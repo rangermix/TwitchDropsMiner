@@ -85,6 +85,23 @@ The application features a modern web-based interface accessible from any browse
 
 The application is designed for Docker deployment, making it easy to run on any platform:
 
+**Using pre-built images (Recommended):**
+
+```bash
+# Pull and run from GitHub Container Registry
+docker pull ghcr.io/rangermix/twitchdropsminer:latest
+docker run -d -p 8080:8080 -v $(pwd)/data:/app/data ghcr.io/rangermix/twitchdropsminer:latest
+
+# Or use docker-compose with the pre-built image
+# Create a docker-compose.yml file with:
+# services:
+#   twitch-drops-miner:
+#     image: ghcr.io/rangermix/twitchdropsminer:latest
+#     ...
+```
+
+**Building locally:**
+
 ```bash
 # Build and run with docker-compose
 docker-compose up -d
@@ -100,6 +117,8 @@ docker run -d -p 8080:8080 -v $(pwd)/data:/app/data twitch-drops-miner
 - Browser notifications supported (requires permission)
 - Health checks and automatic restart included in docker-compose
 - Configure timezone with `TZ` environment variable
+- Pre-built images are automatically built from the master branch via GitHub Actions
+- Available tags: `latest` (stable), `dev` (latest development build)
 
 ### Running from Source:
 

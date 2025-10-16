@@ -58,9 +58,9 @@ jobs:
 
       - name: Append git revision to project version
         run: |
-          (Get-Content version.py) `
+          (Get-Content src/version.py) `
           -Replace '^__version__\s*=\s*"[^"]+', "`$0.${{steps.vars.outputs.sha_short}}" |`
-          Out-File version.py
+          Out-File src/version.py
 
       # Ensure Python version
       - name: Set up Python
@@ -131,7 +131,7 @@ jobs:
 
       - name: Append git revision to project version
         run: |
-          sed -ri "s/^__version__\s*=\s*\"[^\"]+/\0.${{steps.vars.outputs.sha_short}}/" version.py
+          sed -ri "s/^__version__\s*=\s*\"[^\"]+/\0.${{steps.vars.outputs.sha_short}}/" src/version.py
 
       # Ensure Python version
       - name: Set up Python
@@ -209,12 +209,12 @@ jobs:
       - name: Set up variables
         id: vars
         run: |
-          echo "app_version=$(python3 -c 'from version import __version__ as v; print(v)')" >> "${GITHUB_OUTPUT}"
+          echo "app_version=$(python3 -c 'import sys; sys.path.insert(0, "src"); from version import __version__ as v; print(v)')" >> "${GITHUB_OUTPUT}"
           echo "sha_short=$(git rev-parse --short HEAD)" >> "${GITHUB_OUTPUT}"
 
       - name: Append git revision to project version
         run: |
-          sed -ri "s/^__version__\s*=\s*\"[^\"]+/\0.${{steps.vars.outputs.sha_short}}/" version.py
+          sed -ri "s/^__version__\s*=\s*\"[^\"]+/\0.${{steps.vars.outputs.sha_short}}/" src/version.py
 
       - name: Install system dependencies
         run: |
@@ -248,6 +248,62 @@ jobs:
           if-no-files-found: error
           name: Twitch.Drops.Miner.Linux.AppImage-${{matrix.arch}}
           path: Twitch.Drops.Miner.Linux.AppImage-${{matrix.arch}}.zip
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs:
+      - validate
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up variables
+        id: vars
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> "${GITHUB_OUTPUT}"
+          echo "date=$(date +%Y-%m-%d)" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{github.repository}}
+          tags: |
+            type=raw,value=dev
+            type=raw,value=dev-${{steps.vars.outputs.sha_short}}
+            type=raw,value=latest,enable=${{github.ref == 'refs/heads/master'}}
+            type=sha,prefix=
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{github.event_name != 'pull_request'}}
+          tags: ${{steps.meta.outputs.tags}}
+          labels: ${{steps.meta.outputs.labels}}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{steps.vars.outputs.date}}
+            VCS_REF=${{github.sha}}
+            VERSION=dev-${{steps.vars.outputs.sha_short}}
 
   update_releases_page:
     name: Upload builds to Releases
