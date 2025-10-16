@@ -137,20 +137,19 @@ pip install -r requirements.txt
 python main.py
 ```
 
-### Support the Original Author
+### Support This Fork
 
-This project is a fork. If you find this application useful, please consider supporting the original author:
+If you find this fork useful, please consider supporting my work:
 
 <div align="center">
 
 [![Buy me a coffee](https://i.imgur.com/cL95gzE.png)](
-    https://www.buymeacoffee.com/DevilXD
-)
-[![Support me on Patreon](https://i.imgur.com/Mdkb9jq.png)](
-    https://www.patreon.com/bePatron?u=26937862
+    https://buymeacoffee.com/rangermix
 )
 
 </div>
+
+You can also support the original author [@DevilXD](https://github.com/DevilXD) at [buymeacoffee.com/DevilXD](https://www.buymeacoffee.com/DevilXD) or [Patreon](https://www.patreon.com/bePatron?u=26937862).
 
 ### Project goals:
 
