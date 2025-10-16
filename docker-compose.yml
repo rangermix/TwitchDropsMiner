@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  twitch-drops-miner:
+    build: .
+    container_name: twitch-drops-miner
+    image: twitch-drops-miner:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount data directory for persistent storage
+      - ./data:/app/data
+    environment:
+      # Set timezone (optional, defaults to UTC)
+      - TZ=UTC
+      # Docker environment flag
+      - DOCKER_ENV=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/status')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    # Optional: Limit resources
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1'
+    #       memory: 512M
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 256M

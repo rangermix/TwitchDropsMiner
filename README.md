@@ -19,17 +19,44 @@ Every several seconds, the application pretends to watch a particular stream by 
 
 ### Usage:
 
-- Download and unzip [the latest release](https://github.com/DevilXD/TwitchDropsMiner/releases) - it's recommended to keep it in the folder it comes in.
-- Run it and login/connect the miner to your Twitch account by using the in-app login form.
-- After a successful login, the app should fetch a list of all available campaigns and games you can mine drops for - you can then select and add games of choice to the Priority List available on the Settings tab, and then press on the `Reload` button to start processing. It will fetch a list of all applicable streams it can watch, and start mining right away. You can also manually switch to a different channel as needed.
-- If you wish to keep the miner occupied with mining anything it can, beyond what you've selected via the Priority List, you can use the Priority Mode setting to specify the mining order for the rest of the games.
-- Make sure to link your Twitch account to game accounts on the [campaigns page](https://www.twitch.tv/drops/campaigns), to enable more games to be mined.
+**Quick Start with Docker (Recommended):**
 
-### Pictures:
+```bash
+# Clone the repository
+git clone https://github.com/DevilXD/TwitchDropsMiner.git
+cd TwitchDropsMiner
 
-![Main](https://user-images.githubusercontent.com/4180725/164298155-c0880ad7-6423-4419-8d73-f3c053730a1b.png)
-![Inventory](https://user-images.githubusercontent.com/4180725/164298315-81cae0d2-24a4-4822-a056-154fd763c284.png)
-![Settings](https://user-images.githubusercontent.com/4180725/164298391-b13ad40d-3881-436c-8d4c-34e2bbe33a78.png)
+# Start with docker-compose
+docker-compose up -d
+
+# Access the web interface at http://localhost:8080
+```
+
+**Running from Source:**
+
+```bash
+# Install Python 3.10+ and dependencies
+pip install -r requirements.txt
+
+# Run the application
+python main.py
+
+# Access the web interface at http://localhost:8080
+```
+
+**Using the Application:**
+
+- Open the web interface in your browser at `http://localhost:8080`
+- Login/connect the miner to your Twitch account using the OAuth device code flow
+- After a successful login, the app will fetch all available campaigns and games you can mine drops for
+- Select and add games to the Priority List on the Settings tab, then press `Reload` to start processing
+- The miner will fetch applicable streams and start mining automatically
+- You can manually switch to a different channel as needed
+- Make sure to link your Twitch account to game accounts on the [campaigns page](https://www.twitch.tv/drops/campaigns)
+
+### Screenshots:
+
+The application features a modern web-based interface accessible from any browser on your network.
 
 ### Notes:
 
@@ -50,24 +77,42 @@ Every several seconds, the application pretends to watch a particular stream by 
 > [!NOTE]  
 > The source code requires Python 3.10 or higher to run.
 
-### Notes about the Windows build:
+### Docker Deployment:
 
-- To achieve a portable-executable format, the application is packaged with PyInstaller into an `EXE`. Some antivirus engines (including Windows Defender) might report the packaged executable as a trojan, because PyInstaller has been used by others to package malicious Python code in the past. These reports can be safely ignored. If you absolutely do not trust the executable, you'll have to install Python yourself and run everything from source.
-- The executable uses the `%TEMP%` directory for temporary runtime storage of files, that don't need to be exposed to the user (like compiled code and translation files). For persistent storage, the directory the executable resides in is used instead.
-- The autostart feature is implemented as a registry entry to the current user's (`HKCU`) autostart key. It is only altered when toggling the respective option. If you relocate the app to a different directory, the autostart feature will stop working, until you toggle the option off and back on again
+The application is designed for Docker deployment, making it easy to run on any platform:
 
-### Notes about the Linux build:
+```bash
+# Build and run with docker-compose
+docker-compose up -d
 
-- The Linux app is built and distributed using two distinct portable-executable formats: [AppImage](https://appimage.org/) and [PyInstaller](https://pyinstaller.org/).
-- There are no major differences between the two formats, but if you're looking for a recommendation, use the AppImage.
-- The Linux app should work out of the box on any modern distribution, as long as it has `glibc>=2.35`, plus a working display server.
-- Every feature of the app is expected to work on Linux just as well as it does on Windows. If you find something that's broken, please [open a new issue](https://github.com/DevilXD/TwitchDropsMiner/issues/new).
-- The size of the Linux app is significantly larger than the Windows app due to the inclusion of the `gtk3` library (and its dependencies), which is required for proper system tray/notifications support.
-- As an alternative to the native Linux app, you can run the Windows app via [Wine](https://www.winehq.org/) instead. It works really well!
+# Or build and run manually
+docker build -t twitch-drops-miner .
+docker run -d -p 8080:8080 -v $(pwd)/data:/app/data twitch-drops-miner
+```
 
-### Advanced Usage:
+**Important Docker notes:**
+- All persistent data (cookies, settings, logs) is stored in the `data/` directory
+- Login uses OAuth device code flow - you'll be given a code to enter at twitch.tv/activate
+- Browser notifications supported (requires permission)
+- Health checks and automatic restart included in docker-compose
+- Configure timezone with `TZ` environment variable
 
-If you'd be interested in running the latest master from source or building your own executable, see the wiki page explaining how to do so: https://github.com/DevilXD/TwitchDropsMiner/wiki/Setting-up-the-environment,-building-and-running
+### Running from Source:
+
+For development or customization:
+
+```bash
+# Install Python 3.10+
+# Create virtual environment (recommended)
+python -m venv env
+source env/bin/activate  # On Windows: env\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+python main.py
+```
 
 ### Support
 
@@ -84,37 +129,29 @@ If you'd be interested in running the latest master from source or building your
 
 ### Project goals:
 
-Twitch Drops Miner (TDM for short) has been designed with a couple of simple goals in mind. These are, specifically:
+Twitch Drops Miner (TDM for short) has been designed with a couple of simple goals in mind:
 
-- Twitch Drops oriented - it's in the name. That's what I made it for.
-- Easy to use for an average person. Includes a nice looking GUI and is packaged as a ready-to-go executable, without requiring an existing Python installation to work.
-- Intended as a helper tool that starts together with your PC, runs in the background through out the day, and then closes together with your PC shutting down at the end of the day. If it can run continuously for 24 hours at minimum, and not run into any errors, I'd call that good enough already.
-- Requiring a minimum amount of attention during operation - check it once or twice through out the day to see if everything's fine with it.
-- Underlying service friendly - the amount of interactions done with the Twitch site is kept to the minimum required for reliable operation, at a level achievable by a diligent site user.
+**What TDM is:**
+- **Twitch Drops focused** - Automatic mining of timed Twitch drops
+- **Easy to use** - Simple web interface accessible from any browser
+- **Reliable** - Designed to run continuously with minimal attention needed
+- **Efficient** - Minimal interactions with Twitch, respecting their service
+- **Docker-ready** - Easy deployment on any platform or server
 
-TDM is not intended for/as:
+**What TDM is NOT:**
+- Mining channel points
+- Mining other platforms besides Twitch
+- Multi-account support
+- Mining unlinked campaigns
+- 100% guaranteed uptime (expect occasional errors)
 
-- Mining channel points - again, it's about the drops: only.
-- Mining anything else besides Twitch drops - no, I won't be adding support for a random 3rd party site that also happens to rely on watching Twitch streams.
-- Unattended operation: worst case scenario, it'll stop working and you'll hopefully notice that at some point. Hopefully.
-- 100% uptime application, due to the underlying nature of it, expect fatal errors to happen every so often.
-- Being hosted on a remote server as a 24/7 miner.
-- Being used with more than one managed account.
-- Mining campaigns the managed account isn't linked to.
+**Limitations:**
+- Single account per instance
+- No automatic error recovery (monitor periodically)
+- No additional notification systems (email, webhook, etc.)
+- Campaigns must be linked to your Twitch account
 
-This means that features such as:
-
-- It being possible to run it without a GUI, or with only a console attached.
-- Any form of automatic restart when an error happens.
-- Docker or any other form of remote deployment.
-- Using it with more than one managed account.
-- Making it possible to mine campaigns that the managed account isn't linked to.
-- Anything that increases the site processing load caused by the application.
-- Any form of additional notifications system (email, webhook, etc.), beyond what's already implemented.
-
-..., are most likely not going to be a feature, ever. You're welcome to search through the existing issues to comment on your point of view on the relevant matters, where applicable. Otherwise, most of the new issues that go against these goals will be closed and the user will be pointed to this paragraph.
-
-For more context about these goals, please check out these issues: [#161](https://github.com/DevilXD/TwitchDropsMiner/issues/161), [#105](https://github.com/DevilXD/TwitchDropsMiner/issues/105), [#84](https://github.com/DevilXD/TwitchDropsMiner/issues/84)
+This is a web-only application designed for Docker deployment and headless operation.
 
 ### Credits:
 

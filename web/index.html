@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch Drops Miner</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 Twitch Drops Miner</h1>
+            <div class="status-bar">
+                <span id="status-text">Initializing...</span>
+                <span id="connection-indicator" class="connected">● Connected</span>
+            </div>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-button active" data-tab="main">Main</button>
+            <button class="tab-button" data-tab="inventory">Inventory</button>
+            <button class="tab-button" data-tab="settings">Settings</button>
+            <button class="tab-button" data-tab="help">Help</button>
+        </nav>
+
+        <!-- Main Tab -->
+        <div id="main-tab" class="tab-content active">
+            <div class="main-grid">
+                <!-- Login Section -->
+                <section class="panel login-panel">
+                    <h2>Login</h2>
+                    <div id="login-status" class="login-status">Not logged in</div>
+                    <div id="login-form" style="display: none;">
+                        <input type="text" id="username" placeholder="Username" />
+                        <input type="password" id="password" placeholder="Password" />
+                        <input type="text" id="2fa-token" placeholder="2FA Token (optional)" />
+                        <button id="login-button">Login</button>
+                    </div>
+                    <div id="oauth-code-display" style="display: none;">
+                        <p>Enter this code at: <a id="oauth-url" href="#" target="_blank">Twitch Activate</a></p>
+                        <div class="oauth-code" id="oauth-code"></div>
+                        <button id="oauth-confirm">I've entered the code</button>
+                    </div>
+                </section>
+
+                <!-- Current Drop Progress -->
+                <section class="panel progress-panel">
+                    <h2>Current Drop</h2>
+                    <div id="drop-display">
+                        <div id="no-drop-message">No active drop</div>
+                        <div id="drop-info" style="display: none;">
+                            <div class="drop-name" id="drop-name"></div>
+                            <div class="drop-game" id="drop-game"></div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill"></div>
+                            </div>
+                            <div class="progress-text" id="progress-text"></div>
+                            <div class="progress-time" id="progress-time"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Console Output -->
+                <section class="panel console-panel">
+                    <h2>Console Output</h2>
+                    <div id="console-output" class="console-output"></div>
+                </section>
+
+                <!-- Channels List -->
+                <section class="panel channels-panel">
+                    <h2>Channels</h2>
+                    <div id="channels-list" class="channels-list"></div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Inventory Tab -->
+        <div id="inventory-tab" class="tab-content">
+            <div class="inventory-grid" id="inventory-grid">
+                <p class="empty-message">No campaigns loaded yet...</p>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings-tab" class="tab-content">
+            <div class="settings-container">
+                <section class="settings-section">
+                    <h2>General Settings</h2>
+                    <label>
+                        <input type="checkbox" id="dark-mode"> Dark Mode
+                    </label>
+                    <label>
+                        Language:
+                        <select id="language">
+                            <option value="en">English</option>
+                        </select>
+                    </label>
+                    <label>
+                        Connection Quality:
+                        <input type="number" id="connection-quality" min="1" max="6" value="1">
+                    </label>
+                </section>
+
+                <section class="settings-section">
+                    <h2>Games to Watch</h2>
+                    <p class="help-text">Select games to watch. Order matters - drag to reorder priority (top = highest priority).</p>
+
+                    <div class="games-filter">
+                        <input type="text" id="games-filter" placeholder="Search games..." />
+                        <div class="filter-actions">
+                            <button id="select-all-btn" class="small-btn">Select All</button>
+                            <button id="deselect-all-btn" class="small-btn">Deselect All</button>
+                        </div>
+                    </div>
+
+                    <div class="games-container">
+                        <div class="selected-games">
+                            <h3>Selected Games (drag to reorder)</h3>
+                            <div id="selected-games-list" class="sortable-list"></div>
+                        </div>
+
+                        <div class="available-games">
+                            <h3>Available Games</h3>
+                            <div id="available-games-list" class="checkbox-list"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="settings-section">
+                    <h2>Actions</h2>
+                    <button id="reload-btn" class="action-button">Reload Campaigns</button>
+                </section>
+            </div>
+        </div>
+
+        <!-- Help Tab -->
+        <div id="help-tab" class="tab-content">
+            <div class="help-content">
+                <h2>About Twitch Drops Miner</h2>
+                <p>This application automatically mines timed Twitch drops without downloading stream data.</p>
+
+                <h3>How to Use</h3>
+                <ol>
+                    <li>Login using your Twitch account (OAuth device code flow)</li>
+                    <li>Link your accounts at <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a></li>
+                    <li>The miner will automatically discover campaigns and start mining</li>
+                    <li>Configure priority games in Settings to focus on what you want</li>
+                    <li>Monitor progress in the Main and Inventory tabs</li>
+                </ol>
+
+                <h3>Features</h3>
+                <ul>
+                    <li>Stream-less drop mining - saves bandwidth</li>
+                    <li>Game priority and exclusion lists</li>
+                    <li>Tracks up to 199 channels simultaneously</li>
+                    <li>Automatic channel switching</li>
+                    <li>Real-time progress tracking</li>
+                </ul>
+
+                <h3>Important Notes</h3>
+                <ul>
+                    <li>Do not watch streams on the same account while mining</li>
+                    <li>Keep your cookies.jar file secure</li>
+                    <li>Requires linked game accounts for drops</li>
+                </ul>
+
+                <div class="help-links">
+                    <a href="https://github.com/DevilXD/TwitchDropsMiner" target="_blank">GitHub Repository</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

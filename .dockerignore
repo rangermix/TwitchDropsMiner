@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
+env/
+venv/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# GitHub
+.github/
+
+# CI/CD
+.gitlab-ci.yml
+
+# Documentation
+*.md
+!README.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Application data (will be mounted as volumes)
+data/
+cache/
+cookies.jar
+settings.json
+log.txt
+dump.dat
+lock.file
+logs/
+.claude/
+
+# Build artifacts
+*.exe
+*.AppImage
+*.deb
+*.rpm
+
+# Other
+.env
+.env.local
