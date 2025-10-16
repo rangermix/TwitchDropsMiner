@@ -1,5 +1,9 @@
 # Twitch Drops Miner
 
+> **Note:** This is a fork of [DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner). See [Acknowledgments](#acknowledgments) for credits to the original author and contributors.
+
+> **Disclaimer:** This fork is heavily maintained and developed using AI-assisted coding (Claude Code). While functional, the codebase may reflect "vibe coding" patterns and AI-generated conventions. Use at your own discretion and always review changes before deploying.
+
 This application allows you to AFK mine timed Twitch drops, without having to worry about switching channels when the one you were watching goes offline, claiming the drops, or even receiving the stream data itself. This helps you save on bandwidth and hassle.
 
 ### How It Works:
@@ -23,7 +27,7 @@ Every several seconds, the application pretends to watch a particular stream by 
 
 ```bash
 # Clone the repository
-git clone https://github.com/DevilXD/TwitchDropsMiner.git
+git clone https://github.com/rangermix/TwitchDropsMiner.git
 cd TwitchDropsMiner
 
 # Start with docker-compose
@@ -114,7 +118,9 @@ pip install -r requirements.txt
 python main.py
 ```
 
-### Support
+### Support the Original Author
+
+This project is a fork. If you find this application useful, please consider supporting the original author:
 
 <div align="center">
 
@@ -153,7 +159,14 @@ Twitch Drops Miner (TDM for short) has been designed with a couple of simple goa
 
 This is a web-only application designed for Docker deployment and headless operation.
 
-### Credits:
+### Acknowledgments:
+
+This project is a fork of the excellent [TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner) created by [@DevilXD](https://github.com/DevilXD). Huge thanks to DevilXD for creating and maintaining this amazing tool, and to all the contributors who have helped improve it over time.
+
+**Original Project:** [DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner)
+**Original Author:** [@DevilXD](https://github.com/DevilXD)
+
+### Translation Credits:
 
 <!---
 Note: The translations credits are sorted alphabetically, based on their English language name.
