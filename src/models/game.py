@@ -16,6 +16,8 @@ class Game:
         self.name: str = data.get("displayName") or data["name"]
         if "slug" in data:
             self.slug = data["slug"]
+        # Store box art URL if available (used for game icons in UI)
+        self.box_art_url: str | None = data.get("boxArtURL")
 
     def __str__(self) -> str:
         return self.name

@@ -22,6 +22,7 @@ class InventoryManager:
         self._broadcaster = broadcaster
         self._cache = cache
         self._campaigns: dict[str, dict[str, Any]] = {}
+        self._batch_mode: bool = False
 
     def clear(self):
         """Clear all campaigns from inventory."""
@@ -59,6 +60,7 @@ class InventoryManager:
             "name": campaign.name,
             "game_name": campaign.game.name,
             "image_url": image_url,
+            "link_url": f"https://www.twitch.tv/drops/campaigns?dropID={campaign.id}",
             "starts_at": campaign.starts_at.isoformat(),
             "ends_at": campaign.ends_at.isoformat(),
             "linked": campaign.linked,
@@ -71,7 +73,10 @@ class InventoryManager:
         }
 
         self._campaigns[campaign.id] = campaign_data
-        await self._broadcaster.emit("campaign_add", campaign_data)
+
+        # Only emit immediately if not in batch mode
+        if not self._batch_mode:
+            await self._broadcaster.emit("campaign_add", campaign_data)
 
     def update_drop(self, drop: TimedDrop):
         """Update a specific drop's progress within its campaign.
@@ -98,6 +103,25 @@ class InventoryManager:
                         })
                     )
                     break
+
+    def start_batch(self):
+        """Start batch mode - prevents individual campaign_add emissions.
+
+        Call this before adding multiple campaigns, then call finalize_batch()
+        when done to emit all campaigns at once.
+        """
+        self._batch_mode = True
+        self._campaigns.clear()
+
+    async def finalize_batch(self):
+        """Finalize batch mode and emit all campaigns atomically.
+
+        This sends a single inventory_batch_update event with all campaigns,
+        preventing UI flicker from individual adds.
+        """
+        self._batch_mode = False
+        campaigns_data = list(self._campaigns.values())
+        await self._broadcaster.emit("inventory_batch_update", {"campaigns": campaigns_data})
 
     def get_campaigns(self) -> list[dict[str, Any]]:
         """Get all campaigns in inventory.

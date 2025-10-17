@@ -18,11 +18,12 @@ class ChannelListManager:
     or when the watched channel switches.
     """
 
-    def __init__(self, broadcaster: WebSocketBroadcaster):
+    def __init__(self, broadcaster: WebSocketBroadcaster, gui_manager=None):
         self._broadcaster = broadcaster
         self._channels: dict[int, dict[str, Any]] = {}
         self._watching_id: int | None = None
         self._selected_id: int | None = None
+        self._gui_manager = gui_manager
 
     def display(self, channel: Channel, *, add: bool = False):
         """Add or update a channel in the display list.
@@ -35,6 +36,8 @@ class ChannelListManager:
             "id": channel.id,
             "name": channel.name,
             "game": channel.game.name if channel.game else None,
+            "game_id": channel.game.id if channel.game else None,
+            "game_icon": channel.game.box_art_url if channel.game else None,
             "viewers": channel.viewers,
             "online": channel.online,
             "drops_enabled": channel.drops_enabled,
@@ -84,12 +87,63 @@ class ChannelListManager:
         )
 
     def get_selection(self) -> Channel | None:
-        """Get user's channel selection (handled via webapp API).
+        """Get user's channel selection from web GUI.
 
         Returns:
-            None (selection is handled through the web API, not here)
+            The selected Channel if one exists, None otherwise
         """
-        return None  # Handled via webapp API
+        if self._gui_manager is None:
+            return None
+
+        # Get the selected channel ID from the parent GUI manager
+        selected_id = self._gui_manager.get_selected_channel_id()
+        if selected_id is None:
+            return None
+
+        # Get the Channel object from the Twitch client
+        from src.core.client import Twitch
+        if hasattr(self._gui_manager, '_twitch'):
+            twitch: Twitch = self._gui_manager._twitch
+            return twitch.channels.get(selected_id)
+
+        return None
+
+    def batch_update(self, channels: list[Channel]):
+        """Replace all channels atomically with a new list.
+
+        This prevents UI flicker by updating all channels in one operation
+        instead of clearing and gradually re-adding them.
+
+        Args:
+            channels: List of channels to display
+        """
+        # Build new channels dict
+        new_channels = {}
+        channels_data = []
+
+        for channel in channels:
+            channel_data = {
+                "id": channel.id,
+                "name": channel.name,
+                "game": channel.game.name if channel.game else None,
+                "game_id": channel.game.id if channel.game else None,
+                "game_icon": channel.game.box_art_url if channel.game else None,
+                "viewers": channel.viewers,
+                "online": channel.online,
+                "drops_enabled": channel.drops_enabled,
+                "acl_based": channel.acl_based,
+                "watching": channel.id == self._watching_id
+            }
+            new_channels[channel.id] = channel_data
+            channels_data.append(channel_data)
+
+        # Atomically replace all channels
+        self._channels = new_channels
+
+        # Emit batch update event
+        asyncio.create_task(
+            self._broadcaster.emit("channels_batch_update", {"channels": channels_data})
+        )
 
     def get_channels(self) -> list[dict[str, Any]]:
         """Get all currently tracked channels.

@@ -207,6 +207,18 @@ header h1 {
     margin-bottom: 15px;
 }
 
+.drop-campaign-link {
+    color: #0066cc;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.drop-campaign-link:hover {
+    color: #0052a3;
+    text-decoration: underline;
+}
+
 .progress-bar {
     width: 100%;
     height: 30px;
@@ -260,9 +272,56 @@ header h1 {
     overflow-y: auto;
 }
 
+/* Game Group Header */
+.game-group-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
+    margin-top: 12px;
+    background: linear-gradient(135deg, var(--accent-color) 0%, rgba(145, 70, 255, 0.7) 100%);
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(145, 70, 255, 0.3);
+}
+
+.game-group-header:first-child {
+    margin-top: 0;
+}
+
+.game-icon {
+    width: 40px;
+    height: 53px;
+    border-radius: 4px;
+    object-fit: cover;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.game-group-info {
+    flex: 1;
+}
+
+.game-group-name {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.game-group-stats {
+    font-size: 12px;
+    opacity: 0.9;
+    font-weight: normal;
+}
+
 .channel-item {
     padding: 12px;
     margin-bottom: 8px;
+    margin-left: 16px;
     background: var(--bg-secondary);
     border: 2px solid var(--border-color);
     border-radius: 6px;
@@ -344,6 +403,27 @@ header h1 {
 .campaign-name {
     font-size: 14px;
     color: var(--text-secondary);
+}
+
+.campaign-name-link {
+    font-size: 14px;
+    color: #0066cc;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.campaign-name-link:hover {
+    color: #0052a3;
+    text-decoration: underline;
+}
+
+.external-link-icon {
+    font-size: 12px;
+    opacity: 0.7;
 }
 
 .campaign-status {
@@ -688,7 +768,131 @@ header h1 {
     user-select: none;
 }
 
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-content {
+    background: var(--bg-panel);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 20px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--accent-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+#loading-message {
+    font-size: 16px;
+    color: var(--text-primary);
+    margin-top: 10px;
+}
+
+/* Manual Mode Styles */
+.mode-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    margin-left: 10px;
+    transition: all 0.3s ease;
+}
+
+#auto-mode-badge {
+    background: rgba(145, 70, 255, 0.15);
+    color: var(--accent-color);
+    border: 1px solid var(--accent-color);
+}
+
+#manual-mode-badge {
+    background: rgba(255, 167, 38, 0.15);
+    color: var(--warning-color);
+    border: 1px solid var(--warning-color);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+}
+
+.manual-mode-controls {
+    background: rgba(255, 167, 38, 0.1);
+    border: 2px solid var(--warning-color);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.manual-mode-info {
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.manual-mode-info strong {
+    color: var(--warning-color);
+}
+
+.exit-manual-btn {
+    padding: 8px 16px;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.exit-manual-btn:hover {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(145, 70, 255, 0.3);
+}
+
 /* Utilities */
+.hidden {
+    display: none !important;
+}
+
 .empty-message {
     text-align: center;
     color: var(--text-secondary);

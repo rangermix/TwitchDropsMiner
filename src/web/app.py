@@ -95,13 +95,14 @@ async def serve_index():
 @app.get("/api/status")
 async def get_status():
     """Get current application status"""
-    if not gui_manager:
+    if not gui_manager or not twitch_client:
         raise HTTPException(status_code=503, detail="GUI not initialized")
 
     return {
         "status": gui_manager.status.get(),
         "login": gui_manager.login.get_status(),
-        "close_requested": gui_manager.close_requested
+        "close_requested": gui_manager.close_requested,
+        "manual_mode": twitch_client.get_manual_mode_info()
     }
 
 
@@ -119,10 +120,28 @@ async def get_channels():
 @app.post("/api/channels/select")
 async def select_channel(request: ChannelSelectRequest):
     """Select a channel to watch"""
-    if not gui_manager:
+    if not gui_manager or not twitch_client:
         raise HTTPException(status_code=503, detail="GUI not initialized")
 
+    # Validate channel exists
+    channel = twitch_client.channels.get(request.channel_id)
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+
+    # Validate channel has a game
+    if not channel.game:
+        raise HTTPException(status_code=400, detail="Channel is not playing any game")
+
+    # Warn if channel has no drops (shouldn't happen if GUI is filtering correctly)
+    if not any(campaign.can_earn(channel) for campaign in twitch_client.inventory):
+        logger.warning(f"User selected channel {channel.name} but it has no available drops")
+
     gui_manager.select_channel(request.channel_id)
+
+    # Trigger channel switch to apply the selection
+    from src.config import State
+    twitch_client.change_state(State.CHANNEL_SWITCH)
+
     return {"success": True}
 
 
@@ -214,6 +233,19 @@ async def trigger_close():
     return {"success": True}
 
 
+@app.post("/api/mode/exit-manual")
+async def exit_manual_mode():
+    """Exit manual mode and return to automatic channel selection"""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    if not twitch_client.is_manual_mode():
+        return {"success": False, "message": "Not in manual mode"}
+
+    twitch_client.exit_manual_mode("User requested")
+    return {"success": True}
+
+
 # ==================== Socket.IO Events ====================
 
 @sio.event
@@ -222,14 +254,16 @@ async def connect(sid, environ):
     logger.info(f"Web client connected: {sid}")
 
     # Send initial state to new client
-    if gui_manager:
+    if gui_manager and twitch_client:
         await sio.emit("initial_state", {
             "status": gui_manager.status.get(),
             "channels": gui_manager.channels.get_channels(),
             "campaigns": gui_manager.inv.get_campaigns(),
             "console": gui_manager.output.get_history(),
             "settings": gui_manager.settings.get_settings(),
-            "login": gui_manager.login.get_status()
+            "login": gui_manager.login.get_status(),
+            "manual_mode": twitch_client.get_manual_mode_info(),
+            "current_drop": gui_manager.progress.get_current_drop()
         }, room=sid)
 
 

@@ -29,7 +29,9 @@ if __name__ == "__main__":
 
     logger = logging.getLogger("TwitchDrops")
     # Force INFO level logging by default for better visibility
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
+    if logger.level < logging.INFO:
+        logger.setLevel(logging.INFO)
     # Always add console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(FILE_FORMATTER)

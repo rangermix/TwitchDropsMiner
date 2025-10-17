@@ -37,6 +37,7 @@ class CampaignProgressManager:
                     "drop_id": drop.id,
                     "drop_name": drop.name,
                     "campaign_name": drop.campaign.name,
+                    "campaign_id": drop.campaign.id,
                     "game_name": drop.campaign.game.name,
                     "current_minutes": drop.current_minutes,
                     "required_minutes": drop.required_minutes,
@@ -59,3 +60,25 @@ class CampaignProgressManager:
             True if remaining seconds is at or below zero
         """
         return self._remaining_seconds <= 0
+
+    def get_current_drop(self) -> dict | None:
+        """Get the current drop progress data for sending to newly connected clients.
+
+        Returns:
+            Dictionary with drop progress data, or None if no active drop
+        """
+        if self._current_drop is None:
+            return None
+
+        drop = self._current_drop
+        return {
+            "drop_id": drop.id,
+            "drop_name": drop.name,
+            "campaign_name": drop.campaign.name,
+            "campaign_id": drop.campaign.id,
+            "game_name": drop.campaign.game.name,
+            "current_minutes": drop.current_minutes,
+            "required_minutes": drop.required_minutes,
+            "progress": drop.progress,
+            "remaining_seconds": self._remaining_seconds
+        }

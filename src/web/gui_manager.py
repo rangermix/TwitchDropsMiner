@@ -50,7 +50,7 @@ class WebGUIManager:
         self.websockets = WebsocketStatusManager(self._broadcaster)
         self.output = ConsoleOutputManager(self._broadcaster)
         self.progress = CampaignProgressManager(self._broadcaster)
-        self.channels = ChannelListManager(self._broadcaster)
+        self.channels = ChannelListManager(self._broadcaster, self)
         self.inv = InventoryManager(self._broadcaster, ImageCache(self))
         self.login = LoginFormManager(self._broadcaster, self)
         self.tray = TrayIconStub(self._broadcaster)
@@ -223,6 +223,16 @@ class WebGUIManager:
         """
         asyncio.create_task(
             self._broadcaster.emit("theme_change", {"dark_mode": dark_mode})
+        )
+
+    def broadcast_manual_mode_change(self, manual_mode_info: dict):
+        """Broadcast manual mode status change to connected clients.
+
+        Args:
+            manual_mode_info: Manual mode status from get_manual_mode_info()
+        """
+        asyncio.create_task(
+            self._broadcaster.emit("manual_mode_update", manual_mode_info)
         )
 
 

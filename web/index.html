@@ -13,6 +13,12 @@
             <h1>🎮 Twitch Drops Miner</h1>
             <div class="status-bar">
                 <span id="status-text">Initializing...</span>
+                <span id="manual-mode-badge" class="mode-badge hidden" title="Manual mode active - watching specific game">
+                    🎯 MANUAL: <span id="manual-game-name"></span>
+                </span>
+                <span id="auto-mode-badge" class="mode-badge" title="Automatic mode - following game priority">
+                    🤖 AUTO
+                </span>
                 <span id="connection-indicator" class="connected">● Connected</span>
             </div>
         </header>
@@ -50,6 +56,12 @@
                     <div id="drop-display">
                         <div id="no-drop-message">No active drop</div>
                         <div id="drop-info" style="display: none;">
+                            <div id="manual-mode-controls" class="manual-mode-controls hidden">
+                                <div class="manual-mode-info">
+                                    🎯 Manual Mode: Mining <strong id="manual-mode-game"></strong>
+                                </div>
+                                <button id="exit-manual-btn" class="exit-manual-btn">Return to Auto Mode</button>
+                            </div>
                             <div class="drop-name" id="drop-name"></div>
                             <div class="drop-game" id="drop-game"></div>
                             <div class="progress-bar">

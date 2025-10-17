@@ -7,7 +7,8 @@ const state = {
     channels: {},
     campaigns: {},
     settings: {},
-    currentDrop: null
+    currentDrop: null,
+    countdownTimer: null  // Track the active countdown timer
 };
 
 // Initialize Socket.IO connection
@@ -43,6 +44,13 @@ socket.on('initial_state', (data) => {
     if (data.console) data.console.forEach(line => addConsoleLineRaw(line));
     if (data.settings) updateSettingsUI(data.settings);
     if (data.login) updateLoginStatus(data.login);
+    if (data.manual_mode) updateManualModeUI(data.manual_mode);
+    // Restore current drop progress if it exists
+    if (data.current_drop) {
+        updateDropProgress(data.current_drop);
+    } else {
+        clearDropProgress();
+    }
 });
 
 socket.on('status_update', (data) => {
@@ -69,6 +77,15 @@ socket.on('channels_clear', () => {
     clearChannels();
 });
 
+socket.on('channels_batch_update', (data) => {
+    // Replace all channels atomically to prevent flickering
+    state.channels = {};
+    data.channels.forEach(ch => {
+        state.channels[ch.id] = ch;
+    });
+    renderChannels();
+});
+
 socket.on('channel_watching', (data) => {
     setWatchingChannel(data.id);
 });
@@ -91,6 +108,15 @@ socket.on('campaign_add', (data) => {
 
 socket.on('inventory_clear', () => {
     clearInventory();
+});
+
+socket.on('inventory_batch_update', (data) => {
+    // Replace all campaigns atomically to prevent flickering
+    state.campaigns = {};
+    data.campaigns.forEach(camp => {
+        state.campaigns[camp.id] = camp;
+    });
+    renderInventory();
 });
 
 socket.on('drop_update', (data) => {
@@ -150,10 +176,17 @@ socket.on('attention_required', (data) => {
     flashTitle();
 });
 
+socket.on('manual_mode_update', (data) => {
+    updateManualModeUI(data);
+});
+
 // ==================== UI Update Functions ====================
 
 function updateStatus(status) {
     document.getElementById('status-text').textContent = status;
+
+    // Loading overlay disabled - UI remains responsive during backend operations
+    // Backend now uses batch updates to prevent flickering
 }
 
 function addConsoleLine(message) {
@@ -211,45 +244,136 @@ function renderChannels() {
         return;
     }
 
-    // Sort: watching first, then online, then by viewers
-    channels.sort((a, b) => {
-        if (a.watching !== b.watching) return b.watching ? 1 : -1;
-        if (a.online !== b.online) return b.online ? 1 : -1;
-        return (b.viewers || 0) - (a.viewers || 0);
+    // Get the games to watch list from settings
+    const gamesToWatch = state.settings.games_to_watch || [];
+    const gamesToWatchSet = new Set(gamesToWatch);
+
+    // Filter channels to only include those playing games in the watch list
+    const filteredChannels = channels.filter(channel => {
+        const gameName = channel.game;
+        // Include channels if: they have a game AND it's in the watch list
+        // OR if the watch list is empty (show all)
+        return gamesToWatch.length === 0 || (gameName && gamesToWatchSet.has(gameName));
     });
 
-    channels.forEach(channel => {
-        const div = document.createElement('div');
-        div.className = 'channel-item';
-        if (channel.watching) div.classList.add('watching');
-        if (channel.online) div.classList.add('online');
-        else div.classList.add('offline');
+    if (filteredChannels.length === 0) {
+        container.innerHTML = '<p class="empty-message">No channels found for selected games...</p>';
+        return;
+    }
 
-        let badges = '';
-        if (channel.drops_enabled) badges += '<span class="channel-badge drops">DROPS</span>';
-        if (channel.acl_based) badges += '<span class="channel-badge acl">ACL</span>';
+    // Group channels by game
+    const gameGroups = {};
+    filteredChannels.forEach(channel => {
+        const gameName = channel.game || 'No Game';
+        const gameId = channel.game_id || 'no-game';
+        const gameIcon = channel.game_icon;
 
-        div.innerHTML = `
-            <div class="channel-name">${channel.name} ${badges}</div>
-            <div class="channel-info">
-                ${channel.game || 'No game'} •
-                ${channel.viewers !== null ? channel.viewers.toLocaleString() + ' viewers' : 'Offline'}
-                ${channel.watching ? ' • <strong>WATCHING</strong>' : ''}
+        if (!gameGroups[gameId]) {
+            gameGroups[gameId] = {
+                name: gameName,
+                icon: gameIcon,
+                channels: []
+            };
+        }
+        gameGroups[gameId].channels.push(channel);
+    });
+
+    // Sort games: prioritize games with watching channels, then by total viewers
+    const sortedGames = Object.entries(gameGroups).sort(([idA, groupA], [idB, groupB]) => {
+        const hasWatchingA = groupA.channels.some(ch => ch.watching);
+        const hasWatchingB = groupB.channels.some(ch => ch.watching);
+
+        if (hasWatchingA !== hasWatchingB) return hasWatchingB ? 1 : -1;
+
+        // Sum total viewers for each game
+        const totalViewersA = groupA.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
+        const totalViewersB = groupB.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
+
+        return totalViewersB - totalViewersA;
+    });
+
+    // Render each game group
+    sortedGames.forEach(([gameId, group]) => {
+        // Create game header
+        const gameHeader = document.createElement('div');
+        gameHeader.className = 'game-group-header';
+
+        let iconHtml = '';
+        if (group.icon) {
+            // Resize the box art to 40x53 (Twitch's standard small size)
+            const iconUrl = group.icon.replace('{width}', '40').replace('{height}', '53');
+            iconHtml = `<img src="${iconUrl}" alt="${group.name}" class="game-icon" onerror="this.style.display='none'">`;
+        }
+
+        const channelCount = group.channels.length;
+        const totalViewers = group.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
+
+        gameHeader.innerHTML = `
+            ${iconHtml}
+            <div class="game-group-info">
+                <div class="game-group-name">${group.name}</div>
+                <div class="game-group-stats">${channelCount} channel${channelCount !== 1 ? 's' : ''} • ${totalViewers.toLocaleString()} viewers</div>
             </div>
         `;
 
-        div.onclick = () => selectChannel(channel.id);
-        container.appendChild(div);
+        container.appendChild(gameHeader);
+
+        // Sort channels within game: watching first, then online, then by viewers
+        group.channels.sort((a, b) => {
+            if (a.watching !== b.watching) return b.watching ? 1 : -1;
+            if (a.online !== b.online) return b.online ? 1 : -1;
+            return (b.viewers || 0) - (a.viewers || 0);
+        });
+
+        // Render channels in this game
+        group.channels.forEach(channel => {
+            const div = document.createElement('div');
+            div.className = 'channel-item';
+            if (channel.watching) div.classList.add('watching');
+            if (channel.online) div.classList.add('online');
+            else div.classList.add('offline');
+
+            let badges = '';
+            if (channel.drops_enabled) badges += '<span class="channel-badge drops">DROPS</span>';
+            if (channel.acl_based) badges += '<span class="channel-badge acl">ACL</span>';
+
+            div.innerHTML = `
+                <div class="channel-name">${channel.name} ${badges}</div>
+                <div class="channel-info">
+                    ${channel.viewers !== null ? channel.viewers.toLocaleString() + ' viewers' : 'Offline'}
+                    ${channel.watching ? ' • <strong>WATCHING</strong>' : ''}
+                </div>
+            `;
+
+            div.onclick = () => selectChannel(channel.id);
+            container.appendChild(div);
+        });
     });
 }
 
 function updateDropProgress(data) {
+    // Check if this is a new drop or if remaining seconds changed significantly
+    const isNewDrop = !state.currentDrop || state.currentDrop.drop_id !== data.drop_id;
+
+    // Store old remaining seconds before updating state
+    const oldRemaining = state.currentDrop ? state.currentDrop.remaining_seconds : null;
+
+    // Update state with new data
     state.currentDrop = data;
+
     document.getElementById('no-drop-message').style.display = 'none';
     document.getElementById('drop-info').style.display = 'block';
 
     document.getElementById('drop-name').textContent = data.drop_name;
-    document.getElementById('drop-game').textContent = `${data.campaign_name} (${data.game_name})`;
+
+    // Make campaign name clickable with link to Twitch
+    const dropGameEl = document.getElementById('drop-game');
+    if (data.campaign_id) {
+        const campaignUrl = `https://www.twitch.tv/drops/campaigns?dropID=${data.campaign_id}`;
+        dropGameEl.innerHTML = `<a href="${campaignUrl}" target="_blank" rel="noopener noreferrer" class="drop-campaign-link">${data.campaign_name}</a> (${data.game_name})`;
+    } else {
+        dropGameEl.textContent = `${data.campaign_name} (${data.game_name})`;
+    }
 
     const progress = data.progress * 100;
     const fill = document.getElementById('progress-fill');
@@ -259,8 +383,21 @@ function updateDropProgress(data) {
     document.getElementById('progress-text').textContent =
         `${data.current_minutes} / ${data.required_minutes} minutes`;
 
-    // Update remaining time
-    updateRemainingTime(data.remaining_seconds);
+    // Only reset the timer if it's a new drop or if backend time differs by more than 2 seconds
+    // This prevents constant timer resets from periodic backend updates
+    const shouldResetTimer = isNewDrop || oldRemaining === null || Math.abs(oldRemaining - data.remaining_seconds) > 2;
+
+    if (shouldResetTimer) {
+        // Cancel any existing countdown timer before starting a new one
+        if (state.countdownTimer !== null) {
+            clearTimeout(state.countdownTimer);
+            state.countdownTimer = null;
+        }
+
+        // Start countdown with the new value from backend
+        updateRemainingTime(data.remaining_seconds);
+    }
+    // Otherwise, let the existing timer continue counting down smoothly
 }
 
 function updateRemainingTime(seconds) {
@@ -270,12 +407,22 @@ function updateRemainingTime(seconds) {
         `Time remaining: ${minutes}:${secs.toString().padStart(2, '0')}`;
 
     if (seconds > 0) {
-        setTimeout(() => updateRemainingTime(seconds - 1), 1000);
+        // Store the timer ID so we can cancel it if needed
+        state.countdownTimer = setTimeout(() => updateRemainingTime(seconds - 1), 1000);
+    } else {
+        state.countdownTimer = null;
     }
 }
 
 function clearDropProgress() {
     state.currentDrop = null;
+
+    // Cancel any active countdown timer
+    if (state.countdownTimer !== null) {
+        clearTimeout(state.countdownTimer);
+        state.countdownTimer = null;
+    }
+
     document.getElementById('no-drop-message').style.display = 'block';
     document.getElementById('drop-info').style.display = 'none';
 }
@@ -337,10 +484,15 @@ function renderInventory() {
             </div>
         `).join('');
 
+        // Make campaign name clickable if link_url is available
+        const campaignNameHtml = campaign.link_url
+            ? `<a href="${campaign.link_url}" target="_blank" rel="noopener noreferrer" class="campaign-name-link">${campaign.name} <span class="external-link-icon">🔗</span></a>`
+            : `<div class="campaign-name">${campaign.name}</div>`;
+
         card.innerHTML = `
             <div class="campaign-header">
                 <div class="campaign-game">${campaign.game_name}</div>
-                <div class="campaign-name">${campaign.name}</div>
+                ${campaignNameHtml}
             </div>
             <div class="campaign-status">
                 <span>${statusText}</span>
@@ -402,6 +554,41 @@ function updateSettingsUI(settings) {
 
     // Update games to watch lists
     renderGamesToWatch();
+
+    // Re-render channels list to apply filter based on updated games to watch
+    renderChannels();
+}
+
+function updateManualModeUI(manualModeInfo) {
+    const manualBadge = document.getElementById('manual-mode-badge');
+    const autoBadge = document.getElementById('auto-mode-badge');
+    const manualGameName = document.getElementById('manual-game-name');
+    const manualControls = document.getElementById('manual-mode-controls');
+    const manualModeGame = document.getElementById('manual-mode-game');
+
+    if (manualModeInfo.active) {
+        // Show manual mode badge, hide auto badge
+        manualBadge.classList.remove('hidden');
+        autoBadge.classList.add('hidden');
+        manualGameName.textContent = manualModeInfo.game_name || '';
+
+        // Show manual mode controls in drop progress section
+        if (manualControls) {
+            manualControls.classList.remove('hidden');
+            if (manualModeGame) {
+                manualModeGame.textContent = manualModeInfo.game_name || '';
+            }
+        }
+    } else {
+        // Hide manual mode badge, show auto badge
+        manualBadge.classList.add('hidden');
+        autoBadge.classList.remove('hidden');
+
+        // Hide manual mode controls
+        if (manualControls) {
+            manualControls.classList.add('hidden');
+        }
+    }
 }
 
 // ==================== Games to Watch Management ====================
@@ -539,6 +726,9 @@ function handleDragEnd(e) {
     // Re-render to update priority numbers
     renderSelectedGames(newOrder);
 
+    // Re-render channels list to apply updated filter
+    renderChannels();
+
     // Save settings
     saveSettings();
 }
@@ -557,6 +747,7 @@ function toggleGameWatch(gameName, checked) {
 
     state.settings.games_to_watch = games;
     renderGamesToWatch();
+    renderChannels();
     saveSettings();
 }
 
@@ -567,6 +758,7 @@ function removeGameFromWatch(gameName) {
         games.splice(index, 1);
         state.settings.games_to_watch = games;
         renderGamesToWatch();
+        renderChannels();
         saveSettings();
     }
 }
@@ -574,12 +766,14 @@ function removeGameFromWatch(gameName) {
 function selectAllGames() {
     state.settings.games_to_watch = Array.from(availableGames).sort();
     renderGamesToWatch();
+    renderChannels();
     saveSettings();
 }
 
 function deselectAllGames() {
     state.settings.games_to_watch = [];
     renderGamesToWatch();
+    renderChannels();
     saveSettings();
 }
 
@@ -600,13 +794,36 @@ function flashTitle() {
 
 async function selectChannel(channelId) {
     try {
-        await fetch('/api/channels/select', {
+        const response = await fetch('/api/channels/select', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({channel_id: channelId})
         });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Failed to select channel:', errorData.detail || 'Unknown error');
+            addConsoleLine(`Error selecting channel: ${errorData.detail || 'Unknown error'}`);
+        }
     } catch (error) {
         console.error('Failed to select channel:', error);
+        addConsoleLine(`Error selecting channel: ${error.message}`);
+    }
+}
+
+async function exitManualMode() {
+    try {
+        const response = await fetch('/api/mode/exit-manual', {
+            method: 'POST'
+        });
+
+        const result = await response.json();
+        if (!result.success) {
+            console.log('Exit manual mode:', result.message || 'Already in automatic mode');
+        }
+    } catch (error) {
+        console.error('Failed to exit manual mode:', error);
+        addConsoleLine(`Error exiting manual mode: ${error.message}`);
     }
 }
 
@@ -662,6 +879,7 @@ async function saveSettings() {
 async function reloadCampaigns() {
     try {
         await fetch('/api/reload', {method: 'POST'});
+        // Status will update via Socket.IO when backend starts operation
     } catch (error) {
         console.error('Failed to reload:', error);
     }
@@ -716,6 +934,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('select-all-btn').addEventListener('click', selectAllGames);
     document.getElementById('deselect-all-btn').addEventListener('click', deselectAllGames);
     document.getElementById('games-filter').addEventListener('input', renderGamesToWatch);
+
+    // Manual mode controls
+    const exitManualBtn = document.getElementById('exit-manual-btn');
+    if (exitManualBtn) {
+        exitManualBtn.addEventListener('click', exitManualMode);
+    }
 
     // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {

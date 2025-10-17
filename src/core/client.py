@@ -98,6 +98,9 @@ class Twitch:
         self.watching_channel: AwaitableValue[Channel] = AwaitableValue()
         self._watching_task: asyncio.Task[None] | None = None
         self._watching_restart = asyncio.Event()
+        # Manual mode tracking
+        self._manual_target_channel: Channel | None = None
+        self._manual_target_game: Game | None = None
         # Websocket
         self.websocket = WebsocketPool(self)
         # Maintenance task
@@ -309,9 +312,9 @@ class Twitch:
                 self.wanted_games.clear()
                 games_to_watch: list[str] = self.settings.games_to_watch
                 next_hour: datetime = datetime.now(timezone.utc) + timedelta(hours=1)
-                logger.info("fames_to_watch: %s", games_to_watch)
+                logger.info("games_to_watch: %s", games_to_watch)
                 logger.info("inventory has %d eligible campaigns", sum(1 for c in self.inventory if c.eligible))
-                logger.info("inventories: %s", self.inventory)
+                logger.debug("inventories: %s", self.inventory)
 
                 # Log detailed game -> campaigns -> channels mapping
                 logger.info("=== Active Campaigns Mapping ===")
@@ -368,6 +371,20 @@ class Twitch:
                         sum(1 for c in self.inventory if c.eligible and c.can_earn_within(next_hour))
                     )
 
+                # Handle manual mode: check if manual game still has drops
+                if self.is_manual_mode():
+                    manual_has_drops = any(
+                        campaign.can_earn_within(next_hour) and campaign.game == self._manual_target_game
+                        for campaign in self.inventory
+                    )
+                    if not manual_has_drops:
+                        self.exit_manual_mode("All drops completed for manual game")
+                    elif self._manual_target_game in self.wanted_games:
+                        # Move manual game to front of wanted_games for priority
+                        self.wanted_games.remove(self._manual_target_game)
+                        self.wanted_games.insert(0, self._manual_target_game)
+                        logger.info(f"Manual mode: prioritizing game {self._manual_target_game.name}")
+
                 full_cleanup = True
                 self.restart_watching()
                 self.change_state(State.CHANNELS_CLEANUP)
@@ -395,7 +412,7 @@ class Twitch:
                     self._remove_channel_topics(to_remove_channels)
                     for channel in to_remove_channels:
                         del channels[channel.id]
-                        channel.remove()
+                        # Don't remove from GUI - batch_update in CHANNELS_FETCH will handle it atomically
                     del to_remove_channels
                 if self.wanted_games:
                     self.change_state(State.CHANNELS_FETCH)
@@ -405,10 +422,9 @@ class Twitch:
                     self.change_state(State.IDLE)
             elif self._state is State.CHANNELS_FETCH:
                 self.gui.status.update(_("gui", "status", "gathering"))
-                # start with all current channels, clear the memory and GUI
+                # start with all current channels, keep them in memory for smooth update
                 new_channels: set[Channel] = set(channels.values())
                 channels.clear()
-                self.gui.channels.clear()
                 # gather and add ACL channels from campaigns
                 # NOTE: we consider only campaigns that can be progressed
                 # NOTE: we use another set so that we can set them online separately
@@ -452,10 +468,11 @@ class Twitch:
                     # just make sure to unsubscribe from their topics
                     self._remove_channel_topics(to_remove_channels)
                     del to_remove_channels
-                # set our new channel list
+                # set our new channel list and update GUI in one batch
                 for channel in ordered_channels:
                     channels[channel.id] = channel
-                    channel.display(add=True)
+                # Batch update GUI - prevents flickering from individual adds
+                self.gui.channels.batch_update(ordered_channels)
                 # subscribe to these channel's state updates
                 to_add_topics: list[WebsocketTopic] = []
                 for channel_id in channels:
@@ -470,17 +487,15 @@ class Twitch:
                         )
                     )
                 self.websocket.add_topics(to_add_topics)
-                # relink watching channel after cleanup,
-                # or stop watching it if it no longer qualifies
+                # relink watching channel after cleanup
                 # NOTE: this replaces 'self.watching_channel's internal value with the new object
+                # Don't call stop_watching() here - let CHANNEL_SWITCH handle it to avoid clearing drop display
                 watching_channel = self.watching_channel.get_with_default(None)
                 if watching_channel is not None:
                     new_watching: Channel | None = channels.get(watching_channel.id)
                     if new_watching is not None and self.can_watch(new_watching):
                         self.watch(new_watching, update_status=False)
-                    else:
-                        # we've removed a channel we were watching
-                        self.stop_watching()
+                    # If channel not found, CHANNEL_SWITCH will handle selecting a new one
                     del new_watching
                 # pre-display the active drop with a substracted minute
                 for channel in channels.values():
@@ -510,28 +525,54 @@ class Twitch:
                 # Determine the best channel to watch
                 new_watching: Channel | None = None
                 selected_channel: Channel | None = self.gui.channels.get_selection()
+                watching_channel: Channel | None = self.watching_channel.get_with_default(None)
 
+                # Handle user selection
                 if selected_channel is not None and self.can_watch(selected_channel):
-                    # User-selected channel takes priority
+                    # Check if this is a game change -> enter manual mode
+                    if watching_channel and selected_channel.game != watching_channel.game:
+                        self.enter_manual_mode(selected_channel)
                     new_watching = selected_channel
+                # Handle manual mode
+                elif self.is_manual_mode():
+                    # Try to stay on manual target channel
+                    if self._manual_target_channel and self.can_watch(self._manual_target_channel):
+                        new_watching = self._manual_target_channel
+                    else:
+                        # Manual channel offline, find another channel for same game
+                        for channel in channels.values():
+                            if channel.game == self._manual_target_game and self.can_watch(channel):
+                                new_watching = channel
+                                self._manual_target_channel = channel
+                                logger.info(f"Manual mode: switching to {channel.name} (same game: {self._manual_target_game.name})")
+                                break
+                        # No channels available for manual game -> exit manual mode
+                        if new_watching is None:
+                            self.exit_manual_mode("No channels available for manual game")
+                # Auto-select best channel based on priority
                 else:
-                    # Auto-select best channel based on priority
                     for channel in sorted(channels.values(), key=self.get_priority):
                         if self.can_watch(channel) and self.should_switch(channel):
                             new_watching = channel
                             break
 
-                watching_channel: Channel | None = self.watching_channel.get_with_default(None)
-
                 if new_watching is not None:
                     # Switch to new channel
                     self.watch(new_watching)
+                    # Display the active drop for the new channel
+                    if (
+                        (active_campaign := self.get_active_campaign(new_watching)) is not None
+                        and (active_drop := active_campaign.first_drop) is not None
+                    ):
+                        active_drop.display(countdown=False, subone=True)
                     self._state_change.clear()
                 elif watching_channel is not None and self.can_watch(watching_channel):
                     # Continue watching current channel
-                    self.gui.status.update(
-                        _("status", "watching").format(channel=watching_channel.name)
-                    )
+                    if self.is_manual_mode() and self._manual_target_game:
+                        status_text = f"🎯 Manual Mode: Watching {watching_channel.name} for {self._manual_target_game.name}"
+                    else:
+                        status_text = _("status", "watching").format(channel=watching_channel.name)
+                    self.gui.status.update(status_text)
                     self._state_change.clear()
                 else:
                     # No channels available to watch
@@ -689,7 +730,10 @@ class Twitch:
         self.gui.channels.set_watching(channel)
         self.watching_channel.set(channel)
         if update_status:
-            status_text: str = _("status", "watching").format(channel=channel.name)
+            if self.is_manual_mode() and self._manual_target_game:
+                status_text: str = f"🎯 Manual Mode: Watching {channel.name} for {self._manual_target_game.name}"
+            else:
+                status_text: str = _("status", "watching").format(channel=channel.name)
             self.print(status_text)
             self.gui.status.update(status_text)
 
@@ -701,8 +745,68 @@ class Twitch:
 
     def restart_watching(self) -> None:
         """Restart the watch loop (forces immediate re-send of watch payload)."""
-        self.gui.progress.stop_timer()
+        # Don't stop the timer - this would clear the drop display on the frontend
+        # The timer will naturally update when the next drop progress arrives
         self._watching_restart.set()
+
+    def is_manual_mode(self) -> bool:
+        """Check if manual mode is currently active."""
+        return self._manual_target_channel is not None and self._manual_target_game is not None
+
+    def enter_manual_mode(self, channel: Channel) -> None:
+        """
+        Enter manual mode for the given channel's game.
+
+        Args:
+            channel: The channel that was manually selected by the user
+        """
+        if channel.game is None:
+            logger.warning(f"Cannot enter manual mode: channel {channel.name} has no game")
+            return
+
+        self._manual_target_channel = channel
+        self._manual_target_game = channel.game
+        logger.info(f"Entered manual mode for game: {channel.game.name}, channel: {channel.name}")
+
+        # Broadcast manual mode change to GUI
+        self.gui.broadcast_manual_mode_change(self.get_manual_mode_info())
+
+    def exit_manual_mode(self, reason: str = "") -> None:
+        """
+        Exit manual mode and return to automatic channel selection.
+
+        Args:
+            reason: Optional reason for exiting manual mode (for logging)
+        """
+        if not self.is_manual_mode():
+            return
+
+        game_name = self._manual_target_game.name if self._manual_target_game else "Unknown"
+        logger.info(f"Exiting manual mode for game: {game_name}. Reason: {reason or 'User requested'}")
+
+        self._manual_target_channel = None
+        self._manual_target_game = None
+
+        # Broadcast manual mode change to GUI
+        self.gui.broadcast_manual_mode_change(self.get_manual_mode_info())
+
+        # Trigger channel switch to select new channel automatically
+        self.change_state(State.CHANNEL_SWITCH)
+
+    def get_manual_mode_info(self) -> dict[str, Any]:
+        """
+        Get current manual mode status information.
+
+        Returns:
+            Dictionary with manual mode status including active state and game name
+        """
+        if self.is_manual_mode():
+            return {
+                "active": True,
+                "game_name": self._manual_target_game.name if self._manual_target_game else "",
+                "channel_name": self._manual_target_channel.name if self._manual_target_channel else ""
+            }
+        return {"active": False}
 
     @task_wrapper
     async def process_stream_state(self, channel_id: int, message: JsonType) -> None:
@@ -1001,7 +1105,6 @@ class Twitch:
         campaigns.sort(key=lambda c: c.eligible, reverse=True)
 
         self._drops.clear()
-        self.gui.inv.clear()
         self.inventory.clear()
         self._mnt_triggers.clear()
         switch_triggers: set[datetime] = set()
@@ -1015,6 +1118,8 @@ class Twitch:
             self._campaigns[campaign.id] = campaign
         # concurrently add the campaigns into the GUI
         # NOTE: this fetches pictures from the CDN, so might be slow without a cache
+        # Start batch mode to prevent individual emissions
+        self.gui.inv.start_batch()
         status_update(
             _("gui", "status", "adding_campaigns").format(counter=f"(0/{len(campaigns)})")
         )
@@ -1038,6 +1143,8 @@ class Twitch:
             for task in add_campaign_tasks:
                 task.cancel()
             raise
+        # Finalize batch mode - emit all campaigns atomically
+        await self.gui.inv.finalize_batch()
         self._mnt_triggers.extend(sorted(switch_triggers))
         # trim out all triggers that we're already past
         now = datetime.now(timezone.utc)
