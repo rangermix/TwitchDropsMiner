@@ -1,10 +1,11 @@
 name: Build
 
 on:
-  push:
-    branches:
-      - "master"
-  pull_request:
+  # Disabled automatic builds - run manually only
+  # push:
+  #   branches:
+  #     - "master"
+  # pull_request:
   workflow_dispatch:
 
 env:
