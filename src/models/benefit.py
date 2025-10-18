@@ -3,6 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING
 
+
 if TYPE_CHECKING:
     from src.config.constants import JsonType, URLType
 
@@ -28,7 +29,7 @@ class Benefit:
         self.name: str = benefit_data["name"]
         self.type: BenefitType = (
             BenefitType(benefit_data["distributionType"])
-            if benefit_data["distributionType"] in BenefitType.__members__.keys()
+            if benefit_data["distributionType"] in BenefitType.__members__
             else BenefitType.UNKNOWN
         )
         self.image_url: URLType = benefit_data["imageAssetURL"]

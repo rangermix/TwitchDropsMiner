@@ -1,22 +1,24 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
+from functools import cached_property
 from itertools import chain
 from typing import TYPE_CHECKING
-from functools import cached_property
-from datetime import datetime, timezone
+
 from dateutil.parser import isoparse
 
+from src.config.constants import State, URLType
 from src.models.channel import Channel
-from src.models.game import Game
 from src.models.drop import TimedDrop, remove_dimensions
-from src.config.constants import URLType, State
+from src.models.game import Game
+
 
 if TYPE_CHECKING:
     from collections import abc
 
-    from src.core.client import Twitch
     from src.config.constants import JsonType
+    from src.core.client import Twitch
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -187,7 +189,7 @@ class DropsCampaign:
         Used when websocket updates aren't available.
         """
         # NOTE: Use a temporary list to ensure all drops are bumped before checking
-        if any([drop._bump_minutes(channel) for drop in self.drops]):
+        if any(drop._bump_minutes(channel) for drop in self.drops):
             # Executes if any drop's extra_current_minutes reach MAX_ESTIMATED_MINUTES
             # TODO: Figure out a better way to handle this case
             logger.warning(

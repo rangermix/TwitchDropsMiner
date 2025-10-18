@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from src.i18n import _
 
+
 if TYPE_CHECKING:
-    from src.web.managers.broadcaster import WebSocketBroadcaster
     from src.web.gui_manager import WebGUIManager
+    from src.web.managers.broadcaster import WebSocketBroadcaster
 
 
 @dataclass

@@ -1,22 +1,24 @@
 from __future__ import annotations
 
-import re
 import logging
-from typing import TYPE_CHECKING
+import re
 from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING
+
 from dateutil.parser import isoparse
 
+from src.config.constants import MAX_EXTRA_MINUTES
+from src.config.operations import GQL_OPERATIONS
+from src.exceptions import GQLException
 from src.i18n import _
 from src.models.benefit import Benefit
-from src.exceptions import GQLException
-from src.config.constants import MAX_EXTRA_MINUTES, State
-from src.config.operations import GQL_OPERATIONS
+
 
 if TYPE_CHECKING:
-    from src.core.client import Twitch
-    from src.models.channel import Channel
-    from src.models.campaign import DropsCampaign
     from src.config.constants import JsonType
+    from src.core.client import Twitch
+    from src.models.campaign import DropsCampaign
+    from src.models.channel import Channel
 
 
 logger = logging.getLogger("TwitchDrops")

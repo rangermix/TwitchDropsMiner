@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
-import sys
 import logging
-from enum import Enum, auto
-from datetime import timedelta
-from typing import Any, Dict, Literal, NewType, TYPE_CHECKING
+import sys
 from copy import deepcopy
+from datetime import timedelta
+from enum import Enum, auto
+from typing import TYPE_CHECKING, Any, Literal, NewType
 
 from src.version import __version__
 
+
 if TYPE_CHECKING:
     from collections import abc  # noqa
-    from typing_extensions import TypeAlias
+    from typing import TypeAlias
 
 
 # Logging special levels
@@ -36,7 +37,7 @@ FILE_FORMATTER = logging.Formatter(
 OUTPUT_FORMATTER = logging.Formatter("{levelname}: {message}", style='{', datefmt="%H:%M:%S")
 
 # Type aliases
-JsonType = Dict[str, Any]
+JsonType = dict[str, Any]
 URLType = NewType("URLType", str)
 TopicProcess: TypeAlias = "abc.Callable[[int, JsonType], Any]"
 

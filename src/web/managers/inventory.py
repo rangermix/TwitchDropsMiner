@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
 
 if TYPE_CHECKING:
+    from src.models import DropsCampaign, TimedDrop
     from src.web.managers.broadcaster import WebSocketBroadcaster
     from src.web.managers.cache import ImageCache
-    from src.models import DropsCampaign, TimedDrop
 
 
 class InventoryManager:

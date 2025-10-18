@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Mapping, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from yarl import URL
 
@@ -117,7 +118,7 @@ def merge_json(obj: JsonType, template: Mapping[Any, Any]) -> None:
             assert isinstance(template[k], dict)
             merge_json(v, template[k])
     # ensure the object is not missing any keys
-    for k in template.keys():
+    for k in template:
         if k not in obj:
             obj[k] = template[k]
 
@@ -136,7 +137,7 @@ def json_load(path: Path, defaults: _JSON_T, *, merge: bool = True) -> _JSON_T:
     """
     defaults_dict: JsonType = dict(defaults)
     if path.exists():
-        with open(path, 'r', encoding="utf8") as file:
+        with open(path, encoding="utf8") as file:
             combined: JsonType = _remove_missing(json.load(file, object_hook=_deserialize))
         if merge:
             merge_json(combined, defaults_dict)

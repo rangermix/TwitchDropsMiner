@@ -5,11 +5,11 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 
 # Type alias for path operations
-JsonType = Dict[str, Any]
+JsonType = dict[str, Any]
 
 
 # Environment detection
@@ -43,7 +43,7 @@ def _resource_path(relative_path: Path | str) -> Path:
         base_path = Path(sys.argv[0]).resolve().parent
     elif IS_PACKAGED:
         # PyInstaller's folder where the one-file app is unpacked
-        meipass: str = getattr(sys, "_MEIPASS")
+        meipass: str = sys._MEIPASS  # type: ignore[attr-defined]
         base_path = Path(meipass)
     else:
         base_path = WORKING_DIR

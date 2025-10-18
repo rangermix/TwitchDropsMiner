@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from src.models.game import Game
 
+
 if TYPE_CHECKING:
-    from src.web.managers.broadcaster import WebSocketBroadcaster
     from src.config.settings import Settings
+    from src.web.managers.broadcaster import WebSocketBroadcaster
 
 
 class SettingsManager:

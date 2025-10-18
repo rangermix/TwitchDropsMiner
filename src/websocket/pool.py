@@ -2,17 +2,18 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Literal
 
-from src.exceptions import MinerException
 from src.config import MAX_WEBSOCKETS, WS_TOPICS_LIMIT
+from src.exceptions import MinerException
 from src.websocket.websocket import Websocket
+
 
 if TYPE_CHECKING:
     from collections import abc
 
-    from src.core.client import Twitch
     from src.config import WebsocketTopic
+    from src.core.client import Twitch
 
 
 logger = logging.getLogger("TwitchDrops")

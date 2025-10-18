@@ -13,19 +13,21 @@ import logging
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any
+
 from dateutil.parser import isoparse
 
-from src.utils import chunk
-from src.i18n import _
-from src.config import DUMP_PATH, GQL_OPERATIONS
-from src.models import DropsCampaign
-from src.exceptions import ExitRequest
 from src.api import GQLClient
+from src.config import DUMP_PATH, GQL_OPERATIONS
+from src.exceptions import ExitRequest
+from src.i18n import _
+from src.models import DropsCampaign
+from src.utils import chunk
+
 
 if TYPE_CHECKING:
+    from src.config import JsonType
     from src.core.client import Twitch
     from src.models.channel import Channel
-    from src.config import JsonType
 
 
 logger = logging.getLogger("TwitchDrops")

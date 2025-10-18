@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, TypedDict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from yarl import URL
 
+from src.config import DEFAULT_LANG, SETTINGS_PATH
 from src.utils import json_load, json_save
-from src.config import SETTINGS_PATH, DEFAULT_LANG
+
 
 if TYPE_CHECKING:
-    from main import ParsedArgs
+    from typing import Any as ParsedArgs  # Avoid circular import
 
 
 class SettingsFile(TypedDict):

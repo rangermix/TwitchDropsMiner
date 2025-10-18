@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from collections import abc
-from typing import Any, TypedDict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypedDict
 
+from src.config import DEFAULT_LANG, IS_PACKAGED, LANG_PATH
 from src.exceptions import MinerException
 from src.utils.json_utils import json_load, json_save
-from src.config import IS_PACKAGED, LANG_PATH, DEFAULT_LANG
+
 
 if TYPE_CHECKING:
     from typing_extensions import NotRequired
@@ -471,12 +472,12 @@ class Translator:
         try:
             for key in path:
                 v = v[key]
-        except KeyError:
+        except KeyError as err:
             # this can only really happen for the default translation
             raise MinerException(
                 f"{self.current} translation is missing the '{' -> '.join(path)}' translation key"
-            )
-        return v
+            ) from err
+        return str(v)
 
 
 _ = Translator()

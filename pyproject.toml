@@ -1,0 +1,61 @@
+[tool.ruff]
+# Set the maximum line length to 100 (more reasonable than 88)
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+# Enable specific rule sets
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort (import sorting)
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "C4",  # flake8-comprehensions
+]
+
+# Ignore specific rules
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "UP036", # outdated version block (we want to keep Python version check)
+]
+
+[tool.ruff.lint.isort]
+force-single-line = false
+lines-after-imports = 2
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = false  # Too noisy with JSON responses
+warn_unused_configs = true
+disallow_untyped_defs = false  # Start lenient, can tighten later
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = false  # We use many type: ignore comments
+no_implicit_reexport = true
+strict_equality = true
+show_error_codes = true
+
+# Per-module options
+[[tool.mypy.overrides]]
+module = [
+    "aiohttp.*",
+    "socketio.*",
+    "truststore.*",
+    "dateutil.*",
+    "yarl.*",
+    "PIL.*",
+]
+ignore_missing_imports = true
+
+# GraphQL responses are dynamically typed - allow more flexibility
+[[tool.mypy.overrides]]
+module = [
+    "src.api.gql_client",
+    "src.models.*",
+    "src.services.*",
+]
+warn_return_any = false
+disable_error_code = ["call-overload", "assignment"]

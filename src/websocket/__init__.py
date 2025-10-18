@@ -10,7 +10,8 @@ Classes:
     WebsocketPool: Manages multiple websocket connections for topic distribution
 """
 
-from src.websocket.websocket import Websocket
 from src.websocket.pool import WebsocketPool
+from src.websocket.websocket import Websocket
+
 
 __all__ = ["Websocket", "WebsocketPool"]

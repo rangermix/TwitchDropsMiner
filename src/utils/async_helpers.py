@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-import io
-import sys
 import asyncio
 import logging
 import traceback
-from pathlib import Path
-from functools import wraps
-from contextlib import suppress
-from typing import Any, Literal, Generic, TypeVar, ParamSpec
 from collections import abc
+from contextlib import suppress
+from functools import wraps
+from typing import Any, Generic, Literal, ParamSpec, TypeVar
 
 from src.exceptions import ExitRequest, ReloadRequest
 

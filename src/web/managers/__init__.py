@@ -15,15 +15,16 @@ This package contains all component managers for the web-based GUI:
 """
 
 from src.web.managers.broadcaster import WebSocketBroadcaster
-from src.web.managers.status import StatusManager, WebsocketStatusManager
-from src.web.managers.console import ConsoleOutputManager
+from src.web.managers.cache import ImageCache
 from src.web.managers.campaigns import CampaignProgressManager
 from src.web.managers.channels import ChannelListManager
+from src.web.managers.console import ConsoleOutputManager
 from src.web.managers.inventory import InventoryManager
-from src.web.managers.login import LoginFormManager, LoginData
+from src.web.managers.login import LoginData, LoginFormManager
 from src.web.managers.settings import SettingsManager
+from src.web.managers.status import StatusManager, WebsocketStatusManager
 from src.web.managers.tray import TrayIconStub
-from src.web.managers.cache import ImageCache
+
 
 __all__ = [
     "WebSocketBroadcaster",

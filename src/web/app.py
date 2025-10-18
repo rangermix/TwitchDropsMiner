@@ -5,16 +5,19 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from fastapi import FastAPI, HTTPException
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse
-from fastapi.middleware.cors import CORSMiddleware
 import socketio
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+
 if TYPE_CHECKING:
-    from src.web.gui_manager import WebGUIManager
+    import uvicorn
+
     from src.core.client import Twitch
+    from src.web.gui_manager import WebGUIManager
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -45,7 +48,7 @@ socket_app = socketio.ASGIApp(sio, app)
 # Global references (set by main.py)
 gui_manager: WebGUIManager | None = None
 twitch_client: Twitch | None = None
-_server_instance: 'uvicorn.Server | None' = None
+_server_instance: uvicorn.Server | None = None
 
 
 def set_managers(gui: WebGUIManager, twitch: Twitch):
@@ -319,7 +322,6 @@ async def run_server(host: str = "0.0.0.0", port: int = 8080):
 
 async def shutdown_server():
     """Gracefully shutdown the web server"""
-    global _server_instance
     if _server_instance:
         logger.info("Setting server.should_exit = True")
         _server_instance.should_exit = True

@@ -6,21 +6,23 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from src.models.game import Game
 from src.i18n import _
+from src.models.game import Game
 from src.web.managers.broadcaster import WebSocketBroadcaster
-from src.web.managers.status import StatusManager, WebsocketStatusManager
-from src.web.managers.console import ConsoleOutputManager
+from src.web.managers.cache import ImageCache
 from src.web.managers.campaigns import CampaignProgressManager
 from src.web.managers.channels import ChannelListManager
+from src.web.managers.console import ConsoleOutputManager
 from src.web.managers.inventory import InventoryManager
 from src.web.managers.login import LoginFormManager
-from src.web.managers.tray import TrayIconStub
 from src.web.managers.settings import SettingsManager
-from src.web.managers.cache import ImageCache
+from src.web.managers.status import StatusManager, WebsocketStatusManager
+from src.web.managers.tray import TrayIconStub
+
 
 if TYPE_CHECKING:
     from socketio import AsyncServer
+
     from src.core.client import Twitch
     from src.models import TimedDrop
 

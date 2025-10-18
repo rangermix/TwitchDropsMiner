@@ -9,18 +9,19 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING
 from collections import abc
+from typing import TYPE_CHECKING
 
-from src.utils import chunk
-from src.config import MAX_INT, GQL_OPERATIONS
-from src.models.channel import Channel
+from src.config import GQL_OPERATIONS, MAX_INT
 from src.exceptions import GQLException, MinerException
+from src.models.channel import Channel
+from src.utils import chunk
+
 
 if TYPE_CHECKING:
+    from src.config import GQLOperation, JsonType
     from src.core.client import Twitch
     from src.models.game import Game
-    from src.config import JsonType, GQLOperation
 
 
 logger = logging.getLogger("TwitchDrops")

@@ -9,20 +9,21 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from contextlib import suppress
 from time import time
 from typing import TYPE_CHECKING, NoReturn
-from contextlib import suppress
 
-from src.utils import task_wrapper, AwaitableValue
-from src.i18n import _
-from src.config import CALL, WATCH_INTERVAL, GQL_OPERATIONS
+from src.config import CALL, GQL_OPERATIONS, WATCH_INTERVAL
 from src.exceptions import GQLException
+from src.i18n import _
+from src.utils import task_wrapper
+
 
 if TYPE_CHECKING:
-    from src.core.client import Twitch
-    from src.models.channel import Channel
-    from src.models import TimedDrop
     from src.config import JsonType
+    from src.core.client import Twitch
+    from src.models import TimedDrop
+    from src.models.channel import Channel
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -77,11 +78,7 @@ class WatchService:
         if channel.game is None or channel.game not in self._twitch.wanted_games:
             return False
 
-        for campaign in self._twitch.inventory:
-            if campaign.can_earn(channel):
-                return True
-
-        return False
+        return any(campaign.can_earn(channel) for campaign in self._twitch.inventory)
 
     def should_switch(self, channel: Channel) -> bool:
         """
@@ -129,7 +126,11 @@ class WatchService:
         self._twitch.watching_channel.set(channel)
 
         if update_status:
-            status_text: str = _("status", "watching").format(channel=channel.name)
+            # Check if manual mode is active for custom status message
+            if self._twitch.is_manual_mode() and self._twitch._manual_target_game:
+                status_text = f"🎯 Manual Mode: Watching {channel.name} for {self._twitch._manual_target_game.name}"
+            else:
+                status_text = _("status", "watching").format(channel=channel.name)
             self._twitch.print(status_text)
             self._twitch.gui.status.update(status_text)
 

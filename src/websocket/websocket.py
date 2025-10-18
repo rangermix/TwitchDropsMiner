@@ -1,31 +1,32 @@
 from __future__ import annotations
 
-import json
 import asyncio
+import json
 import logging
-from time import time
 from contextlib import suppress
+from time import time
 from typing import TYPE_CHECKING
 
 import aiohttp
 
-from src.i18n import _
-from src.exceptions import WebsocketClosed
 from src.config import PING_INTERVAL, PING_TIMEOUT, WS_TOPICS_LIMIT
+from src.exceptions import WebsocketClosed
+from src.i18n import _
 from src.utils import (
     CHARS_ASCII,
-    task_wrapper,
-    create_nonce,
-    json_minify,
-    format_traceback,
     AwaitableValue,
     ExponentialBackoff,
+    create_nonce,
+    format_traceback,
+    json_minify,
+    task_wrapper,
 )
 
+
 if TYPE_CHECKING:
+    from src.config import JsonType, WebsocketTopic
     from src.core.client import Twitch
     from src.web.gui_manager import WebsocketStatus
-    from src.config import JsonType, WebsocketTopic
 
 
 WSMsgType = aiohttp.WSMsgType
@@ -162,10 +163,7 @@ class Websocket:
         """
         session = await self._twitch.get_session()
         backoff = ExponentialBackoff(**kwargs)
-        if self._twitch.settings.proxy:
-            proxy = self._twitch.settings.proxy
-        else:
-            proxy = None
+        proxy = self._twitch.settings.proxy or None
         for delay in backoff:
             try:
                 async with session.ws_connect(ws_url, proxy=proxy) as websocket:

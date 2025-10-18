@@ -1,21 +1,22 @@
 from __future__ import annotations
 
-import re
-import json
 import asyncio
+import json
 import logging
+import re
 from base64 import b64encode
 from functools import cached_property
-from typing import Any, SupportsInt, cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, SupportsInt, cast
 
 import aiohttp
 from yarl import URL
 
-from src.models.game import Game
-from src.config.constants import JsonType, GQLOperation, URLType, CALL, ONLINE_DELAY
+from src.config.constants import CALL, ONLINE_DELAY, GQLOperation, JsonType, URLType
 from src.config.operations import GQL_OPERATIONS
-from src.utils.json_utils import json_minify
 from src.exceptions import MinerException, RequestException
+from src.models.game import Game
+from src.utils.json_utils import json_minify
+
 
 if TYPE_CHECKING:
     from src.core.client import Twitch

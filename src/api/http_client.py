@@ -8,23 +8,24 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
-from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING
 from collections import abc
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING
 
 import aiohttp
 from yarl import URL
 
-from src.i18n import _
-from src.exceptions import ExitRequest, RequestInvalid
-from src.utils import ExponentialBackoff
 from src.config import COOKIES_PATH
+from src.exceptions import ExitRequest, RequestInvalid
+from src.i18n import _
+from src.utils import ExponentialBackoff
+
 
 if TYPE_CHECKING:
+    from src.config import ClientInfo
     from src.config.settings import Settings
     from src.web.gui_manager import WebGUIManager
-    from src.config import ClientInfo
 
 
 logger = logging.getLogger("TwitchDrops")

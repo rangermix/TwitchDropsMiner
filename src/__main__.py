@@ -6,25 +6,23 @@ from multiprocessing import freeze_support
 
 if __name__ == "__main__":
     freeze_support()
-    import sys
-    import signal
+    import argparse
     import asyncio
     import logging
-    import argparse
-    import warnings
+    import signal
+    import sys
     import traceback
-    from typing import NoReturn
+    import warnings
 
     import truststore
     truststore.inject_into_ssl()
 
-    from src.i18n import _
-    from src.core.client import Twitch
+    from src.config import FILE_FORMATTER, LOG_PATH, LOGGING_LEVELS, SELF_PATH
     from src.config.settings import Settings
-    from src.version import __version__
+    from src.core.client import Twitch
     from src.exceptions import CaptchaRequired
-    from src.config.paths import _resource_path as resource_path
-    from src.config import LOGGING_LEVELS, SELF_PATH, FILE_FORMATTER, LOG_PATH, LOCK_PATH
+    from src.i18n import _
+    from src.version import __version__
 
 
     logger = logging.getLogger("TwitchDrops")
@@ -111,11 +109,10 @@ if __name__ == "__main__":
     logger.debug("Defining main async function")
     async def main():
         # set language
-        try:
-            _.set_language(settings.language)
-        except ValueError:
+        from contextlib import suppress
+        with suppress(ValueError):
             # this language doesn't exist - stick to English
-            pass
+            _.set_language(settings.language)
 
         # Always log to file with timestamped filename in ./logs/ directory
         from datetime import datetime

@@ -11,15 +11,16 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from src.utils import task_wrapper
-from src.config import CALL, State, GQL_OPERATIONS
+from src.config import CALL, GQL_OPERATIONS, State
 from src.i18n import _
+from src.utils import task_wrapper
+
 
 if TYPE_CHECKING:
-    from src.core.client import Twitch
-    from src.models.channel import Channel, Stream
-    from src.models import TimedDrop
     from src.config import JsonType
+    from src.core.client import Twitch
+    from src.models import TimedDrop
+    from src.models.channel import Channel, Stream
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -216,7 +217,7 @@ class MessageHandlerService:
             await asyncio.sleep(4)
 
             if watching_channel is not None:
-                for attempt in range(8):
+                for _attempt in range(8):
                     context = await self._twitch.gql_request(
                         GQL_OPERATIONS["CurrentDrop"].with_variables(
                             {"channelID": str(watching_channel.id)}

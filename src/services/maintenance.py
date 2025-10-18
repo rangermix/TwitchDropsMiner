@@ -12,8 +12,9 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
-from src.utils import task_wrapper
 from src.config import CALL, State
+from src.utils import task_wrapper
+
 
 if TYPE_CHECKING:
     from src.core.client import Twitch

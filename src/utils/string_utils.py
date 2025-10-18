@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import random
 import string
-from collections import OrderedDict
-from collections import abc
+from collections import OrderedDict, abc
 from typing import TypeVar
 
 

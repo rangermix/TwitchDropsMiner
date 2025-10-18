@@ -8,17 +8,17 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import overload, TYPE_CHECKING
 from itertools import chain
+from typing import TYPE_CHECKING, overload
 
-from src.utils import RateLimiter, ExponentialBackoff
 from src.exceptions import GQLException, MinerException
-from src.config import GQL_OPERATIONS
+from src.utils import ExponentialBackoff, RateLimiter
+
 
 if TYPE_CHECKING:
-    from src.config import JsonType, GQLOperation, ClientInfo
     from src.api.http_client import HTTPClient
     from src.auth import _AuthState
+    from src.config import ClientInfo, GQLOperation, JsonType
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -115,10 +115,7 @@ class GQLClient:
             orig_response = response_json
 
             # Normalize to list for unified error handling
-            if isinstance(response_json, list):
-                response_list = response_json
-            else:
-                response_list = [response_json]
+            response_list = response_json if isinstance(response_json, list) else [response_json]
 
             force_retry: bool = False
             for response_json in response_list:
