@@ -229,15 +229,11 @@ if __name__ == "__main__":
             client.gui.status.update(_("gui", "status", "terminated"))
             # notify the user about the closure
             client.gui.grab_attention(sound=True)
-            # Wait for user to close the GUI window (only needed if close wasn't already requested)
-            logger.info("Waiting for GUI to close")
-            await client.gui.wait_until_closed()
-            logger.info("GUI closed by user")
+            # Web GUI doesn't need to wait - browser clients can stay connected
+            logger.info("Web GUI - no need to wait for user to close browser")
         else:
-            logger.info("Close already requested - skipping GUI wait")
+            logger.info("Close already requested - proceeding with shutdown")
         # save the application state
-        # NOTE: we have to do it after wait_until_closed,
-        # because the user can alter some settings between app termination and closing the window
         logger.info("Saving application state")
         client.save(force=True)
         logger.info("Application state saved")

@@ -480,7 +480,6 @@ class Twitch:
                     to_add_topics,
                     ordered_channels,
                     watching_channel,
-                    new_watching,
                 )
             elif self._state is State.CHANNEL_SWITCH:
                 if self.settings.dump:
