@@ -38,7 +38,8 @@ class SettingsManager:
             "games_available": self._available_games,
             "proxy": str(self._settings.proxy),
             "tray_notifications": self._settings.tray_notifications,
-            "connection_quality": self._settings.connection_quality
+            "connection_quality": self._settings.connection_quality,
+            "minimum_refresh_interval_minutes": self._settings.minimum_refresh_interval_minutes
         }
 
     def update_settings(self, settings_data: dict[str, Any]):
@@ -57,6 +58,8 @@ class SettingsManager:
             self._settings.proxy = settings_data["proxy"]
         if "tray_notifications" in settings_data:
             self._settings.tray_notifications = settings_data["tray_notifications"]
+        if "minimum_refresh_interval_minutes" in settings_data:
+            self._settings.minimum_refresh_interval_minutes = settings_data["minimum_refresh_interval_minutes"]
         self._settings.alter()
         asyncio.create_task(
             self._broadcaster.emit("settings_updated", self.get_settings())

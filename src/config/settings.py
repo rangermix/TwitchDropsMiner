@@ -20,6 +20,7 @@ class SettingsFile(TypedDict):
     autostart_tray: bool
     connection_quality: int
     tray_notifications: bool
+    minimum_refresh_interval_minutes: int
 
 
 default_settings: SettingsFile = {
@@ -30,6 +31,7 @@ default_settings: SettingsFile = {
     "connection_quality": 1,
     "language": DEFAULT_LANG,
     "tray_notifications": True,
+    "minimum_refresh_interval_minutes": 30,
 }
 
 
@@ -50,6 +52,7 @@ class Settings:
     autostart_tray: bool
     connection_quality: int
     tray_notifications: bool
+    minimum_refresh_interval_minutes: int
 
     PASSTHROUGH = ("_settings", "_args", "_altered")
 

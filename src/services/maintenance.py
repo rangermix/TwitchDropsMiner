@@ -57,7 +57,7 @@ class MaintenanceService:
         3. After reaching the next hour boundary, request inventory reload
         """
         now = datetime.now(timezone.utc)
-        next_period = now + timedelta(minutes=1)
+        next_period = now + timedelta(minutes=self._twitch.settings.minimum_refresh_interval_minutes)
 
         while True:
             # exit if there's no need to repeat the loop
@@ -89,6 +89,6 @@ class MaintenanceService:
                 logger.log(CALL, "Maintenance task requests channels cleanup")
                 self._twitch.change_state(State.CHANNELS_CLEANUP)
 
-        # this triggers a restart of this task every (up to) 60 minutes
+        # this triggers a restart of this task every (up to) <timedelta> minutes
         logger.log(CALL, "Maintenance task requests a reload")
         self._twitch.change_state(State.INVENTORY_FETCH)

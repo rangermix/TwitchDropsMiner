@@ -76,6 +76,7 @@ class SettingsUpdate(BaseModel):
     proxy: str | None = None
     tray_notifications: bool | None = None
     connection_quality: int | None = None
+    minimum_refresh_interval_minutes: int | None = None
 
 
 # ==================== REST API Endpoints ====================

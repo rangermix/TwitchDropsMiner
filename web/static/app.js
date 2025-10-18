@@ -540,6 +540,7 @@ function updateSettingsUI(settings) {
     state.settings = settings;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
+    document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
 
     if (settings.dark_mode) {
         document.body.classList.add('dark-mode');
@@ -861,6 +862,7 @@ async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
+        minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
         games_to_watch: state.settings.games_to_watch || []
     };
 
@@ -928,6 +930,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSettings();
     });
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
+    document.getElementById('minimum-refresh-interval').addEventListener('change', saveSettings);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
 
     // Games to watch management
