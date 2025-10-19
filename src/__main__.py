@@ -13,7 +13,6 @@ import truststore
 
 
 if __name__ == "__main__":
-
     truststore.inject_into_ssl()
 
     from src.config import FILE_FORMATTER, LOGGING_LEVELS
@@ -219,4 +218,3 @@ if __name__ == "__main__":
         sys.exit(exit_status)
 
     asyncio.run(main())
-
