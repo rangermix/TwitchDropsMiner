@@ -192,7 +192,7 @@ class Websocket:
         self.set_status(_("gui", "websocket", "initializing"))
         await self._twitch.wait_until_login()
         self.set_status(_("gui", "websocket", "connecting"))
-        ws_logger.info(f"Websocket[{self._idx}] connecting...")
+        ws_logger.debug(f"Websocket[{self._idx}] connecting...")
         self._closed.clear()
         # Connect/Reconnect loop
         async for websocket in self._backoff_connect(
@@ -203,7 +203,7 @@ class Websocket:
             # NOTE: _topics_changed doesn't start set,
             # because there's no initial topics we can sub to right away
             self.set_status(_("gui", "websocket", "connected"))
-            ws_logger.info(f"Websocket[{self._idx}] connected.")
+            ws_logger.debug(f"Websocket[{self._idx}] connected.")
             try:
                 try:
                     while not self._reconnect_requested.is_set():
@@ -224,7 +224,7 @@ class Websocket:
                     )
                 elif self._closed.is_set():
                     # we closed it - exit
-                    ws_logger.info(f"Websocket[{self._idx}] stopped.")
+                    ws_logger.debug(f"Websocket[{self._idx}] stopped.")
                     self.set_status(_("gui", "websocket", "disconnected"))
                     return
             except Exception:

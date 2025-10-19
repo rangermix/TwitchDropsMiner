@@ -9,6 +9,7 @@ if __name__ == "__main__":
     import argparse
     import asyncio
     import logging
+    from logging.handlers import TimedRotatingFileHandler
     import signal
     import sys
     import traceback
@@ -85,7 +86,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("--version", action="version", version=f"v{__version__}")
     parser.add_argument("-v", dest="_verbose", action="count", default=0)
-    parser.add_argument("--log", action="store_true")
     parser.add_argument("--dump", action="store_true")
     # undocumented debug args
     parser.add_argument(
@@ -106,7 +106,6 @@ if __name__ == "__main__":
         sys.exit(4)
 
     # client run
-    logger.debug("Defining main async function")
     async def main():
         # set language
         from contextlib import suppress
@@ -124,20 +123,13 @@ if __name__ == "__main__":
 
         # Generate timestamped log filename: TDM.YYYY-MM-DDTHH-MM-SS.log
         timestamp = datetime.now().isoformat(timespec='seconds').replace(':', '-')
-        log_file = logs_dir / f"TDM.{timestamp}.log"
+        log_file = logs_dir / f"TDM.log"
 
         # Add file handler for timestamped log
-        file_handler = logging.FileHandler(log_file)
+        file_handler = TimedRotatingFileHandler(log_file, when="midnight", backupCount=5)
         file_handler.setFormatter(FILE_FORMATTER)
         logger.addHandler(file_handler)
         logger.info(f"Logging to file: {log_file}")
-
-        # Keep old log.txt for backward compatibility if --log flag is used
-        if settings.log:
-            legacy_handler = logging.FileHandler(LOG_PATH)
-            legacy_handler.setFormatter(FILE_FORMATTER)
-            logger.addHandler(legacy_handler)
-            logger.info(f"Legacy log file: {LOG_PATH}")
 
         logging.getLogger("TwitchDrops.gql").setLevel(settings.debug_gql)
         logging.getLogger("TwitchDrops.websocket").setLevel(settings.debug_ws)

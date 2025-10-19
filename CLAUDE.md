@@ -34,9 +34,6 @@ source env/bin/activate && python main.py
 # With verbose logging (stackable: -vv, -vvv)
 source env/bin/activate && python main.py -v
 
-# Enable legacy log file (logs always go to ./logs/TDM.TIMESTAMP.log)
-source env/bin/activate && python main.py --log
-
 # Create data dump for debugging
 source env/bin/activate && python main.py --dump
 
@@ -228,7 +225,6 @@ The project does not include a test suite. Manual testing workflow:
 1. Run with `-vvv` for maximum verbosity (levels: -v, -vv, -vvv, -vvvv)
 2. Use `--dump` to generate debug data dumps
 3. Check timestamped log files in `./logs/` directory (always created as `TDM.TIMESTAMP.log`)
-4. Use `--log` flag to also create legacy `log.txt` file
 5. Use `--debug-ws` for websocket debug logging
 6. Use `--debug-gql` for GraphQL debug logging
 7. Monitor web GUI console output and browser developer tools

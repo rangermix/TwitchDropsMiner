@@ -282,33 +282,33 @@ class Twitch:
                 logger.debug("inventories: %s", self.inventory)
 
                 # Log detailed game -> campaigns -> channels mapping
-                logger.info("=== Active Campaigns Mapping ===")
-                from collections import defaultdict
-                game_campaign_map: dict[str, list[tuple[DropsCampaign, list[str]]]] = defaultdict(list)
-                for campaign in self.inventory:
-                    if campaign.eligible and not campaign.finished:
-                        logger.info("eligible Campaign: %s - %s", campaign.name, campaign.game.name)
-                    if campaign.can_earn_within(next_hour):
-                        channel_names = []
-                        if campaign.allowed_channels:
-                            channel_names = [ch.name for ch in campaign.allowed_channels]
-                        else:
-                            channel_names = ["<directory>"]
-                        game_campaign_map[campaign.game.name].append((campaign, channel_names))
-
-                for game_name in sorted(game_campaign_map.keys()):
-                    logger.info(f"Game: {game_name}")
-                    for campaign, channel_list in game_campaign_map[game_name]:
-                        status_info = f"{'ACTIVE' if campaign.active else 'UPCOMING'}"
-                        ends_info = campaign.ends_at.astimezone().strftime('%Y-%m-%d %H:%M')
-                        channel_info = f"{len(channel_list)} channels" if channel_list[0] != "<directory>" else "directory"
-                        logger.info(f"  └─ Campaign: {campaign.name} [{status_info}] (ends: {ends_info})")
-                        logger.info(f"     Channels: {channel_info}")
-                        if channel_list[0] != "<directory>" and len(channel_list) <= 10:
-                            logger.info(f"     └─ {', '.join(channel_list)}")
-                        elif channel_list[0] != "<directory>":
-                            logger.info(f"     └─ {', '.join(channel_list[:10])} ... (+{len(channel_list)-10} more)")
-                logger.info("=== End Campaigns Mapping ===")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.info("=== Active Campaigns Mapping ===")
+                    from collections import defaultdict
+                    game_campaign_map: dict[str, list[tuple[DropsCampaign, list[str]]]] = defaultdict(list)
+                    for campaign in self.inventory:
+                        if campaign.eligible and not campaign.finished:
+                            logger.info("eligible Campaign: %s - %s", campaign.name, campaign.game.name)
+                        if campaign.can_earn_within(next_hour):
+                            channel_names = []
+                            if campaign.allowed_channels:
+                                channel_names = [ch.name for ch in campaign.allowed_channels]
+                            else:
+                                channel_names = ["<directory>"]
+                            game_campaign_map[campaign.game.name].append((campaign, channel_names))
+                    for game_name in sorted(game_campaign_map.keys()):
+                        logger.debug(f"Game: {game_name}")
+                        for campaign, channel_list in game_campaign_map[game_name]:
+                            status_info = f"{'ACTIVE' if campaign.active else 'UPCOMING'}"
+                            ends_info = campaign.ends_at.astimezone().strftime('%Y-%m-%d %H:%M')
+                            channel_info = f"{len(channel_list)} channels" if channel_list[0] != "<directory>" else "directory"
+                            logger.debug(f"  └─ Campaign: {campaign.name} [{status_info}] (ends: {ends_info})")
+                            logger.debug(f"     Channels: {channel_info}")
+                            if channel_list[0] != "<directory>" and len(channel_list) <= 10:
+                                logger.debug(f"     └─ {', '.join(channel_list)}")
+                            elif channel_list[0] != "<directory>":
+                                logger.debug(f"     └─ {', '.join(channel_list[:10])} ... (+{len(channel_list)-10} more)")
+                    logger.info("=== End Campaigns Mapping ===")
 
                 # Build wanted_games list preserving the order from games_to_watch
                 for game_name in games_to_watch:
