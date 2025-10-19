@@ -25,15 +25,15 @@ if [ ! -d "$dirpath/env" ]; then
     fi
 fi
 
-# Activate the virtual environment and install requirements
+# Activate the virtual environment and install dependencies
 echo
-echo "Installing requirements.txt..."
+echo "Installing dependencies from pyproject.toml..."
 "$dirpath/env/bin/python" -m pip install -U pip
 "$dirpath/env/bin/pip" install wheel
-"$dirpath/env/bin/pip" install -r "$dirpath/requirements.txt"
+"$dirpath/env/bin/pip" install -e "$dirpath"
 if [ $? -ne 0 ]; then
     echo
-    echo "Failed to install requirements."
+    echo "Failed to install dependencies."
     echo
     read -p "Press any key to continue..."
     exit 1

@@ -40,7 +40,7 @@ docker-compose up -d
 
 ```bash
 # Install Python 3.10+ and dependencies
-pip install -r requirements.txt
+pip install -e .
 
 # Run the application
 python main.py
@@ -131,7 +131,7 @@ python -m venv env
 source env/bin/activate  # On Windows: env\Scripts\activate
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -e .
 
 # Run the application
 python main.py

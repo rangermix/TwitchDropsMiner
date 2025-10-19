@@ -21,3 +21,8 @@ settings.json
 logs/
 .claude/
 data/
+.ruff_cache/
+.vscode/
+.idea/
+*.iml
+*.log

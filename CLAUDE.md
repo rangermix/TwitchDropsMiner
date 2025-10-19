@@ -45,7 +45,7 @@ source env/bin/activate && python main.py --dump
 The application requires:
 - Python 3.10+
 - Virtual environment at `env/` (must be activated before running commands)
-- Dependencies from `requirements.txt` (includes FastAPI, uvicorn, Socket.IO)
+- Dependencies from `pyproject.toml` (includes FastAPI, uvicorn, Socket.IO)
 
 Docker deployment:
 ```bash
@@ -278,7 +278,7 @@ The application uses a web-based interface accessible via browser:
 
 **Dockerfile:**
 - Based on `python:3.11-slim`
-- Installs dependencies from `requirements.txt`
+- Installs dependencies from `pyproject.toml`
 - Exposes port 8080
 - Health check on `/api/status`
 
