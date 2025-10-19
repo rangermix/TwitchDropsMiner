@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-# import an additional thing for proper PyInstaller freeze support
-from multiprocessing import freeze_support
-
-
 if __name__ == "__main__":
-    freeze_support()
     import argparse
     import asyncio
     import logging
@@ -38,9 +33,6 @@ if __name__ == "__main__":
     logger.info("Logger initialized")
 
     warnings.simplefilter("default", ResourceWarning)
-
-    # import tracemalloc
-    # tracemalloc.start(3)
 
     if sys.version_info < (3, 10):
         raise RuntimeError("Python 3.10 or higher is required")

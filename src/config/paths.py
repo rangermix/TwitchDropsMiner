@@ -13,8 +13,6 @@ JsonType = dict[str, Any]
 
 
 # Environment detection
-IS_APPIMAGE = "APPIMAGE" in os.environ and os.path.exists(os.environ["APPIMAGE"])
-IS_PACKAGED = hasattr(sys, "_MEIPASS") or IS_APPIMAGE
 IS_DOCKER = os.getenv("DOCKER_ENV") == "1" or os.path.exists("/.dockerenv")
 
 # Site-packages venv path changes depending on the system platform
@@ -36,17 +34,8 @@ else:
 def _resource_path(relative_path: Path | str) -> Path:
     """
     Get an absolute path to a bundled resource.
-
-    Works for dev and for PyInstaller.
     """
-    if IS_APPIMAGE:
-        base_path = Path(sys.argv[0]).resolve().parent
-    elif IS_PACKAGED:
-        # PyInstaller's folder where the one-file app is unpacked
-        meipass: str = sys._MEIPASS  # type: ignore[attr-defined]
-        base_path = Path(meipass)
-    else:
-        base_path = WORKING_DIR
+    base_path = WORKING_DIR
     return base_path.joinpath(relative_path)
 
 
@@ -84,22 +73,9 @@ if IS_DOCKER:
     SELF_PATH = Path("/app/main.py")
     WORKING_DIR = Path("/app")
     DATA_DIR = Path("/app/data")
-elif IS_APPIMAGE:
-    SELF_PATH = Path(os.environ["APPIMAGE"]).resolve()
-    WORKING_DIR = SELF_PATH.parent
-    DATA_DIR = WORKING_DIR
-else:
-    # NOTE: pyinstaller will set sys.argv[0] to its own executable when building
-    # NOTE: sys.argv[0] will point to gui.py when running the gui.py directly for GUI debug
-    # detect these and use __file__ and main.py redirection instead
-    SELF_PATH = Path(sys.argv[0]).resolve()
-    if SELF_PATH.stem == "pyinstaller" or SELF_PATH.name == "gui.py":
-        SELF_PATH = Path(__file__).with_name("main.py").resolve()
-    WORKING_DIR = SELF_PATH.parent
-    DATA_DIR = WORKING_DIR
 
-# Ensure data directory exists in Docker
-if IS_DOCKER and not DATA_DIR.exists():
+# Ensure data directory exists
+if not DATA_DIR.exists():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # Development paths

@@ -271,9 +271,10 @@ The application uses a web-based interface accessible via browser:
 
 **src/config/paths.py:**
 - Detects Docker environment via `DOCKER_ENV` env var or `/.dockerenv` file
-- Uses `/app` for code, `/app/data` for persistent storage
+- Docker: Uses `/app` for code, `/app/data` for persistent storage
+- Development: Uses `<project_root>/data` for persistent storage
 - All user data (cookies, settings, cache, logs) stored in DATA_DIR
-- Provides `_resource_path()` helper for locating resources
+- Provides `_resource_path()` helper for locating bundled resources
 
 **Dockerfile:**
 - Based on `python:3.11-slim`

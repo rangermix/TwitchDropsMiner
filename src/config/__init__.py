@@ -39,7 +39,6 @@ from .paths import (
     COOKIES_PATH,
     DATA_DIR,
     DUMP_PATH,
-    IS_APPIMAGE,
     IS_DOCKER,
     IS_PACKAGED,
     LANG_PATH,
@@ -86,7 +85,6 @@ __all__ = [
     "WATCH_INTERVAL",
     "WINDOW_TITLE",
     # paths.py
-    "IS_APPIMAGE",
     "IS_PACKAGED",
     "IS_DOCKER",
     "SYS_SITE_PACKAGES",
