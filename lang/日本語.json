@@ -126,12 +126,9 @@
       "general": {
         "name": "一般",
         "dark_mode": "ダークモード：",
-        "priority_only": "優先のみ：",
         "proxy": "プロキシ（再起動が必要）："
       },
       "game_name": "ゲーム名",
-      "priority": "優先度",
-      "exclude": "除外",
       "reload": "再読み込み",
       "reload_text": "ほとんどの変更は即時に反映されるために再読み込みが必要です："
     },

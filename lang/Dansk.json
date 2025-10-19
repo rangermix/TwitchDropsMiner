@@ -125,13 +125,10 @@
         "settings": {
             "general": {
                 "name": "General",
-                "priority_only": "Kun prioritet: ",
                 "dark_mode": "Mørk tilstand: ",
                 "proxy": "Proxy (kræver genstart):"
             },
             "game_name": "Spilnavn",
-            "priority": "Prioritet",
-            "exclude": "Udelukke",
             "reload": "Genindlæs",
             "reload_text": "De fleste ændringer kræver en genindlæsning for at få en øjeblikkelig virkning: "
         },

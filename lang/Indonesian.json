@@ -126,12 +126,9 @@
             "general": {
                 "name": "Umum",
                 "dark_mode": "Mode gelap: ",
-                "priority_only": "Prioritas saja :",
                 "proxy": "Proksi (harus dimulai ulang) :"
             },
             "game_name": "Nama game",
-            "priority": "Prioritas",
-            "exclude": "Kecualikan",
             "reload": "Muat Ulang",
             "reload_text": "Sebagian besar perubahan memerlukan pemuatan ulang untuk segera diterapkan : "
         },

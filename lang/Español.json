@@ -129,8 +129,6 @@
                 "proxy": "Proxy (requiere reinicio):"
             },
             "game_name": "Nombre del juego",
-            "priority": "Lista de juegos preferidos",
-            "exclude": "Lista de juegos excluidos",
             "reload": "Recargar",
             "reload_text": "La mayoría de los cambios requieren recargar o reiniciar la aplicación para que sean aplicados: "
         },

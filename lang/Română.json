@@ -126,12 +126,9 @@
             "general": {
                 "name": "General",
                 "dark_mode": "Mod întunecat :",
-                "priority_only": "Doar cu prioritate :",
                 "proxy": "Proxy (necesită repornire) :"
             },
             "game_name": "Nume joc",
-            "priority": "Prioritate",
-            "exclude": "Exclude",
             "reload": "Reîncarcă",
             "reload_text": "Cele mai multe modificări necesită o reîncărcare pentru a se aplica imediat : "
         },

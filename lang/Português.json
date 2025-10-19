@@ -126,12 +126,9 @@
             "general": {
                 "name": "Geral",
                 "dark_mode": "Modo escuro: ",
-                "priority_only": "Apenas com prioridade: ",
                 "proxy": "Proxy (requer o reinício do app):"
             },
             "game_name": "Nome do jogo",
-            "priority": "Prioridade",
-            "exclude": "Excluir",
             "reload": "Recarregar",
             "reload_text": "A maioria das mudanças requer o reinício do app para serem efetivadas: "
         },

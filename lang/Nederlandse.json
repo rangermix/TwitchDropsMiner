@@ -125,13 +125,10 @@
         "settings": {
             "general": {
                 "name": "Algemeen",
-                "priority_only": "Alleen prioriteit: ",
                 "dark_mode": "Donkere modus: ",
                 "proxy": "Proxy (Vereist opnieuw opstarten):"
             },
             "game_name": "Spel",
-            "priority": "Prioriteit",
-            "exclude": "Uitsluiten",
             "reload": "Herladen",
             "reload_text": "Voor de meeste wijzigingen is een herlaadbeurt vereist om onmiddellijk van kracht te worden: "
         },

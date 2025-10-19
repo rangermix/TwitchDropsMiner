@@ -126,17 +126,9 @@
             "general": {
                 "name": "功能设置",
                 "dark_mode": "深色模式: ",
-                "priority_mode": "掉宝模式: ",
                 "proxy": "代理:"
             },
-            "priority_modes": {
-                "priority_only": "只观看添加的游戏掉宝",
-                "ending_soonest": "优先观看即将结束的掉宝",
-                "low_availability": "优先观看可用频道少的掉宝      "
-            },
             "game_name": "游戏名称",
-            "priority": "添加优先掉宝的游戏",
-            "exclude": "添加不参与掉宝的游戏",
             "reload": "刷新",
             "reload_text": "大多数设置更改后需要重新启动软件或刷新才能生效: "
         },

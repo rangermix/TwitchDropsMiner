@@ -125,13 +125,10 @@
         "settings": {
             "general": {
                 "name": "Allgemein",
-                "priority_only": "Nur Priorität: ",
                 "dark_mode": "Dunkler Modus: ",
                 "proxy": "Proxy (Erfordert Neustart):"
             },
             "game_name": "Spiel",
-            "priority": "Priorität",
-            "exclude": "Ausschließen",
             "reload": "Neu laden",
             "reload_text": "Die meisten Änderungen erfordern ein neu laden, um sofort wirksam zu werden: "
         },

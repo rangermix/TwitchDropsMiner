@@ -118,12 +118,10 @@
         "settings": {
             "general": {
                 "name": "Nastavení",
-                "priority_only": "Pouze prioritní: ",
                 "dark_mode": "Tmavý režim: ",
                 "proxy": "Proxy:"
             },
             "game_name": "Název Hry",
-            "priority": "Priorita",
             "exclude": "Vynechat",
             "reload": "Obnovit",
             "reload_text": "Většina změn vyžaduje restart aplikace nebo obnovení: "

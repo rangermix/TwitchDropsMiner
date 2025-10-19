@@ -126,16 +126,9 @@
             "general": {
                 "name": "Ogólne",
                 "dark_mode": "Tryb ciemny: ",
-                "priority_mode": "Tryb priorytetu: ",
                 "proxy": "Proxy (wymaga restartu):"
             },
-            "priority_modes": {
-                "priority_only": "Tylko lista priorytetów",
-                "ending_soonest": "Kończące się najwcześniej",
-                "low_availability": "Najniższa dostępność"
-            },
             "game_name": "Nazwa gry",
-            "priority": "Priorytety",
             "exclude": "Wykluczone",
             "reload": "Przeładuj",
             "reload_text": "Większość zmian wymaga przeładowania, które natychmiastowo je zastosuje: "

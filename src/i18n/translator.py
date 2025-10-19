@@ -154,21 +154,12 @@ class GUIInventory(TypedDict):
 class GUISettingsGeneral(TypedDict):
     name: str
     dark_mode: str
-    priority_mode: str
     proxy: str
-
-
-class GUIPriorityModes(TypedDict):
-    priority_only: str
-    ending_soonest: str
-    low_availability: str
 
 
 class GUISettings(TypedDict):
     general: GUISettingsGeneral
-    priority_modes: GUIPriorityModes
     game_name: str
-    priority: str
     exclude: str
     reload: str
     reload_text: str
@@ -346,17 +337,9 @@ default_translation: Translation = {
             "general": {
                 "name": "General",
                 "dark_mode": "Dark mode: ",
-                "priority_mode": "Priority mode: ",
                 "proxy": "Proxy (requires restart):",
             },
-            "priority_modes": {
-                "priority_only": "Priority list only",
-                "ending_soonest": "Ending soonest",
-                "low_availability": "Low availability first",
-            },
             "game_name": "Game name",
-            "priority": "Priority",
-            "exclude": "Exclude",
             "reload": "Reload",
             "reload_text": "Most changes require a reload to take an immediate effect: ",
         },
