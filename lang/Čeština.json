@@ -118,7 +118,6 @@
         "settings": {
             "general": {
                 "name": "Nastavení",
-                "autostart": "Automatické spuštění: ",
                 "priority_only": "Pouze prioritní: ",
                 "dark_mode": "Tmavý režim: ",
                 "proxy": "Proxy:"

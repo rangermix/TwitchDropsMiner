@@ -125,7 +125,6 @@
         "settings": {
             "general": {
                 "name": "Ogólne",
-                "autostart": "Autostart: ",
                 "dark_mode": "Tryb ciemny: ",
                 "priority_mode": "Tryb priorytetu: ",
                 "proxy": "Proxy (wymaga restartu):"

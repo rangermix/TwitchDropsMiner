@@ -153,7 +153,6 @@ class GUIInventory(TypedDict):
 
 class GUISettingsGeneral(TypedDict):
     name: str
-    autostart: str
     dark_mode: str
     priority_mode: str
     proxy: str
@@ -346,7 +345,6 @@ default_translation: Translation = {
         "settings": {
             "general": {
                 "name": "General",
-                "autostart": "Autostart: ",
                 "dark_mode": "Dark mode: ",
                 "priority_mode": "Priority mode: ",
                 "proxy": "Proxy (requires restart):",

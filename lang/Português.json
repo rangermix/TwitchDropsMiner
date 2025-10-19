@@ -125,7 +125,6 @@
         "settings": {
             "general": {
                 "name": "Geral",
-                "autostart": "Auto-início: ",
                 "dark_mode": "Modo escuro: ",
                 "priority_only": "Apenas com prioridade: ",
                 "proxy": "Proxy (requer o reinício do app):"

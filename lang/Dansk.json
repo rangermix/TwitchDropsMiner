@@ -125,7 +125,6 @@
         "settings": {
             "general": {
                 "name": "General",
-                "autostart": "Automatisk start: ",
                 "priority_only": "Kun prioritet: ",
                 "dark_mode": "Mørk tilstand: ",
                 "proxy": "Proxy (kræver genstart):"

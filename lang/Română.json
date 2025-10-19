@@ -125,7 +125,6 @@
         "settings": {
             "general": {
                 "name": "General",
-                "autostart": "Pornire automată :",
                 "dark_mode": "Mod întunecat :",
                 "priority_only": "Doar cu prioritate :",
                 "proxy": "Proxy (necesită repornire) :"
