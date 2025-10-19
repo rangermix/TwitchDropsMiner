@@ -1,4 +1,4 @@
-name: Release
+name: Create Release Branch
 
 on:
   workflow_dispatch:
@@ -10,15 +10,11 @@ on:
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
-  validate:
-    name: Validate Version
+  create-release-branch:
+    name: Create Release Branch
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.validate.outputs.version }}
-      is_prerelease: ${{ steps.validate.outputs.is_prerelease }}
 
     steps:
       - name: Validate SemVer format
@@ -39,21 +35,11 @@ jobs:
 
           # Check if pre-release (contains hyphen)
           if echo "$VERSION" | grep -q '-'; then
-            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
             echo "Detected pre-release version: $VERSION"
           else
-            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
             echo "Detected stable release version: $VERSION"
           fi
 
-  create-release-branch:
-    name: Create Release Branch
-    runs-on: ubuntu-latest
-    needs: validate
-    outputs:
-      branch_name: ${{ steps.create-branch.outputs.branch_name }}
-
-    steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
@@ -66,9 +52,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Check if branch exists
-        id: check-branch
         run: |
-          BRANCH_NAME="release/${{ needs.validate.outputs.version }}"
+          BRANCH_NAME="release/${{ steps.validate.outputs.version }}"
 
           if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
             echo "Error: Branch '$BRANCH_NAME' already exists"
@@ -77,11 +62,10 @@ jobs:
 
           echo "Branch '$BRANCH_NAME' does not exist, proceeding..."
 
-      - name: Create release branch
-        id: create-branch
+      - name: Create release branch and update version
         run: |
-          BRANCH_NAME="release/${{ needs.validate.outputs.version }}"
-          VERSION="${{ needs.validate.outputs.version }}"
+          BRANCH_NAME="release/${{ steps.validate.outputs.version }}"
+          VERSION="${{ steps.validate.outputs.version }}"
 
           # Create and checkout new branch
           git checkout -b "$BRANCH_NAME"
@@ -93,129 +77,9 @@ jobs:
           git add src/version.py
           git commit -m "chore: bump version to $VERSION"
 
-          # Push branch
+          # Push branch (this will trigger the publish workflow)
           git push origin "$BRANCH_NAME"
 
-          # Create and push tag
-          git tag "v$VERSION"
-          git push origin "v$VERSION"
-
-          echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
-          echo "Created branch '$BRANCH_NAME' and tag 'v$VERSION'"
-
-  docker-build:
-    name: Build & Push Docker Images
-    runs-on: ubuntu-latest
-    needs: [validate, create-release-branch]
-    environment: prod
-
-    steps:
-      - name: Checkout release branch
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ needs.create-release-branch.outputs.branch_name }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Generate Docker tags
-        id: docker-tags
-        run: |
-          VERSION="${{ needs.validate.outputs.version }}"
-          IMAGE="rangermix/twitch-drops-miner"
-          IS_PRERELEASE="${{ needs.validate.outputs.is_prerelease }}"
-
-          # Always include the full version tag
-          TAGS="$IMAGE:$VERSION"
-
-          # For stable releases, add major.minor, major, and latest tags
-          if [ "$IS_PRERELEASE" = "false" ]; then
-            # Extract major.minor.patch
-            MAJOR=$(echo "$VERSION" | cut -d. -f1)
-            MINOR=$(echo "$VERSION" | cut -d. -f2)
-
-            TAGS="$TAGS,$IMAGE:$MAJOR.$MINOR"
-            TAGS="$TAGS,$IMAGE:$MAJOR"
-            TAGS="$TAGS,$IMAGE:latest"
-          fi
-
-          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
-          echo "Generated tags: $TAGS"
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.docker-tags.outputs.tags }}
-          labels: |
-            org.opencontainers.image.title=Twitch Drops Miner
-            org.opencontainers.image.description=Automatically mine Twitch drops
-            org.opencontainers.image.version=${{ needs.validate.outputs.version }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            BUILD_DATE=${{ github.event.repository.updated_at }}
-            VCS_REF=${{ github.sha }}
-            VERSION=${{ needs.validate.outputs.version }}
-
-  github-release:
-    name: Create GitHub Release
-    runs-on: ubuntu-latest
-    needs: [validate, create-release-branch, docker-build]
-
-    steps:
-      - name: Checkout release branch
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ needs.create-release-branch.outputs.branch_name }}
-          fetch-depth: 0
-
-      - name: Generate release notes
-        id: release-notes
-        run: |
-          VERSION="${{ needs.validate.outputs.version }}"
-
-          # Get the previous tag
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-
-          if [ -n "$PREV_TAG" ]; then
-            echo "## Changes since $PREV_TAG" > release_notes.md
-            echo "" >> release_notes.md
-            git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" >> release_notes.md
-          else
-            echo "## Initial Release" > release_notes.md
-            echo "" >> release_notes.md
-            echo "First release of Twitch Drops Miner $VERSION" >> release_notes.md
-          fi
-
-          echo "" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "## Docker Images" >> release_notes.md
-          echo "" >> release_notes.md
-          echo '```bash' >> release_notes.md
-          echo "docker pull rangermix/twitch-drops-miner:$VERSION" >> release_notes.md
-          echo '```' >> release_notes.md
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ needs.validate.outputs.version }}
-          name: Release ${{ needs.validate.outputs.version }}
-          body_path: release_notes.md
-          prerelease: ${{ needs.validate.outputs.is_prerelease }}
-          draft: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "✅ Created branch '$BRANCH_NAME'"
+          echo "✅ Updated version to $VERSION"
+          echo "✅ The publish workflow will now build Docker images and create the GitHub release"
