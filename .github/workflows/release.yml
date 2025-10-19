@@ -15,6 +15,7 @@ jobs:
   create-release-branch:
     name: Create Release Branch
     runs-on: ubuntu-latest
+    environment: release
 
     steps:
       - name: Validate SemVer format
@@ -42,6 +43,8 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.PUBLISHER_TOKEN }}
 
       - name: Configure Git
         run: |
