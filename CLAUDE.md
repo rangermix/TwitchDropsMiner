@@ -59,7 +59,7 @@ docker-compose up -d
 
 **⚠️ IMPORTANT: The codebase has been refactored into a modular structure.**
 
-The application now uses a clean `src/` package structure with clear separation of concerns. See [REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md) for complete details.
+The application now uses a clean `src/` package structure with clear separation of concerns.
 
 ### Project Structure
 
@@ -67,7 +67,7 @@ The application now uses a clean `src/` package structure with clear separation 
 src/
 ├── models/          # Domain models (Game, Channel, Campaign, Drop, Benefit)
 ├── config/          # Configuration (constants, paths, operations, settings, client_info)
-├── utils/           # Pure utilities (time, string, JSON, async helpers, cache, rate_limiter, backoff, registry)
+├── utils/           # Pure utilities (string, JSON, async helpers, rate_limiter, backoff)
 ├── i18n/            # Translation system (translator)
 ├── auth/            # Authentication (auth_state for OAuth and token management)
 ├── api/             # External API (HTTP client, GraphQL client)
@@ -213,10 +213,11 @@ Runs in background to trigger:
 - **src/config/client_info.py** - Twitch client info (Client-Id, User-Agent)
 - **src/config/settings.py** - Application settings with JSON persistence
 - **src/exceptions.py** - Custom exceptions (LoginException, CaptchaRequired, ExitRequest, ReloadRequest, etc.)
-- **src/utils/** - Helper utilities (time, string, JSON, async helpers, cache, rate limiter, backoff, registry)
-- **src/i18n/translator.py** - i18n support with JSON translation files
+- **src/utils/** - Helper utilities (string_utils, json_utils, async_helpers, rate_limiter, backoff)
+- **src/i18n/translator.py** - i18n support with JSON translation files (20 languages supported)
 - **src/version.py** - Version string
 - **src/web/app.py** - FastAPI application with REST API and Socket.IO
+- **src/web/managers/cache.py** - ImageCache for campaign artwork caching
 - **web/** - Frontend assets (index.html, static/app.js, static/styles.css)
 
 ## Testing

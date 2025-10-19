@@ -6,10 +6,6 @@
 
 This application allows you to AFK mine timed Twitch drops, without having to worry about switching channels when the one you were watching goes offline, claiming the drops, or even receiving the stream data itself. This helps you save on bandwidth and hassle.
 
-### How It Works:
-
-Every several seconds, the application pretends to watch a particular stream by fetching stream metadata - this is enough to advance the drops. Note that this completely bypasses the need to download any actual stream video and sound. To keep the status (ONLINE or OFFLINE) of the channels up-to-date, there's a websocket connection established that receives events about streams going up or down, or updates regarding the current amount of viewers.
-
 ### Features:
 
 - Stream-less drop mining - save on bandwidth.
@@ -23,17 +19,38 @@ Every several seconds, the application pretends to watch a particular stream by 
 
 ### Usage:
 
-**Quick Start with Docker (Recommended):**
+The application is designed for Docker deployment, making it easy to run on any platform:
+
+**Using pre-built images (Recommended):**
 
 ```bash
-# Clone the repository
-git clone https://github.com/rangermix/TwitchDropsMiner.git
-cd TwitchDropsMiner
+# Pull and run from Docker Hub
+docker pull rangermix/twitch-drops-miner:latest
+docker run -d -p 8080:8080 -v $(pwd)/data:/app/data rangermix/twitch-drops-miner:latest
+```
 
-# Start with docker-compose
+Or use docker-compose with the pre-built image, Create a docker-compose.yml file with:
+
+```yaml
+services:
+  twitch-drops-miner:
+    image: rangermix/twitch-drops-miner:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+```
+
+**Building locally:**
+
+```bash
+# Build and run with docker-compose
 docker-compose up -d
 
-# Access the web interface at http://localhost:8080
+# Or build and run manually
+docker build -t twitch-drops-miner .
+docker run -d -p 8080:8080 -v $(pwd)/data:/app/data twitch-drops-miner
 ```
 
 **Running from Source:**
@@ -53,10 +70,24 @@ python main.py
 - Open the web interface in your browser at `http://localhost:8080`
 - Login/connect the miner to your Twitch account using the OAuth device code flow
 - After a successful login, the app will fetch all available campaigns and games you can mine drops for
-- Select and add games to the Priority List on the Settings tab, then press `Reload` to start processing
+- Select and add games to the Watching List on the Settings tab, then press `Reload` to start processing
 - The miner will fetch applicable streams and start mining automatically
 - You can manually switch to a different channel as needed
 - Make sure to link your Twitch account to game accounts on the [campaigns page](https://www.twitch.tv/drops/campaigns)
+
+**Important Docker notes:**
+- All persistent data (cookies, settings, logs) is stored in the `data/` directory
+- Login uses OAuth device code flow - you'll be given a code to enter at twitch.tv/activate
+- Browser notifications supported (requires permission)
+- Health checks included
+- Configure timezone with `TZ` environment variable
+- Pre-built images are automatically published to Docker Hub via GitHub Actions
+- Available tags:
+  - `latest` - Latest stable release
+  - `1.0.0`, `1.0`, `1` - Semantic versioning tags (major.minor.patch)
+  - `1.0.0-rc.1` - Pre-release versions (tagged with exact version only)
+- Multi-platform support: linux/amd64, linux/arm64
+
 
 ### Screenshots:
 
@@ -69,56 +100,8 @@ The application features a modern web-based interface accessible from any browse
 > 
 > Using the same account to watch other streams during mining is thus discouraged, in order to avoid any problems arising from it.
 
-> [!CAUTION]  
-> Persistent cookies will be stored in the `cookies.jar` file, from which the authorization (login) information will be restored on each subsequent run. Make sure to keep your cookies file safe, as the authorization information it stores can give another person access to your Twitch account, even without them knowing your password!
-
-> [!IMPORTANT]  
-> Successfully logging into your Twitch account in the application may cause Twitch to send you a "New Login" notification email. This is normal - you can verify that it comes from your own IP address. The detected browser during the login will be "Chrome", as that's what the miner currently presents itself to the Twitch server.
-
-> [!NOTE]  
-> The time remaining timer always countdowns a single minute and then stops - it is then restarted only after the application redetermines the remaining time. This "redetermination" can happen at any time Twitch decides to report on the drop's progress, but not later than 20 seconds after the timer reaches zero. The seconds timer is only an approximation and does not represent nor affect actual mining speed. The time variations are due to Twitch sometimes not reporting drop progress at all, or reporting progress for the wrong drop - these cases have all been accounted for in the application though.
-
 > [!NOTE]  
 > The source code requires Python 3.10 or higher to run.
-
-### Docker Deployment:
-
-The application is designed for Docker deployment, making it easy to run on any platform:
-
-**Using pre-built images (Recommended):**
-
-```bash
-# Pull and run from GitHub Container Registry
-docker pull ghcr.io/rangermix/twitchdropsminer:latest
-docker run -d -p 8080:8080 -v $(pwd)/data:/app/data ghcr.io/rangermix/twitchdropsminer:latest
-
-# Or use docker-compose with the pre-built image
-# Create a docker-compose.yml file with:
-# services:
-#   twitch-drops-miner:
-#     image: ghcr.io/rangermix/twitchdropsminer:latest
-#     ...
-```
-
-**Building locally:**
-
-```bash
-# Build and run with docker-compose
-docker-compose up -d
-
-# Or build and run manually
-docker build -t twitch-drops-miner .
-docker run -d -p 8080:8080 -v $(pwd)/data:/app/data twitch-drops-miner
-```
-
-**Important Docker notes:**
-- All persistent data (cookies, settings, logs) is stored in the `data/` directory
-- Login uses OAuth device code flow - you'll be given a code to enter at twitch.tv/activate
-- Browser notifications supported (requires permission)
-- Health checks and automatic restart included in docker-compose
-- Configure timezone with `TZ` environment variable
-- Pre-built images are automatically built from the master branch via GitHub Actions
-- Available tags: `latest` (stable), `dev` (latest development build)
 
 ### Running from Source:
 
@@ -137,9 +120,9 @@ pip install -e .
 python main.py
 ```
 
-### Support This Fork
+### Support This Project
 
-If you find this fork useful, please consider supporting my work:
+If you find this project useful, please consider supporting my work:
 
 <div align="center">
 
@@ -162,19 +145,6 @@ Twitch Drops Miner (TDM for short) has been designed with a couple of simple goa
 - **Efficient** - Minimal interactions with Twitch, respecting their service
 - **Docker-ready** - Easy deployment on any platform or server
 
-**What TDM is NOT:**
-- Mining channel points
-- Mining other platforms besides Twitch
-- Multi-account support
-- Mining unlinked campaigns
-- 100% guaranteed uptime (expect occasional errors)
-
-**Limitations:**
-- Single account per instance
-- No automatic error recovery (monitor periodically)
-- No additional notification systems (email, webhook, etc.)
-- Campaigns must be linked to your Twitch account
-
 This is a web-only application designed for Docker deployment and headless operation.
 
 ### Acknowledgments:
@@ -184,7 +154,7 @@ This project is a fork of the excellent [TwitchDropsMiner](https://github.com/De
 **Original Project:** [DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner)
 **Original Author:** [@DevilXD](https://github.com/DevilXD)
 
-### Translation Credits:
+### Original Project Credits:
 
 <!---
 Note: The translations credits are sorted alphabetically, based on their English language name.
