@@ -42,9 +42,6 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v5
-        with:
-          ref: master
-          fetch-depth: 0
 
       - name: Configure Git
         run: |

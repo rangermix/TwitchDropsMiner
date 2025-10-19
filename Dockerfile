@@ -9,7 +9,7 @@ ARG VERSION
 LABEL org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.authors="rangermix" \
       org.opencontainers.image.url="https://github.com/rangermix/TwitchDropsMiner" \
-      org.opencontainers.image.documentation="https://github.com/rangermix/TwitchDropsMiner/blob/master/README.md" \
+      org.opencontainers.image.documentation="https://github.com/rangermix/TwitchDropsMiner/blob/main/README.md" \
       org.opencontainers.image.source="https://github.com/rangermix/TwitchDropsMiner" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
