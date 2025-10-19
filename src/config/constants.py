@@ -31,10 +31,10 @@ LOGGING_LEVELS = {
 }
 FILE_FORMATTER = logging.Formatter(
     "{asctime}.{msecs:03.0f}:\t{levelname:>7}:\t{filename}:{lineno}:\t{message}",
-    style='{',
+    style="{",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
-OUTPUT_FORMATTER = logging.Formatter("{levelname}: {message}", style='{', datefmt="%H:%M:%S")
+OUTPUT_FORMATTER = logging.Formatter("{levelname}: {message}", style="{", datefmt="%H:%M:%S")
 
 # Type aliases
 JsonType = dict[str, Any]
@@ -66,6 +66,7 @@ WINDOW_TITLE = f"Twitch Drops Miner v{__version__} (by DevilXD)"
 
 class State(Enum):
     """Application state machine states."""
+
     IDLE = auto()
     INVENTORY_FETCH = auto()
     GAMES_UPDATE = auto()
@@ -86,7 +87,7 @@ class GQLOperation(JsonType):
                     "version": 1,
                     "sha256Hash": sha256,
                 }
-            }
+            },
         )
         if variables is not None:
             self.__setitem__("variables", variables)
@@ -120,9 +121,7 @@ class WebsocketTopic:
         self._process: TopicProcess = process
 
     @classmethod
-    def as_str(
-        cls, category: Literal["User", "Channel"], topic_name: str, target_id: int
-    ) -> str:
+    def as_str(cls, category: Literal["User", "Channel"], topic_name: str, target_id: int) -> str:
         return f"{WEBSOCKET_TOPICS[category][topic_name]}.{target_id}"
 
     def __call__(self, message: JsonType):

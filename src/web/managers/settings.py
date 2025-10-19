@@ -39,7 +39,7 @@ class SettingsManager:
             "proxy": str(self._settings.proxy),
             "tray_notifications": self._settings.tray_notifications,
             "connection_quality": self._settings.connection_quality,
-            "minimum_refresh_interval_minutes": self._settings.minimum_refresh_interval_minutes
+            "minimum_refresh_interval_minutes": self._settings.minimum_refresh_interval_minutes,
         }
 
     def update_settings(self, settings_data: dict[str, Any]):
@@ -59,11 +59,11 @@ class SettingsManager:
         if "tray_notifications" in settings_data:
             self._settings.tray_notifications = settings_data["tray_notifications"]
         if "minimum_refresh_interval_minutes" in settings_data:
-            self._settings.minimum_refresh_interval_minutes = settings_data["minimum_refresh_interval_minutes"]
+            self._settings.minimum_refresh_interval_minutes = settings_data[
+                "minimum_refresh_interval_minutes"
+            ]
         self._settings.alter()
-        asyncio.create_task(
-            self._broadcaster.emit("settings_updated", self.get_settings())
-        )
+        asyncio.create_task(self._broadcaster.emit("settings_updated", self.get_settings()))
 
     def set_games(self, games: set[Game]):
         """Update the list of available games for settings panel.
@@ -74,6 +74,4 @@ class SettingsManager:
         # Store and broadcast available games for settings panel
         game_names = sorted([g.name for g in games])
         self._available_games = game_names
-        asyncio.create_task(
-            self._broadcaster.emit("games_available", {"games": game_names})
-        )
+        asyncio.create_task(self._broadcaster.emit("games_available", {"games": game_names}))

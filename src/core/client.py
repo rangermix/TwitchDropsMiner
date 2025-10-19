@@ -13,7 +13,6 @@ import aiohttp
 from src.api import GQLClient, HTTPClient
 from src.auth import _AuthState
 from src.config import (
-    DUMP_PATH,
     MAX_CHANNELS,
     ClientType,
     State,
@@ -67,7 +66,7 @@ class Twitch:
         self._client_type: ClientInfo = ClientType.ANDROID_APP
         self._auth_state: _AuthState = _AuthState(self)
         # GUI (will be set by main.py)
-        self.gui: WebGUIManager = None # type: ignore[assignment]
+        self.gui: WebGUIManager = None  # type: ignore[assignment]
         # API clients (will be initialized after GUI is set)
         self._http_client: HTTPClient | None = None
         self._gql_client: GQLClient | None = None
@@ -93,7 +92,7 @@ class Twitch:
     def _ensure_api_clients(self) -> None:
         """Ensure API clients are initialized (called after GUI is set)."""
         if self._http_client is None:
-            self._http_client = HTTPClient(self.settings, self.gui, self._client_type)
+            self._http_client = HTTPClient(self.settings, self.gui, self, self._client_type)
         if self._gql_client is None:
             self._gql_client = GQLClient(self._http_client, self._auth_state, self._client_type)
 
@@ -162,13 +161,6 @@ class Twitch:
         """
         self.change_state(State.EXIT)
 
-    def prevent_close(self) -> None:
-        """
-        Called when the application window has to be prevented from closing, even after the user
-        closes it with X. Usually used solely to display tracebacks from the closing sequence.
-        """
-        self.gui.prevent_close()
-
     def print(self, message: str) -> None:
         """Print a message in the GUI."""
         self.gui.print(message)
@@ -191,21 +183,13 @@ class Twitch:
         """Remove websocket topics for a list of channels."""
         topics_to_remove: list[str] = []
         for channel in channels:
-            topics_to_remove.append(
-                WebsocketTopic.as_str("Channel", "StreamState", channel.id)
-            )
-            topics_to_remove.append(
-                WebsocketTopic.as_str("Channel", "StreamUpdate", channel.id)
-            )
+            topics_to_remove.append(WebsocketTopic.as_str("Channel", "StreamState", channel.id))
+            topics_to_remove.append(WebsocketTopic.as_str("Channel", "StreamUpdate", channel.id))
         if topics_to_remove:
             self.websocket.remove_topics(topics_to_remove)
 
     async def run(self) -> None:
         """Main entry point for the miner - handles reload and exit requests."""
-        if self.settings.dump:
-            with open(DUMP_PATH, 'w', encoding="utf8"):
-                # replace the existing file with an empty one
-                pass
         while True:
             try:
                 await self._run()
@@ -226,7 +210,6 @@ class Twitch:
         • Selecting a stream to watch, and watching it
         • Changing the stream that's being watched if necessary
         """
-        self.gui.start()
         # Initialize API clients now that GUI is available
         self._ensure_api_clients()
         auth_state = await self.get_auth()
@@ -236,19 +219,21 @@ class Twitch:
             self._watching_task.cancel()
         self._watching_task = asyncio.create_task(self._watch_loop())
         # Add default topics
-        self.websocket.add_topics([
-            WebsocketTopic("User", "Drops", auth_state.user_id, self.process_drops),
-            WebsocketTopic(
-                "User", "Notifications", auth_state.user_id, self.process_notifications
-            ),
-        ])
+        self.websocket.add_topics(
+            [
+                WebsocketTopic("User", "Drops", auth_state.user_id, self.process_drops),
+                WebsocketTopic(
+                    "User", "Notifications", auth_state.user_id, self.process_notifications
+                ),
+            ]
+        )
         full_cleanup: bool = False
         channels: Final[OrderedDict[int, Channel]] = self.channels
         self.change_state(State.INVENTORY_FETCH)
         while True:
             if self._state is State.IDLE:
                 if self.settings.dump:
-                    self.gui.close()
+                    self.close()
                     continue
                 self.gui.tray.change_icon("idle")
                 self.gui.status.update(_("gui", "status", "idle"))
@@ -278,17 +263,25 @@ class Twitch:
                 games_to_watch: list[str] = self.settings.games_to_watch
                 next_hour: datetime = datetime.now(timezone.utc) + timedelta(hours=1)
                 logger.info("games_to_watch: %s", games_to_watch)
-                logger.info("inventory has %d eligible campaigns", sum(1 for c in self.inventory if c.eligible))
+                logger.info(
+                    "inventory has %d eligible campaigns",
+                    sum(1 for c in self.inventory if c.eligible),
+                )
                 logger.debug("inventories: %s", self.inventory)
 
                 # Log detailed game -> campaigns -> channels mapping
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.info("=== Active Campaigns Mapping ===")
                     from collections import defaultdict
-                    game_campaign_map: dict[str, list[tuple[DropsCampaign, list[str]]]] = defaultdict(list)
+
+                    game_campaign_map: dict[str, list[tuple[DropsCampaign, list[str]]]] = (
+                        defaultdict(list)
+                    )
                     for campaign in self.inventory:
                         if campaign.eligible and not campaign.finished:
-                            logger.info("eligible Campaign: %s - %s", campaign.name, campaign.game.name)
+                            logger.info(
+                                "eligible Campaign: %s - %s", campaign.name, campaign.game.name
+                            )
                         if campaign.can_earn_within(next_hour):
                             channel_names = []
                             if campaign.allowed_channels:
@@ -300,14 +293,22 @@ class Twitch:
                         logger.debug(f"Game: {game_name}")
                         for campaign, channel_list in game_campaign_map[game_name]:
                             status_info = f"{'ACTIVE' if campaign.active else 'UPCOMING'}"
-                            ends_info = campaign.ends_at.astimezone().strftime('%Y-%m-%d %H:%M')
-                            channel_info = f"{len(channel_list)} channels" if channel_list[0] != "<directory>" else "directory"
-                            logger.debug(f"  └─ Campaign: {campaign.name} [{status_info}] (ends: {ends_info})")
+                            ends_info = campaign.ends_at.astimezone().strftime("%Y-%m-%d %H:%M")
+                            channel_info = (
+                                f"{len(channel_list)} channels"
+                                if channel_list[0] != "<directory>"
+                                else "directory"
+                            )
+                            logger.debug(
+                                f"  └─ Campaign: {campaign.name} [{status_info}] (ends: {ends_info})"
+                            )
                             logger.debug(f"     Channels: {channel_info}")
                             if channel_list[0] != "<directory>" and len(channel_list) <= 10:
                                 logger.debug(f"     └─ {', '.join(channel_list)}")
                             elif channel_list[0] != "<directory>":
-                                logger.debug(f"     └─ {', '.join(channel_list[:10])} ... (+{len(channel_list)-10} more)")
+                                logger.debug(
+                                    f"     └─ {', '.join(channel_list[:10])} ... (+{len(channel_list) - 10} more)"
+                                )
                     logger.info("=== End Campaigns Mapping ===")
 
                 # Build wanted_games list preserving the order from games_to_watch
@@ -319,27 +320,31 @@ class Twitch:
                         if (
                             game.name.lower() == game_name_lower
                             and game not in self.wanted_games  # isn't already there
-                            and campaign.can_earn_within(next_hour)  # can be progressed within the next hour
+                            and campaign.can_earn_within(
+                                next_hour
+                            )  # can be progressed within the next hour
                         ):
                             self.wanted_games.append(game)
                             break  # Only add each game once
 
                 if self.wanted_games:
                     logger.info(
-                        "Wanted games: %s",
-                        ", ".join(game.name for game in self.wanted_games)
+                        "Wanted games: %s", ", ".join(game.name for game in self.wanted_games)
                     )
                 else:
                     logger.warning(
                         "No wanted games found! games_to_watch=%s, eligible_campaigns=%d",
                         games_to_watch,
-                        sum(1 for c in self.inventory if c.eligible and c.can_earn_within(next_hour))
+                        sum(
+                            1 for c in self.inventory if c.eligible and c.can_earn_within(next_hour)
+                        ),
                     )
 
                 # Handle manual mode: check if manual game still has drops
                 if self.is_manual_mode():
                     manual_has_drops = any(
-                        campaign.can_earn_within(next_hour) and campaign.game == self._manual_target_game
+                        campaign.can_earn_within(next_hour)
+                        and campaign.game == self._manual_target_game
                         for campaign in self.inventory
                     )
                     if not manual_has_drops:
@@ -348,7 +353,9 @@ class Twitch:
                         # Move manual game to front of wanted_games for priority
                         self.wanted_games.remove(self._manual_target_game)
                         self.wanted_games.insert(0, self._manual_target_game)
-                        logger.info(f"Manual mode: prioritizing game {self._manual_target_game.name}")
+                        logger.info(
+                            f"Manual mode: prioritizing game {self._manual_target_game.name}"
+                        )
 
                 full_cleanup = True
                 self.restart_watching()
@@ -397,10 +404,7 @@ class Twitch:
                 acl_channels: set[Channel] = set()
                 next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
                 for campaign in self.inventory:
-                    if (
-                        campaign.game in self.wanted_games
-                        and campaign.can_earn_within(next_hour)
-                    ):
+                    if campaign.game in self.wanted_games and campaign.can_earn_within(next_hour):
                         if campaign.allowed_channels:
                             acl_channels.update(campaign.allowed_channels)
                         else:
@@ -466,10 +470,9 @@ class Twitch:
                 for channel in channels.values():
                     # check if there's any channels we can watch first
                     if self.can_watch(channel):
-                        if (
-                            (active_campaign := self.get_active_campaign(channel)) is not None
-                            and (active_drop := active_campaign.first_drop) is not None
-                        ):
+                        if (active_campaign := self.get_active_campaign(channel)) is not None and (
+                            active_drop := active_campaign.first_drop
+                        ) is not None:
                             active_drop.display(countdown=False, subone=True)
                         break
                 self.change_state(State.CHANNEL_SWITCH)
@@ -483,7 +486,7 @@ class Twitch:
                 )
             elif self._state is State.CHANNEL_SWITCH:
                 if self.settings.dump:
-                    self.gui.close()
+                    self.close()
                     continue
                 self.gui.status.update(_("gui", "status", "switching"))
 
@@ -509,8 +512,14 @@ class Twitch:
                             if channel.game == self._manual_target_game and self.can_watch(channel):
                                 new_watching = channel
                                 self._manual_target_channel = channel
-                                game_name = self._manual_target_game.name if self._manual_target_game else "Unknown"
-                                logger.info(f"Manual mode: switching to {channel.name} (same game: {game_name})")
+                                game_name = (
+                                    self._manual_target_game.name
+                                    if self._manual_target_game
+                                    else "Unknown"
+                                )
+                                logger.info(
+                                    f"Manual mode: switching to {channel.name} (same game: {game_name})"
+                                )
                                 break
                         # No channels available for manual game -> exit manual mode
                         if new_watching is None:
@@ -526,10 +535,9 @@ class Twitch:
                     # Switch to new channel
                     self.watch(new_watching)
                     # Display the active drop for the new channel
-                    if (
-                        (active_campaign := self.get_active_campaign(new_watching)) is not None
-                        and (active_drop := active_campaign.first_drop) is not None
-                    ):
+                    if (active_campaign := self.get_active_campaign(new_watching)) is not None and (
+                        active_drop := active_campaign.first_drop
+                    ) is not None:
                         active_drop.display(countdown=False, subone=True)
                     self._state_change.clear()
                 elif watching_channel is not None and self.can_watch(watching_channel):
@@ -618,7 +626,9 @@ class Twitch:
             return
 
         game_name = self._manual_target_game.name if self._manual_target_game else "Unknown"
-        logger.info(f"Exiting manual mode for game: {game_name}. Reason: {reason or 'User requested'}")
+        logger.info(
+            f"Exiting manual mode for game: {game_name}. Reason: {reason or 'User requested'}"
+        )
 
         self._manual_target_channel = None
         self._manual_target_game = None
@@ -640,7 +650,9 @@ class Twitch:
             return {
                 "active": True,
                 "game_name": self._manual_target_game.name if self._manual_target_game else "",
-                "channel_name": self._manual_target_channel.name if self._manual_target_channel else ""
+                "channel_name": self._manual_target_channel.name
+                if self._manual_target_channel
+                else "",
             }
         return {"active": False}
 
@@ -705,7 +717,9 @@ class Twitch:
         self, game: Game, *, limit: int = 20, drops_enabled: bool = True
     ) -> list[Channel]:
         """Delegate to ChannelService."""
-        return await self._channel_service.get_live_streams(game, limit=limit, drops_enabled=drops_enabled)
+        return await self._channel_service.get_live_streams(
+            game, limit=limit, drops_enabled=drops_enabled
+        )
 
     async def bulk_check_online(self, channels: abc.Iterable[Channel]):
         """Delegate to ChannelService."""

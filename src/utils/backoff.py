@@ -69,8 +69,7 @@ class ExponentialBackoff:
     def __next__(self) -> float:
         """Generate the next delay value."""
         value: float = (
-            pow(self.base, self.steps)
-            * random.uniform(self.variance_min, self.variance_max)
+            pow(self.base, self.steps) * random.uniform(self.variance_min, self.variance_max)
             + self.shift
         )
         if value > self.maximum:

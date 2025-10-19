@@ -28,7 +28,7 @@ SERIALIZE_ENV: dict[str, Callable[[Any], object]] = {
 
 def json_minify(data: JsonType | list[JsonType]) -> str:
     """Return minified JSON string (no whitespace) for payload usage."""
-    return json.dumps(data, separators=(',', ':'))
+    return json.dumps(data, separators=(",", ":"))
 
 
 def _serialize(obj: Any) -> Any:
@@ -155,5 +155,5 @@ def json_save(path: Path, contents: Mapping[Any, Any], *, sort: bool = False) ->
         contents: Data to serialize
         sort: If True, sort keys alphabetically
     """
-    with open(path, 'w', encoding="utf8") as file:
+    with open(path, "w", encoding="utf8") as file:
         json.dump(contents, file, default=_serialize, sort_keys=sort, indent=4)

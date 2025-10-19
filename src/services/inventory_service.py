@@ -8,16 +8,14 @@ managing the inventory state, and determining active campaigns.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
-from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any
 
 from dateutil.parser import isoparse
 
 from src.api import GQLClient
-from src.config import DUMP_PATH, GQL_OPERATIONS
+from src.config import GQL_OPERATIONS
 from src.exceptions import ExitRequest
 from src.i18n import _
 from src.models import DropsCampaign
@@ -111,8 +109,7 @@ class InventoryService:
 
         # this contains claimed benefit edge IDs, not drop IDs
         claimed_benefits: dict[str, datetime] = {
-            b["id"]: isoparse(b["lastAwardedAt"])
-            for b in inventory["gameEventDrops"]
+            b["id"]: isoparse(b["lastAwardedAt"]) for b in inventory["gameEventDrops"]
         }
 
         inventory_data: dict[str, JsonType] = {c["id"]: c for c in ongoing_campaigns}
@@ -149,30 +146,6 @@ class InventoryService:
         for campaign_id in list(inventory_data.keys()):
             if inventory_data[campaign_id]["game"] is None:
                 del inventory_data[campaign_id]
-
-        if self._twitch.settings.dump:
-            # dump the campaigns data to the dump file
-            with open(DUMP_PATH, 'a', encoding="utf8") as file:
-                # we need to pre-process the inventory dump a little
-                dump_data: JsonType = deepcopy(inventory_data)
-                for campaign_data in dump_data.values():
-                    # replace ACL lists with a simple text description
-                    if (
-                        campaign_data["allow"]
-                        and campaign_data["allow"].get("isEnabled", True)
-                        and campaign_data["allow"]["channels"]
-                    ):
-                        # simply count the channels included in the ACL
-                        campaign_data["allow"]["channels"] = (
-                            f"{len(campaign_data['allow']['channels'])} channels"
-                        )
-                    # replace drop instance IDs, so they don't include user IDs
-                    for drop_data in campaign_data["timeBasedDrops"]:
-                        if "self" in drop_data and drop_data["self"]["dropInstanceID"]:
-                            drop_data["self"]["dropInstanceID"] = "..."
-                json.dump(dump_data, file, indent=4, sort_keys=True)
-                file.write("\n\n")  # add 2x new line spacer
-                json.dump(claimed_benefits, file, indent=4, sort_keys=True, default=str)
 
         # use the merged data to create campaign objects
         campaigns: list[DropsCampaign] = [
@@ -212,12 +185,12 @@ class InventoryService:
             for i, coro in enumerate(asyncio.as_completed(add_campaign_tasks), start=1):
                 await coro
                 status_update(
-                    _("gui", "status", "adding_campaigns").format(
-                        counter=f"({i}/{len(campaigns)})"
-                    )
+                    _("gui", "status", "adding_campaigns").format(counter=f"({i}/{len(campaigns)})")
                 )
                 # this is needed here explicitly, because cache reads from disk don't raise this
-                if self._twitch.gui.close_requested:
+                from src.config import State
+
+                if self._twitch._state == State.EXIT:
                     raise ExitRequest()
         except Exception:
             # asyncio.as_completed doesn't cancel tasks on errors

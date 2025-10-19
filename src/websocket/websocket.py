@@ -148,9 +148,7 @@ class Websocket:
         """
         asyncio.create_task(self.stop(remove=remove))
 
-    async def _backoff_connect(
-        self, ws_url: str, **kwargs
-    ):
+    async def _backoff_connect(self, ws_url: str, **kwargs):
         """
         Connect to websocket with exponential backoff retry logic.
 
@@ -196,7 +194,8 @@ class Websocket:
         self._closed.clear()
         # Connect/Reconnect loop
         async for websocket in self._backoff_connect(
-            "wss://pubsub-edge.twitch.tv/v1", maximum=3*60  # 3 minutes maximum backoff time
+            "wss://pubsub-edge.twitch.tv/v1",
+            maximum=3 * 60,  # 3 minutes maximum backoff time
         ):
             self._ws.set(websocket)
             self._reconnect_requested.clear()
@@ -264,7 +263,7 @@ class Websocket:
                     "data": {
                         "topics": topics_list,
                         "auth_token": auth_state.access_token,
-                    }
+                    },
                 }
             )
             self._submitted.difference_update(removed)
@@ -279,7 +278,7 @@ class Websocket:
                     "data": {
                         "topics": topics_list,
                         "auth_token": auth_state.access_token,
-                    }
+                    },
                 }
             )
             self._submitted.update(added)

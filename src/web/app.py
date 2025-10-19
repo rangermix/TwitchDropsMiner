@@ -36,10 +36,7 @@ app.add_middleware(
 
 # Create Socket.IO server
 sio = socketio.AsyncServer(
-    async_mode='asgi',
-    cors_allowed_origins='*',
-    logger=False,
-    engineio_logger=False
+    async_mode="asgi", cors_allowed_origins="*", logger=False, engineio_logger=False
 )
 
 # Wrap with ASGI app
@@ -63,7 +60,7 @@ def set_managers(gui: WebGUIManager, twitch: Twitch):
 class LoginRequest(BaseModel):
     username: str
     password: str
-    token: str = ''
+    token: str = ""
 
 
 class ChannelSelectRequest(BaseModel):
@@ -81,18 +78,21 @@ class SettingsUpdate(BaseModel):
 
 # ==================== REST API Endpoints ====================
 
+
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():
     """Serve the main web interface"""
     # Web files are in project_root/web/, we're in project_root/src/web/
     web_dir = Path(__file__).parent.parent.parent / "web"
     index_file = web_dir / "index.html"
-    logger.debug(f"Looking for web files: __file__={__file__}, web_dir={web_dir}, index_file={index_file}, exists={index_file.exists()}")
+    logger.debug(
+        f"Looking for web files: __file__={__file__}, web_dir={web_dir}, index_file={index_file}, exists={index_file.exists()}"
+    )
     if index_file.exists():
         return FileResponse(index_file)
     return HTMLResponse(
         content=f"<h1>Twitch Drops Miner</h1><p>Web interface files not found. Please check installation.</p><p>Debug: Looking for {index_file}</p>",
-        status_code=500
+        status_code=500,
     )
 
 
@@ -105,8 +105,7 @@ async def get_status():
     return {
         "status": gui_manager.status.get(),
         "login": gui_manager.login.get_status(),
-        "close_requested": gui_manager.close_requested,
-        "manual_mode": twitch_client.get_manual_mode_info()
+        "manual_mode": twitch_client.get_manual_mode_info(),
     }
 
 
@@ -116,9 +115,7 @@ async def get_channels():
     if not gui_manager:
         raise HTTPException(status_code=503, detail="GUI not initialized")
 
-    return {
-        "channels": gui_manager.channels.get_channels()
-    }
+    return {"channels": gui_manager.channels.get_channels()}
 
 
 @app.post("/api/channels/select")
@@ -144,6 +141,7 @@ async def select_channel(request: ChannelSelectRequest):
 
     # Trigger channel switch to apply the selection
     from src.config import State
+
     twitch_client.change_state(State.CHANNEL_SWITCH)
 
     return {"success": True}
@@ -155,9 +153,7 @@ async def get_campaigns():
     if not gui_manager:
         raise HTTPException(status_code=503, detail="GUI not initialized")
 
-    return {
-        "campaigns": gui_manager.inv.get_campaigns()
-    }
+    return {"campaigns": gui_manager.inv.get_campaigns()}
 
 
 @app.get("/api/console")
@@ -166,9 +162,7 @@ async def get_console_history():
     if not gui_manager:
         raise HTTPException(status_code=503, detail="GUI not initialized")
 
-    return {
-        "lines": gui_manager.output.get_history()
-    }
+    return {"lines": gui_manager.output.get_history()}
 
 
 @app.get("/api/settings")
@@ -197,11 +191,7 @@ async def submit_login(login_data: LoginRequest):
     if not gui_manager:
         raise HTTPException(status_code=503, detail="GUI not initialized")
 
-    gui_manager.login.submit_login(
-        login_data.username,
-        login_data.password,
-        login_data.token
-    )
+    gui_manager.login.submit_login(login_data.username, login_data.password, login_data.token)
     return {"success": True}
 
 
@@ -223,6 +213,7 @@ async def trigger_reload():
         raise HTTPException(status_code=503, detail="Twitch client not initialized")
 
     from src.config import State
+
     twitch_client.change_state(State.INVENTORY_FETCH)
     return {"success": True}
 
@@ -230,10 +221,10 @@ async def trigger_reload():
 @app.post("/api/close")
 async def trigger_close():
     """Trigger application shutdown"""
-    if not gui_manager:
-        raise HTTPException(status_code=503, detail="GUI not initialized")
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
 
-    gui_manager.close()
+    twitch_client.close()
     return {"success": True}
 
 
@@ -252,6 +243,7 @@ async def exit_manual_mode():
 
 # ==================== Socket.IO Events ====================
 
+
 @sio.event
 async def connect(sid, environ):
     """Client connected"""
@@ -259,16 +251,20 @@ async def connect(sid, environ):
 
     # Send initial state to new client
     if gui_manager and twitch_client:
-        await sio.emit("initial_state", {
-            "status": gui_manager.status.get(),
-            "channels": gui_manager.channels.get_channels(),
-            "campaigns": gui_manager.inv.get_campaigns(),
-            "console": gui_manager.output.get_history(),
-            "settings": gui_manager.settings.get_settings(),
-            "login": gui_manager.login.get_status(),
-            "manual_mode": twitch_client.get_manual_mode_info(),
-            "current_drop": gui_manager.progress.get_current_drop()
-        }, room=sid)
+        await sio.emit(
+            "initial_state",
+            {
+                "status": gui_manager.status.get(),
+                "channels": gui_manager.channels.get_channels(),
+                "campaigns": gui_manager.inv.get_campaigns(),
+                "console": gui_manager.output.get_history(),
+                "settings": gui_manager.settings.get_settings(),
+                "login": gui_manager.login.get_status(),
+                "manual_mode": twitch_client.get_manual_mode_info(),
+                "current_drop": gui_manager.progress.get_current_drop(),
+            },
+            room=sid,
+        )
 
 
 @sio.event
@@ -289,6 +285,7 @@ async def request_reload(sid):
     """Client requested application reload"""
     if twitch_client:
         from src.config import State
+
         twitch_client.change_state(State.INVENTORY_FETCH)
 
 
@@ -306,13 +303,8 @@ async def run_server(host: str = "0.0.0.0", port: int = 8080):
     """Run the web server (used for development/testing)"""
     global _server_instance
     import uvicorn
-    config = uvicorn.Config(
-        socket_app,
-        host=host,
-        port=port,
-        log_level="info",
-        access_log=False
-    )
+
+    config = uvicorn.Config(socket_app, host=host, port=port, log_level="info", access_log=False)
     server = uvicorn.Server(config)
     _server_instance = server
     try:

@@ -18,14 +18,14 @@ _T = TypeVar("_T")
 
 def create_nonce(chars: str, length: int) -> str:
     """Generate a random nonce string of specified length from given characters."""
-    return ''.join(random.choices(chars, k=length))
+    return "".join(random.choices(chars, k=length))
 
 
 def chunk(to_chunk: abc.Iterable[_T], chunk_length: int) -> abc.Generator[list[_T], None, None]:
     """Split an iterable into chunks of a specified length."""
     list_to_chunk: list[_T] = list(to_chunk)
     for i in range(0, len(list_to_chunk), chunk_length):
-        yield list_to_chunk[i:i + chunk_length]
+        yield list_to_chunk[i : i + chunk_length]
 
 
 def deduplicate(iterable: abc.Iterable[_T]) -> list[_T]:

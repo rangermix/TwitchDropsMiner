@@ -32,9 +32,7 @@ class ConsoleOutputManager:
         timestamp = datetime.now().strftime("%H:%M:%S")
         line = f"[{timestamp}] {message}"
         self._buffer.append(line)
-        asyncio.create_task(
-            self._broadcaster.emit("console_output", {"message": line})
-        )
+        asyncio.create_task(self._broadcaster.emit("console_output", {"message": line}))
 
     def get_history(self) -> list[str]:
         """Get the current console history buffer.

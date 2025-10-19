@@ -34,25 +34,26 @@ class CampaignProgressManager:
         self._remaining_seconds = remaining_seconds
         if drop:
             asyncio.create_task(
-                self._broadcaster.emit("drop_progress", {
-                    "drop_id": drop.id,
-                    "drop_name": drop.name,
-                    "campaign_name": drop.campaign.name,
-                    "campaign_id": drop.campaign.id,
-                    "game_name": drop.campaign.game.name,
-                    "current_minutes": drop.current_minutes,
-                    "required_minutes": drop.required_minutes,
-                    "progress": drop.progress,
-                    "remaining_seconds": remaining_seconds
-                })
+                self._broadcaster.emit(
+                    "drop_progress",
+                    {
+                        "drop_id": drop.id,
+                        "drop_name": drop.name,
+                        "campaign_name": drop.campaign.name,
+                        "campaign_id": drop.campaign.id,
+                        "game_name": drop.campaign.game.name,
+                        "current_minutes": drop.current_minutes,
+                        "required_minutes": drop.required_minutes,
+                        "progress": drop.progress,
+                        "remaining_seconds": remaining_seconds,
+                    },
+                )
             )
 
     def stop_timer(self):
         """Stop the progress timer and clear the current drop."""
         self._current_drop = None
-        asyncio.create_task(
-            self._broadcaster.emit("drop_progress_stop", {})
-        )
+        asyncio.create_task(self._broadcaster.emit("drop_progress_stop", {}))
 
     def minute_almost_done(self) -> bool:
         """Check if the current progress minute is almost complete.
@@ -81,5 +82,5 @@ class CampaignProgressManager:
             "current_minutes": drop.current_minutes,
             "required_minutes": drop.required_minutes,
             "progress": drop.progress,
-            "remaining_seconds": self._remaining_seconds
+            "remaining_seconds": self._remaining_seconds,
         }

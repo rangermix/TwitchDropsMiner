@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 class BenefitType(Enum):
     """Type of drop benefit (reward)."""
+
     UNKNOWN = "UNKNOWN"
     BADGE = "BADGE"
     EMOTE = "EMOTE"
@@ -21,6 +22,7 @@ class BenefitType(Enum):
 
 class Benefit:
     """Represents a reward/benefit from a completed drop."""
+
     __slots__ = ("id", "name", "type", "image_url")
 
     def __init__(self, data: JsonType):

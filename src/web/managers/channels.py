@@ -43,7 +43,7 @@ class ChannelListManager:
             "online": channel.online,
             "drops_enabled": channel.drops_enabled,
             "acl_based": channel.acl_based,
-            "watching": channel.id == self._watching_id
+            "watching": channel.id == self._watching_id,
         }
         self._channels[channel.id] = channel_data
         asyncio.create_task(
@@ -58,16 +58,12 @@ class ChannelListManager:
         """
         if channel.id in self._channels:
             del self._channels[channel.id]
-            asyncio.create_task(
-                self._broadcaster.emit("channel_remove", {"id": channel.id})
-            )
+            asyncio.create_task(self._broadcaster.emit("channel_remove", {"id": channel.id}))
 
     def clear(self):
         """Clear all channels from the display list."""
         self._channels.clear()
-        asyncio.create_task(
-            self._broadcaster.emit("channels_clear", {})
-        )
+        asyncio.create_task(self._broadcaster.emit("channels_clear", {}))
 
     def set_watching(self, channel: Channel):
         """Mark a channel as currently being watched.
@@ -76,16 +72,12 @@ class ChannelListManager:
             channel: The channel now being watched
         """
         self._watching_id = channel.id
-        asyncio.create_task(
-            self._broadcaster.emit("channel_watching", {"id": channel.id})
-        )
+        asyncio.create_task(self._broadcaster.emit("channel_watching", {"id": channel.id}))
 
     def clear_watching(self):
         """Clear the currently watched channel indicator."""
         self._watching_id = None
-        asyncio.create_task(
-            self._broadcaster.emit("channel_watching_clear", {})
-        )
+        asyncio.create_task(self._broadcaster.emit("channel_watching_clear", {}))
 
     def get_selection(self) -> Channel | None:
         """Get user's channel selection from web GUI.
@@ -103,7 +95,8 @@ class ChannelListManager:
 
         # Get the Channel object from the Twitch client
         from src.core.client import Twitch
-        if hasattr(self._gui_manager, '_twitch'):
+
+        if hasattr(self._gui_manager, "_twitch"):
             twitch: Twitch = self._gui_manager._twitch
             return twitch.channels.get(selected_id)
 
@@ -133,7 +126,7 @@ class ChannelListManager:
                 "online": channel.online,
                 "drops_enabled": channel.drops_enabled,
                 "acl_based": channel.acl_based,
-                "watching": channel.id == self._watching_id
+                "watching": channel.id == self._watching_id,
             }
             new_channels[channel.id] = channel_data
             channels_data.append(channel_data)

@@ -108,14 +108,16 @@ class ChannelService:
 
         try:
             response = await self._twitch.gql_request(
-                GQL_OPERATIONS["GameDirectory"].with_variables({
-                    "limit": limit,
-                    "slug": game.slug,
-                    "options": {
-                        "includeRestricted": ["SUB_ONLY_LIVE"],
-                        "systemFilters": filters,
-                    },
-                })
+                GQL_OPERATIONS["GameDirectory"].with_variables(
+                    {
+                        "limit": limit,
+                        "slug": game.slug,
+                        "options": {
+                            "includeRestricted": ["SUB_ONLY_LIVE"],
+                            "systemFilters": filters,
+                        },
+                    }
+                )
             )
         except GQLException as exc:
             raise MinerException(f"Game: {game.slug}") from exc

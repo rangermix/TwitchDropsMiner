@@ -25,6 +25,7 @@ from src.utils import ExponentialBackoff
 if TYPE_CHECKING:
     from src.config import ClientInfo
     from src.config.settings import Settings
+    from src.core.client import Twitch
     from src.web.gui_manager import WebGUIManager
 
 
@@ -46,6 +47,7 @@ class HTTPClient:
         self,
         settings: Settings,
         gui: WebGUIManager,
+        twitch: Twitch,
         client_type: ClientInfo,
     ):
         """
@@ -56,12 +58,15 @@ class HTTPClient:
         settings : Settings
             Application settings for connection quality and proxy configuration
         gui : WebGUIManager
-            GUI manager for user notifications and close detection
+            GUI manager for user notifications
+        twitch : Twitch
+            Twitch client for state checking
         client_type : ClientInfo
             Client type information (User-Agent, Client-ID, etc.)
         """
         self.settings = settings
         self.gui = gui
+        self._twitch = twitch
         self._client_type = client_type
         self._session: aiohttp.ClientSession | None = None
 
@@ -163,7 +168,9 @@ class HTTPClient:
         backoff = ExponentialBackoff(maximum=3 * 60)
 
         for delay in backoff:
-            if self.gui.close_requested:
+            from src.config import State
+
+            if self._twitch._state == State.EXIT:
                 raise ExitRequest()
             elif (
                 invalidate_after is not None
@@ -174,9 +181,7 @@ class HTTPClient:
 
             try:
                 response: aiohttp.ClientResponse | None = None
-                response = await self.gui.coro_unless_closed(
-                    session.request(method, url, **kwargs)
-                )
+                response = await session.request(method, url, **kwargs)
                 assert response is not None
                 logger.debug(f"Response: {response.status}: {response}")
 
@@ -203,9 +208,8 @@ class HTTPClient:
                 if response is not None:
                     response.release()
 
-            # Wait for the backoff delay or until the GUI closes
-            with asyncio.suppress(asyncio.TimeoutError):
-                await asyncio.wait_for(self.gui.wait_until_closed(), timeout=delay)
+            # Wait for the backoff delay
+            await asyncio.sleep(delay)
 
     async def close(self) -> None:
         """

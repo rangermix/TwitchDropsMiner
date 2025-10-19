@@ -49,7 +49,7 @@ GQL_OPERATIONS: dict[str, GQLOperation] = {
         "d86775d0ef16a63a33ad52e80eaff963b2d5b72fada7c991504a57496e1d8e4b",
         variables={
             "fetchRewardCampaigns": False,
-        }
+        },
     ),
     # returns current state of drops (current drop progress)
     "CurrentDrop": GQLOperation(
@@ -66,7 +66,7 @@ GQL_OPERATIONS: dict[str, GQLOperation] = {
         "5a4da2ab3d5b47c9f9ce864e727b2cb346af1e3ea8b897fe8f704a97ff017619",
         variables={
             "fetchRewardCampaigns": False,
-        }
+        },
     ),
     # returns extended information about a particular campaign
     "CampaignDetails": GQLOperation(

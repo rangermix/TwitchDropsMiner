@@ -41,7 +41,8 @@ class DropsCampaign:
         allowed: JsonType = data["allow"]
         self.allowed_channels: list[Channel] = (
             [Channel.from_acl(twitch, channel_data) for channel_data in allowed["channels"]]
-            if allowed["channels"] and allowed.get("isEnabled", True) else []
+            if allowed["channels"] and allowed.get("isEnabled", True)
+            else []
         )
         self.timed_drops: dict[str, TimedDrop] = {
             drop_data["id"]: TimedDrop(self, drop_data, claimed_benefits)
@@ -139,13 +140,15 @@ class DropsCampaign:
             self.eligible  # account is eligible
             and self.active  # campaign is active (and valid)
             and (
-                channel is None or (  # channel isn't specified,
+                channel is None
+                or (  # channel isn't specified,
                     # or there's no ACL, or the channel is in the ACL
                     (not self.allowed_channels or channel in self.allowed_channels)
                     # and the channel is live and playing the campaign's game
                     and (
                         ignore_channel_status
-                        or channel.game is not None and channel.game == self.game
+                        or channel.game is not None
+                        and channel.game == self.game
                     )
                 )
             )
@@ -163,13 +166,10 @@ class DropsCampaign:
             )
         )
 
-    def can_earn(
-        self, channel: Channel | None = None, ignore_channel_status: bool = False
-    ) -> bool:
+    def can_earn(self, channel: Channel | None = None, ignore_channel_status: bool = False) -> bool:
         # True if any of the containing drops can be earned
-        return (
-            self._base_can_earn(channel, ignore_channel_status)
-            and any(drop._base_can_earn() for drop in self.drops)
+        return self._base_can_earn(channel, ignore_channel_status) and any(
+            drop._base_can_earn() for drop in self.drops
         )
 
     def can_earn_within(self, stamp: datetime) -> bool:
@@ -193,7 +193,7 @@ class DropsCampaign:
             # Executes if any drop's extra_current_minutes reach MAX_ESTIMATED_MINUTES
             # TODO: Figure out a better way to handle this case
             logger.warning(
-                f"At least one of the drops in campaign \"{self.name}({self.game.name})\" "
+                f'At least one of the drops in campaign "{self.name}({self.game.name})" '
                 "has reached the maximum extra minutes limit!"
             )
             self._twitch.change_state(State.CHANNEL_SWITCH)

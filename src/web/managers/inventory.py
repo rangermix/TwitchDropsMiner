@@ -28,9 +28,7 @@ class InventoryManager:
     def clear(self):
         """Clear all campaigns from inventory."""
         self._campaigns.clear()
-        asyncio.create_task(
-            self._broadcaster.emit("inventory_clear", {})
-        )
+        asyncio.create_task(self._broadcaster.emit("inventory_clear", {}))
 
     async def add_campaign(self, campaign: DropsCampaign):
         """Add a campaign to the inventory display.
@@ -43,18 +41,20 @@ class InventoryManager:
 
         drops_data = []
         for drop in campaign.drops:
-            drops_data.append({
-                "id": drop.id,
-                "name": drop.name,
-                "current_minutes": drop.current_minutes,
-                "required_minutes": drop.required_minutes,
-                "progress": drop.progress,
-                "is_claimed": drop.is_claimed,
-                "can_claim": drop.can_claim,
-                "rewards": drop.rewards_text(),
-                "starts_at": drop.starts_at.isoformat(),
-                "ends_at": drop.ends_at.isoformat()
-            })
+            drops_data.append(
+                {
+                    "id": drop.id,
+                    "name": drop.name,
+                    "current_minutes": drop.current_minutes,
+                    "required_minutes": drop.required_minutes,
+                    "progress": drop.progress,
+                    "is_claimed": drop.is_claimed,
+                    "can_claim": drop.can_claim,
+                    "rewards": drop.rewards_text(),
+                    "starts_at": drop.starts_at.isoformat(),
+                    "ends_at": drop.ends_at.isoformat(),
+                }
+            )
 
         campaign_data = {
             "id": campaign.id,
@@ -70,7 +70,7 @@ class InventoryManager:
             "expired": campaign.expired,
             "claimed_drops": campaign.claimed_drops,
             "total_drops": campaign.total_drops,
-            "drops": drops_data
+            "drops": drops_data,
         }
 
         self._campaigns[campaign.id] = campaign_data
@@ -90,18 +90,19 @@ class InventoryManager:
             # Find and update the drop in the campaign
             for drop_data in self._campaigns[campaign_id]["drops"]:
                 if drop_data["id"] == drop.id:
-                    drop_data.update({
-                        "current_minutes": drop.current_minutes,
-                        "required_minutes": drop.required_minutes,
-                        "progress": drop.progress,
-                        "is_claimed": drop.is_claimed,
-                        "can_claim": drop.can_claim
-                    })
+                    drop_data.update(
+                        {
+                            "current_minutes": drop.current_minutes,
+                            "required_minutes": drop.required_minutes,
+                            "progress": drop.progress,
+                            "is_claimed": drop.is_claimed,
+                            "can_claim": drop.can_claim,
+                        }
+                    )
                     asyncio.create_task(
-                        self._broadcaster.emit("drop_update", {
-                            "campaign_id": campaign_id,
-                            "drop": drop_data
-                        })
+                        self._broadcaster.emit(
+                            "drop_update", {"campaign_id": campaign_id, "drop": drop_data}
+                        )
                     )
                     break
 

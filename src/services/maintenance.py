@@ -57,7 +57,9 @@ class MaintenanceService:
         3. After reaching the next hour boundary, request inventory reload
         """
         now = datetime.now(timezone.utc)
-        next_period = now + timedelta(minutes=self._twitch.settings.minimum_refresh_interval_minutes)
+        next_period = now + timedelta(
+            minutes=self._twitch.settings.minimum_refresh_interval_minutes
+        )
 
         while True:
             # exit if there's no need to repeat the loop
@@ -75,7 +77,7 @@ class MaintenanceService:
                 (
                     "Maintenance task waiting until: "
                     f"{next_trigger.astimezone().strftime('%X')} ({trigger_type})"
-                )
+                ),
             )
 
             await asyncio.sleep((next_trigger - now).total_seconds())

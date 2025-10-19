@@ -155,8 +155,7 @@ class _AuthState:
                 # the device_code has expired, request a new code
                 continue
 
-
-    def headers(self, *, user_agent: str = '', gql: bool = False) -> JsonType:
+    def headers(self, *, user_agent: str = "", gql: bool = False) -> JsonType:
         """
         Build HTTP headers for Twitch API requests.
 
@@ -181,7 +180,7 @@ class _AuthState:
         if hasattr(self, "session_id"):
             headers["Client-Session-Id"] = self.session_id
         # if hasattr(self, "client_version"):
-            # headers["Client-Version"] = self.client_version
+        # headers["Client-Version"] = self.client_version
         if hasattr(self, "device_id"):
             headers["X-Device-Id"] = self.device_id
         if gql:
@@ -247,7 +246,7 @@ class _AuthState:
                     async with self._twitch.request(
                         "GET",
                         "https://id.twitch.tv/oauth2/validate",
-                        headers={"Authorization": f"OAuth {self.access_token}"}
+                        headers={"Authorization": f"OAuth {self.access_token}"},
                     ) as response:
                         if response.status == 401:
                             # the access token we have is invalid - clear the cookie and reauth

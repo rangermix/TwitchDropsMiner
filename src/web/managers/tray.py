@@ -28,9 +28,7 @@ class TrayIconStub:
             icon: Icon name/identifier to change to
         """
         # Broadcast icon change for potential UI indicators
-        asyncio.create_task(
-            self._broadcaster.emit("tray_icon_change", {"icon": icon})
-        )
+        asyncio.create_task(self._broadcaster.emit("tray_icon_change", {"icon": icon}))
 
     def notify(self, message: str, title: str):
         """Send a system notification (translated to browser notification).
@@ -41,10 +39,7 @@ class TrayIconStub:
         """
         # Send browser notification
         asyncio.create_task(
-            self._broadcaster.emit("notification", {
-                "title": title,
-                "message": message
-            })
+            self._broadcaster.emit("notification", {"title": title, "message": message})
         )
 
     def minimize(self):

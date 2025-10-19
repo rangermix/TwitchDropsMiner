@@ -214,13 +214,11 @@ class WatchService:
                 # Solution 1: use GQL to query for the currently mined drop status
                 try:
                     context = await self._twitch.gql_request(
-                        GQL_OPERATIONS["CurrentDrop"].with_variables(
-                            {"channelID": str(channel.id)}
-                        )
+                        GQL_OPERATIONS["CurrentDrop"].with_variables({"channelID": str(channel.id)})
                     )
-                    drop_data: JsonType | None = (
-                        context["data"]["currentUser"]["dropCurrentSession"]
-                    )
+                    drop_data: JsonType | None = context["data"]["currentUser"][
+                        "dropCurrentSession"
+                    ]
                 except GQLException:
                     drop_data = None
 

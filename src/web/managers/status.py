@@ -24,9 +24,7 @@ class StatusManager:
     def update(self, status: str):
         """Update the current status and broadcast to all clients."""
         self._current_status = status
-        asyncio.create_task(
-            self._broadcaster.emit("status_update", {"status": status})
-        )
+        asyncio.create_task(self._broadcaster.emit("status_update", {"status": status}))
 
     def get(self) -> str:
         """Get the current status message."""
@@ -65,11 +63,14 @@ class WebsocketStatusManager:
 
         # Broadcast the update
         asyncio.create_task(
-            self._broadcaster.emit("websocket_status", {
-                "idx": idx,
-                "status": self._websockets[idx]["status"],
-                "topics": self._websockets[idx]["topics"],
-                "total_websockets": len(self._websockets),
-                "total_topics": sum(ws["topics"] for ws in self._websockets.values())
-            })
+            self._broadcaster.emit(
+                "websocket_status",
+                {
+                    "idx": idx,
+                    "status": self._websockets[idx]["status"],
+                    "topics": self._websockets[idx]["topics"],
+                    "total_websockets": len(self._websockets),
+                    "total_topics": sum(ws["topics"] for ws in self._websockets.values()),
+                },
+            )
         )

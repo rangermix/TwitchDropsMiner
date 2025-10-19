@@ -2,6 +2,7 @@ class MinerException(Exception):
     """
     Base exception class for this application.
     """
+
     def __init__(self, *args: object):
         if args:
             super().__init__(*args)
@@ -15,6 +16,7 @@ class ExitRequest(MinerException):
 
     Intended for internal use only.
     """
+
     def __init__(self):
         super().__init__("Application was requested to exit")
 
@@ -25,6 +27,7 @@ class ReloadRequest(MinerException):
 
     Intended for internal use only.
     """
+
     def __init__(self):
         super().__init__("Application was requested to reload entirely")
 
@@ -33,6 +36,7 @@ class RequestException(MinerException):
     """
     Raised for cases where a web request doesn't return what we wanted it to.
     """
+
     def __init__(self, *args: object):
         if args:
             super().__init__(*args)
@@ -46,6 +50,7 @@ class RequestInvalid(RequestException):
 
     Intended for internal use only.
     """
+
     def __init__(self):
         super().__init__("Request became invalid during its retry loop")
 
@@ -59,6 +64,7 @@ class WebsocketClosed(RequestException):
     received: bool
         `True` if the closing was caused by our side receiving a close frame, `False` otherwise.
     """
+
     def __init__(self, *args: object, received: bool = False):
         if args:
             super().__init__(*args)
@@ -71,6 +77,7 @@ class LoginException(RequestException):
     """
     Raised when an exception occurs during login phase.
     """
+
     def __init__(self, *args: object):
         if args:
             super().__init__(*args)
@@ -82,6 +89,7 @@ class CaptchaRequired(LoginException):
     """
     The most dreaded thing about automated scripts...
     """
+
     def __init__(self):
         super().__init__("Captcha is required")
 
@@ -90,5 +98,6 @@ class GQLException(RequestException):
     """
     Raised when a GQL request returns an error response.
     """
+
     def __init__(self, message: str):
         super().__init__(message)

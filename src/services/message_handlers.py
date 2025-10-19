@@ -110,7 +110,7 @@ class MessageHandlerService:
         if message["old_game"] != message["game"]:
             game_change = f", game changed: {message['old_game']} -> {message['game']}"
         else:
-            game_change = ''
+            game_change = ""
 
         logger.log(CALL, f"Channel update from websocket: {channel.name}{game_change}")
 
@@ -223,9 +223,9 @@ class MessageHandlerService:
                             {"channelID": str(watching_channel.id)}
                         )
                     )
-                    drop_data: JsonType | None = (
-                        context["data"]["currentUser"]["dropCurrentSession"]
-                    )
+                    drop_data: JsonType | None = context["data"]["currentUser"][
+                        "dropCurrentSession"
+                    ]
                     if drop_data is None or drop_data["dropID"] != drop.id:
                         break
                     await asyncio.sleep(2)

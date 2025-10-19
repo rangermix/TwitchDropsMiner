@@ -40,9 +40,9 @@ class Game:
         Converts the game name into a slug, useable for the GQL API.
         """
         # remove specific characters
-        slug_text = re.sub(r'\'', '', self.name.lower())
+        slug_text = re.sub(r"\'", "", self.name.lower())
         # remove non alpha-numeric characters
-        slug_text = re.sub(r'\W+', '-', slug_text)
+        slug_text = re.sub(r"\W+", "-", slug_text)
         # strip and collapse dashes
-        slug_text = re.sub(r'-{2,}', '-', slug_text.strip('-'))
+        slug_text = re.sub(r"-{2,}", "-", slug_text.strip("-"))
         return slug_text

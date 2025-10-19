@@ -1,25 +1,27 @@
 from __future__ import annotations
 
-if __name__ == "__main__":
-    import argparse
-    import asyncio
-    import logging
-    from logging.handlers import TimedRotatingFileHandler
-    import signal
-    import sys
-    import traceback
-    import warnings
+import argparse
+import asyncio
+import logging
+import signal
+import sys
+import traceback
+import warnings
+from logging.handlers import TimedRotatingFileHandler
 
-    import truststore
+import truststore
+
+
+if __name__ == "__main__":
+
     truststore.inject_into_ssl()
 
-    from src.config import FILE_FORMATTER, LOG_PATH, LOGGING_LEVELS, SELF_PATH
+    from src.config import FILE_FORMATTER, LOGGING_LEVELS
     from src.config.settings import Settings
     from src.core.client import Twitch
     from src.exceptions import CaptchaRequired
     from src.i18n import _
     from src.version import __version__
-
 
     logger = logging.getLogger("TwitchDrops")
     # Force INFO level logging by default for better visibility
@@ -73,16 +75,13 @@ if __name__ == "__main__":
     # handle input parameters
     logger.debug("Parsing command line arguments")
     parser = argparse.ArgumentParser(
-        SELF_PATH.name,
         description="A program that allows you to mine timed drops on Twitch.",
     )
     parser.add_argument("--version", action="version", version=f"v{__version__}")
     parser.add_argument("-v", dest="_verbose", action="count", default=0)
     parser.add_argument("--dump", action="store_true")
     # undocumented debug args
-    parser.add_argument(
-        "--debug-ws", dest="_debug_ws", action="store_true", help=argparse.SUPPRESS
-    )
+    parser.add_argument("--debug-ws", dest="_debug_ws", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument(
         "--debug-gql", dest="_debug_gql", action="store_true", help=argparse.SUPPRESS
     )
@@ -101,21 +100,18 @@ if __name__ == "__main__":
     async def main():
         # set language
         from contextlib import suppress
+
         with suppress(ValueError):
             # this language doesn't exist - stick to English
             _.set_language(settings.language)
 
         # Always log to file with timestamped filename in ./logs/ directory
-        from datetime import datetime
         from pathlib import Path
 
         # Create logs directory if it doesn't exist
         logs_dir = Path("logs")
         logs_dir.mkdir(exist_ok=True)
-
-        # Generate timestamped log filename: TDM.YYYY-MM-DDTHH-MM-SS.log
-        timestamp = datetime.now().isoformat(timespec='seconds').replace(':', '-')
-        log_file = logs_dir / f"TDM.log"
+        log_file = logs_dir / "TDM.log"
 
         # Add file handler for timestamped log
         file_handler = TimedRotatingFileHandler(log_file, when="midnight", backupCount=5)
@@ -139,6 +135,7 @@ if __name__ == "__main__":
         logger.info("Initializing web GUI mode")
         from src.web import app as webapp
         from src.web.gui_manager import WebGUIManager
+
         # Set up web GUI
         logger.debug("Creating WebGUIManager")
         client.gui = WebGUIManager(client)
@@ -147,16 +144,14 @@ if __name__ == "__main__":
         webapp.set_managers(client.gui, client)
         # Start web server in background
         logger.info("Starting web server on http://0.0.0.0:8080")
-        web_server_task = asyncio.create_task(
-            webapp.run_server(host="0.0.0.0", port=8080)
-        )
+        web_server_task = asyncio.create_task(webapp.run_server(host="0.0.0.0", port=8080))
         logger.info("Web server task created")
 
         loop = asyncio.get_running_loop()
         if sys.platform == "linux":
             logger.debug("Setting up signal handlers for SIGINT and SIGTERM")
-            loop.add_signal_handler(signal.SIGINT, lambda *_: client.gui.close())
-            loop.add_signal_handler(signal.SIGTERM, lambda *_: client.gui.close())
+            loop.add_signal_handler(signal.SIGINT, lambda *_: client.close())
+            loop.add_signal_handler(signal.SIGTERM, lambda *_: client.close())
 
         logger.info("Starting main client run loop")
         try:
@@ -165,12 +160,10 @@ if __name__ == "__main__":
         except CaptchaRequired:
             logger.error("Captcha required - cannot continue")
             exit_status = 1
-            client.prevent_close()
             client.print(_("error", "captcha"))
         except Exception:
             logger.exception("Fatal error encountered during client run")
             exit_status = 1
-            client.prevent_close()
             client.print("Fatal error encountered:\n")
             client.print(traceback.format_exc())
         finally:
@@ -200,14 +193,16 @@ if __name__ == "__main__":
                 except Exception as e:
                     logger.error(f"Error while shutting down web server: {e}")
             else:
-                logger.debug(f"Web server task status: task={web_server_task is not None}, done={web_server_task.done() if web_server_task else 'N/A'}")
+                logger.debug(
+                    f"Web server task status: task={web_server_task is not None}, done={web_server_task.done() if web_server_task else 'N/A'}"
+                )
             logger.info("Shutting down Twitch client")
             await client.shutdown()
             logger.info("Twitch client shutdown completed")
-        logger.info(f"Shutdown complete - close_requested={client.gui.close_requested}, exit_status={exit_status}")
-        if not client.gui.close_requested:
-            logger.warning("User didn't request closure - showing error state")
-            # user didn't request the closure
+        logger.info(f"Shutdown complete - exit_status={exit_status}")
+        if exit_status != 0:
+            logger.warning("Application terminated with error - showing error state")
+            # Application terminated with error
             client.gui.tray.change_icon("error")
             client.print(_("status", "terminated"))
             client.gui.status.update(_("gui", "status", "terminated"))
@@ -216,16 +211,11 @@ if __name__ == "__main__":
             # Web GUI doesn't need to wait - browser clients can stay connected
             logger.info("Web GUI - no need to wait for user to close browser")
         else:
-            logger.info("Close already requested - proceeding with shutdown")
+            logger.info("Normal shutdown - proceeding")
         # save the application state
         logger.info("Saving application state")
         client.save(force=True)
         logger.info("Application state saved")
-        logger.info("Stopping GUI")
-        client.gui.stop()
-        logger.info("GUI stopped")
-        logger.info("Closing GUI window")
-        client.gui.close_window()
         logger.info(f"=== Exiting with status code: {exit_status} ===")
         sys.exit(exit_status)
 

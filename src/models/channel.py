@@ -60,7 +60,7 @@ class Stream:
                     "muted": False,
                     "player": "site",
                     "user_id": self.channel._twitch._auth_state.user_id,
-                }
+                },
             }
         ]
         return {"data": (b64encode(json_minify(payload).encode("utf8"))).decode("utf8")}
@@ -107,7 +107,7 @@ class Stream:
         token_value = token_data["value"]
         token_signature = token_data["signature"]
         # using the token, query Twitch for a list of all available stream qualities
-        available_qualities: str = ''
+        available_qualities: str = ""
         try:
             async with self.channel._twitch.request(
                 "GET",
@@ -128,7 +128,7 @@ class Stream:
                 if isinstance(available_json, list):
                     available_json = available_json[0]
                 if "error" in available_json:
-                    logger.error(f"Stream URL get error: \"{available_json['error']}\"")
+                    logger.error(f'Stream URL get error: "{available_json["error"]}"')
                     self.channel.set_offline()
                 return None
             # pick the last URL from the list, usually with the lowest quality stream
@@ -141,8 +141,15 @@ class Stream:
 
 class Channel:
     __slots__ = (
-        "_twitch", "_gui_channels", "id", "_login", "_display_name", "_spade_url",
-        "_stream", "_pending_stream_up", "acl_based"
+        "_twitch",
+        "_gui_channels",
+        "id",
+        "_login",
+        "_display_name",
+        "_spade_url",
+        "_stream",
+        "_pending_stream_up",
+        "acl_based",
     )
 
     def __init__(
@@ -289,9 +296,7 @@ class Channel:
 
         For mobile view, spade_url is available immediately from the page, skipping step #2.
         """
-        SETTINGS_PATTERN: str = (
-            r'src="(https://[\w.]+/config/settings\.[0-9a-f]{32}\.js)"'
-        )
+        SETTINGS_PATTERN: str = r'src="(https://[\w.]+/config/settings\.[0-9a-f]{32}\.js)"'
         SPADE_PATTERN: str = (
             r'"spade_?url": ?"(https://video-edge-[.\w\-/]+\.ts(?:\?allow_stream=true)?)"'
         )
@@ -441,7 +446,7 @@ class Channel:
         # the response may contain some invalid JSON with duplicate double quotes
         # in the value strings: we need to get rid of them by removing the "url" key entirely
         # if no JSON can be found within the response, this is a NOOP
-        available_chunks = re.sub(r'"url": ?".+}",', '', available_chunks)
+        available_chunks = re.sub(r'"url": ?".+}",', "", available_chunks)
         # try to decode the suspected JSON
         try:
             available_json: JsonType = json.loads(available_chunks)
@@ -453,7 +458,7 @@ class Channel:
             if isinstance(available_json, list):
                 available_json = available_json[0]
             if "error" in available_json:
-                logger.error(f"Send watch error: \"{available_json['error']}\"")
+                logger.error(f'Send watch error: "{available_json["error"]}"')
             return False
         # the list contains ~10-13 chunks of the stream at 2s intervals,
         # pick the last chunk URL available. Ensure it's not the end-of-stream tag,

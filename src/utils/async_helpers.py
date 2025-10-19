@@ -37,7 +37,7 @@ def format_traceback(exc: BaseException, **kwargs: Any) -> str:
     Like `traceback.print_exc` but returns a string. Uses the passed-in exception.
     Any additional `**kwargs` are passed to the underlaying `traceback.format_exception`.
     """
-    return ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, **kwargs))
+    return "".join(traceback.format_exception(type(exc), exc, exc.__traceback__, **kwargs))
 
 
 def task_wrapper(
@@ -53,8 +53,9 @@ def task_wrapper(
     Handles ExitRequest and ReloadRequest silently, logs other exceptions.
     Critical tasks will attempt to find and close the Twitch instance on failure.
     """
+
     def decorator(
-        afunc: abc.Callable[_P, abc.Coroutine[Any, Any, _T]]
+        afunc: abc.Callable[_P, abc.Coroutine[Any, Any, _T]],
     ) -> abc.Callable[_P, abc.Coroutine[Any, Any, _T]]:
         @wraps(afunc)
         async def wrapper(*args: _P.args, **kwargs: _P.kwargs):
@@ -69,6 +70,7 @@ def task_wrapper(
                     # there isn't an easy and sure way to obtain the Twitch instance here,
                     # but we can improvise finding it
                     from src.core.client import Twitch  # cyclic import
+
                     probe = args and args[0] or None  # extract from 'self' arg
                     if isinstance(probe, Twitch):
                         probe.close()
@@ -77,7 +79,9 @@ def task_wrapper(
                         if isinstance(probe, Twitch):
                             probe.close()
                 raise  # raise up to the wrapping task
+
         return wrapper
+
     if afunc is None:
         return decorator
     return decorator(afunc)

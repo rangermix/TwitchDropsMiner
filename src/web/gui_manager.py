@@ -6,7 +6,6 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from src.i18n import _
 from src.models.game import Game
 from src.web.managers.broadcaster import WebSocketBroadcaster
 from src.web.managers.cache import ImageCache
@@ -45,7 +44,6 @@ class WebGUIManager:
     def __init__(self, twitch: Twitch):
         self._twitch: Twitch = twitch
         self._broadcaster = WebSocketBroadcaster()
-        self._close_requested = asyncio.Event()
 
         # Create component managers
         self.status = StatusManager(self._broadcaster)
@@ -74,79 +72,6 @@ class WebGUIManager:
             sio: The Socket.IO AsyncServer instance
         """
         self._broadcaster.set_socketio(sio)
-
-    @property
-    def close_requested(self) -> bool:
-        """Check if application closure has been requested.
-
-        Returns:
-            True if close was requested via GUI
-        """
-        return self._close_requested.is_set()
-
-    def start(self):
-        """Start the GUI (logs ready message in web mode)."""
-        logger.info("Web GUI started - access via browser")
-        self.status.update(_("gui", "status", "ready"))
-
-    def close(self, *args) -> int:
-        """Request application closure.
-
-        Returns:
-            Exit code (0 for normal shutdown)
-        """
-        self._close_requested.set()
-        # notify client we're supposed to close
-        self._twitch.close()
-        logger.info("Close requested via web GUI")
-        return 0
-
-    def prevent_close(self):
-        """Prevent window from closing (no-op in web mode).
-
-        In web mode, users can still navigate away from the page.
-        """
-        pass
-
-    def stop(self):
-        """Stop the GUI."""
-        logger.info("Web GUI stopped")
-
-    def close_window(self):
-        """Close the GUI window (no-op in web mode)."""
-        pass
-
-    async def wait_until_closed(self):
-        """Wait until the GUI is closed by the user."""
-        await self._close_requested.wait()
-
-    async def coro_unless_closed(self, coro):
-        """Run a coroutine unless the GUI is closed.
-
-        Races the provided coroutine against the close event, canceling
-        the coroutine if close is requested and raising ExitRequest.
-
-        Args:
-            coro: Coroutine to run
-
-        Returns:
-            Result of the coroutine if it completes first
-
-        Raises:
-            ExitRequest: If close is requested during execution
-        """
-        # Race the coroutine against the close event
-        tasks = [asyncio.ensure_future(coro), asyncio.ensure_future(self._close_requested.wait())]
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        # Cancel any pending tasks
-        for task in pending:
-            task.cancel()
-        # If close was requested, raise ExitRequest
-        if self._close_requested.is_set():
-            from src.exceptions import ExitRequest
-            raise ExitRequest()
-        # Otherwise return the result
-        return await next(iter(done))
 
     def save(self, *, force: bool = False):
         """Save GUI state and settings.
@@ -195,9 +120,7 @@ class WebGUIManager:
         Args:
             sound: Whether to play notification sound
         """
-        asyncio.create_task(
-            self._broadcaster.emit("attention_required", {"sound": sound})
-        )
+        asyncio.create_task(self._broadcaster.emit("attention_required", {"sound": sound}))
 
     def select_channel(self, channel_id: int):
         """Select a channel (called by webapp when user clicks channel).
@@ -223,9 +146,7 @@ class WebGUIManager:
         Args:
             dark_mode: Whether to use dark theme
         """
-        asyncio.create_task(
-            self._broadcaster.emit("theme_change", {"dark_mode": dark_mode})
-        )
+        asyncio.create_task(self._broadcaster.emit("theme_change", {"dark_mode": dark_mode}))
 
     def broadcast_manual_mode_change(self, manual_mode_info: dict):
         """Broadcast manual mode status change to connected clients.
@@ -233,9 +154,7 @@ class WebGUIManager:
         Args:
             manual_mode_info: Manual mode status from get_manual_mode_info()
         """
-        asyncio.create_task(
-            self._broadcaster.emit("manual_mode_update", manual_mode_info)
-        )
+        asyncio.create_task(self._broadcaster.emit("manual_mode_update", manual_mode_info))
 
 
 # Type aliases for backwards compatibility with code that imports from gui

@@ -63,16 +63,12 @@ class GQLClient:
         self._qgl_limiter = RateLimiter(capacity=5, window=1)
 
     @overload
-    async def request(self, ops: GQLOperation) -> JsonType:
-        ...
+    async def request(self, ops: GQLOperation) -> JsonType: ...
 
     @overload
-    async def request(self, ops: list[GQLOperation]) -> list[JsonType]:
-        ...
+    async def request(self, ops: list[GQLOperation]) -> list[JsonType]: ...
 
-    async def request(
-        self, ops: GQLOperation | list[GQLOperation]
-    ) -> JsonType | list[JsonType]:
+    async def request(self, ops: GQLOperation | list[GQLOperation]) -> JsonType | list[JsonType]:
         """
         Execute one or more GraphQL operations.
 
@@ -105,9 +101,7 @@ class GQLClient:
                     "POST",
                     "https://gql.twitch.tv/gql",
                     json=ops,
-                    headers=auth_state.headers(
-                        user_agent=self._client_type.USER_AGENT, gql=True
-                    ),
+                    headers=auth_state.headers(user_agent=self._client_type.USER_AGENT, gql=True),
                 ) as response:
                     response_json: JsonType | list[JsonType] = await response.json()
 
@@ -123,13 +117,9 @@ class GQLClient:
                 if "errors" in response_json:
                     for error_dict in response_json["errors"]:
                         if "message" in error_dict:
-                            if (
-                                single_retry
-                                and error_dict["message"]
-                                in (
-                                    "service error",
-                                    "PersistedQueryNotFound",
-                                )
+                            if single_retry and error_dict["message"] in (
+                                "service error",
+                                "PersistedQueryNotFound",
                             ):
                                 logger.error(
                                     f"Retrying a {error_dict['message']} for "
@@ -160,9 +150,7 @@ class GQLClient:
                         raise GQLException(response_json["errors"])
                 # Other error handling
                 elif "error" in response_json:
-                    raise GQLException(
-                        f"{response_json['error']}: {response_json['message']}"
-                    )
+                    raise GQLException(f"{response_json['error']}: {response_json['message']}")
 
                 if force_retry:
                     break

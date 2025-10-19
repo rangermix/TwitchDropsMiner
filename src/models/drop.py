@@ -22,12 +22,12 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("TwitchDrops")
-DIMS_PATTERN = re.compile(r'-\d+x\d+(?=\.(?:jpg|png|gif)$)', re.I)
+DIMS_PATTERN = re.compile(r"-\d+x\d+(?=\.(?:jpg|png|gif)$)", re.I)
 
 
 def remove_dimensions(url: str) -> str:
     """Remove dimension suffix from Twitch image URLs (e.g., -285x380.jpg)."""
-    return DIMS_PATTERN.sub('', url)
+    return DIMS_PATTERN.sub("", url)
 
 
 class BaseDrop:
@@ -71,7 +71,7 @@ class BaseDrop:
         elif self.can_earn():
             additional = ", can_earn=True"
         else:
-            additional = ''
+            additional = ""
         return f"Drop({self.rewards_text()}{additional})"
 
     @property
@@ -107,11 +107,9 @@ class BaseDrop:
             and self.starts_at < stamp
         )
 
-    def can_earn(
-        self, channel: Channel | None = None, ignore_channel_status: bool = False
-    ) -> bool:
-        return (
-            self._base_can_earn() and self.campaign._base_can_earn(channel, ignore_channel_status)
+    def can_earn(self, channel: Channel | None = None, ignore_channel_status: bool = False) -> bool:
+        return self._base_can_earn() and self.campaign._base_can_earn(
+            channel, ignore_channel_status
         )
 
     @property
@@ -152,7 +150,7 @@ class BaseDrop:
             # two different claim texts, becase a new line after the game name
             # looks ugly in the output window - replace it with a space
             self._twitch.print(
-                _("status", "claimed_drop").format(drop=claim_text.replace('\n', ' '))
+                _("status", "claimed_drop").format(drop=claim_text.replace("\n", " "))
             )
             self._twitch.gui.tray.notify(claim_text, _("gui", "tray", "notification_title"))
         else:
@@ -183,9 +181,9 @@ class BaseDrop:
         elif "claimDropRewards" in data:
             if not data["claimDropRewards"]:
                 return False
-            elif (
-                data["claimDropRewards"]["status"]
-                in ("ELIGIBLE_FOR_ALL", "DROP_INSTANCE_ALREADY_CLAIMED")
+            elif data["claimDropRewards"]["status"] in (
+                "ELIGIBLE_FOR_ALL",
+                "DROP_INSTANCE_ALREADY_CLAIMED",
             ):
                 return True
         return False
@@ -211,11 +209,11 @@ class TimedDrop(BaseDrop):
         elif self.can_earn():
             additional = ", can_earn=True"
         else:
-            additional = ''
+            additional = ""
         if 0 < self.current_minutes < self.required_minutes:
             minutes = f", {self.current_minutes}/{self.required_minutes}"
         else:
-            minutes = ''
+            minutes = ""
         return f"Drop({self.rewards_text()}{minutes}{additional})"
 
     @property
@@ -257,6 +255,7 @@ class TimedDrop(BaseDrop):
     @property
     def availability(self) -> float:
         import math
+
         now = datetime.now(timezone.utc)
         if self.required_minutes > 0 and self.total_remaining_minutes > 0 and now < self.ends_at:
             return ((self.ends_at - now).total_seconds() / 60) / self.total_remaining_minutes

@@ -34,26 +34,11 @@ from .constants import (
 )
 from .operations import GQL_OPERATIONS
 from .paths import (
-    CACHE_DB,
-    CACHE_PATH,
     COOKIES_PATH,
     DATA_DIR,
-    DUMP_PATH,
-    IS_DOCKER,
-    IS_PACKAGED,
     LANG_PATH,
-    LOCK_PATH,
-    LOG_PATH,
-    SCRIPTS_PATH,
-    SELF_PATH,
     SETTINGS_PATH,
-    SITE_PACKAGES_PATH,
-    SYS_SCRIPTS,
-    SYS_SITE_PACKAGES,
-    VENV_PATH,
-    WORKING_DIR,
     _merge_vars,
-    _resource_path,
 )
 
 
@@ -85,25 +70,10 @@ __all__ = [
     "WATCH_INTERVAL",
     "WINDOW_TITLE",
     # paths.py
-    "IS_PACKAGED",
-    "IS_DOCKER",
-    "SYS_SITE_PACKAGES",
-    "SYS_SCRIPTS",
-    "SELF_PATH",
-    "WORKING_DIR",
     "DATA_DIR",
-    "VENV_PATH",
-    "SITE_PACKAGES_PATH",
-    "SCRIPTS_PATH",
     "LANG_PATH",
-    "LOG_PATH",
-    "DUMP_PATH",
-    "LOCK_PATH",
-    "CACHE_PATH",
-    "CACHE_DB",
     "COOKIES_PATH",
     "SETTINGS_PATH",
-    "_resource_path",
     "_merge_vars",
     # client_info.py
     "ClientInfo",
