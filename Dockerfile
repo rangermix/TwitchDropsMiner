@@ -20,7 +20,6 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    DOCKER_ENV=1 \
     PORT=8080
 
 # Set working directory
