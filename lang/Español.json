@@ -49,12 +49,6 @@
             "settings": "Configuración",
             "help": "Ayuda"
         },
-        "tray": {
-            "notification_title": "Drop minado",
-            "minimize": "Minimizar a la bandeja",
-            "show": "Mostrar",
-            "quit": "Salir"
-        },
         "login": {
             "name": "Inicio de sesión",
             "labels": "Estado:\nUsuario:",
@@ -131,17 +125,8 @@
         "settings": {
             "general": {
                 "name": "Ajustes generales",
-                "autostart": "Ejecutar al iniciar el sistema: ",
-                "tray": "Ejecutar en la bandeja del sistema: ",
-                "tray_notifications": "Mostrar notificaciones: ",
                 "dark_mode": "Modo oscuro: ",
-                "priority_mode": "Modo de prioridad: ",
                 "proxy": "Proxy (requiere reinicio):"
-            },
-            "priority_modes": {
-                "priority_only": "Solo juegos preferidos",
-                "ending_soonest": "Terminando pronto",
-                "low_availability": "Poca disponibilidad primero"
             },
             "game_name": "Nombre del juego",
             "priority": "Lista de juegos preferidos",

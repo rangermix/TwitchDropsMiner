@@ -49,12 +49,6 @@
             "settings": "Einstellungen",
             "help": "Hilfe"
         },
-        "tray": {
-            "notification_title": "Drop abgeholt",
-            "minimize": "Minimiere ins System Tray",
-            "show": "Anzeigen",
-            "quit": "Beenden"
-        },
         "login": {
             "name": "Login",
             "labels": "Status:\nBenutzer ID:",
@@ -132,7 +126,6 @@
             "general": {
                 "name": "Allgemein",
                 "autostart": "Autostart: ",
-                "tray": "Autostart ins System Tray: ",
                 "priority_only": "Nur Priorität: ",
                 "dark_mode": "Dunkler Modus: ",
                 "proxy": "Proxy (Erfordert Neustart):"

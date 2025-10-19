@@ -49,12 +49,6 @@
             "settings": "Ustawienia",
             "help": "Pomoc"
         },
-        "tray": {
-            "notification_title": "Drop odebrany",
-            "minimize": "Zminimalizuj",
-            "show": "Pokaż",
-            "quit": "Wyjdź"
-        },
         "login": {
             "name": "Logowanie",
             "labels": "Status:\nIdentyfikator:",
@@ -132,8 +126,6 @@
             "general": {
                 "name": "Ogólne",
                 "autostart": "Autostart: ",
-                "tray": "Autostart z zasobnika: ",
-                "tray_notifications": "Powiadomienia z zasobnika: ",
                 "dark_mode": "Tryb ciemny: ",
                 "priority_mode": "Tryb priorytetu: ",
                 "proxy": "Proxy (wymaga restartu):"

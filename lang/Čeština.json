@@ -42,12 +42,6 @@
             "settings": "Nastavení",
             "help": "Nápověda"
         },
-        "tray": {
-            "notification_title": "Začít sbírat dropy",
-            "minimize": "Minimalizovat",
-            "show": "Zobrazit",
-            "quit": "Ukončit"
-        },
         "login": {
             "name": "Přihlášení k službě Twitch",
             "labels": "Uživatelské ID:",
@@ -125,7 +119,6 @@
             "general": {
                 "name": "Nastavení",
                 "autostart": "Automatické spuštění: ",
-                "tray": "Automaticky spusti minimalizovaně: ",
                 "priority_only": "Pouze prioritní: ",
                 "dark_mode": "Tmavý režim: ",
                 "proxy": "Proxy:"

@@ -49,12 +49,6 @@
             "settings": "Instellingen",
             "help": "Help"
         },
-        "tray": {
-            "notification_title": "Drop verkregen",
-            "minimize": "Minimaliseren naar taakbalk",
-            "show": "Weergeven",
-            "quit": "Verlaten"
-        },
         "login": {
             "name": "Login",
             "labels": "Status:\nGebruiker ID:",
@@ -131,8 +125,6 @@
         "settings": {
             "general": {
                 "name": "Algemeen",
-                "autostart": "Autostart: ",
-                "tray": "Automatisch starten in het taakbalk: ",
                 "priority_only": "Alleen prioriteit: ",
                 "dark_mode": "Donkere modus: ",
                 "proxy": "Proxy (Vereist opnieuw opstarten):"

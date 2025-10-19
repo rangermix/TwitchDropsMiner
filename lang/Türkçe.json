@@ -49,12 +49,6 @@
             "settings": "Ayarlar",
             "help": "Yardım"
         },
-        "tray": {
-            "notification_title": "Drop alındı",
-            "minimize": "Sistem tepsisine küçült",
-            "show": "Göster",
-            "quit": "Çık"
-        },
         "login": {
             "name": "Giriş Yap",
             "labels": "Durum:\nKullanıcı ID:",
@@ -131,8 +125,6 @@
         "settings": {
             "general": {
                 "name": "Genel",
-                "autostart": "Otomatik başlatma: ",
-                "tray": "Sistem tepsisine otomatik başlatma: ",
                 "priority_only": "Yalnızca öncelik: ",
                 "dark_mode": "Karanlık mod: ",
                 "proxy": "Proxy (Yeniden başlatma gerektirir):"

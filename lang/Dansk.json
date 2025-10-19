@@ -49,12 +49,6 @@
             "settings": "Indstillinger",
             "help": "Hjælp"
         },
-        "tray": {
-            "notification_title": "Mined Belønning",
-            "minimize": "Minimer til systembakken",
-            "show": "Vis",
-            "quit": "Afslut"
-        },
         "login": {
             "name": "Login formular",
             "labels": "Status:\nBruger ID:",
@@ -132,8 +126,6 @@
             "general": {
                 "name": "General",
                 "autostart": "Automatisk start: ",
-                "tray": "Automatisk start i systembakken: ",
-                "tray_notifications": "Bakkemeddelelser: ",
                 "priority_only": "Kun prioritet: ",
                 "dark_mode": "Mørk tilstand: ",
                 "proxy": "Proxy (kræver genstart):"

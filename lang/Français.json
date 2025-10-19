@@ -49,12 +49,6 @@
             "settings": "Paramètres",
             "help": "Aide"
         },
-        "tray": {
-            "notification_title": "Drop miné",
-            "minimize": "Réduire dans la barre des tâches",
-            "show": "Afficher",
-            "quit": "Quitter"
-        },
         "login": {
             "name": "Formulaire de connexion",
             "labels": "Statut :\nIdentifiant utilisateur :",
@@ -132,8 +126,6 @@
             "general": {
                 "name": "Général",
                 "autostart": "Démarrage automatique :",
-                "tray": "Démarrage automatique dans la barre des tâches :",
-                "tray_notifications": "Notifications dans la barre des tâches :",
                 "dark_mode": "Mode sombre : ",
                 "priority_mode": "Mode de priorité :",
                 "proxy": "Proxy (nécessite un redémarrage) :"

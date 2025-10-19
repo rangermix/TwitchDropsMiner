@@ -203,7 +203,6 @@ if __name__ == "__main__":
         if exit_status != 0:
             logger.warning("Application terminated with error - showing error state")
             # Application terminated with error
-            client.gui.tray.change_icon("error")
             client.print(_("status", "terminated"))
             client.gui.status.update(_("gui", "status", "terminated"))
             # notify the user about the closure
@@ -220,13 +219,4 @@ if __name__ == "__main__":
         sys.exit(exit_status)
 
     asyncio.run(main())
-    # try:
-    #     # use lock_file to check if we're not already running
-    #     success, file = lock_file(LOCK_PATH)
-    #     if not success:
-    #         # already running - exit
-    #         sys.exit(3)
 
-    #     asyncio.run(main())
-    # finally:
-    #     file.close()

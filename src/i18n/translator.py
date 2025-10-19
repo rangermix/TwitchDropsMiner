@@ -67,13 +67,6 @@ class GUITabs(TypedDict):
     help: str
 
 
-class GUITray(TypedDict):
-    notification_title: str
-    minimize: str
-    show: str
-    quit: str
-
-
 class GUILoginForm(TypedDict):
     name: str
     labels: str
@@ -161,8 +154,6 @@ class GUIInventory(TypedDict):
 class GUISettingsGeneral(TypedDict):
     name: str
     autostart: str
-    tray: str
-    tray_notifications: str
     dark_mode: str
     priority_mode: str
     proxy: str
@@ -202,7 +193,6 @@ class GUIMessages(TypedDict):
     output: str
     status: GUIStatus
     tabs: GUITabs
-    tray: GUITray
     login: GUILoginForm
     websocket: GUIWebsocket
     progress: GUIProgress
@@ -279,12 +269,6 @@ default_translation: Translation = {
             "inventory": "Inventory",
             "settings": "Settings",
             "help": "Help",
-        },
-        "tray": {
-            "notification_title": "Mined Drop",
-            "minimize": "Minimize to Tray",
-            "show": "Show",
-            "quit": "Quit",
         },
         "login": {
             "name": "Login Form",
@@ -363,8 +347,6 @@ default_translation: Translation = {
             "general": {
                 "name": "General",
                 "autostart": "Autostart: ",
-                "tray": "Autostart into tray: ",
-                "tray_notifications": "Tray notifications: ",
                 "dark_mode": "Dark mode: ",
                 "priority_mode": "Priority mode: ",
                 "proxy": "Proxy (requires restart):",

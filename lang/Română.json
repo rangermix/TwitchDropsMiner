@@ -49,12 +49,6 @@
             "settings": "Setări",
             "help": "Ajutor"
         },
-        "tray": {
-            "notification_title": "Drop minat",
-            "minimize": "Minimizați în bara de activități",
-            "show": "Arată",
-            "quit": "Renunțare"
-        },
         "login": {
             "name": "Formular de conectare",
             "labels": "Statut :\nID-ul de utilizator :",
@@ -132,8 +126,6 @@
             "general": {
                 "name": "General",
                 "autostart": "Pornire automată :",
-                "tray": "Pornire automată în bara de activități :",
-                "tray_notifications": "Notificări în bara de activități :",
                 "dark_mode": "Mod întunecat :",
                 "priority_only": "Doar cu prioritate :",
                 "proxy": "Proxy (necesită repornire) :"

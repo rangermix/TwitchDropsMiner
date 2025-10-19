@@ -10,7 +10,6 @@ This package contains all component managers for the web-based GUI:
 - InventoryManager: Drop campaigns and inventory management
 - LoginFormManager: Authentication and OAuth flow handling
 - SettingsManager: Application settings configuration
-- TrayIconStub: System tray stub (browser notifications in web mode)
 - ImageCache: Minimal image caching for campaign artwork
 """
 
@@ -23,7 +22,6 @@ from src.web.managers.inventory import InventoryManager
 from src.web.managers.login import LoginData, LoginFormManager
 from src.web.managers.settings import SettingsManager
 from src.web.managers.status import StatusManager, WebsocketStatusManager
-from src.web.managers.tray import TrayIconStub
 
 
 __all__ = [
@@ -37,6 +35,5 @@ __all__ = [
     "LoginFormManager",
     "LoginData",
     "SettingsManager",
-    "TrayIconStub",
     "ImageCache",
 ]

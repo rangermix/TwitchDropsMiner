@@ -49,12 +49,6 @@
             "settings": "Impostazioni",
             "help": "Aiuto"
         },
-        "tray": {
-            "notification_title": "Premio Ottenuto",
-            "minimize": "Minimizza nella barra delle applicazioni",
-            "show": "Mostra",
-            "quit": "Esci"
-        },
         "login": {
             "name": "Dettagli Login",
             "labels": "Stato:\nID Utente:",
@@ -131,9 +125,6 @@
         "settings": {
             "general": {
                 "name": "Generale",
-                "autostart": "Avvio automatico: ",
-                "tray": "Avvio automatico nella barra delle applicazioni: ",
-                "tray_notifications": "Notifiche: ",
                 "dark_mode": "Modalità scura: ",
                 "priority_only": "Solo priorità: ",
                 "proxy": "Proxy (richiede il riavvio):"

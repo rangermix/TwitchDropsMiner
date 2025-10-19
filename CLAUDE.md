@@ -73,7 +73,7 @@ src/
 ├── api/             # External API (HTTP client, GraphQL client)
 ├── websocket/       # Real-time updates (websocket connection, pool)
 ├── web/             # Web GUI (app, gui_manager, api/)
-│   └── managers/    # Individual UI managers (status, console, channels, campaigns, inventory, login, settings, cache, tray, broadcaster)
+│   └── managers/    # Individual UI managers (status, console, channels, campaigns, inventory, login, settings, cache, broadcaster)
 ├── services/        # Business logic services (channel, inventory, watch, maintenance, message_handlers)
 ├── core/            # Core client (Twitch client)
 ├── exceptions.py    # Custom exceptions
@@ -127,7 +127,7 @@ Note: The services layer is complete and handles all business logic that was pre
 
 **src/web/gui_manager.py** - Web GUI:
 - `WebGUIManager`: Main GUI coordinator
-- Composes individual managers for different UI concerns (status, console, channels, campaigns, inventory, login, settings, cache, tray)
+- Composes individual managers for different UI concerns (status, console, channels, campaigns, inventory, login, settings, cache)
 - Uses `WebSocketBroadcaster` for real-time Socket.IO updates
 - Pure asyncio, no tkinter dependency
 
@@ -236,7 +236,7 @@ The application uses a web-based interface accessible via browser:
 ### Web GUI Components
 
 **src/web/gui_manager.py** - WebGUIManager class:
-- Managers: StatusManager, ConsoleOutputManager, ChannelListManager, CampaignProgressManager, InventoryManager, LoginFormManager, SettingsManager, CacheManager, TrayManager
+- Managers: StatusManager, ConsoleOutputManager, ChannelListManager, CampaignProgressManager, InventoryManager, LoginFormManager, SettingsManager, CacheManager
 - Uses WebSocketBroadcaster to push real-time updates to connected clients via Socket.IO
 - Pure async/await implementation
 

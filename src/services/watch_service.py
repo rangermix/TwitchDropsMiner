@@ -121,7 +121,6 @@ class WatchService:
             channel: The channel to start watching
             update_status: Whether to print status message and update status bar
         """
-        self._twitch.gui.tray.change_icon("active")
         self._twitch.gui.channels.set_watching(channel)
         self._twitch.watching_channel.set(channel)
 

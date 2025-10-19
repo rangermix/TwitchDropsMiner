@@ -49,12 +49,6 @@
             "settings": "设置",
             "help": "帮助"
         },
-        "tray": {
-            "notification_title": "开始掉宝活动",
-            "minimize": "窗口最小化",
-            "show": "掉宝活动",
-            "quit": "退出"
-        },
         "login": {
             "name": "登录Twitch账号",
             "labels": "状态:\n用户ID:",
@@ -131,9 +125,6 @@
         "settings": {
             "general": {
                 "name": "功能设置",
-                "autostart": "开机自启: ",
-                "tray": "开机自启并最小化: ",
-                "tray_notifications": "启用托盘通知: ",
                 "dark_mode": "深色模式: ",
                 "priority_mode": "掉宝模式: ",
                 "proxy": "代理:"

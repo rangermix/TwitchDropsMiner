@@ -49,12 +49,6 @@
       "settings": "設定",
       "help": "ヘルプ"
     },
-    "tray": {
-      "notification_title": "ドロップを取得しました",
-      "minimize": "トレイに最小化",
-      "show": "表示",
-      "quit": "終了"
-    },
     "login": {
       "name": "ログインフォーム",
       "labels": "ステータス：\nユーザーID：",
@@ -131,9 +125,6 @@
     "settings": {
       "general": {
         "name": "一般",
-        "autostart": "自動起動：",
-        "tray": "トレイに自動起動：",
-        "tray_notifications": "トレイ通知：",
         "dark_mode": "ダークモード：",
         "priority_only": "優先のみ：",
         "proxy": "プロキシ（再起動が必要）："

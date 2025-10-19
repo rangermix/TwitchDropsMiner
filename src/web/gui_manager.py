@@ -16,7 +16,6 @@ from src.web.managers.inventory import InventoryManager
 from src.web.managers.login import LoginFormManager
 from src.web.managers.settings import SettingsManager
 from src.web.managers.status import StatusManager, WebsocketStatusManager
-from src.web.managers.tray import TrayIconStub
 
 
 if TYPE_CHECKING:
@@ -53,7 +52,6 @@ class WebGUIManager:
         self.channels = ChannelListManager(self._broadcaster, self)
         self.inv = InventoryManager(self._broadcaster, ImageCache(self))
         self.login = LoginFormManager(self._broadcaster, self)
-        self.tray = TrayIconStub(self._broadcaster)
         self.settings = SettingsManager(self._broadcaster, twitch.settings)
 
         # Selected channel tracking (set by web client)
