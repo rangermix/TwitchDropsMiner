@@ -1,35 +1,42 @@
-# Twitch Drops Miner
+# 🌟 Twitch Drops Miner (TDM)
 
-> **Note:** This is a fork of [DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner). See [Acknowledgments](#acknowledgments) for credits to the original author and contributors.
+> 🎮 **Automate Twitch Drop Farming — Effortlessly, Headlessly, and Bandwidth-Free**
 
-> **Disclaimer:** This fork is heavily maintained and developed using AI-assisted coding (Claude Code). While functional, the codebase may reflect "vibe coding" patterns and AI-generated conventions. Use at your own discretion and always review changes before deploying.
+<p align="center">
+  <a href="https://github.com/rangermix/TwitchDropsMiner/stargazers"><img src="https://img.shields.io/github/stars/rangermix/TwitchDropsMiner?style=for-the-badge&color=yellow" alt="Stars"></a>
+  <a href="https://github.com/rangermix/TwitchDropsMiner/releases"><img src="https://img.shields.io/github/v/release/rangermix/TwitchDropsMiner?style=for-the-badge&color=brightgreen" alt="Release"></a>
+  <a href="https://hub.docker.com/r/rangermix/twitch-drops-miner"><img src="https://img.shields.io/docker/pulls/rangermix/twitch-drops-miner?style=for-the-badge&color=blue" alt="Docker Pulls"></a>
+  <a href="https://github.com/rangermix/TwitchDropsMiner/blob/main/LICENSE"><img src="https://img.shields.io/github/license/rangermix/TwitchDropsMiner?style=for-the-badge&color=orange" alt="License"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python" alt="Python"></a>
+</p>
 
-This application allows you to AFK mine timed Twitch drops, without having to worry about switching channels when the one you were watching goes offline, claiming the drops, or even receiving the stream data itself. This helps you save on bandwidth and hassle.
+A modern, AI-assisted fork of [DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner) — rebuilt for reliability, simplicity, and automation.  
+**Twitch Drops Miner** lets you automatically farm Twitch drops without ever opening a stream.  
+No more tab juggling, channel switching, or missing rewards — just set it, forget it, and collect.
 
-### Features:
+---
 
-- Stream-less drop mining - save on bandwidth.
-- Game priority and exclusion lists, allowing you to focus on mining what you want, in the order you want, and ignore what you don't want.
-- Sharded websocket connection, allowing for tracking up to `199` channels at the same time.
-- Automatic drop campaigns discovery based on linked accounts (requires you to do [account linking](https://www.twitch.tv/drops/campaigns) yourself though).
-- Stream tags and drop campaign validation, to ensure you won't end up mining a stream that can't earn you the drop.
-- Automatic channel stream switching, when the one you were currently watching goes offline, as well as when a channel streaming a higher priority game goes online.
-- Login session is saved in a cookies file, so you don't need to login every time.
-- Mining is automatically started as new campaigns appear, and stopped when the last available drops have been mined.
+## ✨ Features
 
-### Usage:
+- 🚀 **Streamless Mining** — Earn drops without streaming video (save bandwidth)
+- 🔍 **Automatic Campaign Discovery** — Detects new drop events automatically
+- ⚙️ **Auto Channel Switching** — Always mines the best available stream
+- 💾 **Persistent Login** — OAuth login saved via cookies
+- 🕹️ **Simple Web UI** — Manage everything from your browser
+- 🧩 **Docker-Ready** — One command to deploy anywhere
 
-The application is designed for Docker deployment, making it easy to run on any platform:
+---
 
-**Using pre-built images (Recommended):**
+## 🧰 Quick Start (Docker Recommended)
+
+### 🐳 Using Pre-Built Image
 
 ```bash
-# Pull and run from Docker Hub
 docker pull rangermix/twitch-drops-miner:latest
 docker run -d -p 8080:8080 -v $(pwd)/data:/app/data rangermix/twitch-drops-miner:latest
 ```
 
-Or use docker-compose with the pre-built image, Create a docker-compose.yml file with:
+### 📦 Using Docker Compose
 
 ```yaml
 services:
@@ -42,119 +49,100 @@ services:
     restart: unless-stopped
 ```
 
-**Building locally:**
+### 🧑‍💻 From Source (for Developers)
 
 ```bash
-# Build and run with docker-compose
-docker-compose up -d
-
-# Or build and run manually
-docker build -t twitch-drops-miner .
-docker run -d -p 8080:8080 -v $(pwd)/data:/app/data twitch-drops-miner
-```
-
-**Running from Source:**
-
-```bash
-# Install Python 3.10+ and dependencies
+# Python 3.10+
 pip install -e .
-
-# Run the application
-python main.py
-
-# Access the web interface at http://localhost:8080
-```
-
-**Using the Application:**
-
-- Open the web interface in your browser at `http://localhost:8080`
-- Login/connect the miner to your Twitch account using the OAuth device code flow
-- After a successful login, the app will fetch all available campaigns and games you can mine drops for
-- Select and add games to the Watching List on the Settings tab, then press `Reload` to start processing
-- The miner will fetch applicable streams and start mining automatically
-- You can manually switch to a different channel as needed
-- Make sure to link your Twitch account to game accounts on the [campaigns page](https://www.twitch.tv/drops/campaigns)
-
-**Important Docker notes:**
-- All persistent data (cookies, settings, logs) is stored in the `data/` directory
-- Login uses OAuth device code flow - you'll be given a code to enter at twitch.tv/activate
-- Browser notifications supported (requires permission)
-- Health checks included
-- Configure timezone with `TZ` environment variable
-- Pre-built images are automatically published to Docker Hub via GitHub Actions
-- Available tags:
-  - `latest` - Latest stable release
-  - `1.0.0`, `1.0`, `1` - Semantic versioning tags (major.minor.patch)
-  - `1.0.0-rc.1` - Pre-release versions (tagged with exact version only)
-- Multi-platform support: linux/amd64, linux/arm64
-
-
-### Screenshots:
-
-The application features a modern web-based interface accessible from any browser on your network.
-
-### Notes:
-
-> [!WARNING]  
-> Due to how Twitch handles the drop progression on their side, watching a stream in the browser (or by any other means) on the same account that is actively being used by the miner, will usually cause the miner to misbehave, reporting false progress and getting stuck mining the current drop.  
-> 
-> Using the same account to watch other streams during mining is thus discouraged, in order to avoid any problems arising from it.
-
-> [!NOTE]  
-> The source code requires Python 3.10 or higher to run.
-
-### Running from Source:
-
-For development or customization:
-
-```bash
-# Install Python 3.10+
-# Create virtual environment (recommended)
-python -m venv env
-source env/bin/activate  # On Windows: env\Scripts\activate
-
-# Install dependencies
-pip install -e .
-
-# Run the application
 python main.py
 ```
 
-### Support This Project
+Visit 👉 **<http://localhost:8080>**
 
-If you find this project useful, please consider supporting my work:
+---
+
+## 🌈 Using the Web App
+
+1. Open `http://localhost:8080`
+2. Login with your Twitch account (OAuth device flow)
+3. The miner auto-fetches available campaigns
+4. Select games you want to farm → click **Reload**
+5. TDM starts mining drops automatically 🎉
+
+📝 **Tip:**  
+Make sure your Twitch account is linked to your game accounts →  
+👉 [https://www.twitch.tv/drops/campaigns](https://www.twitch.tv/drops/campaigns)
+
+---
+
+## ⚠️ Notes & Warnings
+
+> ⚠️ **Avoid Watching on the Same Account**  
+> Watching Twitch manually while the miner runs can cause progress desync.  
+> Use a different account if you want to watch live streams while mining.
+
+> 💡 **Requirements**  
+> Python 3.10+  
+> Docker optional but recommended  
+> Persistent data stored in `/data`
+
+---
+
+## 🖼️ Screenshot
+
+![screenshot](./screenshot.png)
+> A clean, modern web UI lets you control everything from your browser.
+
+---
+
+## 💖 Support the Project
+
+If TwitchDropsMiner saves you time or bandwidth, please consider supporting continued development:
 
 <div align="center">
 
-[![Buy me a coffee](https://i.imgur.com/cL95gzE.png)](
-    https://buymeacoffee.com/rangermix
-)
+[![Buy Me a Coffee](https://i.imgur.com/cL95gzE.png)](https://buymeacoffee.com/rangermix)
+
+⭐ **Star this repo** → it really helps visibility!  
+💬 [Open an issue](../../issues) or [submit a PR](../../pulls) if you want to contribute.
 
 </div>
 
-You can also support the original author [@DevilXD](https://github.com/DevilXD) at [buymeacoffee.com/DevilXD](https://www.buymeacoffee.com/DevilXD) or [Patreon](https://www.patreon.com/bePatron?u=26937862).
+You can also support the original author [@DevilXD](https://github.com/DevilXD):  
+👉 [buymeacoffee.com/DevilXD](https://www.buymeacoffee.com/DevilXD) or [Patreon](https://www.patreon.com/bePatron?u=26937862).
 
-### Project goals:
+---
 
-Twitch Drops Miner (TDM for short) has been designed with a couple of simple goals in mind:
+## 🎯 Project Goals
 
-**What TDM is:**
-- **Twitch Drops focused** - Automatic mining of timed Twitch drops
-- **Easy to use** - Simple web interface accessible from any browser
-- **Reliable** - Designed to run continuously with minimal attention needed
-- **Efficient** - Minimal interactions with Twitch, respecting their service
-- **Docker-ready** - Easy deployment on any platform or server
+| Goal | Description |
+|------|--------------|
+| 🎯 **Focus** | Twitch Drops automation |
+| 🧩 **Ease of Use** | Simple web UI |
+| 🛡️ **Reliability** | Designed for continuous operation |
+| ⚙️ **Efficiency** | Minimal API calls, Twitch-friendly |
+| 🐳 **Deployment** | Docker-first, headless operation |
 
-This is a web-only application designed for Docker deployment and headless operation.
+---
 
-### Acknowledgments:
+## 🙏 Acknowledgments
 
-This project is a fork of the excellent [TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner) created by [@DevilXD](https://github.com/DevilXD). Huge thanks to DevilXD for creating and maintaining this amazing tool, and to all the contributors who have helped improve it over time.
+This project is a fork of the brilliant [TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner) by [@DevilXD](https://github.com/DevilXD).  
+Huge thanks to DevilXD and all contributors who built the foundation.
 
-**Original Project:** [DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner)
-**Original Author:** [@DevilXD](https://github.com/DevilXD)
+For detailed translation and contribution credits, see [Acknowledgments](#original-project-credits) below.
 
-### Original Project Credits:
+---
+
+## 🧾 Disclaimer
+
+> ⚙️ This fork is heavily maintained and developed using AI-assisted coding (Claude Code).  
+> While stable, the codebase reflects “vibe coding” patterns — always review changes before deployment.  
+> Use responsibly.
+
+---
+
+## 🧑‍💻 Original Project Credits
 
 <!---
 Note: The translations credits are sorted alphabetically, based on their English language name.
