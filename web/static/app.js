@@ -1115,23 +1115,9 @@ function applyTranslations(t) {
                 aboutP.textContent = t.help.about_text;
             }
 
-            // Add how it works section if it exists in translations
-            if (t.help.how_it_works_text) {
-                // Find or create the how it works section
-                let howItWorksH3 = Array.from(helpContent.querySelectorAll('h3')).find(h => h.textContent.includes('How It Works') || h.textContent === t.help.how_it_works);
-                if (!howItWorksH3) {
-                    // Insert How It Works section after the first list
-                    const firstList = helpContent.querySelector('ol');
-                    if (firstList) {
-                        howItWorksH3 = document.createElement('h3');
-                        howItWorksH3.textContent = t.help.how_it_works;
-                        const howItWorksP = document.createElement('p');
-                        howItWorksP.textContent = t.help.how_it_works_text;
-                        firstList.parentNode.insertBefore(howItWorksP, firstList.nextSibling);
-                        firstList.parentNode.insertBefore(howItWorksH3, howItWorksP);
-                    }
-                }
-            }
+            // Note: "How It Works" section from translations is not shown
+            // to avoid dynamically inserting/removing content which causes duplication issues
+            // The static help content above is sufficient for the web UI
         }
     }
 
