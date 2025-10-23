@@ -8,7 +8,8 @@ const state = {
     campaigns: {},
     settings: {},
     currentDrop: null,
-    countdownTimer: null  // Track the active countdown timer
+    countdownTimer: null,  // Track the active countdown timer
+    translations: {}  // Store current translations
 };
 
 // Initialize Socket.IO connection
@@ -178,6 +179,11 @@ socket.on('attention_required', (data) => {
 
 socket.on('manual_mode_update', (data) => {
     updateManualModeUI(data);
+});
+
+socket.on('language_changed', (data) => {
+    console.log('Language changed to:', data.language);
+    fetchAndApplyTranslations();
 });
 
 // ==================== UI Update Functions ====================
@@ -923,6 +929,123 @@ async function fetchAndPopulateLanguages() {
     }
 }
 
+async function fetchAndApplyTranslations() {
+    try {
+        const response = await fetch('/api/translations');
+        const data = await response.json();
+
+        state.translations = data.translations;
+        applyTranslations(data.translations);
+        console.log('Translations applied for language:', data.language);
+    } catch (error) {
+        console.error('Failed to fetch translations:', error);
+    }
+}
+
+function applyTranslations(t) {
+    // Update tab buttons
+    const tabButtons = {
+        'main': document.querySelector('[data-tab="main"]'),
+        'inventory': document.querySelector('[data-tab="inventory"]'),
+        'settings': document.querySelector('[data-tab="settings"]'),
+        'help': document.querySelector('[data-tab="help"]')
+    };
+
+    if (tabButtons.main && t.tabs) tabButtons.main.textContent = t.tabs.main;
+    if (tabButtons.inventory && t.tabs) tabButtons.inventory.textContent = t.tabs.inventory;
+    if (tabButtons.settings && t.tabs) tabButtons.settings.textContent = t.tabs.settings;
+    if (tabButtons.help && t.tabs) tabButtons.help.textContent = t.tabs.help;
+
+    // Update panel headers in Main tab
+    const mainTab = document.getElementById('main-tab');
+    if (mainTab && t.login) {
+        const loginHeader = mainTab.querySelector('.login-panel h2');
+        if (loginHeader) loginHeader.textContent = t.login.title;
+    }
+    if (mainTab && t.progress) {
+        const progressHeader = mainTab.querySelector('.progress-panel h2');
+        if (progressHeader) progressHeader.textContent = t.progress.title;
+
+        const noDropMsg = document.getElementById('no-drop-message');
+        if (noDropMsg) noDropMsg.textContent = t.progress.no_drop;
+    }
+    if (mainTab && t.console) {
+        const consoleHeader = mainTab.querySelector('.console-panel h2');
+        if (consoleHeader) consoleHeader.textContent = t.console.title;
+    }
+    if (mainTab && t.channels) {
+        const channelsHeader = mainTab.querySelector('.channels-panel h2');
+        if (channelsHeader) channelsHeader.textContent = t.channels.title;
+    }
+
+    // Update Settings tab
+    const settingsTab = document.getElementById('settings-tab');
+    if (settingsTab && t.settings) {
+        const headers = settingsTab.querySelectorAll('h2');
+        if (headers[0]) headers[0].textContent = t.settings.general;
+        if (headers[1]) headers[1].textContent = t.settings.games_to_watch;
+        if (headers[2]) headers[2].textContent = t.settings.actions;
+
+        const darkModeLabel = settingsTab.querySelector('label:has(#dark-mode)');
+        if (darkModeLabel) {
+            // Preserve the checkbox, just update text
+            const checkbox = darkModeLabel.querySelector('input');
+            darkModeLabel.textContent = '';
+            darkModeLabel.appendChild(checkbox);
+            darkModeLabel.appendChild(document.createTextNode(' ' + t.settings.dark_mode));
+        }
+
+        const connQualityLabel = settingsTab.querySelector('label:has(#connection-quality)');
+        if (connQualityLabel) {
+            const input = connQualityLabel.querySelector('input');
+            connQualityLabel.textContent = t.settings.connection_quality + ' ';
+            connQualityLabel.appendChild(input);
+        }
+
+        const refreshLabel = settingsTab.querySelector('label:has(#minimum-refresh-interval)');
+        if (refreshLabel) {
+            const input = refreshLabel.querySelector('input');
+            refreshLabel.textContent = t.settings.minimum_refresh + ' ';
+            refreshLabel.appendChild(input);
+        }
+
+        const helpText = settingsTab.querySelector('.help-text');
+        if (helpText) helpText.textContent = t.settings.games_help;
+
+        const searchInput = document.getElementById('games-filter');
+        if (searchInput) searchInput.placeholder = t.settings.search_games;
+
+        const selectAllBtn = document.getElementById('select-all-btn');
+        if (selectAllBtn) selectAllBtn.textContent = t.settings.select_all;
+
+        const deselectAllBtn = document.getElementById('deselect-all-btn');
+        if (deselectAllBtn) deselectAllBtn.textContent = t.settings.deselect_all;
+
+        const selectedGamesHeader = settingsTab.querySelector('.selected-games h3');
+        if (selectedGamesHeader) selectedGamesHeader.textContent = t.settings.selected_games;
+
+        const availableGamesHeader = settingsTab.querySelector('.available-games h3');
+        if (availableGamesHeader) availableGamesHeader.textContent = t.settings.available_games;
+
+        const reloadBtn = document.getElementById('reload-btn');
+        if (reloadBtn) reloadBtn.textContent = t.settings.reload_campaigns;
+    }
+
+    // Update Help tab
+    const helpTab = document.getElementById('help-tab');
+    if (helpTab && t.help) {
+        const headers = helpTab.querySelectorAll('h2, h3');
+        if (headers[0]) headers[0].textContent = t.help.about;
+        // Keep other help text in English for now as they're not in the translation object
+    }
+
+    // Update header elements
+    if (t.header) {
+        const languageLabel = document.querySelector('.language-selector span');
+        if (languageLabel) languageLabel.textContent = t.header.language;
+    }
+}
+
 async function reloadCampaigns() {
     try {
         await fetch('/api/reload', {method: 'POST'});
@@ -992,6 +1115,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fetch and populate available languages
     fetchAndPopulateLanguages();
+
+    // Fetch and apply translations for the current language
+    fetchAndApplyTranslations();
 
     // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {

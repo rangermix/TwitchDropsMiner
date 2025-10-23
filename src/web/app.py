@@ -183,6 +183,75 @@ async def get_languages():
     return gui_manager.settings.get_languages()
 
 
+@app.get("/api/translations")
+async def get_translations():
+    """Get GUI translations for current language"""
+    from src.i18n.translator import _
+
+    # Return only the GUI section of translations
+    return {
+        "language": _.current,
+        "translations": {
+            "tabs": {
+                "main": _("gui", "tabs", "main"),
+                "inventory": _("gui", "tabs", "inventory"),
+                "settings": _("gui", "tabs", "settings"),
+                "help": _("gui", "tabs", "help"),
+            },
+            "login": {
+                "title": _("gui", "login", "name"),
+                "status": _("gui", "login", "labels").split("\n")[0].rstrip(":"),
+                "logged_in": _("gui", "login", "logged_in"),
+                "not_logged_in": _("gui", "login", "logged_out"),
+            },
+            "progress": {
+                "title": _("gui", "progress", "name"),
+                "no_drop": "No active drop",  # Not in translations yet
+                "current_drop": _("gui", "progress", "drop"),
+            },
+            "console": {
+                "title": _("gui", "output"),
+            },
+            "channels": {
+                "title": _("gui", "channels", "name"),
+            },
+            "settings": {
+                "title": _("gui", "tabs", "settings"),
+                "general": _("gui", "settings", "general", "name"),
+                "dark_mode": _("gui", "settings", "general", "dark_mode").rstrip(": "),
+                "games_to_watch": "Games to Watch",  # Not in translations yet
+                "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
+                "search_games": "Search games...",
+                "select_all": "Select All",
+                "deselect_all": "Deselect All",
+                "selected_games": "Selected Games (drag to reorder)",
+                "available_games": "Available Games",
+                "actions": "Actions",
+                "reload_campaigns": _("gui", "settings", "reload"),
+                "connection_quality": "Connection Quality:",
+                "minimum_refresh": "Minimum Refresh Interval (minutes):",
+            },
+            "help": {
+                "title": _("gui", "tabs", "help"),
+                "about": "About Twitch Drops Miner",
+                "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
+                "how_to_use": "How to Use",
+                "features": "Features",
+                "important_notes": "Important Notes",
+            },
+            "header": {
+                "title": "Twitch Drops Miner",
+                "language": "Language:",
+                "initializing": "Initializing...",
+                "connected": "Connected",
+                "disconnected": "Disconnected",
+                "auto_mode": "AUTO",
+                "manual_mode": "MANUAL",
+            },
+        },
+    }
+
+
 @app.post("/api/settings")
 async def update_settings(settings: SettingsUpdate):
     """Update application settings"""
