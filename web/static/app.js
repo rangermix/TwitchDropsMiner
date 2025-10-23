@@ -893,7 +893,10 @@ async function fetchAndPopulateLanguages() {
         const data = await response.json();
 
         const languageSelect = document.getElementById('language');
-        if (!languageSelect) return;
+        if (!languageSelect) {
+            console.warn('Language select element not found');
+            return;
+        }
 
         // Clear existing options
         languageSelect.innerHTML = '';
@@ -912,6 +915,11 @@ async function fetchAndPopulateLanguages() {
         }
     } catch (error) {
         console.error('Failed to fetch languages:', error);
+        const languageSelect = document.getElementById('language');
+        if (languageSelect) {
+            languageSelect.innerHTML = '<option value="">Failed to load languages</option>';
+        }
+        addConsoleLine('Error: Unable to fetch available languages. Please check your connection or try again later.');
     }
 }
 

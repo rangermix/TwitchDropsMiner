@@ -69,8 +69,9 @@ class SettingsManager:
                 _.set_language(language)
                 self._settings.language = language
             except ValueError as e:
-                # Invalid language, skip update
-                pass
+                # Invalid language, log warning
+                import logging
+                logging.warning(f"Invalid language '{language}': {e}")
         if "connection_quality" in settings_data:
             self._settings.connection_quality = settings_data["connection_quality"]
         if "proxy" in settings_data:
