@@ -70,6 +70,7 @@ class ChannelSelectRequest(BaseModel):
 class SettingsUpdate(BaseModel):
     games_to_watch: list[str] | None = None
     dark_mode: bool | None = None
+    language: str | None = None
     proxy: str | None = None
     connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
@@ -171,6 +172,15 @@ async def get_settings():
         raise HTTPException(status_code=503, detail="GUI not initialized")
 
     return gui_manager.settings.get_settings()
+
+
+@app.get("/api/languages")
+async def get_languages():
+    """Get available languages"""
+    if not gui_manager:
+        raise HTTPException(status_code=503, detail="GUI not initialized")
+
+    return gui_manager.settings.get_languages()
 
 
 @app.post("/api/settings")

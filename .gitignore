@@ -26,3 +26,4 @@ data/
 .idea/
 *.iml
 *.log
+*.egg-info/

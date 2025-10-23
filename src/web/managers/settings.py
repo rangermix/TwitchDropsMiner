@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, Any
 
+from src.i18n.translator import _
 from src.models.game import Game
 
 
@@ -41,6 +42,17 @@ class SettingsManager:
             "minimum_refresh_interval_minutes": self._settings.minimum_refresh_interval_minutes,
         }
 
+    def get_languages(self) -> dict[str, Any]:
+        """Get available languages and current selection.
+
+        Returns:
+            Dictionary with available languages and current language
+        """
+        return {
+            "available": list(_.languages),
+            "current": _.current,
+        }
+
     def update_settings(self, settings_data: dict[str, Any]):
         """Update settings from user input.
 
@@ -51,6 +63,15 @@ class SettingsManager:
             self._settings.games_to_watch = settings_data["games_to_watch"]
         if "dark_mode" in settings_data:
             self._settings.dark_mode = settings_data["dark_mode"]
+        if "language" in settings_data:
+            language = settings_data["language"]
+            try:
+                _.set_language(language)
+                self._settings.language = language
+            except ValueError as e:
+                # Invalid language, log warning
+                import logging
+                logging.warning(f"Invalid language '{language}': {e}")
         if "connection_quality" in settings_data:
             self._settings.connection_quality = settings_data["connection_quality"]
         if "proxy" in settings_data:
