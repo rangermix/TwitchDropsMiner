@@ -10,7 +10,17 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎮 Twitch Drops Miner</h1>
+            <div class="header-top">
+                <h1>🎮 Twitch Drops Miner</h1>
+                <div class="header-controls">
+                    <label for="language" class="language-selector">
+                        <span>Language:</span>
+                        <select id="language">
+                            <option value="en">English</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
             <div class="status-bar">
                 <span id="status-text">Initializing...</span>
                 <span id="manual-mode-badge" class="mode-badge hidden" title="Manual mode active - watching specific game">
@@ -101,12 +111,6 @@
                     <h2>General Settings</h2>
                     <label>
                         <input type="checkbox" id="dark-mode"> Dark Mode
-                    </label>
-                    <label>
-                        Language:
-                        <select id="language">
-                            <option value="en">English</option>
-                        </select>
                     </label>
                     <label>
                         Connection Quality:
