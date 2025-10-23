@@ -542,6 +542,14 @@ function updateSettingsUI(settings) {
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
 
+    // Update language dropdown if we have the current language
+    if (settings.language) {
+        const languageSelect = document.getElementById('language');
+        if (languageSelect) {
+            languageSelect.value = settings.language;
+        }
+    }
+
     if (settings.dark_mode) {
         document.body.classList.add('dark-mode');
     } else {
@@ -861,6 +869,7 @@ async function confirmOAuth() {
 async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
+        language: document.getElementById('language').value,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
         games_to_watch: state.settings.games_to_watch || []
@@ -875,6 +884,34 @@ async function saveSettings() {
         console.log('Settings saved automatically');
     } catch (error) {
         console.error('Failed to save settings:', error);
+    }
+}
+
+async function fetchAndPopulateLanguages() {
+    try {
+        const response = await fetch('/api/languages');
+        const data = await response.json();
+
+        const languageSelect = document.getElementById('language');
+        if (!languageSelect) return;
+
+        // Clear existing options
+        languageSelect.innerHTML = '';
+
+        // Populate with available languages
+        data.available.forEach(lang => {
+            const option = document.createElement('option');
+            option.value = lang;
+            option.textContent = lang;
+            languageSelect.appendChild(option);
+        });
+
+        // Set current language
+        if (data.current) {
+            languageSelect.value = data.current;
+        }
+    } catch (error) {
+        console.error('Failed to fetch languages:', error);
     }
 }
 
@@ -929,6 +966,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Then save settings
         saveSettings();
     });
+    document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
     document.getElementById('minimum-refresh-interval').addEventListener('change', saveSettings);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
@@ -943,6 +981,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (exitManualBtn) {
         exitManualBtn.addEventListener('click', exitManualMode);
     }
+
+    // Fetch and populate available languages
+    fetchAndPopulateLanguages();
 
     // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {
