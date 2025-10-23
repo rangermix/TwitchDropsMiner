@@ -244,9 +244,11 @@ function renderChannels() {
     const container = document.getElementById('channels-list');
     container.innerHTML = '';
 
+    const t = state.translations;
     const channels = Object.values(state.channels);
     if (channels.length === 0) {
-        container.innerHTML = '<p class="empty-message">No channels tracked yet...</p>';
+        const emptyMsg = t.channels?.no_channels || 'No channels tracked yet...';
+        container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
         return;
     }
 
@@ -263,7 +265,8 @@ function renderChannels() {
     });
 
     if (filteredChannels.length === 0) {
-        container.innerHTML = '<p class="empty-message">No channels found for selected games...</p>';
+        const emptyMsg = t.channels?.no_channels_for_games || 'No channels found for selected games...';
+        container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
         return;
     }
 
@@ -314,11 +317,16 @@ function renderChannels() {
         const channelCount = group.channels.length;
         const totalViewers = group.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
 
+        const channelText = channelCount === 1
+            ? (t.channels?.channel_count || 'channel')
+            : (t.channels?.channel_count_plural || 'channels');
+        const viewersText = t.channels?.viewers || 'viewers';
+
         gameHeader.innerHTML = `
             ${iconHtml}
             <div class="game-group-info">
                 <div class="game-group-name">${group.name}</div>
-                <div class="game-group-stats">${channelCount} channel${channelCount !== 1 ? 's' : ''} • ${totalViewers.toLocaleString()} viewers</div>
+                <div class="game-group-stats">${channelCount} ${channelText} • ${totalViewers.toLocaleString()} ${viewersText}</div>
             </div>
         `;
 
@@ -458,9 +466,11 @@ function renderInventory() {
     const container = document.getElementById('inventory-grid');
     container.innerHTML = '';
 
+    const t = state.translations;
     const campaigns = Object.values(state.campaigns);
     if (campaigns.length === 0) {
-        container.innerHTML = '<p class="empty-message">No campaigns loaded yet...</p>';
+        const emptyMsg = t.inventory?.no_campaigns || 'No campaigns loaded yet...';
+        container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
         return;
     }
 
@@ -472,21 +482,22 @@ function renderInventory() {
         let statusText = '';
         if (campaign.active) {
             statusClass = 'active';
-            statusText = 'Active';
+            statusText = t.inventory?.status?.active || 'Active';
         } else if (campaign.upcoming) {
             statusClass = 'upcoming';
-            statusText = 'Upcoming';
+            statusText = t.inventory?.status?.upcoming || 'Upcoming';
         } else if (campaign.expired) {
             statusClass = 'expired';
-            statusText = 'Expired';
+            statusText = t.inventory?.status?.expired || 'Expired';
         }
 
+        const claimedText = t.inventory?.status?.claimed || 'Claimed';
         const dropsHtml = campaign.drops.map(drop => `
             <div class="drop-item ${drop.is_claimed ? 'claimed' : ''} ${drop.can_claim ? 'active' : ''}">
                 <div><strong>${drop.name}</strong></div>
                 <div>${drop.rewards}</div>
                 <div>${drop.current_minutes} / ${drop.required_minutes} minutes (${Math.round(drop.progress * 100)}%)</div>
-                ${drop.is_claimed ? '<div>✓ Claimed</div>' : ''}
+                ${drop.is_claimed ? `<div>✓ ${claimedText}</div>` : ''}
             </div>
         `).join('');
 
@@ -495,6 +506,7 @@ function renderInventory() {
             ? `<a href="${campaign.link_url}" target="_blank" rel="noopener noreferrer" class="campaign-name-link">${campaign.name} <span class="external-link-icon">🔗</span></a>`
             : `<div class="campaign-name">${campaign.name}</div>`;
 
+        const claimedCountText = t.inventory?.claimed_drops || 'claimed';
         card.innerHTML = `
             <div class="campaign-header">
                 <div class="campaign-game">${campaign.game_name}</div>
@@ -502,7 +514,7 @@ function renderInventory() {
             </div>
             <div class="campaign-status">
                 <span>${statusText}</span>
-                <span>${campaign.claimed_drops} / ${campaign.total_drops} claimed</span>
+                <span>${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}</span>
             </div>
             <div class="campaign-drops">
                 ${dropsHtml}
@@ -636,10 +648,12 @@ function renderSelectedGames(games) {
     const container = document.getElementById('selected-games-list');
     if (!container) return;
 
+    const t = state.translations;
     container.innerHTML = '';
 
     if (games.length === 0) {
-        container.innerHTML = '<p class="empty-message">No games selected. Check games below to add them.</p>';
+        const emptyMsg = t.settings?.no_games_selected || 'No games selected. Check games below to add them.';
+        container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
         return;
     }
 
@@ -669,13 +683,16 @@ function renderAvailableGames(games, filterText) {
     const container = document.getElementById('available-games-list');
     if (!container) return;
 
+    const t = state.translations;
     container.innerHTML = '';
 
     if (games.length === 0) {
         if (filterText) {
-            container.innerHTML = '<p class="empty-message">No games match your search.</p>';
+            const emptyMsg = t.settings?.no_games_match || 'No games match your search.';
+            container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
         } else {
-            container.innerHTML = '<p class="empty-message">All games are selected or no games available.</p>';
+            const emptyMsg = t.settings?.all_games_selected || 'All games are selected or no games available.';
+            container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
         }
         return;
     }
@@ -956,26 +973,74 @@ function applyTranslations(t) {
     if (tabButtons.settings && t.tabs) tabButtons.settings.textContent = t.tabs.settings;
     if (tabButtons.help && t.tabs) tabButtons.help.textContent = t.tabs.help;
 
-    // Update panel headers in Main tab
+    // Update Main tab - Login section
     const mainTab = document.getElementById('main-tab');
     if (mainTab && t.login) {
         const loginHeader = mainTab.querySelector('.login-panel h2');
         if (loginHeader) loginHeader.textContent = t.login.title;
+
+        // Update login form placeholders
+        const usernameInput = document.getElementById('username');
+        if (usernameInput) usernameInput.placeholder = t.login.username;
+
+        const passwordInput = document.getElementById('password');
+        if (passwordInput) passwordInput.placeholder = t.login.password;
+
+        const twofaInput = document.getElementById('2fa-token');
+        if (twofaInput) twofaInput.placeholder = t.login.twofa_code;
+
+        const loginButton = document.getElementById('login-button');
+        if (loginButton) loginButton.textContent = t.login.button;
+
+        // Update OAuth display text
+        const oauthDisplay = document.getElementById('oauth-code-display');
+        if (oauthDisplay) {
+            const oauthP = oauthDisplay.querySelector('p');
+            if (oauthP) {
+                const link = oauthP.querySelector('a');
+                if (link) {
+                    oauthP.textContent = t.login.oauth_prompt + ' ';
+                    link.textContent = t.login.oauth_activate;
+                    oauthP.appendChild(link);
+                }
+            }
+
+            const oauthConfirmBtn = document.getElementById('oauth-confirm');
+            if (oauthConfirmBtn) oauthConfirmBtn.textContent = t.login.oauth_confirm;
+        }
     }
+
+    // Update Progress section
     if (mainTab && t.progress) {
         const progressHeader = mainTab.querySelector('.progress-panel h2');
         if (progressHeader) progressHeader.textContent = t.progress.title;
 
         const noDropMsg = document.getElementById('no-drop-message');
         if (noDropMsg) noDropMsg.textContent = t.progress.no_drop;
+
+        const exitManualBtn = document.getElementById('exit-manual-btn');
+        if (exitManualBtn) exitManualBtn.textContent = t.progress.return_to_auto;
     }
+
+    // Update Console section
     if (mainTab && t.console) {
         const consoleHeader = mainTab.querySelector('.console-panel h2');
         if (consoleHeader) consoleHeader.textContent = t.console.title;
     }
+
+    // Update Channels section
     if (mainTab && t.channels) {
         const channelsHeader = mainTab.querySelector('.channels-panel h2');
         if (channelsHeader) channelsHeader.textContent = t.channels.title;
+        // Channel list will re-render with translated empty messages
+        renderChannels();
+    }
+
+    // Update Inventory tab
+    const inventoryTab = document.getElementById('inventory-tab');
+    if (inventoryTab && t.inventory) {
+        // Inventory will re-render with translated status and empty messages
+        renderInventory();
     }
 
     // Update Settings tab
@@ -988,7 +1053,6 @@ function applyTranslations(t) {
 
         const darkModeLabel = settingsTab.querySelector('label:has(#dark-mode)');
         if (darkModeLabel) {
-            // Preserve the checkbox, just update text
             const checkbox = darkModeLabel.querySelector('input');
             darkModeLabel.textContent = '';
             darkModeLabel.appendChild(checkbox);
@@ -1029,20 +1093,57 @@ function applyTranslations(t) {
 
         const reloadBtn = document.getElementById('reload-btn');
         if (reloadBtn) reloadBtn.textContent = t.settings.reload_campaigns;
+
+        // Re-render games to watch with translated empty messages
+        renderGamesToWatch();
     }
 
     // Update Help tab
     const helpTab = document.getElementById('help-tab');
     if (helpTab && t.help) {
-        const headers = helpTab.querySelectorAll('h2, h3');
-        if (headers[0]) headers[0].textContent = t.help.about;
-        // Keep other help text in English for now as they're not in the translation object
+        const helpContent = helpTab.querySelector('.help-content');
+        if (helpContent) {
+            const headers = helpContent.querySelectorAll('h2, h3');
+            if (headers[0]) headers[0].textContent = t.help.about;
+            if (headers[1]) headers[1].textContent = t.help.how_to_use;
+            if (headers[2]) headers[2].textContent = t.help.features;
+            if (headers[3]) headers[3].textContent = t.help.important_notes;
+
+            // Update help text paragraphs if we have translations
+            const aboutP = helpContent.querySelector('p');
+            if (aboutP && t.help.about_text) {
+                aboutP.textContent = t.help.about_text;
+            }
+
+            // Add how it works section if it exists in translations
+            if (t.help.how_it_works_text) {
+                // Find or create the how it works section
+                let howItWorksH3 = Array.from(helpContent.querySelectorAll('h3')).find(h => h.textContent.includes('How It Works') || h.textContent === t.help.how_it_works);
+                if (!howItWorksH3) {
+                    // Insert How It Works section after the first list
+                    const firstList = helpContent.querySelector('ol');
+                    if (firstList) {
+                        howItWorksH3 = document.createElement('h3');
+                        howItWorksH3.textContent = t.help.how_it_works;
+                        const howItWorksP = document.createElement('p');
+                        howItWorksP.textContent = t.help.how_it_works_text;
+                        firstList.parentNode.insertBefore(howItWorksP, firstList.nextSibling);
+                        firstList.parentNode.insertBefore(howItWorksH3, howItWorksP);
+                    }
+                }
+            }
+        }
     }
 
     // Update header elements
     if (t.header) {
         const languageLabel = document.querySelector('.language-selector span');
         if (languageLabel) languageLabel.textContent = t.header.language;
+
+        const statusText = document.getElementById('status-text');
+        if (statusText && statusText.textContent === 'Initializing...') {
+            statusText.textContent = t.header.initializing;
+        }
     }
 }
 
