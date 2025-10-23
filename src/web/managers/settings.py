@@ -83,6 +83,8 @@ class SettingsManager:
                 "minimum_refresh_interval_minutes"
             ]
         self._settings.alter()
+        # Persist settings to disk immediately
+        self._settings.save()
         asyncio.create_task(self._broadcaster.emit("settings_updated", self.get_settings()))
 
     def set_games(self, games: set[Game]):
