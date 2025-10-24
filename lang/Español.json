@@ -11,12 +11,6 @@
     },
     "login": {
         "unexpected_content": "Se produjo un error inesperado, \ngeneralmente debido a una redirección.\n¿Necesitas un VPN o iniciar sesión para acceder a internet?",
-        "chrome": {
-            "startup": "Iniciando Chrome...",
-            "login_to_complete": "Por favor, presione Iniciar sesión nuevamente para \ncompletar el inicio de sesión.",
-            "no_token": "No se pudo obtener un token de autorización.",
-            "closed_window": "La ventana de Chrome se cerró antes de que \nse completara el inicio de sesión."
-        },
         "error_code": "Error de inicio de sesión: {error_code}",
         "incorrect_login_pass": "El usuario o contraseña ingresada es incorrecto.",
         "incorrect_email_code": "El código de verificación de email es incorrecto.",
@@ -60,7 +54,10 @@
             "username": "Usuario",
             "password": "Contraseña",
             "twofa_code": "Token 2FA (opcional)",
-            "button": "Iniciar sesión"
+            "button": "Iniciar sesión",
+            "oauth_prompt": "Enter this code at:",
+            "oauth_activate": "Twitch Activate",
+            "oauth_confirm": "I've entered the code"
         },
         "websocket": {
             "name": "Estado del Websocket",
@@ -79,69 +76,75 @@
             "campaign": "Campaña:",
             "remaining": "{time} restante",
             "drop_progress": "Progreso:",
-            "campaign_progress": "Progreso:"
+            "campaign_progress": "Progreso:",
+            "no_drop": "No active drop",
+            "return_to_auto": "Return to Auto Mode",
+            "manual_mode_info": "Manual Mode: Mining"
         },
         "channels": {
             "name": "Canales",
-            "switch": "Cambiar",
             "online": "ONLINE  ✔",
             "pending": "OFFLINE ⏳",
             "offline": "OFFLINE ❌",
-            "headings": {
-                "channel": "Canal",
-                "status": "Estado",
-                "game": "Juego",
-                "viewers": "Espectadores"
-            }
+            "no_channels": "No channels tracked yet...",
+            "no_channels_for_games": "No channels found for selected games...",
+            "channel_count": "channel",
+            "channel_count_plural": "channels",
+            "viewers": "viewers"
         },
         "inventory": {
-            "filter": {
-                "name": "Filtro de campañas",
-                "show": "Mostrar:",
-                "not_linked": "No enlazado",
-                "upcoming": "Próximas",
-                "expired": "Expiradas",
-                "excluded": "Excluidas",
-                "finished": "Completadas",
-                "refresh": "Actualizar"
-            },
             "status": {
-                "linked": "Vinculado ✔",
-                "not_linked": "Sin vincular ❌",
                 "active": "Activo ✔",
                 "upcoming": "Próximamente ⏳",
                 "expired": "Expirado ❌",
-                "claimed": "Reclamado ✔",
-                "ready_to_claim": "Listo para reclamar ⏳"
+                "claimed": "Reclamado ✔"
             },
             "starts": "Comienza: {time}",
             "ends": "Termina: {time}",
-            "allowed_channels": "Canales permitidos:",
-            "all_channels": "Todos",
-            "and_more": "y {amount} más...",
-            "percent_progress": "{percent} de {minutes} minutos",
-            "minutes_progress": "{minutes} minutos"
+            "no_campaigns": "No campaigns loaded yet...",
+            "claimed_drops": "claimed"
         },
         "settings": {
             "general": {
                 "name": "Ajustes generales",
-                "dark_mode": "Modo oscuro: ",
-                "proxy": "Proxy (requiere reinicio):"
+                "dark_mode": "Modo oscuro: "
             },
-            "game_name": "Nombre del juego",
             "reload": "Recargar",
-            "reload_text": "La mayoría de los cambios requieren recargar o reiniciar la aplicación para que sean aplicados: "
+            "games_to_watch": "Games to Watch",
+            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
+            "search_games": "Search games...",
+            "select_all": "Select All",
+            "deselect_all": "Deselect All",
+            "selected_games": "Selected Games (drag to reorder)",
+            "available_games": "Available Games",
+            "no_games_selected": "No games selected. Check games below to add them.",
+            "no_games_match": "No games match your search.",
+            "all_games_selected": "All games are selected or no games available.",
+            "actions": "Actions",
+            "connection_quality": "Connection Quality:",
+            "minimum_refresh": "Minimum Refresh Interval (minutes):"
         },
         "help": {
             "links": {
-                "name": "Enlaces útiles",
-                "inventory": "Ver inventario de Twitch",
-                "campaigns": "Ver todas las campañas y administrar cuentas vinculadas"
+                "name": "Enlaces útiles"
             },
             "how_it_works": "Como funciona",
             "how_it_works_text": "Cada varios segundos, la aplicación pretende ver una transmisión en particular, \ny obtiene los metadatos de la misma para progresar con los drops. \nDe esta forma, no es necesario descargar el video o sonido de la transmisión. Ahorrando ancho de banda al usuario. \nCon el fin de mantener actualizados los estados (ONLINE o OFFLINE) de los canales, se establece una conexión websocket, \nque recibe información de los streams para poder actualizar el estado, o cantidad de espectadores actuales.",
             "getting_started": "Primeros pasos",
-            "getting_started_text": "1. Inicie sesión en la aplicación. \n2. Verifique que su cuenta de Twitch esté vinculada a todas las campañas deseadas a minar. \n3. Si desea minar todas las campañas posibles, cambie el \"Modo de prioridad\" a cualquier opción que no sea \"Solo juegos preferidos\" y presione \"Recargar\". \n4. Si desea darle prioridad a una campaña específica, utilice la \"Lista de juegos preferidos\" para crear una lista de prioridad. \nLos juegos en la parte superior de la lista se intentarán minar antes de los que estén más abajo. \n5. Seleccione la opción \"Solo juegos preferidos\" en el \"Modo de prioridad\" si desea evitar minar juegos que no estén en la lista de juegos preferidos. \n6. Utilice la \"Lista de juegos excluidos\" para indicarle a la aplicación cuales juegos no deben minarse nunca. \n7. Al cambiar el contenido de las listas, o de las opciones del \"Modo de prioridad\", \nserá necesario presionar el botón \"Recargar\" para que los cambios sean aplicados."
+            "getting_started_text": "1. Inicie sesión en la aplicación. \n2. Verifique que su cuenta de Twitch esté vinculada a todas las campañas deseadas a minar. \n3. Si desea minar todas las campañas posibles, cambie el \"Modo de prioridad\" a cualquier opción que no sea \"Solo juegos preferidos\" y presione \"Recargar\". \n4. Si desea darle prioridad a una campaña específica, utilice la \"Lista de juegos preferidos\" para crear una lista de prioridad. \nLos juegos en la parte superior de la lista se intentarán minar antes de los que estén más abajo. \n5. Seleccione la opción \"Solo juegos preferidos\" en el \"Modo de prioridad\" si desea evitar minar juegos que no estén en la lista de juegos preferidos. \n6. Utilice la \"Lista de juegos excluidos\" para indicarle a la aplicación cuales juegos no deben minarse nunca. \n7. Al cambiar el contenido de las listas, o de las opciones del \"Modo de prioridad\", \nserá necesario presionar el botón \"Recargar\" para que los cambios sean aplicados.",
+            "about": "About Twitch Drops Miner",
+            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
+            "how_to_use": "How to Use",
+            "features": "Features",
+            "important_notes": "Important Notes",
+            "github_repo": "GitHub Repository"
+        },
+        "header": {
+            "title": "Twitch Drops Miner",
+            "language": "Language:",
+            "initializing": "Initializing...",
+            "auto_mode": "AUTO",
+            "manual_mode": "MANUAL"
         }
     }
 }

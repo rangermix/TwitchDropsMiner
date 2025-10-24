@@ -10,12 +10,6 @@
         "no_campaign": "Keine aktiven Kampagnen verfügbar. Warten auf neue Kampagne..."
     },
     "login": {
-        "chrome": {
-            "startup": "Starte Chrome...",
-            "login_to_complete": "Erneut auf Anmelden drücken, um den Anmeldevorgang manuell abzuschließen.",
-            "no_token": "Es wurde kein Autorisierungs-Token gefunden.",
-            "closed_window": "Das Chrome-Fenster wurde geschlossen, bevor der Anmeldevorgang abgeschlossen werden konnte."
-        },
         "error_code": "Login-Fehlercode: {error_code}",
         "unexpected_content": "Unerwarteter Inhaltstyp zurückgegeben, normalerweise aufgrund einer Weiterleitung.\nIst ein Login für den Internetzugang erforderlich?",
         "incorrect_login_pass": "Falscher Benutzername oder Passwort.",
@@ -60,7 +54,10 @@
             "username": "Benutzername",
             "password": "Passwort",
             "twofa_code": "2FA Code (optional)",
-            "button": "Anmelden"
+            "button": "Anmelden",
+            "oauth_prompt": "Enter this code at:",
+            "oauth_activate": "Twitch Activate",
+            "oauth_confirm": "I've entered the code"
         },
         "websocket": {
             "name": "WebSocket Status",
@@ -79,69 +76,75 @@
             "campaign": "Kampagne:",
             "remaining": "{time} verbleibend",
             "drop_progress": "Fortschritt:",
-            "campaign_progress": "Fortschritt:"
+            "campaign_progress": "Fortschritt:",
+            "no_drop": "No active drop",
+            "return_to_auto": "Return to Auto Mode",
+            "manual_mode_info": "Manual Mode: Mining"
         },
         "channels": {
             "name": "Kanäle",
-            "switch": "Wechseln",
             "online": "ONLINE ✔",
             "pending": "OFFLINE ⏳",
             "offline": "OFFLINE ❌",
-            "headings": {
-                "channel": "Kanal",
-                "status": "Status",
-                "game": "Spiel",
-                "viewers": "Zuschauer"
-            }
+            "no_channels": "No channels tracked yet...",
+            "no_channels_for_games": "No channels found for selected games...",
+            "channel_count": "channel",
+            "channel_count_plural": "channels",
+            "viewers": "viewers"
         },
         "inventory": {
-            "filter": {
-                "name": "Filter",
-                "show": "Anzeigen:",
-                "not_linked": "Nicht verbunden",
-                "upcoming": "Zukünftig",
-                "expired": "Abgelaufen",
-                "excluded": "Ausgeschlossen",
-                "finished": "Abgeholt",
-                "refresh": "Aktualisieren"
-            },
             "status": {
-                "linked": "Verknüpft ✔",
-                "not_linked": "Nicht verknüpft ❌",
                 "active": "Aktiv ✔",
                 "upcoming": "Zukünftig ⏳",
                 "expired": "Abgelaufen ❌",
-                "claimed": "Abgeholt ✔",
-                "ready_to_claim": "Bereit zum abholen ⏳"
+                "claimed": "Abgeholt ✔"
             },
             "starts": "Beginnt: {time}",
             "ends": "Endet: {time}",
-            "allowed_channels": "Teilnehmende Kanäle:",
-            "all_channels": "Alle",
-            "and_more": "und {amount} weitere...",
-            "percent_progress": "{percent} von {minutes} Minuten",
-            "minutes_progress": "{minutes} Minuten"
+            "no_campaigns": "No campaigns loaded yet...",
+            "claimed_drops": "claimed"
         },
         "settings": {
             "general": {
                 "name": "Allgemein",
-                "dark_mode": "Dunkler Modus: ",
-                "proxy": "Proxy (Erfordert Neustart):"
+                "dark_mode": "Dunkler Modus: "
             },
-            "game_name": "Spiel",
             "reload": "Neu laden",
-            "reload_text": "Die meisten Änderungen erfordern ein neu laden, um sofort wirksam zu werden: "
+            "games_to_watch": "Games to Watch",
+            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
+            "search_games": "Search games...",
+            "select_all": "Select All",
+            "deselect_all": "Deselect All",
+            "selected_games": "Selected Games (drag to reorder)",
+            "available_games": "Available Games",
+            "no_games_selected": "No games selected. Check games below to add them.",
+            "no_games_match": "No games match your search.",
+            "all_games_selected": "All games are selected or no games available.",
+            "actions": "Actions",
+            "connection_quality": "Connection Quality:",
+            "minimum_refresh": "Minimum Refresh Interval (minutes):"
         },
         "help": {
             "links": {
-                "name": "Hilfreiche Links",
-                "inventory": "Twitch Inventar ansehen",
-                "campaigns": "Alle Twitch-Kampagnen ansehen"
+                "name": "Hilfreiche Links"
             },
             "how_it_works": "So funktioniert's",
             "how_it_works_text": "Alle ~60 Sekunden sendet die Anwendung ein \"Minute zugesehen\" Ereignis an den Kanal, dem gerade zugesehen wird.\nDies reicht aus, um den Drop voranzutreiben. Auf diese Weise ist es nicht nötig den Stream herunterzuladen und spart Bandbreite.\nUm den Online- oder Offline-Status der Kanäle aktuell zu halten, wird eine Websocket-Verbindung eingerichtet,\ndie die Kanäle auf ihren Status überprüft.",
             "getting_started": "Erste Schritte",
-            "getting_started_text": "• In der Anwendung anmelden.\n• Stelle sicher, dass das Twitch-Konto mit allen Kampagnen verknüpft ist, an denen Interesse besteht.\n• Sollen alle Drops bearbeitet werden, entferne den Haken bei \"Nur Priorität\" und drücke \"Neu laden\".\n• Sollen nur bestimmte Spiele in betracht gezogen werden, verwende die \"Priorität\" Liste um die Wahl nach Spielen einzugrenzen.\n• Die Liste priorisiert von oben nach unten.\n• Die Option \"Nur Priorität\" verhindert, dass Spiele, die nicht auf der Prioritätenliste stehen, bearbeitet werden.\n• Mit der Liste \"Ausschließen\", ist es möglich Spiele zu filtern, die niemals in betracht gezogen werden sollen.\n• Wenn Listen oder Optionen angepasst wurden, muss \"Neu laden\" gedrückt werden, damit die Änderungen übernommen werden."
+            "getting_started_text": "• In der Anwendung anmelden.\n• Stelle sicher, dass das Twitch-Konto mit allen Kampagnen verknüpft ist, an denen Interesse besteht.\n• Sollen alle Drops bearbeitet werden, entferne den Haken bei \"Nur Priorität\" und drücke \"Neu laden\".\n• Sollen nur bestimmte Spiele in betracht gezogen werden, verwende die \"Priorität\" Liste um die Wahl nach Spielen einzugrenzen.\n• Die Liste priorisiert von oben nach unten.\n• Die Option \"Nur Priorität\" verhindert, dass Spiele, die nicht auf der Prioritätenliste stehen, bearbeitet werden.\n• Mit der Liste \"Ausschließen\", ist es möglich Spiele zu filtern, die niemals in betracht gezogen werden sollen.\n• Wenn Listen oder Optionen angepasst wurden, muss \"Neu laden\" gedrückt werden, damit die Änderungen übernommen werden.",
+            "about": "About Twitch Drops Miner",
+            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
+            "how_to_use": "How to Use",
+            "features": "Features",
+            "important_notes": "Important Notes",
+            "github_repo": "GitHub Repository"
+        },
+        "header": {
+            "title": "Twitch Drops Miner",
+            "language": "Language:",
+            "initializing": "Initializing...",
+            "auto_mode": "AUTO",
+            "manual_mode": "MANUAL"
         }
     }
 }

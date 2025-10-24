@@ -10,12 +10,6 @@
         "no_campaign": "Tidak ada kampanye aktif yang bisa ditambang. Menunggu kampanye aktif..."
     },
     "login": {
-        "chrome": {
-            "startup": "Membuka Chrome",
-            "login_to_complete": "Selesaikan prosedur koneksi secara manual dengan menekan tombol Connection (Koneksi) sekali lagi..",
-            "no_token": "Token otorisasi tidak dapat ditemukan.",
-            "closed_window": "Jendela Chrome ditutup sebelum prosedur koneksi selesai."
-        },
         "error_code": "Kode kesalahan koneksi: {error_code}",
         "unexpected_content": "Jenis konten yang tidak diharapkan yang dikembalikan, biasanya karena pengalihan. Apakah Anda perlu tersambung untuk mengakses Internet ?",
         "incorrect_login_pass": "Nama pengguna atau kata sandi yang dimasukkan salah.",
@@ -60,7 +54,10 @@
             "username": "Nama pengguna",
             "password": "Kata sandi",
             "twofa_code": "Kode 2FA (opsional)",
-            "button": "Masuk"
+            "button": "Masuk",
+            "oauth_prompt": "Enter this code at:",
+            "oauth_activate": "Twitch Activate",
+            "oauth_confirm": "I've entered the code"
         },
         "websocket": {
             "name": "Status soket web",
@@ -79,69 +76,75 @@
             "campaign": "Kampanye :",
             "remaining": "{time} tersisa",
             "drop_progress": "Perkembangan :",
-            "campaign_progress": "Perkembangan :"
+            "campaign_progress": "Perkembangan :",
+            "no_drop": "No active drop",
+            "return_to_auto": "Return to Auto Mode",
+            "manual_mode_info": "Manual Mode: Mining"
         },
         "channels": {
             "name": "Saluran",
-            "switch": "Beralih",
             "online": "ONLINE  ✔",
             "pending": "DITUNDA ⏳",
             "offline": "OFFLINE ❌",
-            "headings": {
-                "channel": "Saluran",
-                "status": "Status",
-                "game": "Game",
-                "viewers": "Penonton"
-            }
+            "no_channels": "No channels tracked yet...",
+            "no_channels_for_games": "No channels found for selected games...",
+            "channel_count": "channel",
+            "channel_count_plural": "channels",
+            "viewers": "viewers"
         },
         "inventory": {
-            "filter": {
-                "name": "Saring",
-                "show": "Tampilkan :",
-                "not_linked": "Non lié",
-                "upcoming": "Segera haidr",
-                "expired": "Kadaluarsa",
-                "excluded": "Dikecualikan",
-                "finished": "Selesai",
-                "refresh": "Muat ulang"
-            },
             "status": {
-                "linked": "Ditautkan ✔",
-                "not_linked": "Tidak Ditautkan ❌",
                 "active": "Aktif ✔",
                 "upcoming": "Segera hadir ⏳",
                 "expired": "Kedaluarsa ❌",
-                "claimed": "Diklaim ✔",
-                "ready_to_claim": "Siap untuk diklaim ⏳"
+                "claimed": "Diklaim ✔"
             },
             "starts": "Mulai : {time}",
             "ends": "Akhir : {time}",
-            "allowed_channels": "Saluran yang diperbolehkan :",
-            "all_channels": "Semua",
-            "and_more": "dan {amount} yang lainnya...",
-            "percent_progress": "{percent} dari {minutes} menit",
-            "minutes_progress": "{minutes} menit"
+            "no_campaigns": "No campaigns loaded yet...",
+            "claimed_drops": "claimed"
         },
         "settings": {
             "general": {
                 "name": "Umum",
-                "dark_mode": "Mode gelap: ",
-                "proxy": "Proksi (harus dimulai ulang) :"
+                "dark_mode": "Mode gelap: "
             },
-            "game_name": "Nama game",
             "reload": "Muat Ulang",
-            "reload_text": "Sebagian besar perubahan memerlukan pemuatan ulang untuk segera diterapkan : "
+            "games_to_watch": "Games to Watch",
+            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
+            "search_games": "Search games...",
+            "select_all": "Select All",
+            "deselect_all": "Deselect All",
+            "selected_games": "Selected Games (drag to reorder)",
+            "available_games": "Available Games",
+            "no_games_selected": "No games selected. Check games below to add them.",
+            "no_games_match": "No games match your search.",
+            "all_games_selected": "All games are selected or no games available.",
+            "actions": "Actions",
+            "connection_quality": "Connection Quality:",
+            "minimum_refresh": "Minimum Refresh Interval (minutes):"
         },
         "help": {
             "links": {
-                "name": "Tautan berguna",
-                "inventory": "Lihat inventaris Twitch",
-                "campaigns": "Lihat semua kampanye dan kelola akun terkait"
+                "name": "Tautan berguna"
             },
             "how_it_works": "Cara kerja",
             "how_it_works_text": "Kira-kira setiap ~60 detik, aplikasi ini mengirimkan \"menit ditonton\" ke saluran yang sedang ditonton - yang cukup untuk membuat drop terus bergerak. Perhatikan bahwa hal ini sepenuhnya mengabaikan kebutuhan untuk mengunduh video dan audio dari streaming yang sebenarnya. Untuk menjaga agar status (ONLINE atau OFFLINE) saluran tetap terbaru, koneksi websocket dibuat untuk menerima peristiwa tentang streaming yang naik atau turun, atau pembaruan tentang jumlah penonton saat ini",
             "getting_started": "Mulai",
-            "getting_started_text": "1. Masuk ke aplikasi.\n2. Pastikan akun Twitch Anda ditautkan ke semua kampanye yang Anda minati.\n3. Jika Anda hanya ingin menambang semuanya, hapus centang pada \"Hanya Prioritas\" dan tekan \"Muat Ulang\".\n4. Jika Anda ingin menambang game tertentu terlebih dahulu, gunakan daftar \"Prioritas\" untuk menentukan daftar game pilihan Anda. Game yang berada di bagian atas daftar akan tergoda untuk ditambang terlebih dahulu, sebelum game yang berada di bagian bawah daftar.\n5. Biarkan opsi \"Prioritas saja\" dicentang untuk menghindari menambang game yang tidak ada dalam daftar prioritas. Atau tidak - terserah Anda.\n6. Gunakan daftar \"Kecualikan\" untuk memberi tahu aplikasi game mana yang tidak boleh ditambang.\n7. Untuk memodifikasi konten dari salah satu daftar atau mengubah status opsi \"Hanya Prioritas\", Anda perlu menekan \"Muat Ulang\" agar perubahan dapat diterapkan."
+            "getting_started_text": "1. Masuk ke aplikasi.\n2. Pastikan akun Twitch Anda ditautkan ke semua kampanye yang Anda minati.\n3. Jika Anda hanya ingin menambang semuanya, hapus centang pada \"Hanya Prioritas\" dan tekan \"Muat Ulang\".\n4. Jika Anda ingin menambang game tertentu terlebih dahulu, gunakan daftar \"Prioritas\" untuk menentukan daftar game pilihan Anda. Game yang berada di bagian atas daftar akan tergoda untuk ditambang terlebih dahulu, sebelum game yang berada di bagian bawah daftar.\n5. Biarkan opsi \"Prioritas saja\" dicentang untuk menghindari menambang game yang tidak ada dalam daftar prioritas. Atau tidak - terserah Anda.\n6. Gunakan daftar \"Kecualikan\" untuk memberi tahu aplikasi game mana yang tidak boleh ditambang.\n7. Untuk memodifikasi konten dari salah satu daftar atau mengubah status opsi \"Hanya Prioritas\", Anda perlu menekan \"Muat Ulang\" agar perubahan dapat diterapkan.",
+            "about": "About Twitch Drops Miner",
+            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
+            "how_to_use": "How to Use",
+            "features": "Features",
+            "important_notes": "Important Notes",
+            "github_repo": "GitHub Repository"
+        },
+        "header": {
+            "title": "Twitch Drops Miner",
+            "language": "Language:",
+            "initializing": "Initializing...",
+            "auto_mode": "AUTO",
+            "manual_mode": "MANUAL"
         }
     }
 }

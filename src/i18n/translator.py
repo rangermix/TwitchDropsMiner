@@ -22,15 +22,7 @@ class StatusMessages(TypedDict):
     no_campaign: str
 
 
-class ChromeMessages(TypedDict):
-    startup: str
-    login_to_complete: str
-    no_token: str
-    closed_window: str
-
-
 class LoginMessages(TypedDict):
-    chrome: ChromeMessages
     error_code: str
     unexpected_content: str
     email_code_required: str
@@ -79,6 +71,9 @@ class GUILoginForm(TypedDict):
     password: str
     twofa_code: str
     button: str
+    oauth_prompt: str
+    oauth_activate: str
+    oauth_confirm: str
 
 
 class GUIWebsocket(TypedDict):
@@ -100,75 +95,63 @@ class GUIProgress(TypedDict):
     remaining: str
     drop_progress: str
     campaign_progress: str
-
-
-class GUIChannelHeadings(TypedDict):
-    channel: str
-    status: str
-    game: str
-    viewers: str
+    no_drop: str
+    return_to_auto: str
+    manual_mode_info: str
 
 
 class GUIChannels(TypedDict):
     name: str
-    switch: str
     online: str
     pending: str
     offline: str
-    headings: GUIChannelHeadings
-
-
-class GUIInvFilter(TypedDict):
-    name: str
-    show: str
-    not_linked: str
-    upcoming: str
-    expired: str
-    excluded: str
-    finished: str
-    refresh: str
+    no_channels: str
+    no_channels_for_games: str
+    channel_count: str
+    channel_count_plural: str
+    viewers: str
 
 
 class GUIInvStatus(TypedDict):
-    linked: str
-    not_linked: str
     active: str
     expired: str
     upcoming: str
     claimed: str
-    ready_to_claim: str
 
 
 class GUIInventory(TypedDict):
-    filter: GUIInvFilter
+    no_campaigns: str
     status: GUIInvStatus
     starts: str
     ends: str
-    allowed_channels: str
-    all_channels: str
-    and_more: str
-    percent_progress: str
-    minutes_progress: str
+    claimed_drops: str
 
 
 class GUISettingsGeneral(TypedDict):
     name: str
     dark_mode: str
-    proxy: str
 
 
 class GUISettings(TypedDict):
     general: GUISettingsGeneral
-    game_name: str
-    exclude: str
     reload: str
-    reload_text: str
+    games_to_watch: str
+    games_help: str
+    search_games: str
+    select_all: str
+    deselect_all: str
+    selected_games: str
+    available_games: str
+    no_games_selected: str
+    no_games_match: str
+    all_games_selected: str
+    actions: str
+    connection_quality: str
+    minimum_refresh: str
 
 
 class GUIHelpLinks(TypedDict):
     name: str
-    inventory: str
-    campaigns: str
 
 
 class GUIHelp(TypedDict):
@@ -177,6 +160,20 @@ class GUIHelp(TypedDict):
     how_it_works_text: str
     getting_started: str
     getting_started_text: str
+    about: str
+    about_text: str
+    how_to_use: str
+    features: str
+    important_notes: str
+    github_repo: str
+
+
+class GUIHeader(TypedDict):
+    title: str
+    language: str
+    initializing: str
+    auto_mode: str
+    manual_mode: str
 
 
 class GUIMessages(TypedDict):
@@ -190,6 +187,7 @@ class GUIMessages(TypedDict):
     inventory: GUIInventory
     settings: GUISettings
     help: GUIHelp
+    header: GUIHeader
 
 
 class Translation(TypedDict):
@@ -217,16 +215,6 @@ default_translation: Translation = {
             "Unexpected content type returned, usually due to being redirected. "
             "Do you need to login for internet access?"
         ),
-        "chrome": {
-            "startup": "Opening Chrome...",
-            "login_to_complete": (
-                "Complete the login procedure manually by pressing the Login button again."
-            ),
-            "no_token": "No authorization token could be found.",
-            "closed_window": (
-                "The Chrome window was closed before the login procedure could be completed."
-            ),
-        },
         "error_code": "Login error code: {error_code}",
         "incorrect_login_pass": "Incorrect username or password.",
         "incorrect_email_code": "Incorrect email code.",
@@ -272,6 +260,9 @@ default_translation: Translation = {
             "password": "Password",
             "twofa_code": "2FA code (optional)",
             "button": "Login",
+            "oauth_prompt": "Enter this code at:",
+            "oauth_activate": "Twitch Activate",
+            "oauth_confirm": "I've entered the code",
         },
         "websocket": {
             "name": "Websocket Status",
@@ -291,63 +282,56 @@ default_translation: Translation = {
             "remaining": "{time} remaining",
             "drop_progress": "Progress:",
             "campaign_progress": "Progress:",
+            "no_drop": "No active drop",
+            "return_to_auto": "Return to Auto Mode",
+            "manual_mode_info": "Manual Mode: Mining",
         },
         "channels": {
             "name": "Channels",
-            "switch": "Switch",
             "online": "ONLINE  ✔",
             "pending": "OFFLINE ⏳",
             "offline": "OFFLINE ❌",
-            "headings": {
-                "channel": "Channel",
-                "status": "Status",
-                "game": "Game",
-                "viewers": "Viewers",
-            },
+            "no_channels": "No channels tracked yet...",
+            "no_channels_for_games": "No channels found for selected games...",
+            "channel_count": "channel",
+            "channel_count_plural": "channels",
+            "viewers": "viewers",
         },
         "inventory": {
-            "filter": {
-                "name": "Filter",
-                "show": "Show:",
-                "not_linked": "Not linked",
-                "upcoming": "Upcoming",
-                "expired": "Expired",
-                "excluded": "Excluded",
-                "finished": "Finished",
-                "refresh": "Refresh",
-            },
+            "no_campaigns": "No campaigns loaded yet...",
             "status": {
-                "linked": "Linked ✔",
-                "not_linked": "Not Linked ❌",
                 "active": "Active ✔",
                 "upcoming": "Upcoming ⏳",
                 "expired": "Expired ❌",
                 "claimed": "Claimed ✔",
-                "ready_to_claim": "Ready to claim ⏳",
             },
             "starts": "Starts: {time}",
             "ends": "Ends: {time}",
-            "allowed_channels": "Allowed Channels:",
-            "all_channels": "All",
-            "and_more": "and {amount} more...",
-            "percent_progress": "{percent} of {minutes} minutes",
-            "minutes_progress": "{minutes} minutes",
+            "claimed_drops": "claimed",
         },
         "settings": {
             "general": {
                 "name": "General",
                 "dark_mode": "Dark mode: ",
-                "proxy": "Proxy (requires restart):",
             },
-            "game_name": "Game name",
             "reload": "Reload",
-            "reload_text": "Most changes require a reload to take an immediate effect: ",
+            "games_to_watch": "Games to Watch",
+            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
+            "search_games": "Search games...",
+            "select_all": "Select All",
+            "deselect_all": "Deselect All",
+            "selected_games": "Selected Games (drag to reorder)",
+            "available_games": "Available Games",
+            "no_games_selected": "No games selected. Check games below to add them.",
+            "no_games_match": "No games match your search.",
+            "all_games_selected": "All games are selected or no games available.",
+            "actions": "Actions",
+            "connection_quality": "Connection Quality:",
+            "minimum_refresh": "Minimum Refresh Interval (minutes):",
         },
         "help": {
             "links": {
                 "name": "Useful Links",
-                "inventory": "See Twitch inventory",
-                "campaigns": "See all campaigns and manage account links",
             },
             "how_it_works": "How It Works",
             "how_it_works_text": (
@@ -380,6 +364,19 @@ default_translation: Translation = {
                 'the "Priority mode", requires you to press on "Reload" '
                 "for the changes to take an effect."
             ),
+            "about": "About Twitch Drops Miner",
+            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
+            "how_to_use": "How to Use",
+            "features": "Features",
+            "important_notes": "Important Notes",
+            "github_repo": "GitHub Repository",
+        },
+        "header": {
+            "title": "Twitch Drops Miner",
+            "language": "Language:",
+            "initializing": "Initializing...",
+            "auto_mode": "AUTO",
+            "manual_mode": "MANUAL",
         },
     },
 }

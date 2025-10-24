@@ -10,12 +10,6 @@
         "no_campaign": "Etkin kampanya yok. Yeni kampanya bekleniyor..."
     },
     "login": {
-        "chrome": {
-            "startup": "Chrome'u Başlat...",
-            "login_to_complete": "Oturum açma işlemini manuel olarak tamamlamak için tekrar Oturum Aç'a basın.",
-            "no_token": "Yetkilendirme belirteci bulunamadı.",
-            "closed_window": "Oturum açma işlemi tamamlanamadan Chrome penceresi kapandı."
-        },
         "error_code": "Giriş Hata Kodu: {error_code}",
         "unexpected_content": "Genellikle bir yönlendirme nedeniyle beklenmeyen içerik türü döndürüldü.\nİnternete erişmek için oturum açmanız gerekiyor mu?",
         "incorrect_login_pass": "Yanlış kullanıcı adı veya şifre.",
@@ -60,7 +54,10 @@
             "username": "Kullanıcı Adı",
             "password": "Parola",
             "twofa_code": "2FA Kodu (opsyonel)",
-            "button": "Kayıt Ol"
+            "button": "Kayıt Ol",
+            "oauth_prompt": "Enter this code at:",
+            "oauth_activate": "Twitch Activate",
+            "oauth_confirm": "I've entered the code"
         },
         "websocket": {
             "name": "WebSocket Status",
@@ -79,69 +76,75 @@
             "campaign": "Kampanya:",
             "remaining": "{time} geriye kalan",
             "drop_progress": "İlerleme:",
-            "campaign_progress": "İlerleme:"
+            "campaign_progress": "İlerleme:",
+            "no_drop": "No active drop",
+            "return_to_auto": "Return to Auto Mode",
+            "manual_mode_info": "Manual Mode: Mining"
         },
         "channels": {
             "name": "Kanallar",
-            "switch": "Değiştir",
             "online": "ONLINE ✔",
             "pending": "OFFLINE ⏳",
             "offline": "OFFLINE ❌",
-            "headings": {
-                "channel": "Kanal",
-                "status": "Durum",
-                "game": "Oyun",
-                "viewers": "İzleyici"
-            }
+            "no_channels": "No channels tracked yet...",
+            "no_channels_for_games": "No channels found for selected games...",
+            "channel_count": "channel",
+            "channel_count_plural": "channels",
+            "viewers": "viewers"
         },
         "inventory": {
-            "filter": {
-                "name": "Filtre",
-                "show": "Dava etmek:",
-                "not_linked": "Bağlantılı değil",
-                "upcoming": "Gelecek",
-                "expired": "Süresi doldu",
-                "excluded": "Hariç tutuldu",
-                "finished": "Aldı",
-                "refresh": "Güncellemek için"
-            },
             "status": {
-                "linked": "Bağlantılı ✔",
-                "not_linked": "Bağlantılı değil ❌",
                 "active": "Aktif ✔",
                 "upcoming": "Gelecek ⏳",
                 "expired": "Süresi dolmuş ❌",
-                "claimed": "Alındı ​​✔",
-                "ready_to_claim": "Almaya hazır ⏳"
+                "claimed": "Alındı ​​✔"
             },
             "starts": "Başladı: {time}",
             "ends": "Bitiş: {time}",
-            "allowed_channels": "Katılan Kanallar:",
-            "all_channels": "Tüm Kanallar",
-            "and_more": "ve {amount} diğer...",
-            "percent_progress": "{percent} {minutes} dakika",
-            "minutes_progress": "{minutes} dakika"
+            "no_campaigns": "No campaigns loaded yet...",
+            "claimed_drops": "claimed"
         },
         "settings": {
             "general": {
                 "name": "Genel",
-                "dark_mode": "Karanlık mod: ",
-                "proxy": "Proxy (Yeniden başlatma gerektirir):"
+                "dark_mode": "Karanlık mod: "
             },
-            "game_name": "Oyun",
             "reload": "Tekrar yükle",
-            "reload_text": "Değişikliklerin çoğu, hemen yürürlüğe girmesi için yeniden yükleme gerektirir: "
+            "games_to_watch": "Games to Watch",
+            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
+            "search_games": "Search games...",
+            "select_all": "Select All",
+            "deselect_all": "Deselect All",
+            "selected_games": "Selected Games (drag to reorder)",
+            "available_games": "Available Games",
+            "no_games_selected": "No games selected. Check games below to add them.",
+            "no_games_match": "No games match your search.",
+            "all_games_selected": "All games are selected or no games available.",
+            "actions": "Actions",
+            "connection_quality": "Connection Quality:",
+            "minimum_refresh": "Minimum Refresh Interval (minutes):"
         },
         "help": {
             "links": {
-                "name": "Faydalı Bağlantılar",
-                "inventory": "Twitch Envanterini Görüntüle",
-                "campaigns": "Tüm Twitch Kampanyalarını Görüntüle"
+                "name": "Faydalı Bağlantılar"
             },
             "how_it_works": "Nasıl çalışır",
             "how_it_works_text": "Uygulama, her ~60 saniyede bir \"izlenen dakika\" olayını o anda izlenmekte olan kanala gönderir.\nBu, düşüşü ileri götürmek için yeterlidir. Bu şekilde, indirmeye gerek yoktur akış sağlar ve bant genişliğinden tasarruf sağlar.\nKanalların çevrimiçi veya çevrimdışı durumunu güncel tutmak için, kanalların durumunu kontrol eden\nbir websocket bağlantısı kurulur.",
             "getting_started": "Başlarken",
-            "getting_started_text": "• Uygulamada oturum açın.\n• Twitch hesabının ilgilendiğiniz tüm kampanyalara bağlı olduğundan emin olun.\n• Tüm ödüllerin işlenmesini istiyorsanız, \"Yalnızca öncelikli \" seçeneğinin işaretini kaldırın ve \"Yeniden Yükle\"ye basın.\n• Yalnızca belirli oyunların dikkate alınmasını istiyorsanız, seçimi oyuna göre daraltmak için \"Öncelik\" listesini kullanın.\n• Liste yukarıdan aşağıya doğru öncelik sırasına göre sıralanır. n• \"Yalnızca öncelik\" seçeneği, öncelik listesinde olmayan oyunların işlenmesini engeller.\n• \"Hariç tut\" listesi ile, asla olması gerektiği düşünülmeyecek oyunların filtrelenmesi mümkündür.\n• Listeler veya seçenekler özelleştirilmişse, değişikliklerin geçerli olması için \"Yeniden Yükle\"ye basılmalıdır."
+            "getting_started_text": "• Uygulamada oturum açın.\n• Twitch hesabının ilgilendiğiniz tüm kampanyalara bağlı olduğundan emin olun.\n• Tüm ödüllerin işlenmesini istiyorsanız, \"Yalnızca öncelikli \" seçeneğinin işaretini kaldırın ve \"Yeniden Yükle\"ye basın.\n• Yalnızca belirli oyunların dikkate alınmasını istiyorsanız, seçimi oyuna göre daraltmak için \"Öncelik\" listesini kullanın.\n• Liste yukarıdan aşağıya doğru öncelik sırasına göre sıralanır. n• \"Yalnızca öncelik\" seçeneği, öncelik listesinde olmayan oyunların işlenmesini engeller.\n• \"Hariç tut\" listesi ile, asla olması gerektiği düşünülmeyecek oyunların filtrelenmesi mümkündür.\n• Listeler veya seçenekler özelleştirilmişse, değişikliklerin geçerli olması için \"Yeniden Yükle\"ye basılmalıdır.",
+            "about": "About Twitch Drops Miner",
+            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
+            "how_to_use": "How to Use",
+            "features": "Features",
+            "important_notes": "Important Notes",
+            "github_repo": "GitHub Repository"
+        },
+        "header": {
+            "title": "Twitch Drops Miner",
+            "language": "Language:",
+            "initializing": "Initializing...",
+            "auto_mode": "AUTO",
+            "manual_mode": "MANUAL"
         }
     }
 }

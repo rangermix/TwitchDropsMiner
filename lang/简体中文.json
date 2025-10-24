@@ -11,12 +11,6 @@
     },
     "login": {
         "unexpected_content": "返回的内容类型有误通常是由于被重定向.您需要VPN才能登录吗？ ",
-        "chrome": {
-            "startup": "正在打开Chrome浏览器...",
-            "login_to_complete": "请再次点击登录按钮来完成登录.",
-            "no_token": "无法获取授权令牌.",
-            "closed_window": "在登录完成之前关闭了Chrome浏览器."
-        },
         "error_code": "登录出错: {error_code}",
         "incorrect_login_pass": "用户名或密码错误.",
         "incorrect_email_code": "电子邮箱验证码错误.",
@@ -60,7 +54,10 @@
             "username": "用户名",
             "password": "密码",
             "twofa_code": "令牌验证码",
-            "button": "登录"
+            "button": "登录",
+            "oauth_prompt": "Enter this code at:",
+            "oauth_activate": "Twitch Activate",
+            "oauth_confirm": "I've entered the code"
         },
         "websocket": {
             "name": "网络协议连接状态",
@@ -79,69 +76,75 @@
             "remaining": "剩余 {time}",
             "campaign": "掉宝活动名称:",
             "drop_progress": "掉宝进度:",
-            "campaign_progress": "活动进度:"
+            "campaign_progress": "活动进度:",
+            "no_drop": "No active drop",
+            "return_to_auto": "Return to Auto Mode",
+            "manual_mode_info": "Manual Mode: Mining"
         },
         "channels": {
             "name": "活动频道",
-            "switch": "切换",
             "online": "ONLINE  ✔",
             "pending": "OFFLINE ⏳",
             "offline": "OFFLINE ❌",
-            "headings": {
-                "channel": "直播频道",
-                "status": "在线状态",
-                "game": "游戏",
-                "viewers": "观众"
-            }
+            "no_channels": "No channels tracked yet...",
+            "no_channels_for_games": "No channels found for selected games...",
+            "channel_count": "channel",
+            "channel_count_plural": "channels",
+            "viewers": "viewers"
         },
         "inventory": {
-            "filter": {
-                "name": "筛选",
-                "show": "掉宝活动:",
-                "not_linked": "未关联账户的游戏掉宝",
-                "expired": "已结束",
-                "excluded": "未添加的掉宝活动",
-                "upcoming": "即将上线",
-                "finished": "已完成",
-                "refresh": "刷新"
-            },
             "status": {
-                "linked": "已关联 ✔",
-                "not_linked": "未关联账户 ❌",
                 "active": "已上线 ✔",
                 "upcoming": "即将上线 ⏳",
                 "expired": "已结束 ❌",
-                "claimed": "已领取 ✔",
-                "ready_to_claim": "可领取 ⏳"
+                "claimed": "已领取 ✔"
             },
             "starts": "开始时间: {time}",
             "ends": "结束时间: {time}",
-            "allowed_channels": "可掉宝的频道:",
-            "all_channels": "全部",
-            "and_more": "还有 {amount} 个...",
-            "percent_progress": "{minutes} 分钟的 {percent}",
-            "minutes_progress": "{minutes} 分钟"
+            "no_campaigns": "No campaigns loaded yet...",
+            "claimed_drops": "claimed"
         },
         "settings": {
             "general": {
                 "name": "功能设置",
-                "dark_mode": "深色模式: ",
-                "proxy": "代理:"
+                "dark_mode": "深色模式: "
             },
-            "game_name": "游戏名称",
             "reload": "刷新",
-            "reload_text": "大多数设置更改后需要重新启动软件或刷新才能生效: "
+            "games_to_watch": "Games to Watch",
+            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
+            "search_games": "Search games...",
+            "select_all": "Select All",
+            "deselect_all": "Deselect All",
+            "selected_games": "Selected Games (drag to reorder)",
+            "available_games": "Available Games",
+            "no_games_selected": "No games selected. Check games below to add them.",
+            "no_games_match": "No games match your search.",
+            "all_games_selected": "All games are selected or no games available.",
+            "actions": "Actions",
+            "connection_quality": "Connection Quality:",
+            "minimum_refresh": "Minimum Refresh Interval (minutes):"
         },
         "help": {
             "links": {
-                "name": "帮助",
-                "inventory": "查看Twitch库存",
-                "campaigns": "查看所有掉宝活动并管理连接账号"
+                "name": "帮助"
             },
             "how_it_works": "工作原理",
             "how_it_works_text": "每隔约 60 秒，应用程序会向当前正在观看的频道发送一个“观看了一分钟”事件 - 这足以推进掉宝进度。这完全不需要下载任何实际视频流和声音。为了使频道的状态（在线或离线）保持最新，建立了websocket连接，用于接收有关直播开播下播事件，或当前观众数量的更新。",
             "getting_started": "入门设置",
-            "getting_started_text": "1. 登录应用程序。\n2.确保所有感兴趣挖掘的游戏的账号已连接到您的Twitch账号。\n3.如果您想挖掘所有掉宝，请不要勾选“仅参与优先掉宝游戏”，然后按“刷新”。\n4.如果您想优先挖掘特定游戏，请使用“优先掉宝游戏”列表设置您想挖掘的游戏的优先顺序。程序将尝试先挖掘列表顶部的游戏，然后再挖掘后边的游戏。\n5.勾选“仅参与优先掉宝游戏”时，不会挖掘不在优先列表中的游戏。勾不勾选取决于你。\n6。使用“不参与掉宝游戏”列表设置永不挖掘的游戏。\n7.更改任一列表的内容，或更改“仅参与优先掉宝游戏”勾选状态，需要手动按“刷新”才能使更改生效。"
+            "getting_started_text": "1. 登录应用程序。\n2.确保所有感兴趣挖掘的游戏的账号已连接到您的Twitch账号。\n3.如果您想挖掘所有掉宝，请不要勾选“仅参与优先掉宝游戏”，然后按“刷新”。\n4.如果您想优先挖掘特定游戏，请使用“优先掉宝游戏”列表设置您想挖掘的游戏的优先顺序。程序将尝试先挖掘列表顶部的游戏，然后再挖掘后边的游戏。\n5.勾选“仅参与优先掉宝游戏”时，不会挖掘不在优先列表中的游戏。勾不勾选取决于你。\n6。使用“不参与掉宝游戏”列表设置永不挖掘的游戏。\n7.更改任一列表的内容，或更改“仅参与优先掉宝游戏”勾选状态，需要手动按“刷新”才能使更改生效。",
+            "about": "About Twitch Drops Miner",
+            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
+            "how_to_use": "How to Use",
+            "features": "Features",
+            "important_notes": "Important Notes",
+            "github_repo": "GitHub Repository"
+        },
+        "header": {
+            "title": "Twitch Drops Miner",
+            "language": "Language:",
+            "initializing": "Initializing...",
+            "auto_mode": "AUTO",
+            "manual_mode": "MANUAL"
         }
     }
 }

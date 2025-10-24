@@ -11,12 +11,6 @@
     },
     "login": {
         "unexpected_content": "Повернуто неочікуваний тип вмісту, зазвичай через перенаправлення. Чи не потрібно вам увійти задля доступу в інтернет?",
-        "chrome": {
-            "startup": "Відкриття браузера...",
-            "login_to_complete": "Завершіть процедуру входу власноруч, натиснувши кнопку \"Увійти ще раз\".",
-            "no_token": "Жетон авторизації не знайдено.",
-            "closed_window": "Вікно браузера було закрито до завершення процедури входу."
-        },
         "error_code": "Код помилки входу: {error_code}",
         "incorrect_login_pass": "Неправильне ім'я користувача або пароль.",
         "incorrect_email_code": "Неправильний код електронної пошти.",
@@ -60,7 +54,10 @@
             "username": "Ім'я користувача",
             "password": "Пароль",
             "twofa_code": "Код двофакторної автентифікації (необов'язково)",
-            "button": "Вхід"
+            "button": "Вхід",
+            "oauth_prompt": "Enter this code at:",
+            "oauth_activate": "Twitch Activate",
+            "oauth_confirm": "I've entered the code"
         },
         "websocket": {
             "name": "Стан веб-сокета",
@@ -79,69 +76,75 @@
             "campaign": "Кампанія:",
             "remaining": "{time} залишилося",
             "drop_progress": "Поступ:",
-            "campaign_progress": "Поступ:"
+            "campaign_progress": "Поступ:",
+            "no_drop": "No active drop",
+            "return_to_auto": "Return to Auto Mode",
+            "manual_mode_info": "Manual Mode: Mining"
         },
         "channels": {
             "name": "Канали",
-            "switch": "Перемкнути",
-            "online": "ОНЛАЙН  \u2714",
-            "pending": "ОФЛАЙН \u23f3",
-            "offline": "ОФЛАЙН \u274c",
-            "headings": {
-                "channel": "Канал",
-                "status": "Стан",
-                "game": "Гра",
-                "viewers": "Глядачі"
-            }
+            "online": "ОНЛАЙН  ✔",
+            "pending": "ОФЛАЙН ⏳",
+            "offline": "ОФЛАЙН ❌",
+            "no_channels": "No channels tracked yet...",
+            "no_channels_for_games": "No channels found for selected games...",
+            "channel_count": "channel",
+            "channel_count_plural": "channels",
+            "viewers": "viewers"
         },
         "inventory": {
-            "filter": {
-                "name": "Фільтри",
-                "show": "Показати лише:",
-                "not_linked": "Не пов'язано",
-                "upcoming": "Наближаються",
-                "expired": "Прострочені",
-                "excluded": "Виключені",
-                "finished": "Завершені",
-                "refresh": "Оновити"
-            },
             "status": {
-                "linked": "Пов'язано \u2714",
-                "not_linked": "Не пов'язано \u274c",
-                "active": "Діюча \u2714",
-                "upcoming": "Наближається \u23f3",
-                "expired": "Прострочено \u274c",
-                "claimed": "Отримано \u2714",
-                "ready_to_claim": "Готове до отримання \u23f3"
+                "active": "Діюча ✔",
+                "upcoming": "Наближається ⏳",
+                "expired": "Прострочено ❌",
+                "claimed": "Отримано ✔"
             },
             "starts": "Починається {time}",
             "ends": "Завершується {time}",
-            "allowed_channels": "Дозволені канали:",
-            "all_channels": "Усі",
-            "and_more": "і {amount} більше...",
-            "percent_progress": "{percent} від {minutes} хвилин",
-            "minutes_progress": "{minutes} хвилин"
+            "no_campaigns": "No campaigns loaded yet...",
+            "claimed_drops": "claimed"
         },
         "settings": {
             "general": {
                 "name": "Основні",
-                "dark_mode": "Темний режим: ",
-                "proxy": "Проксі (потребує перезапуску):"
+                "dark_mode": "Темний режим: "
             },
-            "game_name": "Назва гри",
             "reload": "Перезавантажити",
-            "reload_text": "Більшість змін потребують перезавантаження, щоб набути дії: "
+            "games_to_watch": "Games to Watch",
+            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
+            "search_games": "Search games...",
+            "select_all": "Select All",
+            "deselect_all": "Deselect All",
+            "selected_games": "Selected Games (drag to reorder)",
+            "available_games": "Available Games",
+            "no_games_selected": "No games selected. Check games below to add them.",
+            "no_games_match": "No games match your search.",
+            "all_games_selected": "All games are selected or no games available.",
+            "actions": "Actions",
+            "connection_quality": "Connection Quality:",
+            "minimum_refresh": "Minimum Refresh Interval (minutes):"
         },
         "help": {
             "links": {
-                "name": "Корисні посилання",
-                "inventory": "Переглянути інвентар Twitch",
-                "campaigns": "Переглянути усі кампанії та керувати пов'язаними обліковими записами"
+                "name": "Корисні посилання"
             },
             "how_it_works": "Як це працює?",
             "how_it_works_text": "Кожні кілька секунд програма вдає, що переглядає певний потік, отримуючи метадані потоку — цього достатньо, щоб здобувати дропи. Зауважте, що це повністю обходить необхідність завантажувати будь-які потокові відео та звук.\nЩоб підтримувати актуальний стан каналів (ОНЛАЙН або ОФЛАЙН), встановлюється веб-сокетне з'єднання, яке отримує події про збільшення або зменшення кількості трансляцій, або оновлення поточної кількості глядачів.",
             "getting_started": "Інструкція",
-            "getting_started_text": "1. Увійдіть в додаток.\n2. Переконайтеся, що ваш обліковий запис Twitch пов'язаний з усіма обліковими записами ігор, з яких ви хочете здобувати дропи.\n3. Якщо ви зацікавлені у здобуванні всього можливого, змініть \"Режим пріоритету\" на будь-який інший, окрім \"Тільки список пріоритетів\" і натисніть \"Перезавантажити\".\n4. Якщо ви хочете спочатку здобувати певні ігри, скористайтеся списком \"Пріоритет\", щоб створити впорядкований список ігор на ваш вибір. Першими будуть спроби здобувати ігри з початку списку, а потім ті, що знаходяться нижче у списку.\n5. Залиште для параметра \"Режим пріоритету\" вибрано значення \"Тільки список пріоритетів\", щоб уникнути здобування ігор, яких немає у списку пріоритетів. Або ні - вирішувати вам.\n6. Використовуйте список \"Виключено\", щоб вказати застосунку, з яких ігор ніколи не слід здобувати.\n7. Зміна вмісту будь-якого зі списків або зміна стану опції \"Режим пріоритету\" вимагає натискання кнопки \"Перезавантажити\" для набуття змінами чинності."
+            "getting_started_text": "1. Увійдіть в додаток.\n2. Переконайтеся, що ваш обліковий запис Twitch пов'язаний з усіма обліковими записами ігор, з яких ви хочете здобувати дропи.\n3. Якщо ви зацікавлені у здобуванні всього можливого, змініть \"Режим пріоритету\" на будь-який інший, окрім \"Тільки список пріоритетів\" і натисніть \"Перезавантажити\".\n4. Якщо ви хочете спочатку здобувати певні ігри, скористайтеся списком \"Пріоритет\", щоб створити впорядкований список ігор на ваш вибір. Першими будуть спроби здобувати ігри з початку списку, а потім ті, що знаходяться нижче у списку.\n5. Залиште для параметра \"Режим пріоритету\" вибрано значення \"Тільки список пріоритетів\", щоб уникнути здобування ігор, яких немає у списку пріоритетів. Або ні - вирішувати вам.\n6. Використовуйте список \"Виключено\", щоб вказати застосунку, з яких ігор ніколи не слід здобувати.\n7. Зміна вмісту будь-якого зі списків або зміна стану опції \"Режим пріоритету\" вимагає натискання кнопки \"Перезавантажити\" для набуття змінами чинності.",
+            "about": "About Twitch Drops Miner",
+            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
+            "how_to_use": "How to Use",
+            "features": "Features",
+            "important_notes": "Important Notes",
+            "github_repo": "GitHub Repository"
+        },
+        "header": {
+            "title": "Twitch Drops Miner",
+            "language": "Language:",
+            "initializing": "Initializing...",
+            "auto_mode": "AUTO",
+            "manual_mode": "MANUAL"
         }
     }
 }

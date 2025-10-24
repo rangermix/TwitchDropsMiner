@@ -11,12 +11,6 @@
     },
     "login": {
         "unexpected_content": "Uventet indholdstype returneres, normalt på grund af at blive omdirigeret. Skal du logge ind for internetadgang?",
-        "chrome": {
-            "startup": "Åbner Chrome...",
-            "login_to_complete": "Fuldfør login-proceduren manuelt ved at trykke på Login-knappen igen.",
-            "no_token": "Der blev ikke fundet noget autorisationstoken.",
-            "closed_window": "Chrome-vinduet blev lukket, før login-proceduren kunne fuldføres."
-        },
         "error_code": "Login fejlkode: {error_code}",
         "incorrect_login_pass": "Forkert brugernavn eller kodeord.",
         "incorrect_email_code": "Forkert email kode.",
@@ -60,7 +54,10 @@
             "username": "Brugernavn",
             "password": "Kodeord",
             "twofa_code": "2FA code (valgfrit)",
-            "button": "Login"
+            "button": "Login",
+            "oauth_prompt": "Enter this code at:",
+            "oauth_activate": "Twitch Activate",
+            "oauth_confirm": "I've entered the code"
         },
         "websocket": {
             "name": "Websocket Status",
@@ -79,69 +76,75 @@
             "campaign": "Kampagne:",
             "remaining": "{time} tilbage",
             "drop_progress": "Fremskridt:",
-            "campaign_progress": "Fremskridt:"
+            "campaign_progress": "Fremskridt:",
+            "no_drop": "No active drop",
+            "return_to_auto": "Return to Auto Mode",
+            "manual_mode_info": "Manual Mode: Mining"
         },
         "channels": {
             "name": "Kanaler",
-            "switch": "Skift",
-            "online": "ONLINE  \u2714",
-            "pending": "OFFLINE \u23f3",
-            "offline": "OFFLINE \u274c",
-            "headings": {
-                "channel": "Kanal",
-                "status": "Status",
-                "game": "Spil",
-                "viewers": "Seere"
-            }
+            "online": "ONLINE  ✔",
+            "pending": "OFFLINE ⏳",
+            "offline": "OFFLINE ❌",
+            "no_channels": "No channels tracked yet...",
+            "no_channels_for_games": "No channels found for selected games...",
+            "channel_count": "channel",
+            "channel_count_plural": "channels",
+            "viewers": "viewers"
         },
         "inventory": {
-            "filter": {
-                "name": "Filter",
-                "show": "Vis:",
-                "not_linked": "Ikke forbundet",
-                "upcoming": "Kommende",
-                "expired": "Udløbet",
-                "excluded": "Udelukket",
-                "finished": "Færdig",
-                "refresh": "Opdater"
-            },
             "status": {
-                "linked": "Forbundet \u2714",
-                "not_linked": "Ikke forbundet \u274c",
-                "active": "Aktiv \u2714",
-                "upcoming": "Kommende \u23f3",
-                "expired": "Udløbet \u274c",
-                "claimed": "Hentet \u2714",
-                "ready_to_claim": "Klar til at hente \u23f3"
+                "active": "Aktiv ✔",
+                "upcoming": "Kommende ⏳",
+                "expired": "Udløbet ❌",
+                "claimed": "Hentet ✔"
             },
             "starts": "Starter: {time}",
             "ends": "Slutter: {time}",
-            "allowed_channels": "Tilladte kanaler:",
-            "all_channels": "Alle",
-            "and_more": "og {amount} mere...",
-            "percent_progress": "{percent} af {minutes} minutter",
-            "minutes_progress": "{minutes} minutter"
+            "no_campaigns": "No campaigns loaded yet...",
+            "claimed_drops": "claimed"
         },
         "settings": {
             "general": {
                 "name": "General",
-                "dark_mode": "Mørk tilstand: ",
-                "proxy": "Proxy (kræver genstart):"
+                "dark_mode": "Mørk tilstand: "
             },
-            "game_name": "Spilnavn",
             "reload": "Genindlæs",
-            "reload_text": "De fleste ændringer kræver en genindlæsning for at få en øjeblikkelig virkning: "
+            "games_to_watch": "Games to Watch",
+            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
+            "search_games": "Search games...",
+            "select_all": "Select All",
+            "deselect_all": "Deselect All",
+            "selected_games": "Selected Games (drag to reorder)",
+            "available_games": "Available Games",
+            "no_games_selected": "No games selected. Check games below to add them.",
+            "no_games_match": "No games match your search.",
+            "all_games_selected": "All games are selected or no games available.",
+            "actions": "Actions",
+            "connection_quality": "Connection Quality:",
+            "minimum_refresh": "Minimum Refresh Interval (minutes):"
         },
         "help": {
             "links": {
-                "name": "Nyttige Links",
-                "inventory": "Se Twitch belønninger",
-                "campaigns": "Se alle kampagner og administrer kontolinks"
+                "name": "Nyttige Links"
             },
             "how_it_works": "Hvordan virker det?",
             "how_it_works_text": "Hvert ~60. sekund sender applikationen en \"set minut\"-begivenhed til den kanal, der i øjeblikket bliver set - dette er nok til at øge faldet. Bemærk, at dette helt omgår behovet for at downloade enhver faktisk stream video og lyd. For at holde status (ONLINE eller OFFLINE) for kanalerne opdateret, er der etableret en websocket-forbindelse, der modtager begivenheder om streams, der går op eller ned, eller opdateringer vedrørende det aktuelle antal seere.",
             "getting_started": "Kom igang",
-            "getting_started_text": "1. Log ind på applikationen.\n2. Sørg for, at din Twitch-konto er linket til alle kampagner, du er interesseret i at mine.\n3. Hvis du bare er interesseret i at mine alt, skal du fjerne markeringen i \"Kun prioritet\" og trykke på \"Genindlæs\".\n4. Hvis du ønsker at mine specifikke spil først, skal du bruge listen \"Prioritet\" til at opsætte en ordnet liste over spil efter eget valg. Spil fra toppen af ​​listen vil blive forsøgt at blive minet først, før dem nederst på listen.\n5. Hold indstillingen \"Kun prioritet\" markeret for at undgå at mine spil, der ikke er på prioritetslisten. Eller ej - det er op til dig.\n6. Brug listen \"Ekskluder\" til at fortælle applikationen, hvilke spil der aldrig bør mines.\n7. Ændring af indholdet af en af ​​listerne eller ændring af tilstanden for \"Kun prioritet\"-indstillingen kræver, at du trykker på \"Genindlæs\" for at ændringerne træder i kraft."
+            "getting_started_text": "1. Log ind på applikationen.\n2. Sørg for, at din Twitch-konto er linket til alle kampagner, du er interesseret i at mine.\n3. Hvis du bare er interesseret i at mine alt, skal du fjerne markeringen i \"Kun prioritet\" og trykke på \"Genindlæs\".\n4. Hvis du ønsker at mine specifikke spil først, skal du bruge listen \"Prioritet\" til at opsætte en ordnet liste over spil efter eget valg. Spil fra toppen af ​​listen vil blive forsøgt at blive minet først, før dem nederst på listen.\n5. Hold indstillingen \"Kun prioritet\" markeret for at undgå at mine spil, der ikke er på prioritetslisten. Eller ej - det er op til dig.\n6. Brug listen \"Ekskluder\" til at fortælle applikationen, hvilke spil der aldrig bør mines.\n7. Ændring af indholdet af en af ​​listerne eller ændring af tilstanden for \"Kun prioritet\"-indstillingen kræver, at du trykker på \"Genindlæs\" for at ændringerne træder i kraft.",
+            "about": "About Twitch Drops Miner",
+            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
+            "how_to_use": "How to Use",
+            "features": "Features",
+            "important_notes": "Important Notes",
+            "github_repo": "GitHub Repository"
+        },
+        "header": {
+            "title": "Twitch Drops Miner",
+            "language": "Language:",
+            "initializing": "Initializing...",
+            "auto_mode": "AUTO",
+            "manual_mode": "MANUAL"
         }
     }
 }

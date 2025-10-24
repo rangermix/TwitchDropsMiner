@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 from .translator import (
-    ChromeMessages,
     ErrorMessages,
-    GUIChannelHeadings,
     GUIChannels,
+    GUIHeader,
     GUIHelp,
     GUIHelpLinks,
     GUIInventory,
-    GUIInvFilter,
     GUIInvStatus,
     GUILoginForm,
     GUIMessages,
@@ -31,7 +29,6 @@ from .translator import (
 
 __all__ = [
     "StatusMessages",
-    "ChromeMessages",
     "LoginMessages",
     "ErrorMessages",
     "GUIStatus",
@@ -39,15 +36,14 @@ __all__ = [
     "GUILoginForm",
     "GUIWebsocket",
     "GUIProgress",
-    "GUIChannelHeadings",
     "GUIChannels",
-    "GUIInvFilter",
     "GUIInvStatus",
     "GUIInventory",
     "GUISettingsGeneral",
     "GUISettings",
     "GUIHelpLinks",
     "GUIHelp",
+    "GUIHeader",
     "GUIMessages",
     "Translation",
     "default_translation",

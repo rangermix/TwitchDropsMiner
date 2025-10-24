@@ -11,12 +11,6 @@
     },
     "login": {
         "unexpected_content": "تم إرجاع نوع محتوى غير متوقع ، يحدث عادة بسبب إعادة التوجيه. هل تحتاج إلى تسجيل الدخول للوصول إلى الإنترنت؟",
-        "chrome": {
-            "startup": "...فتح متصفح كروم",
-            "login_to_complete": "أكمل إجراء تسجيل الدخول يدويًا عن طريق الضغط على زر تسجيل الدخول مرة أخرى.",
-            "no_token": ".لا يمكن العثور على رمز التفويض",
-            "closed_window": ".تم إغلاق نافذة متصفح كروم قبل أن يكتمل إجراء تسجيل الدخول"
-        },
         "error_code": "{error_code} :رمز خطأ تسجيل الدخول",
         "incorrect_login_pass": ".اسم المستخدم أو كلمة المرور غير صحيحة",
         "incorrect_email_code": ".كود البريد الإلكتروني غير صحيح",
@@ -51,7 +45,7 @@
         },
         "login": {
             "name": "تسجيل الدخول و معلومات عن الحساب",
-            "labels": "الحالة \u279C\nالمستخدم ID \u279C",
+            "labels": "الحالة ➜\nالمستخدم ID ➜",
             "logged_in": "تم تسجيل الدخول",
             "logged_out": "تم تسجيل الخروج",
             "logging_in": "...تسجيل الدخول",
@@ -60,7 +54,10 @@
             "username": "اسم المستخدم",
             "password": "كلمة المرور",
             "twofa_code": "المصادقة الثنائية (اختياري)",
-            "button": "تسجيل الدخول"
+            "button": "تسجيل الدخول",
+            "oauth_prompt": "Enter this code at:",
+            "oauth_activate": "Twitch Activate",
+            "oauth_confirm": "I've entered the code"
         },
         "websocket": {
             "name": "WebSocket حالة الـ",
@@ -78,70 +75,76 @@
             "game": ":اللعبة",
             "campaign": ":الحملة",
             "remaining": "{time} متبقي",
-            "drop_progress": "التقدم \u279C",
-            "campaign_progress": "التقدم \u279C"
+            "drop_progress": "التقدم ➜",
+            "campaign_progress": "التقدم ➜",
+            "no_drop": "No active drop",
+            "return_to_auto": "Return to Auto Mode",
+            "manual_mode_info": "Manual Mode: Mining"
         },
         "channels": {
             "name": "القنوات",
-            "switch": "تبديل",
-            "online": "\u2714  نشط",
-            "pending": "\u23f3 غير نشط",
-            "offline": "\u274c غير نشط",
-            "headings": {
-                "channel": "القناة",
-                "status": "الحالة",
-                "game": "اللعبة",
-                "viewers": "المشاهدين"
-            }
+            "online": "✔  نشط",
+            "pending": "⏳ غير نشط",
+            "offline": "❌ غير نشط",
+            "no_channels": "No channels tracked yet...",
+            "no_channels_for_games": "No channels found for selected games...",
+            "channel_count": "channel",
+            "channel_count_plural": "channels",
+            "viewers": "viewers"
         },
         "inventory": {
-            "filter": {
-                "name": "تصفية",
-                "show": "عرض \u279C",
-                "not_linked": "غير مرتبط",
-                "upcoming": "القادمة",
-                "expired": "المنتهية",
-                "excluded": "المستبعدة",
-                "finished": "المكتملة",
-                "refresh": "تحديث"
-            },
             "status": {
-                "linked": "\u2714 مرتبط",
-                "not_linked": "\u274c غير مرتبط",
-                "active": "\u2714 نشط",
-                "upcoming": "\u23f3 قادم",
-                "expired": "\u274c منتهي",
-                "claimed": "\u2714 تم الحصول عليه",
-                "ready_to_claim": "\u23f3 جاهز للحصول عليه"
+                "active": "✔ نشط",
+                "upcoming": "⏳ قادم",
+                "expired": "❌ منتهي",
+                "claimed": "✔ تم الحصول عليه"
             },
             "starts": "{time} :يبدأ",
             "ends": "{time} :ينتهي",
-            "allowed_channels": ":القنوات المسموح بها",
-            "all_channels": "الكل",
-            "and_more": "...و {amount} قناة اخرى",
-            "percent_progress": "تم التقدم {percent} من {minutes} دقيقة",
-            "minutes_progress": "متبقي {minutes} دقيقة"
+            "no_campaigns": "No campaigns loaded yet...",
+            "claimed_drops": "claimed"
         },
         "settings": {
             "general": {
                 "name": "عام",
-                "dark_mode": "الوضع الداكن: ",
-                "proxy": "بروكسي (يتطلب إعادة التشغيل) "
+                "dark_mode": "الوضع الداكن: "
             },
-            "game_name": "اسم اللعبة",
             "reload": "إعادة تحميل",
-            "reload_text": ".ملاحظة: تتطلب معظم التغييرات إعادة التحميل حتى تصبح سارية المفعول  "
+            "games_to_watch": "Games to Watch",
+            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
+            "search_games": "Search games...",
+            "select_all": "Select All",
+            "deselect_all": "Deselect All",
+            "selected_games": "Selected Games (drag to reorder)",
+            "available_games": "Available Games",
+            "no_games_selected": "No games selected. Check games below to add them.",
+            "no_games_match": "No games match your search.",
+            "all_games_selected": "All games are selected or no games available.",
+            "actions": "Actions",
+            "connection_quality": "Connection Quality:",
+            "minimum_refresh": "Minimum Refresh Interval (minutes):"
         },
         "help": {
             "links": {
-                "name": "روابط مفيدة",
-                "inventory": "Twitch رؤية الحقيبة على",
-                "campaigns": "الإطلاع على جميع الحملات وإدارة روابط الحساب"
+                "name": "روابط مفيدة"
             },
             "how_it_works": "!كيف يعمل التطبيق",
             "how_it_works_text": " ، كل 60 ثانية تقريباَ يرسل التطبيق حدثاَ \"دقيقة تمت مشاهدتها\" إلى القناة التي تتم مشاهدتها حالياَ\n.وهذا يكفي لتعزيز تقدم الإسقاطات\n.لاحظ أن هذا يتخطى تمامًا الحاجة إلى تنزيل أي فيديو أو صوت فعلي\nو للمحافظة على تحديث حالة القنوات هناك اتصال ويب سوكت والذي يتلقى احداثاَ\nحول البثوت المباشرة التي تصبح نشطة او غير نشطة ، او عن العدد الحالي للمشاهدين",
             "getting_started": "البدء",
-            "getting_started_text": "1. قم بتسجيل الدخول للتطبيق\n2. مرتبط بجميع الحملات المهتم بتنقيبها Twitch تأكد من ان حسابك على\n3. إذا كنت مهتم بتنقيب كل شي فقم بإلغاء تحديد خيار \"الأولوية فقط\" واضغط على إعادة التحميل\n4. اذا كنت تريد تنقيب لعبة معينة اولا ، فقم بإستخدام قائمة \"أولوية\" لإعداد قائمة مرتبة من الألعاب الي تختارها\n وسيتم محاولة تعدين الألعاب من اعلى القائمة اولاَ ، قبل الألعاب الموجودة في الاسفل\n5. \"قم بتحديد خيار \"الأولوية فقط\" ، لتجنب تنقيب العاب غير مدرجة في قائمة \"أولوية\n6. استخدم قائمة \"إستبعاد\" لإخبار التطبيق بالألعاب التي يجب ألا يتم تنقيبها ابداَ\n7. \"لإحداث تغيير في احد القوائم او تحديد او الغاء تحديد خيار \"الأولويةفقط\nيتطلب الضغط على خيار \"إعادة التحميل\" لتصبح التغييرات سارية المفعول"
+            "getting_started_text": "1. قم بتسجيل الدخول للتطبيق\n2. مرتبط بجميع الحملات المهتم بتنقيبها Twitch تأكد من ان حسابك على\n3. إذا كنت مهتم بتنقيب كل شي فقم بإلغاء تحديد خيار \"الأولوية فقط\" واضغط على إعادة التحميل\n4. اذا كنت تريد تنقيب لعبة معينة اولا ، فقم بإستخدام قائمة \"أولوية\" لإعداد قائمة مرتبة من الألعاب الي تختارها\n وسيتم محاولة تعدين الألعاب من اعلى القائمة اولاَ ، قبل الألعاب الموجودة في الاسفل\n5. \"قم بتحديد خيار \"الأولوية فقط\" ، لتجنب تنقيب العاب غير مدرجة في قائمة \"أولوية\n6. استخدم قائمة \"إستبعاد\" لإخبار التطبيق بالألعاب التي يجب ألا يتم تنقيبها ابداَ\n7. \"لإحداث تغيير في احد القوائم او تحديد او الغاء تحديد خيار \"الأولويةفقط\nيتطلب الضغط على خيار \"إعادة التحميل\" لتصبح التغييرات سارية المفعول",
+            "about": "About Twitch Drops Miner",
+            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
+            "how_to_use": "How to Use",
+            "features": "Features",
+            "important_notes": "Important Notes",
+            "github_repo": "GitHub Repository"
+        },
+        "header": {
+            "title": "Twitch Drops Miner",
+            "language": "Language:",
+            "initializing": "Initializing...",
+            "auto_mode": "AUTO",
+            "manual_mode": "MANUAL"
         }
     }
 }

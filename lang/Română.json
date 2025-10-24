@@ -10,12 +10,6 @@
         "no_campaign": "Nu există campanii active pentru a mina drop-uri. În așteptarea unei campanii active..."
     },
     "login": {
-        "chrome": {
-            "startup": "Deschidere Chrome",
-            "login_to_complete": "Finalizați procedura de conectare manual apăsând din nou butonul Conectare.",
-            "no_token": "Nu a putut fi găsit niciun token de autorizare.",
-            "closed_window": "Fereastra Chrome a fost închisă înainte de finalizarea procesului de conectare."
-        },
         "error_code": "Cod de eroare de conexiune: {error_code}",
         "unexpected_content": "Tip de conținut neașteptat returnat, de obicei din cauza unei redirecționări. Trebuie să vă autentificați pentru a accesa Internetul?",
         "incorrect_login_pass": "Numele de utilizator sau parola introdusă este incorectă.",
@@ -60,7 +54,10 @@
             "username": "Nume utilizator",
             "password": "Parolă",
             "twofa_code": "Cod 2FA (opțional)",
-            "button": "Conectare"
+            "button": "Conectare",
+            "oauth_prompt": "Enter this code at:",
+            "oauth_activate": "Twitch Activate",
+            "oauth_confirm": "I've entered the code"
         },
         "websocket": {
             "name": "Stare Websocket",
@@ -79,69 +76,75 @@
             "campaign": "Campanie :",
             "remaining": "{time} rămas",
             "drop_progress": "Avansare :",
-            "campaign_progress": "Avansare :"
+            "campaign_progress": "Avansare :",
+            "no_drop": "No active drop",
+            "return_to_auto": "Return to Auto Mode",
+            "manual_mode_info": "Manual Mode: Mining"
         },
         "channels": {
             "name": "Canale",
-            "switch": "Schimbă",
             "online": "ONLINE  ✔",
             "pending": "OFFLINE ⏳",
             "offline": "OFFLINE ❌",
-            "headings": {
-                "channel": "Canal",
-                "status": "Statut",
-                "game": "Joc",
-                "viewers": "Spectatori"
-            }
+            "no_channels": "No channels tracked yet...",
+            "no_channels_for_games": "No channels found for selected games...",
+            "channel_count": "channel",
+            "channel_count_plural": "channels",
+            "viewers": "viewers"
         },
         "inventory": {
-            "filter": {
-                "name": "Filtru",
-                "show": "Arată :",
-                "not_linked": "Neconectat",
-                "upcoming": "În viitor",
-                "expired": "Expirat",
-                "excluded": "Exclus",
-                "finished": "Terminat",
-                "refresh": "Actualizare"
-            },
             "status": {
-                "linked": "Conectat ✔",
-                "not_linked": "Deconectat ❌",
                 "active": "Activ ✔",
                 "upcoming": "În viitor ⏳",
                 "expired": "Expirat ❌",
-                "claimed": "Revendicat ✔",
-                "ready_to_claim": "Gata de revendicare ⏳"
+                "claimed": "Revendicat ✔"
             },
             "starts": "Începe : {time}",
             "ends": "Se termină : {time}",
-            "allowed_channels": "Canale autorizate :",
-            "all_channels": "Toate",
-            "and_more": "și încă {amount}...",
-            "percent_progress": "{percent} din {minutes} minute",
-            "minutes_progress": "{minutes} minute"
+            "no_campaigns": "No campaigns loaded yet...",
+            "claimed_drops": "claimed"
         },
         "settings": {
             "general": {
                 "name": "General",
-                "dark_mode": "Mod întunecat :",
-                "proxy": "Proxy (necesită repornire) :"
+                "dark_mode": "Mod întunecat :"
             },
-            "game_name": "Nume joc",
             "reload": "Reîncarcă",
-            "reload_text": "Cele mai multe modificări necesită o reîncărcare pentru a se aplica imediat : "
+            "games_to_watch": "Games to Watch",
+            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
+            "search_games": "Search games...",
+            "select_all": "Select All",
+            "deselect_all": "Deselect All",
+            "selected_games": "Selected Games (drag to reorder)",
+            "available_games": "Available Games",
+            "no_games_selected": "No games selected. Check games below to add them.",
+            "no_games_match": "No games match your search.",
+            "all_games_selected": "All games are selected or no games available.",
+            "actions": "Actions",
+            "connection_quality": "Connection Quality:",
+            "minimum_refresh": "Minimum Refresh Interval (minutes):"
         },
         "help": {
             "links": {
-                "name": "Link-uri utile",
-                "inventory": "Vizualizați inventarul Twitch",
-                "campaigns": "Vizualizați toate campaniile și gestionați conturile asociate"
+                "name": "Link-uri utile"
             },
             "how_it_works": "Cum funcționează",
             "how_it_works_text": "Aproximativ la fiecare ~60 de secunde, aplicația trimite un eveniment \"minut vizionat\" către canalul care este vizionat în prezent - ceea ce este suficient pentru a avansa drop-ul. Rețineți că acest lucru ocolește complet necesitatea de a descărca video și audio din fluxul real. Pentru a menține actualizată starea (ONLINE sau OFFLINE) a canalelor, se stabilește o conexiune websocket pentru a primi evenimente despre fluxurile care cresc sau scad sau actualizări despre numărul actual de spectatori.",
             "getting_started": "Ghid introductiv",
-            "getting_started_text": "1. Conectați-vă la aplicație.\n2. Asigurați-vă că contul dvs. Twitch este conectat la orice campanie care vă interesează.\n3. Dacă doriți doar să extrageți totul, debifați \"Doar cu prioritate\" și apăsați \"Reîncarcă\".\n4. Dacă doriți să extrageți mai întâi anumite jocuri, utilizați lista \"Prioritate\" pentru a defini o listă ordonată de jocuri la alegere. Jocurile din partea de sus a listei vor fi încercate să fie extrase mai întâi, înaintea celor de mai jos în listă.\n5. Lăsați opțiunea \"Doar cu prioritate\" bifată pentru a evita jocurile miniere care nu sunt în lista de priorități. Sau nu - depinde de tine.\n6. Utilizați lista \"Exclude\" pentru a spune aplicației ce jocuri nu ar trebui să fie extrase niciodată.\n7. Editarea conținutului oricăreia dintre liste sau modificarea stării opțiunii \"Doar cu prioritate\" necesită apăsarea \"Reîncarcă\" pentru ca modificările să intre în vigoare."
+            "getting_started_text": "1. Conectați-vă la aplicație.\n2. Asigurați-vă că contul dvs. Twitch este conectat la orice campanie care vă interesează.\n3. Dacă doriți doar să extrageți totul, debifați \"Doar cu prioritate\" și apăsați \"Reîncarcă\".\n4. Dacă doriți să extrageți mai întâi anumite jocuri, utilizați lista \"Prioritate\" pentru a defini o listă ordonată de jocuri la alegere. Jocurile din partea de sus a listei vor fi încercate să fie extrase mai întâi, înaintea celor de mai jos în listă.\n5. Lăsați opțiunea \"Doar cu prioritate\" bifată pentru a evita jocurile miniere care nu sunt în lista de priorități. Sau nu - depinde de tine.\n6. Utilizați lista \"Exclude\" pentru a spune aplicației ce jocuri nu ar trebui să fie extrase niciodată.\n7. Editarea conținutului oricăreia dintre liste sau modificarea stării opțiunii \"Doar cu prioritate\" necesită apăsarea \"Reîncarcă\" pentru ca modificările să intre în vigoare.",
+            "about": "About Twitch Drops Miner",
+            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
+            "how_to_use": "How to Use",
+            "features": "Features",
+            "important_notes": "Important Notes",
+            "github_repo": "GitHub Repository"
+        },
+        "header": {
+            "title": "Twitch Drops Miner",
+            "language": "Language:",
+            "initializing": "Initializing...",
+            "auto_mode": "AUTO",
+            "manual_mode": "MANUAL"
         }
     }
 }
