@@ -673,8 +673,12 @@ function renderSelectedGames(games) {
             <span class="drag-handle">☰</span>
             <span class="priority-number">${index + 1}</span>
             <span class="game-name">${game}</span>
-            <button class="remove-btn" onclick="removeGameFromWatch('${game}')">✕</button>
+            <button class="remove-btn">✕</button>
         `;
+
+        // Event listener for the delete button
+        const removeBtn = div.querySelector('.remove-btn');
+        removeBtn.addEventListener('click', () => removeGameFromWatch(game));
 
         // Drag event handlers
         div.addEventListener('dragstart', handleDragStart);
@@ -708,9 +712,13 @@ function renderAvailableGames(games, filterText) {
         const label = document.createElement('label');
         label.className = 'game-checkbox';
         label.innerHTML = `
-            <input type="checkbox" value="${game}" onchange="toggleGameWatch('${game}', this.checked)">
+            <input type="checkbox" value="${game}">
             <span>${game}</span>
         `;
+
+        const checkbox = label.querySelector('input[type="checkbox"]');
+        checkbox.addEventListener('change', (e) => toggleGameWatch(game, e.target.checked));
+
         container.appendChild(label);
     });
 }
