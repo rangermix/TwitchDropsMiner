@@ -110,19 +110,19 @@
                 "dark_mode": "Modo escuro: "
             },
             "reload": "Recarregar",
-            "games_to_watch": "Games to Watch",
-            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
-            "search_games": "Search games...",
-            "select_all": "Select All",
-            "deselect_all": "Deselect All",
-            "selected_games": "Selected Games (drag to reorder)",
-            "available_games": "Available Games",
-            "no_games_selected": "No games selected. Check games below to add them.",
-            "no_games_match": "No games match your search.",
-            "all_games_selected": "All games are selected or no games available.",
-            "actions": "Actions",
-            "connection_quality": "Connection Quality:",
-            "minimum_refresh": "Minimum Refresh Interval (minutes):"
+            "games_to_watch": "Jogos para assistir",
+            "games_help": "Selecione os jogos para assistir. A ordem importa - arraste para reordenar a prioridade (topo = maior prioridade).",
+            "search_games": "Procurar jogos...",
+            "select_all": "Selecionar tudo",
+            "deselect_all": "Desmarcar tudo",
+            "selected_games": "Jogos selecionados (arraste para reordenar)",
+            "available_games": "Jogos disponíveis",
+            "no_games_selected": "Nenhum jogo selecionado. Marque os jogos abaixo para adicioná-los.",
+            "no_games_match": "Nenhum jogo corresponde à sua pesquisa.",
+            "all_games_selected": "Todos os jogos estão selecionados ou não há jogos disponíveis.",
+            "actions": "Ações",
+            "connection_quality": "Qualidade da conexão:",
+            "minimum_refresh": "Intervalo mínimo de atualização (minutos):"
         },
         "help": {
             "links": {

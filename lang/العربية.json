@@ -110,19 +110,19 @@
                 "dark_mode": "الوضع الداكن: "
             },
             "reload": "إعادة تحميل",
-            "games_to_watch": "Games to Watch",
-            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
-            "search_games": "Search games...",
-            "select_all": "Select All",
-            "deselect_all": "Deselect All",
-            "selected_games": "Selected Games (drag to reorder)",
-            "available_games": "Available Games",
-            "no_games_selected": "No games selected. Check games below to add them.",
-            "no_games_match": "No games match your search.",
-            "all_games_selected": "All games are selected or no games available.",
-            "actions": "Actions",
-            "connection_quality": "Connection Quality:",
-            "minimum_refresh": "Minimum Refresh Interval (minutes):"
+            "games_to_watch": "ألعاب للمشاهدة",
+            "games_help": "حدد الألعاب للمشاهدة. الترتيب مهم - اسحب لإعادة ترتيب الأولوية (الأعلى = أعلى أولوية).",
+            "search_games": "البحث عن الألعاب...",
+            "select_all": "تحديد الكل",
+            "deselect_all": "إلغاء تحديد الكل",
+            "selected_games": "الألعاب المحددة (اسحب لإعادة الترتيب)",
+            "available_games": "الألعاب المتاحة",
+            "no_games_selected": "لم يتم تحديد ألعاب. حدد الألعاب أدناه لإضافتها.",
+            "no_games_match": "لا توجد ألعاب تطابق بحثك.",
+            "all_games_selected": "تم تحديد جميع الألعاب أو لا توجد ألعاب متاحة.",
+            "actions": "الإجراءات",
+            "connection_quality": "جودة الاتصال:",
+            "minimum_refresh": "الحد الأدنى لفترة التحديث (بالدقائق):"
         },
         "help": {
             "links": {

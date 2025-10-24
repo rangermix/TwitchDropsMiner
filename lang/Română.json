@@ -110,19 +110,19 @@
                 "dark_mode": "Mod întunecat :"
             },
             "reload": "Reîncarcă",
-            "games_to_watch": "Games to Watch",
-            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
-            "search_games": "Search games...",
-            "select_all": "Select All",
-            "deselect_all": "Deselect All",
-            "selected_games": "Selected Games (drag to reorder)",
-            "available_games": "Available Games",
-            "no_games_selected": "No games selected. Check games below to add them.",
-            "no_games_match": "No games match your search.",
-            "all_games_selected": "All games are selected or no games available.",
-            "actions": "Actions",
-            "connection_quality": "Connection Quality:",
-            "minimum_refresh": "Minimum Refresh Interval (minutes):"
+            "games_to_watch": "Jocuri de urmărit",
+            "games_help": "Selectați jocurile de urmărit. Ordinea contează - trageți pentru a reordona prioritatea (sus = prioritate maximă).",
+            "search_games": "Căutați jocuri...",
+            "select_all": "Selectați tot",
+            "deselect_all": "Deselectați tot",
+            "selected_games": "Jocuri selectate (trageți pentru a reordona)",
+            "available_games": "Jocuri disponibile",
+            "no_games_selected": "Niciun joc selectat. Bifați jocurile de mai jos pentru a le adăuga.",
+            "no_games_match": "Niciun joc nu corespunde căutării dvs.",
+            "all_games_selected": "Toate jocurile sunt selectate sau nu sunt jocuri disponibile.",
+            "actions": "Acțiuni",
+            "connection_quality": "Calitatea conexiunii:",
+            "minimum_refresh": "Interval minim de reîmprospătare (minute):"
         },
         "help": {
             "links": {

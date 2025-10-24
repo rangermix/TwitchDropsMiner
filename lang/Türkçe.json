@@ -110,19 +110,19 @@
                 "dark_mode": "Karanlık mod: "
             },
             "reload": "Tekrar yükle",
-            "games_to_watch": "Games to Watch",
-            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
-            "search_games": "Search games...",
-            "select_all": "Select All",
-            "deselect_all": "Deselect All",
-            "selected_games": "Selected Games (drag to reorder)",
-            "available_games": "Available Games",
-            "no_games_selected": "No games selected. Check games below to add them.",
-            "no_games_match": "No games match your search.",
-            "all_games_selected": "All games are selected or no games available.",
-            "actions": "Actions",
-            "connection_quality": "Connection Quality:",
-            "minimum_refresh": "Minimum Refresh Interval (minutes):"
+            "games_to_watch": "İzlenecek Oyunlar",
+            "games_help": "İzlenecek oyunları seçin. Sıralama önemlidir - önceliği yeniden sıralamak için sürükleyin (üst = en yüksek öncelik).",
+            "search_games": "Oyun ara...",
+            "select_all": "Tümünü seç",
+            "deselect_all": "Tümünü kaldır",
+            "selected_games": "Seçilen oyunlar (yeniden sıralamak için sürükleyin)",
+            "available_games": "Mevcut oyunlar",
+            "no_games_selected": "Oyun seçilmedi. Eklemek için aşağıdaki oyunları işaretleyin.",
+            "no_games_match": "Aramanızla eşleşen oyun yok.",
+            "all_games_selected": "Tüm oyunlar seçildi veya mevcut oyun yok.",
+            "actions": "İşlemler",
+            "connection_quality": "Bağlantı kalitesi:",
+            "minimum_refresh": "Minimum yenileme aralığı (dakika):"
         },
         "help": {
             "links": {

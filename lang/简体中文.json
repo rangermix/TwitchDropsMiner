@@ -110,19 +110,19 @@
                 "dark_mode": "深色模式: "
             },
             "reload": "刷新",
-            "games_to_watch": "Games to Watch",
-            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
-            "search_games": "Search games...",
-            "select_all": "Select All",
-            "deselect_all": "Deselect All",
-            "selected_games": "Selected Games (drag to reorder)",
-            "available_games": "Available Games",
-            "no_games_selected": "No games selected. Check games below to add them.",
-            "no_games_match": "No games match your search.",
-            "all_games_selected": "All games are selected or no games available.",
-            "actions": "Actions",
-            "connection_quality": "Connection Quality:",
-            "minimum_refresh": "Minimum Refresh Interval (minutes):"
+            "games_to_watch": "观看游戏",
+            "games_help": "选择要观看的游戏。顺序很重要 - 拖动以重新排序优先级（顶部 = 最高优先级）。",
+            "search_games": "搜索游戏...",
+            "select_all": "全选",
+            "deselect_all": "取消全选",
+            "selected_games": "已选游戏（拖动以重新排序）",
+            "available_games": "可用游戏",
+            "no_games_selected": "未选择游戏。勾选下方游戏以添加。",
+            "no_games_match": "没有游戏符合您的搜索。",
+            "all_games_selected": "所有游戏都已选择或没有可用游戏。",
+            "actions": "操作",
+            "connection_quality": "连接质量：",
+            "minimum_refresh": "最小刷新间隔（分钟）："
         },
         "help": {
             "links": {

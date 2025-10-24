@@ -110,19 +110,19 @@
                 "dark_mode": "ダークモード："
             },
             "reload": "再読み込み",
-            "games_to_watch": "Games to Watch",
-            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
-            "search_games": "Search games...",
-            "select_all": "Select All",
-            "deselect_all": "Deselect All",
-            "selected_games": "Selected Games (drag to reorder)",
-            "available_games": "Available Games",
-            "no_games_selected": "No games selected. Check games below to add them.",
-            "no_games_match": "No games match your search.",
-            "all_games_selected": "All games are selected or no games available.",
-            "actions": "Actions",
-            "connection_quality": "Connection Quality:",
-            "minimum_refresh": "Minimum Refresh Interval (minutes):"
+            "games_to_watch": "視聴するゲーム",
+            "games_help": "視聴するゲームを選択してください。順序が重要です - ドラッグして優先順位を並べ替えます（上 = 最高優先度）。",
+            "search_games": "ゲームを検索...",
+            "select_all": "すべて選択",
+            "deselect_all": "すべて選択解除",
+            "selected_games": "選択されたゲーム（ドラッグして並べ替え）",
+            "available_games": "利用可能なゲーム",
+            "no_games_selected": "ゲームが選択されていません。下のゲームにチェックを入れて追加してください。",
+            "no_games_match": "検索に一致するゲームはありません。",
+            "all_games_selected": "すべてのゲームが選択されているか、利用可能なゲームがありません。",
+            "actions": "アクション",
+            "connection_quality": "接続品質：",
+            "minimum_refresh": "最小更新間隔（分）："
         },
         "help": {
             "links": {
