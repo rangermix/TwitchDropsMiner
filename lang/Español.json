@@ -1,4 +1,5 @@
 {
+    "language_name": "Español",
     "english_name": "Spanish",
     "status": {
         "terminated": "\nLa aplicación se ha detenido.\nPor favor, cierre la aplicación.",
@@ -16,7 +17,14 @@
         "incorrect_email_code": "El código de verificación de email es incorrecto.",
         "incorrect_twofa_code": "El código 2FA es incorrecto.",
         "email_code_required": "Código de verificación de email requerido. \nPor favor, revise su email.",
-        "twofa_code_required": "Token 2FA requerido."
+        "twofa_code_required": "Token 2FA requerido.",
+        "status": {
+            "logged_in": "Conectado",
+            "logged_out": "Desconectado",
+            "logging_in": "Iniciando sesión...",
+            "required": "Se requiere inicio de sesión",
+            "waiting_auth": "Waiting for authentication..."
+        }
     },
     "error": {
         "captcha": "El inicio de sesión fue rechazado por CAPTCHA.\nPor favor, intente nuevamente en aprox. 12 horas.",
@@ -46,10 +54,6 @@
         "login": {
             "name": "Inicio de sesión",
             "labels": "Estado:\nUsuario:",
-            "logged_in": "Conectado",
-            "logged_out": "Desconectado",
-            "logging_in": "Iniciando sesión...",
-            "required": "Se requiere inicio de sesión",
             "request": "Por favor, inicie sesión para continuar.",
             "username": "Usuario",
             "password": "Contraseña",
@@ -122,7 +126,9 @@
             "all_games_selected": "Todos los juegos están seleccionados o no hay juegos disponibles.",
             "actions": "Acciones",
             "connection_quality": "Calidad de conexión:",
-            "minimum_refresh": "Intervalo mínimo de actualización (minutos):"
+            "minimum_refresh": "Intervalo mínimo de actualización (minutos):",
+            "dark_mode": "Dark Mode",
+            "reload_campaigns": "Reload Campaigns"
         },
         "help": {
             "links": {
@@ -137,14 +143,35 @@
             "how_to_use": "How to Use",
             "features": "Features",
             "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository"
+            "github_repo": "GitHub Repository",
+            "how_to_use_items": [
+                "Login using your Twitch account (OAuth device code flow)",
+                "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+                "The miner will automatically discover campaigns and start mining",
+                "Configure priority games in Settings to focus on what you want",
+                "Monitor progress in the Main and Inventory tabs"
+            ],
+            "features_items": [
+                "Stream-less drop mining - saves bandwidth",
+                "Game priority and exclusion lists",
+                "Tracks up to 199 channels simultaneously",
+                "Automatic channel switching",
+                "Real-time progress tracking"
+            ],
+            "important_notes_items": [
+                "Do not watch streams on the same account while mining",
+                "Keep your cookies.jar file secure",
+                "Requires linked game accounts for drops"
+            ]
         },
         "header": {
             "title": "Twitch Drops Miner",
             "language": "Language:",
             "initializing": "Initializing...",
             "auto_mode": "AUTO",
-            "manual_mode": "MANUAL"
+            "manual_mode": "MANUAL",
+            "connected": "Connected",
+            "disconnected": "Disconnected"
         }
     }
 }

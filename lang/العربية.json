@@ -1,4 +1,5 @@
 {
+    "language_name": "العربية",
     "english_name": "Arabic",
     "status": {
         "terminated": "تم إنهاء التطبيق. \n أغلق النافذة للخروج من التطبيق.",
@@ -16,7 +17,14 @@
         "incorrect_email_code": ".كود البريد الإلكتروني غير صحيح",
         "incorrect_twofa_code": ".كود المصادقة الثنائية غير صحيح",
         "email_code_required": ".كود البريد الإلكتروني مطلوب. تحقق من بريدك الالكتروني",
-        "twofa_code_required": ".رمز المصادقة الثنائية مطلوب"
+        "twofa_code_required": ".رمز المصادقة الثنائية مطلوب",
+        "status": {
+            "logged_in": "تم تسجيل الدخول",
+            "logged_out": "تم تسجيل الخروج",
+            "logging_in": "...تسجيل الدخول",
+            "required": "تسجيل الدخول مطلوب",
+            "waiting_auth": "Waiting for authentication..."
+        }
     },
     "error": {
         "captcha": ".يرجى المحاولة مجدداَ بعد مرور 12 ساعة \n .CAPTCHA تم رفض محاولة تسجيل الدخول الخاصة بك من قبل",
@@ -46,10 +54,6 @@
         "login": {
             "name": "تسجيل الدخول و معلومات عن الحساب",
             "labels": "الحالة ➜\nالمستخدم ID ➜",
-            "logged_in": "تم تسجيل الدخول",
-            "logged_out": "تم تسجيل الخروج",
-            "logging_in": "...تسجيل الدخول",
-            "required": "تسجيل الدخول مطلوب",
             "request": ".الرجاء تسجيل الدخول للمتابعة",
             "username": "اسم المستخدم",
             "password": "كلمة المرور",
@@ -122,7 +126,9 @@
             "all_games_selected": "تم تحديد جميع الألعاب أو لا توجد ألعاب متاحة.",
             "actions": "الإجراءات",
             "connection_quality": "جودة الاتصال:",
-            "minimum_refresh": "الحد الأدنى لفترة التحديث (بالدقائق):"
+            "minimum_refresh": "الحد الأدنى لفترة التحديث (بالدقائق):",
+            "dark_mode": "Dark Mode",
+            "reload_campaigns": "Reload Campaigns"
         },
         "help": {
             "links": {
@@ -137,14 +143,35 @@
             "how_to_use": "How to Use",
             "features": "Features",
             "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository"
+            "github_repo": "GitHub Repository",
+            "how_to_use_items": [
+                "Login using your Twitch account (OAuth device code flow)",
+                "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+                "The miner will automatically discover campaigns and start mining",
+                "Configure priority games in Settings to focus on what you want",
+                "Monitor progress in the Main and Inventory tabs"
+            ],
+            "features_items": [
+                "Stream-less drop mining - saves bandwidth",
+                "Game priority and exclusion lists",
+                "Tracks up to 199 channels simultaneously",
+                "Automatic channel switching",
+                "Real-time progress tracking"
+            ],
+            "important_notes_items": [
+                "Do not watch streams on the same account while mining",
+                "Keep your cookies.jar file secure",
+                "Requires linked game accounts for drops"
+            ]
         },
         "header": {
             "title": "Twitch Drops Miner",
             "language": "Language:",
             "initializing": "Initializing...",
             "auto_mode": "AUTO",
-            "manual_mode": "MANUAL"
+            "manual_mode": "MANUAL",
+            "connected": "Connected",
+            "disconnected": "Disconnected"
         }
     }
 }

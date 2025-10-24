@@ -26,14 +26,16 @@ const socket = io({
 socket.on('connect', () => {
     console.log('Connected to server');
     state.connected = true;
-    document.getElementById('connection-indicator').textContent = '● Connected';
+    const connText = state.translations.header?.connected || 'Connected';
+    document.getElementById('connection-indicator').textContent = '● ' + connText;
     document.getElementById('connection-indicator').className = 'connected';
 });
 
 socket.on('disconnect', () => {
     console.log('Disconnected from server');
     state.connected = false;
-    document.getElementById('connection-indicator').textContent = '● Disconnected';
+    const disconnText = state.translations.header?.disconnected || 'Disconnected';
+    document.getElementById('connection-indicator').textContent = '● ' + disconnText;
     document.getElementById('connection-indicator').className = 'disconnected';
 });
 
@@ -171,7 +173,7 @@ socket.on('attention_required', (data) => {
     if (data.sound) {
         // Play notification sound
         const audio = new Audio('/static/notification.mp3');
-        audio.play().catch(() => {});
+        audio.play().catch(() => { });
     }
     // Flash title
     flashTitle();
@@ -539,13 +541,18 @@ function showOAuthCode(url, code) {
 
 function updateLoginStatus(data) {
     const statusEl = document.getElementById('login-status');
+    const t = state.translations;
     if (data.user_id) {
-        statusEl.textContent = `Logged in (User ID: ${data.user_id})`;
+        const userIdLabel = t.gui?.login?.user_id_label || 'User ID:';
+        statusEl.textContent = `${data.status} (${userIdLabel} ${data.user_id})`;
+        statusEl.removeAttribute('translation-key');
         statusEl.style.color = 'var(--success-color)';
         document.getElementById('login-form').style.display = 'none';
         document.getElementById('oauth-code-display').style.display = 'none';
     } else {
-        statusEl.textContent = data.status || 'Not logged in';
+        const loggedOut = t.gui?.login?.logged_out || 'Not logged in';
+        statusEl.textContent = data.status || loggedOut;
+        statusEl.setAttribute('translation-key', 'logged_out');
         statusEl.style.color = 'var(--text-secondary)';
         // Check if OAuth is pending (for late-connecting clients)
         if (data.oauth_pending) {
@@ -828,8 +835,8 @@ async function selectChannel(channelId) {
     try {
         const response = await fetch('/api/channels/select', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({channel_id: channelId})
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channel_id: channelId })
         });
 
         if (!response.ok) {
@@ -867,8 +874,8 @@ async function submitLogin() {
     try {
         await fetch('/api/login', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({username, password, token})
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, token })
         });
     } catch (error) {
         console.error('Failed to submit login:', error);
@@ -883,7 +890,11 @@ async function confirmOAuth() {
         });
         // Hide the OAuth form and show waiting message
         document.getElementById('oauth-code-display').style.display = 'none';
-        document.getElementById('login-status').textContent = 'Waiting for authentication...';
+        const t = state.translations;
+        const waitingAuth = t.gui?.login?.waiting_auth || 'Waiting for authentication...';
+        const loginStatus = document.getElementById('login-status');
+        loginStatus.textContent = waitingAuth;
+        loginStatus.setAttribute('translation-key', 'waiting_auth');
     } catch (error) {
         console.error('Failed to confirm OAuth:', error);
     }
@@ -901,7 +912,7 @@ async function saveSettings() {
     try {
         await fetch('/api/settings', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(settings)
         });
         console.log('Settings saved automatically');
@@ -978,6 +989,9 @@ function applyTranslations(t) {
     if (mainTab && t.login) {
         const loginHeader = mainTab.querySelector('.login-panel h2');
         if (loginHeader) loginHeader.textContent = t.login.title;
+
+        const loginStatus = document.getElementById('login-status');
+        if (loginStatus?.hasAttribute('translation-key')) loginStatus.textContent = t.login.status[loginStatus.getAttribute('translation-key')];
 
         // Update login form placeholders
         const usernameInput = document.getElementById('username');
@@ -1103,21 +1117,46 @@ function applyTranslations(t) {
     if (helpTab && t.help) {
         const helpContent = helpTab.querySelector('.help-content');
         if (helpContent) {
-            const headers = helpContent.querySelectorAll('h2, h3');
-            if (headers[0]) headers[0].textContent = t.help.about;
-            if (headers[1]) headers[1].textContent = t.help.how_to_use;
-            if (headers[2]) headers[2].textContent = t.help.features;
-            if (headers[3]) headers[3].textContent = t.help.important_notes;
+            // Rebuild help content dynamically
+            helpContent.innerHTML = `
+                <h2>${t.help.about || 'About Twitch Drops Miner'}</h2>
+                <p>${t.help.about_text || 'This application automatically mines timed Twitch drops without downloading stream data.'}</p>
 
-            // Update help text paragraphs if we have translations
-            const aboutP = helpContent.querySelector('p');
-            if (aboutP && t.help.about_text) {
-                aboutP.textContent = t.help.about_text;
-            }
+                <h3>${t.help.how_to_use || 'How to Use'}</h3>
+                <ol>
+                    ${(t.help.how_to_use_items || [
+                    'Login using your Twitch account (OAuth device code flow)',
+                    'Link your accounts at <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a>',
+                    'The miner will automatically discover campaigns and start mining',
+                    'Configure priority games in Settings to focus on what you want',
+                    'Monitor progress in the Main and Inventory tabs'
+                ]).map(item => `<li>${item}</li>`).join('')}
+                </ol>
 
-            // Note: "How It Works" section from translations is not shown
-            // to avoid dynamically inserting/removing content which causes duplication issues
-            // The static help content above is sufficient for the web UI
+                <h3>${t.help.features || 'Features'}</h3>
+                <ul>
+                    ${(t.help.features_items || [
+                    'Stream-less drop mining - saves bandwidth',
+                    'Game priority and exclusion lists',
+                    'Tracks up to 199 channels simultaneously',
+                    'Automatic channel switching',
+                    'Real-time progress tracking'
+                ]).map(item => `<li>${item}</li>`).join('')}
+                </ul>
+
+                <h3>${t.help.important_notes || 'Important Notes'}</h3>
+                <ul>
+                    ${(t.help.important_notes_items || [
+                    'Do not watch streams on the same account while mining',
+                    'Keep your cookies.jar file secure',
+                    'Requires linked game accounts for drops'
+                ]).map(item => `<li>${item}</li>`).join('')}
+                </ul>
+
+                <div class="help-links">
+                    <a href="https://github.com/DevilXD/TwitchDropsMiner" target="_blank">${t.help.github_repo || 'GitHub Repository'}</a>
+                </div>
+            `;
         }
     }
 
@@ -1130,12 +1169,22 @@ function applyTranslations(t) {
         if (statusText && statusText.textContent === 'Initializing...') {
             statusText.textContent = t.header.initializing;
         }
+
+        // Update connection indicator
+        const connIndicator = document.getElementById('connection-indicator');
+        if (connIndicator) {
+            if (state.connected) {
+                connIndicator.textContent = '● ' + (t.header.connected || 'Connected');
+            } else {
+                connIndicator.textContent = '● ' + (t.header.disconnected || 'Disconnected');
+            }
+        }
     }
 }
 
 async function reloadCampaigns() {
     try {
-        await fetch('/api/reload', {method: 'POST'});
+        await fetch('/api/reload', { method: 'POST' });
         // Status will update via Socket.IO when backend starts operation
     } catch (error) {
         console.error('Failed to reload:', error);

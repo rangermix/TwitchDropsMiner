@@ -16,7 +16,6 @@ log.txt
 /dump.dat
 /lock.file
 settings.json
-/lang/English.json
 
 logs/
 .claude/

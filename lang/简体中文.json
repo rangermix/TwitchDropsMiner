@@ -1,4 +1,5 @@
 {
+    "language_name": "简体中文",
     "english_name": "Simplified Chinese",
     "status": {
         "terminated": "\n应用程序已终止，请关闭窗口以退出应用程序.",
@@ -16,7 +17,14 @@
         "incorrect_email_code": "电子邮箱验证码错误.",
         "incorrect_twofa_code": "手机2FA令牌双重验证码错误.",
         "email_code_required": "需要电子邮件验证码,查看你的邮箱.",
-        "twofa_code_required": "需要手机2FA令牌双重验证."
+        "twofa_code_required": "需要手机2FA令牌双重验证.",
+        "status": {
+            "logged_in": "已登录",
+            "logged_out": "未登录",
+            "logging_in": "正在登录中...",
+            "required": "请先登录",
+            "waiting_auth": "Waiting for authentication..."
+        }
     },
     "error": {
         "captcha": "您的登录存在异常,Twitch官方已进行限制,请在12小时后重试.",
@@ -46,18 +54,14 @@
         "login": {
             "name": "登录Twitch账号",
             "labels": "状态:\n用户ID:",
-            "logged_in": "已登录",
-            "logged_out": "未登录",
-            "logging_in": "正在登录中...",
-            "required": "请先登录",
             "request": "请先登录以访问更多内容.",
             "username": "用户名",
             "password": "密码",
             "twofa_code": "令牌验证码",
             "button": "登录",
-            "oauth_prompt": "Enter this code at:",
-            "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code"
+            "oauth_prompt": "在此网站输入代码：",
+            "oauth_activate": "Twitch 激活",
+            "oauth_confirm": "我已输入代码"
         },
         "websocket": {
             "name": "网络协议连接状态",
@@ -77,20 +81,20 @@
             "campaign": "掉宝活动名称:",
             "drop_progress": "掉宝进度:",
             "campaign_progress": "活动进度:",
-            "no_drop": "No active drop",
-            "return_to_auto": "Return to Auto Mode",
-            "manual_mode_info": "Manual Mode: Mining"
+            "no_drop": "无活跃掉宝",
+            "return_to_auto": "返回自动模式",
+            "manual_mode_info": "手动模式：正在挖掘"
         },
         "channels": {
             "name": "活动频道",
             "online": "ONLINE  ✔",
             "pending": "OFFLINE ⏳",
             "offline": "OFFLINE ❌",
-            "no_channels": "No channels tracked yet...",
-            "no_channels_for_games": "No channels found for selected games...",
-            "channel_count": "channel",
-            "channel_count_plural": "channels",
-            "viewers": "viewers"
+            "no_channels": "尚未跟踪任何频道...",
+            "no_channels_for_games": "所选游戏未找到频道...",
+            "channel_count": "频道",
+            "channel_count_plural": "频道",
+            "viewers": "观众"
         },
         "inventory": {
             "status": {
@@ -101,14 +105,11 @@
             },
             "starts": "开始时间: {time}",
             "ends": "结束时间: {time}",
-            "no_campaigns": "No campaigns loaded yet...",
-            "claimed_drops": "claimed"
+            "no_campaigns": "尚未加载任何活动...",
+            "claimed_drops": "已领取"
         },
         "settings": {
-            "general": {
-                "name": "功能设置",
-                "dark_mode": "深色模式: "
-            },
+            "general": "常规设置",
             "reload": "刷新",
             "games_to_watch": "观看游戏",
             "games_help": "选择要观看的游戏。顺序很重要 - 拖动以重新排序优先级（顶部 = 最高优先级）。",
@@ -122,7 +123,9 @@
             "all_games_selected": "所有游戏都已选择或没有可用游戏。",
             "actions": "操作",
             "connection_quality": "连接质量：",
-            "minimum_refresh": "最小刷新间隔（分钟）："
+            "minimum_refresh": "最小刷新间隔（分钟）：",
+            "dark_mode": "深色模式",
+            "reload_campaigns": "重新加载活动"
         },
         "help": {
             "links": {
@@ -132,19 +135,40 @@
             "how_it_works_text": "每隔约 60 秒，应用程序会向当前正在观看的频道发送一个“观看了一分钟”事件 - 这足以推进掉宝进度。这完全不需要下载任何实际视频流和声音。为了使频道的状态（在线或离线）保持最新，建立了websocket连接，用于接收有关直播开播下播事件，或当前观众数量的更新。",
             "getting_started": "入门设置",
             "getting_started_text": "1. 登录应用程序。\n2.确保所有感兴趣挖掘的游戏的账号已连接到您的Twitch账号。\n3.如果您想挖掘所有掉宝，请不要勾选“仅参与优先掉宝游戏”，然后按“刷新”。\n4.如果您想优先挖掘特定游戏，请使用“优先掉宝游戏”列表设置您想挖掘的游戏的优先顺序。程序将尝试先挖掘列表顶部的游戏，然后再挖掘后边的游戏。\n5.勾选“仅参与优先掉宝游戏”时，不会挖掘不在优先列表中的游戏。勾不勾选取决于你。\n6。使用“不参与掉宝游戏”列表设置永不挖掘的游戏。\n7.更改任一列表的内容，或更改“仅参与优先掉宝游戏”勾选状态，需要手动按“刷新”才能使更改生效。",
-            "about": "About Twitch Drops Miner",
-            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
-            "how_to_use": "How to Use",
-            "features": "Features",
-            "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository"
+            "about": "关于 Twitch 掉宝矿工",
+            "about_text": "此应用程序可在不下载流数据的情况下自动挖掘定时 Twitch 掉宝。",
+            "how_to_use": "使用方法",
+            "features": "功能",
+            "important_notes": "重要提示",
+            "github_repo": "GitHub 仓库",
+            "how_to_use_items": [
+                "使用您的 Twitch 账号登录（OAuth 设备代码流程）",
+                "在 <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> 关联您的账号",
+                "矿工将自动发现活动并开始挖掘",
+                "在设置中配置优先游戏以关注您想要的内容",
+                "在主界面和库存选项卡中监控进度"
+            ],
+            "features_items": [
+                "无流挖掘 - 节省带宽",
+                "游戏优先级和排除列表",
+                "同时跟踪最多 199 个频道",
+                "自动切换频道",
+                "实时进度跟踪"
+            ],
+            "important_notes_items": [
+                "挖掘时请勿在同一账号上观看流",
+                "保护好您的 cookies.jar 文件",
+                "需要关联游戏账号才能掉宝"
+            ]
         },
         "header": {
             "title": "Twitch Drops Miner",
-            "language": "Language:",
-            "initializing": "Initializing...",
+            "language": "语言：",
+            "initializing": "初始化中...",
             "auto_mode": "AUTO",
-            "manual_mode": "MANUAL"
+            "manual_mode": "MANUAL",
+            "connected": "已连接",
+            "disconnected": "已断开"
         }
     }
 }

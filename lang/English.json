@@ -1,0 +1,175 @@
+{
+    "language_name": "English",
+    "english_name": "English",
+    "status": {
+        "terminated": "\nApplication Terminated.\nClose the window to exit the application.",
+        "watching": "Watching: {channel}",
+        "goes_online": "{channel} goes ONLINE, switching...",
+        "goes_offline": "{channel} goes OFFLINE, switching...",
+        "claimed_drop": "Claimed drop: {drop}",
+        "no_channel": "No available channels to watch. Waiting for an ONLINE channel...",
+        "no_campaign": "No active campaigns to mine drops for. Waiting for an active campaign..."
+    },
+    "login": {
+        "unexpected_content": "Unexpected content type returned, usually due to being redirected. Do you need to login for internet access?",
+        "error_code": "Login error code: {error_code}",
+        "incorrect_login_pass": "Incorrect username or password.",
+        "incorrect_email_code": "Incorrect email code.",
+        "incorrect_twofa_code": "Incorrect 2FA code.",
+        "email_code_required": "Email code required. Check your email.",
+        "twofa_code_required": "2FA token required.",
+        "status": {
+            "logged_in": "Logged in",
+            "logged_out": "Logged out",
+            "logging_in": "Logging in...",
+            "required": "Login required",
+            "waiting_auth": "Waiting for authentication..."
+        }
+    },
+    "error": {
+        "captcha": "Your login attempt was denied by CAPTCHA.\nPlease try again in 12+ hours.",
+        "site_down": "Twitch is down, retrying in {seconds} seconds...",
+        "no_connection": "Cannot connect to Twitch, retrying in {seconds} seconds..."
+    },
+    "gui": {
+        "output": "Output",
+        "status": {
+            "name": "Status",
+            "idle": "Idle",
+            "ready": "Ready",
+            "exiting": "Exiting...",
+            "terminated": "Terminated",
+            "cleanup": "Cleaning up channels...",
+            "gathering": "Gathering channels...",
+            "switching": "Switching the channel...",
+            "fetching_inventory": "Fetching inventory...",
+            "fetching_campaigns": "Fetching campaigns...",
+            "adding_campaigns": "Adding campaigns to inventory... {counter}"
+        },
+        "tabs": {
+            "main": "Main",
+            "inventory": "Inventory",
+            "settings": "Settings",
+            "help": "Help"
+        },
+        "login": {
+            "name": "Login Form",
+            "labels": "Status:\nUser ID:",
+            "request": "Please log in to continue.",
+            "username": "Username",
+            "password": "Password",
+            "twofa_code": "2FA code (optional)",
+            "button": "Login",
+            "oauth_prompt": "Enter this code at:",
+            "oauth_activate": "Twitch Activate",
+            "oauth_confirm": "I've entered the code"
+        },
+        "websocket": {
+            "name": "Websocket Status",
+            "websocket": "Websocket #{id}:",
+            "initializing": "Initializing...",
+            "connected": "Connected",
+            "disconnected": "Disconnected",
+            "connecting": "Connecting...",
+            "disconnecting": "Disconnecting...",
+            "reconnecting": "Reconnecting..."
+        },
+        "progress": {
+            "name": "Campaign Progress",
+            "drop": "Drop:",
+            "game": "Game:",
+            "campaign": "Campaign:",
+            "remaining": "{time} remaining",
+            "drop_progress": "Progress:",
+            "campaign_progress": "Progress:",
+            "no_drop": "No active drop",
+            "return_to_auto": "Return to Auto Mode",
+            "manual_mode_info": "Manual Mode: Mining"
+        },
+        "channels": {
+            "name": "Channels",
+            "online": "ONLINE  ✔",
+            "pending": "OFFLINE ⏳",
+            "offline": "OFFLINE ❌",
+            "no_channels": "No channels tracked yet...",
+            "no_channels_for_games": "No channels found for selected games...",
+            "channel_count": "channel",
+            "channel_count_plural": "channels",
+            "viewers": "viewers"
+        },
+        "inventory": {
+            "no_campaigns": "No campaigns loaded yet...",
+            "status": {
+                "active": "Active ✔",
+                "upcoming": "Upcoming ⏳",
+                "expired": "Expired ❌",
+                "claimed": "Claimed ✔"
+            },
+            "starts": "Starts: {time}",
+            "ends": "Ends: {time}",
+            "claimed_drops": "claimed"
+        },
+        "settings": {
+            "general": "General Settings",
+            "dark_mode": "Dark Mode",
+            "reload": "Reload",
+            "reload_campaigns": "Reload Campaigns",
+            "games_to_watch": "Games to Watch",
+            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
+            "search_games": "Search games...",
+            "select_all": "Select All",
+            "deselect_all": "Deselect All",
+            "selected_games": "Selected Games (drag to reorder)",
+            "available_games": "Available Games",
+            "no_games_selected": "No games selected. Check games below to add them.",
+            "no_games_match": "No games match your search.",
+            "all_games_selected": "All games are selected or no games available.",
+            "actions": "Actions",
+            "connection_quality": "Connection Quality:",
+            "minimum_refresh": "Minimum Refresh Interval (minutes):"
+        },
+        "help": {
+            "links": {
+                "name": "Useful Links"
+            },
+            "how_it_works": "How It Works",
+            "how_it_works_text": "Every several seconds, the application pretends to watch a particular stream by fetching stream metadata - this is enough to advance the drops. Note that this completely bypasses the need to download any actual stream of video and sound. To keep the status (ONLINE or OFFLINE) of the channels up-to-date, there's a websocket connection established that receives events about streams going up or down, or updates regarding the current number of viewers.",
+            "getting_started": "Getting Started",
+            "getting_started_text": "1. Login to the application.\n2. Ensure your Twitch account is linked to all campaigns you're interested in mining.\n3. If you're interested in mining everything possible, change the Priority Mode to anything other than \"Priority list only\" and press on \"Reload\".\n4. If you want to mine specific games first, use the \"Priority\" list to set up an ordered list of games of your choice. Games from the top of the list will be attempted to be mined first, before the ones lower down the list.\n5. Keep the \"Priority mode\" selected as \"Priority list only\", to avoid mining games that are not on the priority list. Or not - it's up to you.\n6. Use the \"Exclude\" list to tell the application which games should never be mined.\n7. Changing the contents of either of the lists, or changing the \"Priority mode\", requires you to press on \"Reload\" for the changes to take an effect.",
+            "about": "About Twitch Drops Miner",
+            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
+            "how_to_use": "How to Use",
+            "how_to_use_items": [
+                "Login using your Twitch account (OAuth device code flow)",
+                "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+                "The miner will automatically discover campaigns and start mining",
+                "Configure priority games in Settings to focus on what you want",
+                "Monitor progress in the Main and Inventory tabs"
+            ],
+            "features": "Features",
+            "features_items": [
+                "Stream-less drop mining - saves bandwidth",
+                "Game priority and exclusion lists",
+                "Tracks up to 199 channels simultaneously",
+                "Automatic channel switching",
+                "Real-time progress tracking"
+            ],
+            "important_notes": "Important Notes",
+            "important_notes_items": [
+                "Do not watch streams on the same account while mining",
+                "Keep your cookies.jar file secure",
+                "Requires linked game accounts for drops"
+            ],
+            "github_repo": "GitHub Repository"
+        },
+        "header": {
+            "title": "Twitch Drops Miner",
+            "language": "Language:",
+            "initializing": "Initializing...",
+            "auto_mode": "AUTO",
+            "manual_mode": "MANUAL",
+            "connected": "Connected",
+            "disconnected": "Disconnected"
+        }
+    }
+}

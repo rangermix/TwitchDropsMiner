@@ -68,7 +68,7 @@ src/
 ├── models/          # Domain models (Game, Channel, Campaign, Drop, Benefit)
 ├── config/          # Configuration (constants, paths, operations, settings, client_info)
 ├── utils/           # Pure utilities (string, JSON, async helpers, rate_limiter, backoff)
-├── i18n/            # Translation system (translator)
+├── i18n/            # Translation system (Translator class, TypedDict schemas)
 ├── auth/            # Authentication (auth_state for OAuth and token management)
 ├── api/             # External API (HTTP client, GraphQL client)
 ├── websocket/       # Real-time updates (websocket connection, pool)
@@ -79,6 +79,13 @@ src/
 ├── exceptions.py    # Custom exceptions
 ├── version.py       # Version string
 └── __main__.py      # Entry point (replaces old main.py)
+
+lang/                # Translation JSON files (19 languages)
+├── English.json     # Default/fallback translations
+├── Español.json
+├── Français.json
+├── Deutsch.json
+└── ...              # 15 more languages
 ```
 
 ### Core Components
@@ -205,6 +212,48 @@ Runs in background to trigger:
 - Channel cleanup when drops start/end (based on time_triggers)
 - Inventory reload every ~60 minutes
 
+### Translation System
+
+**Architecture:**
+- All translations stored as JSON files in `lang/` directory (19 languages supported)
+- English (`lang/English.json`) is the single source of truth and fallback language
+- Strongly typed with TypedDict schema defined in `src/i18n/translator.py`
+- Translator class (`src/i18n/translator.py`) handles language loading and fallback
+- Singleton instance `_` available via `from src.i18n import _`
+
+**Supported Languages:**
+- English, Dansk (Danish), Deutsch (German), Español (Spanish), Français (French)
+- Indonesian, Italiano (Italian), Nederlandse (Dutch), Polski (Polish), Português (Portuguese)
+- Română (Romanian), Türkçe (Turkish), Čeština (Czech)
+- Русский (Russian), Українська (Ukrainian), العربية (Arabic)
+- 日本語 (Japanese), 简体中文 (Simplified Chinese), 繁體中文 (Traditional Chinese)
+
+**Translation Structure:**
+```python
+Translation = {
+    "language_name": str,      # Display name of language
+    "english_name": str,       # English name of language
+    "status": StatusMessages,  # Console status messages
+    "login": LoginMessages,    # Login-related messages
+    "error": ErrorMessages,    # Error messages
+    "gui": GUIMessages        # All web GUI text (tabs, settings, help, etc.)
+}
+```
+
+**Usage:**
+```python
+from src.i18n import _
+
+# Access translations
+status_text = _("gui", "status", "idle")  # Returns "Idle"
+login_text = _("login", "status", "logged_in")  # Returns "Logged in"
+```
+
+**Language Persistence:**
+- Language selection persisted in `settings.json` (DATA_DIR)
+- Dynamic language switching supported in web GUI
+- Changes take effect immediately without restart
+
 ## Key Files
 
 - **src/config/constants.py** - Core enums (State, WebsocketTopic), logging config, type aliases
@@ -214,7 +263,10 @@ Runs in background to trigger:
 - **src/config/settings.py** - Application settings with JSON persistence
 - **src/exceptions.py** - Custom exceptions (LoginException, CaptchaRequired, ExitRequest, ReloadRequest, etc.)
 - **src/utils/** - Helper utilities (string_utils, json_utils, async_helpers, rate_limiter, backoff)
-- **src/i18n/translator.py** - i18n support with JSON translation files (20 languages supported)
+- **src/i18n/** - Internationalization package with TypedDict schema and Translator class
+  - **translator.py** - Translator class with typed translation schema (Translation TypedDict)
+  - **__init__.py** - Exports translation types and `_` (Translator instance)
+- **lang/** - Translation JSON files for 19 languages (English.json is the single source of truth)
 - **src/version.py** - Version string
 - **src/web/app.py** - FastAPI application with REST API and Socket.IO
 - **src/web/managers/cache.py** - ImageCache for campaign artwork caching

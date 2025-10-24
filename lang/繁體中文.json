@@ -1,4 +1,5 @@
 {
+    "language_name": "繁體中文",
     "english_name": "Traditional Chinese",
     "status": {
         "terminated": "\n應用程式已終止，請關閉視窗以離開應用程式。",
@@ -16,7 +17,14 @@
         "incorrect_email_code": "電子郵件驗證碼錯誤。",
         "incorrect_twofa_code": "2FA 驗證碼不正確。",
         "email_code_required": "需要電子郵件驗證碼，請查看您的電子郵件信箱。",
-        "twofa_code_required": "需要 2FA 驗證碼。"
+        "twofa_code_required": "需要 2FA 驗證碼。",
+        "status": {
+            "logged_in": "已登入",
+            "logged_out": "未登入",
+            "logging_in": "正在登入…",
+            "required": "需要登入",
+            "waiting_auth": "Waiting for authentication..."
+        }
     },
     "error": {
         "captcha": "您的登入被 CAPTCHA 拒絕，請於12小時後重試。",
@@ -46,10 +54,6 @@
         "login": {
             "name": "登入 Twitch",
             "labels": "狀態：\n用戶ID：",
-            "logged_in": "已登入",
-            "logged_out": "未登入",
-            "logging_in": "正在登入…",
-            "required": "需要登入",
             "request": "請先登入以繼續。",
             "username": "使用者名稱",
             "password": "密碼",
@@ -122,7 +126,9 @@
             "all_games_selected": "所有遊戲都已選擇或沒有可用遊戲。",
             "actions": "操作",
             "connection_quality": "連線品質：",
-            "minimum_refresh": "最小重新整理間隔（分鐘）："
+            "minimum_refresh": "最小重新整理間隔（分鐘）：",
+            "dark_mode": "Dark Mode",
+            "reload_campaigns": "Reload Campaigns"
         },
         "help": {
             "links": {
@@ -137,14 +143,35 @@
             "how_to_use": "How to Use",
             "features": "Features",
             "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository"
+            "github_repo": "GitHub Repository",
+            "how_to_use_items": [
+                "Login using your Twitch account (OAuth device code flow)",
+                "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+                "The miner will automatically discover campaigns and start mining",
+                "Configure priority games in Settings to focus on what you want",
+                "Monitor progress in the Main and Inventory tabs"
+            ],
+            "features_items": [
+                "Stream-less drop mining - saves bandwidth",
+                "Game priority and exclusion lists",
+                "Tracks up to 199 channels simultaneously",
+                "Automatic channel switching",
+                "Real-time progress tracking"
+            ],
+            "important_notes_items": [
+                "Do not watch streams on the same account while mining",
+                "Keep your cookies.jar file secure",
+                "Requires linked game accounts for drops"
+            ]
         },
         "header": {
             "title": "Twitch Drops Miner",
             "language": "Language:",
             "initializing": "Initializing...",
             "auto_mode": "AUTO",
-            "manual_mode": "MANUAL"
+            "manual_mode": "MANUAL",
+            "connected": "Connected",
+            "disconnected": "Disconnected"
         }
     }
 }

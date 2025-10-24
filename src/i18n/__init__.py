@@ -23,7 +23,6 @@ from .translator import (
     Translation,
     Translator,
     _,
-    default_translation,
 )
 
 
@@ -46,7 +45,6 @@ __all__ = [
     "GUIHeader",
     "GUIMessages",
     "Translation",
-    "default_translation",
     "Translator",
     "_",
 ]

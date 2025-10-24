@@ -35,7 +35,7 @@ class LoginFormManager:
         self._manager = manager
         self._login_event = asyncio.Event()
         self._login_data: LoginData | None = None
-        self._status = "Logged out"
+        self._status = _("login", "status", "logged_out")
         self._user_id: int | None = None
         self._oauth_pending: dict[str, str] | None = (
             None  # Store OAuth code for late-connecting clients
@@ -68,19 +68,6 @@ class LoginFormManager:
             self._broadcaster.emit("login_status", {"status": status, "user_id": user_id})
         )
 
-    async def ask_login(self) -> LoginData:
-        """Request login credentials from the user.
-
-        Returns:
-            LoginData containing submitted credentials
-        """
-        self.update(_("gui", "login", "required"), None)
-        self._login_event.clear()
-        await self._broadcaster.emit("login_required", {})
-        # Wait for user to submit login (will be cancelled on shutdown)
-        await self._login_event.wait()
-        return self._login_data
-
     async def ask_enter_code(self, page_url, user_code: str):
         """Request OAuth device code entry from the user.
 
@@ -91,7 +78,7 @@ class LoginFormManager:
             page_url: URL where user should enter the code (e.g., twitch.tv/activate)
             user_code: The device code to enter
         """
-        self.update(_("gui", "login", "required"), None)
+        self.update(_("login", "status", "required"), None)
         self._login_event.clear()
         # Store OAuth code for late-connecting clients
         self._oauth_pending = {"url": str(page_url), "code": user_code}

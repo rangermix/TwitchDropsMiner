@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import json
 from collections import abc
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict, cast
 
 from src.config import DEFAULT_LANG, LANG_PATH
 from src.exceptions import MinerException
-from src.utils.json_utils import json_load, json_save
+from src.utils.json_utils import json_load
 
 
 if TYPE_CHECKING:
@@ -22,6 +23,14 @@ class StatusMessages(TypedDict):
     no_campaign: str
 
 
+class LoginStatus(TypedDict):
+    logged_in: str
+    logged_out: str
+    logging_in: str
+    required: str
+    waiting_auth: str
+
+
 class LoginMessages(TypedDict):
     error_code: str
     unexpected_content: str
@@ -30,6 +39,7 @@ class LoginMessages(TypedDict):
     incorrect_login_pass: str
     incorrect_email_code: str
     incorrect_twofa_code: str
+    status: LoginStatus
 
 
 class ErrorMessages(TypedDict):
@@ -62,11 +72,7 @@ class GUITabs(TypedDict):
 class GUILoginForm(TypedDict):
     name: str
     labels: str
-    logging_in: str
-    logged_in: str
-    logged_out: str
     request: str
-    required: str
     username: str
     password: str
     twofa_code: str
@@ -133,8 +139,10 @@ class GUISettingsGeneral(TypedDict):
 
 
 class GUISettings(TypedDict):
-    general: GUISettingsGeneral
+    general: str
+    dark_mode: str
     reload: str
+    reload_campaigns: str
     games_to_watch: str
     games_help: str
     search_games: str
@@ -163,8 +171,11 @@ class GUIHelp(TypedDict):
     about: str
     about_text: str
     how_to_use: str
+    how_to_use_items: list[str]
     features: str
+    features_items: list[str]
     important_notes: str
+    important_notes_items: list[str]
     github_repo: str
 
 
@@ -174,6 +185,8 @@ class GUIHeader(TypedDict):
     initializing: str
     auto_mode: str
     manual_mode: str
+    connected: str
+    disconnected: str
 
 
 class GUIMessages(TypedDict):
@@ -191,7 +204,7 @@ class GUIMessages(TypedDict):
 
 
 class Translation(TypedDict):
-    language_name: NotRequired[str]
+    language_name: str
     english_name: str
     status: StatusMessages
     login: LoginMessages
@@ -199,202 +212,47 @@ class Translation(TypedDict):
     gui: GUIMessages
 
 
-default_translation: Translation = {
-    "english_name": "English",
-    "status": {
-        "terminated": "\nApplication Terminated.\nClose the window to exit the application.",
-        "watching": "Watching: {channel}",
-        "goes_online": "{channel} goes ONLINE, switching...",
-        "goes_offline": "{channel} goes OFFLINE, switching...",
-        "claimed_drop": "Claimed drop: {drop}",
-        "no_channel": "No available channels to watch. Waiting for an ONLINE channel...",
-        "no_campaign": "No active campaigns to mine drops for. Waiting for an active campaign...",
-    },
-    "login": {
-        "unexpected_content": (
-            "Unexpected content type returned, usually due to being redirected. "
-            "Do you need to login for internet access?"
-        ),
-        "error_code": "Login error code: {error_code}",
-        "incorrect_login_pass": "Incorrect username or password.",
-        "incorrect_email_code": "Incorrect email code.",
-        "incorrect_twofa_code": "Incorrect 2FA code.",
-        "email_code_required": "Email code required. Check your email.",
-        "twofa_code_required": "2FA token required.",
-    },
-    "error": {
-        "captcha": "Your login attempt was denied by CAPTCHA.\nPlease try again in 12+ hours.",
-        "site_down": "Twitch is down, retrying in {seconds} seconds...",
-        "no_connection": "Cannot connect to Twitch, retrying in {seconds} seconds...",
-    },
-    "gui": {
-        "output": "Output",
-        "status": {
-            "name": "Status",
-            "idle": "Idle",
-            "ready": "Ready",
-            "exiting": "Exiting...",
-            "terminated": "Terminated",
-            "cleanup": "Cleaning up channels...",
-            "gathering": "Gathering channels...",
-            "switching": "Switching the channel...",
-            "fetching_inventory": "Fetching inventory...",
-            "fetching_campaigns": "Fetching campaigns...",
-            "adding_campaigns": "Adding campaigns to inventory... {counter}",
-        },
-        "tabs": {
-            "main": "Main",
-            "inventory": "Inventory",
-            "settings": "Settings",
-            "help": "Help",
-        },
-        "login": {
-            "name": "Login Form",
-            "labels": "Status:\nUser ID:",
-            "logged_in": "Logged in",
-            "logged_out": "Logged out",
-            "logging_in": "Logging in...",
-            "required": "Login required",
-            "request": "Please log in to continue.",
-            "username": "Username",
-            "password": "Password",
-            "twofa_code": "2FA code (optional)",
-            "button": "Login",
-            "oauth_prompt": "Enter this code at:",
-            "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code",
-        },
-        "websocket": {
-            "name": "Websocket Status",
-            "websocket": "Websocket #{id}:",
-            "initializing": "Initializing...",
-            "connected": "Connected",
-            "disconnected": "Disconnected",
-            "connecting": "Connecting...",
-            "disconnecting": "Disconnecting...",
-            "reconnecting": "Reconnecting...",
-        },
-        "progress": {
-            "name": "Campaign Progress",
-            "drop": "Drop:",
-            "game": "Game:",
-            "campaign": "Campaign:",
-            "remaining": "{time} remaining",
-            "drop_progress": "Progress:",
-            "campaign_progress": "Progress:",
-            "no_drop": "No active drop",
-            "return_to_auto": "Return to Auto Mode",
-            "manual_mode_info": "Manual Mode: Mining",
-        },
-        "channels": {
-            "name": "Channels",
-            "online": "ONLINE  ✔",
-            "pending": "OFFLINE ⏳",
-            "offline": "OFFLINE ❌",
-            "no_channels": "No channels tracked yet...",
-            "no_channels_for_games": "No channels found for selected games...",
-            "channel_count": "channel",
-            "channel_count_plural": "channels",
-            "viewers": "viewers",
-        },
-        "inventory": {
-            "no_campaigns": "No campaigns loaded yet...",
-            "status": {
-                "active": "Active ✔",
-                "upcoming": "Upcoming ⏳",
-                "expired": "Expired ❌",
-                "claimed": "Claimed ✔",
-            },
-            "starts": "Starts: {time}",
-            "ends": "Ends: {time}",
-            "claimed_drops": "claimed",
-        },
-        "settings": {
-            "general": {
-                "name": "General",
-                "dark_mode": "Dark mode: ",
-            },
-            "reload": "Reload",
-            "games_to_watch": "Games to Watch",
-            "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
-            "search_games": "Search games...",
-            "select_all": "Select All",
-            "deselect_all": "Deselect All",
-            "selected_games": "Selected Games (drag to reorder)",
-            "available_games": "Available Games",
-            "no_games_selected": "No games selected. Check games below to add them.",
-            "no_games_match": "No games match your search.",
-            "all_games_selected": "All games are selected or no games available.",
-            "actions": "Actions",
-            "connection_quality": "Connection Quality:",
-            "minimum_refresh": "Minimum Refresh Interval (minutes):",
-        },
-        "help": {
-            "links": {
-                "name": "Useful Links",
-            },
-            "how_it_works": "How It Works",
-            "how_it_works_text": (
-                "Every several seconds, the application pretends to watch a particular stream "
-                "by fetching stream metadata - this is enough to advance the drops. "
-                "Note that this completely bypasses the need to download "
-                "any actual stream of video and sound. "
-                "To keep the status (ONLINE or OFFLINE) of the channels up-to-date, "
-                "there's a websocket connection established that receives events about streams "
-                "going up or down, or updates regarding the current number of viewers."
-            ),
-            "getting_started": "Getting Started",
-            "getting_started_text": (
-                "1. Login to the application.\n"
-                "2. Ensure your Twitch account is linked to all campaigns "
-                "you're interested in mining.\n"
-                "3. If you're interested in mining everything possible, "
-                'change the Priority Mode to anything other than "Priority list only" '
-                'and press on "Reload".\n'
-                '4. If you want to mine specific games first, use the "Priority" list '
-                "to set up an ordered list of games of your choice. "
-                "Games from the top of the list will be attempted to be mined first, "
-                "before the ones lower down the list.\n"
-                '5. Keep the "Priority mode" selected as "Priority list only", '
-                "to avoid mining games that are not on the priority list. "
-                "Or not - it's up to you.\n"
-                '6. Use the "Exclude" list to tell the application '
-                "which games should never be mined.\n"
-                "7. Changing the contents of either of the lists, or changing "
-                'the "Priority mode", requires you to press on "Reload" '
-                "for the changes to take an effect."
-            ),
-            "about": "About Twitch Drops Miner",
-            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
-            "how_to_use": "How to Use",
-            "features": "Features",
-            "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository",
-        },
-        "header": {
-            "title": "Twitch Drops Miner",
-            "language": "Language:",
-            "initializing": "Initializing...",
-            "auto_mode": "AUTO",
-            "manual_mode": "MANUAL",
-        },
-    },
-}
+# Load English translation from JSON file (single source of truth)
+def _load_english_translation() -> Translation:
+    """Load the English translation from lang/English.json.
+
+    This is the fallback translation used when other translations are missing keys.
+    """
+    english_path = LANG_PATH / "English.json"
+    try:
+        with open(english_path, "r", encoding="utf-8") as f:
+            return cast(Translation, json.load(f))
+    except Exception as e:
+        raise MinerException(
+            f"Failed to load English translation from {english_path}: {e}"
+        ) from e
+
+
+# Module-level English translation (loaded once at import time)
+_english_translation = _load_english_translation()
 
 
 class Translator:
     def __init__(self) -> None:
         self._langs: list[str] = []
-        # start with (and always copy) the default translation
-        self._translation: Translation = default_translation.copy()
-        # if we're in dev, update the template English.json file
-        default_langpath = LANG_PATH.joinpath(f"{DEFAULT_LANG}.json")
-        json_save(default_langpath, default_translation)
+        # start with English translation (loaded from JSON)
+        self._translation: Translation = _english_translation.copy()
         self._translation["language_name"] = DEFAULT_LANG
-        # load available translation names
+        # load available languages from JSON files by reading language_name field
         for filepath in LANG_PATH.glob("*.json"):
-            self._langs.append(filepath.stem)
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if "language_name" in data:
+                        self._langs.append(data["language_name"])
+                    else:
+                        # fallback to filename if language_name is missing
+                        self._langs.append(filepath.stem)
+            except Exception:
+                # if we can't read the file, skip it
+                continue
         self._langs.sort()
+        # ensure DEFAULT_LANG is first in the list
         if DEFAULT_LANG in self._langs:
             self._langs.remove(DEFAULT_LANG)
         self._langs.insert(0, DEFAULT_LANG)
@@ -414,15 +272,22 @@ class Translator:
             # same language as loaded selected
             return
         elif language == DEFAULT_LANG:
-            # default language selected - use the memory value
-            self._translation = default_translation.copy()
+            # default language selected - use English from JSON
+            self._translation = _english_translation.copy()
+            self._translation["language_name"] = DEFAULT_LANG
         else:
-            self._translation = json_load(
-                LANG_PATH.joinpath(f"{language}.json"), default_translation
-            )
-            if "language_name" in self._translation:
-                raise ValueError("Translations cannot define 'language_name'")
-        self._translation["language_name"] = language
+            # find the JSON file with matching language_name field
+            for filepath in LANG_PATH.glob("*.json"):
+                try:
+                    with open(filepath, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        if data.get("language_name") == language:
+                            self._translation = json_load(filepath, _english_translation)
+                            return
+                except Exception:
+                    continue
+            # if we can't find a matching file, raise an error
+            raise ValueError(f"Cannot find translation file for language: {language}")
 
     def __call__(self, *path: str) -> str:
         if not path:
