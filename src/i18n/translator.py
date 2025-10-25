@@ -6,6 +6,7 @@ from typing import TypedDict, cast
 
 from src.config import DEFAULT_LANG, LANG_PATH
 
+
 class StatusMessages(TypedDict):
     terminated: str
     watching: str
@@ -213,13 +214,14 @@ class Translator:
         self.t: Translation
         # load available languages from JSON files by reading language_name field
         for filepath in LANG_PATH.glob("*.json"):
-            try:
-                loaded_translation: Translation = json.load(open(filepath, "r"))
-                self._langs[loaded_translation["language_name"]] = loaded_translation
-            except Exception as e:
-                # if we can't read the file, skip it
-                self.logger.warning(f"Failed to load language file {filepath}: {e}")
-                continue
+            with filepath.open("r", encoding="utf-8") as json_file:
+                try:
+                    loaded_translation: Translation = json.load(json_file)
+                    self._langs[loaded_translation["language_name"]] = loaded_translation
+                except Exception as e:
+                    # if we can't read the file, skip it
+                    self.logger.warning(f"Failed to load language file {filepath}: {e}")
+                    continue
         self._langs = dict(sorted(self._langs.items()))
         self.set_language(DEFAULT_LANG)
 
@@ -232,5 +234,6 @@ class Translator:
 
         self.current_language = language
         self.t = cast(Translation, self._langs.get(language))
+
 
 _ = Translator()

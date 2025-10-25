@@ -4,7 +4,9 @@
 import json
 from pathlib import Path
 
+
 LANG_PATH = Path(__file__).parent / "lang"
+
 
 def add_language_names():
     """Add language_name field to each translation file based on filename."""
@@ -15,7 +17,7 @@ def add_language_names():
         print(f"Processing {filepath.name}...")
 
         # Read the JSON file
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, encoding="utf-8") as f:
             data = json.load(f)
 
         # Add language_name at the beginning
@@ -23,10 +25,11 @@ def add_language_names():
         updated_data.update(data)
 
         # Write back to file with proper formatting
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(updated_data, f, ensure_ascii=False, indent=4)
 
         print(f"  ✓ Added language_name: {language_name}")
+
 
 if __name__ == "__main__":
     add_language_names()

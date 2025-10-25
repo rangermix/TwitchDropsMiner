@@ -5,8 +5,8 @@ Adds English text as placeholders where translations are missing.
 """
 
 import json
-import os
 from pathlib import Path
+
 
 # Translations to add/update for each language
 # Format: {language_code: {key_path: translation}}
@@ -36,10 +36,10 @@ TRANSLATIONS = {
         "gui.help.how_to_use": "使用方法",
         "gui.help.how_to_use_items": [
             "使用您的 Twitch 账号登录（OAuth 设备代码流程）",
-            "在 <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> 关联您的账号",
+            '在 <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a> 关联您的账号',
             "矿工将自动发现活动并开始挖掘",
             "在设置中配置优先游戏以关注您想要的内容",
-            "在主界面和库存选项卡中监控进度"
+            "在主界面和库存选项卡中监控进度",
         ],
         "gui.help.features": "功能",
         "gui.help.features_items": [
@@ -47,13 +47,13 @@ TRANSLATIONS = {
             "游戏优先级和排除列表",
             "同时跟踪最多 199 个频道",
             "自动切换频道",
-            "实时进度跟踪"
+            "实时进度跟踪",
         ],
         "gui.help.important_notes": "重要提示",
         "gui.help.important_notes_items": [
             "挖掘时请勿在同一账号上观看流",
             "保护好您的 cookies.jar 文件",
-            "需要关联游戏账号才能掉宝"
+            "需要关联游戏账号才能掉宝",
         ],
         "gui.help.github_repo": "GitHub 仓库",
         "gui.header.language": "语言：",
@@ -88,10 +88,10 @@ DEFAULT_TRANSLATIONS = {
     "gui.help.how_to_use": "How to Use",
     "gui.help.how_to_use_items": [
         "Login using your Twitch account (OAuth device code flow)",
-        "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+        'Link your accounts at <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a>',
         "The miner will automatically discover campaigns and start mining",
         "Configure priority games in Settings to focus on what you want",
-        "Monitor progress in the Main and Inventory tabs"
+        "Monitor progress in the Main and Inventory tabs",
     ],
     "gui.help.features": "Features",
     "gui.help.features_items": [
@@ -99,13 +99,13 @@ DEFAULT_TRANSLATIONS = {
         "Game priority and exclusion lists",
         "Tracks up to 199 channels simultaneously",
         "Automatic channel switching",
-        "Real-time progress tracking"
+        "Real-time progress tracking",
     ],
     "gui.help.important_notes": "Important Notes",
     "gui.help.important_notes_items": [
         "Do not watch streams on the same account while mining",
         "Keep your cookies.jar file secure",
-        "Requires linked game accounts for drops"
+        "Requires linked game accounts for drops",
     ],
     "gui.help.github_repo": "GitHub Repository",
     "gui.header.language": "Language:",
@@ -139,7 +139,7 @@ def get_nested_value(data, key_path, default=None):
 
 def update_language_file(file_path):
     """Update a language file with missing translations."""
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open(file_path, encoding="utf-8") as f:
         data = json.load(f)
 
     language_name = data.get("english_name", "Unknown")
@@ -164,7 +164,7 @@ def update_language_file(file_path):
 
     if updated:
         # Write back with proper formatting
-        with open(file_path, 'w', encoding='utf-8') as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
         print(f"  ✓ Saved {language_name}")
     else:

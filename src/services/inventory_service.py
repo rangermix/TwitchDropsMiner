@@ -185,7 +185,9 @@ class InventoryService:
             for i, coro in enumerate(asyncio.as_completed(add_campaign_tasks), start=1):
                 await coro
                 status_update(
-                    _.t["gui"]["status"]["adding_campaigns"].format(counter=f"({i}/{len(campaigns)})")
+                    _.t["gui"]["status"]["adding_campaigns"].format(
+                        counter=f"({i}/{len(campaigns)})"
+                    )
                 )
                 # this is needed here explicitly, because cache reads from disk don't raise this
                 from src.config import State

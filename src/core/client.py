@@ -6,7 +6,7 @@ from collections import OrderedDict, abc, deque
 from datetime import datetime, timedelta, timezone
 from functools import partial
 from time import time
-from typing import TYPE_CHECKING, Any, Final, Literal, NoReturn
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 import aiohttp
 
@@ -32,7 +32,6 @@ from src.services.message_handlers import MessageHandlerService
 from src.services.watch_service import WatchService
 from src.utils import (
     AwaitableValue,
-    task_wrapper,
 )
 from src.websocket import WebsocketPool
 
@@ -209,9 +208,14 @@ class Twitch:
         # Add default topics
         self.websocket.add_topics(
             [
-                WebsocketTopic("User", "Drops", auth_state.user_id, self._message_handler_service.process_drops),
                 WebsocketTopic(
-                    "User", "Notifications", auth_state.user_id, self._message_handler_service.process_notifications
+                    "User", "Drops", auth_state.user_id, self._message_handler_service.process_drops
+                ),
+                WebsocketTopic(
+                    "User",
+                    "Notifications",
+                    auth_state.user_id,
+                    self._message_handler_service.process_notifications,
                 ),
             ]
         )
@@ -433,12 +437,18 @@ class Twitch:
                 for channel_id in channels:
                     to_add_topics.append(
                         WebsocketTopic(
-                            "Channel", "StreamState", channel_id, self._message_handler_service.process_stream_state
+                            "Channel",
+                            "StreamState",
+                            channel_id,
+                            self._message_handler_service.process_stream_state,
                         )
                     )
                     to_add_topics.append(
                         WebsocketTopic(
-                            "Channel", "StreamUpdate", channel_id, self._message_handler_service.process_stream_update
+                            "Channel",
+                            "StreamUpdate",
+                            channel_id,
+                            self._message_handler_service.process_stream_update,
                         )
                     )
                 self.websocket.add_topics(to_add_topics)
@@ -512,7 +522,9 @@ class Twitch:
                             self.exit_manual_mode("No channels available for manual game")
                 # Auto-select best channel based on priority
                 else:
-                    for channel in sorted(channels.values(), key=self._channel_service.get_priority):
+                    for channel in sorted(
+                        channels.values(), key=self._channel_service.get_priority
+                    ):
                         if self.can_watch(channel) and self.should_switch(channel):
                             new_watching = channel
                             break
@@ -531,7 +543,9 @@ class Twitch:
                     if self.is_manual_mode() and self._manual_target_game:
                         status_text = f"🎯 Manual Mode: Watching {watching_channel.name} for {self._manual_target_game.name}"
                     else:
-                        status_text = _.t["status"]["watching"].format(channel=watching_channel.name)
+                        status_text = _.t["status"]["watching"].format(
+                            channel=watching_channel.name
+                        )
                     self.gui.status.update(status_text)
                     self._state_change.clear()
                 else:

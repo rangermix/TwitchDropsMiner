@@ -105,7 +105,7 @@ class LoginFormManager:
         Returns:
             Dictionary with status, user_id, and optional oauth_pending data
         """
-        result = {"status": self._status, "user_id": self._user_id}
+        result: dict[str, Any] = {"status": self._status, "user_id": self._user_id}
         # Include OAuth code if pending
         if self._oauth_pending:
             result["oauth_pending"] = self._oauth_pending

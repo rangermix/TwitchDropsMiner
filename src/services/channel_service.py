@@ -150,14 +150,21 @@ class ChannelService:
             # NOTE: Have to do this here, because "channels" can be any iterable
             return
 
-        stream_gql_tasks: list[asyncio.Task[list[JsonType]]] = [
+        # gql_request may return either a single JsonType or a list[JsonType],
+        # so accept the union in the Task type.
+        stream_gql_tasks: list[asyncio.Task[JsonType | list[JsonType]]] = [
             asyncio.create_task(self._twitch.gql_request(stream_gql_chunk))
             for stream_gql_chunk in chunk(stream_gql_ops, 20)
         ]
 
         try:
             for coro in asyncio.as_completed(stream_gql_tasks):
-                response_list: list[JsonType] = await coro
+                response = await coro
+                # Normalize response to a list for uniform processing
+                if isinstance(response, list):
+                    response_list: list[JsonType] = response
+                else:
+                    response_list = [response]
                 for response_json in response_list:
                     channel_data: JsonType = response_json["data"]["user"]
                     if channel_data is not None:

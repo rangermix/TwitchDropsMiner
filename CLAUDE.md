@@ -300,7 +300,7 @@ The project does not include a test suite. Manual testing workflow:
 
 1. Run with `-vvv` for maximum verbosity (levels: -v, -vv, -vvv, -vvvv)
 2. Use `--dump` to generate debug data dumps
-3. Check timestamped log files in `./logs/` directory (always created as `TDM.TIMESTAMP.log`)
+3. Check log files in `./logs/` directory
 4. Use `--debug-ws` for websocket debug logging
 5. Use `--debug-gql` for GraphQL debug logging
 6. Monitor web GUI console output and browser developer tools
