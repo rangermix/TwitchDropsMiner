@@ -120,6 +120,7 @@ jobs:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     needs: [extract-version, docker-build]
+    environment: prod
 
     steps:
       - name: Checkout code
@@ -140,31 +141,18 @@ jobs:
 
           echo "✅ Created and pushed tag v$VERSION"
 
+      - name: Auto-generate release notes if missing
+        run: .github/scripts/generate_release_notes.sh "${{ needs.extract-version.outputs.version }}" "${{ secrets.GEMINI_API_KEY }}"
+
+      - uses: DavidAnson/markdownlint-cli2-action@v20
+        with:
+          fix: true
+          globs: '**/*.md'
+          continue-on-error: true
+
       - name: Generate release notes
         id: release-notes
-        run: |
-          VERSION="${{ needs.extract-version.outputs.version }}"
-
-          # Get the previous tag
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-
-          if [ -n "$PREV_TAG" ]; then
-            echo "## Changes since $PREV_TAG" > release_notes.md
-            echo "" >> release_notes.md
-            git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" >> release_notes.md
-          else
-            echo "## Initial Release" > release_notes.md
-            echo "" >> release_notes.md
-            echo "First release of Twitch Drops Miner $VERSION" >> release_notes.md
-          fi
-
-          echo "" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "## Docker Images" >> release_notes.md
-          echo "" >> release_notes.md
-          echo '```bash' >> release_notes.md
-          echo "docker pull rangermix/twitch-drops-miner:$VERSION" >> release_notes.md
-          echo '```' >> release_notes.md
+        run: .github/scripts/extract_release_notes.sh "${{ needs.extract-version.outputs.version }}"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
