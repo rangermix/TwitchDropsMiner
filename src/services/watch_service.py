@@ -129,7 +129,7 @@ class WatchService:
             if self._twitch.is_manual_mode() and self._twitch._manual_target_game:
                 status_text = f"🎯 Manual Mode: Watching {channel.name} for {self._twitch._manual_target_game.name}"
             else:
-                status_text = _("status", "watching").format(channel=channel.name)
+                status_text = _.t["status"]["watching"].format(channel=channel.name)
             self._twitch.print(status_text)
             self._twitch.gui.status.update(status_text)
 

@@ -100,7 +100,7 @@ class InventoryService:
         6. Sets up maintenance triggers for campaign timing changes
         """
         status_update = self._twitch.gui.status.update
-        status_update(_("gui", "status", "fetching_inventory"))
+        status_update(_.t["gui"]["status"]["fetching_inventory"])
 
         # fetch in-progress campaigns (inventory)
         response = await self._twitch.gql_request(GQL_OPERATIONS["Inventory"])
@@ -125,7 +125,7 @@ class InventoryService:
         }
 
         # fetch detailed data for each campaign, in chunks
-        status_update(_("gui", "status", "fetching_campaigns"))
+        status_update(_.t["gui"]["status"]["fetching_campaigns"])
         fetch_campaigns_tasks: list[asyncio.Task[Any]] = [
             asyncio.create_task(self.fetch_campaigns(campaigns_chunk))
             for campaigns_chunk in chunk(available_campaigns.items(), 20)
@@ -174,7 +174,7 @@ class InventoryService:
         # concurrently add the campaigns into the GUI
         # NOTE: this fetches pictures from the CDN, so might be slow without a cache
         status_update(
-            _("gui", "status", "adding_campaigns").format(counter=f"(0/{len(campaigns)})")
+            _.t["gui"]["status"]["adding_campaigns"].format(counter=f"(0/{len(campaigns)})")
         )
         add_campaign_tasks: list[asyncio.Task[None]] = [
             asyncio.create_task(self._twitch.gui.inv.add_campaign(campaign))
@@ -185,7 +185,7 @@ class InventoryService:
             for i, coro in enumerate(asyncio.as_completed(add_campaign_tasks), start=1):
                 await coro
                 status_update(
-                    _("gui", "status", "adding_campaigns").format(counter=f"({i}/{len(campaigns)})")
+                    _.t["gui"]["status"]["adding_campaigns"].format(counter=f"({i}/{len(campaigns)})")
                 )
                 # this is needed here explicitly, because cache reads from disk don't raise this
                 from src.config import State

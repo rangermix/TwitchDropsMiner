@@ -232,7 +232,7 @@ class _AuthState:
             # looks like we're missing something
             login_form: LoginForm = self._twitch.gui.login
             logger.info("Checking login")
-            login_form.update(_("login", "status", "logging_in"), None)
+            login_form.update(_.t["login"]["status"]["logging_in"], None)
             for _client_mismatch_attempt in range(2):
                 for _invalid_token_attempt in range(2):
                     cookie = jar.filter_cookies(client_info.CLIENT_URL)
@@ -271,7 +271,7 @@ class _AuthState:
             self.user_id = int(validate_response["user_id"])
             cookie["persistent"] = str(self.user_id)
             logger.info(f"Login successful, user ID: {self.user_id}")
-            login_form.update(_("login", "status", "logged_in"), self.user_id)
+            login_form.update(_.t["login"]["status"]["logged_in"], self.user_id)
             # update our cookie and save it
             jar.update_cookies(cookie, client_info.CLIENT_URL)
             jar.save(COOKIES_PATH)

@@ -98,10 +98,7 @@ if __name__ == "__main__":
     # client run
     async def main():
         # set language
-        from contextlib import suppress
-
-        with suppress(ValueError):
-            # this language doesn't exist - stick to English
+        if settings.language:
             _.set_language(settings.language)
 
         # Always log to file with timestamped filename in ./logs/ directory
@@ -159,7 +156,7 @@ if __name__ == "__main__":
         except CaptchaRequired:
             logger.error("Captcha required - cannot continue")
             exit_status = 1
-            client.print(_("error", "captcha"))
+            client.print(_.t["error"]["captcha"])
         except Exception:
             logger.exception("Fatal error encountered during client run")
             exit_status = 1
@@ -172,7 +169,7 @@ if __name__ == "__main__":
                 loop.remove_signal_handler(signal.SIGINT)
                 loop.remove_signal_handler(signal.SIGTERM)
             logger.info("Notifying client of exit")
-            client.print(_("gui", "status", "exiting"))
+            client.print(_.t["gui"]["status"]["exiting"])
             # Shutdown web server
             if web_server_task and not web_server_task.done():
                 logger.info("Shutting down web server")
@@ -202,8 +199,8 @@ if __name__ == "__main__":
         if exit_status != 0:
             logger.warning("Application terminated with error - showing error state")
             # Application terminated with error
-            client.print(_("status", "terminated"))
-            client.gui.status.update(_("gui", "status", "terminated"))
+            client.print(_.t["status"]["terminated"])
+            client.gui.status.update(_.t["gui"]["status"]["terminated"])
             # notify the user about the closure
             client.gui.grab_attention(sound=True)
             # Web GUI doesn't need to wait - browser clients can stay connected

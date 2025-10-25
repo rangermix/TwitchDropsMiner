@@ -49,8 +49,8 @@ class SettingsManager:
             Dictionary with available languages and current language
         """
         return {
-            "available": list(_.languages),
-            "current": _.current,
+            "available": _.get_languages(),
+            "current": _.current_language,
         }
 
     def update_settings(self, settings_data: dict[str, Any]):

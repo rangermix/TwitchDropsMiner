@@ -191,7 +191,7 @@ class HTTPClient:
                     yield response
                     return
 
-                self.gui.print(_("error", "site_down").format(seconds=round(delay)))
+                self.gui.print(_.t["error"]["site_down"].format(seconds=round(delay)))
             except aiohttp.ClientConnectorCertificateError:
                 # SSL verification failures should not be retried
                 raise
@@ -203,7 +203,7 @@ class HTTPClient:
                 # Connection problems, retry with backoff
                 if backoff.steps > 1:
                     # Don't show quick retries to the user
-                    self.gui.print(_("error", "no_connection").format(seconds=round(delay)))
+                    self.gui.print(_.t["error"]["no_connection"].format(seconds=round(delay)))
             finally:
                 if response is not None:
                     response.release()

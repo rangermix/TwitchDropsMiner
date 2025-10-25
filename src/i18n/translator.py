@@ -1,17 +1,10 @@
 from __future__ import annotations
 
 import json
-from collections import abc
-from typing import TYPE_CHECKING, Any, TypedDict, cast
+import logging
+from typing import TypedDict, cast
 
 from src.config import DEFAULT_LANG, LANG_PATH
-from src.exceptions import MinerException
-from src.utils.json_utils import json_load
-
-
-if TYPE_CHECKING:
-    from typing_extensions import NotRequired
-
 
 class StatusMessages(TypedDict):
     terminated: str
@@ -212,96 +205,32 @@ class Translation(TypedDict):
     gui: GUIMessages
 
 
-# Load English translation from JSON file (single source of truth)
-def _load_english_translation() -> Translation:
-    """Load the English translation from lang/English.json.
-
-    This is the fallback translation used when other translations are missing keys.
-    """
-    english_path = LANG_PATH / "English.json"
-    try:
-        with open(english_path, "r", encoding="utf-8") as f:
-            return cast(Translation, json.load(f))
-    except Exception as e:
-        raise MinerException(
-            f"Failed to load English translation from {english_path}: {e}"
-        ) from e
-
-
-# Module-level English translation (loaded once at import time)
-_english_translation = _load_english_translation()
-
-
 class Translator:
     def __init__(self) -> None:
-        self._langs: list[str] = []
-        # start with English translation (loaded from JSON)
-        self._translation: Translation = _english_translation.copy()
-        self._translation["language_name"] = DEFAULT_LANG
+        self.logger: logging.Logger = logging.getLogger("TwitchDropsMiner.i18n.Translator")
+        self._langs: dict[str, Translation] = {}
+        self.current_language: str
+        self.t: Translation
         # load available languages from JSON files by reading language_name field
         for filepath in LANG_PATH.glob("*.json"):
             try:
-                with open(filepath, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    if "language_name" in data:
-                        self._langs.append(data["language_name"])
-                    else:
-                        # fallback to filename if language_name is missing
-                        self._langs.append(filepath.stem)
-            except Exception:
+                loaded_translation: Translation = json.load(open(filepath, "r"))
+                self._langs[loaded_translation["language_name"]] = loaded_translation
+            except Exception as e:
                 # if we can't read the file, skip it
+                self.logger.warning(f"Failed to load language file {filepath}: {e}")
                 continue
-        self._langs.sort()
-        # ensure DEFAULT_LANG is first in the list
-        if DEFAULT_LANG in self._langs:
-            self._langs.remove(DEFAULT_LANG)
-        self._langs.insert(0, DEFAULT_LANG)
+        self._langs = dict(sorted(self._langs.items()))
+        self.set_language(DEFAULT_LANG)
 
-    @property
-    def languages(self) -> abc.Iterable[str]:
-        return iter(self._langs)
-
-    @property
-    def current(self) -> str:
-        return self._translation["language_name"]
+    def get_languages(self) -> list[str]:
+        return list(self._langs.keys())
 
     def set_language(self, language: str):
         if language not in self._langs:
-            raise ValueError("Unrecognized language")
-        elif self._translation["language_name"] == language:
-            # same language as loaded selected
-            return
-        elif language == DEFAULT_LANG:
-            # default language selected - use English from JSON
-            self._translation = _english_translation.copy()
-            self._translation["language_name"] = DEFAULT_LANG
-        else:
-            # find the JSON file with matching language_name field
-            for filepath in LANG_PATH.glob("*.json"):
-                try:
-                    with open(filepath, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                        if data.get("language_name") == language:
-                            self._translation = json_load(filepath, _english_translation)
-                            return
-                except Exception:
-                    continue
-            # if we can't find a matching file, raise an error
-            raise ValueError(f"Cannot find translation file for language: {language}")
+            raise ValueError(f"Unrecognized language {language}")
 
-    def __call__(self, *path: str) -> str:
-        if not path:
-            raise ValueError("Language path expected")
-        v: Any = self._translation
-        try:
-            for key in path:
-                v = v[key]
-        except KeyError as err:
-            # this can only really happen for the default translation
-            raise MinerException(
-                f"{self.current} translation is missing the '{' -> '.join(path)}' translation key"
-            ) from err
-        return str(v)
-
+        self.current_language = language
+        self.t = cast(Translation, self._langs.get(language))
 
 _ = Translator()

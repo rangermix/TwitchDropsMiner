@@ -74,7 +74,7 @@ class Websocket:
         self.topics: dict[str, WebsocketTopic] = {}
         self._submitted: set[WebsocketTopic] = set()
         # notify GUI
-        self.set_status(_("gui", "websocket", "disconnected"))
+        self.set_status(_.t["gui"]["websocket"]["disconnected"])
 
     @property
     def connected(self) -> bool:
@@ -127,7 +127,7 @@ class Websocket:
             self._closed.set()
             ws = self._ws.get_with_default(None)
             if ws is not None:
-                self.set_status(_("gui", "websocket", "disconnecting"))
+                self.set_status(_.t["gui"]["websocket"]["disconnecting"])
                 await ws.close()
             if self._handle_task is not None:
                 with suppress(asyncio.TimeoutError, asyncio.CancelledError):
@@ -187,9 +187,9 @@ class Websocket:
     async def _handle(self):
         """Main websocket handler that manages connection lifecycle and message processing."""
         # ensure we're logged in before connecting
-        self.set_status(_("gui", "websocket", "initializing"))
+        self.set_status(_.t["gui"]["websocket"]["initializing"])
         await self._twitch.wait_until_login()
-        self.set_status(_("gui", "websocket", "connecting"))
+        self.set_status(_.t["gui"]["websocket"]["connecting"])
         ws_logger.debug(f"Websocket[{self._idx}] connecting...")
         self._closed.clear()
         # Connect/Reconnect loop
@@ -201,7 +201,7 @@ class Websocket:
             self._reconnect_requested.clear()
             # NOTE: _topics_changed doesn't start set,
             # because there's no initial topics we can sub to right away
-            self.set_status(_("gui", "websocket", "connected"))
+            self.set_status(_.t["gui"]["websocket"]["connected"])
             ws_logger.debug(f"Websocket[{self._idx}] connected.")
             try:
                 try:
@@ -224,11 +224,11 @@ class Websocket:
                 elif self._closed.is_set():
                     # we closed it - exit
                     ws_logger.debug(f"Websocket[{self._idx}] stopped.")
-                    self.set_status(_("gui", "websocket", "disconnected"))
+                    self.set_status(_.t["gui"]["websocket"]["disconnected"])
                     return
             except Exception:
                 ws_logger.exception(f"Exception in Websocket[{self._idx}]")
-            self.set_status(_("gui", "websocket", "reconnecting"))
+            self.set_status(_.t["gui"]["websocket"]["reconnecting"])
             ws_logger.warning(f"Websocket[{self._idx}] reconnecting...")
 
     async def _handle_ping(self):
