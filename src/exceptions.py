@@ -21,17 +21,6 @@ class ExitRequest(MinerException):
         super().__init__("Application was requested to exit")
 
 
-class ReloadRequest(MinerException):
-    """
-    Raised when the application is requested to reload entirely, without closing the GUI.
-
-    Intended for internal use only.
-    """
-
-    def __init__(self):
-        super().__init__("Application was requested to reload entirely")
-
-
 class RequestException(MinerException):
     """
     Raised for cases where a web request doesn't return what we wanted it to.

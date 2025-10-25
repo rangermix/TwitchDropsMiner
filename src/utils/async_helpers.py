@@ -10,7 +10,7 @@ from contextlib import suppress
 from functools import wraps
 from typing import Any, Generic, Literal, ParamSpec, TypeVar
 
-from src.exceptions import ExitRequest, ReloadRequest
+from src.exceptions import ExitRequest
 
 
 _T = TypeVar("_T")  # type
@@ -50,7 +50,7 @@ def task_wrapper(
         afunc: The async function to wrap
         critical: If True, a critical task failure will trigger application termination
 
-    Handles ExitRequest and ReloadRequest silently, logs other exceptions.
+    Handles ExitRequest silently, logs other exceptions.
     Critical tasks will attempt to find and close the Twitch instance on failure.
     """
 
@@ -61,7 +61,7 @@ def task_wrapper(
         async def wrapper(*args: _P.args, **kwargs: _P.kwargs):
             try:
                 await afunc(*args, **kwargs)
-            except (ExitRequest, ReloadRequest):
+            except ExitRequest:
                 pass
             except Exception:
                 logger.exception(f"Exception in {afunc.__name__} task")

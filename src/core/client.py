@@ -20,7 +20,6 @@ from src.config import (
 )
 from src.exceptions import (
     ExitRequest,
-    ReloadRequest,
     RequestException,
 )
 from src.i18n import _
@@ -170,15 +169,6 @@ class Twitch:
         self.gui.save(force=force)
         self.settings.save(force=force)
 
-    def get_priority(self, channel: Channel) -> int:
-        """Delegate to ChannelService."""
-        return self._channel_service.get_priority(channel)
-
-    @staticmethod
-    def _viewers_key(channel: Channel) -> int:
-        """Delegate to ChannelService."""
-        return ChannelService.get_viewers_key(channel)
-
     def _remove_channel_topics(self, channels: abc.Iterable[Channel]) -> None:
         """Remove websocket topics for a list of channels."""
         topics_to_remove: list[str] = []
@@ -189,17 +179,15 @@ class Twitch:
             self.websocket.remove_topics(topics_to_remove)
 
     async def run(self) -> None:
-        """Main entry point for the miner - handles reload and exit requests."""
+        """Main entry point for the miner - handles exit requests."""
         while True:
             try:
                 await self._run()
                 break
-            except ReloadRequest:
-                await self.shutdown()
             except ExitRequest:
                 break
             except aiohttp.ContentTypeError as exc:
-                raise RequestException(_("login", "unexpected_content")) from exc
+                raise RequestException(_.t["login"]["unexpected_content"]) from exc
 
     async def _run(self) -> None:
         """
@@ -217,13 +205,13 @@ class Twitch:
         # NOTE: watch task is explicitly restarted on each new run
         if self._watching_task is not None:
             self._watching_task.cancel()
-        self._watching_task = asyncio.create_task(self._watch_loop())
+        self._watching_task = asyncio.create_task(self._watch_service.watch_loop())
         # Add default topics
         self.websocket.add_topics(
             [
-                WebsocketTopic("User", "Drops", auth_state.user_id, self.process_drops),
+                WebsocketTopic("User", "Drops", auth_state.user_id, self._message_handler_service.process_drops),
                 WebsocketTopic(
-                    "User", "Notifications", auth_state.user_id, self.process_notifications
+                    "User", "Notifications", auth_state.user_id, self._message_handler_service.process_notifications
                 ),
             ]
         )
@@ -235,7 +223,7 @@ class Twitch:
                 if self.settings.dump:
                     self.close()
                     continue
-                self.gui.status.update(_("gui", "status", "idle"))
+                self.gui.status.update(_.t["gui"]["status"]["idle"])
                 self.stop_watching()
                 # clear the flag and wait until it's set again
                 self._state_change.clear()
@@ -359,7 +347,7 @@ class Twitch:
                 self.restart_watching()
                 self.change_state(State.CHANNELS_CLEANUP)
             elif self._state is State.CHANNELS_CLEANUP:
-                self.gui.status.update(_("gui", "status", "cleanup"))
+                self.gui.status.update(_.t["gui"]["status"]["cleanup"])
                 if not self.wanted_games or full_cleanup:
                     # no games selected or we're doing full cleanup: remove everything
                     to_remove_channels: list[Channel] = list(channels.values())
@@ -388,10 +376,10 @@ class Twitch:
                     self.change_state(State.CHANNELS_FETCH)
                 else:
                     # with no games available, we switch to IDLE after cleanup
-                    self.print(_("status", "no_campaign"))
+                    self.print(_.t["status"]["no_campaign"])
                     self.change_state(State.IDLE)
             elif self._state is State.CHANNELS_FETCH:
-                self.gui.status.update(_("gui", "status", "gathering"))
+                self.gui.status.update(_.t["gui"]["status"]["gathering"])
                 # start with all current channels, keep them in memory for smooth update
                 new_channels: set[Channel] = set(channels.values())
                 channels.clear()
@@ -421,10 +409,10 @@ class Twitch:
                 # NOTE: Viewers sort also ensures ONLINE channels are sorted to the top
                 # NOTE: We can drop using the set now, because there's no more channels being added
                 ordered_channels: list[Channel] = sorted(
-                    new_channels, key=self._viewers_key, reverse=True
+                    new_channels, key=ChannelService.get_viewers_key, reverse=True
                 )
                 ordered_channels.sort(key=lambda ch: ch.acl_based, reverse=True)
-                ordered_channels.sort(key=self.get_priority)
+                ordered_channels.sort(key=self._channel_service.get_priority)
                 # ensure that we won't end up with more channels than we can handle
                 # NOTE: we trim from the end because that's where the non-priority,
                 # offline (or online but low viewers) channels end up
@@ -445,12 +433,12 @@ class Twitch:
                 for channel_id in channels:
                     to_add_topics.append(
                         WebsocketTopic(
-                            "Channel", "StreamState", channel_id, self.process_stream_state
+                            "Channel", "StreamState", channel_id, self._message_handler_service.process_stream_state
                         )
                     )
                     to_add_topics.append(
                         WebsocketTopic(
-                            "Channel", "StreamUpdate", channel_id, self.process_stream_update
+                            "Channel", "StreamUpdate", channel_id, self._message_handler_service.process_stream_update
                         )
                     )
                 self.websocket.add_topics(to_add_topics)
@@ -486,7 +474,7 @@ class Twitch:
                 if self.settings.dump:
                     self.close()
                     continue
-                self.gui.status.update(_("gui", "status", "switching"))
+                self.gui.status.update(_.t["gui"]["status"]["switching"])
 
                 # Determine the best channel to watch
                 new_watching: Channel | None = None  # type: ignore[no-redef]
@@ -524,7 +512,7 @@ class Twitch:
                             self.exit_manual_mode("No channels available for manual game")
                 # Auto-select best channel based on priority
                 else:
-                    for channel in sorted(channels.values(), key=self.get_priority):
+                    for channel in sorted(channels.values(), key=self._channel_service.get_priority):
                         if self.can_watch(channel) and self.should_switch(channel):
                             new_watching = channel
                             break
@@ -543,32 +531,18 @@ class Twitch:
                     if self.is_manual_mode() and self._manual_target_game:
                         status_text = f"🎯 Manual Mode: Watching {watching_channel.name} for {self._manual_target_game.name}"
                     else:
-                        status_text = _("status", "watching").format(channel=watching_channel.name)
+                        status_text = _.t["status"]["watching"].format(channel=watching_channel.name)
                     self.gui.status.update(status_text)
                     self._state_change.clear()
                 else:
                     # No channels available to watch
-                    self.print(_("status", "no_channel"))
+                    self.print(_.t["status"]["no_channel"])
                     self.change_state(State.IDLE)
             elif self._state is State.EXIT:
-                self.gui.status.update(_("gui", "status", "exiting"))
+                self.gui.status.update(_.t["gui"]["status"]["exiting"])
                 # we've been requested to exit the application
                 break
             await self._state_change.wait()
-
-    async def _watch_sleep(self, delay: float) -> None:
-        """Delegate to WatchService."""
-        await self._watch_service.watch_sleep(delay)
-
-    @task_wrapper(critical=True)
-    async def _watch_loop(self) -> NoReturn:
-        """Delegate to WatchService."""
-        await self._watch_service.watch_loop()  # type: ignore[misc]
-
-    @task_wrapper(critical=True)
-    async def _maintenance_task(self) -> None:
-        """Delegate to MaintenanceService."""
-        await self._maintenance_service.run_maintenance_task()
 
     def can_watch(self, channel: Channel) -> bool:
         """Delegate to WatchService."""
@@ -653,31 +627,11 @@ class Twitch:
             }
         return {"active": False}
 
-    @task_wrapper
-    async def process_stream_state(self, channel_id: int, message: JsonType) -> None:
-        """Delegate to MessageHandlerService."""
-        await self._message_handler_service.process_stream_state(channel_id, message)
-
-    @task_wrapper
-    async def process_stream_update(self, channel_id: int, message: JsonType) -> None:
-        """Delegate to MessageHandlerService."""
-        await self._message_handler_service.process_stream_update(channel_id, message)
-
     def on_channel_update(
         self, channel: Channel, stream_before: Stream | None, stream_after: Stream | None
     ) -> None:
         """Delegate to MessageHandlerService."""
         self._message_handler_service.on_channel_update(channel, stream_before, stream_after)
-
-    @task_wrapper
-    async def process_drops(self, user_id: int, message: JsonType) -> None:
-        """Delegate to MessageHandlerService."""
-        await self._message_handler_service.process_drops(user_id, message)
-
-    @task_wrapper
-    async def process_notifications(self, user_id: int, message: JsonType) -> None:
-        """Delegate to MessageHandlerService."""
-        await self._message_handler_service.process_notifications(user_id, message)
 
     async def get_auth(self) -> _AuthState:
         """Get authentication state (validates token if needed)."""
