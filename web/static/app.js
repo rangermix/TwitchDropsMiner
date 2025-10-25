@@ -26,7 +26,7 @@ const socket = io({
 socket.on('connect', () => {
     console.log('Connected to server');
     state.connected = true;
-    const connText = state.translations.header?.connected || 'Connected';
+    const connText = state.translations.gui?.websocket?.connected || 'Connected';
     document.getElementById('connection-indicator').textContent = '● ' + connText;
     document.getElementById('connection-indicator').className = 'connected';
 });
@@ -34,7 +34,7 @@ socket.on('connect', () => {
 socket.on('disconnect', () => {
     console.log('Disconnected from server');
     state.connected = false;
-    const disconnText = state.translations.header?.disconnected || 'Disconnected';
+    const disconnText = state.translations.gui?.websocket?.disconnected || 'Disconnected';
     document.getElementById('connection-indicator').textContent = '● ' + disconnText;
     document.getElementById('connection-indicator').className = 'disconnected';
 });
@@ -249,7 +249,7 @@ function renderChannels() {
     const t = state.translations;
     const channels = Object.values(state.channels);
     if (channels.length === 0) {
-        const emptyMsg = t.channels?.no_channels || 'No channels tracked yet...';
+        const emptyMsg = t.gui?.channels?.no_channels || 'No channels tracked yet...';
         container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
         return;
     }
@@ -267,7 +267,7 @@ function renderChannels() {
     });
 
     if (filteredChannels.length === 0) {
-        const emptyMsg = t.channels?.no_channels_for_games || 'No channels found for selected games...';
+        const emptyMsg = t.gui?.channels?.no_channels_for_games || 'No channels found for selected games...';
         container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
         return;
     }
@@ -320,9 +320,9 @@ function renderChannels() {
         const totalViewers = group.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
 
         const channelText = channelCount === 1
-            ? (t.channels?.channel_count || 'channel')
-            : (t.channels?.channel_count_plural || 'channels');
-        const viewersText = t.channels?.viewers || 'viewers';
+            ? (t.gui?.channels?.channel_count || 'channel')
+            : (t.gui?.channels?.channel_count_plural || 'channels');
+        const viewersText = t.gui?.channels?.viewers || 'viewers';
 
         gameHeader.innerHTML = `
             ${iconHtml}
@@ -471,7 +471,7 @@ function renderInventory() {
     const t = state.translations;
     const campaigns = Object.values(state.campaigns);
     if (campaigns.length === 0) {
-        const emptyMsg = t.inventory?.no_campaigns || 'No campaigns loaded yet...';
+        const emptyMsg = t.gui?.inventory?.no_campaigns || 'No campaigns loaded yet...';
         container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
         return;
     }
@@ -484,16 +484,16 @@ function renderInventory() {
         let statusText = '';
         if (campaign.active) {
             statusClass = 'active';
-            statusText = t.inventory?.status?.active || 'Active';
+            statusText = t.gui?.inventory?.status?.active || 'Active';
         } else if (campaign.upcoming) {
             statusClass = 'upcoming';
-            statusText = t.inventory?.status?.upcoming || 'Upcoming';
+            statusText = t.gui?.inventory?.status?.upcoming || 'Upcoming';
         } else if (campaign.expired) {
             statusClass = 'expired';
-            statusText = t.inventory?.status?.expired || 'Expired';
+            statusText = t.gui?.inventory?.status?.expired || 'Expired';
         }
 
-        const claimedText = t.inventory?.status?.claimed || 'Claimed';
+        const claimedText = t.gui?.inventory?.status?.claimed || 'Claimed';
         const dropsHtml = campaign.drops.map(drop => `
             <div class="drop-item ${drop.is_claimed ? 'claimed' : ''} ${drop.can_claim ? 'active' : ''}">
                 <div><strong>${drop.name}</strong></div>
@@ -508,7 +508,7 @@ function renderInventory() {
             ? `<a href="${campaign.link_url}" target="_blank" rel="noopener noreferrer" class="campaign-name-link">${campaign.name} <span class="external-link-icon">🔗</span></a>`
             : `<div class="campaign-name">${campaign.name}</div>`;
 
-        const claimedCountText = t.inventory?.claimed_drops || 'claimed';
+        const claimedCountText = t.gui?.inventory?.claimed_drops || 'claimed';
         card.innerHTML = `
             <div class="campaign-header">
                 <div class="campaign-game">${campaign.game_name}</div>
@@ -659,7 +659,7 @@ function renderSelectedGames(games) {
     container.innerHTML = '';
 
     if (games.length === 0) {
-        const emptyMsg = t.settings?.no_games_selected || 'No games selected. Check games below to add them.';
+        const emptyMsg = t.gui?.settings?.no_games_selected || 'No games selected. Check games below to add them.';
         container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
         return;
     }
@@ -695,10 +695,10 @@ function renderAvailableGames(games, filterText) {
 
     if (games.length === 0) {
         if (filterText) {
-            const emptyMsg = t.settings?.no_games_match || 'No games match your search.';
+            const emptyMsg = t.gui?.settings?.no_games_match || 'No games match your search.';
             container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
         } else {
-            const emptyMsg = t.settings?.all_games_selected || 'All games are selected or no games available.';
+            const emptyMsg = t.gui?.settings?.all_games_selected || 'All games are selected or no games available.';
             container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
         }
         return;
@@ -962,9 +962,9 @@ async function fetchAndApplyTranslations() {
         const response = await fetch('/api/translations');
         const data = await response.json();
 
-        state.translations = data.translations;
-        applyTranslations(data.translations);
-        console.log('Translations applied for language:', data.language);
+        state.translations = data;
+        applyTranslations(data);
+        console.log('Translations applied for language:', data.language_name);
     } catch (error) {
         console.error('Failed to fetch translations:', error);
     }
@@ -979,32 +979,32 @@ function applyTranslations(t) {
         'help': document.querySelector('[data-tab="help"]')
     };
 
-    if (tabButtons.main && t.tabs) tabButtons.main.textContent = t.tabs.main;
-    if (tabButtons.inventory && t.tabs) tabButtons.inventory.textContent = t.tabs.inventory;
-    if (tabButtons.settings && t.tabs) tabButtons.settings.textContent = t.tabs.settings;
-    if (tabButtons.help && t.tabs) tabButtons.help.textContent = t.tabs.help;
+    if (tabButtons.main && t.gui?.tabs) tabButtons.main.textContent = t.gui.tabs.main;
+    if (tabButtons.inventory && t.gui?.tabs) tabButtons.inventory.textContent = t.gui.tabs.inventory;
+    if (tabButtons.settings && t.gui?.tabs) tabButtons.settings.textContent = t.gui.tabs.settings;
+    if (tabButtons.help && t.gui?.tabs) tabButtons.help.textContent = t.gui.tabs.help;
 
     // Update Main tab - Login section
     const mainTab = document.getElementById('main-tab');
-    if (mainTab && t.login) {
+    if (mainTab && t.gui?.login) {
         const loginHeader = mainTab.querySelector('.login-panel h2');
-        if (loginHeader) loginHeader.textContent = t.login.title;
+        if (loginHeader) loginHeader.textContent = t.gui.login.name;
 
         const loginStatus = document.getElementById('login-status');
-        if (loginStatus?.hasAttribute('translation-key')) loginStatus.textContent = t.login.status[loginStatus.getAttribute('translation-key')];
+        if (loginStatus?.hasAttribute('translation-key')) loginStatus.textContent = t.login?.status?.[loginStatus.getAttribute('translation-key')];
 
         // Update login form placeholders
         const usernameInput = document.getElementById('username');
-        if (usernameInput) usernameInput.placeholder = t.login.username;
+        if (usernameInput) usernameInput.placeholder = t.gui.login.username;
 
         const passwordInput = document.getElementById('password');
-        if (passwordInput) passwordInput.placeholder = t.login.password;
+        if (passwordInput) passwordInput.placeholder = t.gui.login.password;
 
         const twofaInput = document.getElementById('2fa-token');
-        if (twofaInput) twofaInput.placeholder = t.login.twofa_code;
+        if (twofaInput) twofaInput.placeholder = t.gui.login.twofa_code;
 
         const loginButton = document.getElementById('login-button');
-        if (loginButton) loginButton.textContent = t.login.button;
+        if (loginButton) loginButton.textContent = t.gui.login.button;
 
         // Update OAuth display text
         const oauthDisplay = document.getElementById('oauth-code-display');
@@ -1013,100 +1013,100 @@ function applyTranslations(t) {
             if (oauthP) {
                 const link = oauthP.querySelector('a');
                 if (link) {
-                    oauthP.textContent = t.login.oauth_prompt + ' ';
-                    link.textContent = t.login.oauth_activate;
+                    oauthP.textContent = t.gui.login.oauth_prompt + ' ';
+                    link.textContent = t.gui.login.oauth_activate;
                     oauthP.appendChild(link);
                 }
             }
 
             const oauthConfirmBtn = document.getElementById('oauth-confirm');
-            if (oauthConfirmBtn) oauthConfirmBtn.textContent = t.login.oauth_confirm;
+            if (oauthConfirmBtn) oauthConfirmBtn.textContent = t.gui.login.oauth_confirm;
         }
     }
 
     // Update Progress section
-    if (mainTab && t.progress) {
+    if (mainTab && t.gui?.progress) {
         const progressHeader = mainTab.querySelector('.progress-panel h2');
-        if (progressHeader) progressHeader.textContent = t.progress.title;
+        if (progressHeader) progressHeader.textContent = t.gui.progress.name;
 
         const noDropMsg = document.getElementById('no-drop-message');
-        if (noDropMsg) noDropMsg.textContent = t.progress.no_drop;
+        if (noDropMsg) noDropMsg.textContent = t.gui.progress.no_drop;
 
         const exitManualBtn = document.getElementById('exit-manual-btn');
-        if (exitManualBtn) exitManualBtn.textContent = t.progress.return_to_auto;
+        if (exitManualBtn) exitManualBtn.textContent = t.gui.progress.return_to_auto;
     }
 
     // Update Console section
-    if (mainTab && t.console) {
+    if (mainTab && t.gui) {
         const consoleHeader = mainTab.querySelector('.console-panel h2');
-        if (consoleHeader) consoleHeader.textContent = t.console.title;
+        if (consoleHeader) consoleHeader.textContent = t.gui.output;
     }
 
     // Update Channels section
-    if (mainTab && t.channels) {
+    if (mainTab && t.gui?.channels) {
         const channelsHeader = mainTab.querySelector('.channels-panel h2');
-        if (channelsHeader) channelsHeader.textContent = t.channels.title;
+        if (channelsHeader) channelsHeader.textContent = t.gui.channels.name;
         // Channel list will re-render with translated empty messages
         renderChannels();
     }
 
     // Update Inventory tab
     const inventoryTab = document.getElementById('inventory-tab');
-    if (inventoryTab && t.inventory) {
+    if (inventoryTab && t.gui?.inventory) {
         // Inventory will re-render with translated status and empty messages
         renderInventory();
     }
 
     // Update Settings tab
     const settingsTab = document.getElementById('settings-tab');
-    if (settingsTab && t.settings) {
+    if (settingsTab && t.gui?.settings) {
         const headers = settingsTab.querySelectorAll('h2');
-        if (headers[0]) headers[0].textContent = t.settings.general;
-        if (headers[1]) headers[1].textContent = t.settings.games_to_watch;
-        if (headers[2]) headers[2].textContent = t.settings.actions;
+        if (headers[0]) headers[0].textContent = t.gui.settings.general;
+        if (headers[1]) headers[1].textContent = t.gui.settings.games_to_watch;
+        if (headers[2]) headers[2].textContent = t.gui.settings.actions;
 
         const darkModeLabel = settingsTab.querySelector('label:has(#dark-mode)');
         if (darkModeLabel) {
             const checkbox = darkModeLabel.querySelector('input');
             darkModeLabel.textContent = '';
             darkModeLabel.appendChild(checkbox);
-            darkModeLabel.appendChild(document.createTextNode(' ' + t.settings.dark_mode));
+            darkModeLabel.appendChild(document.createTextNode(' ' + t.gui.settings.dark_mode));
         }
 
         const connQualityLabel = settingsTab.querySelector('label:has(#connection-quality)');
         if (connQualityLabel) {
             const input = connQualityLabel.querySelector('input');
-            connQualityLabel.textContent = t.settings.connection_quality + ' ';
+            connQualityLabel.textContent = t.gui.settings.connection_quality + ' ';
             connQualityLabel.appendChild(input);
         }
 
         const refreshLabel = settingsTab.querySelector('label:has(#minimum-refresh-interval)');
         if (refreshLabel) {
             const input = refreshLabel.querySelector('input');
-            refreshLabel.textContent = t.settings.minimum_refresh + ' ';
+            refreshLabel.textContent = t.gui.settings.minimum_refresh + ' ';
             refreshLabel.appendChild(input);
         }
 
         const helpText = settingsTab.querySelector('.help-text');
-        if (helpText) helpText.textContent = t.settings.games_help;
+        if (helpText) helpText.textContent = t.gui.settings.games_help;
 
         const searchInput = document.getElementById('games-filter');
-        if (searchInput) searchInput.placeholder = t.settings.search_games;
+        if (searchInput) searchInput.placeholder = t.gui.settings.search_games;
 
         const selectAllBtn = document.getElementById('select-all-btn');
-        if (selectAllBtn) selectAllBtn.textContent = t.settings.select_all;
+        if (selectAllBtn) selectAllBtn.textContent = t.gui.settings.select_all;
 
         const deselectAllBtn = document.getElementById('deselect-all-btn');
-        if (deselectAllBtn) deselectAllBtn.textContent = t.settings.deselect_all;
+        if (deselectAllBtn) deselectAllBtn.textContent = t.gui.settings.deselect_all;
 
         const selectedGamesHeader = settingsTab.querySelector('.selected-games h3');
-        if (selectedGamesHeader) selectedGamesHeader.textContent = t.settings.selected_games;
+        if (selectedGamesHeader) selectedGamesHeader.textContent = t.gui.settings.selected_games;
 
         const availableGamesHeader = settingsTab.querySelector('.available-games h3');
-        if (availableGamesHeader) availableGamesHeader.textContent = t.settings.available_games;
+        if (availableGamesHeader) availableGamesHeader.textContent = t.gui.settings.available_games;
 
         const reloadBtn = document.getElementById('reload-btn');
-        if (reloadBtn) reloadBtn.textContent = t.settings.reload_campaigns;
+        if (reloadBtn) reloadBtn.textContent = t.gui.settings.reload_campaigns;
 
         // Re-render games to watch with translated empty messages
         renderGamesToWatch();
@@ -1114,17 +1114,17 @@ function applyTranslations(t) {
 
     // Update Help tab
     const helpTab = document.getElementById('help-tab');
-    if (helpTab && t.help) {
+    if (helpTab && t.gui?.help) {
         const helpContent = helpTab.querySelector('.help-content');
         if (helpContent) {
             // Rebuild help content dynamically
             helpContent.innerHTML = `
-                <h2>${t.help.about || 'About Twitch Drops Miner'}</h2>
-                <p>${t.help.about_text || 'This application automatically mines timed Twitch drops without downloading stream data.'}</p>
+                <h2>${t.gui.help.about || 'About Twitch Drops Miner'}</h2>
+                <p>${t.gui.help.about_text || 'This application automatically mines timed Twitch drops without downloading stream data.'}</p>
 
-                <h3>${t.help.how_to_use || 'How to Use'}</h3>
+                <h3>${t.gui.help.how_to_use || 'How to Use'}</h3>
                 <ol>
-                    ${(t.help.how_to_use_items || [
+                    ${(t.gui.help.how_to_use_items || [
                     'Login using your Twitch account (OAuth device code flow)',
                     'Link your accounts at <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a>',
                     'The miner will automatically discover campaigns and start mining',
@@ -1133,9 +1133,9 @@ function applyTranslations(t) {
                 ]).map(item => `<li>${item}</li>`).join('')}
                 </ol>
 
-                <h3>${t.help.features || 'Features'}</h3>
+                <h3>${t.gui.help.features || 'Features'}</h3>
                 <ul>
-                    ${(t.help.features_items || [
+                    ${(t.gui.help.features_items || [
                     'Stream-less drop mining - saves bandwidth',
                     'Game priority and exclusion lists',
                     'Tracks up to 199 channels simultaneously',
@@ -1144,9 +1144,9 @@ function applyTranslations(t) {
                 ]).map(item => `<li>${item}</li>`).join('')}
                 </ul>
 
-                <h3>${t.help.important_notes || 'Important Notes'}</h3>
+                <h3>${t.gui.help.important_notes || 'Important Notes'}</h3>
                 <ul>
-                    ${(t.help.important_notes_items || [
+                    ${(t.gui.help.important_notes_items || [
                     'Do not watch streams on the same account while mining',
                     'Keep your cookies.jar file secure',
                     'Requires linked game accounts for drops'
@@ -1154,29 +1154,29 @@ function applyTranslations(t) {
                 </ul>
 
                 <div class="help-links">
-                    <a href="https://github.com/DevilXD/TwitchDropsMiner" target="_blank">${t.help.github_repo || 'GitHub Repository'}</a>
+                    <a href="https://github.com/DevilXD/TwitchDropsMiner" target="_blank">${t.gui.help.github_repo || 'GitHub Repository'}</a>
                 </div>
             `;
         }
     }
 
     // Update header elements
-    if (t.header) {
+    if (t.gui?.header) {
         const languageLabel = document.querySelector('.language-selector span');
-        if (languageLabel) languageLabel.textContent = t.header.language;
+        if (languageLabel) languageLabel.textContent = t.gui.header.language;
 
         const statusText = document.getElementById('status-text');
         if (statusText && statusText.textContent === 'Initializing...') {
-            statusText.textContent = t.header.initializing;
+            statusText.textContent = t.gui.header.initializing;
         }
 
         // Update connection indicator
         const connIndicator = document.getElementById('connection-indicator');
         if (connIndicator) {
             if (state.connected) {
-                connIndicator.textContent = '● ' + (t.header.connected || 'Connected');
+                connIndicator.textContent = '● ' + (t.gui.websocket.connected || 'Connected');
             } else {
-                connIndicator.textContent = '● ' + (t.header.disconnected || 'Disconnected');
+                connIndicator.textContent = '● ' + (t.gui.websocket.disconnected || 'Disconnected');
             }
         }
     }
