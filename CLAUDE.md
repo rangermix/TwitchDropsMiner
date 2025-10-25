@@ -266,8 +266,8 @@ Translation = {
 from src.i18n import _
 
 # Access translations
-status_text = _("gui", "status", "idle")  # Returns "Idle"
-login_text = _("login", "status", "logged_in")  # Returns "Logged in"
+status_text = _.t["gui"]["status"]["idle"]  # Returns "Idle"
+login_text = _.t["login"]["status"]["logged_in"]  # Returns "Logged in"
 ```
 
 **Language Persistence:**
@@ -283,7 +283,7 @@ login_text = _("login", "status", "logged_in")  # Returns "Logged in"
 - **src/config/paths.py** - Path management and Docker environment detection
 - **src/config/client_info.py** - Twitch client info (Client-Id, User-Agent)
 - **src/config/settings.py** - Application settings with JSON persistence
-- **src/exceptions.py** - Custom exceptions (LoginException, CaptchaRequired, ExitRequest, ReloadRequest, etc.)
+- **src/exceptions.py** - Custom exceptions (LoginException, CaptchaRequired, ExitRequest, etc.)
 - **src/utils/** - Helper utilities (string_utils, json_utils, async_helpers, rate_limiter, backoff)
 - **src/i18n/** - Internationalization package with TypedDict schema and Translator class
   - **translator.py** - Translator class with typed translation schema (Translation TypedDict)
