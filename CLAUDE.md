@@ -360,7 +360,7 @@ The application uses a web-based interface accessible via browser:
 
 **Dockerfile:**
 
-- Based on `python:3.11-slim`
+- Based on `python:3`
 - Installs dependencies from `pyproject.toml`
 - Exposes port 8080
 - Health check on `/api/status`

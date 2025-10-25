@@ -22,7 +22,6 @@ logger = logging.getLogger("TwitchDrops")
 
 async def first_to_complete(coros: abc.Iterable[abc.Coroutine[Any, Any, _T]]) -> _T:
     """Wait for the first coroutine to complete, canceling the rest."""
-    # In Python 3.11, we need to explicitly wrap awaitables
     tasks: list[asyncio.Task[_T]] = [asyncio.ensure_future(coro) for coro in coros]
     done: set[asyncio.Task[Any]]
     pending: set[asyncio.Task[Any]]
