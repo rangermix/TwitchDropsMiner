@@ -23,7 +23,6 @@ from .constants import (
     TOPICS_PER_CHANNEL,
     WATCH_INTERVAL,
     WEBSOCKET_TOPICS,
-    WINDOW_TITLE,
     WS_TOPICS_LIMIT,
     GQLOperation,
     JsonType,
@@ -68,7 +67,6 @@ __all__ = [
     "PING_TIMEOUT",
     "ONLINE_DELAY",
     "WATCH_INTERVAL",
-    "WINDOW_TITLE",
     # paths.py
     "DATA_DIR",
     "LANG_PATH",

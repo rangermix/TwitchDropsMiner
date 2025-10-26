@@ -9,9 +9,6 @@ from datetime import timedelta
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Literal, NewType
 
-from src.version import __version__
-
-
 if TYPE_CHECKING:
     from collections import abc  # noqa
     from typing import TypeAlias
@@ -60,8 +57,6 @@ PING_TIMEOUT = timedelta(seconds=10)
 ONLINE_DELAY = timedelta(seconds=120)
 WATCH_INTERVAL = timedelta(seconds=59)
 
-# Strings
-WINDOW_TITLE = f"Twitch Drops Miner v{__version__} (by DevilXD)"
 
 
 class State(Enum):
