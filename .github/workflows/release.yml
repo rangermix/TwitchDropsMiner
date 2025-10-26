@@ -1,4 +1,4 @@
-name: Create Release Branch
+name: Create Release
 
 on:
   workflow_dispatch:
@@ -11,11 +11,13 @@ on:
 permissions:
   contents: write
 
+env:
+  CURRENT_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
 jobs:
   create-release-branch:
     name: Create Release Branch
     runs-on: ubuntu-latest
-    environment: release
 
     steps:
       - name: Validate SemVer format
@@ -64,22 +66,30 @@ jobs:
 
       - name: Create release branch and update version
         run: |
-          BRANCH_NAME="release/${{ steps.validate.outputs.version }}"
+
           VERSION="${{ steps.validate.outputs.version }}"
-
-          # Create and checkout new branch
-          git checkout -b "$BRANCH_NAME"
-
           # Update version.py
+          mv -f src/version.py src/last_version.py
           echo "__version__ = \"$VERSION\"" > src/version.py
 
           # Commit changes
           git add src/version.py
           git commit -m "chore: bump version to $VERSION"
+          git push origin $CURRENT_BRANCH_NAME
+
+          BRANCH_NAME="release/${{ steps.validate.outputs.version }}"
+
+          # Create and checkout new branch
+          git checkout -b "$BRANCH_NAME"
 
           # Push branch (this will trigger the publish workflow)
           git push origin "$BRANCH_NAME"
 
-          echo "✅ Created branch '$BRANCH_NAME'"
+          # Create tag
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+
           echo "✅ Updated version to $VERSION"
+          echo "✅ Created branch '$BRANCH_NAME'"
+          echo "✅ Created and pushed tag v$VERSION"
           echo "✅ The publish workflow will now build Docker images and create the GitHub release"

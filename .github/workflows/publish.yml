@@ -128,21 +128,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Create and push git tag
-        run: |
-          VERSION="${{ needs.extract-version.outputs.version }}"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Create tag
-          git tag "v$VERSION"
-          git push origin "v$VERSION"
-
-          echo "✅ Created and pushed tag v$VERSION"
-
       - name: Auto-generate release notes if missing
-        run: .github/scripts/generate_release_notes.sh "${{ needs.extract-version.outputs.version }}" "${{ secrets.GEMINI_API_KEY }}"
+        run: .github/scripts/generate_release_notes.sh -v "${{ needs.extract-version.outputs.version }}" -k "${{ secrets.GEMINI_API_KEY }}" -p
 
       - uses: DavidAnson/markdownlint-cli2-action@v20
         with:
