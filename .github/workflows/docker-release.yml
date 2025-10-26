@@ -1,4 +1,4 @@
-name: Publish Release
+name: Docker Release
 
 on:
   push:
@@ -115,37 +115,3 @@ jobs:
             BUILD_DATE=${{ github.event.repository.updated_at }}
             VCS_REF=${{ github.sha }}
             VERSION=${{ needs.extract-version.outputs.version }}
-
-  github-release:
-    name: Create GitHub Release
-    runs-on: ubuntu-latest
-    needs: [extract-version, docker-build]
-    environment: prod
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Auto-generate release notes if missing
-        run: .github/scripts/generate_release_notes.sh -v "${{ needs.extract-version.outputs.version }}" -k "${{ secrets.GEMINI_API_KEY }}" -p
-
-      - uses: DavidAnson/markdownlint-cli2-action@v20
-        with:
-          fix: true
-          globs: '**/*.md'
-        continue-on-error: true
-
-      - name: Generate release notes
-        id: release-notes
-        run: .github/scripts/extract_release_notes.sh "${{ needs.extract-version.outputs.version }}"
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ needs.extract-version.outputs.version }}
-          name: Release ${{ needs.extract-version.outputs.version }}
-          body_path: release_notes.md
-          prerelease: ${{ needs.extract-version.outputs.is_prerelease }}
-          draft: false

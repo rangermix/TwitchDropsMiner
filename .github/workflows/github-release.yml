@@ -1,0 +1,79 @@
+name: GitHub Release
+
+on:
+  workflow_run:
+    workflows: ["Publish Release"]
+    types:
+      - completed
+    branches:
+      - 'release/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  create-github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    # Only run if the upstream workflow succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment: prod
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+          fetch-depth: 0
+
+      - name: Extract version from branch
+        id: extract
+        run: |
+          # Extract version from branch name (release/1.2.3 -> 1.2.3)
+          BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
+          VERSION="${BRANCH_NAME#release/}"
+          echo "Branch version: $VERSION"
+
+          # Read version from version.py
+          FILE_VERSION=$(grep -oP '__version__ = "\K[^"]+' src/version.py)
+          echo "File version: $FILE_VERSION"
+
+          # Verify they match
+          if [ "$VERSION" != "$FILE_VERSION" ]; then
+            echo "Error: Branch version ($VERSION) does not match version.py ($FILE_VERSION)"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          # Check if pre-release (contains hyphen)
+          if echo "$VERSION" | grep -q '-'; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "Detected pre-release version: $VERSION"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "Detected stable release version: $VERSION"
+          fi
+
+      - name: Auto-generate release notes if missing
+        run: .github/scripts/generate_release_notes.sh -v "${{ steps.extract.outputs.version }}" -k "${{ secrets.GEMINI_API_KEY }}" -p
+
+      - uses: DavidAnson/markdownlint-cli2-action@v20
+        with:
+          fix: true
+          globs: '**/*.md'
+        continue-on-error: true
+
+      - name: Generate release notes
+        id: release-notes
+        run: .github/scripts/extract_release_notes.sh "${{ steps.extract.outputs.version }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.extract.outputs.version }}
+          name: Release ${{ steps.extract.outputs.version }}
+          body_path: release_notes.md
+          prerelease: ${{ steps.extract.outputs.is_prerelease }}
+          draft: false
