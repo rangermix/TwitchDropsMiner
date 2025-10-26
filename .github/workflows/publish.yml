@@ -148,7 +148,7 @@ jobs:
         with:
           fix: true
           globs: '**/*.md'
-          continue-on-error: true
+        continue-on-error: true
 
       - name: Generate release notes
         id: release-notes
