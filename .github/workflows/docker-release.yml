@@ -24,31 +24,13 @@ jobs:
       - name: Extract version from branch and version.py
         id: extract
         run: |
-          # Extract version from branch name (release/1.2.3 -> 1.2.3)
-          BRANCH_VERSION="${GITHUB_REF#refs/heads/release/}"
-          echo "Branch version: $BRANCH_VERSION"
+          # Extract version from branch name and validate against version.py
+          .github/scripts/extract_version.sh "${{ github.ref }}"
 
-          # Read version from version.py
-          FILE_VERSION=$(grep -oP '__version__ = "\K[^"]+' src/version.py)
-          echo "File version: $FILE_VERSION"
-
-          # Verify they match
-          if [ "$BRANCH_VERSION" != "$FILE_VERSION" ]; then
-            echo "Error: Branch version ($BRANCH_VERSION) does not match version.py ($FILE_VERSION)"
-            exit 1
-          fi
-
-          VERSION="$BRANCH_VERSION"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-          # Check if pre-release (contains hyphen)
-          if echo "$VERSION" | grep -q '-'; then
-            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
-            echo "Detected pre-release version: $VERSION"
-          else
-            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
-            echo "Detected stable release version: $VERSION"
-          fi
+      - name: Validate version format
+        run: |
+          # Validate version is proper SemVer and set prerelease flag
+          .github/scripts/validate_semver.sh "${{ steps.extract.outputs.version }}"
 
   docker-build:
     name: Build & Push Docker Images

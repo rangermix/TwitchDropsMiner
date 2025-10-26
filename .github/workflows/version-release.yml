@@ -26,10 +26,18 @@ jobs:
         with:
           token: ${{ secrets.PUBLISHER_TOKEN }}
 
-      - name: Configure Git
+      - name: Validate version format
+        id: validate
+        run: .github/scripts/validate_semver.sh "${{ github.event.inputs.version }}"
+
+      - name: Check if input version
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          CURRENT_VERSION=$(grep -oP '(?<=__version__ = ")[^"]+' src/version.py)
+          INPUT_VERSION="${{ github.event.inputs.version }}"
+          if [ "$CURRENT_VERSION" = "$INPUT_VERSION" ]; then
+            echo "Error: Input version '$INPUT_VERSION' is the same as the current version"
+            exit 1
+          fi
 
       - name: Check if branch exists
         run: |
@@ -45,7 +53,11 @@ jobs:
       - name: Create release branch and update version
         run: |
 
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
           VERSION="${{ steps.validate.outputs.version }}"
+
           # Update version.py
           mv -f src/version.py src/last_version.py
           echo "__version__ = \"$VERSION\"" > src/version.py

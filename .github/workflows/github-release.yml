@@ -29,32 +29,11 @@ jobs:
 
       - name: Extract version from branch
         id: extract
-        run: |
-          # Extract version from branch name (release/1.2.3 -> 1.2.3)
-          BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
-          VERSION="${BRANCH_NAME#release/}"
-          echo "Branch version: $VERSION"
+        run: .github/scripts/extract_version.sh "${{ github.event.workflow_run.head_branch }}"
 
-          # Read version from version.py
-          FILE_VERSION=$(grep -oP '__version__ = "\K[^"]+' src/version.py)
-          echo "File version: $FILE_VERSION"
-
-          # Verify they match
-          if [ "$VERSION" != "$FILE_VERSION" ]; then
-            echo "Error: Branch version ($VERSION) does not match version.py ($FILE_VERSION)"
-            exit 1
-          fi
-
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-          # Check if pre-release (contains hyphen)
-          if echo "$VERSION" | grep -q '-'; then
-            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
-            echo "Detected pre-release version: $VERSION"
-          else
-            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
-            echo "Detected stable release version: $VERSION"
-          fi
+      - name: Validate version format
+        id: validate
+        run: .github/scripts/validate_semver.sh "${{ steps.extract.outputs.version }}"
 
       - name: Extract release notes
         id: release-notes
@@ -66,5 +45,5 @@ jobs:
           tag_name: v${{ steps.extract.outputs.version }}
           name: Release ${{ steps.extract.outputs.version }}
           body_path: release_notes.md
-          prerelease: ${{ steps.extract.outputs.is_prerelease }}
+          prerelease: ${{ steps.validate.outputs.is_prerelease }}
           draft: false
