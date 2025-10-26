@@ -1,6 +1,8 @@
-# Release Notes - v1.1.0
+# Release Notes - v1.1.1
 
-We're excited to roll out v1.1.0, a major update focused entirely on making Twitch Drops Miner accessible to users around the globe by introducing comprehensive internationalization (i18n) support and dynamic language switching. This release also brings crucial bug fixes for stability and cleaner code under the hood.
+We're excited to roll out v1.1.1, a major update focused entirely on making Twitch Drops Miner accessible to users around the globe by introducing comprehensive internationalization (i18n) support and dynamic language switching. This release also brings crucial bug fixes for stability and cleaner code under the hood.
+
+## For 1.1.0
 
 ### 🌍 Global Language Support (i18n)
 
@@ -24,3 +26,7 @@ While these changes are mostly internal, they result in a faster, more stable ap
 
 - **Modernized Translation Engine**: We completely refactored the internal translation system (Translator class) to be faster, cleaner, and easier to maintain.
 - **Client Code Cleanup**: Removed unused or legacy code components, including the `ReloadRequest` exception, leading to a lighter, more efficient client application.
+
+## For 1.1.1
+
+Workflow fix and upgrade

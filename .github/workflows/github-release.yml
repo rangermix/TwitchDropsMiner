@@ -56,16 +56,7 @@ jobs:
             echo "Detected stable release version: $VERSION"
           fi
 
-      - name: Auto-generate release notes if missing
-        run: .github/scripts/generate_release_notes.sh -v "${{ steps.extract.outputs.version }}" -k "${{ secrets.GEMINI_API_KEY }}" -p
-
-      - uses: DavidAnson/markdownlint-cli2-action@v20
-        with:
-          fix: true
-          globs: '**/*.md'
-        continue-on-error: true
-
-      - name: Generate release notes
+      - name: Extract release notes
         id: release-notes
         run: .github/scripts/extract_release_notes.sh "${{ steps.extract.outputs.version }}"
 

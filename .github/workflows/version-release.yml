@@ -18,31 +18,9 @@ jobs:
   create-release-branch:
     name: Create Release Branch
     runs-on: ubuntu-latest
+    environment: prod
 
     steps:
-      - name: Validate SemVer format
-        id: validate
-        run: |
-          VERSION="${{ github.event.inputs.version }}"
-
-          # SemVer regex: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
-          SEMVER_REGEX='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$'
-
-          if ! echo "$VERSION" | grep -Pq "$SEMVER_REGEX"; then
-            echo "Error: Version '$VERSION' is not valid SemVer format"
-            echo "Examples: 1.2.3, 2.0.0-rc.1, 1.0.0-beta.2+build.123"
-            exit 1
-          fi
-
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-          # Check if pre-release (contains hyphen)
-          if echo "$VERSION" | grep -q '-'; then
-            echo "Detected pre-release version: $VERSION"
-          else
-            echo "Detected stable release version: $VERSION"
-          fi
-
       - name: Checkout code
         uses: actions/checkout@v5
         with:
