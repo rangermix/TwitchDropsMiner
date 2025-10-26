@@ -30,7 +30,7 @@ jobs:
 
       - name: Run Ruff linter
         run: |
-          ruff check src/
+          ruff check --fix src/
           echo "✅ Ruff checks passed!"
 
       - name: Run Mypy type checker
