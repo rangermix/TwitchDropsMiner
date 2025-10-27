@@ -1162,7 +1162,7 @@ function applyTranslations(t) {
                 </ul>
 
                 <div class="help-links">
-                    <a href="https://github.com/DevilXD/TwitchDropsMiner" target="_blank">${t.gui.help.github_repo || 'GitHub Repository'}</a>
+                    <a href="https://github.com/rangermix/TwitchDropsMiner" target="_blank">${t.gui.help.github_repo || 'GitHub Repository'}</a>
                 </div>
             `;
         }
