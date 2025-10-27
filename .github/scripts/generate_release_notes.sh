@@ -76,12 +76,13 @@ fi
 
 echo "🤖 Generating release notes using Gemini AI..."
 
-# Get commit history since last version tag
-LAST_VERSION=$(sed -n 's/^__version__ = "\([^"]*\)"/\1/p' src/last_version.py)
-echo "Last version from src/last_version.py: $LAST_VERSION"
+# Get previous version from history of src/version.py
+LAST_VERSION=$(git show HEAD^:src/version.py | sed -n 's/^__version__ = "\([^"]*\)"/\1/p')
+echo "Last version from git history of src/version.py: $LAST_VERSION"
 
+# Get commit history since last version tag
+echo "Looking for last version tag: v$LAST_VERSION"
 PREV_TAG="v$LAST_VERSION"
-echo "Looking for last version tag: $PREV_TAG"
 
 if ! git rev-parse "$PREV_TAG" >/dev/null 2>&1; then
   echo "❌ Error: Could not find previous tag for $PREV_TAG"

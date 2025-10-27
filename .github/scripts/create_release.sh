@@ -36,7 +36,6 @@ git config user.email "github-actions[bot]@users.noreply.github.com"
 
 # Update version.py
 echo "Updating src/version.py..."
-mv -f src/version.py src/last_version.py
 echo "__version__ = \"$VERSION\"" > src/version.py
 
 # Update pyproject.toml
