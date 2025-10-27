@@ -2,7 +2,7 @@ name: GitHub Release
 
 on:
   workflow_run:
-    workflows: ["Publish Release"]
+    workflows: ["Docker Release"]
     types:
       - completed
     branches:
