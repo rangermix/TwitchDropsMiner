@@ -23,8 +23,11 @@
             "logged_out": "Terputus",
             "logging_in": "Koneksi dalam proses...",
             "required": "Diperlukan sambungan",
-            "waiting_auth": "Waiting for authentication..."
-        }
+            "waiting_auth": "Menunggu autentikasi..."
+        },
+        "oauth_prompt": "Masukkan kode ini di:",
+        "oauth_activate": "Aktifkan Twitch",
+        "oauth_confirm": "Saya telah memasukkan kode"
     },
     "error": {
         "captcha": "Sambungan ditolak oleh CAPTCHA. Silakan coba lagi dalam waktu sekitar 12 jam.",
@@ -46,7 +49,7 @@
             "adding_campaigns": "Menambahkan daftar kampanye ke inventaris... {counter}"
         },
         "tabs": {
-            "main": "Umum",
+            "main": "Utama",
             "inventory": "Inventaris",
             "settings": "Parameter",
             "help": "Bantuan"
@@ -64,7 +67,7 @@
             "oauth_confirm": "I've entered the code"
         },
         "websocket": {
-            "name": "Status soket web",
+            "name": "Status Websocket",
             "websocket": "Soket web #{id}:",
             "initializing": "Menginisialisasi...",
             "connected": "Tersambung",
@@ -81,20 +84,20 @@
             "remaining": "{time} tersisa",
             "drop_progress": "Perkembangan :",
             "campaign_progress": "Perkembangan :",
-            "no_drop": "No active drop",
-            "return_to_auto": "Return to Auto Mode",
-            "manual_mode_info": "Manual Mode: Mining"
+            "no_drop": "Tidak ada drop aktif",
+            "return_to_auto": "Kembali ke Mode Otomatis",
+            "manual_mode_info": "Mode Manual: Mining"
         },
         "channels": {
             "name": "Saluran",
             "online": "ONLINE  ✔",
             "pending": "DITUNDA ⏳",
             "offline": "OFFLINE ❌",
-            "no_channels": "No channels tracked yet...",
-            "no_channels_for_games": "No channels found for selected games...",
+            "no_channels": "Belum ada channel yang dilacak...",
+            "no_channels_for_games": "Tidak ada channel ditemukan untuk game yang dipilih...",
             "channel_count": "channel",
-            "channel_count_plural": "channels",
-            "viewers": "viewers"
+            "channel_count_plural": "channel",
+            "viewers": "penonton"
         },
         "inventory": {
             "status": {
@@ -105,13 +108,13 @@
             },
             "starts": "Mulai : {time}",
             "ends": "Akhir : {time}",
-            "no_campaigns": "No campaigns loaded yet...",
-            "claimed_drops": "claimed"
+            "no_campaigns": "Belum ada kampanye yang dimuat...",
+            "claimed_drops": "diklaim"
         },
         "settings": {
             "general": {
                 "name": "Umum",
-                "dark_mode": "Mode gelap: "
+                "dark_mode": "Mode Gelap"
             },
             "reload": "Muat Ulang",
             "games_to_watch": "Game untuk Ditonton",
@@ -127,43 +130,43 @@
             "actions": "Tindakan",
             "connection_quality": "Kualitas Koneksi:",
             "minimum_refresh": "Interval Refresh Minimum (menit):",
-            "reload_campaigns": "Reload Campaigns"
+            "reload_campaigns": "Muat Ulang Kampanye"
         },
         "help": {
-            "about": "About Twitch Drops Miner",
-            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
-            "how_to_use": "How to Use",
-            "features": "Features",
-            "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository",
+            "about": "Tentang Twitch Drops Miner",
+            "about_text": "Aplikasi ini secara otomatis menambang drop Twitch berwaktu tanpa mengunduh data streaming.",
+            "how_to_use": "Cara Menggunakan",
+            "features": "Fitur",
+            "important_notes": "Catatan Penting",
+            "github_repo": "Repository GitHub",
             "how_to_use_items": [
-                "Login using your Twitch account (OAuth device code flow)",
-                "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "The miner will automatically discover campaigns and start mining",
-                "Configure priority games in Settings to focus on what you want",
-                "Monitor progress in the Main and Inventory tabs"
+                "Masuk menggunakan akun Twitch Anda (alur kode perangkat OAuth)",
+                "Tautkan akun Anda di <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+                "Penambang akan secara otomatis menemukan kampanye dan mulai menambang",
+                "Konfigurasikan game prioritas di Pengaturan untuk fokus pada yang Anda inginkan",
+                "Pantau kemajuan di tab Utama dan Inventaris"
             ],
             "features_items": [
-                "Stream-less drop mining - saves bandwidth",
-                "Game priority and exclusion lists",
-                "Tracks up to 199 channels simultaneously",
-                "Automatic channel switching",
-                "Real-time progress tracking"
+                "Penambangan drop tanpa streaming - menghemat bandwidth",
+                "Daftar prioritas dan pengecualian game",
+                "Melacak hingga 199 channel secara bersamaan",
+                "Perpindahan channel otomatis",
+                "Pelacakan kemajuan waktu nyata"
             ],
             "important_notes_items": [
-                "Do not watch streams on the same account while mining",
-                "Keep your cookies.jar file secure",
-                "Requires linked game accounts for drops"
+                "Jangan menonton stream di akun yang sama saat menambang",
+                "Jaga keamanan file cookies.jar Anda",
+                "Memerlukan akun game yang ditautkan untuk drop"
             ]
         },
         "header": {
             "title": "Twitch Drops Miner",
-            "language": "Language:",
-            "initializing": "Initializing...",
+            "language": "Bahasa:",
+            "initializing": "Menginisialisasi...",
             "auto_mode": "AUTO",
             "manual_mode": "MANUAL",
-            "connected": "Connected",
-            "disconnected": "Disconnected"
+            "connected": "Terhubung",
+            "disconnected": "Terputus"
         }
     }
 }

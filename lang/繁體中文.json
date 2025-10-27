@@ -23,8 +23,11 @@
             "logged_out": "未登入",
             "logging_in": "正在登入…",
             "required": "需要登入",
-            "waiting_auth": "Waiting for authentication..."
-        }
+            "waiting_auth": "正在等待身份驗證..."
+        },
+        "oauth_prompt": "請在此處輸入此代碼：",
+        "oauth_activate": "啟用 Twitch",
+        "oauth_confirm": "我已輸入代碼"
     },
     "error": {
         "captcha": "您的登入被 CAPTCHA 拒絕，請於12小時後重試。",
@@ -46,7 +49,7 @@
             "adding_campaigns": "將掉寶活動列表新增至庫存… {counter}"
         },
         "tabs": {
-            "main": "主視窗",
+            "main": "主要",
             "inventory": "庫存",
             "settings": "設置",
             "help": "幫助"
@@ -81,20 +84,20 @@
             "campaign": "掉寶活動名稱：",
             "drop_progress": "掉寶進度：",
             "campaign_progress": "活動進度：",
-            "no_drop": "No active drop",
-            "return_to_auto": "Return to Auto Mode",
-            "manual_mode_info": "Manual Mode: Mining"
+            "no_drop": "沒有活躍的掉落",
+            "return_to_auto": "返回自動模式",
+            "manual_mode_info": "手動模式：挖礦中"
         },
         "channels": {
             "name": "活動頻道",
             "online": "上線 ✔",
             "pending": "離線 ⏳",
             "offline": "離線 ❌",
-            "no_channels": "No channels tracked yet...",
-            "no_channels_for_games": "No channels found for selected games...",
-            "channel_count": "channel",
-            "channel_count_plural": "channels",
-            "viewers": "viewers"
+            "no_channels": "尚未追蹤任何頻道...",
+            "no_channels_for_games": "找不到所選遊戲的頻道...",
+            "channel_count": "頻道",
+            "channel_count_plural": "頻道",
+            "viewers": "觀眾"
         },
         "inventory": {
             "status": {
@@ -105,13 +108,13 @@
             },
             "starts": "開始時間：{time}",
             "ends": "結束時間：{time}",
-            "no_campaigns": "No campaigns loaded yet...",
-            "claimed_drops": "claimed"
+            "no_campaigns": "尚未載入任何活動...",
+            "claimed_drops": "已領取"
         },
         "settings": {
             "general": {
-                "name": "基本設定",
-                "dark_mode": "深色模式："
+                "name": "一般",
+                "dark_mode": "深色模式"
             },
             "reload": "重新載入",
             "games_to_watch": "觀看遊戲",
@@ -127,43 +130,43 @@
             "actions": "操作",
             "connection_quality": "連線品質：",
             "minimum_refresh": "最小重新整理間隔（分鐘）：",
-            "reload_campaigns": "Reload Campaigns"
+            "reload_campaigns": "重新載入活動"
         },
         "help": {
-            "about": "About Twitch Drops Miner",
-            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
-            "how_to_use": "How to Use",
-            "features": "Features",
-            "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository",
+            "about": "關於 Twitch Drops Miner",
+            "about_text": "此應用程式會自動挖掘定時的 Twitch 掉落，而無需下載串流資料。",
+            "how_to_use": "使用方法",
+            "features": "功能",
+            "important_notes": "重要注意事項",
+            "github_repo": "GitHub 儲存庫",
             "how_to_use_items": [
-                "Login using your Twitch account (OAuth device code flow)",
-                "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "The miner will automatically discover campaigns and start mining",
-                "Configure priority games in Settings to focus on what you want",
-                "Monitor progress in the Main and Inventory tabs"
+                "使用您的 Twitch 帳戶登入（OAuth 裝置代碼流程）",
+                "在 <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> 連結您的帳戶",
+                "挖礦器將自動發現活動並開始挖礦",
+                "在設定中配置優先遊戲以專注於您想要的內容",
+                "在主要和庫存頁籤中監控進度"
             ],
             "features_items": [
-                "Stream-less drop mining - saves bandwidth",
-                "Game priority and exclusion lists",
-                "Tracks up to 199 channels simultaneously",
-                "Automatic channel switching",
-                "Real-time progress tracking"
+                "無串流掉落挖礦 - 節省頻寬",
+                "遊戲優先級和排除清單",
+                "同時追蹤最多 199 個頻道",
+                "自動頻道切換",
+                "即時進度追蹤"
             ],
             "important_notes_items": [
-                "Do not watch streams on the same account while mining",
-                "Keep your cookies.jar file secure",
-                "Requires linked game accounts for drops"
+                "挖礦時請勿在同一帳戶上觀看串流",
+                "保持您的 cookies.jar 檔案安全",
+                "需要連結的遊戲帳戶才能獲得掉落"
             ]
         },
         "header": {
             "title": "Twitch Drops Miner",
-            "language": "Language:",
-            "initializing": "Initializing...",
+            "language": "語言：",
+            "initializing": "正在初始化...",
             "auto_mode": "AUTO",
-            "manual_mode": "MANUAL",
-            "connected": "Connected",
-            "disconnected": "Disconnected"
+            "manual_mode": "手動",
+            "connected": "已連接",
+            "disconnected": "已中斷連接"
         }
     }
 }

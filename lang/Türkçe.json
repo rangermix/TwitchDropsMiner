@@ -23,8 +23,11 @@
             "logged_out": "Çıkış Yapıldı",
             "logging_in": "Kayıt Ol...",
             "required": "Kaydolmak gerekiyor",
-            "waiting_auth": "Waiting for authentication..."
-        }
+            "waiting_auth": "Kimlik doğrulama bekleniyor..."
+        },
+        "oauth_prompt": "Bu kodu şuraya girin:",
+        "oauth_activate": "Twitch'i Etkinleştir",
+        "oauth_confirm": "Kodu girdim"
     },
     "error": {
         "captcha": "Giriş girişimi CAPTCHA tarafından reddedildi.\nLütfen en az 12 saat içinde tekrar deneyin.",
@@ -46,7 +49,7 @@
             "adding_campaigns": "Kampanyaları envantere ekle... {counter}"
         },
         "tabs": {
-            "main": "Anasayfa",
+            "main": "Ana",
             "inventory": "Envanter",
             "settings": "Ayarlar",
             "help": "Yardım"
@@ -64,7 +67,7 @@
             "oauth_confirm": "I've entered the code"
         },
         "websocket": {
-            "name": "WebSocket Status",
+            "name": "Websocket Durumu",
             "websocket": "WebSocket #{id}:",
             "initializing": "Başlat...",
             "connected": "Bağlandı",
@@ -81,20 +84,20 @@
             "remaining": "{time} geriye kalan",
             "drop_progress": "İlerleme:",
             "campaign_progress": "İlerleme:",
-            "no_drop": "No active drop",
-            "return_to_auto": "Return to Auto Mode",
-            "manual_mode_info": "Manual Mode: Mining"
+            "no_drop": "Aktif drop yok",
+            "return_to_auto": "Otomatik Moda Dön",
+            "manual_mode_info": "Manuel Mod: Madencilik"
         },
         "channels": {
             "name": "Kanallar",
             "online": "ONLINE ✔",
             "pending": "OFFLINE ⏳",
             "offline": "OFFLINE ❌",
-            "no_channels": "No channels tracked yet...",
-            "no_channels_for_games": "No channels found for selected games...",
-            "channel_count": "channel",
-            "channel_count_plural": "channels",
-            "viewers": "viewers"
+            "no_channels": "Henüz takip edilen kanal yok...",
+            "no_channels_for_games": "Seçili oyunlar için kanal bulunamadı...",
+            "channel_count": "kanal",
+            "channel_count_plural": "kanal",
+            "viewers": "izleyici"
         },
         "inventory": {
             "status": {
@@ -105,13 +108,13 @@
             },
             "starts": "Başladı: {time}",
             "ends": "Bitiş: {time}",
-            "no_campaigns": "No campaigns loaded yet...",
-            "claimed_drops": "claimed"
+            "no_campaigns": "Henüz yüklenen kampanya yok...",
+            "claimed_drops": "talep edildi"
         },
         "settings": {
             "general": {
                 "name": "Genel",
-                "dark_mode": "Karanlık mod: "
+                "dark_mode": "Karanlık Mod"
             },
             "reload": "Tekrar yükle",
             "games_to_watch": "İzlenecek Oyunlar",
@@ -127,43 +130,43 @@
             "actions": "İşlemler",
             "connection_quality": "Bağlantı kalitesi:",
             "minimum_refresh": "Minimum yenileme aralığı (dakika):",
-            "reload_campaigns": "Reload Campaigns"
+            "reload_campaigns": "Kampanyaları Yeniden Yükle"
         },
         "help": {
-            "about": "About Twitch Drops Miner",
-            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
-            "how_to_use": "How to Use",
-            "features": "Features",
-            "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository",
+            "about": "Twitch Drops Miner Hakkında",
+            "about_text": "Bu uygulama, yayın verilerini indirmeden zamanlı Twitch drop'larını otomatik olarak kazır.",
+            "how_to_use": "Nasıl Kullanılır",
+            "features": "Özellikler",
+            "important_notes": "Önemli Notlar",
+            "github_repo": "GitHub Deposu",
             "how_to_use_items": [
-                "Login using your Twitch account (OAuth device code flow)",
-                "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "The miner will automatically discover campaigns and start mining",
-                "Configure priority games in Settings to focus on what you want",
-                "Monitor progress in the Main and Inventory tabs"
+                "Twitch hesabınızı kullanarak giriş yapın (OAuth cihaz kodu akışı)",
+                "Hesaplarınızı <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> adresinde bağlayın",
+                "Madenci otomatik olarak kampanyaları keşfedecek ve kazımaya başlayacak",
+                "İstediğiniz şeye odaklanmak için Ayarlar'da öncelikli oyunları yapılandırın",
+                "Ana ve Envanter sekmelerinde ilerlemeyi izleyin"
             ],
             "features_items": [
-                "Stream-less drop mining - saves bandwidth",
-                "Game priority and exclusion lists",
-                "Tracks up to 199 channels simultaneously",
-                "Automatic channel switching",
-                "Real-time progress tracking"
+                "Yayınsız drop kazma - bant genişliği tasarrufu sağlar",
+                "Oyun önceliği ve hariç tutma listeleri",
+                "Aynı anda 199 kanala kadar takip eder",
+                "Otomatik kanal değiştirme",
+                "Gerçek zamanlı ilerleme takibi"
             ],
             "important_notes_items": [
-                "Do not watch streams on the same account while mining",
-                "Keep your cookies.jar file secure",
-                "Requires linked game accounts for drops"
+                "Madencilik yaparken aynı hesapta yayın izlemeyin",
+                "cookies.jar dosyanızı güvende tutun",
+                "Drop'lar için bağlantılı oyun hesapları gerektirir"
             ]
         },
         "header": {
             "title": "Twitch Drops Miner",
-            "language": "Language:",
-            "initializing": "Initializing...",
+            "language": "Dil:",
+            "initializing": "Başlatılıyor...",
             "auto_mode": "AUTO",
-            "manual_mode": "MANUAL",
-            "connected": "Connected",
-            "disconnected": "Disconnected"
+            "manual_mode": "MANUEL",
+            "connected": "Bağlandı",
+            "disconnected": "Bağlantı kesildi"
         }
     }
 }

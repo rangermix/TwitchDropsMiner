@@ -23,8 +23,11 @@
             "logged_out": "Вийдено",
             "logging_in": "Вхід...",
             "required": "Потрібен вхід",
-            "waiting_auth": "Waiting for authentication..."
-        }
+            "waiting_auth": "Очікування автентифікації..."
+        },
+        "oauth_prompt": "Введіть цей код на:",
+        "oauth_activate": "Активувати Twitch",
+        "oauth_confirm": "Я ввів код"
     },
     "error": {
         "captcha": "Ваша спроба входу була відхилена через капчу.\nБудь ласка, спробуйте ще раз через 12 або більше годин.",
@@ -46,7 +49,7 @@
             "adding_campaigns": "Додавання кампаній до інвентарю... {counter}"
         },
         "tabs": {
-            "main": "Основне",
+            "main": "Головна",
             "inventory": "Інвентар",
             "settings": "Налаштування",
             "help": "Інформація"
@@ -64,7 +67,7 @@
             "oauth_confirm": "I've entered the code"
         },
         "websocket": {
-            "name": "Стан веб-сокета",
+            "name": "Статус Websocket",
             "websocket": "Веб-сокет #{id}:",
             "initializing": "Ініціалізація...",
             "connected": "Підключено",
@@ -81,20 +84,20 @@
             "remaining": "{time} залишилося",
             "drop_progress": "Поступ:",
             "campaign_progress": "Поступ:",
-            "no_drop": "No active drop",
-            "return_to_auto": "Return to Auto Mode",
-            "manual_mode_info": "Manual Mode: Mining"
+            "no_drop": "Немає активного дропу",
+            "return_to_auto": "Повернутися до автоматичного режиму",
+            "manual_mode_info": "Ручний режим: Майнінг"
         },
         "channels": {
             "name": "Канали",
             "online": "ОНЛАЙН  ✔",
             "pending": "ОФЛАЙН ⏳",
             "offline": "ОФЛАЙН ❌",
-            "no_channels": "No channels tracked yet...",
-            "no_channels_for_games": "No channels found for selected games...",
-            "channel_count": "channel",
-            "channel_count_plural": "channels",
-            "viewers": "viewers"
+            "no_channels": "Поки що не відстежуються канали...",
+            "no_channels_for_games": "Не знайдено каналів для вибраних ігор...",
+            "channel_count": "канал",
+            "channel_count_plural": "канали",
+            "viewers": "глядачів"
         },
         "inventory": {
             "status": {
@@ -105,13 +108,13 @@
             },
             "starts": "Починається {time}",
             "ends": "Завершується {time}",
-            "no_campaigns": "No campaigns loaded yet...",
-            "claimed_drops": "claimed"
+            "no_campaigns": "Кампанії ще не завантажені...",
+            "claimed_drops": "отримано"
         },
         "settings": {
             "general": {
-                "name": "Основні",
-                "dark_mode": "Темний режим: "
+                "name": "Загальні",
+                "dark_mode": "Темний режим"
             },
             "reload": "Перезавантажити",
             "games_to_watch": "Ігри для перегляду",
@@ -127,43 +130,43 @@
             "actions": "Дії",
             "connection_quality": "Якість з'єднання:",
             "minimum_refresh": "Мінімальний інтервал оновлення (хвилини):",
-            "reload_campaigns": "Reload Campaigns"
+            "reload_campaigns": "Перезавантажити кампанії"
         },
         "help": {
-            "about": "About Twitch Drops Miner",
-            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
-            "how_to_use": "How to Use",
-            "features": "Features",
-            "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository",
+            "about": "Про Twitch Drops Miner",
+            "about_text": "Ця програма автоматично майнить тимчасові дропи Twitch без завантаження даних стріму.",
+            "how_to_use": "Як використовувати",
+            "features": "Можливості",
+            "important_notes": "Важливі нотатки",
+            "github_repo": "Репозиторій GitHub",
             "how_to_use_items": [
-                "Login using your Twitch account (OAuth device code flow)",
-                "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "The miner will automatically discover campaigns and start mining",
-                "Configure priority games in Settings to focus on what you want",
-                "Monitor progress in the Main and Inventory tabs"
+                "Увійдіть, використовуючи свій обліковий запис Twitch (потік коду пристрою OAuth)",
+                "Зв'яжіть свої облікові записи на <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+                "Майнер автоматично виявить кампанії та почне майнінг",
+                "Налаштуйте пріоритетні ігри в Налаштуваннях, щоб зосередитися на тому, що ви хочете",
+                "Відстежуйте прогрес у вкладках Головна та Інвентар"
             ],
             "features_items": [
-                "Stream-less drop mining - saves bandwidth",
-                "Game priority and exclusion lists",
-                "Tracks up to 199 channels simultaneously",
-                "Automatic channel switching",
-                "Real-time progress tracking"
+                "Майнінг дропів без стріму - економить пропускну здатність",
+                "Списки пріоритетів та виключень ігор",
+                "Відстежує до 199 каналів одночасно",
+                "Автоматичне перемикання каналів",
+                "Відстеження прогресу в реальному часі"
             ],
             "important_notes_items": [
-                "Do not watch streams on the same account while mining",
-                "Keep your cookies.jar file secure",
-                "Requires linked game accounts for drops"
+                "Не дивіться стріми на тому ж обліковому записі під час майнінгу",
+                "Зберігайте файл cookies.jar у безпеці",
+                "Потрібні пов'язані ігрові облікові записи для дропів"
             ]
         },
         "header": {
             "title": "Twitch Drops Miner",
-            "language": "Language:",
-            "initializing": "Initializing...",
+            "language": "Мова:",
+            "initializing": "Ініціалізація...",
             "auto_mode": "AUTO",
-            "manual_mode": "MANUAL",
-            "connected": "Connected",
-            "disconnected": "Disconnected"
+            "manual_mode": "РУЧНИЙ",
+            "connected": "Підключено",
+            "disconnected": "Відключено"
         }
     }
 }

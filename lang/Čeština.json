@@ -22,8 +22,11 @@
             "logged_out": "Odhlášeno",
             "logging_in": "Přihlašování...",
             "required": "Potřebujete se nejdříve přihlásit",
-            "waiting_auth": "Waiting for authentication..."
-        }
+            "waiting_auth": "Čekání na ověření..."
+        },
+        "oauth_prompt": "Zadejte tento kód na:",
+        "oauth_activate": "Aktivovat Twitch",
+        "oauth_confirm": "Zadal jsem kód"
     },
     "error": {
         "captcha": "Vaše připojení bylo zamítnuto službou Twitch, zkuste to znovu za 12 hodin.",
@@ -45,7 +48,7 @@
             "adding_campaigns": "Přidávám dropy... {counter}"
         },
         "tabs": {
-            "main": "Hlavní Panel",
+            "main": "Hlavní",
             "inventory": "Inventář",
             "settings": "Nastavení",
             "help": "Nápověda"
@@ -63,7 +66,7 @@
             "oauth_confirm": "I've entered the code"
         },
         "websocket": {
-            "name": "Status Připojení Síťového Protokolu",
+            "name": "Stav Websocketu",
             "websocket": "Websocket #{id}:",
             "initializing": "Načítání",
             "connected": "Připojeno",
@@ -80,20 +83,20 @@
             "remaining": "Zbývá {time}",
             "drop_progress": "Průběh dropu:",
             "campaign_progress": "Průběh kampaňe:",
-            "no_drop": "No active drop",
-            "return_to_auto": "Return to Auto Mode",
-            "manual_mode_info": "Manual Mode: Mining"
+            "no_drop": "Žádný aktivní drop",
+            "return_to_auto": "Návrat do automatického režimu",
+            "manual_mode_info": "Ruční režim: Těžba"
         },
         "channels": {
             "name": "Název",
             "online": "ONLINE  ✔",
             "pending": "PRŮBĚH ⏳",
             "offline": "OFFLINE ❌",
-            "no_channels": "No channels tracked yet...",
-            "no_channels_for_games": "No channels found for selected games...",
-            "channel_count": "channel",
-            "channel_count_plural": "channels",
-            "viewers": "viewers"
+            "no_channels": "Zatím nejsou sledovány žádné kanály...",
+            "no_channels_for_games": "Pro vybrané hry nebyly nalezeny žádné kanály...",
+            "channel_count": "kanál",
+            "channel_count_plural": "kanály",
+            "viewers": "diváci"
         },
         "inventory": {
             "status": {
@@ -104,13 +107,13 @@
             },
             "starts": "Začíná: {time}",
             "ends": "Začíná: {time}",
-            "no_campaigns": "No campaigns loaded yet...",
-            "claimed_drops": "claimed"
+            "no_campaigns": "Zatím nejsou načteny žádné kampaně...",
+            "claimed_drops": "získáno"
         },
         "settings": {
             "general": {
-                "name": "Nastavení",
-                "dark_mode": "Tmavý režim: "
+                "name": "Obecné",
+                "dark_mode": "Tmavý režim"
             },
             "exclude": "Vynechat",
             "reload": "Obnovit",
@@ -127,43 +130,43 @@
             "actions": "Akce",
             "connection_quality": "Kvalita připojení:",
             "minimum_refresh": "Minimální interval obnovení (minuty):",
-            "reload_campaigns": "Reload Campaigns"
+            "reload_campaigns": "Znovu načíst kampaně"
         },
         "help": {
-            "about": "About Twitch Drops Miner",
-            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
-            "how_to_use": "How to Use",
-            "features": "Features",
-            "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository",
+            "about": "O Twitch Drops Miner",
+            "about_text": "Tato aplikace automaticky těží časované Twitch dropy bez stahování streamovacích dat.",
+            "how_to_use": "Jak používat",
+            "features": "Funkce",
+            "important_notes": "Důležité poznámky",
+            "github_repo": "GitHub Repozitář",
             "how_to_use_items": [
-                "Login using your Twitch account (OAuth device code flow)",
-                "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "The miner will automatically discover campaigns and start mining",
-                "Configure priority games in Settings to focus on what you want",
-                "Monitor progress in the Main and Inventory tabs"
+                "Přihlaste se pomocí účtu Twitch (OAuth tok kódu zařízení)",
+                "Propojte své účty na <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+                "Těžař automaticky objeví kampaně a začne těžit",
+                "Nakonfigurujte prioritní hry v Nastaveních, abyste se zaměřili na to, co chcete",
+                "Sledujte postup v záložkách Hlavní a Inventář"
             ],
             "features_items": [
-                "Stream-less drop mining - saves bandwidth",
-                "Game priority and exclusion lists",
-                "Tracks up to 199 channels simultaneously",
-                "Automatic channel switching",
-                "Real-time progress tracking"
+                "Těžba dropů bez streamu - šetří šířku pásma",
+                "Seznamy priorit a vyloučení her",
+                "Sleduje až 199 kanálů současně",
+                "Automatické přepínání kanálů",
+                "Sledování postupu v reálném čase"
             ],
             "important_notes_items": [
-                "Do not watch streams on the same account while mining",
-                "Keep your cookies.jar file secure",
-                "Requires linked game accounts for drops"
+                "Nesledujte streamy na stejném účtu během těžby",
+                "Udržujte svůj soubor cookies.jar v bezpečí",
+                "Vyžaduje propojené herní účty pro dropy"
             ]
         },
         "header": {
             "title": "Twitch Drops Miner",
-            "language": "Language:",
-            "initializing": "Initializing...",
+            "language": "Jazyk:",
+            "initializing": "Inicializace...",
             "auto_mode": "AUTO",
-            "manual_mode": "MANUAL",
-            "connected": "Connected",
-            "disconnected": "Disconnected"
+            "manual_mode": "MANUÁLNÍ",
+            "connected": "Připojeno",
+            "disconnected": "Odpojeno"
         }
     }
 }

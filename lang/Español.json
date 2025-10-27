@@ -23,7 +23,7 @@
             "logged_out": "Desconectado",
             "logging_in": "Iniciando sesión...",
             "required": "Se requiere inicio de sesión",
-            "waiting_auth": "Waiting for authentication..."
+            "waiting_auth": "Esperando autenticación..."
         }
     },
     "error": {
@@ -46,7 +46,7 @@
             "adding_campaigns": "Agregando lista de campañas al inventario... {counter}"
         },
         "tabs": {
-            "main": "General",
+            "main": "Principal",
             "inventory": "Inventario",
             "settings": "Configuración",
             "help": "Ayuda"
@@ -59,9 +59,9 @@
             "password": "Contraseña",
             "twofa_code": "Token 2FA (opcional)",
             "button": "Iniciar sesión",
-            "oauth_prompt": "Enter this code at:",
-            "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code"
+            "oauth_prompt": "Ingresa este código en:",
+            "oauth_activate": "Activar Twitch",
+            "oauth_confirm": "He ingresado el código"
         },
         "websocket": {
             "name": "Estado del Websocket",
@@ -81,20 +81,20 @@
             "remaining": "{time} restante",
             "drop_progress": "Progreso:",
             "campaign_progress": "Progreso:",
-            "no_drop": "No active drop",
-            "return_to_auto": "Return to Auto Mode",
-            "manual_mode_info": "Manual Mode: Mining"
+            "no_drop": "Sin drop activo",
+            "return_to_auto": "Volver al modo automático",
+            "manual_mode_info": "Modo manual: Minando"
         },
         "channels": {
             "name": "Canales",
             "online": "ONLINE  ✔",
             "pending": "OFFLINE ⏳",
             "offline": "OFFLINE ❌",
-            "no_channels": "No channels tracked yet...",
-            "no_channels_for_games": "No channels found for selected games...",
-            "channel_count": "channel",
-            "channel_count_plural": "channels",
-            "viewers": "viewers"
+            "no_channels": "Aún no se han rastreado canales...",
+            "no_channels_for_games": "No se encontraron canales para los juegos seleccionados...",
+            "channel_count": "canal",
+            "channel_count_plural": "canales",
+            "viewers": "espectadores"
         },
         "inventory": {
             "status": {
@@ -105,15 +105,16 @@
             },
             "starts": "Comienza: {time}",
             "ends": "Termina: {time}",
-            "no_campaigns": "No campaigns loaded yet...",
-            "claimed_drops": "claimed"
+            "no_campaigns": "Aún no se han cargado campañas...",
+            "claimed_drops": "reclamado"
         },
         "settings": {
             "general": {
-                "name": "Ajustes generales",
-                "dark_mode": "Modo oscuro: "
+                "name": "General",
+                "dark_mode": "Modo oscuro"
             },
             "reload": "Recargar",
+            "reload_campaigns": "Recargar campañas",
             "games_to_watch": "Juegos para ver",
             "games_help": "Selecciona los juegos a ver. El orden importa - arrastra para reordenar la prioridad (arriba = mayor prioridad).",
             "search_games": "Buscar juegos...",
@@ -126,44 +127,43 @@
             "all_games_selected": "Todos los juegos están seleccionados o no hay juegos disponibles.",
             "actions": "Acciones",
             "connection_quality": "Calidad de conexión:",
-            "minimum_refresh": "Intervalo mínimo de actualización (minutos):",
-            "reload_campaigns": "Reload Campaigns"
+            "minimum_refresh": "Intervalo mínimo de actualización (minutos):"
         },
         "help": {
-            "about": "About Twitch Drops Miner",
-            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
-            "how_to_use": "How to Use",
-            "features": "Features",
-            "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository",
+            "about": "Acerca de Twitch Drops Miner",
+            "about_text": "Esta aplicación mina automáticamente drops cronometrados de Twitch sin descargar datos de transmisión.",
+            "how_to_use": "Cómo usar",
+            "features": "Características",
+            "important_notes": "Notas importantes",
+            "github_repo": "Repositorio de GitHub",
             "how_to_use_items": [
-                "Login using your Twitch account (OAuth device code flow)",
-                "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "The miner will automatically discover campaigns and start mining",
-                "Configure priority games in Settings to focus on what you want",
-                "Monitor progress in the Main and Inventory tabs"
+                "Inicia sesión con tu cuenta de Twitch (flujo de código de dispositivo OAuth)",
+                "Vincula tus cuentas en <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+                "El minador descubrirá automáticamente campañas y comenzará a minar",
+                "Configura juegos prioritarios en Configuración para enfocarte en lo que deseas",
+                "Monitorea el progreso en las pestañas Principal e Inventario"
             ],
             "features_items": [
-                "Stream-less drop mining - saves bandwidth",
-                "Game priority and exclusion lists",
-                "Tracks up to 199 channels simultaneously",
-                "Automatic channel switching",
-                "Real-time progress tracking"
+                "Minería de drops sin transmisión - ahorra ancho de banda",
+                "Listas de prioridad y exclusión de juegos",
+                "Rastrea hasta 199 canales simultáneamente",
+                "Cambio automático de canal",
+                "Seguimiento de progreso en tiempo real"
             ],
             "important_notes_items": [
-                "Do not watch streams on the same account while mining",
-                "Keep your cookies.jar file secure",
-                "Requires linked game accounts for drops"
+                "No veas transmisiones en la misma cuenta mientras minas",
+                "Mantén tu archivo cookies.jar seguro",
+                "Requiere cuentas de juegos vinculadas para drops"
             ]
         },
         "header": {
             "title": "Twitch Drops Miner",
-            "language": "Language:",
-            "initializing": "Initializing...",
+            "language": "Idioma:",
+            "initializing": "Inicializando...",
             "auto_mode": "AUTO",
             "manual_mode": "MANUAL",
-            "connected": "Connected",
-            "disconnected": "Disconnected"
+            "connected": "Conectado",
+            "disconnected": "Desconectado"
         }
     }
 }

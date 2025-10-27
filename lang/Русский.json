@@ -23,8 +23,11 @@
             "logged_out": "не авторизован",
             "logging_in": "Авторизация...",
             "required": "Требуется авторизация",
-            "waiting_auth": "Waiting for authentication..."
-        }
+            "waiting_auth": "Ожидание аутентификации..."
+        },
+        "oauth_prompt": "Введите этот код на:",
+        "oauth_activate": "Активировать Twitch",
+        "oauth_confirm": "Я ввёл код"
     },
     "error": {
         "captcha": "Попытка входа в систему была отклонена CAPTCHA.\nПожалуйста, повторите попытку не менее чем через 12 часов.",
@@ -64,7 +67,7 @@
             "oauth_confirm": "I've entered the code"
         },
         "websocket": {
-            "name": "WebSocket статус",
+            "name": "Статус Websocket",
             "websocket": "WebSocket #{id}:",
             "initializing": "Инициализация...",
             "connected": "Подключено",
@@ -81,20 +84,20 @@
             "remaining": "{time} осталось",
             "drop_progress": "Прогресс:",
             "campaign_progress": "Прогресс:",
-            "no_drop": "No active drop",
-            "return_to_auto": "Return to Auto Mode",
-            "manual_mode_info": "Manual Mode: Mining"
+            "no_drop": "Нет активного дропа",
+            "return_to_auto": "Вернуться в автоматический режим",
+            "manual_mode_info": "Ручной режим: Майнинг"
         },
         "channels": {
             "name": "Каналы",
             "online": "ОНЛАЙН ✔",
             "pending": "ОЖИДАНИЕ ⏳",
             "offline": "ОФЛАЙН ❌",
-            "no_channels": "No channels tracked yet...",
-            "no_channels_for_games": "No channels found for selected games...",
-            "channel_count": "channel",
-            "channel_count_plural": "channels",
-            "viewers": "viewers"
+            "no_channels": "Пока не отслеживаются каналы...",
+            "no_channels_for_games": "Не найдено каналов для выбранных игр...",
+            "channel_count": "канал",
+            "channel_count_plural": "каналы",
+            "viewers": "зрителей"
         },
         "inventory": {
             "status": {
@@ -105,13 +108,13 @@
             },
             "starts": "Начало: {time}",
             "ends": "Окончание: {time}",
-            "no_campaigns": "No campaigns loaded yet...",
-            "claimed_drops": "claimed"
+            "no_campaigns": "Кампании ещё не загружены...",
+            "claimed_drops": "получено"
         },
         "settings": {
             "general": {
                 "name": "Общие",
-                "dark_mode": "Тёмный режим: "
+                "dark_mode": "Тёмный режим"
             },
             "exclude": "Исключения",
             "reload": "Перезагрузить",
@@ -128,43 +131,43 @@
             "actions": "Действия",
             "connection_quality": "Качество соединения:",
             "minimum_refresh": "Минимальный интервал обновления (минуты):",
-            "reload_campaigns": "Reload Campaigns"
+            "reload_campaigns": "Перезагрузить кампании"
         },
         "help": {
-            "about": "About Twitch Drops Miner",
-            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
-            "how_to_use": "How to Use",
-            "features": "Features",
-            "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository",
+            "about": "О Twitch Drops Miner",
+            "about_text": "Это приложение автоматически майнит временные дропы Twitch без загрузки данных стрима.",
+            "how_to_use": "Как использовать",
+            "features": "Возможности",
+            "important_notes": "Важные заметки",
+            "github_repo": "Репозиторий GitHub",
             "how_to_use_items": [
-                "Login using your Twitch account (OAuth device code flow)",
-                "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "The miner will automatically discover campaigns and start mining",
-                "Configure priority games in Settings to focus on what you want",
-                "Monitor progress in the Main and Inventory tabs"
+                "Войдите, используя свой аккаунт Twitch (поток кода устройства OAuth)",
+                "Свяжите свои аккаунты на <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+                "Майнер автоматически обнаружит кампании и начнёт майнинг",
+                "Настройте приоритетные игры в Настройках, чтобы сосредоточиться на том, что вы хотите",
+                "Отслеживайте прогресс во вкладках Главная и Инвентарь"
             ],
             "features_items": [
-                "Stream-less drop mining - saves bandwidth",
-                "Game priority and exclusion lists",
-                "Tracks up to 199 channels simultaneously",
-                "Automatic channel switching",
-                "Real-time progress tracking"
+                "Майнинг дропов без стрима - экономит пропускную способность",
+                "Списки приоритетов и исключений игр",
+                "Отслеживает до 199 каналов одновременно",
+                "Автоматическое переключение каналов",
+                "Отслеживание прогресса в реальном времени"
             ],
             "important_notes_items": [
-                "Do not watch streams on the same account while mining",
-                "Keep your cookies.jar file secure",
-                "Requires linked game accounts for drops"
+                "Не смотрите стримы на том же аккаунте во время майнинга",
+                "Храните файл cookies.jar в безопасности",
+                "Требуются связанные игровые аккаунты для дропов"
             ]
         },
         "header": {
             "title": "Twitch Drops Miner",
-            "language": "Language:",
-            "initializing": "Initializing...",
+            "language": "Язык:",
+            "initializing": "Инициализация...",
             "auto_mode": "AUTO",
-            "manual_mode": "MANUAL",
-            "connected": "Connected",
-            "disconnected": "Disconnected"
+            "manual_mode": "РУЧНОЙ",
+            "connected": "Подключено",
+            "disconnected": "Отключено"
         }
     }
 }

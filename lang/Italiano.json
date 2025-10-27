@@ -23,8 +23,11 @@
             "logged_out": "Non loggato",
             "logging_in": "Loggando...",
             "required": "Login richiesto",
-            "waiting_auth": "Waiting for authentication..."
-        }
+            "waiting_auth": "In attesa di autenticazione..."
+        },
+        "oauth_prompt": "Inserisci questo codice su:",
+        "oauth_activate": "Attiva Twitch",
+        "oauth_confirm": "Ho inserito il codice"
     },
     "error": {
         "captcha": "Il tuo tentativo di login è stato negato da CAPTCHA.\nRiprova tra 12+ ore.",
@@ -64,7 +67,7 @@
             "oauth_confirm": "I've entered the code"
         },
         "websocket": {
-            "name": "Stato del Websocket",
+            "name": "Stato Websocket",
             "websocket": "Websocket #{id}:",
             "initializing": "Inizializzando...",
             "connected": "Connesso",
@@ -81,20 +84,20 @@
             "remaining": "{time} rimanenti",
             "drop_progress": "Progresso:",
             "campaign_progress": "Progresso:",
-            "no_drop": "No active drop",
-            "return_to_auto": "Return to Auto Mode",
-            "manual_mode_info": "Manual Mode: Mining"
+            "no_drop": "Nessun drop attivo",
+            "return_to_auto": "Torna alla modalità automatica",
+            "manual_mode_info": "Modalità manuale: Mining"
         },
         "channels": {
             "name": "Canali",
             "online": "ONLINE  ✔",
             "pending": "OFFLINE ⏳",
             "offline": "OFFLINE ❌",
-            "no_channels": "No channels tracked yet...",
-            "no_channels_for_games": "No channels found for selected games...",
-            "channel_count": "channel",
-            "channel_count_plural": "channels",
-            "viewers": "viewers"
+            "no_channels": "Nessun canale tracciato ancora...",
+            "no_channels_for_games": "Nessun canale trovato per i giochi selezionati...",
+            "channel_count": "canale",
+            "channel_count_plural": "canali",
+            "viewers": "spettatori"
         },
         "inventory": {
             "status": {
@@ -105,13 +108,13 @@
             },
             "starts": "Inizia: {time}",
             "ends": "Finisce: {time}",
-            "no_campaigns": "No campaigns loaded yet...",
-            "claimed_drops": "claimed"
+            "no_campaigns": "Nessuna campagna caricata ancora...",
+            "claimed_drops": "reclamato"
         },
         "settings": {
             "general": {
                 "name": "Generale",
-                "dark_mode": "Modalità scura: "
+                "dark_mode": "Modalità scura"
             },
             "reload": "Ricarica",
             "games_to_watch": "Giochi da guardare",
@@ -127,43 +130,43 @@
             "actions": "Azioni",
             "connection_quality": "Qualità della connessione:",
             "minimum_refresh": "Intervallo minimo di aggiornamento (minuti):",
-            "reload_campaigns": "Reload Campaigns"
+            "reload_campaigns": "Ricarica campagne"
         },
         "help": {
-            "about": "About Twitch Drops Miner",
-            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
-            "how_to_use": "How to Use",
-            "features": "Features",
-            "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository",
+            "about": "Informazioni su Twitch Drops Miner",
+            "about_text": "Questa applicazione estrae automaticamente i drop Twitch temporizzati senza scaricare dati di streaming.",
+            "how_to_use": "Come usare",
+            "features": "Funzionalità",
+            "important_notes": "Note importanti",
+            "github_repo": "Repository GitHub",
             "how_to_use_items": [
-                "Login using your Twitch account (OAuth device code flow)",
-                "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "The miner will automatically discover campaigns and start mining",
-                "Configure priority games in Settings to focus on what you want",
-                "Monitor progress in the Main and Inventory tabs"
+                "Accedi utilizzando il tuo account Twitch (flusso del codice dispositivo OAuth)",
+                "Collega i tuoi account su <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+                "Il miner scoprirà automaticamente le campagne e inizierà il mining",
+                "Configura i giochi prioritari nelle Impostazioni per concentrarti su ciò che desideri",
+                "Monitora i progressi nelle schede Principale e Inventario"
             ],
             "features_items": [
-                "Stream-less drop mining - saves bandwidth",
-                "Game priority and exclusion lists",
-                "Tracks up to 199 channels simultaneously",
-                "Automatic channel switching",
-                "Real-time progress tracking"
+                "Mining di drop senza streaming - risparmia larghezza di banda",
+                "Liste di priorità ed esclusione dei giochi",
+                "Traccia fino a 199 canali simultaneamente",
+                "Cambio automatico di canale",
+                "Tracciamento dei progressi in tempo reale"
             ],
             "important_notes_items": [
-                "Do not watch streams on the same account while mining",
-                "Keep your cookies.jar file secure",
-                "Requires linked game accounts for drops"
+                "Non guardare stream sullo stesso account durante il mining",
+                "Mantieni sicuro il tuo file cookies.jar",
+                "Richiede account di gioco collegati per i drop"
             ]
         },
         "header": {
             "title": "Twitch Drops Miner",
-            "language": "Language:",
-            "initializing": "Initializing...",
+            "language": "Lingua:",
+            "initializing": "Inizializzazione...",
             "auto_mode": "AUTO",
-            "manual_mode": "MANUAL",
-            "connected": "Connected",
-            "disconnected": "Disconnected"
+            "manual_mode": "MANUALE",
+            "connected": "Connesso",
+            "disconnected": "Disconnesso"
         }
     }
 }

@@ -23,8 +23,11 @@
             "logged_out": "Deconectat",
             "logging_in": "Se conectează...",
             "required": "Este necesară conectarea",
-            "waiting_auth": "Waiting for authentication..."
-        }
+            "waiting_auth": "Se așteaptă autentificarea..."
+        },
+        "oauth_prompt": "Introduceți acest cod la:",
+        "oauth_activate": "Activează Twitch",
+        "oauth_confirm": "Am introdus codul"
     },
     "error": {
         "captcha": "Conexiunea a fost respinsă de CAPTCHA. Vă rugăm să încercați din nou în aprox. 12 ore.",
@@ -64,7 +67,7 @@
             "oauth_confirm": "I've entered the code"
         },
         "websocket": {
-            "name": "Stare Websocket",
+            "name": "Status Websocket",
             "websocket": "Websocket #{id}:",
             "initializing": "Se inițializează...",
             "connected": "Conectat",
@@ -81,20 +84,20 @@
             "remaining": "{time} rămas",
             "drop_progress": "Avansare :",
             "campaign_progress": "Avansare :",
-            "no_drop": "No active drop",
-            "return_to_auto": "Return to Auto Mode",
-            "manual_mode_info": "Manual Mode: Mining"
+            "no_drop": "Niciun drop activ",
+            "return_to_auto": "Revenire la modul automat",
+            "manual_mode_info": "Mod manual: Mining"
         },
         "channels": {
             "name": "Canale",
             "online": "ONLINE  ✔",
             "pending": "OFFLINE ⏳",
             "offline": "OFFLINE ❌",
-            "no_channels": "No channels tracked yet...",
-            "no_channels_for_games": "No channels found for selected games...",
-            "channel_count": "channel",
-            "channel_count_plural": "channels",
-            "viewers": "viewers"
+            "no_channels": "Niciun canal urmărit încă...",
+            "no_channels_for_games": "Nu s-au găsit canale pentru jocurile selectate...",
+            "channel_count": "canal",
+            "channel_count_plural": "canale",
+            "viewers": "spectatori"
         },
         "inventory": {
             "status": {
@@ -105,13 +108,13 @@
             },
             "starts": "Începe : {time}",
             "ends": "Se termină : {time}",
-            "no_campaigns": "No campaigns loaded yet...",
-            "claimed_drops": "claimed"
+            "no_campaigns": "Nicio campanie încărcată încă...",
+            "claimed_drops": "revendicat"
         },
         "settings": {
             "general": {
                 "name": "General",
-                "dark_mode": "Mod întunecat :"
+                "dark_mode": "Mod întunecat"
             },
             "reload": "Reîncarcă",
             "games_to_watch": "Jocuri de urmărit",
@@ -127,43 +130,43 @@
             "actions": "Acțiuni",
             "connection_quality": "Calitatea conexiunii:",
             "minimum_refresh": "Interval minim de reîmprospătare (minute):",
-            "reload_campaigns": "Reload Campaigns"
+            "reload_campaigns": "Reîncarcă campaniile"
         },
         "help": {
-            "about": "About Twitch Drops Miner",
-            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
-            "how_to_use": "How to Use",
-            "features": "Features",
-            "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository",
+            "about": "Despre Twitch Drops Miner",
+            "about_text": "Această aplicație minează automat dropuri Twitch cronometrate fără a descărca date de streaming.",
+            "how_to_use": "Cum se folosește",
+            "features": "Caracteristici",
+            "important_notes": "Note importante",
+            "github_repo": "Depozit GitHub",
             "how_to_use_items": [
-                "Login using your Twitch account (OAuth device code flow)",
-                "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "The miner will automatically discover campaigns and start mining",
-                "Configure priority games in Settings to focus on what you want",
-                "Monitor progress in the Main and Inventory tabs"
+                "Autentificați-vă folosind contul Twitch (flux cod dispozitiv OAuth)",
+                "Legați conturile la <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+                "Minerul va descoperi automat campaniile și va începe mineritul",
+                "Configurați jocurile prioritare în Setări pentru a vă concentra pe ceea ce doriți",
+                "Monitorizați progresul în filele Principal și Inventar"
             ],
             "features_items": [
-                "Stream-less drop mining - saves bandwidth",
-                "Game priority and exclusion lists",
-                "Tracks up to 199 channels simultaneously",
-                "Automatic channel switching",
-                "Real-time progress tracking"
+                "Minare de dropuri fără streaming - economisește lățime de bandă",
+                "Liste de prioritate și excludere a jocurilor",
+                "Urmărește până la 199 de canale simultan",
+                "Comutare automată a canalelor",
+                "Urmărire progres în timp real"
             ],
             "important_notes_items": [
-                "Do not watch streams on the same account while mining",
-                "Keep your cookies.jar file secure",
-                "Requires linked game accounts for drops"
+                "Nu vizionați streaming-uri pe același cont în timp ce minați",
+                "Păstrați fișierul cookies.jar în siguranță",
+                "Necesită conturi de joc legate pentru dropuri"
             ]
         },
         "header": {
             "title": "Twitch Drops Miner",
-            "language": "Language:",
-            "initializing": "Initializing...",
+            "language": "Limbă:",
+            "initializing": "Inițializare...",
             "auto_mode": "AUTO",
             "manual_mode": "MANUAL",
-            "connected": "Connected",
-            "disconnected": "Disconnected"
+            "connected": "Conectat",
+            "disconnected": "Deconectat"
         }
     }
 }

@@ -23,8 +23,11 @@
             "logged_out": "ログアウト済み",
             "logging_in": "ログイン中...",
             "required": "ログインが必要です",
-            "waiting_auth": "Waiting for authentication..."
-        }
+            "waiting_auth": "認証を待っています..."
+        },
+        "oauth_prompt": "このコードを次の場所に入力してください:",
+        "oauth_activate": "Twitchをアクティベート",
+        "oauth_confirm": "コードを入力しました"
     },
     "error": {
         "captcha": "ログイン試行がCAPTCHAによって拒否されました。\n12時間以上後に再試行してください。",
@@ -81,20 +84,20 @@
             "remaining": "残り時間：{time}",
             "drop_progress": "進行状況：",
             "campaign_progress": "進行状況：",
-            "no_drop": "No active drop",
-            "return_to_auto": "Return to Auto Mode",
-            "manual_mode_info": "Manual Mode: Mining"
+            "no_drop": "アクティブなドロップなし",
+            "return_to_auto": "自動モードに戻る",
+            "manual_mode_info": "手動モード: マイニング中"
         },
         "channels": {
             "name": "チャンネル",
             "online": "オンライン ✔",
             "pending": "オフライン中 ⏳",
             "offline": "オフライン ❌",
-            "no_channels": "No channels tracked yet...",
-            "no_channels_for_games": "No channels found for selected games...",
-            "channel_count": "channel",
-            "channel_count_plural": "channels",
-            "viewers": "viewers"
+            "no_channels": "まだチャンネルが追跡されていません...",
+            "no_channels_for_games": "選択したゲームのチャンネルが見つかりません...",
+            "channel_count": "チャンネル",
+            "channel_count_plural": "チャンネル",
+            "viewers": "視聴者"
         },
         "inventory": {
             "status": {
@@ -105,13 +108,13 @@
             },
             "starts": "開始：{time}",
             "ends": "終了：{time}",
-            "no_campaigns": "No campaigns loaded yet...",
-            "claimed_drops": "claimed"
+            "no_campaigns": "まだキャンペーンが読み込まれていません...",
+            "claimed_drops": "受け取り済み"
         },
         "settings": {
             "general": {
                 "name": "一般",
-                "dark_mode": "ダークモード："
+                "dark_mode": "ダークモード"
             },
             "reload": "再読み込み",
             "games_to_watch": "視聴するゲーム",
@@ -127,43 +130,43 @@
             "actions": "アクション",
             "connection_quality": "接続品質：",
             "minimum_refresh": "最小更新間隔（分）：",
-            "reload_campaigns": "Reload Campaigns"
+            "reload_campaigns": "キャンペーンを再読み込み"
         },
         "help": {
-            "about": "About Twitch Drops Miner",
-            "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
-            "how_to_use": "How to Use",
-            "features": "Features",
-            "important_notes": "Important Notes",
-            "github_repo": "GitHub Repository",
+            "about": "Twitch Drops Minerについて",
+            "about_text": "このアプリケーションは、ストリームデータをダウンロードせずに、時間指定のTwitchドロップを自動的にマイニングします。",
+            "how_to_use": "使い方",
+            "features": "機能",
+            "important_notes": "重要な注意事項",
+            "github_repo": "GitHubリポジトリ",
             "how_to_use_items": [
-                "Login using your Twitch account (OAuth device code flow)",
-                "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "The miner will automatically discover campaigns and start mining",
-                "Configure priority games in Settings to focus on what you want",
-                "Monitor progress in the Main and Inventory tabs"
+                "Twitchアカウントを使用してログイン（OAuthデバイスコードフロー）",
+                "<a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>でアカウントをリンク",
+                "マイナーは自動的にキャンペーンを発見してマイニングを開始します",
+                "設定で優先ゲームを設定して、希望するものに集中します",
+                "メインタブとインベントリタブで進行状況を監視します"
             ],
             "features_items": [
-                "Stream-less drop mining - saves bandwidth",
-                "Game priority and exclusion lists",
-                "Tracks up to 199 channels simultaneously",
-                "Automatic channel switching",
-                "Real-time progress tracking"
+                "ストリームレスドロップマイニング - 帯域幅を節約",
+                "ゲームの優先順位リストと除外リスト",
+                "最大199チャンネルを同時に追跡",
+                "自動チャンネル切り替え",
+                "リアルタイム進行状況追跡"
             ],
             "important_notes_items": [
-                "Do not watch streams on the same account while mining",
-                "Keep your cookies.jar file secure",
-                "Requires linked game accounts for drops"
+                "マイニング中は同じアカウントでストリームを視聴しないでください",
+                "cookies.jarファイルを安全に保管してください",
+                "ドロップにはリンクされたゲームアカウントが必要です"
             ]
         },
         "header": {
             "title": "Twitch Drops Miner",
-            "language": "Language:",
-            "initializing": "Initializing...",
+            "language": "言語:",
+            "initializing": "初期化中...",
             "auto_mode": "AUTO",
-            "manual_mode": "MANUAL",
-            "connected": "Connected",
-            "disconnected": "Disconnected"
+            "manual_mode": "手動",
+            "connected": "接続済み",
+            "disconnected": "切断"
         }
     }
 }
