@@ -12,6 +12,9 @@ on:
 permissions:
   contents: write
 
+env:
+  CURRENT_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
 jobs:
   create-github-release:
     name: Create GitHub Release
@@ -24,12 +27,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.workflow_run.head_branch }}
+          ref: $CURRENT_BRANCH_NAME
           fetch-depth: 0
 
       - name: Extract version from branch
         id: extract
-        run: .github/scripts/extract_version.sh "${{ github.event.workflow_run.head_branch }}"
+        run: .github/scripts/extract_version.sh "$CURRENT_BRANCH_NAME"
 
       - name: Validate version format
         id: validate

@@ -62,7 +62,9 @@ else
     BRANCH_NAME="$1"
 
     # Extract version from branch name (release/1.2.3 -> 1.2.3)
-    BRANCH_VERSION="${BRANCH_NAME#release/}"
+    # Also strip refs/heads/ if present (from github.ref)
+    BRANCH_VERSION="${BRANCH_NAME#refs/heads/}"
+    BRANCH_VERSION="${BRANCH_VERSION#release/}"
     echo "Branch version: $BRANCH_VERSION"
     echo ""
 

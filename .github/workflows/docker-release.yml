@@ -4,10 +4,14 @@ on:
   push:
     branches:
       - 'release/**'
+  workflow_dispatch:
 
 permissions:
   contents: write
   packages: write
+
+env:
+  CURRENT_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
 jobs:
   extract-version:
@@ -20,12 +24,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.PUBLISHER_TOKEN }}
 
       - name: Extract version from branch and version.py
         id: extract
         run: |
           # Extract version from branch name and validate against version.py
-          .github/scripts/extract_version.sh "${{ github.ref }}"
+          .github/scripts/extract_version.sh "$CURRENT_BRANCH_NAME"
 
       - name: Validate version format
         run: |
