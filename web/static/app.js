@@ -1069,7 +1069,7 @@ function applyTranslations(t) {
     const settingsTab = document.getElementById('settings-tab');
     if (settingsTab && t.gui?.settings) {
         const headers = settingsTab.querySelectorAll('h2');
-        if (headers[0]) headers[0].textContent = t.gui.settings.general;
+        if (headers[0]) headers[0].textContent = t.gui.settings.general.name;
         if (headers[1]) headers[1].textContent = t.gui.settings.games_to_watch;
         if (headers[2]) headers[2].textContent = t.gui.settings.actions;
 
@@ -1078,7 +1078,7 @@ function applyTranslations(t) {
             const checkbox = darkModeLabel.querySelector('input');
             darkModeLabel.textContent = '';
             darkModeLabel.appendChild(checkbox);
-            darkModeLabel.appendChild(document.createTextNode(' ' + t.gui.settings.dark_mode));
+            darkModeLabel.appendChild(document.createTextNode(' ' + t.gui.settings.general.dark_mode));
         }
 
         const connQualityLabel = settingsTab.querySelector('label:has(#connection-quality)');

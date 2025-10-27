@@ -127,7 +127,6 @@
             "actions": "Handlinger",
             "connection_quality": "Forbindelseskvalitet:",
             "minimum_refresh": "Minimum opdateringsinterval (minutter):",
-            "dark_mode": "Dark Mode",
             "reload_campaigns": "Reload Campaigns"
         },
         "help": {

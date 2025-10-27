@@ -127,7 +127,6 @@
             "actions": "Tindakan",
             "connection_quality": "Kualitas Koneksi:",
             "minimum_refresh": "Interval Refresh Minimum (menit):",
-            "dark_mode": "Dark Mode",
             "reload_campaigns": "Reload Campaigns"
         },
         "help": {

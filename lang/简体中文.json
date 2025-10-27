@@ -109,7 +109,10 @@
             "claimed_drops": "已领取"
         },
         "settings": {
-            "general": "常规设置",
+            "general": {
+                "name": "常规设置",
+                "dark_mode": "深色模式"
+            },
             "reload": "刷新",
             "games_to_watch": "观看游戏",
             "games_help": "选择要观看的游戏。顺序很重要 - 拖动以重新排序优先级（顶部 = 最高优先级）。",
@@ -124,7 +127,6 @@
             "actions": "操作",
             "connection_quality": "连接质量：",
             "minimum_refresh": "最小刷新间隔（分钟）：",
-            "dark_mode": "深色模式",
             "reload_campaigns": "重新加载活动"
         },
         "help": {

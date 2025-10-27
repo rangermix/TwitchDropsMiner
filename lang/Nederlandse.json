@@ -127,7 +127,6 @@
             "actions": "Acties",
             "connection_quality": "Verbindingskwaliteit:",
             "minimum_refresh": "Minimaal verversingsinterval (minuten):",
-            "dark_mode": "Dark Mode",
             "reload_campaigns": "Reload Campaigns"
         },
         "help": {

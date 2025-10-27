@@ -133,8 +133,7 @@ class GUISettingsGeneral(TypedDict):
 
 
 class GUISettings(TypedDict):
-    general: str
-    dark_mode: str
+    general: GUISettingsGeneral
     reload: str
     reload_campaigns: str
     games_to_watch: str

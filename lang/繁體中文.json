@@ -127,7 +127,6 @@
             "actions": "操作",
             "connection_quality": "連線品質：",
             "minimum_refresh": "最小重新整理間隔（分鐘）：",
-            "dark_mode": "Dark Mode",
             "reload_campaigns": "Reload Campaigns"
         },
         "help": {

@@ -127,7 +127,6 @@
             "actions": "الإجراءات",
             "connection_quality": "جودة الاتصال:",
             "minimum_refresh": "الحد الأدنى لفترة التحديث (بالدقائق):",
-            "dark_mode": "Dark Mode",
             "reload_campaigns": "Reload Campaigns"
         },
         "help": {

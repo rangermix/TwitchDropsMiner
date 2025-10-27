@@ -128,7 +128,6 @@
             "actions": "Действия",
             "connection_quality": "Качество соединения:",
             "minimum_refresh": "Минимальный интервал обновления (минуты):",
-            "dark_mode": "Dark Mode",
             "reload_campaigns": "Reload Campaigns"
         },
         "help": {

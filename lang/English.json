@@ -110,8 +110,10 @@
             "claimed_drops": "claimed"
         },
         "settings": {
-            "general": "General Settings",
-            "dark_mode": "Dark Mode",
+            "general": {
+                "name": "General Settings",
+                "dark_mode": "Dark Mode"
+            },
             "reload": "Reload",
             "reload_campaigns": "Reload Campaigns",
             "games_to_watch": "Games to Watch",

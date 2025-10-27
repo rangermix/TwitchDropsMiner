@@ -127,7 +127,6 @@
             "actions": "Дії",
             "connection_quality": "Якість з'єднання:",
             "minimum_refresh": "Мінімальний інтервал оновлення (хвилини):",
-            "dark_mode": "Dark Mode",
             "reload_campaigns": "Reload Campaigns"
         },
         "help": {

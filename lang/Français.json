@@ -127,7 +127,6 @@
             "actions": "Actions",
             "connection_quality": "Qualité de connexion:",
             "minimum_refresh": "Intervalle minimum de rafraîchissement (minutes):",
-            "dark_mode": "Dark Mode",
             "reload_campaigns": "Reload Campaigns"
         },
         "help": {
