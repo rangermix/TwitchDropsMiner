@@ -155,37 +155,10 @@ fi
 # Step 4: Extract previous version from git history
 echo -e "${YELLOW}[4/7] Extracting previous version from git history...${NC}"
 
-# Get the git history of version.py, find the commit before the version we're reverting
-# We need to find the commit that changed version to $VERSION, then get the version from the commit before that
-CURRENT_VERSION_COMMIT=$(git log --all --format="%H" --follow -S "__version__ = \"$VERSION\"" -- src/version.py | head -1)
-
-if [ -z "$CURRENT_VERSION_COMMIT" ]; then
-    echo -e "${RED}Error: Could not find commit that set version to $VERSION${NC}"
-    exit 1
-fi
-
-echo "  Found version $VERSION in commit: ${CURRENT_VERSION_COMMIT:0:7}"
-
-# Get the previous commit for version.py
-PREVIOUS_VERSION_COMMIT=$(git log --all --format="%H" --follow "$CURRENT_VERSION_COMMIT^..HEAD" -- src/version.py | grep -A1 "$CURRENT_VERSION_COMMIT" | tail -1 || true)
-
-# If we can't find a previous commit in that way, try getting the parent commit and extracting version from there
-if [ -z "$PREVIOUS_VERSION_COMMIT" ] || [ "$PREVIOUS_VERSION_COMMIT" = "$CURRENT_VERSION_COMMIT" ]; then
-    PREVIOUS_VERSION_COMMIT=$(git rev-parse "$CURRENT_VERSION_COMMIT^" 2>/dev/null || true)
-fi
-
-if [ -z "$PREVIOUS_VERSION_COMMIT" ]; then
-    echo -e "${RED}Error: Could not find previous commit for version.py${NC}"
-    exit 1
-fi
-
-echo "  Found previous commit: ${PREVIOUS_VERSION_COMMIT:0:7}"
-
-# Extract version from that commit
-PREVIOUS_VERSION=$(git show "$PREVIOUS_VERSION_COMMIT:src/version.py" | grep -oP '__version__ = "\K[^"]+' || true)
-
-if [ -z "$PREVIOUS_VERSION" ]; then
-    echo -e "${RED}Error: Could not extract previous version from commit ${PREVIOUS_VERSION_COMMIT:0:7}${NC}"
+# Use the get_previous_version.sh script to extract the previous version
+if ! PREVIOUS_VERSION=$("$SCRIPT_DIR/get_previous_version.sh" "$VERSION" 2>&1); then
+    echo -e "${RED}Error: Failed to extract previous version${NC}"
+    echo -e "${RED}$PREVIOUS_VERSION${NC}"
     exit 1
 fi
 
