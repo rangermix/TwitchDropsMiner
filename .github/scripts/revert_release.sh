@@ -180,27 +180,27 @@ ACTION_COUNT=0
 
 if [ "$RELEASE_EXISTS" = true ]; then
     echo "  • Delete GitHub release: $TAG_NAME"
-    ((ACTION_COUNT++))
+    ACTION_COUNT=$((ACTION_COUNT + 1))
 fi
 
 if [ "$TAG_EXISTS_REMOTE" = true ]; then
     echo "  • Delete remote tag: $TAG_NAME"
-    ((ACTION_COUNT++))
+    ACTION_COUNT=$((ACTION_COUNT + 1))
 fi
 
 if [ "$TAG_EXISTS_LOCAL" = true ]; then
     echo "  • Delete local tag: $TAG_NAME"
-    ((ACTION_COUNT++))
+    ACTION_COUNT=$((ACTION_COUNT + 1))
 fi
 
 if [ "$BRANCH_EXISTS_REMOTE" = true ]; then
     echo "  • Delete remote branch: $BRANCH_NAME"
-    ((ACTION_COUNT++))
+    ACTION_COUNT=$((ACTION_COUNT + 1))
 fi
 
 if [ "$BRANCH_EXISTS_LOCAL" = true ]; then
     echo "  • Delete local branch: $BRANCH_NAME"
-    ((ACTION_COUNT++))
+    ACTION_COUNT=$((ACTION_COUNT + 1))
 fi
 
 echo "  • Update src/version.py: $VERSION → $PREVIOUS_VERSION"
@@ -208,7 +208,7 @@ echo "  • Update pyproject.toml: $VERSION → $PREVIOUS_VERSION"
 echo "  • Commit changes to main branch with message:"
 echo "    'chore: revert version from $VERSION to $PREVIOUS_VERSION'"
 echo "  • Push changes to origin/main"
-((ACTION_COUNT+=3))
+ACTION_COUNT=$((ACTION_COUNT + 3))
 
 echo ""
 echo -e "${RED}Total actions: $ACTION_COUNT${NC}"
