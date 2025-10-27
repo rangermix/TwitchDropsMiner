@@ -45,4 +45,4 @@ jobs:
           echo "Branch '$BRANCH_NAME' does not exist, proceeding..."
 
       - name: Create release branch and update version
-        run: .github/scripts/create_release.sh "${{ steps.validate.outputs.version }}" "$CURRENT_BRANCH_NAME"
+        run: .github/scripts/create_release.sh "${{ steps.validate.outputs.version }}" "${{ env.CURRENT_BRANCH_NAME }}"

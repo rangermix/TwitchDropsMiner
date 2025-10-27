@@ -31,7 +31,7 @@ jobs:
         id: extract
         run: |
           # Extract version from branch name and validate against version.py
-          .github/scripts/extract_version.sh "$CURRENT_BRANCH_NAME"
+          .github/scripts/extract_version.sh "${{ env.CURRENT_BRANCH_NAME }}"
 
       - name: Validate version format
         run: |

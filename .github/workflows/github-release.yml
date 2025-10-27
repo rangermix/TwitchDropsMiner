@@ -27,12 +27,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
-          ref: $CURRENT_BRANCH_NAME
           fetch-depth: 0
 
       - name: Extract version from branch
         id: extract
-        run: .github/scripts/extract_version.sh "$CURRENT_BRANCH_NAME"
+        run: .github/scripts/extract_version.sh "${{ env.CURRENT_BRANCH_NAME }}"
 
       - name: Validate version format
         id: validate
