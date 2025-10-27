@@ -151,16 +151,7 @@ class GUISettings(TypedDict):
     minimum_refresh: str
 
 
-class GUIHelpLinks(TypedDict):
-    name: str
-
-
 class GUIHelp(TypedDict):
-    links: GUIHelpLinks
-    how_it_works: str
-    how_it_works_text: str
-    getting_started: str
-    getting_started_text: str
     about: str
     about_text: str
     how_to_use: str

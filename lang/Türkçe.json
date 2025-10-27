@@ -130,13 +130,6 @@
             "reload_campaigns": "Reload Campaigns"
         },
         "help": {
-            "links": {
-                "name": "Faydalı Bağlantılar"
-            },
-            "how_it_works": "Nasıl çalışır",
-            "how_it_works_text": "Uygulama, her ~60 saniyede bir \"izlenen dakika\" olayını o anda izlenmekte olan kanala gönderir.\nBu, düşüşü ileri götürmek için yeterlidir. Bu şekilde, indirmeye gerek yoktur akış sağlar ve bant genişliğinden tasarruf sağlar.\nKanalların çevrimiçi veya çevrimdışı durumunu güncel tutmak için, kanalların durumunu kontrol eden\nbir websocket bağlantısı kurulur.",
-            "getting_started": "Başlarken",
-            "getting_started_text": "• Uygulamada oturum açın.\n• Twitch hesabının ilgilendiğiniz tüm kampanyalara bağlı olduğundan emin olun.\n• Tüm ödüllerin işlenmesini istiyorsanız, \"Yalnızca öncelikli \" seçeneğinin işaretini kaldırın ve \"Yeniden Yükle\"ye basın.\n• Yalnızca belirli oyunların dikkate alınmasını istiyorsanız, seçimi oyuna göre daraltmak için \"Öncelik\" listesini kullanın.\n• Liste yukarıdan aşağıya doğru öncelik sırasına göre sıralanır. n• \"Yalnızca öncelik\" seçeneği, öncelik listesinde olmayan oyunların işlenmesini engeller.\n• \"Hariç tut\" listesi ile, asla olması gerektiği düşünülmeyecek oyunların filtrelenmesi mümkündür.\n• Listeler veya seçenekler özelleştirilmişse, değişikliklerin geçerli olması için \"Yeniden Yükle\"ye basılmalıdır.",
             "about": "About Twitch Drops Miner",
             "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
             "how_to_use": "How to Use",

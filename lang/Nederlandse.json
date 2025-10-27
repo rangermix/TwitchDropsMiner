@@ -130,13 +130,6 @@
             "reload_campaigns": "Reload Campaigns"
         },
         "help": {
-            "links": {
-                "name": "Handige Links"
-            },
-            "how_it_works": "Dit is hoe het werkt",
-            "how_it_works_text": "Elke ~60 seconden verzendt de applicatie een \"minuut gekeken\" gebeurtenis naar het kanaal waar deze momenteel naar kijkt.\nDit is voldoende om voortgang te boeken voor drops. Opmerking: op deze manier is het niet nodig om de stream te downloaden en wordt er bandbreedte bespaard. \nOm de online of offline status van de kanalen up-to-date te houden, wordt er een websocket verbinding opgezet\ndie de kanalen controleert op hun status.",
-            "getting_started": "Eerste stappen",
-            "getting_started_text": "• Meld je aan bij de applicatie.\n• Zorg ervoor dat het Twitch-account is gekoppeld aan alle campagnes waarin je geïnteresseerd bent.\n• ls je alle drops wilt verwerken, verwijder je het vinkje bij \"Alleen prioriteit\" en druk je op \"Herladen\" .\n• Als je alleen bepaalde games wilt overwegen, gebruik dan de lijst \"Prioriteit\" om de keuze per game te verfijnen.\n• De lijst geeft prioriteit van boven naar beneden.\n• De optie \"Alleen prioriteit\" verhindert dat games die niet op de prioriteitenlijst staan, worden verwerkt.\n• Met de lijst \"Uitsluiten\" is het mogelijk om games te filteren die nooit in overweging mogen worden genomen.\n• Als lijsten of opties zijn aangepast, moet je op \"Herladen\" drukken zodat de wijzigingen van kracht worden.",
             "about": "About Twitch Drops Miner",
             "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
             "how_to_use": "How to Use",
