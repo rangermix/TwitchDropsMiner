@@ -18,7 +18,6 @@ jobs:
   create-release-branch:
     name: Create Release Branch
     runs-on: ubuntu-latest
-    environment: prod
 
     steps:
       - name: Checkout code
