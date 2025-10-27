@@ -26,18 +26,13 @@ jobs:
         with:
           token: ${{ secrets.PUBLISHER_TOKEN }}
 
-      - name: Validate version format
-        id: validate
-        run: .github/scripts/validate_semver.sh "${{ github.event.inputs.version }}"
+      - name: Extract version
+        id: extract
+        run: .github/scripts/extract_version.sh
 
-      - name: Check if input version
-        run: |
-          CURRENT_VERSION=$(grep -oP '(?<=__version__ = ")[^"]+' src/version.py)
-          INPUT_VERSION="${{ github.event.inputs.version }}"
-          if [ "$CURRENT_VERSION" = "$INPUT_VERSION" ]; then
-            echo "Error: Input version '$INPUT_VERSION' is the same as the current version"
-            exit 1
-          fi
+      - name: Validate version format and range
+        id: validate
+        run: .github/scripts/validate_semver.sh "${{ github.event.inputs.version }}" ">${{ steps.extract.outputs.version }}"
 
       - name: Check if branch exists
         run: |
@@ -51,35 +46,4 @@ jobs:
           echo "Branch '$BRANCH_NAME' does not exist, proceeding..."
 
       - name: Create release branch and update version
-        run: |
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          VERSION="${{ steps.validate.outputs.version }}"
-
-          # Update version.py
-          mv -f src/version.py src/last_version.py
-          echo "__version__ = \"$VERSION\"" > src/version.py
-
-          # Commit changes
-          git add src/version.py
-          git commit -m "chore: bump version to $VERSION"
-          git push origin $CURRENT_BRANCH_NAME
-
-          BRANCH_NAME="release/${{ steps.validate.outputs.version }}"
-
-          # Create and checkout new branch
-          git checkout -b "$BRANCH_NAME"
-
-          # Push branch (this will trigger the publish workflow)
-          git push origin "$BRANCH_NAME"
-
-          # Create tag
-          git tag "v$VERSION"
-          git push origin "v$VERSION"
-
-          echo "✅ Updated version to $VERSION"
-          echo "✅ Created branch '$BRANCH_NAME'"
-          echo "✅ Created and pushed tag v$VERSION"
-          echo "✅ The publish workflow will now build Docker images and create the GitHub release"
+        run: .github/scripts/create_release.sh "${{ steps.validate.outputs.version }}" "$CURRENT_BRANCH_NAME"
