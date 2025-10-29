@@ -24,6 +24,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           token: ${{ secrets.PUBLISHER_TOKEN }}
+          fetch-depth: 0
 
       - name: Extract version
         id: extract
