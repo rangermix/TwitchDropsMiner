@@ -103,3 +103,16 @@ jobs:
             BUILD_DATE=${{ github.event.repository.updated_at }}
             VCS_REF=${{ github.sha }}
             VERSION=${{ needs.extract-version.outputs.version }}
+
+  trigger-github-release:
+    name: Trigger GitHub Release Workflow
+    runs-on: ubuntu-latest
+    needs: docker-build
+
+    steps:
+      - name: Trigger Version Release Workflow
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: version-release.yml
+          token: ${{ secrets.PUBLISHER_TOKEN }}
+          ref: ${{ github.ref }}
