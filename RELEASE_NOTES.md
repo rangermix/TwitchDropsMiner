@@ -1,3 +1,25 @@
+# Release Notes - v1.1.2
+
+This release focuses heavily on international accessibility, bringing comprehensive language support to the entire application. We've also included several minor fixes and internal cleanups to keep the miner running smoothly.
+
+### 🌍 Localization & Language
+
+We've completely overhauled the translation system to ensure a seamless experience for users worldwide.
+
+- **Full Language Coverage**: Thanks to a massive effort, the application now features full, high-quality translations across all screens and features.
+- **Settings Clarity**: We fixed a small issue where translations in the General Settings menu were not displaying correctly, ensuring your preferences are clear no matter your chosen language.
+
+### 🐛 Bug Fixes
+
+A few minor issues have been squashed to improve overall stability and user experience.
+
+- **Repository Link**: We corrected the link pointing to the project repository within the application, ensuring users can easily find the source code or support page.
+
+### 📚 Quality of Life & Maintenance
+
+- **Branding Update**: Implemented minor internal name changes for better consistency.
+- **Code Optimization**: Removed several pieces of unused code structure, helping to keep the application lean and efficient.
+
 # Release Notes - v1.1.1
 
 We're excited to roll out v1.1.1, a major update focused entirely on making Twitch Drops Miner accessible to users around the globe by introducing comprehensive internationalization (i18n) support and dynamic language switching. This release also brings crucial bug fixes for stability and cleaner code under the hood.
