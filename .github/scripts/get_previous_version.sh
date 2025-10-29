@@ -148,6 +148,13 @@ if [ "$#" -eq 0 ]; then
 else
     # One argument: find previous version
     VERSION="$1"
+    LATEST_VERSION="${filtered_versions[0]}"
+
+    # if version is larger than the latest version, return latest version
+    if bash "$VALIDATE_SEMVER" "$VERSION" ">${LATEST_VERSION}" >/dev/null 2>&1; then
+        echo "$LATEST_VERSION"
+        exit 0
+    fi
 
     # Find the version in the list
     for i in "${!filtered_versions[@]}"; do
