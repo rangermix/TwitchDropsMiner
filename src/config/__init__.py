@@ -17,7 +17,6 @@ from .constants import (
     MAX_TOPICS,
     MAX_WEBSOCKETS,
     ONLINE_DELAY,
-    OUTPUT_FORMATTER,
     PING_INTERVAL,
     PING_TIMEOUT,
     TOPICS_PER_CHANNEL,
@@ -45,7 +44,6 @@ __all__ = [
     # constants.py
     "CALL",
     "FILE_FORMATTER",
-    "OUTPUT_FORMATTER",
     "LOGGING_LEVELS",
     "State",
     "WebsocketTopic",

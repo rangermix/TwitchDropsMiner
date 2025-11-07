@@ -29,8 +29,8 @@ class ConsoleOutputManager:
         Args:
             message: The message to display
         """
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        line = f"[{timestamp}] {message}"
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        line = f"[{timestamp}] | {message}"
         self._buffer.append(line)
         asyncio.create_task(self._broadcaster.emit("console_output", {"message": line}))
 

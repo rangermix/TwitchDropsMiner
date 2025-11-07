@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import argparse
 import asyncio
 import logging
@@ -8,6 +7,7 @@ import sys
 import traceback
 import warnings
 from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
 
 import truststore
 
@@ -23,20 +23,26 @@ if __name__ == "__main__":
     from src.version import __version__
 
     logger = logging.getLogger("TwitchDrops")
-    # Force INFO level logging by default for better visibility
-    logger.setLevel(logging.INFO)
     if logger.level < logging.INFO:
         logger.setLevel(logging.INFO)
     # Always add console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(FILE_FORMATTER)
     logger.addHandler(console_handler)
+
+    # Create logs directory if it doesn't exist
+    logs_dir = Path("logs")
+    logs_dir.mkdir(exist_ok=True)
+    log_file = logs_dir / "TDM.log"
+
+    # Add file handler for timestamped log
+    file_handler = TimedRotatingFileHandler(log_file, when="midnight", backupCount=5)
+    file_handler.setFormatter(FILE_FORMATTER)
+    logger.addHandler(file_handler)
+
     logger.info("Logger initialized")
 
     warnings.simplefilter("default", ResourceWarning)
-
-    if sys.version_info < (3, 10):
-        raise RuntimeError("Python 3.10 or higher is required")
 
     class ParsedArgs(argparse.Namespace):
         _verbose: int
@@ -101,22 +107,8 @@ if __name__ == "__main__":
         if settings.language:
             _.set_language(settings.language)
 
-        # Always log to file with timestamped filename in ./logs/ directory
-        from pathlib import Path
-
-        # Create logs directory if it doesn't exist
-        logs_dir = Path("logs")
-        logs_dir.mkdir(exist_ok=True)
-        log_file = logs_dir / "TDM.log"
-
-        # Add file handler for timestamped log
-        file_handler = TimedRotatingFileHandler(log_file, when="midnight", backupCount=5)
-        file_handler.setFormatter(FILE_FORMATTER)
-        logger.addHandler(file_handler)
-        logger.info(f"Logging to file: {log_file}")
-
-        logging.getLogger("TwitchDrops.gql").setLevel(settings.debug_gql)
-        logging.getLogger("TwitchDrops.websocket").setLevel(settings.debug_ws)
+        # logging.getLogger("TwitchDrops.gql").setLevel(settings.debug_gql)
+        # logging.getLogger("TwitchDrops.websocket").setLevel(settings.debug_ws)
 
         logger.info("=== TwitchDropsMiner Starting ===")
         logger.info(f"Version: {__version__}")

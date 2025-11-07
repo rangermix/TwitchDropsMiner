@@ -8,7 +8,8 @@ services:
     volumes:
       # Mount data directory for persistent storage
       - ./data:/app/data
+      - ./logs:/app/logs
     environment:
       # Set timezone (optional, defaults to UTC)
-      - TZ=UTC
+      - TZ=Australia/Sydney
     restart: unless-stopped

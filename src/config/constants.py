@@ -27,11 +27,10 @@ LOGGING_LEVELS = {
     4: logging.DEBUG,
 }
 FILE_FORMATTER = logging.Formatter(
-    "{asctime}.{msecs:03.0f}:\t{levelname:>7}:\t{filename}:{lineno}:\t{message}",
+    "{asctime}:\t{levelname:>7}:\t{filename}:{lineno}:\t{message}",
     style="{",
-    datefmt="%Y-%m-%d %H:%M:%S",
+    datefmt="%Y-%m-%dT%H:%M:%S%z",
 )
-OUTPUT_FORMATTER = logging.Formatter("{levelname}: {message}", style="{", datefmt="%H:%M:%S")
 
 # Type aliases
 JsonType = dict[str, Any]
