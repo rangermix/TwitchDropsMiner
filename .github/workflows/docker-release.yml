@@ -113,6 +113,6 @@ jobs:
       - name: Trigger Version Release Workflow
         uses: benc-uk/workflow-dispatch@v1
         with:
-          workflow: version-release.yml
+          workflow: github-release.yml
           token: ${{ secrets.PUBLISHER_TOKEN }}
           ref: ${{ github.ref }}
