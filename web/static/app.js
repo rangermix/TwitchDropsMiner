@@ -800,16 +800,26 @@ function renderInventory() {
             `;
         }).join('');
 
-        // Make campaign name clickable if link_url is available
-        const campaignNameHtml = campaign.link_url
-            ? `<a href="${campaign.link_url}" target="_blank" rel="noopener noreferrer" class="campaign-name-link">${campaign.name} <span class="external-link-icon">🔗</span></a>`
-            : `<div class="campaign-name">${campaign.name}</div>`;
+        const campaignNameHtml = `<a href="${campaign.campaign_url}" target="_blank" rel="noopener noreferrer" class="campaign-name-link">${campaign.name} <span class="external-link-icon">🔗</span></a>`
+
+        // Add LINKED or NOT LINKED badge
+        const linkStatusBadgeHtml = campaign.linked
+            ? `<span class="campaign-badge linked" title="Account is linked">LINKED</span>`
+            : `<span class="campaign-badge not-linked" onclick="window.open('${campaign.link_url}', '_blank')" title="Click to link your account">NOT LINKED</span>`;
+
+        const linkAccountButtonHtml = !campaign.linked && campaign.link_url
+            ? `<button class="link-account-btn" onclick="window.open('${campaign.link_url}', '_blank')">Link Account</button>`
+            : '';
 
         const claimedCountText = t.gui?.inventory?.claimed_drops || 'claimed';
         card.innerHTML = `
             <div class="campaign-header">
-                <div class="campaign-game">${campaign.game_name}</div>
+                <div class="campaign-game">
+                    ${campaign.game_name}
+                    ${linkStatusBadgeHtml}
+                </div>
                 ${campaignNameHtml}
+                ${linkAccountButtonHtml}
             </div>
             <div class="campaign-status">
                 <span>${statusText}</span>

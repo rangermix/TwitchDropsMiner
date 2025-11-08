@@ -28,6 +28,7 @@ class DropsCampaign:
     def __init__(self, twitch: Twitch, data: JsonType, claimed_benefits: dict[str, datetime]):
         self._twitch: Twitch = twitch
         self.id: str = data["id"]
+        self.campaign_url: str = f"https://www.twitch.tv/drops/campaigns?dropID={self.id}"
         self.name: str = data["name"]
         self.game: Game = Game(data["game"])
         self.linked: bool = data["self"]["isAccountConnected"]
