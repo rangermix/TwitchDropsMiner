@@ -609,6 +609,7 @@ header h1 {
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: relative;
 }
 
 .campaign-header {
@@ -645,6 +646,63 @@ header h1 {
 .external-link-icon {
     font-size: 12px;
     opacity: 0.7;
+}
+
+.campaign-badge {
+    position: absolute;
+    right: 15px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.campaign-badge.linked {
+    background: rgba(0, 200, 83, 0.15);
+    color: var(--success-color);
+    border: 1px solid rgba(0, 200, 83, 0.3);
+    cursor: default;
+}
+
+.campaign-badge.not-linked {
+    background: var(--warning-color);
+    color: white;
+    box-shadow: 0 2px 4px rgba(255, 167, 38, 0.3);
+}
+
+.campaign-badge.not-linked:hover {
+    background: #ff9800;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(255, 167, 38, 0.4);
+}
+
+.link-account-btn {
+    margin-top: 8px;
+    padding: 8px 16px;
+    background: var(--warning-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(255, 167, 38, 0.3);
+    width: 100%;
+}
+
+.link-account-btn:hover {
+    background: #ff9800;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(255, 167, 38, 0.4);
+}
+
+.link-account-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(255, 167, 38, 0.3);
 }
 
 .campaign-status {
