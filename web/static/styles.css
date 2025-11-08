@@ -500,6 +500,66 @@ header h1 {
     border-left-color: var(--accent-color);
 }
 
+.drop-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.drop-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.benefits-list {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.benefit-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    background: var(--bg-panel);
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.benefit-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.benefit-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.benefit-name {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.benefit-type {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
 /* Settings */
 .settings-container {
     max-width: 800px;

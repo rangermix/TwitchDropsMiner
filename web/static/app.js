@@ -494,14 +494,36 @@ function renderInventory() {
         }
 
         const claimedText = t.gui?.inventory?.status?.claimed || 'Claimed';
-        const dropsHtml = campaign.drops.map(drop => `
-            <div class="drop-item ${drop.is_claimed ? 'claimed' : ''} ${drop.can_claim ? 'active' : ''}">
-                <div><strong>${drop.name}</strong></div>
-                <div>${drop.rewards}</div>
-                <div>${drop.current_minutes} / ${drop.required_minutes} minutes (${Math.round(drop.progress * 100)}%)</div>
-                ${drop.is_claimed ? `<div>✓ ${claimedText}</div>` : ''}
-            </div>
-        `).join('');
+        const dropsHtml = campaign.drops.map(drop => {
+            // Generate HTML for each benefit as its own line
+            let benefitsHtml = '';
+            if (drop.benefits && drop.benefits.length > 0) {
+                benefitsHtml = drop.benefits.map(benefit =>
+                    `<div class="benefit-item">
+                        <img src="${benefit.image_url}" alt="${benefit.name}" class="benefit-icon" onerror="this.style.display='none'">
+                        <div class="benefit-info">
+                            <span class="benefit-name">${benefit.name}</span>
+                            <span class="benefit-type">(${benefit.type})</span>
+                        </div>
+                    </div>`
+                ).join('');
+            }
+
+            return `
+                <div class="drop-item ${drop.is_claimed ? 'claimed' : ''} ${drop.can_claim ? 'active' : ''}">
+                    <div class="drop-item-header">
+                        <div class="drop-item-info">
+                            <div><strong>${drop.name}</strong></div>
+                        </div>
+                    </div>
+                    <div class="benefits-list">
+                        ${benefitsHtml}
+                    </div>
+                    <div>${drop.current_minutes} / ${drop.required_minutes} minutes (${Math.round(drop.progress * 100)}%)</div>
+                    ${drop.is_claimed ? `<div>✓ ${claimedText}</div>` : ''}
+                </div>
+            `;
+        }).join('');
 
         // Make campaign name clickable if link_url is available
         const campaignNameHtml = campaign.link_url
