@@ -12,6 +12,15 @@ if TYPE_CHECKING:
     from typing import Any as ParsedArgs  # Avoid circular import
 
 
+class InventoryFilters(TypedDict):
+    show_active: bool
+    show_not_linked: bool
+    show_upcoming: bool
+    show_expired: bool
+    show_finished: bool
+    game_name_search: list[str]
+
+
 class SettingsFile(TypedDict):
     proxy: URL
     language: str
@@ -19,6 +28,7 @@ class SettingsFile(TypedDict):
     games_to_watch: list[str]
     connection_quality: int
     minimum_refresh_interval_minutes: int
+    inventory_filters: InventoryFilters
 
 
 default_settings: SettingsFile = {
@@ -28,6 +38,14 @@ default_settings: SettingsFile = {
     "connection_quality": 1,
     "language": DEFAULT_LANG,
     "minimum_refresh_interval_minutes": 30,
+    "inventory_filters": {
+        "show_active": False,
+        "show_not_linked": True,
+        "show_upcoming": True,
+        "show_expired": False,
+        "show_finished": False,
+        "game_name_search": [],
+    },
 }
 
 
@@ -46,6 +64,7 @@ class Settings:
     games_to_watch: list[str]
     connection_quality: int
     minimum_refresh_interval_minutes: int
+    inventory_filters: InventoryFilters
 
     PASSTHROUGH = ("_settings", "_args", "_altered")
 

@@ -99,6 +99,49 @@
 
         <!-- Inventory Tab -->
         <div id="inventory-tab" class="tab-content">
+            <div class="inventory-filters">
+                <div class="filter-controls">
+                    <div class="filter-checkboxes">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="filter-active" />
+                            <span>Active</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="filter-not-linked" checked />
+                            <span>Not Linked</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="filter-upcoming" checked />
+                            <span>Upcoming</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="filter-expired" />
+                            <span>Expired</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="filter-finished" />
+                            <span>Finished</span>
+                        </label>
+                    </div>
+                    <div class="filter-search">
+                        <div class="game-dropdown-container">
+                            <div class="game-tags-display" id="selected-game-tags">
+                                <!-- Selected game tags will appear here -->
+                            </div>
+                            <input
+                                type="text"
+                                id="inventory-game-search"
+                                placeholder="Type to search games..."
+                                autocomplete="off"
+                            />
+                            <div class="game-dropdown-list" id="game-dropdown-list">
+                                <!-- Dropdown options will appear here -->
+                            </div>
+                        </div>
+                        <button id="clear-filters-btn" class="small-btn">Clear Filters</button>
+                    </div>
+                </div>
+            </div>
             <div class="inventory-grid" id="inventory-grid">
                 <p class="empty-message">No campaigns loaded yet...</p>
             </div>

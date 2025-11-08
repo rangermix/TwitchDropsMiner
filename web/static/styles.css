@@ -421,6 +421,181 @@ header h1 {
     color: white;
 }
 
+/* Inventory Filters */
+.inventory-filters {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.filter-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.filter-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+}
+
+.filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.filter-checkbox input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.filter-checkbox span {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.filter-search {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.game-dropdown-container {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.game-tags-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+    min-height: 0;
+}
+
+.game-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: var(--accent-color);
+    color: white;
+    border-radius: 16px;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.game-tag:hover {
+    background: #7d39e0;
+}
+
+.game-tag-name {
+    line-height: 1.2;
+}
+
+.game-tag-remove {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.game-tag-remove:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+#inventory-game-search {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.game-dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    margin-top: 4px;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover,
+.dropdown-item.focused {
+    background: var(--bg-secondary);
+}
+
+.dropdown-item input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+}
+
+.dropdown-item label {
+    flex: 1;
+    cursor: pointer;
+    user-select: none;
+    font-size: 14px;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.dropdown-item.no-results {
+    color: var(--text-secondary);
+    cursor: default;
+    text-align: center;
+    font-style: italic;
+}
+
+.dropdown-item.no-results:hover {
+    background: none;
+}
+
 /* Inventory Grid */
 .inventory-grid {
     display: grid;
