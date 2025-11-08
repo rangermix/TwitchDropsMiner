@@ -40,6 +40,7 @@ COPY web/ ./web/
 
 # Create data directory for persistent storage
 RUN mkdir -p /app/data && chmod 777 /app/data
+RUN mkdir -p /app/logs && chmod 777 /app/logs
 
 # Expose web port
 EXPOSE 8080
