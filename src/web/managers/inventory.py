@@ -41,7 +41,6 @@ class InventoryManager:
             campaign: The drop campaign to add
         """
         # Get campaign image from cache
-        image_url = str(campaign.image_url)
 
         drops_data = []
         for drop in campaign.drops:
@@ -74,7 +73,7 @@ class InventoryManager:
             "id": campaign.id,
             "name": campaign.name,
             "game_name": campaign.game.name,
-            "image_url": image_url,
+            "game_box_art_url": campaign.game.box_art_url,
             "campaign_url": campaign.campaign_url,
             "link_url": campaign.link_url,
             "starts_at": campaign.starts_at.isoformat(),

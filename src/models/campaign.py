@@ -35,7 +35,6 @@ class DropsCampaign:
         self.link_url: str = data["accountLinkURL"]
         # campaign's image actually comes from the game object
         # we use regex to get rid of the dimensions part (ex. ".../game_id-285x380.jpg")
-        self.image_url: URLType = remove_dimensions(data["game"]["boxArtURL"])
         self.starts_at: datetime = isoparse(data["startAt"])
         self.ends_at: datetime = isoparse(data["endAt"])
         self._valid: bool = data["status"] != "EXPIRED"

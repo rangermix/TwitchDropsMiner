@@ -811,11 +811,38 @@ function renderInventory() {
             ? `<button class="link-account-btn" onclick="window.open('${campaign.link_url}', '_blank')">Link Account</button>`
             : '';
 
+        // Add game icon if available
+        let gameIconHtml = '';
+        if (campaign.game_box_art_url) {
+            const iconUrl = campaign.game_box_art_url.replace('{width}', '52').replace('{height}', '70');
+            gameIconHtml = `<img src="${iconUrl}" alt="${campaign.game_name}" class="game-icon" onerror="this.style.display='none'">`;
+        }
+
+        // Format campaign timing based on status
+        let timingHtml = '';
+        if (campaign.active && campaign.ends_at) {
+            const endDate = new Date(campaign.ends_at);
+            const formattedDate = endDate.toLocaleString();
+            const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
+            timingHtml = `<div class="campaign-timing">${endsLabel.replace('{time}', formattedDate)}</div>`;
+        } else if (campaign.upcoming && campaign.starts_at) {
+            const startDate = new Date(campaign.starts_at);
+            const formattedDate = startDate.toLocaleString();
+            const startsLabel = t.gui?.inventory?.starts || 'Starts: {time}';
+            timingHtml = `<div class="campaign-timing">${startsLabel.replace('{time}', formattedDate)}</div>`;
+        } else if (campaign.expired && campaign.ends_at) {
+            const endDate = new Date(campaign.ends_at);
+            const formattedDate = endDate.toLocaleString();
+            const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
+            timingHtml = `<div class="campaign-timing">${endsLabel.replace('{time}', formattedDate)}</div>`;
+        }
+
         const claimedCountText = t.gui?.inventory?.claimed_drops || 'claimed';
         card.innerHTML = `
             <div class="campaign-header">
                 <div class="campaign-game">
-                    ${campaign.game_name}
+                    ${gameIconHtml}
+                    <span class="campaign-game-name">${campaign.game_name}</span>
                     ${linkStatusBadgeHtml}
                 </div>
                 ${campaignNameHtml}
@@ -825,6 +852,7 @@ function renderInventory() {
                 <span>${statusText}</span>
                 <span>${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}</span>
             </div>
+            ${timingHtml}
             <div class="campaign-drops">
                 ${dropsHtml}
             </div>

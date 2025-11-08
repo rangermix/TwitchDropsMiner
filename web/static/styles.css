@@ -618,8 +618,17 @@ header h1 {
 }
 
 .campaign-game {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     font-weight: bold;
     font-size: 16px;
+}
+
+.campaign-game .game-icon {
+    width: 52px;
+    height: 70px;
+    flex-shrink: 0;
 }
 
 .campaign-name {
@@ -710,6 +719,13 @@ header h1 {
     font-size: 12px;
     display: flex;
     justify-content: space-between;
+}
+
+.campaign-timing {
+    padding: 5px 15px 10px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-style: italic;
 }
 
 .campaign-drops {
