@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import TYPE_CHECKING, Any
 
 
@@ -10,6 +11,9 @@ if TYPE_CHECKING:
     from src.models import DropsCampaign, TimedDrop
     from src.web.managers.broadcaster import WebSocketBroadcaster
     from src.web.managers.cache import ImageCache
+
+
+logger = logging.getLogger("TwitchDrops")
 
 
 class InventoryManager:
@@ -41,6 +45,16 @@ class InventoryManager:
 
         drops_data = []
         for drop in campaign.drops:
+            # Collect full benefit data (filter out benefits without images)
+            benefits_data = [
+                {
+                    "name": benefit.name,
+                    "type": benefit.type.name,
+                    "image_url": str(benefit.image_url),
+                }
+                for benefit in drop.benefits
+                if benefit.image_url
+            ]
             drops_data.append(
                 {
                     "id": drop.id,
@@ -50,7 +64,7 @@ class InventoryManager:
                     "progress": drop.progress,
                     "is_claimed": drop.is_claimed,
                     "can_claim": drop.can_claim,
-                    "rewards": drop.rewards_text(),
+                    "benefits": benefits_data,
                     "starts_at": drop.starts_at.isoformat(),
                     "ends_at": drop.ends_at.isoformat(),
                 }
