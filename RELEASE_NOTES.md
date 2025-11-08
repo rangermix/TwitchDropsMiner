@@ -1,3 +1,31 @@
+# Release Notes - v1.1.3
+
+We've completely overhauled the Inventory tab in v1.1.3, introducing powerful new filtering options and significant visual upgrades to help you track your drops faster and more efficiently. This update makes managing your active campaigns and identifying required linking actions much clearer.
+
+### 🎮 Advanced Tracking & Filtering
+
+This release introduces comprehensive tools to help you quickly sort through your Twitch drops inventory.
+
+-   **Advanced Game Filtering**: Need to find all drops for a specific game? Our new multi-select dropdown allows you to filter campaigns by game title. It features live search, easy tag removal, and keyboard navigation for speed.
+-   **Campaign Status Filters**: Quickly narrow down your view using new status filters, including **Active**, **Not Linked**, **Upcoming**, **Expired**, and **Finished**. Filter selections are now saved across sessions.
+
+### 🌍 Inventory Visual Overhaul
+
+We've packed more critical information directly onto your inventory cards, making them cleaner and easier to read at a glance.
+
+-   **Account Linking Status**: Campaign cards now feature clear visual badges in the top right corner. See **LINKED** (green) or **NOT LINKED** (orange) instantly. If an account isn't linked, the badge and a new button provide a direct link to the setup page.
+-   **Detailed Benefit Display**: Rewards are no longer displayed as a simple grid of icons. Each benefit is now listed on its own line, showing the associated icon, the full name, and the item type (e.g., *In-Game Currency (CURRENCY)*).
+-   **Game Icons & Timing**: We added game box art icons next to the campaign title for faster visual identification. Below the status, you'll find contextual timing information (start or end time) formatted correctly for your local timezone.
+
+### 🐛 Bug Fixes
+
+-   **Log Persistence**: Fixed an issue related to log file permissions, ensuring that persistent logging is reliable and your historical data is saved correctly across restarts.
+
+### 📚 Performance & Infrastructure
+
+-   **Slimmer Docker Image**: For users running the Miner via Docker, we have optimized the underlying base image, reducing the overall size to less than 1/10th of the previous version. This means faster deployments and less resource usage!
+-   **Improved Logging**: Console logs now include the date and timezone, making it significantly easier for users and developers to debug and track events accurately.
+
 # Release Notes - v1.1.2
 
 This release focuses heavily on international accessibility, bringing comprehensive language support to the entire application. We've also included several minor fixes and internal cleanups to keep the miner running smoothly.
