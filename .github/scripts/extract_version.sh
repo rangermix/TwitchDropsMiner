@@ -84,6 +84,11 @@ fi
 # Output to GITHUB_OUTPUT if available
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
     echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+    if echo "$VERSION" | grep -q '-'; then
+        echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+    else
+        echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+    fi
 fi
 
 exit 0
