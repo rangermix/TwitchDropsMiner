@@ -9,6 +9,7 @@ from datetime import timedelta
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Literal, NewType
 
+
 if TYPE_CHECKING:
     from collections import abc  # noqa
     from typing import TypeAlias
@@ -55,7 +56,6 @@ PING_INTERVAL = timedelta(minutes=3)
 PING_TIMEOUT = timedelta(seconds=10)
 ONLINE_DELAY = timedelta(seconds=120)
 WATCH_INTERVAL = timedelta(seconds=59)
-
 
 
 class State(Enum):
