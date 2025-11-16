@@ -29,7 +29,7 @@ No more tab juggling, channel switching, or missing rewards — just set it, for
 
 ## 🧰 Quick Start (Docker Recommended)
 
-### 🐳 Using Pre-Built Image
+### 🐳 Using Pre-Built Image (Docker run)
 
 ```bash
 docker pull rangermix/twitch-drops-miner:latest
@@ -46,6 +46,11 @@ services:
       - "8080:8080"
     volumes:
       - ./data:/app/data
+      # optional, use if you want to persist logs
+      - ./logs:/app/logs
+    environment:
+      # Set timezone (optional, defaults to UTC)
+      - TZ=Australia/Sydney
     restart: unless-stopped
 ```
 
