@@ -485,8 +485,8 @@ function campaignMatchesFilters(campaign, filters) {
     // Check if any filter is enabled
     const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
     const anyFilterEnabled = filters.show_active || filters.show_not_linked ||
-                            filters.show_upcoming || filters.show_expired ||
-                            filters.show_finished || hasGameFilter;
+        filters.show_upcoming || filters.show_expired ||
+        filters.show_finished || hasGameFilter;
 
     // If no filters enabled, show all campaigns
     if (!anyFilterEnabled) {
@@ -504,8 +504,8 @@ function campaignMatchesFilters(campaign, filters) {
 
     // If status filters are enabled but campaign doesn't match any, filter it out
     const hasStatusFilters = filters.show_active || filters.show_not_linked ||
-                            filters.show_upcoming || filters.show_expired ||
-                            filters.show_finished;
+        filters.show_upcoming || filters.show_expired ||
+        filters.show_finished;
     if (hasStatusFilters && !statusMatch) {
         return false;
     }
@@ -902,6 +902,17 @@ function updateSettingsUI(settings) {
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
 
+    // Update proxy settings and indicator
+    const proxyUrl = settings.proxy || '';
+    const proxyInput = document.getElementById('proxy-url');
+    if (proxyInput) proxyInput.value = proxyUrl;
+
+    const proxyIndicator = document.getElementById('proxy-indicator');
+    if (proxyIndicator) {
+        proxyIndicator.style.display = proxyUrl ? 'inline-flex' : 'none';
+        proxyIndicator.title = proxyUrl ? `Proxy active: ${proxyUrl}` : 'Proxy disabled';
+    }
+
     // Update language dropdown if we have the current language
     if (settings.language) {
         const languageSelect = document.getElementById('language');
@@ -1261,12 +1272,53 @@ async function confirmOAuth() {
     }
 }
 
+async function verifyProxy() {
+    const proxyInput = document.getElementById('proxy-url');
+    const proxyUrl = proxyInput ? proxyInput.value.trim() : '';
+    const resultDiv = document.getElementById('proxy-verify-result');
+
+    if (!resultDiv) return;
+
+    // Reset display
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'verify-result loading';
+    resultDiv.textContent = 'Verifying connection...';
+
+    if (!proxyUrl) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = 'Please enter a proxy URL first.';
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/settings/verify-proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ proxy: proxyUrl })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            resultDiv.className = 'verify-result success';
+            resultDiv.textContent = `✓ ${data.message}`;
+        } else {
+            resultDiv.className = 'verify-result error';
+            resultDiv.textContent = `✗ ${data.message}`;
+        }
+    } catch (error) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = `Error: ${error.message}`;
+    }
+}
+
 async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
         language: document.getElementById('language').value,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
+        proxy: document.getElementById('proxy-url')?.value || '',
         games_to_watch: state.settings.games_to_watch || [],
         inventory_filters: getInventoryFilters()
     };
@@ -1598,6 +1650,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
     document.getElementById('minimum-refresh-interval').addEventListener('change', saveSettings);
+    document.getElementById('proxy-url').addEventListener('change', saveSettings);
+    document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
 
     // Games to watch management

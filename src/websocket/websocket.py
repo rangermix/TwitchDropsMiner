@@ -162,9 +162,11 @@ class Websocket:
         session = await self._twitch.get_session()
         backoff = ExponentialBackoff(**kwargs)
         proxy = self._twitch.settings.proxy or None
+        # Add Origin header to mimic valid client behavior, potentially fixing 4010 error with proxies
+        headers = {"Origin": str(self._twitch._client_type.CLIENT_URL)}
         for delay in backoff:
             try:
-                async with session.ws_connect(ws_url, proxy=proxy) as websocket:
+                async with session.ws_connect(ws_url, proxy=proxy, headers=headers) as websocket:
                     yield websocket
                     backoff.reset()
             except (
@@ -227,7 +229,7 @@ class Websocket:
                     self.set_status(_.t["gui"]["websocket"]["disconnected"])
                     return
             except Exception:
-                ws_logger.exception(f"Exception in Websocket[{self._idx}]")
+                ws_logger.exception(f"Exception in Websocket[{self._idx}] to wss://pubsub-edge.twitch.tv/v1")
             self.set_status(_.t["gui"]["websocket"]["reconnecting"])
             ws_logger.warning(f"Websocket[{self._idx}] reconnecting...")
 

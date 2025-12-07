@@ -12,6 +12,7 @@ from src.models.game import Game
 if TYPE_CHECKING:
     from src.config.settings import Settings
     from src.web.managers.broadcaster import WebSocketBroadcaster
+    from src.web.managers.console import ConsoleOutputManager
 
 
 class SettingsManager:
@@ -21,9 +22,15 @@ class SettingsManager:
     game priorities, proxy configuration, and UI preferences.
     """
 
-    def __init__(self, broadcaster: WebSocketBroadcaster, settings: Settings):
+    def __init__(
+        self,
+        broadcaster: WebSocketBroadcaster,
+        settings: Settings,
+        console: ConsoleOutputManager,
+    ):
         self._broadcaster = broadcaster
         self._settings = settings
+        self._console = console
         self._available_games: list[str] = []
 
     def get_settings(self) -> dict[str, Any]:
@@ -80,7 +87,16 @@ class SettingsManager:
         if "connection_quality" in settings_data:
             self._settings.connection_quality = settings_data["connection_quality"]
         if "proxy" in settings_data:
-            self._settings.proxy = settings_data["proxy"]
+            from yarl import URL
+
+            proxy_str = settings_data["proxy"].strip()
+            if proxy_str:
+                self._settings.proxy = URL(proxy_str)
+                self._console.print(f"Proxy set to: {proxy_str}")
+            else:
+                self._settings.proxy = URL()
+                self._console.print("Proxy cleared")
+
         if "minimum_refresh_interval_minutes" in settings_data:
             self._settings.minimum_refresh_interval_minutes = settings_data[
                 "minimum_refresh_interval_minutes"

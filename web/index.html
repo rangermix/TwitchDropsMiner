@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="/static/styles.css">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -23,11 +25,15 @@
             </div>
             <div class="status-bar">
                 <span id="status-text">Initializing...</span>
-                <span id="manual-mode-badge" class="mode-badge hidden" title="Manual mode active - watching specific game">
+                <span id="manual-mode-badge" class="mode-badge hidden"
+                    title="Manual mode active - watching specific game">
                     🎯 MANUAL: <span id="manual-game-name"></span>
                 </span>
                 <span id="auto-mode-badge" class="mode-badge" title="Automatic mode - following game priority">
                     🤖 AUTO
+                </span>
+                <span id="proxy-indicator" class="proxy-badge" style="display: none;" title="Proxy connection active">
+                    🔒 PROXY
                 </span>
                 <span id="connection-indicator" class="connected">● Connected</span>
             </div>
@@ -128,12 +134,8 @@
                             <div class="game-tags-display" id="selected-game-tags">
                                 <!-- Selected game tags will appear here -->
                             </div>
-                            <input
-                                type="text"
-                                id="inventory-game-search"
-                                placeholder="Type to search games..."
-                                autocomplete="off"
-                            />
+                            <input type="text" id="inventory-game-search" placeholder="Type to search games..."
+                                autocomplete="off" />
                             <div class="game-dropdown-list" id="game-dropdown-list">
                                 <!-- Dropdown options will appear here -->
                             </div>
@@ -163,11 +165,23 @@
                         Minimum Refresh Interval (minutes):
                         <input type="number" id="minimum-refresh-interval" min="1" max="1440" value="30">
                     </label>
+                    <label>
+                        Proxy URL:
+                        <div class="input-with-button">
+                            <input type="text" id="proxy-url" placeholder="http://user:pass@host:port"
+                                class="full-width">
+                            <button id="verify-proxy-btn" class="secondary-btn"
+                                title="Test proxy connection">Verify</button>
+                        </div>
+                        <small class="help-text-inline">Leave empty to disable. Supports HTTP/HTTPS/SOCKS.</small>
+                        <div id="proxy-verify-result" class="verify-result" style="display: none;"></div>
+                    </label>
                 </section>
 
                 <section class="settings-section">
                     <h2>Games to Watch</h2>
-                    <p class="help-text">Select games to watch. Order matters - drag to reorder priority (top = highest priority).</p>
+                    <p class="help-text">Select games to watch. Order matters - drag to reorder priority (top = highest
+                        priority).</p>
 
                     <div class="games-filter">
                         <input type="text" id="games-filter" placeholder="Search games..." />
@@ -206,7 +220,8 @@
                 <h3>How to Use</h3>
                 <ol>
                     <li>Login using your Twitch account (OAuth device code flow)</li>
-                    <li>Link your accounts at <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a></li>
+                    <li>Link your accounts at <a href="https://www.twitch.tv/drops/campaigns"
+                            target="_blank">twitch.tv/drops/campaigns</a></li>
                     <li>The miner will automatically discover campaigns and start mining</li>
                     <li>Configure priority games in Settings to focus on what you want</li>
                     <li>Monitor progress in the Main and Inventory tabs</li>
@@ -237,4 +252,5 @@
 
     <script src="/static/app.js"></script>
 </body>
+
 </html>
