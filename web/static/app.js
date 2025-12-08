@@ -42,9 +42,39 @@ socket.on('disconnect', () => {
 socket.on('initial_state', (data) => {
     console.log('Received initial state', data);
     if (data.status) updateStatus(data.status);
-    if (data.channels) data.channels.forEach(ch => updateChannel(ch));
-    if (data.campaigns) data.campaigns.forEach(camp => addCampaign(camp));
-    if (data.console) data.console.forEach(line => addConsoleLineRaw(line));
+
+    // Batch update channels to prevent UI freezing
+    if (data.channels) {
+        data.channels.forEach(ch => {
+            state.channels[ch.id] = ch;
+        });
+        renderChannels();
+    }
+
+    // Batch update campaigns to prevent UI freezing
+    if (data.campaigns) {
+        data.campaigns.forEach(camp => {
+            state.campaigns[camp.id] = camp;
+        });
+        renderInventory();
+    }
+
+    // Batch update console logs
+    if (data.console) {
+        const consoleEl = document.getElementById('console-output');
+        const fragment = document.createDocumentFragment();
+        data.console.forEach(line => {
+            const div = document.createElement('div');
+            div.textContent = line;
+            fragment.appendChild(div);
+        });
+        consoleEl.appendChild(fragment);
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+        while (consoleEl.children.length > 1000) {
+            consoleEl.removeChild(consoleEl.firstChild);
+        }
+    }
+
     if (data.settings) updateSettingsUI(data.settings);
     if (data.login) updateLoginStatus(data.login);
     if (data.manual_mode) updateManualModeUI(data.manual_mode);
