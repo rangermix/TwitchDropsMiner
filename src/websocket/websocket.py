@@ -162,11 +162,10 @@ class Websocket:
         session = await self._twitch.get_session()
         backoff = ExponentialBackoff(**kwargs)
         proxy = self._twitch.settings.proxy or None
-        # Add Origin header to mimic valid client behavior, potentially fixing 4010 error with proxies
-        headers = {"Origin": str(self._twitch._client_type.CLIENT_URL)}
+        ws_logger.info(f"Websocket[{self._idx}] connecting with {'no' if proxy is None else str(proxy)} proxy")
         for delay in backoff:
             try:
-                async with session.ws_connect(ws_url, proxy=proxy, headers=headers) as websocket:
+                async with session.ws_connect(ws_url, proxy=proxy) as websocket:
                     yield websocket
                     backoff.reset()
             except (
@@ -221,17 +220,17 @@ class Websocket:
                 if exc.received:
                     # server closed the connection, not us - reconnect
                     ws_logger.warning(
-                        f"Websocket[{self._idx}] closed unexpectedly: {websocket.close_code}"
+                        f"Websocket[{self._idx}] to wss://pubsub-edge.twitch.tv/v1 closed unexpectedly: {websocket.close_code}"
                     )
                 elif self._closed.is_set():
                     # we closed it - exit
-                    ws_logger.debug(f"Websocket[{self._idx}] stopped.")
+                    ws_logger.debug(f"Websocket[{self._idx}] to wss://pubsub-edge.twitch.tv/v1 stopped.")
                     self.set_status(_.t["gui"]["websocket"]["disconnected"])
                     return
             except Exception:
                 ws_logger.exception(f"Exception in Websocket[{self._idx}] to wss://pubsub-edge.twitch.tv/v1")
             self.set_status(_.t["gui"]["websocket"]["reconnecting"])
-            ws_logger.warning(f"Websocket[{self._idx}] reconnecting...")
+            ws_logger.warning(f"Websocket[{self._idx}] to wss://pubsub-edge.twitch.tv/v1 reconnecting...")
 
     async def _handle_ping(self):
         """Handle ping/pong heartbeat to keep connection alive."""

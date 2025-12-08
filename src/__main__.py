@@ -108,33 +108,28 @@ if __name__ == "__main__":
         if settings.language:
             _.set_language(settings.language)
 
-        # logging.getLogger("TwitchDrops.gql").setLevel(settings.debug_gql)
-        # logging.getLogger("TwitchDrops.websocket").setLevel(settings.debug_ws)
-
         logger.info("=== TwitchDropsMiner Starting ===")
         logger.info(f"Version: {__version__}")
         logger.info(f"Python version: {sys.version}")
         logger.info(f"Platform: {sys.platform}")
+        logger.info(f"Proxy: {settings.proxy}")
+        logger.info(f"Language: {settings.language}")
+        logger.info(f"Minimum refresh interval: {settings.minimum_refresh_interval_minutes} minutes")
 
         exit_status = 0
-        logger.info("Creating Twitch client")
         client = Twitch(settings)
 
         # Initialize web GUI
-        logger.info("Initializing web GUI mode")
         from src.web import app as webapp
         from src.web.gui_manager import WebGUIManager
 
         # Set up web GUI
-        logger.debug("Creating WebGUIManager")
         client.gui = WebGUIManager(client)
         # Set up webapp references
-        logger.debug("Setting up webapp managers")
         webapp.set_managers(client.gui, client)
         # Start web server in background
         logger.info("Starting web server on http://0.0.0.0:8080")
         web_server_task = asyncio.create_task(webapp.run_server(host="0.0.0.0", port=8080))
-        logger.info("Web server task created")
 
         loop = asyncio.get_running_loop()
         if sys.platform == "linux":
