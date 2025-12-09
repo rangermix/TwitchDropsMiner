@@ -54,12 +54,16 @@ class WebsocketClosed(RequestException):
         `True` if the closing was caused by our side receiving a close frame, `False` otherwise.
     """
 
-    def __init__(self, *args: object, received: bool = False):
+    def __init__(self, *args: object, received: bool = False, raw_message: str = ""):
         if args:
             super().__init__(*args)
         else:
             super().__init__("Websocket has been closed")
         self.received: bool = received
+        self.raw_message: str = raw_message
+
+    def __str__(self):
+        return f"Websocket has been closed. received: {self.received}, raw_message: {self.raw_message}"
 
 
 class LoginException(RequestException):

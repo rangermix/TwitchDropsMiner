@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import traceback
 from contextlib import suppress
 from time import time
 from typing import TYPE_CHECKING
@@ -220,7 +221,7 @@ class Websocket:
                 if exc.received:
                     # server closed the connection, not us - reconnect
                     ws_logger.warning(
-                        f"Websocket[{self._idx}] to wss://pubsub-edge.twitch.tv/v1 closed unexpectedly: {websocket.close_code}"
+                        f"Websocket[{self._idx}] to wss://pubsub-edge.twitch.tv/v1 closed unexpectedly: {websocket.close_code}, {traceback.format_exc()}"
                     )
                 elif self._closed.is_set():
                     # we closed it - exit
@@ -304,16 +305,16 @@ class Websocket:
                 message: JsonType = json.loads(raw_message.data)
                 messages.append(message)
             elif raw_message.type is WSMsgType.CLOSE:
-                raise WebsocketClosed(received=True)
+                raise WebsocketClosed(received=True, raw_message=raw_message.data)
             elif raw_message.type is WSMsgType.CLOSED:
-                raise WebsocketClosed(received=False)
+                raise WebsocketClosed(received=False, raw_message=raw_message.data)
             elif raw_message.type is WSMsgType.CLOSING:
                 pass  # skip these
             elif raw_message.type is WSMsgType.ERROR:
                 ws_logger.error(
                     f"Websocket[{self._idx}] error: {format_traceback(raw_message.data)}"
                 )
-                raise WebsocketClosed()
+                raise WebsocketClosed(raw_message=raw_message.data)
             else:
                 ws_logger.error(f"Websocket[{self._idx}] error: Unknown message: {raw_message}")
 
