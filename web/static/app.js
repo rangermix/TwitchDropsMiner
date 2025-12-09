@@ -557,21 +557,21 @@ function campaignMatchesFilters(campaign, filters) {
     }
 
     // Check benefit type filter - campaign must have at least one drop with a matching benefit type
-    const hasBenefitFilter = filters.show_benefit_item !== undefined ||
-        filters.show_benefit_badge !== undefined ||
-        filters.show_benefit_emote !== undefined ||
-        filters.show_benefit_other !== undefined;
+    // Only filter if at least one benefit type is UNCHECKED (otherwise show all)
+    const allBenefitsEnabled = filters.show_benefit_item && filters.show_benefit_badge &&
+        filters.show_benefit_emote && filters.show_benefit_other;
 
-    if (hasBenefitFilter && campaign.drops) {
+    if (!allBenefitsEnabled && campaign.drops) {
         let benefitMatch = false;
         for (const drop of campaign.drops) {
-            if (drop.benefits) {
+            if (drop.benefits && drop.benefits.length > 0) {
                 for (const benefit of drop.benefits) {
-                    const benefitType = (benefit.type || '').toLowerCase();
-                    if (filters.show_benefit_item && benefitType === 'item') benefitMatch = true;
-                    if (filters.show_benefit_badge && benefitType === 'badge') benefitMatch = true;
-                    if (filters.show_benefit_emote && benefitType === 'emote') benefitMatch = true;
-                    if (filters.show_benefit_other && !['item', 'badge', 'emote'].includes(benefitType)) benefitMatch = true;
+                    const benefitType = (benefit.type || '').toUpperCase();
+                    // Map filter checkboxes to actual API benefit types
+                    if (filters.show_benefit_item && benefitType === 'DIRECT_ENTITLEMENT') benefitMatch = true;
+                    if (filters.show_benefit_badge && benefitType === 'BADGE') benefitMatch = true;
+                    if (filters.show_benefit_emote && benefitType === 'EMOTE') benefitMatch = true;
+                    if (filters.show_benefit_other && benefitType === 'UNKNOWN') benefitMatch = true;
                 }
             }
         }
@@ -579,6 +579,7 @@ function campaignMatchesFilters(campaign, filters) {
             return false;
         }
     }
+
 
     return true;
 }
