@@ -504,9 +504,15 @@ function getInventoryFilters() {
         show_upcoming: document.getElementById('filter-upcoming')?.checked || false,
         show_expired: document.getElementById('filter-expired')?.checked || false,
         show_finished: document.getElementById('filter-finished')?.checked || false,
-        game_name_search: [...selectedInventoryGames]  // Array of selected game names
+        game_name_search: [...selectedInventoryGames],  // Array of selected game names
+        // Benefit type filters (default to true if checkbox doesn't exist)
+        show_benefit_item: document.getElementById('filter-benefit-item')?.checked !== false,
+        show_benefit_badge: document.getElementById('filter-benefit-badge')?.checked !== false,
+        show_benefit_emote: document.getElementById('filter-benefit-emote')?.checked !== false,
+        show_benefit_other: document.getElementById('filter-benefit-other')?.checked !== false
     };
 }
+
 
 function campaignMatchesFilters(campaign, filters) {
     // Calculate "finished" status: all drops claimed
@@ -550,8 +556,33 @@ function campaignMatchesFilters(campaign, filters) {
         }
     }
 
+    // Check benefit type filter - campaign must have at least one drop with a matching benefit type
+    const hasBenefitFilter = filters.show_benefit_item !== undefined ||
+        filters.show_benefit_badge !== undefined ||
+        filters.show_benefit_emote !== undefined ||
+        filters.show_benefit_other !== undefined;
+
+    if (hasBenefitFilter && campaign.drops) {
+        let benefitMatch = false;
+        for (const drop of campaign.drops) {
+            if (drop.benefits) {
+                for (const benefit of drop.benefits) {
+                    const benefitType = (benefit.type || '').toLowerCase();
+                    if (filters.show_benefit_item && benefitType === 'item') benefitMatch = true;
+                    if (filters.show_benefit_badge && benefitType === 'badge') benefitMatch = true;
+                    if (filters.show_benefit_emote && benefitType === 'emote') benefitMatch = true;
+                    if (filters.show_benefit_other && !['item', 'badge', 'emote'].includes(benefitType)) benefitMatch = true;
+                }
+            }
+        }
+        if (!benefitMatch) {
+            return false;
+        }
+    }
+
     return true;
 }
+
 
 function onInventoryFilterChange() {
     // Save filter state to settings and re-render inventory
@@ -568,6 +599,12 @@ function clearInventoryFilters() {
     document.getElementById('filter-finished').checked = false;
     document.getElementById('inventory-game-search').value = '';
 
+    // Reset benefit type filters to checked (show all)
+    if (document.getElementById('filter-benefit-item')) document.getElementById('filter-benefit-item').checked = true;
+    if (document.getElementById('filter-benefit-badge')) document.getElementById('filter-benefit-badge').checked = true;
+    if (document.getElementById('filter-benefit-emote')) document.getElementById('filter-benefit-emote').checked = true;
+    if (document.getElementById('filter-benefit-other')) document.getElementById('filter-benefit-other').checked = true;
+
     // Clear selected games
     selectedInventoryGames = [];
     updateGameTagsDisplay();
@@ -576,6 +613,7 @@ function clearInventoryFilters() {
     saveSettings();
     renderInventory();
 }
+
 
 // ==================== Game Dropdown & Tags ====================
 
@@ -975,7 +1013,14 @@ function updateSettingsUI(settings) {
             ? [...settings.inventory_filters.game_name_search]
             : [];  // Handle old string format gracefully
         updateGameTagsDisplay();
+
+        // Restore benefit type filters (default to true if not set)
+        if (document.getElementById('filter-benefit-item')) document.getElementById('filter-benefit-item').checked = settings.inventory_filters.show_benefit_item !== false;
+        if (document.getElementById('filter-benefit-badge')) document.getElementById('filter-benefit-badge').checked = settings.inventory_filters.show_benefit_badge !== false;
+        if (document.getElementById('filter-benefit-emote')) document.getElementById('filter-benefit-emote').checked = settings.inventory_filters.show_benefit_emote !== false;
+        if (document.getElementById('filter-benefit-other')) document.getElementById('filter-benefit-other').checked = settings.inventory_filters.show_benefit_other !== false;
     }
+
 
     // Update games to watch lists
     renderGamesToWatch();
@@ -1348,7 +1393,7 @@ async function saveSettings() {
         language: document.getElementById('language').value,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
-        proxy: document.getElementById('proxy-url')?.value || '',
+        proxy: state.settings.proxy || '',
         games_to_watch: state.settings.games_to_watch || [],
         inventory_filters: getInventoryFilters()
     };
@@ -1680,9 +1725,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
     document.getElementById('minimum-refresh-interval').addEventListener('change', saveSettings);
-    document.getElementById('proxy-url').addEventListener('change', saveSettings);
+    // Proxy uses a manual "Set Proxy" button instead of auto-save
+    document.getElementById('set-proxy-btn').addEventListener('click', () => {
+        const proxyInput = document.getElementById('proxy-url');
+        const newValue = proxyInput ? proxyInput.value : '';
+
+        // Only save if changed
+        if (newValue !== (state.settings.proxy || '')) {
+            state.settings.proxy = newValue;
+            saveSettings();
+        }
+    });
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
+
 
     // Games to watch management
     document.getElementById('select-all-btn').addEventListener('click', selectAllGames);
@@ -1695,7 +1751,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filter-upcoming').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-expired').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-finished').addEventListener('change', onInventoryFilterChange);
+    // Benefit type filters
+    document.getElementById('filter-benefit-item').addEventListener('change', onInventoryFilterChange);
+    document.getElementById('filter-benefit-badge').addEventListener('change', onInventoryFilterChange);
+    document.getElementById('filter-benefit-emote').addEventListener('change', onInventoryFilterChange);
+    document.getElementById('filter-benefit-other').addEventListener('change', onInventoryFilterChange);
     document.getElementById('clear-filters-btn').addEventListener('click', clearInventoryFilters);
+
 
     // Inventory game search dropdown
     const gameSearchInput = document.getElementById('inventory-game-search');

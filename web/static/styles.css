@@ -904,7 +904,8 @@ header h1 {
 }
 
 .settings-section select,
-.settings-section input[type="number"] {
+.settings-section input[type="number"],
+.settings-section input[type="text"] {
     padding: 8px;
     border: 1px solid var(--border-color);
     border-radius: 4px;

@@ -18,6 +18,10 @@ class InventoryFilters(TypedDict):
     show_upcoming: bool
     show_expired: bool
     show_finished: bool
+    show_benefit_item: bool
+    show_benefit_badge: bool
+    show_benefit_emote: bool
+    show_benefit_other: bool
     game_name_search: list[str]
 
 
@@ -44,6 +48,10 @@ default_settings: SettingsFile = {
         "show_upcoming": True,
         "show_expired": False,
         "show_finished": False,
+        "show_benefit_item": True,
+        "show_benefit_badge": True,
+        "show_benefit_emote": True,
+        "show_benefit_other": True,
         "game_name_search": [],
     },
 }

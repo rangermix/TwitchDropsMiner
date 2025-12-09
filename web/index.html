@@ -128,6 +128,24 @@
                             <input type="checkbox" id="filter-finished" />
                             <span>Finished</span>
                         </label>
+                        <div class="filter-separator"
+                            style="width: 1px; height: 24px; background: var(--border-color); margin: 0 10px;"></div>
+                        <label class="filter-checkbox" title="Direct Entitlement (Game Item)">
+                            <input type="checkbox" id="filter-benefit-item" checked />
+                            <span>Item</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="filter-benefit-badge" checked />
+                            <span>Badge</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="filter-benefit-emote" checked />
+                            <span>Emote</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="filter-benefit-other" checked />
+                            <span>Other</span>
+                        </label>
                     </div>
                     <div class="filter-search">
                         <div class="game-dropdown-container">
@@ -167,15 +185,14 @@
                     </label>
                     <label>
                         Proxy URL:
-                        <div class="input-with-button">
-                            <input type="text" id="proxy-url" placeholder="http://user:pass@host:port"
-                                class="full-width">
-                            <button id="verify-proxy-btn" class="secondary-btn"
-                                title="Test proxy connection">Verify</button>
-                        </div>
-                        <small class="help-text-inline">Leave empty to disable. Supports HTTP/HTTPS/SOCKS.</small>
-                        <div id="proxy-verify-result" class="verify-result" style="display: none;"></div>
+                        <input type="text" id="proxy-url" placeholder="http://user:pass@host:port">
+                        <button id="set-proxy-btn" class="secondary-btn" title="Set and verify proxy">Set Proxy</button>
+                        <button id="verify-proxy-btn" class="secondary-btn"
+                            title="Test proxy connection">Verify</button>
                     </label>
+                    <small class="help-text-inline" style="margin-top: 5px;">Leave empty to disable. Supports
+                        HTTP/HTTPS/SOCKS.</small>
+                    <div id="proxy-verify-result" class="verify-result" style="display: none;"></div>
                 </section>
 
                 <section class="settings-section">
