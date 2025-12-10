@@ -1,3 +1,26 @@
+# Release Notes - v1.1.5
+
+Version 1.1.5 delivers significant advancements in network configuration and inventory management, introducing robust proxy support for advanced users and powerful new filters to help you sort through your earned drops faster than ever.
+
+### 🌍 Advanced Connectivity & Infrastructure
+
+This release introduces major improvements for users needing specialized network configurations, making your mining setup more flexible and reliable.
+
+*   **Full Proxy Support**: You can now configure and utilize proxies within the application. This is ideal for managing multiple accounts or ensuring connection stability.
+*   **Proxy Verification**: New built-in verification ensures your configured proxy is working correctly *before* you start mining, saving you valuable time and troubleshooting effort.
+
+### 🎁 Inventory & Filtering Upgrades
+
+We’ve made it easier to focus on the drops that matter most to you by adding granular filtering options to your inventory view.
+
+*   **Drop Benefit Type Filters**: You can now filter your earned drops based on their specific benefit type (e.g., currency, in-game items, beta access, etc.). Quickly find exactly what you’ve earned without scrolling through unrelated loot!
+
+### 📚 Setup & Configuration
+
+These changes primarily benefit users running the application via Docker or `docker-compose`.
+
+*   **Improved Docker Compose Example**: The provided example configuration has been updated to include necessary logging features and timezone settings, ensuring easier setup and better debugging capabilities right out of the box.
+
 # Release Notes - v1.1.4
 
 release automation fix only.
