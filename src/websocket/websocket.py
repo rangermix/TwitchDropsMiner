@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import traceback
 from contextlib import suppress
 from time import time
 from typing import TYPE_CHECKING
@@ -20,6 +21,7 @@ from src.utils import (
     format_traceback,
     json_minify,
     task_wrapper,
+    chunk,
 )
 
 
@@ -162,6 +164,7 @@ class Websocket:
         session = await self._twitch.get_session()
         backoff = ExponentialBackoff(**kwargs)
         proxy = self._twitch.settings.proxy or None
+        ws_logger.info(f"Websocket[{self._idx}] connecting with {'no' if proxy is None else str(proxy)} proxy")
         for delay in backoff:
             try:
                 async with session.ws_connect(ws_url, proxy=proxy) as websocket:
@@ -219,17 +222,17 @@ class Websocket:
                 if exc.received:
                     # server closed the connection, not us - reconnect
                     ws_logger.warning(
-                        f"Websocket[{self._idx}] closed unexpectedly: {websocket.close_code}"
+                        f"Websocket[{self._idx}] to wss://pubsub-edge.twitch.tv/v1 closed unexpectedly: {websocket.close_code}"
                     )
                 elif self._closed.is_set():
                     # we closed it - exit
-                    ws_logger.debug(f"Websocket[{self._idx}] stopped.")
+                    ws_logger.debug(f"Websocket[{self._idx}] to wss://pubsub-edge.twitch.tv/v1 stopped.")
                     self.set_status(_.t["gui"]["websocket"]["disconnected"])
                     return
             except Exception:
-                ws_logger.exception(f"Exception in Websocket[{self._idx}]")
+                ws_logger.exception(f"Exception in Websocket[{self._idx}] to wss://pubsub-edge.twitch.tv/v1")
             self.set_status(_.t["gui"]["websocket"]["reconnecting"])
-            ws_logger.warning(f"Websocket[{self._idx}] reconnecting...")
+            ws_logger.warning(f"Websocket[{self._idx}] to wss://pubsub-edge.twitch.tv/v1 reconnecting...")
 
     async def _handle_ping(self):
         """Handle ping/pong heartbeat to keep connection alive."""
@@ -257,30 +260,32 @@ class Websocket:
         if removed:
             topics_list = list(map(str, removed))
             ws_logger.debug(f"Websocket[{self._idx}]: Removing topics: {', '.join(topics_list)}")
-            await self.send(
-                {
-                    "type": "UNLISTEN",
-                    "data": {
-                        "topics": topics_list,
-                        "auth_token": auth_state.access_token,
-                    },
-                }
-            )
+            for topics in chunk(topics_list, 10):
+                await self.send(
+                    {
+                        "type": "UNLISTEN",
+                        "data": {
+                            "topics": topics,
+                            "auth_token": auth_state.access_token,
+                        },
+                    }
+                )
             self._submitted.difference_update(removed)
         # handle added topics
         added = current.difference(self._submitted)
         if added:
             topics_list = list(map(str, added))
             ws_logger.debug(f"Websocket[{self._idx}]: Adding topics: {', '.join(topics_list)}")
-            await self.send(
-                {
-                    "type": "LISTEN",
-                    "data": {
-                        "topics": topics_list,
-                        "auth_token": auth_state.access_token,
-                    },
-                }
-            )
+            for topics in chunk(topics_list, 10):
+                await self.send(
+                    {
+                        "type": "LISTEN",
+                        "data": {
+                            "topics": topics,
+                            "auth_token": auth_state.access_token,
+                        },
+                    }
+                )
             self._submitted.update(added)
 
     async def _gather_recv(self, messages: list[JsonType], timeout: float = 0.5):
@@ -303,16 +308,16 @@ class Websocket:
                 message: JsonType = json.loads(raw_message.data)
                 messages.append(message)
             elif raw_message.type is WSMsgType.CLOSE:
-                raise WebsocketClosed(received=True)
+                raise WebsocketClosed(received=True, raw_message=raw_message.data)
             elif raw_message.type is WSMsgType.CLOSED:
-                raise WebsocketClosed(received=False)
+                raise WebsocketClosed(received=False, raw_message=raw_message.data)
             elif raw_message.type is WSMsgType.CLOSING:
                 pass  # skip these
             elif raw_message.type is WSMsgType.ERROR:
                 ws_logger.error(
                     f"Websocket[{self._idx}] error: {format_traceback(raw_message.data)}"
                 )
-                raise WebsocketClosed()
+                raise WebsocketClosed(raw_message=raw_message.data)
             else:
                 ws_logger.error(f"Websocket[{self._idx}] error: Unknown message: {raw_message}")
 
