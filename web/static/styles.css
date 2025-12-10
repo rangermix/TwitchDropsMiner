@@ -48,7 +48,7 @@ header {
     border-radius: 8px;
     padding: 20px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .header-top {
@@ -121,6 +121,72 @@ header h1 {
     color: var(--error-color);
 }
 
+.proxy-badge {
+    background: #4a90e2;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.full-width {
+    width: 100%;
+}
+
+.help-text-inline {
+    display: block;
+    margin-top: 4px;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.input-with-button {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.input-with-button input {
+    flex: 1;
+}
+
+.secondary-btn {
+    padding: 8px 12px;
+    background-color: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.secondary-btn:hover {
+    background-color: var(--hover-bg);
+}
+
+.verify-result {
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.verify-result.success {
+    color: var(--success-color);
+}
+
+.verify-result.error {
+    color: var(--error-color);
+}
+
+.verify-result.loading {
+    color: var(--text-secondary);
+}
+
 /* Tabs */
 .tabs {
     display: flex;
@@ -165,7 +231,7 @@ header h1 {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .panel h2 {
@@ -214,7 +280,8 @@ header h1 {
     color: var(--text-primary);
 }
 
-#login-form button, #oauth-confirm {
+#login-form button,
+#oauth-confirm {
     width: 100%;
     padding: 12px;
     background: var(--accent-color);
@@ -226,7 +293,8 @@ header h1 {
     font-weight: bold;
 }
 
-#login-form button:hover, #oauth-confirm:hover {
+#login-form button:hover,
+#oauth-confirm:hover {
     opacity: 0.9;
 }
 
@@ -608,7 +676,7 @@ header h1 {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     position: relative;
 }
 
@@ -836,7 +904,8 @@ header h1 {
 }
 
 .settings-section select,
-.settings-section input[type="number"] {
+.settings-section input[type="number"],
+.settings-section input[type="text"] {
     padding: 8px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
@@ -920,7 +989,8 @@ header h1 {
     margin-bottom: 10px;
 }
 
-.help-content ul, .help-content ol {
+.help-content ul,
+.help-content ol {
     margin-left: 20px;
     margin-bottom: 15px;
 }
@@ -1004,14 +1074,16 @@ header h1 {
     margin-top: 20px;
 }
 
-.selected-games, .available-games {
+.selected-games,
+.available-games {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 15px;
     background: var(--bg-secondary);
 }
 
-.selected-games h3, .available-games h3 {
+.selected-games h3,
+.available-games h3 {
     font-size: 14px;
     margin-bottom: 15px;
     color: var(--text-secondary);
@@ -1142,7 +1214,7 @@ header h1 {
     border-radius: 12px;
     padding: 40px;
     text-align: center;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .loading-spinner {
@@ -1156,7 +1228,9 @@ header h1 {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 #loading-message {
@@ -1191,10 +1265,13 @@ header h1 {
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
         opacity: 1;
     }
+
     50% {
         transform: scale(1.05);
         opacity: 0.9;
@@ -1261,7 +1338,10 @@ header h1 {
         grid-template-rows: auto;
     }
 
-    .login-panel, .progress-panel, .console-panel, .channels-panel {
+    .login-panel,
+    .progress-panel,
+    .console-panel,
+    .channels-panel {
         grid-column: 1;
         grid-row: auto;
     }

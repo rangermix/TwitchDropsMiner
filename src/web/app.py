@@ -73,7 +73,13 @@ class SettingsUpdate(BaseModel):
     language: str | None = None
     proxy: str | None = None
     connection_quality: int | None = None
+    proxy: str | None = None
+    connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
+
+
+class ProxyVerifyRequest(BaseModel):
+    proxy: str
 
 
 # ==================== REST API Endpoints ====================
@@ -201,6 +207,40 @@ async def update_settings(settings: SettingsUpdate):
     settings_dict = settings.dict(exclude_unset=True)
     gui_manager.settings.update_settings(settings_dict)
     return {"success": True, "settings": gui_manager.settings.get_settings()}
+
+
+@app.post("/api/settings/verify-proxy")
+async def verify_proxy(request: ProxyVerifyRequest):
+    """Verify proxy connectivity"""
+    import aiohttp
+    import time
+
+    proxy_url = request.proxy.strip()
+    if not proxy_url:
+        return {"success": False, "message": "Proxy URL is empty"}
+
+    try:
+        start_time = time.time()
+        # Test connection to Twitch
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                "https://www.twitch.tv", proxy=proxy_url, timeout=10
+            ) as response:
+                # Just checking if we can connect and get a response
+                if response.status < 500:
+                    latency = round((time.time() - start_time) * 1000)
+                    return {
+                        "success": True,
+                        "message": f"Connected! ({latency}ms)",
+                        "latency": latency,
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "message": f"Proxy reachable but returned {response.status}",
+                    }
+    except Exception as e:
+        return {"success": False, "message": f"Connection failed: {str(e)}"}
 
 
 @app.post("/api/login")

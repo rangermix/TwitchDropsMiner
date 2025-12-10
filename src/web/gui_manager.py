@@ -52,7 +52,7 @@ class WebGUIManager:
         self.channels = ChannelListManager(self._broadcaster, self)
         self.inv = InventoryManager(self._broadcaster, ImageCache(self))
         self.login = LoginFormManager(self._broadcaster, self)
-        self.settings = SettingsManager(self._broadcaster, twitch.settings)
+        self.settings = SettingsManager(self._broadcaster, twitch.settings, self.output)
 
         # Selected channel tracking (set by web client)
         self._selected_channel_id: int | None = None
