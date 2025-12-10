@@ -21,6 +21,7 @@ from src.utils import (
     format_traceback,
     json_minify,
     task_wrapper,
+    chunk,
 )
 
 
@@ -221,7 +222,7 @@ class Websocket:
                 if exc.received:
                     # server closed the connection, not us - reconnect
                     ws_logger.warning(
-                        f"Websocket[{self._idx}] to wss://pubsub-edge.twitch.tv/v1 closed unexpectedly: {websocket.close_code}, {traceback.format_exc()}"
+                        f"Websocket[{self._idx}] to wss://pubsub-edge.twitch.tv/v1 closed unexpectedly: {websocket.close_code}"
                     )
                 elif self._closed.is_set():
                     # we closed it - exit
@@ -259,30 +260,32 @@ class Websocket:
         if removed:
             topics_list = list(map(str, removed))
             ws_logger.debug(f"Websocket[{self._idx}]: Removing topics: {', '.join(topics_list)}")
-            await self.send(
-                {
-                    "type": "UNLISTEN",
-                    "data": {
-                        "topics": topics_list,
-                        "auth_token": auth_state.access_token,
-                    },
-                }
-            )
+            for topics in chunk(topics_list, 10):
+                await self.send(
+                    {
+                        "type": "UNLISTEN",
+                        "data": {
+                            "topics": topics,
+                            "auth_token": auth_state.access_token,
+                        },
+                    }
+                )
             self._submitted.difference_update(removed)
         # handle added topics
         added = current.difference(self._submitted)
         if added:
             topics_list = list(map(str, added))
             ws_logger.debug(f"Websocket[{self._idx}]: Adding topics: {', '.join(topics_list)}")
-            await self.send(
-                {
-                    "type": "LISTEN",
-                    "data": {
-                        "topics": topics_list,
-                        "auth_token": auth_state.access_token,
-                    },
-                }
-            )
+            for topics in chunk(topics_list, 10):
+                await self.send(
+                    {
+                        "type": "LISTEN",
+                        "data": {
+                            "topics": topics,
+                            "auth_token": auth_state.access_token,
+                        },
+                    }
+                )
             self._submitted.update(added)
 
     async def _gather_recv(self, messages: list[JsonType], timeout: float = 0.5):
