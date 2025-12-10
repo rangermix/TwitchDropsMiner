@@ -91,11 +91,13 @@ class SettingsManager:
 
             proxy_str = settings_data["proxy"].strip()
             if proxy_str:
-                self._settings.proxy = URL(proxy_str)
-                self._console.print(f"Proxy set to: {proxy_str}")
+                if self._settings.proxy != URL(proxy_str):
+                    self._settings.proxy = URL(proxy_str)
+                    self._console.print(f"Proxy set to: {proxy_str}")
             else:
-                self._settings.proxy = URL()
-                self._console.print("Proxy cleared")
+                if self._settings.proxy != URL():
+                    self._settings.proxy = URL()
+                    self._console.print("Proxy cleared")
 
         if "minimum_refresh_interval_minutes" in settings_data:
             self._settings.minimum_refresh_interval_minutes = settings_data[
