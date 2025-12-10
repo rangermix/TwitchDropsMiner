@@ -283,7 +283,7 @@ login_text = _.t["login"]["status"]["logged_in"]  # Returns "Logged in"
 - **src/config/paths.py** - Path management and Docker environment detection
 - **src/config/client_info.py** - Twitch client info (Client-Id, User-Agent)
 - **src/config/settings.py** - Application settings with JSON persistence
-- **src/exceptions.py** - Custom exceptions (LoginException, CaptchaRequired, ExitRequest, etc.)
+- **src/exceptions.py** - Custom exceptions (MinerException, ExitRequest, RequestException, RequestInvalid, WebsocketClosed, LoginException, CaptchaRequired, GQLException)
 - **src/utils/** - Helper utilities (string_utils, json_utils, async_helpers, rate_limiter, backoff)
 - **src/i18n/** - Internationalization package with TypedDict schema and Translator class
   - **translator.py** - Translator class with typed translation schema (Translation TypedDict)
@@ -296,7 +296,21 @@ login_text = _.t["login"]["status"]["logged_in"]  # Returns "Logged in"
 
 ## Testing
 
-The project does not include a test suite. Manual testing workflow:
+### Automated Tests
+
+The project includes a test suite in the `tests/` directory:
+
+```bash
+# Activate virtual environment and run tests
+source env/bin/activate && python -m pytest tests/
+```
+
+**Test Files:**
+
+- `tests/test_proxy_settings.py` - Tests for proxy settings configuration
+- `tests/test_verify_proxy.py` - Tests for proxy verification functionality
+
+### Manual Testing
 
 1. Run with `-vvv` for maximum verbosity (levels: -v, -vv, -vvv, -vvvv)
 2. Use `--dump` to generate debug data dumps
