@@ -1,3 +1,15 @@
+# Release Notes - v1.1.6
+
+We've released a small but important update focusing on quality of life and core application stability. This version ensures better synchronization reliability and adds a helpful visual indicator for easier navigation.
+
+### ✨ Quality of Life Improvements
+This small visual tweak makes managing your drops much smoother!
+
+- **New Tab Icon (Favicon)**: We've added a custom favicon to the browser tab bar! Now you can easily identify your Twitch Drops Miner instance among the dozens of browser tabs you inevitably have open. No more hunting for the right window!
+
+### 🐛 Bug Fixes
+- **Core Synchronization Stability**: Implemented an important sync fix to improve the reliability and accuracy of drop tracking. This ensures the application maintains better stability, especially during long mining sessions.
+
 # Release Notes - v1.1.5
 
 Version 1.1.5 delivers significant advancements in network configuration and inventory management, introducing robust proxy support for advanced users and powerful new filters to help you sort through your earned drops faster than ever.
