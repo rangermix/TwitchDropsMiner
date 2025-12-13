@@ -42,6 +42,7 @@ class SettingsManager:
         return {
             "language": self._settings.language,
             "dark_mode": self._settings.dark_mode,
+            "skip_badge_only_drops": self._settings.skip_badge_only_drops,
             "games_to_watch": list(self._settings.games_to_watch),
             "games_available": self._available_games,
             "proxy": str(self._settings.proxy),
@@ -70,6 +71,8 @@ class SettingsManager:
             self._settings.games_to_watch = settings_data["games_to_watch"]
         if "dark_mode" in settings_data:
             self._settings.dark_mode = settings_data["dark_mode"]
+        if "skip_badge_only_drops" in settings_data:
+            self._settings.skip_badge_only_drops = settings_data["skip_badge_only_drops"]
         if "language" in settings_data:
             language = settings_data["language"]
             try:
