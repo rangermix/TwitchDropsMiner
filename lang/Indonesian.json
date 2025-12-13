@@ -116,7 +116,7 @@
                 "name": "Umum",
                 "dark_mode": "Mode Gelap",
                 "skip_cosmetic_drops": "Lewati drop kosmetik (badge dan emote)",
-                "skip_cosmetic_drops_help": "Saat diaktifkan, penambang akan melewati drop yang hanya memberi hadiah item kosmetik (badge dan emote), fokus pada drop dengan item dalam game atau hadiah berharga lainnya."
+                "skip_cosmetic_drops_help": "Saat diaktifkan, penambang akan melewati drop yang hanya memberi hadiah item kosmetik (badge dan emote)."
             },
             "reload": "Muat Ulang",
             "games_to_watch": "Game untuk Ditonton",

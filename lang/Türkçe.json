@@ -116,7 +116,7 @@
                 "name": "Genel",
                 "dark_mode": "Karanlık Mod",
                 "skip_cosmetic_drops": "Kozmetik düşüşleri atla (rozetler ve emote'lar)",
-                "skip_cosmetic_drops_help": "Etkinleştirildiğinde, madenci yalnızca kozmetik öğeleri (rozetler ve emote'lar) ödüllendiren düşüşleri atlayacak ve oyun içi öğeler veya diğer değerli ödüller içeren düşüşlere odaklanacaktır."
+                "skip_cosmetic_drops_help": "Etkinleştirildiğinde, madenci yalnızca kozmetik öğeleri (rozetler ve emote'lar) ödüllendiren düşüşleri atlayacaktır."
             },
             "reload": "Tekrar yükle",
             "games_to_watch": "İzlenecek Oyunlar",

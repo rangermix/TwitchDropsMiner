@@ -116,7 +116,7 @@
                 "name": "一般",
                 "dark_mode": "深色模式",
                 "skip_cosmetic_drops": "跳過裝飾性掉寶（徽章和表情符號）",
-                "skip_cosmetic_drops_help": "啟用後，礦工將跳過僅獎勵裝飾性物品（徽章和表情符號）的掉寶，專注於具有遊戲內物品或其他有價值獎勵的掉寶。"
+                "skip_cosmetic_drops_help": "啟用後，礦工將跳過僅獎勵裝飾性物品（徽章和表情符號）的掉寶。"
             },
             "reload": "重新載入",
             "games_to_watch": "觀看遊戲",

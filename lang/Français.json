@@ -113,7 +113,7 @@
                 "name": "Général",
                 "dark_mode": "Mode sombre",
                 "skip_cosmetic_drops": "Ignorer les drops cosmétiques (badges et emotes)",
-                "skip_cosmetic_drops_help": "Lorsqu'il est activé, le mineur ignorera les drops qui ne récompensent que des objets cosmétiques (badges et emotes), en se concentrant sur les drops avec des objets en jeu ou d'autres récompenses précieuses."
+                "skip_cosmetic_drops_help": "Lorsqu'il est activé, le mineur ignorera les drops qui ne récompensent que des objets cosmétiques (badges et emotes)."
             },
             "reload": "Recharger",
             "reload_campaigns": "Recharger les campagnes",

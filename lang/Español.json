@@ -113,7 +113,7 @@
                 "name": "General",
                 "dark_mode": "Modo oscuro",
                 "skip_cosmetic_drops": "Omitir drops cosméticos (insignias y emotes)",
-                "skip_cosmetic_drops_help": "Cuando está habilitado, el minero omitirá drops que solo recompensen artículos cosméticos (insignias y emotes), centrándose en drops con artículos del juego u otras recompensas valiosas."
+                "skip_cosmetic_drops_help": "Cuando está habilitado, el minero omitirá drops que solo recompensen artículos cosméticos (insignias y emotes)."
             },
             "reload": "Recargar",
             "reload_campaigns": "Recargar campañas",
