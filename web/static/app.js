@@ -12,6 +12,44 @@ const state = {
     translations: {}  // Store current translations
 };
 
+// ==================== Version Checking ====================
+
+async function fetchAndDisplayVersion() {
+    try {
+        const response = await fetch('/api/version');
+        if (!response.ok) throw new Error('Failed to fetch version');
+
+        const data = await response.json();
+        const versionElement = document.getElementById('current-version');
+        if (versionElement) {
+            versionElement.textContent = data.current_version;
+        }
+
+        // Display update notification if available
+        if (data.update_available && data.latest_version) {
+            const updateIndicator = document.getElementById('footer-update-indicator');
+            const latestVersionSpan = document.getElementById('latest-version');
+            const updateLink = document.getElementById('footer-update-link');
+
+            if (updateIndicator && latestVersionSpan && updateLink) {
+                latestVersionSpan.textContent = data.latest_version;
+                updateLink.href = data.download_url;
+                updateIndicator.style.display = 'inline-block';
+
+                // Log to console
+                console.log(`Update available: ${data.latest_version} (current: ${data.current_version})`);
+            }
+        }
+    } catch (error) {
+        console.warn('Could not fetch version information:', error);
+        // Set placeholder text if fetch fails
+        const versionElement = document.getElementById('current-version');
+        if (versionElement && versionElement.textContent === 'Loading...') {
+            versionElement.textContent = 'Unknown';
+        }
+    }
+}
+
 // Initialize Socket.IO connection
 const socket = io({
     transports: ['websocket', 'polling'],
@@ -1723,6 +1761,9 @@ function switchTab(tabName) {
 // ==================== Event Listeners ====================
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Fetch and display version information
+    fetchAndDisplayVersion();
+
     // Tab switching
     document.querySelectorAll('.tab-button').forEach(button => {
         button.addEventListener('click', () => {

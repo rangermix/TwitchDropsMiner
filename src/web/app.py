@@ -243,6 +243,43 @@ async def verify_proxy(request: ProxyVerifyRequest):
         return {"success": False, "message": f"Connection failed: {str(e)}"}
 
 
+@app.get("/api/version")
+async def get_version():
+    """Get current application version and check for updates"""
+    from src.version import __version__
+    import aiohttp
+
+    current_version = __version__
+    latest_version = None
+    update_available = False
+    download_url = None
+
+    try:
+        # Check GitHub API for latest release
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest",
+                timeout=5
+            ) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    latest_version = data.get('tag_name', '').lstrip('v')
+                    download_url = data.get('html_url')
+
+                    # Compare versions (simple string comparison works for semantic versioning)
+                    if latest_version and latest_version > current_version:
+                        update_available = True
+    except Exception as e:
+        logger.warning(f"Failed to check for updates: {str(e)}")
+
+    return {
+        "current_version": current_version,
+        "latest_version": latest_version,
+        "update_available": update_available,
+        "download_url": download_url or "https://github.com/rangermix/TwitchDropsMiner/releases"
+    }
+
+
 @app.post("/api/login")
 async def submit_login(login_data: LoginRequest):
     """Submit login credentials"""
