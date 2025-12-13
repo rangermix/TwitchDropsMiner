@@ -130,6 +130,30 @@
             "actions": "Acțiuni",
             "connection_quality": "Calitatea conexiunii:",
             "minimum_refresh": "Interval minim de reîmprospătare (minute):",
+            "telegram": {
+                "name": "Notificări Telegram",
+                "description": "Primiți notificări pe Telegram atunci când revendicați drops.",
+                "bot_token": "Token Bot Telegram",
+                "chat_id": "ID Chat Telegram",
+                "save_settings": "Salvați setările",
+                "test_connection": "Testare Conexiune",
+                "how_to_setup": "Cum se configurează",
+                "setup_steps": [
+                    "Accesați <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> pe Telegram",
+                    "Creați un bot nou cu comanda /newbot",
+                    "Salvați tokenul botului pe care îl primiți",
+                    "Porniți noul bot căutând-o și dând clic pe /start (sau trimiteți orice mesaj)",
+                    "Obțineți ID-ul dvs. de chat deschizând acest URL în browser (înlocuiți TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Găsiți ID-ul utilizatorului în răspuns - acesta este numărul din \"from\": {\"id\": ID_DVS}",
+                    "Introduceți tokenul și ID-ul de chat și faceți clic pe Testare Conexiune"
+                ],
+                "saved": "✓ Setări salvate cu succes!",
+                "success": "✓ Conexiune Telegram reușită! Veți primi notificări când revendicați drops.",
+                "error": "Conexiune la Telegram eșuată. Verificați tokenul botului și ID-ul chat.",
+                "missing_credentials": "Completați tokenul botului și ID-ul chat. Consultați instrucțiunile de configurare în fila Ajutor.",
+                "get_from_botfather": "Obțineți de la @BotFather",
+                "your_user_id": "ID-ul utilizatorului numeric Telegram"
+            },
             "reload_campaigns": "Reîncarcă campaniile"
         },
         "help": {

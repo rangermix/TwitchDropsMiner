@@ -127,6 +127,30 @@
             "actions": "操作",
             "connection_quality": "连接质量：",
             "minimum_refresh": "最小刷新间隔（分钟）：",
+            "telegram": {
+                "name": "电报通知",
+                "description": "在您获得掉宝时接收电报通知。",
+                "bot_token": "电报机器人令牌",
+                "chat_id": "电报聊天ID",
+                "save_settings": "保存设置",
+                "test_connection": "测试连接",
+                "how_to_setup": "设置方法",
+                "setup_steps": [
+                    "在电报中前往 <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a>",
+                    "使用 /newbot 命令创建新机器人",
+                    "保存您收到的机器人令牌",
+                    "通过搜索并单击 /start 启动您的新机器人（或发送任何消息）",
+                    "通过在浏览器中打开此URL来获取您的聊天ID（替换TOKEN）: https://api.telegram.org/botTOKEN/getUpdates",
+                    "在响应中找到您的用户ID - 它是\"from\": {\"id\": 您的ID}中的数字",
+                    "输入令牌和聊天ID，然后点击测试连接"
+                ],
+                "success": "✓ 电报连接成功！在您获得掉宝时您将收到通知。",
+                "saved": "✓ 设置已成功保存！",
+                "error": "无法连接到电报。请检查您的机器人令牌和聊天ID。",
+                "missing_credentials": "请同时填写机器人令牌和聊天ID。请在帮助标签中查看设置说明。",
+                "get_from_botfather": "从 @BotFather 获取",
+                "your_user_id": "您的电报数字用户ID"
+            },
             "reload_campaigns": "重新加载活动"
         },
         "help": {

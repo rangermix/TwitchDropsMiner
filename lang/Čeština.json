@@ -130,6 +130,30 @@
             "actions": "Akce",
             "connection_quality": "Kvalita připojení:",
             "minimum_refresh": "Minimální interval obnovení (minuty):",
+            "telegram": {
+                "name": "Upozornění na Telegram",
+                "description": "Dostávejte upozornění na Telegram, když si nárokujete drops.",
+                "bot_token": "Token Telegram bota",
+                "chat_id": "ID chatu Telegram",
+                "save_settings": "Uložit nastavení",
+                "test_connection": "Testovat připojení",
+                "how_to_setup": "Jak nastavit",
+                "setup_steps": [
+                    "Přejděte na <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> na Telegram",
+                    "Vytvořte nového bota příkazem /newbot",
+                    "Uložte si token bota, který obdržíte",
+                    "Spusťte nového bota vyhledáním a kliknutím na /start (nebo pošlete jakoukoli zprávu)",
+                    "Získejte své ID chatu otevřením této URL v prohlížeči (nahraďte TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Najděte své ID uživatele v odpovědi - je to číslo v \"from\": {\"id\": VAŠE_ID}",
+                    "Zadejte token a ID chatu a klikněte na Testovat připojení"
+                ],
+                "success": "✓ Připojení k Telegram úspěšné! Budete dostávat upozornění, když si nárokujete drops.",
+                "saved": "✓ Nastavení úspěšně uloženo!",
+                "error": "Připojení k Telegram se nezdařilo. Zkontrolujte token bota a ID chatu.",
+                "missing_credentials": "Vyplňte token bota i ID chatu. Viz pokyny k nastavení v záložce Nápověda.",
+                "get_from_botfather": "Získejte od @BotFather",
+                "your_user_id": "Vaše číselné ID uživatele Telegram"
+            },
             "reload_campaigns": "Znovu načíst kampaně"
         },
         "help": {

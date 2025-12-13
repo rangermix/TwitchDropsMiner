@@ -130,6 +130,30 @@
             "actions": "İşlemler",
             "connection_quality": "Bağlantı kalitesi:",
             "minimum_refresh": "Minimum yenileme aralığı (dakika):",
+            "telegram": {
+                "name": "Telegram Bildirimleri",
+                "description": "Drop talep ettiğinizde Telegram'da bildirim alın.",
+                "bot_token": "Telegram Bot Token",
+                "chat_id": "Telegram Sohbet Kimliği",
+                "save_settings": "Ayarları Kaydet",
+                "test_connection": "Bağlantıyı Test Et",
+                "how_to_setup": "Nasıl Kurulur",
+                "setup_steps": [
+                    "Telegram'da <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> sayfasına gidin",
+                    "/newbot komutu ile yeni bir bot oluşturun",
+                    "Aldığınız bot token'ını kaydedin",
+                    "Yeni bot'unuzu arayarak /start'a tıklayarak başlatın (veya herhangi bir mesaj gönderin)",
+                    "Tarayıcıda bu URL'yi açarak Chat Kimliğini alın (TOKEN'i değiştirin): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Yanıtınızda kullanıcı kimliğinizi bulun - \"from\": {\"id\": KİMLİĞİNİZ} içindeki sayıdır",
+                    "Token ve Sohbet Kimliğini girin ve Bağlantıyı Test Et'e tıklayın"
+                ],
+                "saved": "✓ Ayarlar başarıyla kaydedildi!",
+                "success": "✓ Telegram bağlantısı başarılı! Drop talep ettiğinizde bildirim alacaksınız.",
+                "error": "Telegram'a bağlanılamadı. Bot token'ınızı ve sohbet kimliğinizi kontrol edin.",
+                "missing_credentials": "Lütfen bot token'ını ve sohbet kimliğini doldurun. Yardım sekmesindeki kurulum talimatlarını görün.",
+                "get_from_botfather": "@BotFather'dan Al",
+                "your_user_id": "Telegram sayısal kullanıcı kimliğiniz"
+            },
             "reload_campaigns": "Kampanyaları Yeniden Yükle"
         },
         "help": {

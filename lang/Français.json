@@ -127,7 +127,31 @@
             "all_games_selected": "Tous les jeux sont sélectionnés ou aucun jeu disponible.",
             "actions": "Actions",
             "connection_quality": "Qualité de connexion :",
-            "minimum_refresh": "Intervalle minimum de rafraîchissement (minutes) :"
+            "minimum_refresh": "Intervalle minimum de rafraîchissement (minutes) :",
+            "telegram": {
+                "name": "Notifications Telegram",
+                "description": "Recevez des notifications sur Telegram lorsque vous réclamez des drops.",
+                "bot_token": "Jeton du Bot Telegram",
+                "chat_id": "ID de Chat Telegram",
+                "save_settings": "Enregistrer les paramètres",
+                "test_connection": "Tester la connexion",
+                "how_to_setup": "Comment configurer",
+                "setup_steps": [
+                    "Allez à <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> sur Telegram",
+                    "Créez un nouveau bot avec la commande /newbot",
+                    "Enregistrez le jeton du bot que vous recevez",
+                    "Démarrez votre nouveau bot en le recherchant et en cliquant sur /start (ou envoyez n'importe quel message)",
+                    "Obtenez votre ID de chat en ouvrant cette URL dans le navigateur (remplacez TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Trouvez votre ID utilisateur dans la réponse - c'est le nombre dans \"from\": {\"id\": VOTRE_ID}",
+                    "Entrez le jeton et l'ID de chat, puis cliquez sur Tester la connexion"
+                ],
+                "success": "✓ Connexion Telegram réussie! Vous recevrez des notifications lorsque vous réclamez des drops.",
+                "saved": "✓ Paramètres enregistrés avec succès!",
+                "error": "Échec de la connexion à Telegram. Veuillez vérifier votre jeton de bot et votre ID de chat.",
+                "missing_credentials": "Veuillez remplir le jeton du bot et l'ID du chat. Consultez les instructions de configuration dans l'onglet Aide.",
+                "get_from_botfather": "Obtenir de @BotFather",
+                "your_user_id": "Votre ID utilisateur numérique Telegram"
+            }
         },
         "help": {
             "about": "À propos de Twitch Drops Miner",

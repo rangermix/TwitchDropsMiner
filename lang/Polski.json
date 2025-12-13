@@ -131,6 +131,28 @@
             "actions": "Akcje",
             "connection_quality": "Jakość połączenia:",
             "minimum_refresh": "Minimalny interwał odświeżania (minuty):",
+            "telegram": {
+                "name": "Powiadomienia Telegram",
+                "description": "Otrzymuj powiadomienia na Telegram, gdy zostanie odebrany drop.",
+                "bot_token": "Token Bota Telegram",
+                "chat_id": "Chat ID Telegram",                "save_settings": "Zapisz ustawienia",                "test_connection": "Testuj połączenie",
+                "how_to_setup": "Jak skonfigurować",
+                "setup_steps": [
+                    "Przejdź do <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> na Telegrama",
+                    "Utwórz nowego bota za pomocą polecenia /newbot",
+                    "Zapisz token bota, który otrzymasz",
+                    "Uruchom nowego bota, szukając go i klikając /start (lub wyślij dowolną wiadomość)",
+                    "Pobierz swój Chat ID, otwierając ten adres URL w przeglądarce (zamień TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Znajdź swój ID użytkownika w odpowiedzi - to liczba w \"from\": {\"id\": TWOJE_ID}",
+                    "Wpisz token i Chat ID poniżej i kliknij Testuj połączenie"
+                ],
+                "success": "✓ Połączenie Telegram pomyślne! Będziesz otrzymywać powiadomienia o odbieranych dropach.",
+                "saved": "✓ Ustawienia zapisane pomyślnie!",
+                "error": "Nie udało się połączyć z Telegramem. Sprawdź token bota i Chat ID.",
+                "missing_credentials": "Wypełnij zarówno token bota, jak i Chat ID. Instrukcje konfiguracji znajdują się w zakładce Pomoc.",
+                "get_from_botfather": "Pobierz od @BotFather",
+                "your_user_id": "Twój numeryczny ID użytkownika Telegram"
+            },
             "reload_campaigns": "Przeładuj kampanie"
         },
         "help": {

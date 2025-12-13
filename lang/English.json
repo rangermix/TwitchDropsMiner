@@ -128,7 +128,31 @@
             "all_games_selected": "All games are selected or no games available.",
             "actions": "Actions",
             "connection_quality": "Connection Quality:",
-            "minimum_refresh": "Minimum Refresh Interval (minutes):"
+            "minimum_refresh": "Minimum Refresh Interval (minutes):",
+            "telegram": {
+                "name": "Telegram Notifications",
+                "description": "Receive notifications on Telegram when you claim drops.",
+                "bot_token": "Telegram Bot Token",
+                "chat_id": "Telegram Chat ID",
+                "save_settings": "Save Settings",
+                "test_connection": "Test Connection",
+                "how_to_setup": "How to Set Up",
+                "setup_steps": [
+                    "Go to <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> on Telegram",
+                    "Create a new bot with /newbot command",
+                    "Save the bot token you receive",
+                    "Start your new bot by searching for it and clicking /start (or send any message)",
+                    "Get your Chat ID by opening this URL in browser (replace TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Find your user ID in the response - it's the number in \"from\": {\"id\": YOUR_ID}",
+                    "Enter the token and Chat ID below and click Test Connection"
+                ],
+                "success": "✓ Telegram connection successful! You will receive drop notifications.",
+                "saved": "✓ Settings saved successfully!",
+                "error": "Failed to connect to Telegram. Please check your bot token and chat ID.",
+                "missing_credentials": "Please fill in both Bot Token and Chat ID. See setup instructions in the Help tab.",
+                "get_from_botfather": "Get from @BotFather",
+                "your_user_id": "Your Telegram user ID (numeric)"
+            }
         },
         "help": {
             "about": "About Twitch Drops Miner",
