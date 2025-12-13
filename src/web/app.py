@@ -70,6 +70,7 @@ class ChannelSelectRequest(BaseModel):
 class SettingsUpdate(BaseModel):
     games_to_watch: list[str] | None = None
     dark_mode: bool | None = None
+    skip_badge_only_drops: bool | None = None
     language: str | None = None
     proxy: str | None = None
     connection_quality: int | None = None
