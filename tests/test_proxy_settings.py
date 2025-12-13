@@ -24,6 +24,7 @@ class TestProxySettings(unittest.TestCase):
         self.mock_settings.proxy = URL()
         self.mock_settings.language = "en"
         self.mock_settings.dark_mode = False
+        self.mock_settings.skip_cosmetic_drops = False
         self.mock_settings.games_to_watch = []
         self.mock_settings.connection_quality = 1
         self.mock_settings.minimum_refresh_interval_minutes = 30

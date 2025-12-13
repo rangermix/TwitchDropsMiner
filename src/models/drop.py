@@ -84,6 +84,10 @@ class BaseDrop:
 
     def _base_earn_conditions(self) -> bool:
         # define when a drop can be earned or not
+        # Skip drops that only contain cosmetic benefits (badges/emotes) if setting is enabled
+        if self._twitch.settings.skip_cosmetic_drops:
+            if self.benefits and all(benefit.type.is_badge_or_emote() for benefit in self.benefits):
+                return False
         return (
             self.preconditions_met  # preconditions are met
             and not self.is_claimed  # isn't already claimed

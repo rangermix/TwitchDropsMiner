@@ -112,7 +112,9 @@
         "settings": {
             "general": {
                 "name": "General Settings",
-                "dark_mode": "Dark Mode"
+                "dark_mode": "Dark Mode",
+                "skip_cosmetic_drops": "Skip cosmetic drops (badges and emotes)",
+                "skip_cosmetic_drops_help": "When enabled, the miner will skip drops that only reward cosmetic items (badges and emotes)."
             },
             "reload": "Reload",
             "reload_campaigns": "Reload Campaigns",
