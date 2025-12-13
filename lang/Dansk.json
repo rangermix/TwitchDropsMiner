@@ -111,7 +111,9 @@
         "settings": {
             "general": {
                 "name": "Generelt",
-                "dark_mode": "Mørk tilstand: "
+                "dark_mode": "Mørk tilstand: ",
+                "skip_cosmetic_drops": "Spring kosmetiske drops over (badges og emotes)",
+                "skip_cosmetic_drops_help": "Når aktiveret, springer mineren drops over, der kun belønner kosmetiske genstande (badges og emotes), og fokuserer på drops med spilgenstande eller andre værdifulde belønninger."
             },
             "reload": "Genindlæs",
             "games_to_watch": "Spil at se",

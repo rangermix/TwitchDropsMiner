@@ -114,7 +114,9 @@
         "settings": {
             "general": {
                 "name": "Geral",
-                "dark_mode": "Modo Escuro"
+                "dark_mode": "Modo Escuro",
+                "skip_cosmetic_drops": "Pular drops cosméticos (badges e emotes)",
+                "skip_cosmetic_drops_help": "Quando ativado, o minerador pulará drops que recompensam apenas itens cosméticos (badges e emotes), focando em drops com itens no jogo ou outras recompensas valiosas."
             },
             "reload": "Recarregar",
             "games_to_watch": "Jogos para assistir",

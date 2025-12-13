@@ -8,7 +8,7 @@ from src.models.drop import BaseDrop, TimedDrop
 from src.models.campaign import DropsCampaign
 
 
-class TestSkipBadgeOnlyDrops(unittest.TestCase):
+class TestSkipCosmeticDrops(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Mock Twitch client
@@ -126,9 +126,9 @@ class TestSkipBadgeOnlyDrops(unittest.TestCase):
             "preconditionDrops": []
         }
 
-    def test_skip_badge_only_drops_disabled(self):
-        """Test that badge-only drops are allowed when skip_badge_only_drops is False."""
-        self.mock_settings.skip_badge_only_drops = False
+    def test_skip_cosmetic_drops_disabled(self):
+        """Test that badge-only drops are allowed when skip_cosmetic_drops is False."""
+        self.mock_settings.skip_cosmetic_drops = False
         
         drop = BaseDrop(self.mock_campaign, self.badge_drop_data, {})
         
@@ -136,9 +136,9 @@ class TestSkipBadgeOnlyDrops(unittest.TestCase):
         result = drop._base_earn_conditions()
         self.assertTrue(result)
 
-    def test_skip_badge_only_drops_enabled_badge_drop(self):
-        """Test that badge-only drops are skipped when skip_badge_only_drops is True."""
-        self.mock_settings.skip_badge_only_drops = True
+    def test_skip_cosmetic_drops_enabled_badge_drop(self):
+        """Test that badge-only drops are skipped when skip_cosmetic_drops is True."""
+        self.mock_settings.skip_cosmetic_drops = True
         
         drop = BaseDrop(self.mock_campaign, self.badge_drop_data, {})
         
@@ -146,9 +146,9 @@ class TestSkipBadgeOnlyDrops(unittest.TestCase):
         result = drop._base_earn_conditions()
         self.assertFalse(result)
 
-    def test_skip_badge_only_drops_enabled_emote_drop(self):
-        """Test that emote-only drops are skipped when skip_badge_only_drops is True."""
-        self.mock_settings.skip_badge_only_drops = True
+    def test_skip_cosmetic_drops_enabled_emote_drop(self):
+        """Test that emote-only drops are skipped when skip_cosmetic_drops is True."""
+        self.mock_settings.skip_cosmetic_drops = True
         
         drop = BaseDrop(self.mock_campaign, self.emote_drop_data, {})
         
@@ -156,9 +156,9 @@ class TestSkipBadgeOnlyDrops(unittest.TestCase):
         result = drop._base_earn_conditions()
         self.assertFalse(result)
 
-    def test_skip_badge_only_drops_enabled_mixed_drop(self):
-        """Test that drops with mixed benefits are NOT skipped when skip_badge_only_drops is True."""
-        self.mock_settings.skip_badge_only_drops = True
+    def test_skip_cosmetic_drops_enabled_mixed_drop(self):
+        """Test that drops with mixed benefits are NOT skipped when skip_cosmetic_drops is True."""
+        self.mock_settings.skip_cosmetic_drops = True
         
         drop = BaseDrop(self.mock_campaign, self.mixed_drop_data, {})
         
@@ -166,9 +166,9 @@ class TestSkipBadgeOnlyDrops(unittest.TestCase):
         result = drop._base_earn_conditions()
         self.assertTrue(result)
 
-    def test_skip_badge_only_drops_enabled_item_drop(self):
-        """Test that item drops are NOT skipped when skip_badge_only_drops is True."""
-        self.mock_settings.skip_badge_only_drops = True
+    def test_skip_cosmetic_drops_enabled_item_drop(self):
+        """Test that item drops are NOT skipped when skip_cosmetic_drops is True."""
+        self.mock_settings.skip_cosmetic_drops = True
         
         drop = BaseDrop(self.mock_campaign, self.item_drop_data, {})
         
@@ -176,9 +176,9 @@ class TestSkipBadgeOnlyDrops(unittest.TestCase):
         result = drop._base_earn_conditions()
         self.assertTrue(result)
 
-    def test_skip_badge_only_drops_timed_drop(self):
-        """Test that timed badge-only drops are skipped when skip_badge_only_drops is True."""
-        self.mock_settings.skip_badge_only_drops = True
+    def test_skip_cosmetic_drops_timed_drop(self):
+        """Test that timed badge-only drops are skipped when skip_cosmetic_drops is True."""
+        self.mock_settings.skip_cosmetic_drops = True
         
         timed_drop = TimedDrop(self.mock_campaign, self.timed_badge_drop_data, {})
         

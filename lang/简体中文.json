@@ -111,7 +111,9 @@
         "settings": {
             "general": {
                 "name": "常规设置",
-                "dark_mode": "深色模式"
+                "dark_mode": "深色模式",
+                "skip_cosmetic_drops": "跳过装饰性掉宝（徽章和表情）",
+                "skip_cosmetic_drops_help": "启用后，矿工将跳过仅奖励装饰性物品（徽章和表情）的掉宝，专注于具有游戏内物品或其他有价值奖励的掉宝。"
             },
             "reload": "刷新",
             "games_to_watch": "观看游戏",

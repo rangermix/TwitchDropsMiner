@@ -114,7 +114,9 @@
         "settings": {
             "general": {
                 "name": "Ogólne",
-                "dark_mode": "Tryb ciemny"
+                "dark_mode": "Tryb ciemny",
+                "skip_cosmetic_drops": "Pomiń dropy kosmetyczne (odznaki i emotki)",
+                "skip_cosmetic_drops_help": "Po włączeniu, miner pominie dropy nagradzające tylko przedmioty kosmetyczne (odznaki i emotki), koncentrując się na dropach z przedmiotami w grze lub innymi wartościowymi nagrodami."
             },
             "exclude": "Wykluczone",
             "reload": "Przeładuj",

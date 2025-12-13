@@ -113,7 +113,9 @@
         "settings": {
             "general": {
                 "name": "Obecné",
-                "dark_mode": "Tmavý režim"
+                "dark_mode": "Tmavý režim",
+                "skip_cosmetic_drops": "Přeskočit kosmetické dropy (odznaky a emotikony)",
+                "skip_cosmetic_drops_help": "Když je povoleno, těžař přeskočí dropy, které odměňují pouze kosmetické předměty (odznaky a emotikony), a zaměří se na dropy s předměty ve hře nebo jinými cennými odměnami."
             },
             "exclude": "Vynechat",
             "reload": "Obnovit",

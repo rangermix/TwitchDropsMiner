@@ -114,7 +114,9 @@
         "settings": {
             "general": {
                 "name": "General",
-                "dark_mode": "Mod întunecat"
+                "dark_mode": "Mod întunecat",
+                "skip_cosmetic_drops": "Omite dropurile cosmetice (insigne și emoticonuri)",
+                "skip_cosmetic_drops_help": "Când este activat, minerul va omite dropurile care recompensează doar articole cosmetice (insigne și emoticonuri), concentrându-se pe dropurile cu articole din joc sau alte recompense valoroase."
             },
             "reload": "Reîncarcă",
             "games_to_watch": "Jocuri de urmărit",

@@ -114,7 +114,9 @@
         "settings": {
             "general": {
                 "name": "Generale",
-                "dark_mode": "Modalità scura"
+                "dark_mode": "Modalità scura",
+                "skip_cosmetic_drops": "Salta drop cosmetici (badge ed emote)",
+                "skip_cosmetic_drops_help": "Quando abilitato, il miner salterà i drop che premiano solo oggetti cosmetici (badge ed emote), concentrandosi sui drop con oggetti di gioco o altre ricompense preziose."
             },
             "reload": "Ricarica",
             "games_to_watch": "Giochi da guardare",
