@@ -130,6 +130,30 @@
             "actions": "Tindakan",
             "connection_quality": "Kualitas Koneksi:",
             "minimum_refresh": "Interval Refresh Minimum (menit):",
+            "telegram": {
+                "name": "Notifikasi Telegram",
+                "description": "Terima notifikasi di Telegram ketika Anda mengklaim drop.",
+                "bot_token": "Token Bot Telegram",
+                "chat_id": "ID Chat Telegram",
+                "save_settings": "Simpan Pengaturan",
+                "test_connection": "Uji Koneksi",
+                "how_to_setup": "Cara Menyiapkan",
+                "setup_steps": [
+                    "Pergi ke <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> di Telegram",
+                    "Buat bot baru dengan perintah /newbot",
+                    "Simpan token bot yang Anda terima",
+                    "Mulai bot baru Anda dengan mencarinya dan mengklik /start (atau kirim pesan apa pun)",
+                    "Dapatkan ID Chat Anda dengan membuka URL ini di browser (ganti TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Temukan ID pengguna Anda dalam respons - itu adalah angka di \"from\": {\"id\": ID_ANDA}",
+                    "Masukkan token dan ID Chat, lalu klik Uji Koneksi"
+                ],
+                "success": "✓ Koneksi Telegram berhasil! Anda akan menerima notifikasi saat mengklaim drop.",
+                "saved": "✓ Pengaturan berhasil disimpan!",
+                "error": "Gagal terhubung ke Telegram. Periksa token bot dan ID chat Anda.",
+                "missing_credentials": "Silakan isi token bot dan ID chat. Lihat petunjuk pengaturan di tab Bantuan.",
+                "get_from_botfather": "Dapatkan dari @BotFather",
+                "your_user_id": "ID pengguna numerik Telegram Anda"
+            },
             "reload_campaigns": "Muat Ulang Kampanye"
         },
         "help": {

@@ -76,10 +76,17 @@ class SettingsUpdate(BaseModel):
     proxy: str | None = None
     connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
+    telegram_bot_token: str | None = None
+    telegram_chat_id: str | None = None
 
 
 class ProxyVerifyRequest(BaseModel):
     proxy: str
+
+
+class TelegramTestRequest(BaseModel):
+    telegram_bot_token: str
+    telegram_chat_id: str
 
 
 # ==================== REST API Endpoints ====================
@@ -242,6 +249,55 @@ async def verify_proxy(request: ProxyVerifyRequest):
     except Exception as e:
         return {"success": False, "message": f"Connection failed: {str(e)}"}
 
+
+@app.post("/api/settings/test-telegram")
+async def test_telegram(request: TelegramTestRequest):
+    """Test Telegram bot connection"""
+    # Ensure project root is on sys.path so `src` package can be imported
+    import sys
+    from pathlib import Path
+
+    project_root = Path(__file__).parent.parent.parent
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+
+    try:
+        from src.services.telegram_service import TelegramNotifier
+    except Exception:
+        # Fallback: load module directly from file to avoid import/package issues
+        from importlib.util import spec_from_file_location, module_from_spec
+
+        svc_path = project_root / "src" / "services" / "telegram_service.py"
+        spec = spec_from_file_location("tdm.telegram_service", str(svc_path))
+        mod = module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        TelegramNotifier = getattr(mod, "TelegramNotifier")
+
+    bot_token = request.telegram_bot_token.strip()
+    chat_id = request.telegram_chat_id.strip()
+
+    if not bot_token or not chat_id:
+        return {"success": False, "message": "Bot token and chat ID are required"}
+
+    try:
+        notifier = TelegramNotifier(bot_token, chat_id)
+        result = await notifier.test_connection()
+
+        if result:
+            return {
+                "success": True,
+                "message": "✓ Telegram connection successful! You will receive drop notifications."
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Failed to connect to Telegram. Please check your bot token and chat ID."
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Telegram error: {str(e)}"
+        }
 
 @app.post("/api/login")
 async def submit_login(login_data: LoginRequest):

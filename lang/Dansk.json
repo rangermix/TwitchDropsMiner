@@ -127,6 +127,30 @@
             "actions": "Handlinger",
             "connection_quality": "Forbindelseskvalitet:",
             "minimum_refresh": "Minimum opdateringsinterval (minutter):",
+            "telegram": {
+                "name": "Telegram-meddelelser",
+                "description": "Modtag meddelelser på Telegram, når du samler drops.",
+                "bot_token": "Telegram Bot Token",
+                "chat_id": "Telegram Chat-ID",
+                "save_settings": "Gem indstillinger",
+                "test_connection": "Test forbindelse",
+                "how_to_setup": "Sådan opsætter du",
+                "setup_steps": [
+                    "Gå til <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> på Telegram",
+                    "Opret en ny bot med kommandoen /newbot",
+                    "Gem den bot-token, du modtager",
+                    "Start din nye bot ved at søge efter den og klikke på /start (eller send en besked)",
+                    "Få dit Chat-ID ved at åbne denne URL i browseren (erstat TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Find dit bruger-ID i svaret - det er nummeret i \"from\": {\"id\": DIT_ID}",
+                    "Indtast token og Chat-ID og klik på Test forbindelse"
+                ],
+                "saved": "✓ Indstillinger gemt korrekt!",
+                "success": "✓ Telegram-forbindelse etableret! Du modtager meddelelser, når du samler drops.",
+                "error": "Kunne ikke oprette forbindelse til Telegram. Kontroller din bot-token og chat-ID.",
+                "missing_credentials": "Udfyld både bot-token og chat-ID. Se setupinstruktioner under fanen Hjælp.",
+                "get_from_botfather": "Hent fra @BotFather",
+                "your_user_id": "Dit numeriske Telegram bruger-ID"
+            },
             "reload_campaigns": "Genindlæs kampagner"
         },
         "help": {

@@ -33,6 +33,8 @@ class SettingsFile(TypedDict):
     connection_quality: int
     minimum_refresh_interval_minutes: int
     inventory_filters: InventoryFilters
+    telegram_bot_token: str
+    telegram_chat_id: str
 
 
 default_settings: SettingsFile = {
@@ -42,6 +44,8 @@ default_settings: SettingsFile = {
     "connection_quality": 1,
     "language": DEFAULT_LANG,
     "minimum_refresh_interval_minutes": 30,
+    "telegram_bot_token": "",
+    "telegram_chat_id": "",
     "inventory_filters": {
         "show_active": False,
         "show_not_linked": True,
@@ -73,6 +77,8 @@ class Settings:
     connection_quality: int
     minimum_refresh_interval_minutes: int
     inventory_filters: InventoryFilters
+    telegram_bot_token: str
+    telegram_chat_id: str
 
     PASSTHROUGH = ("_settings", "_args", "_altered")
 

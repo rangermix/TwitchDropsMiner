@@ -130,6 +130,30 @@
             "actions": "Azioni",
             "connection_quality": "Qualità della connessione:",
             "minimum_refresh": "Intervallo minimo di aggiornamento (minuti):",
+            "telegram": {
+                "name": "Notifiche Telegram",
+                "description": "Ricevi notifiche su Telegram quando reclami drop.",
+                "bot_token": "Token Bot Telegram",
+                "chat_id": "ID Chat Telegram",
+                "save_settings": "Salva impostazioni",
+                "test_connection": "Prova Connessione",
+                "how_to_setup": "Come Configurare",
+                "setup_steps": [
+                    "Vai a <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> su Telegram",
+                    "Crea un nuovo bot con il comando /newbot",
+                    "Salva il token del bot che ricevi",
+                    "Avvia il tuo nuovo bot cercandolo e facendo clic su /start (o invia un messaggio qualsiasi)",
+                    "Ottieni il tuo ID Chat aprendo questo URL nel browser (sostituisci TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Trova il tuo ID utente nella risposta - è il numero in \"from\": {\"id\": TUO_ID}",
+                    "Inserisci il token e l'ID Chat e fai clic su Prova Connessione"
+                ],
+                "success": "✓ Connessione Telegram riuscita! Riceverai notifiche quando reclami drop.",
+                "saved": "✓ Impostazioni salvate con successo!",
+                "error": "Impossibile connettersi a Telegram. Controlla il token del bot e l'ID della chat.",
+                "missing_credentials": "Compila sia il token del bot che l'ID della chat. Consulta le istruzioni di configurazione nella scheda Aiuto.",
+                "get_from_botfather": "Ottieni da @BotFather",
+                "your_user_id": "Il tuo ID utente numerico di Telegram"
+            },
             "reload_campaigns": "Ricarica campagne"
         },
         "help": {
