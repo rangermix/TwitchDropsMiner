@@ -1573,6 +1573,12 @@ function applyTranslations(t) {
             skipBadgeLabel.appendChild(document.createTextNode(' ' + t.gui.settings.general.skip_badge_only_drops));
         }
 
+        // Update skip badge help text
+        const skipBadgeHelpText = settingsTab.querySelector('label:has(#skip-badge-only-drops) + small.help-text-inline');
+        if (skipBadgeHelpText && t.gui?.settings?.general?.skip_badge_only_drops_help) {
+            skipBadgeHelpText.textContent = t.gui.settings.general.skip_badge_only_drops_help;
+        }
+
         const connQualityLabel = settingsTab.querySelector('label:has(#connection-quality)');
         if (connQualityLabel) {
             const input = connQualityLabel.querySelector('input');

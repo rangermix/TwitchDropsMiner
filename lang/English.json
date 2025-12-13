@@ -113,7 +113,8 @@
             "general": {
                 "name": "General Settings",
                 "dark_mode": "Dark Mode",
-                "skip_badge_only_drops": "Skip badge/emote-only drops"
+                "skip_badge_only_drops": "Skip badge/emote-only drops",
+                "skip_badge_only_drops_help": "When enabled, the miner will skip drops that only reward badges or emotes, focusing on drops with in-game items or other valuable rewards."
             },
             "reload": "Reload",
             "reload_campaigns": "Reload Campaigns",
