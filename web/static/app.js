@@ -1565,6 +1565,14 @@ function applyTranslations(t) {
             darkModeLabel.appendChild(document.createTextNode(' ' + t.gui.settings.general.dark_mode));
         }
 
+        const skipBadgeLabel = settingsTab.querySelector('label:has(#skip-badge-only-drops)');
+        if (skipBadgeLabel) {
+            const checkbox = skipBadgeLabel.querySelector('input');
+            skipBadgeLabel.textContent = '';
+            skipBadgeLabel.appendChild(checkbox);
+            skipBadgeLabel.appendChild(document.createTextNode(' ' + t.gui.settings.general.skip_badge_only_drops));
+        }
+
         const connQualityLabel = settingsTab.querySelector('label:has(#connection-quality)');
         if (connQualityLabel) {
             const input = connQualityLabel.querySelector('input');
