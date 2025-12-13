@@ -112,7 +112,8 @@
         "settings": {
             "general": {
                 "name": "General Settings",
-                "dark_mode": "Dark Mode"
+                "dark_mode": "Dark Mode",
+                "skip_badge_only_drops": "Skip badge/emote-only drops"
             },
             "reload": "Reload",
             "reload_campaigns": "Reload Campaigns",

@@ -32,6 +32,7 @@ class SettingsFile(TypedDict):
     games_to_watch: list[str]
     connection_quality: int
     minimum_refresh_interval_minutes: int
+    skip_badge_only_drops: bool
     inventory_filters: InventoryFilters
 
 
@@ -42,6 +43,7 @@ default_settings: SettingsFile = {
     "connection_quality": 1,
     "language": DEFAULT_LANG,
     "minimum_refresh_interval_minutes": 30,
+    "skip_badge_only_drops": False,
     "inventory_filters": {
         "show_active": False,
         "show_not_linked": True,
@@ -72,6 +74,7 @@ class Settings:
     games_to_watch: list[str]
     connection_quality: int
     minimum_refresh_interval_minutes: int
+    skip_badge_only_drops: bool
     inventory_filters: InventoryFilters
 
     PASSTHROUGH = ("_settings", "_args", "_altered")
