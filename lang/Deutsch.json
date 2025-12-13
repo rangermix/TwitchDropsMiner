@@ -111,7 +111,9 @@
         "settings": {
             "general": {
                 "name": "Allgemein",
-                "dark_mode": "Dunkler Modus"
+                "dark_mode": "Dunkler Modus",
+                "skip_cosmetic_drops": "Kosmetische Drops überspringen (Abzeichen und Emotes)",
+                "skip_cosmetic_drops_help": "Wenn aktiviert, überspringt der Miner Drops, die nur kosmetische Gegenstände (Abzeichen und Emotes) belohnen."
             },
             "reload": "Neu laden",
             "reload_campaigns": "Kampagnen neu laden",

@@ -114,7 +114,9 @@
         "settings": {
             "general": {
                 "name": "Algemeen",
-                "dark_mode": "Donkere Modus"
+                "dark_mode": "Donkere Modus",
+                "skip_cosmetic_drops": "Cosmetische drops overslaan (badges en emotes)",
+                "skip_cosmetic_drops_help": "Wanneer ingeschakeld, slaat de miner drops over die alleen cosmetische items (badges en emotes) belonen."
             },
             "reload": "Herladen",
             "games_to_watch": "Games om te kijken",

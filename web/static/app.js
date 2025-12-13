@@ -968,6 +968,7 @@ function updateLoginStatus(data) {
 function updateSettingsUI(settings) {
     state.settings = settings;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
+    document.getElementById('skip-cosmetic-drops').checked = settings.skip_cosmetic_drops || false;
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
 
@@ -1391,6 +1392,7 @@ async function verifyProxy() {
 async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
+        skip_cosmetic_drops: document.getElementById('skip-cosmetic-drops').checked,
         language: document.getElementById('language').value,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
@@ -1563,6 +1565,20 @@ function applyTranslations(t) {
             darkModeLabel.appendChild(document.createTextNode(' ' + t.gui.settings.general.dark_mode));
         }
 
+        const skipCosmeticLabel = settingsTab.querySelector('label:has(#skip-cosmetic-drops)');
+        if (skipCosmeticLabel) {
+            const checkbox = skipCosmeticLabel.querySelector('input');
+            skipCosmeticLabel.textContent = '';
+            skipCosmeticLabel.appendChild(checkbox);
+            skipCosmeticLabel.appendChild(document.createTextNode(' ' + t.gui.settings.general.skip_cosmetic_drops));
+        }
+
+        // Update skip cosmetic help text
+        const skipCosmeticHelpText = settingsTab.querySelector('label:has(#skip-cosmetic-drops) + small.help-text-inline');
+        if (skipCosmeticHelpText && t.gui?.settings?.general?.skip_cosmetic_drops_help) {
+            skipCosmeticHelpText.textContent = t.gui.settings.general.skip_cosmetic_drops_help;
+        }
+
         const connQualityLabel = settingsTab.querySelector('label:has(#connection-quality)');
         if (connQualityLabel) {
             const input = connQualityLabel.querySelector('input');
@@ -1723,6 +1739,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Then save settings
         saveSettings();
     });
+    document.getElementById('skip-cosmetic-drops').addEventListener('change', saveSettings);
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
     document.getElementById('minimum-refresh-interval').addEventListener('change', saveSettings);
