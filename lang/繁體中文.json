@@ -109,7 +109,20 @@
             "starts": "開始時間：{time}",
             "ends": "結束時間：{time}",
             "no_campaigns": "尚未載入任何活動...",
-            "claimed_drops": "已領取"
+            "claimed_drops": "已領取",
+            "filters": {
+                "active": "活動中",
+                "not_linked": "未連結",
+                "upcoming": "即將開始",
+                "expired": "已過期",
+                "finished": "已完成",
+                "item": "物品",
+                "badge": "徽章",
+                "emote": "表情",
+                "other": "其他",
+                "clear": "清除過濾器",
+                "search_placeholder": "搜尋遊戲..."
+            }
         },
         "settings": {
             "general": {
@@ -130,7 +143,9 @@
             "actions": "操作",
             "connection_quality": "連線品質：",
             "minimum_refresh": "最小重新整理間隔（分鐘）：",
-            "reload_campaigns": "重新載入活動"
+            "reload_campaigns": "重新載入活動",
+            "mining_benefits": "挖掘獎勵",
+            "mining_benefits_help": "選擇您想要獲取的掉落類型。"
         },
         "help": {
             "about": "關於 Twitch Drops Miner",
@@ -167,6 +182,26 @@
             "manual_mode": "手動",
             "connected": "已連接",
             "disconnected": "已中斷連接"
+        },
+        "footer": {
+            "version": "版本:",
+            "loading": "載入中...",
+            "update_available": "可用更新:"
+        },
+        "badges": {
+            "manual": {
+                "title": "手動模式已啟用 - 正在觀看特定遊戲"
+            },
+            "auto": {
+                "title": "自動模式 - 遵循遊戲優先級"
+            },
+            "proxy": {
+                "title": "代理連接已啟用"
+            }
+        },
+        "wanted": {
+            "name": "期望掉落隊列",
+            "none": "隊列中沒有期望的掉落..."
         }
     }
 }

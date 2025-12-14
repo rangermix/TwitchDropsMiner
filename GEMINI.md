@@ -1,6 +1,29 @@
 # GEMINI.md
 
+## GEMINI.md Specific Instructions
+
 This file provides guidance to Gemini when working with code in this repository.
+
+## Development Guidelines
+
+1. **Testing**:
+   - Always add unit tests for backend changes.
+   - Frontend changes should have tests if possible.
+
+2. **Code Style & Architecture**:
+   - **DRY (Don't Repeat Yourself)**: Codebase must follow DRY principle.
+   - **OOP (Object-Oriented Programming)**: Required for all backend code.
+
+3. **Refactoring**:
+   - You are authorized to refactor code to align with DRY/OOP principles.
+   - **Permission Required**: You MUST ask for user permission before significant refactoring.
+
+4. **Localization (i18n)**:
+   - Update translation files if there are changes to UI text or console messages.
+
+5. **Documentation**:
+   - Always update `README.md` and all agent instruction files when making changes.
+   - The contents of all agent instruction files should be identical except for the `Specific Instructions` section. Any agent-specific instructions must be added to that section.
 
 ## Project Overview
 
@@ -8,55 +31,12 @@ Twitch Drops Miner is a Python application that automatically mines timed Twitch
 
 **Key Characteristics:**
 
-- Python 3.10+ required
+- Python 3.12+ required
 - Web-based GUI using FastAPI and Socket.IO
 - Async/await architecture with asyncio
 - Session persistence via cookies
 - No stream video/audio download (bandwidth-efficient)
 - Docker-ready for easy deployment
-
-## Development Commands
-
-**IMPORTANT: Always activate the virtual environment first!**
-
-The project uses a virtual environment located at `env/`. All Python commands must be run within this environment:
-
-```bash
-# Activate the virtual environment (required before any Python commands)
-source env/bin/activate
-```
-
-### Running the Application
-
-```bash
-# Run from source (remember to activate venv first!)
-source env/bin/activate && python main.py
-
-# With verbose logging (stackable: -vv, -vvv)
-source env/bin/activate && python main.py -v
-
-# Create data dump for debugging
-source env/bin/activate && python main.py --dump
-
-# Access the web interface at http://localhost:8080
-```
-
-### Development Setup
-
-The application requires:
-
-- Python 3.10+
-- Virtual environment at `env/` (must be activated before running commands)
-- Dependencies from `pyproject.toml` (includes FastAPI, uvicorn, Socket.IO)
-
-Docker deployment:
-
-```bash
-# Build and run with docker-compose
-docker-compose up -d
-
-# Access at http://localhost:8080
-```
 
 ## Architecture
 
@@ -149,7 +129,7 @@ lang/                # Translation JSON files (19 languages)
 
 **src/web/app.py** - FastAPI application:
 
-- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/login`, `/api/oauth/confirm`, `/api/reload`, `/api/close`
+- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/login`, `/api/oauth/confirm`, `/api/reload`, `/api/close`, `/api/version`
 - Socket.IO server for real-time bi-directional communication
 - Serves static web frontend from `web/` directory
 - Integrates with WebGUIManager via `set_managers()`
@@ -293,6 +273,49 @@ login_text = _.t["login"]["status"]["logged_in"]  # Returns "Logged in"
 - **src/web/managers/cache.py** - ImageCache for campaign artwork caching
 - **web/** - Frontend assets (index.html, static/app.js, static/styles.css)
 
+## Development Commands
+
+**IMPORTANT: Always activate the virtual environment first!**
+
+The project uses a virtual environment located at `env/`. All Python commands must be run within this environment:
+
+```bash
+# Activate the virtual environment (required before any Python commands)
+source env/bin/activate
+```
+
+### Running the Application
+
+```bash
+# Run from source (remember to activate venv first!)
+source env/bin/activate && python main.py
+
+# With verbose logging (stackable: -vv, -vvv)
+source env/bin/activate && python main.py -v
+
+# Create data dump for debugging
+source env/bin/activate && python main.py --dump
+
+# Access the web interface at http://localhost:8080
+```
+
+### Development Setup
+
+The application requires:
+
+- Python 3.12+
+- Virtual environment at `env/` (must be activated before running commands)
+- Dependencies from `pyproject.toml` (includes FastAPI, uvicorn, Socket.IO)
+
+Docker deployment:
+
+```bash
+# Build and run with docker-compose
+docker-compose up -d
+
+# Access at http://localhost:8080
+```
+
 ## Testing
 
 ### Automated Tests
@@ -332,8 +355,8 @@ The application uses a web-based interface accessible via browser:
 
 **src/web/app.py** - FastAPI application:
 
-- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/console`, `/api/settings`, `/api/login`, `/api/oauth/confirm`, `/api/reload`, `/api/close`
-- Socket.IO events for real-time bi-directional communication
+- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/login`, `/api/oauth/confirm`, `/api/reload`, `/api/close`, `/api/version`
+- Socket.IO server for real-time bi-directional communication
 - Serves static web frontend from `web/` directory
 - Integrates with WebGUIManager via `set_managers(gui, twitch)`
 

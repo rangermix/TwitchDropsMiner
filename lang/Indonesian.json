@@ -109,7 +109,20 @@
             "starts": "Mulai : {time}",
             "ends": "Akhir : {time}",
             "no_campaigns": "Belum ada kampanye yang dimuat...",
-            "claimed_drops": "diklaim"
+            "claimed_drops": "diklaim",
+            "filters": {
+                "active": "Aktif",
+                "not_linked": "Tidak Terhubung",
+                "upcoming": "Mendatang",
+                "expired": "Kadaluarsa",
+                "finished": "Selesai",
+                "item": "Item",
+                "badge": "Lencana",
+                "emote": "Emote",
+                "other": "Lainnya",
+                "clear": "Hapus Filter",
+                "search_placeholder": "Cari game..."
+            }
         },
         "settings": {
             "general": {
@@ -130,7 +143,9 @@
             "actions": "Tindakan",
             "connection_quality": "Kualitas Koneksi:",
             "minimum_refresh": "Interval Refresh Minimum (menit):",
-            "reload_campaigns": "Muat Ulang Kampanye"
+            "reload_campaigns": "Muat Ulang Kampanye",
+            "mining_benefits": "Manfaat Penambangan",
+            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang."
         },
         "help": {
             "about": "Tentang Twitch Drops Miner",
@@ -167,6 +182,26 @@
             "manual_mode": "MANUAL",
             "connected": "Terhubung",
             "disconnected": "Terputus"
+        },
+        "footer": {
+            "version": "Versi:",
+            "loading": "Memuat...",
+            "update_available": "Pembaruan Tersedia:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Mode manual aktif - menonton game tertentu"
+            },
+            "auto": {
+                "title": "Mode otomatis - mengikuti prioritas game"
+            },
+            "proxy": {
+                "title": "Koneksi proxy aktif"
+            }
+        },
+        "wanted": {
+            "name": "Antrean Drops yang Diinginkan",
+            "none": "Tidak ada drops yang diinginkan dalam antrean..."
         }
     }
 }

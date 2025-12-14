@@ -109,7 +109,20 @@
             "starts": "{time} :يبدأ",
             "ends": "{time} :ينتهي",
             "no_campaigns": "لم يتم تحميل أي حملات بعد...",
-            "claimed_drops": "تم المطالبة"
+            "claimed_drops": "تم المطالبة",
+            "filters": {
+                "active": "نشط",
+                "not_linked": "غير مرتبط",
+                "upcoming": "قادم",
+                "expired": "منتهي",
+                "finished": "مكتمل",
+                "item": "عنصر",
+                "badge": "شارة",
+                "emote": "رمز تعبيري",
+                "other": "آخر",
+                "clear": "مسح المرشحات",
+                "search_placeholder": "البحث عن الألعاب..."
+            }
         },
         "settings": {
             "general": {
@@ -130,7 +143,9 @@
             "actions": "الإجراءات",
             "connection_quality": "جودة الاتصال:",
             "minimum_refresh": "الحد الأدنى لفترة التحديث (بالدقائق):",
-            "reload_campaigns": "إعادة تحميل الحملات"
+            "reload_campaigns": "إعادة تحميل الحملات",
+            "mining_benefits": "فوائد التعدين",
+            "mining_benefits_help": "اختر أنواع الجوائز التي تريد تعدينها."
         },
         "help": {
             "about": "حول Twitch Drops Miner",
@@ -167,6 +182,26 @@
             "manual_mode": "يدوي",
             "connected": "متصل",
             "disconnected": "غير متصل"
+        },
+        "footer": {
+            "version": "النسخة:",
+            "loading": "جاري التحميل...",
+            "update_available": "تحديث متوفر:"
+        },
+        "badges": {
+            "manual": {
+                "title": "الوضع اليدوي نشط - مشاهدة لعبة محددة"
+            },
+            "auto": {
+                "title": "الوضع التلقائي - اتباع أولوية الألعاب"
+            },
+            "proxy": {
+                "title": "اتصال البروكسي نشط"
+            }
+        },
+        "wanted": {
+            "name": "قائمة انتظار Drops المطلوبة",
+            "none": "لا توجد drops مطلوبة في قائمة الانتظار..."
         }
     }
 }

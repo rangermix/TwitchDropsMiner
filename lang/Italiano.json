@@ -109,7 +109,20 @@
             "starts": "Inizia: {time}",
             "ends": "Finisce: {time}",
             "no_campaigns": "Nessuna campagna caricata ancora...",
-            "claimed_drops": "reclamato"
+            "claimed_drops": "reclamato",
+            "filters": {
+                "active": "Attivo",
+                "not_linked": "Non Collegato",
+                "upcoming": "In Arrivo",
+                "expired": "Scaduto",
+                "finished": "Finito",
+                "item": "Oggetto",
+                "badge": "Badge",
+                "emote": "Emote",
+                "other": "Altro",
+                "clear": "Pulisci Filtri",
+                "search_placeholder": "Cerca giochi..."
+            }
         },
         "settings": {
             "general": {
@@ -130,7 +143,9 @@
             "actions": "Azioni",
             "connection_quality": "Qualità della connessione:",
             "minimum_refresh": "Intervallo minimo di aggiornamento (minuti):",
-            "reload_campaigns": "Ricarica campagne"
+            "reload_campaigns": "Ricarica campagne",
+            "mining_benefits": "Vantaggi Minatori",
+            "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare."
         },
         "help": {
             "about": "Informazioni su Twitch Drops Miner",
@@ -167,6 +182,26 @@
             "manual_mode": "MANUALE",
             "connected": "Connesso",
             "disconnected": "Disconnesso"
+        },
+        "footer": {
+            "version": "Versione:",
+            "loading": "Caricamento...",
+            "update_available": "Aggiornamento disponibile:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Modalità manuale attiva - guardando gioco specifico"
+            },
+            "auto": {
+                "title": "Modalità automatica - seguendo priorità giochi"
+            },
+            "proxy": {
+                "title": "Connessione proxy attiva"
+            }
+        },
+        "wanted": {
+            "name": "Coda Drops Desiderati",
+            "none": "Nessun drop desiderato in coda..."
         }
     }
 }
