@@ -101,6 +101,14 @@
                     <h2>Channels</h2>
                     <div id="channels-list" class="channels-list"></div>
                 </section>
+
+                <!-- Wanted Items (New Panel) -->
+                <section class="panel wanted-panel">
+                    <h2>Wanted Drops Queue</h2>
+                    <div id="wanted-items-list" class="wanted-items-list">
+                        <p class="empty-message-small">No wanted drops queued...</p>
+                    </div>
+                </section>
             </div>
         </div>
 
@@ -194,6 +202,29 @@
                     <small class="help-text-inline" style="margin-top: 5px;">Leave empty to disable. Supports
                         HTTP/HTTPS/SOCKS.</small>
                     <div id="proxy-verify-result" class="verify-result" style="display: none;"></div>
+                </section>
+
+                <section class="settings-section">
+                    <h2>Mining Benefits</h2>
+                    <p class="help-text">Select which types of drops you want to mine.</p>
+                    <div class="benefits-filter filter-checkboxes">
+                        <label class="filter-checkbox" title="Detailed description: Direct Entitlement (Game Item)">
+                            <input type="checkbox" id="mining-benefit-item" checked />
+                            <span>Item</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="mining-benefit-badge" checked />
+                            <span>Badge</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="mining-benefit-emote" checked />
+                            <span>Emote</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="mining-benefit-unknown" checked />
+                            <span>Other</span>
+                        </label>
+                    </div>
                 </section>
 
                 <section class="settings-section">

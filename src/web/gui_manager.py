@@ -6,6 +6,7 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
+from src.config import State
 from src.models.game import Game
 from src.web.managers.broadcaster import WebSocketBroadcaster
 from src.web.managers.cache import ImageCache
@@ -52,7 +53,17 @@ class WebGUIManager:
         self.channels = ChannelListManager(self._broadcaster, self)
         self.inv = InventoryManager(self._broadcaster, ImageCache(self))
         self.login = LoginFormManager(self._broadcaster, self)
-        self.settings = SettingsManager(self._broadcaster, twitch.settings, self.output)
+        self.inv = InventoryManager(self._broadcaster, ImageCache(self))
+        self.login = LoginFormManager(self._broadcaster, self)
+        
+        # Callback to trigger game update when relevant settings change
+        on_settings_change = self._twitch.state_change(State.GAMES_UPDATE)
+        self.settings = SettingsManager(
+            self._broadcaster, 
+            twitch.settings, 
+            self.output,
+            on_change=on_settings_change
+        )
 
         # Selected channel tracking (set by web client)
         self._selected_channel_id: int | None = None
@@ -153,6 +164,72 @@ class WebGUIManager:
             manual_mode_info: Manual mode status from get_manual_mode_info()
         """
         asyncio.create_task(self._broadcaster.emit("manual_mode_update", manual_mode_info))
+
+    def get_wanted_tree(self) -> list[dict]:
+        """
+        Get the hierarchical tree of wanted items (Games -> Campaigns -> Drops -> Benefits).
+        Ignoring 'can earn within' time constraint.
+        """
+        wanted_tree = []
+        games_to_watch = self._twitch.settings.games_to_watch
+        mining_benefits = self._twitch.settings.mining_benefits
+
+        for game_name in games_to_watch:
+            game_matches = []
+            game_obj = None
+            
+            # Find all campaigns for this game
+            for campaign in self._twitch.inventory:
+                if campaign.game.name.lower() != game_name.lower():
+                    continue
+                
+                if game_obj is None:
+                    game_obj = campaign.game
+
+                wanted_drops = []
+                for drop in campaign.drops:
+                    if drop.is_claimed:
+                        continue
+                    
+                    filtered_benefits = [
+                        b.name for b in drop.benefits
+                        if b.is_wanted(mining_benefits)
+                    ]
+
+                    if filtered_benefits:
+                        wanted_drops.append({
+                            "name": drop.name,
+                            "benefits": filtered_benefits
+                        })
+                
+                if wanted_drops:
+                    game_matches.append({
+                        "id": campaign.id,
+                        "name": campaign.name,
+                        "url": campaign.campaign_url,
+                        "drops": wanted_drops
+                    })
+
+            if game_matches:
+                # Use the game object from the first matching campaign to get metadata
+                # If no game object found (shouldn't happen if game_matches has items), 
+                # we can't easily get the icon unless we search known games or similar.
+                # But here we are iterating games_to_watch, so we know the name at least.
+                icon_url = game_obj.box_art_url if game_obj else None
+                
+                wanted_tree.append({
+                    "game_id": game_obj.id if game_obj else None,
+                    "game_name": game_name,
+                    "game_icon": icon_url,
+                    "campaigns": game_matches
+                })
+
+        return wanted_tree
+
+    def broadcast_wanted_items(self):
+        """Broadcast the list of wanted items to connected clients."""
+        tree = self.get_wanted_tree()
+        asyncio.create_task(self._broadcaster.emit("wanted_items_update", tree))
 
 
 # Type aliases for backwards compatibility with code that imports from gui

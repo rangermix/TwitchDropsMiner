@@ -73,9 +73,9 @@ class SettingsUpdate(BaseModel):
     language: str | None = None
     proxy: str | None = None
     connection_quality: int | None = None
-    proxy: str | None = None
-    connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
+    inventory_filters: dict | None = None
+    mining_benefits: dict[str, bool] | None = None
 
 
 class ProxyVerifyRequest(BaseModel):
@@ -320,6 +320,7 @@ async def connect(sid, environ):
                 "login": gui_manager.login.get_status(),
                 "manual_mode": twitch_client.get_manual_mode_info(),
                 "current_drop": gui_manager.progress.get_current_drop(),
+                "wanted_items": gui_manager.get_wanted_tree(),
             },
             room=sid,
         )
@@ -345,6 +346,17 @@ async def request_reload(sid):
         from src.config import State
 
         twitch_client.change_state(State.INVENTORY_FETCH)
+
+
+@sio.event
+async def get_wanted_items(sid):
+    """Client requested wanted items list"""
+    if gui_manager:
+        await sio.emit(
+            "wanted_items_update",
+            gui_manager.get_wanted_tree(),
+            to=sid
+        )
 
 
 # Mount static files (CSS, JS, images)

@@ -33,6 +33,7 @@ class SettingsFile(TypedDict):
     connection_quality: int
     minimum_refresh_interval_minutes: int
     inventory_filters: InventoryFilters
+    mining_benefits: dict[str, bool]
 
 
 default_settings: SettingsFile = {
@@ -54,6 +55,12 @@ default_settings: SettingsFile = {
         "show_benefit_other": True,
         "game_name_search": [],
     },
+    "mining_benefits": {
+        "DIRECT_ENTITLEMENT": True,
+        "BADGE": True,
+        "EMOTE": True,
+        "UNKNOWN": True,
+    },
 }
 
 
@@ -73,6 +80,7 @@ class Settings:
     connection_quality: int
     minimum_refresh_interval_minutes: int
     inventory_filters: InventoryFilters
+    mining_benefits: dict[str, bool]
 
     PASSTHROUGH = ("_settings", "_args", "_altered")
 

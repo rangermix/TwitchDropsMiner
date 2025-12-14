@@ -35,3 +35,6 @@ class Benefit:
             else BenefitType.UNKNOWN
         )
         self.image_url: URLType = benefit_data["imageAssetURL"]
+
+    def is_wanted(self, allowed_benefits: dict[str, bool]) -> bool:
+        return allowed_benefits.get(self.type.name, False)
