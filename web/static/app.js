@@ -84,6 +84,10 @@ socket.on('initial_state', (data) => {
     } else {
         clearDropProgress();
     }
+
+    if (data.wanted_items) {
+        renderWantedItems(data.wanted_items);
+    }
 });
 
 socket.on('status_update', (data) => {
@@ -216,6 +220,10 @@ socket.on('manual_mode_update', (data) => {
 socket.on('language_changed', (data) => {
     console.log('Language changed to:', data.language);
     fetchAndApplyTranslations();
+});
+
+socket.on('wanted_items_update', (data) => {
+    renderWantedItems(data);
 });
 
 // ==================== UI Update Functions ====================
@@ -1022,6 +1030,14 @@ function updateSettingsUI(settings) {
         if (document.getElementById('filter-benefit-other')) document.getElementById('filter-benefit-other').checked = settings.inventory_filters.show_benefit_other !== false;
     }
 
+    // Restore mining benefit filters
+    if (settings.mining_benefits) {
+        if (document.getElementById('mining-benefit-item')) document.getElementById('mining-benefit-item').checked = settings.mining_benefits.DIRECT_ENTITLEMENT;
+        if (document.getElementById('mining-benefit-badge')) document.getElementById('mining-benefit-badge').checked = settings.mining_benefits.BADGE;
+        if (document.getElementById('mining-benefit-emote')) document.getElementById('mining-benefit-emote').checked = settings.mining_benefits.EMOTE;
+        if (document.getElementById('mining-benefit-unknown')) document.getElementById('mining-benefit-unknown').checked = settings.mining_benefits.UNKNOWN;
+    }
+
 
     // Update games to watch lists
     renderGamesToWatch();
@@ -1396,7 +1412,13 @@ async function saveSettings() {
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
         proxy: state.settings.proxy || '',
         games_to_watch: state.settings.games_to_watch || [],
-        inventory_filters: getInventoryFilters()
+        inventory_filters: getInventoryFilters(),
+        mining_benefits: {
+            "DIRECT_ENTITLEMENT": document.getElementById('mining-benefit-item')?.checked,
+            "BADGE": document.getElementById('mining-benefit-badge')?.checked,
+            "EMOTE": document.getElementById('mining-benefit-emote')?.checked,
+            "UNKNOWN": document.getElementById('mining-benefit-unknown')?.checked
+        }
     };
 
     try {
@@ -1759,6 +1781,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filter-benefit-other').addEventListener('change', onInventoryFilterChange);
     document.getElementById('clear-filters-btn').addEventListener('click', clearInventoryFilters);
 
+    // Mining benefit settings
+    document.getElementById('mining-benefit-item').addEventListener('change', saveSettings);
+    document.getElementById('mining-benefit-badge').addEventListener('change', saveSettings);
+    document.getElementById('mining-benefit-emote').addEventListener('change', saveSettings);
+    document.getElementById('mining-benefit-unknown').addEventListener('change', saveSettings);
+
 
     // Inventory game search dropdown
     const gameSearchInput = document.getElementById('inventory-game-search');
@@ -1795,3 +1823,83 @@ document.addEventListener('DOMContentLoaded', () => {
         Notification.requestPermission();
     }
 });
+
+
+// ==================== Wanted Items Rendering ====================
+
+function renderWantedItems(tree) {
+    const container = document.getElementById('wanted-items-list');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (!tree || tree.length === 0) {
+        container.innerHTML = '<p class="empty-message-small">No wanted drops queued...</p>';
+        return;
+    }
+
+    tree.forEach((gameGroup, index) => {
+        const groupEl = document.createElement('div');
+        groupEl.className = 'wanted-game-group';
+
+        const headerEl = document.createElement('div');
+        headerEl.className = 'wanted-game-header';
+
+        // Game Icon
+        let iconUrl = gameGroup.game_icon;
+        if (iconUrl) {
+            iconUrl = iconUrl.replace('{width}', '40').replace('{height}', '53'); // 3:4 aspect ratio approx
+        }
+
+        const iconHtml = iconUrl
+            ? `<img src="${iconUrl}" alt="${gameGroup.game_name}" class="wanted-game-icon" onerror="this.style.display='none'">`
+            : '';
+
+        headerEl.innerHTML = `
+            <span class="wanted-game-index">#${index + 1}</span>
+            ${iconHtml}
+            <span class="wanted-game-title">${gameGroup.game_name}</span>
+        `;
+        groupEl.appendChild(headerEl);
+
+        const campaignListEl = document.createElement('div');
+        campaignListEl.className = 'wanted-campaign-list';
+
+        gameGroup.campaigns.forEach(campaign => {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'wanted-card';
+
+            cardEl.innerHTML = `
+                <div class="wanted-card-header">
+                     <a href="${campaign.url}" target="_blank" rel="noopener noreferrer" class="wanted-card-campaign-link" title="${campaign.name}">
+                        ${campaign.name}
+                    </a>
+                </div>
+                <div class="wanted-card-body">
+                    <div id="wanted-drops-${campaign.id}"></div>
+                </div>
+            `;
+
+            const dropContainer = cardEl.querySelector(`#wanted-drops-${campaign.id}`);
+
+            campaign.drops.forEach(drop => {
+                const dropEl = document.createElement('div');
+                dropEl.className = 'wanted-drop-item';
+
+                let html = `<span class="wanted-drop-name">${drop.name}</span>`;
+
+                drop.benefits.forEach(benefit => {
+                    html += `<span class="wanted-benefit-pill">${benefit}</span>`;
+                });
+
+                dropEl.innerHTML = html;
+                dropContainer.appendChild(dropEl);
+            });
+
+            campaignListEl.appendChild(cardEl);
+        });
+
+        groupEl.appendChild(campaignListEl);
+        container.appendChild(groupEl);
+    });
+}

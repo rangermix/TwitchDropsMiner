@@ -245,7 +245,7 @@ header h1 {
 .main-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto 1fr;
+    grid-template-rows: auto auto auto;
     gap: 20px;
     min-height: 70vh;
 }
@@ -260,12 +260,17 @@ header h1 {
 
 .console-panel {
     grid-column: 1;
-    grid-row: 2 / 4;
+    grid-row: 2;
 }
 
 .channels-panel {
     grid-column: 2;
-    grid-row: 2 / 4;
+    grid-row: 2;
+}
+
+.wanted-panel {
+    grid-column: 1 / -1;
+    grid-row: 3;
 }
 
 /* Login */
@@ -666,9 +671,8 @@ header h1 {
 
 /* Inventory Grid */
 .inventory-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 20px;
+    column-width: 350px;
+    column-gap: 20px;
 }
 
 .campaign-card {
@@ -678,6 +682,8 @@ header h1 {
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     position: relative;
+    break-inside: avoid;
+    margin-bottom: 20px;
 }
 
 .campaign-header {
@@ -799,6 +805,136 @@ header h1 {
 .campaign-drops {
     padding: 15px;
 }
+
+
+.empty-message-small {
+    color: var(--text-secondary);
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+    grid-column: 1 / -1;
+}
+
+/* Wanted Items Tree / Groups */
+#wanted-items-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.wanted-game-group {
+    flex: min-content;
+    /* Grow, shrink, basis */
+    min-width: 0;
+    /* Fix for flex item overflow */
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    break-inside: avoid;
+    overflow: hidden;
+    position: relative;
+}
+
+.wanted-game-header {
+    padding: 10px 15px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 700;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.wanted-game-index {
+    background: var(--accent-color);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    min-width: 20px;
+    text-align: center;
+}
+
+.wanted-game-icon {
+    width: 30px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 3px;
+    background: #000;
+}
+
+.wanted-campaign-list {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Wanted Cards (Nested inside Game Group) */
+.wanted-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.wanted-card-header {
+    padding: 8px 12px;
+    background: var(--bg-tertiary, #262626);
+    /* Slightly darker/different than panel */
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Removing old wanted-card styles that are handled by group header now */
+
+.wanted-card-campaign-link {
+    font-size: 12px;
+    color: var(--accent-color);
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wanted-card-campaign-link:hover {
+    text-decoration: underline;
+}
+
+.wanted-card-body {
+    padding: 10px;
+}
+
+.wanted-drop-item {
+    font-size: 11px;
+    margin-bottom: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.wanted-drop-name {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.wanted-benefit-pill {
+    background: rgba(145, 70, 255, 0.15);
+    color: var(--accent-color);
+    padding: 1px 5px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 500;
+}
+
 
 .drop-item {
     padding: 10px;
