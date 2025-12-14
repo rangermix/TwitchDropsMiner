@@ -982,6 +982,12 @@ function updateSettingsUI(settings) {
         proxyIndicator.title = proxyUrl ? `Proxy active: ${proxyUrl}` : 'Proxy disabled';
     }
 
+    // Populate Telegram fields if present in settings
+    const botTokenInput = document.getElementById('telegram-bot-token');
+    const chatIdInput = document.getElementById('telegram-chat-id');
+    if (botTokenInput) botTokenInput.value = settings.telegram_bot_token || '';
+    if (chatIdInput) chatIdInput.value = settings.telegram_chat_id || '';
+
     // Update language dropdown if we have the current language
     if (settings.language) {
         const languageSelect = document.getElementById('language');
