@@ -106,7 +106,20 @@
             "starts": "Starter: {time}",
             "ends": "Slutter: {time}",
             "no_campaigns": "Ingen kampagner indlæst endnu...",
-            "claimed_drops": "hentet"
+            "claimed_drops": "hentet",
+            "filters": {
+                "active": "Aktiv",
+                "not_linked": "Ikke forbundet",
+                "upcoming": "Kommende",
+                "expired": "Udløbet",
+                "finished": "Afsluttet",
+                "item": "Genstand",
+                "badge": "Badge",
+                "emote": "Emote",
+                "other": "Andet",
+                "clear": "Ryd filtre",
+                "search_placeholder": "Søg efter spil..."
+            }
         },
         "settings": {
             "general": {
@@ -127,7 +140,9 @@
             "actions": "Handlinger",
             "connection_quality": "Forbindelseskvalitet:",
             "minimum_refresh": "Minimum opdateringsinterval (minutter):",
-            "reload_campaigns": "Genindlæs kampagner"
+            "reload_campaigns": "Genindlæs kampagner",
+            "mining_benefits": "Mining Fordele",
+            "mining_benefits_help": "Vælg hvilke typer drops du vil mine."
         },
         "help": {
             "about": "Om Twitch Drops Miner",
@@ -164,6 +179,26 @@
             "manual_mode": "MANUEL",
             "connected": "Tilsluttet",
             "disconnected": "Afbrudt"
+        },
+        "footer": {
+            "version": "Version:",
+            "loading": "Indlæser...",
+            "update_available": "Opdatering tilgængelig:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Manuel tilstand aktiv - ser specifikt spil"
+            },
+            "auto": {
+                "title": "Automatisk tilstand - følger spilprioritet"
+            },
+            "proxy": {
+                "title": "Proxy-forbindelse aktiv"
+            }
+        },
+        "wanted": {
+            "name": "Ønskede Drops Kø",
+            "none": "Ingen ønskede drops i køen..."
         }
     }
 }

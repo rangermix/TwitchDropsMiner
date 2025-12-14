@@ -109,7 +109,20 @@
             "starts": "開始：{time}",
             "ends": "終了：{time}",
             "no_campaigns": "まだキャンペーンが読み込まれていません...",
-            "claimed_drops": "受け取り済み"
+            "claimed_drops": "受け取り済み",
+            "filters": {
+                "active": "アクティブ",
+                "not_linked": "未連携",
+                "upcoming": "近日開催",
+                "expired": "期限切れ",
+                "finished": "完了",
+                "item": "アイテム",
+                "badge": "バッジ",
+                "emote": "エモート",
+                "other": "その他",
+                "clear": "フィルター解除",
+                "search_placeholder": "ゲームを検索..."
+            }
         },
         "settings": {
             "general": {
@@ -130,7 +143,9 @@
             "actions": "アクション",
             "connection_quality": "接続品質：",
             "minimum_refresh": "最小更新間隔（分）：",
-            "reload_campaigns": "キャンペーンを再読み込み"
+            "reload_campaigns": "キャンペーンを再読み込み",
+            "mining_benefits": "マイニング特典",
+            "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。"
         },
         "help": {
             "about": "Twitch Drops Minerについて",
@@ -167,6 +182,26 @@
             "manual_mode": "手動",
             "connected": "接続済み",
             "disconnected": "切断"
+        },
+        "footer": {
+            "version": "バージョン:",
+            "loading": "読み込み中...",
+            "update_available": "更新利用可能:"
+        },
+        "badges": {
+            "manual": {
+                "title": "手動モード - 特定のゲームを視聴中"
+            },
+            "auto": {
+                "title": "自動モード - ゲーム優先度に従う"
+            },
+            "proxy": {
+                "title": "プロキシ接続中"
+            }
+        },
+        "wanted": {
+            "name": "欲しいDropsキュー",
+            "none": "キューに欲しいDropsはありません..."
         }
     }
 }

@@ -106,7 +106,20 @@
             "starts": "开始时间: {time}",
             "ends": "结束时间: {time}",
             "no_campaigns": "尚未加载任何活动...",
-            "claimed_drops": "已领取"
+            "claimed_drops": "已领取",
+            "filters": {
+                "active": "活动中",
+                "not_linked": "未关联",
+                "upcoming": "即将开始",
+                "expired": "已过期",
+                "finished": "已完成",
+                "item": "物品",
+                "badge": "徽章",
+                "emote": "表情",
+                "other": "其他",
+                "clear": "清除过滤器",
+                "search_placeholder": "搜索游戏..."
+            }
         },
         "settings": {
             "general": {
@@ -127,7 +140,9 @@
             "actions": "操作",
             "connection_quality": "连接质量：",
             "minimum_refresh": "最小刷新间隔（分钟）：",
-            "reload_campaigns": "重新加载活动"
+            "reload_campaigns": "重新加载活动",
+            "mining_benefits": "挖掘奖励",
+            "mining_benefits_help": "选择您想要获取的掉落类型。"
         },
         "help": {
             "about": "关于 Twitch 掉宝矿工",
@@ -164,6 +179,26 @@
             "manual_mode": "MANUAL",
             "connected": "已连接",
             "disconnected": "已断开"
+        },
+        "footer": {
+            "version": "版本:",
+            "loading": "加载中...",
+            "update_available": "可用更新:"
+        },
+        "badges": {
+            "manual": {
+                "title": "手动模式已激活 - 正在观看特定游戏"
+            },
+            "auto": {
+                "title": "自动模式 - 遵循游戏优先级"
+            },
+            "proxy": {
+                "title": "代理连接已激活"
+            }
+        },
+        "wanted": {
+            "name": "期望掉落队列",
+            "none": "队列中没有期望的掉落..."
         }
     }
 }

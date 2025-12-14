@@ -109,7 +109,20 @@
             "starts": "Begint: {time}",
             "ends": "Eindigt: {time}",
             "no_campaigns": "Nog geen campagnes geladen...",
-            "claimed_drops": "geclaimd"
+            "claimed_drops": "geclaimd",
+            "filters": {
+                "active": "Actief",
+                "not_linked": "Niet gekoppeld",
+                "upcoming": "Aankomend",
+                "expired": "Verlopen",
+                "finished": "Voltooid",
+                "item": "Item",
+                "badge": "Badge",
+                "emote": "Emote",
+                "other": "Overig",
+                "clear": "Filters wissen",
+                "search_placeholder": "Zoek spellen..."
+            }
         },
         "settings": {
             "general": {
@@ -130,7 +143,9 @@
             "actions": "Acties",
             "connection_quality": "Verbindingskwaliteit:",
             "minimum_refresh": "Minimaal verversingsinterval (minuten):",
-            "reload_campaigns": "Herlaad Campagnes"
+            "reload_campaigns": "Herlaad Campagnes",
+            "mining_benefits": "Mining Voordelen",
+            "mining_benefits_help": "Selecteer welke soorten drops je wilt minen."
         },
         "help": {
             "about": "Over Twitch Drops Miner",
@@ -167,6 +182,26 @@
             "manual_mode": "HANDMATIG",
             "connected": "Verbonden",
             "disconnected": "Verbinding verbroken"
+        },
+        "footer": {
+            "version": "Versie:",
+            "loading": "Laden...",
+            "update_available": "Update beschikbaar:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Handmatige modus actief - specifiek spel kijken"
+            },
+            "auto": {
+                "title": "Automatische modus - spelprioriteit volgen"
+            },
+            "proxy": {
+                "title": "Proxy-verbinding actief"
+            }
+        },
+        "wanted": {
+            "name": "Gewenste Drops Wachtrij",
+            "none": "Geen gewenste drops in de wachtrij..."
         }
     }
 }

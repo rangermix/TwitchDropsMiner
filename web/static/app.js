@@ -28,6 +28,16 @@ async function fetchAndDisplayVersion() {
                 versionText += ' (latest)';
             }
             versionElement.textContent = versionText;
+
+            // Translate footer version text
+            const footerVersionText = document.getElementById('footer-version-text');
+            if (footerVersionText && state.translations.gui?.footer) {
+                const versionLabel = state.translations.gui.footer.version || 'Version:';
+                // Preserve the span inside
+                const span = footerVersionText.querySelector('span');
+                footerVersionText.textContent = versionLabel + ' ';
+                footerVersionText.appendChild(span);
+            }
         }
 
         // Display update notification if available
@@ -41,6 +51,17 @@ async function fetchAndDisplayVersion() {
                 updateLink.href = data.download_url;
                 updateIndicator.style.display = 'inline-block';
 
+                // Translate update message
+                if (state.translations.gui?.footer) {
+                    const updateLabel = state.translations.gui.footer.update_available || 'Update Available:';
+                    const linkText = document.createTextNode(` ⚠ ${updateLabel} `);
+                    // Clear existing text nodes but keep the span
+                    const span = updateLink.querySelector('span'); // latest-version span
+                    updateLink.textContent = '';
+                    updateLink.appendChild(linkText);
+                    updateLink.appendChild(span);
+                }
+
                 // Log to console
                 console.log(`Update available: ${data.latest_version} (current: ${data.current_version})`);
             }
@@ -49,7 +70,8 @@ async function fetchAndDisplayVersion() {
         console.warn('Could not fetch version information:', error);
         // Set placeholder text if fetch fails
         const versionElement = document.getElementById('current-version');
-        if (versionElement && versionElement.textContent === 'Loading...') {
+        const loadingText = state.translations.gui?.footer?.loading || 'Loading...';
+        if (versionElement && versionElement.textContent === loadingText) {
             versionElement.textContent = 'Unknown';
         }
     }
@@ -1581,7 +1603,8 @@ function applyTranslations(t) {
 
     // Update Progress section
     if (mainTab && t.gui?.progress) {
-        const progressHeader = mainTab.querySelector('.progress-panel h2');
+        // ID: progress-header
+        const progressHeader = document.getElementById('progress-header');
         if (progressHeader) progressHeader.textContent = t.gui.progress.name;
 
         const noDropMsg = document.getElementById('no-drop-message');
@@ -1593,13 +1616,15 @@ function applyTranslations(t) {
 
     // Update Console section
     if (mainTab && t.gui) {
-        const consoleHeader = mainTab.querySelector('.console-panel h2');
+        // ID: console-header
+        const consoleHeader = document.getElementById('console-header');
         if (consoleHeader) consoleHeader.textContent = t.gui.output;
     }
 
     // Update Channels section
     if (mainTab && t.gui?.channels) {
-        const channelsHeader = mainTab.querySelector('.channels-panel h2');
+        // ID: channels-header
+        const channelsHeader = document.getElementById('channels-header');
         if (channelsHeader) channelsHeader.textContent = t.gui.channels.name;
         // Channel list will re-render with translated empty messages
         renderChannels();
@@ -1615,10 +1640,18 @@ function applyTranslations(t) {
     // Update Settings tab
     const settingsTab = document.getElementById('settings-tab');
     if (settingsTab && t.gui?.settings) {
-        const headers = settingsTab.querySelectorAll('h2');
-        if (headers[0]) headers[0].textContent = t.gui.settings.general.name;
-        if (headers[1]) headers[1].textContent = t.gui.settings.games_to_watch;
-        if (headers[2]) headers[2].textContent = t.gui.settings.actions;
+        // Use IDs for robust selection
+        const generalHeader = document.getElementById('settings-general-header');
+        if (generalHeader) generalHeader.textContent = t.gui.settings.general.name;
+
+        const benefitsHeader = document.getElementById('settings-benefits-header');
+        if (benefitsHeader && t.gui.settings.mining_benefits) benefitsHeader.textContent = t.gui.settings.mining_benefits;
+
+        const gamesHeader = document.getElementById('settings-games-header');
+        if (gamesHeader) gamesHeader.textContent = t.gui.settings.games_to_watch;
+
+        const actionsHeader = document.getElementById('settings-actions-header');
+        if (actionsHeader) actionsHeader.textContent = t.gui.settings.actions;
 
         const darkModeLabel = settingsTab.querySelector('label:has(#dark-mode)');
         if (darkModeLabel) {
@@ -1642,8 +1675,11 @@ function applyTranslations(t) {
             refreshLabel.appendChild(input);
         }
 
-        const helpText = settingsTab.querySelector('.help-text');
-        if (helpText) helpText.textContent = t.gui.settings.games_help;
+        const benefitsHelp = document.getElementById('settings-benefits-help');
+        if (benefitsHelp && t.gui.settings.mining_benefits_help) benefitsHelp.textContent = t.gui.settings.mining_benefits_help;
+
+        const gamesHelp = document.getElementById('settings-games-help');
+        if (gamesHelp) gamesHelp.textContent = t.gui.settings.games_help;
 
         const searchInput = document.getElementById('games-filter');
         if (searchInput) searchInput.placeholder = t.gui.settings.search_games;
@@ -1670,14 +1706,38 @@ function applyTranslations(t) {
     // Update Help tab
     const helpTab = document.getElementById('help-tab');
     if (helpTab && t.gui?.help) {
+        // Robust ID selection for Help tab headers
+        const aboutHeader = document.getElementById('help-about-header');
+        if (aboutHeader) aboutHeader.textContent = t.gui.help.about || 'About Twitch Drops Miner';
+
+        const howtoHeader = document.getElementById('help-howto-header');
+        if (howtoHeader) howtoHeader.textContent = t.gui.help.how_to_use || 'How to Use';
+
+        const featuresHeader = document.getElementById('help-features-header');
+        if (featuresHeader) featuresHeader.textContent = t.gui.help.features || 'Features';
+
+        const notesHeader = document.getElementById('help-notes-header');
+        if (notesHeader) notesHeader.textContent = t.gui.help.important_notes || 'Important Notes';
+
+        // Update list items and links (keeping innerHTML approach for lists as they are dynamic content blocks)
         const helpContent = helpTab.querySelector('.help-content');
         if (helpContent) {
-            // Rebuild help content dynamically
+            // We only need to update the dynamic lists and the github link, preserving the headers we just updated?
+            // Actually, the previous code was nuke-and-rebuild via innerHTML.
+            // To keep it consistent with our "ID-based update" philosophy, we should probably avoid nuke-and-rebuild if possible,
+            // OR just rebuild but include the IDs.
+            // Since I added IDs to the static HTML, rebuilding via innerHTML will wipe them unless I include them in the template string.
+            // Strategy: Update the dynamic parts (lists) safely, or just update the whole thing but INCLUDE the IDs.
+            // Let's update the lists directly if possible, or just re-render properly.
+
+            // Actually, the best approach for the lists is to find the UL/OL elements.
+            // But they don't have IDs. TO be fully robust I should have added IDs to the lists too.
+            // But for now, let's stick to the previous innerHTML approach but ensuring IDs are preserved in the template string.
             helpContent.innerHTML = `
-                <h2>${t.gui.help.about || 'About Twitch Drops Miner'}</h2>
+                <h2 id="help-about-header">${t.gui.help.about || 'About Twitch Drops Miner'}</h2>
                 <p>${t.gui.help.about_text || 'This application automatically mines timed Twitch drops without downloading stream data.'}</p>
 
-                <h3>${t.gui.help.how_to_use || 'How to Use'}</h3>
+                <h3 id="help-howto-header">${t.gui.help.how_to_use || 'How to Use'}</h3>
                 <ol>
                     ${(t.gui.help.how_to_use_items || [
                     'Login using your Twitch account (OAuth device code flow)',
@@ -1688,7 +1748,7 @@ function applyTranslations(t) {
                 ]).map(item => `<li>${item}</li>`).join('')}
                 </ol>
 
-                <h3>${t.gui.help.features || 'Features'}</h3>
+                <h3 id="help-features-header">${t.gui.help.features || 'Features'}</h3>
                 <ul>
                     ${(t.gui.help.features_items || [
                     'Stream-less drop mining - saves bandwidth',
@@ -1699,7 +1759,7 @@ function applyTranslations(t) {
                 ]).map(item => `<li>${item}</li>`).join('')}
                 </ul>
 
-                <h3>${t.gui.help.important_notes || 'Important Notes'}</h3>
+                <h3 id="help-notes-header">${t.gui.help.important_notes || 'Important Notes'}</h3>
                 <ul>
                     ${(t.gui.help.important_notes_items || [
                     'Do not watch streams on the same account while mining',
@@ -1713,6 +1773,84 @@ function applyTranslations(t) {
                 </div>
             `;
         }
+    }
+
+    // Update Footer
+    if (t.gui?.footer) {
+        const loadingText = t.gui.footer.loading || 'Loading...';
+        const currentVersionEl = document.getElementById('current-version');
+        // Only update if it's the specific "Loading..." text to avoid overwriting the fetched version
+        if (currentVersionEl && currentVersionEl.textContent === 'Loading...') {
+            currentVersionEl.textContent = loadingText;
+        }
+
+        const footerVersionText = document.getElementById('footer-version-text');
+        if (footerVersionText) {
+            const versionLabel = t.gui.footer.version || 'Version:';
+            const span = document.getElementById('current-version'); // Need to re-fetch or preserve
+            footerVersionText.textContent = versionLabel + ' ';
+            // Re-finding the span because textContent wiped it from parent
+            if (span) footerVersionText.appendChild(span);
+        }
+    }
+
+    // Update Badges tooltips
+    if (t.gui?.badges) {
+        const manualBadge = document.getElementById('manual-mode-badge');
+        if (manualBadge && t.gui.badges.manual) manualBadge.title = t.gui.badges.manual.title;
+
+        const autoBadge = document.getElementById('auto-mode-badge');
+        if (autoBadge && t.gui.badges.auto) autoBadge.title = t.gui.badges.auto.title;
+
+        const proxyBadge = document.getElementById('proxy-indicator');
+        if (proxyBadge && t.gui.badges.proxy) proxyBadge.title = t.gui.badges.proxy.title; // Note: append logic in updateSettingsUI overrides this
+    }
+
+    // Update Wanted Drops Panel
+    if (mainTab && t.gui?.wanted) {
+        // ID: wanted-header
+        const wantedHeader = document.getElementById('wanted-header');
+        if (wantedHeader) wantedHeader.textContent = t.gui.wanted.name;
+        // Re-render wanted items to update empty message
+        // Since we don't store wanted items in state globally (only receives them), we rely on updateWantedItems triggering render
+    }
+
+    // Update Inventory Filters (re-using existing inventoryTab variable if available, or just querying)
+    // Note: inventoryTab was declared above in "Update Inventory Status" section
+    // But since that might be in a different block or not, let's be safe and just query element directly without const redeclaration if it conflicts.
+    // However, looking at the code, the previous declaration was likely in the same function scope.
+    // Simplest fix: use the existing element or re-query without 'const' if needed, but best to just use the one we have.
+    // Actually, looking at the view_file, there was 'const inventoryTab' around line 1639.
+    // So I should just reuse that variable or use a different name.
+
+    if (inventoryTab && t.gui?.inventory?.filters) {
+        const f = t.gui.inventory.filters;
+        const updateLabel = (id, text) => {
+            const el = document.getElementById(id)?.parentElement.querySelector('span');
+            if (el) el.textContent = text;
+        };
+        updateLabel('filter-active', f.active);
+        updateLabel('filter-not-linked', f.not_linked);
+        updateLabel('filter-upcoming', f.upcoming);
+        updateLabel('filter-expired', f.expired);
+        updateLabel('filter-finished', f.finished);
+        updateLabel('filter-benefit-item', f.item);
+        updateLabel('filter-benefit-badge', f.badge);
+        updateLabel('filter-benefit-emote', f.emote);
+        updateLabel('filter-benefit-other', f.other);
+
+        const clearBtn = document.getElementById('clear-filters-btn');
+        if (clearBtn) clearBtn.textContent = f.clear;
+
+        const searchInput = document.getElementById('games-filter');
+        if (searchInput) searchInput.placeholder = f.search_placeholder;
+
+        // Update Mining Benefit Labels in Settings (re-using inventory filter keys)
+        // IDs: mining-benefit-item, mining-benefit-badge, mining-benefit-emote, mining-benefit-unknown
+        updateLabel('mining-benefit-item', f.item);
+        updateLabel('mining-benefit-badge', f.badge);
+        updateLabel('mining-benefit-emote', f.emote);
+        updateLabel('mining-benefit-unknown', f.other);
     }
 
     // Update header elements
@@ -1880,7 +2018,8 @@ function renderWantedItems(tree) {
     container.innerHTML = '';
 
     if (!tree || tree.length === 0) {
-        container.innerHTML = '<p class="empty-message-small">No wanted drops queued...</p>';
+        const emptyMsg = state.translations.gui?.wanted?.none || 'No wanted drops queued...';
+        container.innerHTML = `<p class="empty-message-small">${emptyMsg}</p>`;
         return;
     }
 

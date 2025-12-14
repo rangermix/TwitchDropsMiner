@@ -109,7 +109,20 @@
             "starts": "Начало: {time}",
             "ends": "Окончание: {time}",
             "no_campaigns": "Кампании ещё не загружены...",
-            "claimed_drops": "получено"
+            "claimed_drops": "получено",
+            "filters": {
+                "active": "Активные",
+                "not_linked": "Не связаны",
+                "upcoming": "Предстоящие",
+                "expired": "Истекшие",
+                "finished": "Завершенные",
+                "item": "Предмет",
+                "badge": "Значок",
+                "emote": "Смайлик",
+                "other": "Другое",
+                "clear": "Очистить фильтры",
+                "search_placeholder": "Поиск игр..."
+            }
         },
         "settings": {
             "general": {
@@ -131,7 +144,9 @@
             "actions": "Действия",
             "connection_quality": "Качество соединения:",
             "minimum_refresh": "Минимальный интервал обновления (минуты):",
-            "reload_campaigns": "Перезагрузить кампании"
+            "reload_campaigns": "Перезагрузить кампании",
+            "mining_benefits": "Преимущества майнинга",
+            "mining_benefits_help": "Выберите типы drops, которые вы хотите майнить."
         },
         "help": {
             "about": "О Twitch Drops Miner",
@@ -168,6 +183,26 @@
             "manual_mode": "РУЧНОЙ",
             "connected": "Подключено",
             "disconnected": "Отключено"
+        },
+        "footer": {
+            "version": "Версия:",
+            "loading": "Загрузка...",
+            "update_available": "Доступно обновление:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Ручной режим - просмотр конкретной игры"
+            },
+            "auto": {
+                "title": "Автоматический режим - по приоритету игр"
+            },
+            "proxy": {
+                "title": "Прокси подключен"
+            }
+        },
+        "wanted": {
+            "name": "Очередь желаемых дропов",
+            "none": "Нет желаемых дропов в очереди..."
         }
     }
 }

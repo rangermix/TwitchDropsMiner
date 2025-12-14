@@ -106,7 +106,20 @@
             "starts": "Comienza: {time}",
             "ends": "Termina: {time}",
             "no_campaigns": "Aún no se han cargado campañas...",
-            "claimed_drops": "reclamado"
+            "claimed_drops": "reclamado",
+            "filters": {
+                "active": "Activo",
+                "not_linked": "No Vinculado",
+                "upcoming": "Próximo",
+                "expired": "Caducado",
+                "finished": "Terminado",
+                "item": "Objeto",
+                "badge": "Insignia",
+                "emote": "Emote",
+                "other": "Otro",
+                "clear": "Limpiar Filtros",
+                "search_placeholder": "Buscar juegos..."
+            }
         },
         "settings": {
             "general": {
@@ -127,7 +140,9 @@
             "all_games_selected": "Todos los juegos están seleccionados o no hay juegos disponibles.",
             "actions": "Acciones",
             "connection_quality": "Calidad de conexión:",
-            "minimum_refresh": "Intervalo mínimo de actualización (minutos):"
+            "minimum_refresh": "Intervalo mínimo de actualización (minutos):",
+            "mining_benefits": "Beneficios de Minería",
+            "mining_benefits_help": "Selecciona qué tipos de drops deseas minar."
         },
         "help": {
             "about": "Acerca de Twitch Drops Miner",
@@ -164,6 +179,26 @@
             "manual_mode": "MANUAL",
             "connected": "Conectado",
             "disconnected": "Desconectado"
+        },
+        "footer": {
+            "version": "Versión:",
+            "loading": "Cargando...",
+            "update_available": "Actualización disponible:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Modo manual activo - viendo juego específico"
+            },
+            "auto": {
+                "title": "Modo automático - siguiendo prioridad de juegos"
+            },
+            "proxy": {
+                "title": "Conexión proxy activa"
+            }
+        },
+        "wanted": {
+            "name": "Cola de Drops Deseados",
+            "none": "No hay drops deseados en cola..."
         }
     }
 }

@@ -109,7 +109,20 @@
             "starts": "Începe : {time}",
             "ends": "Se termină : {time}",
             "no_campaigns": "Nicio campanie încărcată încă...",
-            "claimed_drops": "revendicat"
+            "claimed_drops": "revendicat",
+            "filters": {
+                "active": "Activ",
+                "not_linked": "Neconectat",
+                "upcoming": "Viitor",
+                "expired": "Expirat",
+                "finished": "Terminat",
+                "item": "Obiect",
+                "badge": "Insignă",
+                "emote": "Emoticon",
+                "other": "Altele",
+                "clear": "Șterge filtre",
+                "search_placeholder": "Caută jocuri..."
+            }
         },
         "settings": {
             "general": {
@@ -130,7 +143,9 @@
             "actions": "Acțiuni",
             "connection_quality": "Calitatea conexiunii:",
             "minimum_refresh": "Interval minim de reîmprospătare (minute):",
-            "reload_campaigns": "Reîncarcă campaniile"
+            "reload_campaigns": "Reîncarcă campaniile",
+            "mining_benefits": "Beneficii Minerit",
+            "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați."
         },
         "help": {
             "about": "Despre Twitch Drops Miner",
@@ -167,6 +182,26 @@
             "manual_mode": "MANUAL",
             "connected": "Conectat",
             "disconnected": "Deconectat"
+        },
+        "footer": {
+            "version": "Versiune:",
+            "loading": "Se încarcă...",
+            "update_available": "Actualizare disponibilă:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Mod manual activ - vizionare joc specific"
+            },
+            "auto": {
+                "title": "Mod automat - urmărire prioritate jocuri"
+            },
+            "proxy": {
+                "title": "Conexiune proxy activă"
+            }
+        },
+        "wanted": {
+            "name": "Coadă Drops Dorite",
+            "none": "Niciun drop dorit în coadă..."
         }
     }
 }

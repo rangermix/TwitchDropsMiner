@@ -109,7 +109,20 @@
             "starts": "Rozpoczęcie: {time}",
             "ends": "Koniec: {time}",
             "no_campaigns": "Nie załadowano jeszcze żadnych kampanii...",
-            "claimed_drops": "odebrano"
+            "claimed_drops": "odebrano",
+            "filters": {
+                "active": "Aktywne",
+                "not_linked": "Niepołączone",
+                "upcoming": "Nadchodzące",
+                "expired": "Wygasłe",
+                "finished": "Zakończone",
+                "item": "Przedmiot",
+                "badge": "Odznaka",
+                "emote": "Emotka",
+                "other": "Inne",
+                "clear": "Wyczyść filtry",
+                "search_placeholder": "Szukaj gier..."
+            }
         },
         "settings": {
             "general": {
@@ -131,7 +144,9 @@
             "actions": "Akcje",
             "connection_quality": "Jakość połączenia:",
             "minimum_refresh": "Minimalny interwał odświeżania (minuty):",
-            "reload_campaigns": "Przeładuj kampanie"
+            "reload_campaigns": "Przeładuj kampanie",
+            "mining_benefits": "Korzyści z Minowania",
+            "mining_benefits_help": "Wybierz rodzaje dropów, które chcesz zdobywać."
         },
         "help": {
             "about": "O Twitch Drops Miner",
@@ -168,6 +183,26 @@
             "manual_mode": "RĘCZNY",
             "connected": "Połączono",
             "disconnected": "Rozłączono"
+        },
+        "footer": {
+            "version": "Wersja:",
+            "loading": "Ładowanie...",
+            "update_available": "Aktualizacja dostępna:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Tryb ręczny aktywny - oglądanie konkretnej gry"
+            },
+            "auto": {
+                "title": "Tryb automatyczny - według priorytetu gier"
+            },
+            "proxy": {
+                "title": "Połączenie proxy aktywne"
+            }
+        },
+        "wanted": {
+            "name": "Kolejka Pożądanych Dropów",
+            "none": "Brak pożądanych dropów w kolejce..."
         }
     }
 }
