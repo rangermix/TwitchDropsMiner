@@ -1,6 +1,6 @@
-# CLAUDE.md
+# GEMINI.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Gemini when working with code in this repository.
 
 ## Project Overview
 
@@ -97,7 +97,7 @@ lang/                # Translation JSON files (19 languages)
 - Runs the `src` package as a module using `runpy.run_module("src")`
 - All application logic is now in `src/__main__.py`
 
-**src/**main**.py** - Entry point:
+**src/__main__.py** - Entry point:
 
 - Parses command-line arguments
 - Initializes Settings, Twitch client, and WebGUIManager
@@ -286,7 +286,7 @@ login_text = _.t["login"]["status"]["logged_in"]  # Returns "Logged in"
 - **src/utils/** - Helper utilities (string_utils, json_utils, async_helpers, rate_limiter, backoff)
 - **src/i18n/** - Internationalization package with TypedDict schema and Translator class
   - **translator.py** - Translator class with typed translation schema (Translation TypedDict)
-  - ****init**.py** - Exports translation types and `_` (Translator instance)
+  - **__init__.py** - Exports translation types and `_` (Translator instance)
 - **lang/** - Translation JSON files for 19 languages (English.json is the single source of truth)
 - **src/version.py** - Version string
 - **src/web/app.py** - FastAPI application with REST API and Socket.IO
@@ -308,7 +308,6 @@ source env/bin/activate && python -m pytest tests/
 
 - `tests/test_proxy_settings.py` - Tests for proxy settings configuration
 - `tests/test_verify_proxy.py` - Tests for proxy verification functionality
-
 
 ### Manual Testing
 
