@@ -109,7 +109,20 @@
             "starts": "Починається {time}",
             "ends": "Завершується {time}",
             "no_campaigns": "Кампанії ще не завантажені...",
-            "claimed_drops": "отримано"
+            "claimed_drops": "отримано",
+            "filters": {
+                "active": "Активні",
+                "not_linked": "Не пов'язані",
+                "upcoming": "Майбутні",
+                "expired": "Завершені",
+                "finished": "Закінчені",
+                "item": "Предмет",
+                "badge": "Значок",
+                "emote": "Смайлик",
+                "other": "Інше",
+                "clear": "Очистити фільтри",
+                "search_placeholder": "Пошук ігор..."
+            }
         },
         "settings": {
             "general": {
@@ -130,7 +143,9 @@
             "actions": "Дії",
             "connection_quality": "Якість з'єднання:",
             "minimum_refresh": "Мінімальний інтервал оновлення (хвилини):",
-            "reload_campaigns": "Перезавантажити кампанії"
+            "reload_campaigns": "Перезавантажити кампанії",
+            "mining_benefits": "Переваги майнінгу",
+            "mining_benefits_help": "Виберіть типи drops, які ви хочете майнити."
         },
         "help": {
             "about": "Про Twitch Drops Miner",
@@ -167,6 +182,26 @@
             "manual_mode": "РУЧНИЙ",
             "connected": "Підключено",
             "disconnected": "Відключено"
+        },
+        "footer": {
+            "version": "Версія:",
+            "loading": "Завантаження...",
+            "update_available": "Доступне оновлення:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Ручний режим - перегляд конкретної гри"
+            },
+            "auto": {
+                "title": "Автоматичний режим - за пріоритетом ігор"
+            },
+            "proxy": {
+                "title": "Проксі підключено"
+            }
+        },
+        "wanted": {
+            "name": "Черга бажаних дропів",
+            "none": "Немає бажаних дропів у черзі..."
         }
     }
 }

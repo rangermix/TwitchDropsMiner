@@ -112,6 +112,41 @@ class GUIChannels(TypedDict):
     viewers: str
 
 
+class GUIFooter(TypedDict):
+    version: str
+    loading: str
+    update_available: str
+
+
+class GUIBadgeItem(TypedDict):
+    title: str
+
+
+class GUIBadges(TypedDict):
+    manual: GUIBadgeItem
+    auto: GUIBadgeItem
+    proxy: GUIBadgeItem
+
+
+class GUIWanted(TypedDict):
+    name: str
+    none: str
+
+
+class GUIInvFilters(TypedDict):
+    active: str
+    not_linked: str
+    upcoming: str
+    expired: str
+    finished: str
+    item: str
+    badge: str
+    emote: str
+    other: str
+    clear: str
+    search_placeholder: str
+
+
 class GUIInvStatus(TypedDict):
     active: str
     expired: str
@@ -125,6 +160,7 @@ class GUIInventory(TypedDict):
     starts: str
     ends: str
     claimed_drops: str
+    filters: GUIInvFilters
 
 
 class GUISettingsGeneral(TypedDict):
@@ -134,6 +170,8 @@ class GUISettingsGeneral(TypedDict):
 
 class GUISettings(TypedDict):
     general: GUISettingsGeneral
+    mining_benefits: str
+    mining_benefits_help: str
     reload: str
     reload_campaigns: str
     games_to_watch: str
@@ -185,6 +223,9 @@ class GUIMessages(TypedDict):
     settings: GUISettings
     help: GUIHelp
     header: GUIHeader
+    footer: GUIFooter
+    badges: GUIBadges
+    wanted: GUIWanted
 
 
 class Translation(TypedDict):

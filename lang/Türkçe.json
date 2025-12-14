@@ -109,7 +109,20 @@
             "starts": "Başladı: {time}",
             "ends": "Bitiş: {time}",
             "no_campaigns": "Henüz yüklenen kampanya yok...",
-            "claimed_drops": "talep edildi"
+            "claimed_drops": "talep edildi",
+            "filters": {
+                "active": "Aktif",
+                "not_linked": "Bağlı Değil",
+                "upcoming": "Yaklaşan",
+                "expired": "Süresi Dolmuş",
+                "finished": "Tamamlanmış",
+                "item": "Eşya",
+                "badge": "Rozet",
+                "emote": "İfade",
+                "other": "Diğer",
+                "clear": "Filtreleri Temizle",
+                "search_placeholder": "Oyun ara..."
+            }
         },
         "settings": {
             "general": {
@@ -130,7 +143,9 @@
             "actions": "İşlemler",
             "connection_quality": "Bağlantı kalitesi:",
             "minimum_refresh": "Minimum yenileme aralığı (dakika):",
-            "reload_campaigns": "Kampanyaları Yeniden Yükle"
+            "reload_campaigns": "Kampanyaları Yeniden Yükle",
+            "mining_benefits": "Madencilik Avantajları",
+            "mining_benefits_help": "Hangi tür dropları toplamak istediğinizi seçin."
         },
         "help": {
             "about": "Twitch Drops Miner Hakkında",
@@ -167,6 +182,26 @@
             "manual_mode": "MANUEL",
             "connected": "Bağlandı",
             "disconnected": "Bağlantı kesildi"
+        },
+        "footer": {
+            "version": "Sürüm:",
+            "loading": "Yükleniyor...",
+            "update_available": "Güncelleme Mevcut:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Manuel mod aktif - belirli oyun izleniyor"
+            },
+            "auto": {
+                "title": "Otomatik mod - oyun önceliği takip ediliyor"
+            },
+            "proxy": {
+                "title": "Proxy bağlantısı aktif"
+            }
+        },
+        "wanted": {
+            "name": "İstenen Drop Kuyruğu",
+            "none": "Kuyrukta istenen drop yok..."
         }
     }
 }
