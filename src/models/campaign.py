@@ -199,3 +199,8 @@ class DropsCampaign:
             self._twitch.change_state(State.CHANNEL_SWITCH)
         if (first_drop := self.first_drop) is not None:
             first_drop.display()
+
+    def has_wanted_unclaimed_benefits(self, allowed_benefits: dict[str, bool]) -> bool:
+        return any(
+            drop.has_wanted_unclaimed_benefits(allowed_benefits) for drop in self.drops
+        )

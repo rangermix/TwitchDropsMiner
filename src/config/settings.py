@@ -35,6 +35,7 @@ class SettingsFile(TypedDict):
     inventory_filters: InventoryFilters
     telegram_bot_token: str
     telegram_chat_id: str
+    mining_benefits: dict[str, bool]
 
 
 default_settings: SettingsFile = {
@@ -58,6 +59,12 @@ default_settings: SettingsFile = {
         "show_benefit_other": True,
         "game_name_search": [],
     },
+    "mining_benefits": {
+        "DIRECT_ENTITLEMENT": True,
+        "BADGE": True,
+        "EMOTE": True,
+        "UNKNOWN": True,
+    },
 }
 
 
@@ -79,6 +86,7 @@ class Settings:
     inventory_filters: InventoryFilters
     telegram_bot_token: str
     telegram_chat_id: str
+    mining_benefits: dict[str, bool]
 
     PASSTHROUGH = ("_settings", "_args", "_altered")
 

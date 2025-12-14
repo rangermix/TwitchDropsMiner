@@ -138,6 +138,11 @@ class BaseDrop:
     def rewards_text(self, delim: str = ", ") -> str:
         return delim.join(benefit.name for benefit in self.benefits)
 
+    def has_wanted_unclaimed_benefits(self, allowed_benefits: dict[str, bool]) -> bool:
+        if self.is_claimed:
+            return False
+        return any(benefit.is_wanted(allowed_benefits) for benefit in self.benefits)
+
     async def claim(self) -> bool:
         result = await self._claim()
         if result:

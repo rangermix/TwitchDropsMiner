@@ -12,6 +12,11 @@ if TYPE_CHECKING:
     from src.web.managers.broadcaster import WebSocketBroadcaster
 
 
+
+import logging
+
+logger = logging.getLogger("TwitchDrops")
+
 class ConsoleOutputManager:
     """Manages console output display in the web interface.
 
@@ -33,6 +38,7 @@ class ConsoleOutputManager:
         line = f"[{timestamp}] | {message}"
         self._buffer.append(line)
         asyncio.create_task(self._broadcaster.emit("console_output", {"message": line}))
+        logger.info(message)
 
     def get_history(self) -> list[str]:
         """Get the current console history buffer.

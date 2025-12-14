@@ -101,6 +101,14 @@
                     <h2>Channels</h2>
                     <div id="channels-list" class="channels-list"></div>
                 </section>
+
+                <!-- Wanted Items (New Panel) -->
+                <section class="panel wanted-panel">
+                    <h2>Wanted Drops Queue</h2>
+                    <div id="wanted-items-list" class="wanted-items-list">
+                        <p class="empty-message-small">No wanted drops queued...</p>
+                    </div>
+                </section>
             </div>
         </div>
 
@@ -214,6 +222,26 @@
                         <button id="test-telegram-btn" class="secondary-btn" title="Test Telegram connection" data-i18n="settings.telegram.test_connection">Test Connection</button>
                     </div>
                     <div id="telegram-test-result" class="verify-result" style="display: none;"></div>
+                    <h2>Mining Benefits</h2>
+                    <p class="help-text">Select which types of drops you want to mine.</p>
+                    <div class="benefits-filter filter-checkboxes">
+                        <label class="filter-checkbox" title="Detailed description: Direct Entitlement (Game Item)">
+                            <input type="checkbox" id="mining-benefit-item" checked />
+                            <span>Item</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="mining-benefit-badge" checked />
+                            <span>Badge</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="mining-benefit-emote" checked />
+                            <span>Emote</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="mining-benefit-unknown" checked />
+                            <span>Other</span>
+                        </label>
+                    </div>
                 </section>
 
                 <section class="settings-section">
@@ -294,10 +322,26 @@
                 </ol>
 
                 <div class="help-links">
-                    <a href="https://github.com/DevilXD/TwitchDropsMiner" target="_blank">GitHub Repository</a>
+                    <a href="https://github.com/rangermix/TwitchDropsMiner" target="_blank">GitHub Repository</a>
                 </div>
             </div>
         </div>
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-version">
+                    <span id="footer-version-text">Version: <span id="current-version">Loading...</span></span>
+                    <span id="footer-update-indicator" style="display: none;" class="update-indicator">
+                        <a href="#" id="footer-update-link" target="_blank" title="Click to download update">
+                            ⚠ Update Available: <span id="latest-version"></span>
+                        </a>
+                    </span>
+                </div>
+                <div class="footer-links">
+                    <a href="https://github.com/rangermix/TwitchDropsMiner" target="_blank">GitHub</a>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <script src="/static/app.js"></script>

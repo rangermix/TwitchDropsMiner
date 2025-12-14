@@ -73,11 +73,11 @@ class SettingsUpdate(BaseModel):
     language: str | None = None
     proxy: str | None = None
     connection_quality: int | None = None
-    proxy: str | None = None
-    connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None
+    inventory_filters: dict | None = None
+    mining_benefits: dict[str, bool] | None = None
 
 
 class ProxyVerifyRequest(BaseModel):
@@ -298,6 +298,42 @@ async def test_telegram(request: TelegramTestRequest):
             "success": False,
             "message": f"Telegram error: {str(e)}"
         }
+@app.get("/api/version")
+async def get_version():
+    """Get current application version and check for updates"""
+    from src.version import __version__
+    import aiohttp
+
+    current_version = __version__
+    latest_version = None
+    update_available = False
+    download_url = None
+
+    try:
+        # Check GitHub API for latest release
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest",
+                timeout=5
+            ) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    latest_version = data.get('tag_name', '').lstrip('v')
+                    download_url = data.get('html_url')
+
+                    # Compare versions (simple string comparison works for semantic versioning)
+                    if latest_version and latest_version > current_version:
+                        update_available = True
+    except Exception as e:
+        logger.warning(f"Failed to check for updates: {str(e)}")
+
+    return {
+        "current_version": current_version,
+        "latest_version": latest_version,
+        "update_available": update_available,
+        "download_url": download_url or "https://github.com/rangermix/TwitchDropsMiner/releases"
+    }
+
 
 @app.post("/api/login")
 async def submit_login(login_data: LoginRequest):
@@ -376,6 +412,7 @@ async def connect(sid, environ):
                 "login": gui_manager.login.get_status(),
                 "manual_mode": twitch_client.get_manual_mode_info(),
                 "current_drop": gui_manager.progress.get_current_drop(),
+                "wanted_items": gui_manager.get_wanted_tree(),
             },
             room=sid,
         )
@@ -401,6 +438,17 @@ async def request_reload(sid):
         from src.config import State
 
         twitch_client.change_state(State.INVENTORY_FETCH)
+
+
+@sio.event
+async def get_wanted_items(sid):
+    """Client requested wanted items list"""
+    if gui_manager:
+        await sio.emit(
+            "wanted_items_update",
+            gui_manager.get_wanted_tree(),
+            to=sid
+        )
 
 
 # Mount static files (CSS, JS, images)

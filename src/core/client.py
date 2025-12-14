@@ -236,6 +236,8 @@ class Twitch:
                 await self.websocket.start()
                 await self.fetch_inventory()
                 self.gui.set_games({campaign.game for campaign in self.inventory})
+                # Broadcast unwanted items (based on settings)
+                self.gui.broadcast_wanted_items()
                 # Save state on every inventory fetch
                 self.save()
                 self.change_state(State.GAMES_UPDATE)
@@ -302,20 +304,7 @@ class Twitch:
                     logger.info("=== End Campaigns Mapping ===")
 
                 # Build wanted_games list preserving the order from games_to_watch
-                for game_name in games_to_watch:
-                    # Find campaigns for this game (case-insensitive matching)
-                    game_name_lower: str = game_name.lower()
-                    for campaign in self.inventory:
-                        game: Game = campaign.game
-                        if (
-                            game.name.lower() == game_name_lower
-                            and game not in self.wanted_games  # isn't already there
-                            and campaign.can_earn_within(
-                                next_hour
-                            )  # can be progressed within the next hour
-                        ):
-                            self.wanted_games.append(game)
-                            break  # Only add each game once
+                self.wanted_games = self._filter_wanted_campaigns(next_hour)
 
                 if self.wanted_games:
                     logger.info(
@@ -689,3 +678,25 @@ class Twitch:
     async def bulk_check_online(self, channels: abc.Iterable[Channel]):
         """Delegate to ChannelService."""
         await self._channel_service.bulk_check_online(channels)
+
+    def _filter_wanted_campaigns(self, next_hour: datetime) -> list[Game]:
+        """
+        Filter campaigns to find wanted games based on settings and benefits.
+        """
+        wanted_games: list[Game] = []
+        games_to_watch: list[str] = self.settings.games_to_watch
+        mining_benefits: dict[str, bool] = self.settings.mining_benefits
+
+        for game_name in games_to_watch:
+            game_name_lower: str = game_name.lower()
+            for campaign in self.inventory:
+                game: Game = campaign.game
+                if (
+                    game.name.lower() == game_name_lower
+                    and game not in wanted_games
+                    and campaign.can_earn_within(next_hour)
+                    and campaign.has_wanted_unclaimed_benefits(mining_benefits)
+                ):
+                    wanted_games.append(game)
+                    break 
+        return wanted_games
