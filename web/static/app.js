@@ -22,7 +22,12 @@ async function fetchAndDisplayVersion() {
         const data = await response.json();
         const versionElement = document.getElementById('current-version');
         if (versionElement) {
-            versionElement.textContent = data.current_version;
+            let versionText = data.current_version;
+            // Add (latest) indicator if we know the latest version and it matches
+            if (data.latest_version && data.current_version === data.latest_version) {
+                versionText += ' (latest)';
+            }
+            versionElement.textContent = versionText;
         }
 
         // Display update notification if available
