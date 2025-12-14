@@ -130,6 +130,30 @@
             "actions": "アクション",
             "connection_quality": "接続品質：",
             "minimum_refresh": "最小更新間隔（分）：",
+            "telegram": {
+                "name": "Telegram通知",
+                "description": "ドロップを獲得したときにTelegramで通知を受け取ります。",
+                "bot_token": "Telegramボットトークン",
+                "chat_id": "TelegramチャットID",
+                "save_settings": "設定を保存",
+                "test_connection": "接続をテスト",
+                "how_to_setup": "セットアップ方法",
+                "setup_steps": [
+                    "Telegramで<a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a>にアクセス",
+                    "/newbotコマンドで新しいボットを作成",
+                    "受け取ったボットトークンを保存",
+                    "新しいボットを検索して/startをクリックして開始（またはメッセージを送信）",
+                    "ブラウザでこのURLを開いてチャットIDを取得（TOKENを置き換え）: https://api.telegram.org/botTOKEN/getUpdates",
+                    "レスポンスでユーザーIDを見つける - \"from\": {\"id\": あなたのID}の数字です",
+                    "トークンとチャットIDを入力して、接続をテストをクリック"
+                ],
+                "success": "✓ Telegram接続成功！ドロップを獲得したときに通知を受け取ります。",
+                "saved": "✓ 設定が正常に保存されました!",
+                "error": "Telegramへの接続に失敗しました。ボットトークンとチャットIDを確認してください。",
+                "missing_credentials": "ボットトークンとチャットIDの両方を入力してください。ヘルプタブのセットアップ手順を参照してください。",
+                "get_from_botfather": "@BotFatherから取得",
+                "your_user_id": "あなたのTelegram数値ユーザーID"
+            },
             "reload_campaigns": "キャンペーンを再読み込み"
         },
         "help": {

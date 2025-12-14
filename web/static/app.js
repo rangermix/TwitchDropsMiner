@@ -1033,6 +1033,12 @@ function updateSettingsUI(settings) {
         proxyIndicator.title = proxyUrl ? `Proxy active: ${proxyUrl}` : 'Proxy disabled';
     }
 
+    // Populate Telegram fields if present in settings
+    const botTokenInput = document.getElementById('telegram-bot-token');
+    const chatIdInput = document.getElementById('telegram-chat-id');
+    if (botTokenInput) botTokenInput.value = settings.telegram_bot_token || '';
+    if (chatIdInput) chatIdInput.value = settings.telegram_chat_id || '';
+
     // Update language dropdown if we have the current language
     if (settings.language) {
         const languageSelect = document.getElementById('language');
@@ -1447,6 +1453,101 @@ async function verifyProxy() {
     }
 }
 
+async function testTelegramConnection() {
+    const botTokenInput = document.getElementById('telegram-bot-token');
+    const chatIdInput = document.getElementById('telegram-chat-id');
+    const resultDiv = document.getElementById('telegram-test-result');
+
+    if (!resultDiv) return;
+
+    const botToken = botTokenInput ? botTokenInput.value.trim() : '';
+    const chatId = chatIdInput ? chatIdInput.value.trim() : '';
+
+    // Reset display
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'verify-result loading';
+    resultDiv.textContent = 'Testing Telegram connection...';
+
+    if (!botToken || !chatId) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = 'Please fill in both Bot Token and Chat ID. See setup instructions in the Help tab.';
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/settings/test-telegram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegram_bot_token: botToken, telegram_chat_id: chatId })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            resultDiv.className = 'verify-result success';
+            resultDiv.textContent = `✓ ${data.message || 'Telegram connection successful!'}`;
+            // Save settings if test was successful
+            saveTelegramSettings(botToken, chatId);
+        } else {
+            resultDiv.className = 'verify-result error';
+            resultDiv.textContent = `✗ ${data.message || 'Telegram connection failed.'}`;
+        }
+    } catch (error) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = `Error: ${error.message}`;
+    }
+}
+
+async function saveTelegramSettings(botToken, chatId) {
+    const settings = {
+        telegram_bot_token: botToken,
+        telegram_chat_id: chatId
+    };
+
+    try {
+        await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+        console.log('Telegram settings saved');
+    } catch (error) {
+        console.error('Failed to save Telegram settings:', error);
+    }
+}
+
+async function handleSaveTelegramClick() {
+    const botTokenInput = document.getElementById('telegram-bot-token');
+    const chatIdInput = document.getElementById('telegram-chat-id');
+    const resultDiv = document.getElementById('telegram-test-result');
+
+    if (!resultDiv) return;
+
+    const botToken = botTokenInput ? botTokenInput.value.trim() : '';
+    const chatId = chatIdInput ? chatIdInput.value.trim() : '';
+
+    // Reset display
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'verify-result loading';
+    resultDiv.textContent = 'Saving settings...';
+
+    if (!botToken || !chatId) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = 'Please fill in both Bot Token and Chat ID. See setup instructions in the Help tab.';
+        return;
+    }
+
+    try {
+        await saveTelegramSettings(botToken, chatId);
+        resultDiv.className = 'verify-result success';
+        resultDiv.textContent = '✓ Settings saved successfully!';
+    } catch (error) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = `Error: ${error.message}`;
+    }
+}
+
+
 async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
@@ -1617,8 +1718,14 @@ function applyTranslations(t) {
     if (settingsTab && t.gui?.settings) {
         const headers = settingsTab.querySelectorAll('h2');
         if (headers[0]) headers[0].textContent = t.gui.settings.general.name;
-        if (headers[1]) headers[1].textContent = t.gui.settings.games_to_watch;
-        if (headers[2]) headers[2].textContent = t.gui.settings.actions;
+        // headers[1] is the Telegram section header in DOM order
+        if (headers[1]) {
+            const telegramName = (t.settings && t.settings.telegram && t.settings.telegram.name) || (t.gui && t.gui.settings && t.gui.settings.telegram && t.gui.settings.telegram.name) || null;
+            headers[1].textContent = telegramName || headers[1].textContent;
+        }
+        // games to watch is the next header
+        if (headers[2]) headers[2].textContent = t.gui.settings.games_to_watch;
+        if (headers[3]) headers[3].textContent = t.gui.settings.actions;
 
         const darkModeLabel = settingsTab.querySelector('label:has(#dark-mode)');
         if (darkModeLabel) {
@@ -1662,6 +1769,37 @@ function applyTranslations(t) {
 
         const reloadBtn = document.getElementById('reload-btn');
         if (reloadBtn) reloadBtn.textContent = t.gui.settings.reload_campaigns;
+
+        // Update Telegram Notifications section (use either t.settings.telegram or t.gui.settings.telegram)
+        const tgTrans = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
+        if (tgTrans) {
+            const telegramSection = settingsTab.querySelector('.settings-section:has(#telegram-bot-token)');
+            if (telegramSection) {
+                const heading = telegramSection.querySelector('h2');
+                if (heading) heading.textContent = tgTrans.name || heading.textContent;
+
+                const description = telegramSection.querySelector('.help-text');
+                if (description) description.textContent = tgTrans.description || description.textContent;
+
+                const labels = telegramSection.querySelectorAll('label');
+                if (labels[0]) {
+                    const span = labels[0].querySelector('span');
+                    if (span) span.textContent = (tgTrans.bot_token ? tgTrans.bot_token + ':' : span.textContent);
+                }
+                if (labels[1]) {
+                    const span = labels[1].querySelector('span');
+                    if (span) span.textContent = (tgTrans.chat_id ? tgTrans.chat_id + ':' : span.textContent);
+                    const small = labels[1].querySelector('small');
+                    if (small) small.textContent = tgTrans.your_user_id || small.textContent;
+                }
+
+                const saveTelegramBtn = document.getElementById('save-telegram-btn');
+                if (saveTelegramBtn) saveTelegramBtn.textContent = tgTrans.save_settings || saveTelegramBtn.textContent;
+
+                const testTelegramBtn = document.getElementById('test-telegram-btn');
+                if (testTelegramBtn) testTelegramBtn.textContent = tgTrans.test_connection || testTelegramBtn.textContent;
+            }
+        }
 
         // Re-render games to watch with translated empty messages
         renderGamesToWatch();
@@ -1707,6 +1845,30 @@ function applyTranslations(t) {
                     'Requires linked game accounts for drops'
                 ]).map(item => `<li>${item}</li>`).join('')}
                 </ul>
+
+                <!-- Telegram setup (translated) -->
+                ${(() => {
+                    const tg = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
+                    const title = tg && tg.name ? tg.name : (t.gui && t.gui.settings && t.gui.settings.telegram && t.gui.settings.telegram.name) || 'Telegram Notifications';
+                    const desc = tg && tg.description ? tg.description : (t.gui && t.gui.settings && t.gui.settings.telegram && t.gui.settings.telegram.description) || 'Receive instant notifications on Telegram when you claim drops. Setup instructions:';
+                    const steps = (tg && tg.setup_steps) || (t.gui && t.gui.settings && t.gui.settings.telegram && t.gui.settings.telegram.setup_steps) || [
+                        'Go to @BotFather on Telegram',
+                        'Create a new bot with /newbot command',
+                        'Save the bot token you receive',
+                        'Start your new bot by searching for it and clicking /start (or send any message)',
+                        'Get your Chat ID by opening this URL in browser (replace TOKEN): https://api.telegram.org/botTOKEN/getUpdates',
+                        'Find your user ID in the response - it is the number in "from": {"id": YOUR_ID}',
+                        'Enter the token and Chat ID in Settings and click Test Connection'
+                    ];
+
+                    return `
+                        <h3>${title}</h3>
+                        <p>${desc}</p>
+                        <ol>
+                            ${steps.map(s => `<li>${s}</li>`).join('')}
+                        </ol>
+                    `;
+                })()}
 
                 <div class="help-links">
                     <a href="https://github.com/rangermix/TwitchDropsMiner" target="_blank">${t.gui.help.github_repo || 'GitHub Repository'}</a>
@@ -1806,6 +1968,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
+    document.getElementById('test-telegram-btn').addEventListener('click', testTelegramConnection);
+    document.getElementById('save-telegram-btn').addEventListener('click', handleSaveTelegramClick);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
 
 

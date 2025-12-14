@@ -130,6 +130,30 @@
             "actions": "Acties",
             "connection_quality": "Verbindingskwaliteit:",
             "minimum_refresh": "Minimaal verversingsinterval (minuten):",
+            "telegram": {
+                "name": "Telegram-meldingen",
+                "description": "Ontvang meldingen op Telegram wanneer u drops claims.",
+                "bot_token": "Telegram Bot Token",
+                "chat_id": "Telegram Chat-ID",
+                "save_settings": "Instellingen opslaan",
+                "test_connection": "Verbinding testen",
+                "how_to_setup": "Hoe in te stellen",
+                "setup_steps": [
+                    "Ga naar <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> op Telegram",
+                    "Maak een nieuwe bot met de opdracht /newbot",
+                    "Sla het bottoken op dat u ontvangt",
+                    "Start uw nieuwe bot door ernaar te zoeken en op /start te klikken (of stuur een bericht)",
+                    "Haal uw Chat-ID op door deze URL in de browser te openen (vervang TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Zoek uw gebruikers-ID in het antwoord - dit is het getal in \"from\": {\"id\": UW_ID}",
+                    "Voer het token en Chat-ID in en klik op Verbinding testen"
+                ],
+                "success": "✓ Telegram-verbinding succesvol! U ontvangt meldingen wanneer u drops claims.",
+                "saved": "✓ Instellingen succesvol opgeslagen!",
+                "error": "Kan geen verbinding maken met Telegram. Controleer uw bottoken en chat-ID.",
+                "missing_credentials": "Vul zowel bot-token als chat-ID in. Zie setupinstructies in het Help-tabblad.",
+                "get_from_botfather": "Haal op van @BotFather",
+                "your_user_id": "Uw numerieke Telegram gebruikers-ID"
+            },
             "reload_campaigns": "Herlaad Campagnes"
         },
         "help": {

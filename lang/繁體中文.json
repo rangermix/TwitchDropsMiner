@@ -130,6 +130,30 @@
             "actions": "操作",
             "connection_quality": "連線品質：",
             "minimum_refresh": "最小重新整理間隔（分鐘）：",
+            "telegram": {
+                "name": "電報通知",
+                "description": "在您領取掉落時接收電報通知。",
+                "bot_token": "電報機器人令牌",
+                "chat_id": "電報聊天ID",
+                "save_settings": "儲存設定",
+                "test_connection": "測試連線",
+                "how_to_setup": "設定方法",
+                "setup_steps": [
+                    "在電報中前往 <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a>",
+                    "使用 /newbot 指令建立新機器人",
+                    "儲存您收到的機器人令牌",
+                    "透過搜尋並點擊 /start 啟動您的新機器人（或傳送任何訊息）",
+                    "透過在瀏覽器中開啟此URL來取得您的聊天ID（取代TOKEN）: https://api.telegram.org/botTOKEN/getUpdates",
+                    "在回應中找到您的使用者ID - 它是\"from\": {\"id\": 您的ID}中的數字",
+                    "輸入令牌和聊天ID，然後點擊測試連線"
+                ],
+                "saved": "✓ 設定已成功儲存！",
+                "success": "✓ 電報連線成功！在您領取掉落時您將收到通知。",
+                "error": "無法連線到電報。請檢查您的機器人令牌和聊天ID。",
+                "missing_credentials": "請同時填寫機器人令牌和聊天ID。請在「說明」標籤中查看設定說明。",
+                "get_from_botfather": "從 @BotFather 取得",
+                "your_user_id": "您的電報數字使用者ID"
+            },
             "reload_campaigns": "重新載入活動"
         },
         "help": {

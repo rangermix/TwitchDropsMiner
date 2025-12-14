@@ -127,7 +127,31 @@
             "all_games_selected": "Alle Spiele sind ausgewählt oder keine Spiele verfügbar.",
             "actions": "Aktionen",
             "connection_quality": "Verbindungsqualität:",
-            "minimum_refresh": "Minimales Aktualisierungsintervall (Minuten):"
+            "minimum_refresh": "Minimales Aktualisierungsintervall (Minuten):",
+            "telegram": {
+                "name": "Telegram-Benachrichtigungen",
+                "description": "Erhalten Sie Benachrichtigungen auf Telegram, wenn Sie Drops einsammeln.",
+                "bot_token": "Telegram-Bot-Token",
+                "chat_id": "Telegram-Chat-ID",
+                "save_settings": "Einstellungen speichern",
+                "test_connection": "Verbindung testen",
+                "how_to_setup": "Einrichtungsanleitung",
+                "setup_steps": [
+                    "Gehen Sie zu <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> auf Telegram",
+                    "Erstellen Sie einen neuen Bot mit dem Befehl /newbot",
+                    "Speichern Sie den erhaltenen Bot-Token",
+                    "Starten Sie Ihren neuen Bot, indem Sie ihn durchsuchen und /start klicken (oder senden Sie eine Nachricht)",
+                    "Holen Sie sich Ihre Chat-ID, indem Sie diese URL im Browser öffnen (TOKEN ersetzen): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Finden Sie Ihre Benutzer-ID in der Antwort - es ist die Zahl in \"from\": {\"id\": IHRE_ID}",
+                    "Geben Sie Token und Chat-ID ein und klicken Sie auf Verbindung testen"
+                ],
+                "success": "✓ Telegram-Verbindung erfolgreich! Sie erhalten Benachrichtigungen über eingsammelte Drops.",
+                "saved": "✓ Einstellungen erfolgreich gespeichert!",
+                "error": "Verbindung zu Telegram fehlgeschlagen. Bitte überprüfen Sie Bot-Token und Chat-ID.",
+                "missing_credentials": "Füllen Sie sowohl Bot-Token als auch Chat-ID aus. Siehe Setupanleitung im Hilfereiter.",
+                "get_from_botfather": "Von @BotFather",
+                "your_user_id": "Ihre numerische Telegram-Benutzer-ID"
+            }
         },
         "help": {
             "about": "Über Twitch Drops Miner",

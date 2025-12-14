@@ -53,6 +53,8 @@ class SettingsManager:
             "proxy": str(self._settings.proxy),
             "connection_quality": self._settings.connection_quality,
             "minimum_refresh_interval_minutes": self._settings.minimum_refresh_interval_minutes,
+            "telegram_bot_token": self._settings.telegram_bot_token,
+            "telegram_chat_id": self._settings.telegram_chat_id,
             "inventory_filters": self._settings.inventory_filters,
             "mining_benefits": self._settings.mining_benefits,
         }
@@ -124,6 +126,10 @@ class SettingsManager:
             self._settings.minimum_refresh_interval_minutes = settings_data[
                 "minimum_refresh_interval_minutes"
             ]
+        if "telegram_bot_token" in settings_data:
+            self._settings.telegram_bot_token = settings_data["telegram_bot_token"] or ""
+        if "telegram_chat_id" in settings_data:
+            self._settings.telegram_chat_id = settings_data["telegram_chat_id"] or ""
             self._log_change(f"Setting changed: minimum_refresh_interval_minutes = {self._settings.minimum_refresh_interval_minutes}")
             
         if "inventory_filters" in settings_data:
