@@ -106,7 +106,20 @@
             "starts": "Beginnt: {time}",
             "ends": "Endet: {time}",
             "no_campaigns": "Noch keine Kampagnen geladen...",
-            "claimed_drops": "abgeholt"
+            "claimed_drops": "abgeholt",
+            "filters": {
+                "active": "Aktiv",
+                "not_linked": "Nicht Verbunden",
+                "upcoming": "Kommend",
+                "expired": "Abgelaufen",
+                "finished": "Beendet",
+                "item": "Gegenstand",
+                "badge": "Abzeichen",
+                "emote": "Emote",
+                "other": "Andere",
+                "clear": "Filter löschen",
+                "search_placeholder": "Spiele suchen..."
+            }
         },
         "settings": {
             "general": {
@@ -127,7 +140,9 @@
             "all_games_selected": "Alle Spiele sind ausgewählt oder keine Spiele verfügbar.",
             "actions": "Aktionen",
             "connection_quality": "Verbindungsqualität:",
-            "minimum_refresh": "Minimales Aktualisierungsintervall (Minuten):"
+            "minimum_refresh": "Minimales Aktualisierungsintervall (Minuten):",
+            "mining_benefits": "Mining-Vorteile",
+            "mining_benefits_help": "Wählen Sie, welche Arten von Drops Sie minen möchten."
         },
         "help": {
             "about": "Über Twitch Drops Miner",
@@ -164,6 +179,26 @@
             "manual_mode": "MANUELL",
             "connected": "Verbunden",
             "disconnected": "Getrennt"
+        },
+        "footer": {
+            "version": "Version:",
+            "loading": "Laden...",
+            "update_available": "Update verfügbar:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Manueller Modus aktiv - schaue bestimmtes Spiel"
+            },
+            "auto": {
+                "title": "Automatischer Modus - folge Spielpriorität"
+            },
+            "proxy": {
+                "title": "Proxy-Verbindung aktiv"
+            }
+        },
+        "wanted": {
+            "name": "Wunsch-Drops Warteschlange",
+            "none": "Keine Wunsch-Drops in der Warteschlange..."
         }
     }
 }

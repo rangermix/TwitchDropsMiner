@@ -69,8 +69,8 @@
 
                 <!-- Current Drop Progress -->
                 <section class="panel progress-panel">
-                    <h2>Current Drop</h2>
-                    <div id="drop-display">
+                    <h2 id="progress-header">Campaign Progress</h2>
+                    <div id="progress-container">
                         <div id="no-drop-message">No active drop</div>
                         <div id="drop-info" style="display: none;">
                             <div id="manual-mode-controls" class="manual-mode-controls hidden">
@@ -92,19 +92,19 @@
 
                 <!-- Console Output -->
                 <section class="panel console-panel">
-                    <h2>Console Output</h2>
+                    <h2 id="console-header">Logs</h2>
                     <div id="console-output" class="console-output"></div>
                 </section>
 
                 <!-- Channels List -->
                 <section class="panel channels-panel">
-                    <h2>Channels</h2>
+                    <h2 id="channels-header">Channels</h2>
                     <div id="channels-list" class="channels-list"></div>
                 </section>
 
                 <!-- Wanted Items (New Panel) -->
                 <section class="panel wanted-panel">
-                    <h2>Wanted Drops Queue</h2>
+                    <h2 id="wanted-header">Wanted Drop Queue</h2>
                     <div id="wanted-items-list" class="wanted-items-list">
                         <p class="empty-message-small">No wanted drops queued...</p>
                     </div>
@@ -138,7 +138,8 @@
                             <span>Finished</span>
                         </label>
                         <div class="filter-separator"
-                            style="width: 1px; height: 24px; background: var(--border-color); margin: 0 10px;"></div>
+                            style="width: 1px; height: 24px; background: var(--border-color); margin: 0 10px;">
+                        </div>
                         <label class="filter-checkbox" title="Direct Entitlement (Game Item)">
                             <input type="checkbox" id="filter-benefit-item" checked />
                             <span>Item</span>
@@ -180,7 +181,7 @@
         <div id="settings-tab" class="tab-content">
             <div class="settings-container">
                 <section class="settings-section">
-                    <h2>General Settings</h2>
+                    <h2 id="settings-general-header">General</h2>
                     <label>
                         <input type="checkbox" id="dark-mode"> Dark Mode
                     </label>
@@ -195,7 +196,8 @@
                     <label>
                         Proxy URL:
                         <input type="text" id="proxy-url" placeholder="http://user:pass@host:port">
-                        <button id="set-proxy-btn" class="secondary-btn" title="Set and verify proxy">Set Proxy</button>
+                        <button id="set-proxy-btn" class="secondary-btn" title="Set and verify proxy">Set
+                            Proxy</button>
                         <button id="verify-proxy-btn" class="secondary-btn"
                             title="Test proxy connection">Verify</button>
                     </label>
@@ -205,8 +207,9 @@
                 </section>
 
                 <section class="settings-section">
-                    <h2>Mining Benefits</h2>
-                    <p class="help-text">Select which types of drops you want to mine.</p>
+                    <h2 id="settings-benefits-header">Mining Benefits</h2>
+                    <p id="settings-benefits-help" class="help-text">Select which types of drops you want to
+                        mine.</p>
                     <div class="benefits-filter filter-checkboxes">
                         <label class="filter-checkbox" title="Detailed description: Direct Entitlement (Game Item)">
                             <input type="checkbox" id="mining-benefit-item" checked />
@@ -228,8 +231,10 @@
                 </section>
 
                 <section class="settings-section">
-                    <h2>Games to Watch</h2>
-                    <p class="help-text">Select games to watch. Order matters - drag to reorder priority (top = highest
+                    <h2 id="settings-games-header">Games to Watch</h2>
+                    <p id="settings-games-help" class="help-text">Select games to watch. Order matters - drag to
+                        reorder
+                        priority (top = highest
                         priority).</p>
 
                     <div class="games-filter">
@@ -254,8 +259,10 @@
                 </section>
 
                 <section class="settings-section">
-                    <h2>Actions</h2>
-                    <button id="reload-btn" class="action-button">Reload Campaigns</button>
+                    <h2 id="settings-actions-header">Actions</h2>
+                    <div class="settings-actions">
+                        <button id="reload-btn" class="action-button">Reload</button>
+                    </div>
                 </section>
             </div>
         </div>
@@ -263,10 +270,10 @@
         <!-- Help Tab -->
         <div id="help-tab" class="tab-content">
             <div class="help-content">
-                <h2>About Twitch Drops Miner</h2>
+                <h2 id="help-about-header">About Twitch Drops Miner</h2>
                 <p>This application automatically mines timed Twitch drops without downloading stream data.</p>
 
-                <h3>How to Use</h3>
+                <h3 id="help-howto-header">How to Use</h3>
                 <ol>
                     <li>Login using your Twitch account (OAuth device code flow)</li>
                     <li>Link your accounts at <a href="https://www.twitch.tv/drops/campaigns"
@@ -276,7 +283,7 @@
                     <li>Monitor progress in the Main and Inventory tabs</li>
                 </ol>
 
-                <h3>Features</h3>
+                <h3 id="help-features-header">Features</h3>
                 <ul>
                     <li>Stream-less drop mining - saves bandwidth</li>
                     <li>Game priority and exclusion lists</li>
@@ -285,7 +292,7 @@
                     <li>Real-time progress tracking</li>
                 </ul>
 
-                <h3>Important Notes</h3>
+                <h3 id="help-notes-header">Important Notes</h3>
                 <ul>
                     <li>Do not watch streams on the same account while mining</li>
                     <li>Keep your cookies.jar file secure</li>
@@ -293,7 +300,8 @@
                 </ul>
 
                 <div class="help-links">
-                    <a href="https://github.com/rangermix/TwitchDropsMiner" target="_blank">GitHub Repository</a>
+                    <a href="https://github.com/rangermix/TwitchDropsMiner" target="_blank">GitHub
+                        Repository</a>
                 </div>
             </div>
         </div>

@@ -108,7 +108,20 @@
             "starts": "Začíná: {time}",
             "ends": "Začíná: {time}",
             "no_campaigns": "Zatím nejsou načteny žádné kampaně...",
-            "claimed_drops": "získáno"
+            "claimed_drops": "získáno",
+            "filters": {
+                "active": "Aktivní",
+                "not_linked": "Nepřipojeno",
+                "upcoming": "Nadcházející",
+                "expired": "Vypršelo",
+                "finished": "Dokončeno",
+                "item": "Předmět",
+                "badge": "Odznak",
+                "emote": "Emotikon",
+                "other": "Jiné",
+                "clear": "Vymazat filtry",
+                "search_placeholder": "Hledat hry..."
+            }
         },
         "settings": {
             "general": {
@@ -130,7 +143,9 @@
             "actions": "Akce",
             "connection_quality": "Kvalita připojení:",
             "minimum_refresh": "Minimální interval obnovení (minuty):",
-            "reload_campaigns": "Znovu načíst kampaně"
+            "reload_campaigns": "Znovu načíst kampaně",
+            "mining_benefits": "Výhody Těžby",
+            "mining_benefits_help": "Vyberte typy dropů, které chcete těžit."
         },
         "help": {
             "about": "O Twitch Drops Miner",
@@ -167,6 +182,26 @@
             "manual_mode": "MANUÁLNÍ",
             "connected": "Připojeno",
             "disconnected": "Odpojeno"
+        },
+        "footer": {
+            "version": "Verze:",
+            "loading": "Načítání...",
+            "update_available": "Dostupná aktualizace:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Manuální režim aktivní - sledování konkrétní hry"
+            },
+            "auto": {
+                "title": "Automatický režim - podle priority her"
+            },
+            "proxy": {
+                "title": "Proxy připojení aktivní"
+            }
+        },
+        "wanted": {
+            "name": "Fronta chtěných Dropů",
+            "none": "Žádné chtěné dropy ve frontě..."
         }
     }
 }

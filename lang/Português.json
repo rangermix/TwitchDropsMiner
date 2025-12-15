@@ -109,7 +109,20 @@
             "starts": "Começa em: {time}",
             "ends": "Termina em: {time}",
             "no_campaigns": "Nenhuma campanha carregada ainda...",
-            "claimed_drops": "reivindicado"
+            "claimed_drops": "reivindicado",
+            "filters": {
+                "active": "Ativo",
+                "not_linked": "Não Vinculado",
+                "upcoming": "Próximo",
+                "expired": "Expirado",
+                "finished": "Terminado",
+                "item": "Item",
+                "badge": "Distintivo",
+                "emote": "Emote",
+                "other": "Outro",
+                "clear": "Limpar Filtros",
+                "search_placeholder": "Pesquisar jogos..."
+            }
         },
         "settings": {
             "general": {
@@ -130,7 +143,9 @@
             "actions": "Ações",
             "connection_quality": "Qualidade da conexão:",
             "minimum_refresh": "Intervalo mínimo de atualização (minutos):",
-            "reload_campaigns": "Recarregar Campanhas"
+            "reload_campaigns": "Recarregar Campanhas",
+            "mining_benefits": "Benefícios de Mineração",
+            "mining_benefits_help": "Selecione quais tipos de drops você deseja minerar."
         },
         "help": {
             "about": "Sobre o Twitch Drops Miner",
@@ -167,6 +182,26 @@
             "manual_mode": "MANUAL",
             "connected": "Conectado",
             "disconnected": "Desconectado"
+        },
+        "footer": {
+            "version": "Versão:",
+            "loading": "Carregando...",
+            "update_available": "Atualização disponível:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Modo manual ativo - assistindo jogo específico"
+            },
+            "auto": {
+                "title": "Modo automático - seguindo prioridade de jogos"
+            },
+            "proxy": {
+                "title": "Conexão proxy ativa"
+            }
+        },
+        "wanted": {
+            "name": "Fila de Drops Desejados",
+            "none": "Nenhum drop desejado na fila..."
         }
     }
 }

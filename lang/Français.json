@@ -106,7 +106,20 @@
             "starts": "Début : {time}",
             "ends": "Fin : {time}",
             "no_campaigns": "Aucune campagne chargée pour le moment...",
-            "claimed_drops": "récupéré"
+            "claimed_drops": "récupéré",
+            "filters": {
+                "active": "Actif",
+                "not_linked": "Non lié",
+                "upcoming": "À venir",
+                "expired": "Expiré",
+                "finished": "Terminé",
+                "item": "Objet",
+                "badge": "Badge",
+                "emote": "Émote",
+                "other": "Autre",
+                "clear": "Effacer les filtres",
+                "search_placeholder": "Rechercher des jeux..."
+            }
         },
         "settings": {
             "general": {
@@ -127,7 +140,9 @@
             "all_games_selected": "Tous les jeux sont sélectionnés ou aucun jeu disponible.",
             "actions": "Actions",
             "connection_quality": "Qualité de connexion :",
-            "minimum_refresh": "Intervalle minimum de rafraîchissement (minutes) :"
+            "minimum_refresh": "Intervalle minimum de rafraîchissement (minutes) :",
+            "mining_benefits": "Avantages du Minage",
+            "mining_benefits_help": "Sélectionnez les types de drops que vous souhaitez miner."
         },
         "help": {
             "about": "À propos de Twitch Drops Miner",
@@ -164,6 +179,26 @@
             "manual_mode": "MANUEL",
             "connected": "Connecté",
             "disconnected": "Déconnecté"
+        },
+        "footer": {
+            "version": "Version :",
+            "loading": "Chargement...",
+            "update_available": "Mise à jour disponible :"
+        },
+        "badges": {
+            "manual": {
+                "title": "Mode manuel actif - regarde un jeu spécifique"
+            },
+            "auto": {
+                "title": "Mode automatique - suit la priorité des jeux"
+            },
+            "proxy": {
+                "title": "Connexion proxy active"
+            }
+        },
+        "wanted": {
+            "name": "File d'attente Drops souhaités",
+            "none": "Aucun drop souhaité en file d'attente..."
         }
     }
 }

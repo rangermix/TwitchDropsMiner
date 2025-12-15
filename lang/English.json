@@ -97,24 +97,14 @@
             "channel_count_plural": "channels",
             "viewers": "viewers"
         },
-        "inventory": {
-            "no_campaigns": "No campaigns loaded yet...",
-            "status": {
-                "active": "Active ✔",
-                "upcoming": "Upcoming ⏳",
-                "expired": "Expired ❌",
-                "claimed": "Claimed ✔"
-            },
-            "starts": "Starts: {time}",
-            "ends": "Ends: {time}",
-            "claimed_drops": "claimed"
-        },
         "settings": {
             "general": {
-                "name": "General Settings",
+                "name": "General",
                 "dark_mode": "Dark Mode"
             },
-            "reload": "Reload",
+            "mining_benefits": "Mining Benefits",
+            "mining_benefits_help": "Select which types of drops you want to mine.",
+            "reload": "Reload Campaigns",
             "reload_campaigns": "Reload Campaigns",
             "games_to_watch": "Games to Watch",
             "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
@@ -165,6 +155,51 @@
             "manual_mode": "MANUAL",
             "connected": "Connected",
             "disconnected": "Disconnected"
+        },
+        "footer": {
+            "version": "Version:",
+            "loading": "Loading...",
+            "update_available": "Update Available:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Manual mode active - watching specific game"
+            },
+            "auto": {
+                "title": "Automatic mode - following game priority"
+            },
+            "proxy": {
+                "title": "Proxy connection active"
+            }
+        },
+        "wanted": {
+            "name": "Wanted Drops Queue",
+            "none": "No wanted drops queued..."
+        },
+        "inventory": {
+            "no_campaigns": "No campaigns loaded yet...",
+            "status": {
+                "active": "Active ✔",
+                "upcoming": "Upcoming ⏳",
+                "expired": "Expired ❌",
+                "claimed": "Claimed ✔"
+            },
+            "starts": "Starts: {time}",
+            "ends": "Ends: {time}",
+            "claimed_drops": "claimed",
+            "filters": {
+                "active": "Active",
+                "not_linked": "Not Linked",
+                "upcoming": "Upcoming",
+                "expired": "Expired",
+                "finished": "Finished",
+                "item": "Item",
+                "badge": "Badge",
+                "emote": "Emote",
+                "other": "Other",
+                "clear": "Clear Filters",
+                "search_placeholder": "Type to search games..."
+            }
         }
     }
 }

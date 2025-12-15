@@ -1,3 +1,29 @@
+# Release Notes - v1.2.0
+
+This release brings a major overhaul to the dashboard, making drop management much cleaner and more intuitive. We've also introduced automated update checks and powerful new filtering options to help you prioritize your farming efforts!
+
+### 🌍 Dashboard Overhaul & Drop Prioritization
+
+We completely redesigned the core dashboard elements to make managing your wanted drops faster and more visually appealing.
+
+-   **Wanted Drops Queue Redesign**: The 'Wanted Drops Queue' now features a beautiful, responsive card-based masonry layout. Organizing your priority drops is easier and looks fantastic!
+-   **New Benefit Filters**: Stop mining clutter! You can now easily filter your drop lists based on the specific type of reward you want (e.g., Item, Badge, Currency, etc.) directly in the settings.
+-   **Game Grouping**: Drops in the Wanted Queue are now automatically grouped by their associated game, giving you a clearer, organized overview of what you are currently mining for.
+-   **Smarter Inventory Cards**: Inventory cards now support variable heights, resulting in a cleaner dashboard layout and better use of screen space.
+
+### ⚙️ Utility & Infrastructure
+
+We added crucial quality-of-life features to keep you informed and provide more flexibility.
+
+-   **Automated Update Checker**: The app now features a persistent footer displaying the current version. It automatically checks GitHub for the latest release and alerts you instantly with a visible indicator and link if an update is available. No more manual checking!
+-   **Proxy Support**: Added initial support and verification logic for using proxies, enhancing flexibility for advanced users who require customized network setups.
+
+### 📚 Maintenance & General Improvements
+
+-   **Translation Updates**: We have updated and improved several translations across the application for better localization and accuracy.
+-   **Repository Links**: Updated internal and external links to the correct repository owner.
+-   **UI Polish**: Minor alignment and styling fixes, including updating the favicon to use a transparent background.
+
 # Release Notes - v1.1.6
 
 We've released a small but important update focusing on quality of life and core application stability. This version ensures better synchronization reliability and adds a helpful visual indicator for easier navigation.
