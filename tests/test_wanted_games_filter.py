@@ -1,8 +1,6 @@
 import unittest
-from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
-from src.core.client import Twitch
 from src.models.campaign import DropsCampaign
 from src.models.game import Game
 from src.services.stream_selector import StreamSelector

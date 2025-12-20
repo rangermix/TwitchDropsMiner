@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, timezone
 
+from src.config.settings import Settings
 from src.models.campaign import DropsCampaign
 from src.models.game import Game
-from src.config.settings import Settings
 
 
 class StreamSelector:
