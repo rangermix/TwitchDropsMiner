@@ -1,9 +1,10 @@
-import asyncio
 import unittest
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock
+
+from src.config.settings import Settings
 from src.web.app import SettingsUpdate
 from src.web.managers.settings import SettingsManager
-from src.config.settings import Settings
+
 
 class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
     def test_settings_update_model(self):
@@ -27,19 +28,19 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         mock_settings.proxy = "http://proxy"
         mock_settings.connection_quality = 1
         mock_settings.minimum_refresh_interval_minutes = 30
-        
+
         mock_console = MagicMock()
         mock_callback = MagicMock()
-        
+
         manager = SettingsManager(mock_broadcaster, mock_settings, mock_console, on_change=mock_callback)
-        
+
         # 1. Update Inventory Filters (Should NOT trigger callback if not games/benefits)
         inv_filters = {"show_upcoming": False}
         manager.update_settings({"inventory_filters": inv_filters})
         mock_callback.assert_not_called()
         self.assertEqual(mock_settings.inventory_filters, inv_filters)
         mock_console.print.assert_called_with("Setting changed: inventory_filters updated")
-        
+
         # 2. Update Mining Benefits (SHOULD trigger callback)
         benefits = {"BADGE": False}
         manager.update_settings({"mining_benefits": benefits})

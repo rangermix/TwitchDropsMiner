@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import traceback
 from contextlib import suppress
 from time import time
 from typing import TYPE_CHECKING
@@ -17,11 +16,11 @@ from src.utils import (
     CHARS_ASCII,
     AwaitableValue,
     ExponentialBackoff,
+    chunk,
     create_nonce,
     format_traceback,
     json_minify,
     task_wrapper,
-    chunk,
 )
 
 

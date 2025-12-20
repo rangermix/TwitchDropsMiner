@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 import logging
 
+
 logger = logging.getLogger("TwitchDrops")
 
 class ConsoleOutputManager:

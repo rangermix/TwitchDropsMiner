@@ -197,7 +197,7 @@ if __name__ == "__main__":
             logger.info("Normal shutdown - proceeding")
         # save the application state
         logger.info("Saving application state")
-        client.save(force=True)
+        settings.save()
         logger.info("Application state saved")
         logger.info(f"=== Exiting with status code: {exit_status} ===")
         sys.exit(exit_status)

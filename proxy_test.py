@@ -1,9 +1,10 @@
 
 import http.server
-import socketserver
-import urllib.request
 import logging
 import shutil
+import socketserver
+import urllib.request
+
 
 PORT = 8888
 
@@ -41,7 +42,7 @@ class Proxy(http.server.SimpleHTTPRequestHandler):
     def do_CONNECT(self):
         logger.info(f"CONNECT request: {self.path}")
         self.wfile.write(b"HTTP/1.1 200 Connection Established\r\n\r\n")
-        # In a real proxy we would tunnel. 
+        # In a real proxy we would tunnel.
         # For verification of "reachability", getting the 200 is often enough for simple clients,
         # but aiohttp might try to read/write through the tunnel.
         # Minimal tunnel implementation:

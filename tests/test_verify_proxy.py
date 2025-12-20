@@ -1,9 +1,10 @@
 
 import asyncio
 import unittest
-from unittest.mock import MagicMock, patch, AsyncMock
-from src.web.app import verify_proxy
-from src.web.app import ProxyVerifyRequest
+from unittest.mock import AsyncMock, MagicMock, patch
+
+from src.web.app import ProxyVerifyRequest, verify_proxy
+
 
 class MockResponseContext:
     def __init__(self, response_or_exc):
@@ -35,15 +36,15 @@ class TestVerifyProxy(unittest.TestCase):
         # Mock successful response
         mock_response = AsyncMock()
         mock_response.status = 200
-        
+
         # Configure get to return our custom context manager
         self.mock_session.get.side_effect = lambda *args, **kwargs: MockResponseContext(mock_response)
 
         request = ProxyVerifyRequest(proxy="http://valid-proxy:8080")
-        
+
         # Run async function
         result = asyncio.run(verify_proxy(request))
-        
+
         self.assertTrue(result['success'])
         self.assertIn("Connected!", result['message'])
         self.assertIn("latency", result)
@@ -52,15 +53,15 @@ class TestVerifyProxy(unittest.TestCase):
         # Mock error status response
         mock_response = AsyncMock()
         mock_response.status = 503
-        
+
         self.mock_session.get.side_effect = lambda *args, **kwargs: MockResponseContext(mock_response)
 
         request = ProxyVerifyRequest(proxy="http://bad-proxy:8080")
-        
+
         result = asyncio.run(verify_proxy(request))
-        
+
         self.assertFalse(result['success'])
-        
+
         # The expected message in app.py is: f"Proxy reachable but returned {response.status}"
         self.assertIn("Proxy reachable but returned 503", result['message'])
 
@@ -70,9 +71,9 @@ class TestVerifyProxy(unittest.TestCase):
         self.mock_session.get.side_effect = lambda *args, **kwargs: MockResponseContext(error)
 
         request = ProxyVerifyRequest(proxy="http://down-proxy:8080")
-        
+
         result = asyncio.run(verify_proxy(request))
-        
+
         self.assertFalse(result['success'])
         self.assertIn("Connection failed", result['message'])
 

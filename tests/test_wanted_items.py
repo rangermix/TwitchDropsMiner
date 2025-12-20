@@ -1,11 +1,13 @@
 import unittest
-from unittest.mock import MagicMock, Mock
-from src.web.gui_manager import WebGUIManager
-from src.core.client import Twitch, State
-from src.models.campaign import DropsCampaign
-from src.models.game import Game
-from src.models.drop import TimedDrop
+from unittest.mock import MagicMock
+
+from src.core.client import Twitch
 from src.models.benefit import Benefit, BenefitType
+from src.models.campaign import DropsCampaign
+from src.models.drop import TimedDrop
+from src.models.game import Game
+from src.web.gui_manager import WebGUIManager
+
 
 class TestWantedItems(unittest.TestCase):
     def setUp(self):
@@ -13,13 +15,13 @@ class TestWantedItems(unittest.TestCase):
         self.twitch = MagicMock(spec=Twitch)
         self.twitch.settings = MagicMock()
         self.twitch.state_change.return_value = lambda: None
-        
+
         # Mock dependencies created in __init__
         # We can't easily mock internal creation of sub-managers without patching,
         # but for get_wanted_tree we only need self._twitch.settings and self._twitch.inventory
-        
+
         # However, WebGUIManager __init__ calls self.twitch.state_change
-        
+
         self.gui = WebGUIManager(self.twitch)
         # Suppress broadcaster
         self.gui._broadcaster = MagicMock()
@@ -30,14 +32,14 @@ class TestWantedItems(unittest.TestCase):
         self.twitch.settings.mining_benefits = {"BADGE": True, "DIRECT_ENTITLEMENT": False}
 
         # Setup Inventory
-        
+
         # Campaign 1: Game1, Drop with BADGE (Wanted)
         c1 = MagicMock(spec=DropsCampaign)
         c1.id = "c1_id"
         c1.name = "Campaign1"
         c1.campaign_url = "http://url1"
         c1.game = Game({"id": 1, "name": "Game1", "boxArtURL": "http://img1"})
-        
+
         d1 = MagicMock(spec=TimedDrop)
         d1.name = "Drop1"
         d1.is_claimed = False
@@ -54,7 +56,7 @@ class TestWantedItems(unittest.TestCase):
         c2.name = "Campaign2"
         c2.campaign_url = "http://url2"
         c2.game = Game({"id": 2, "name": "Game2", "boxArtURL": "http://img2"})
-        
+
         d2 = MagicMock(spec=TimedDrop)
         d2.name = "Drop2"
         d2.is_claimed = False
@@ -64,14 +66,14 @@ class TestWantedItems(unittest.TestCase):
         b2.is_wanted.return_value = False
         d2.benefits = [b2]
         c2.drops = [d2]
-        
+
         # Campaign 3: Game3 (Not in watch list), Drop with BADGE (Wanted but wrong game)
         c3 = MagicMock(spec=DropsCampaign)
         c3.id = "c3_id"
         c3.name = "Campaign3"
         c3.campaign_url = "http://url3"
         c3.game = Game({"id": 3, "name": "Game3", "boxArtURL": "http://img3"})
-        
+
         d3 = MagicMock(spec=TimedDrop)
         d3.name = "Drop3"
         d3.is_claimed = False
@@ -92,7 +94,7 @@ class TestWantedItems(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["game_name"], "Game1")
         self.assertEqual(result[0]["game_icon"], "http://img1")
-        
+
         campaigns = result[0]["campaigns"]
         self.assertEqual(len(campaigns), 1)
         self.assertEqual(campaigns[0]["name"], "Campaign1")
@@ -112,7 +114,7 @@ class TestWantedItems(unittest.TestCase):
         c1.name = "Campaign1"
         c1.campaign_url = "http://url1"
         c1.game = Game({"id": 1, "name": "Game1", "boxArtURL": "http://img1"})
-        
+
         d1 = MagicMock(spec=TimedDrop)
         d1.name = "Drop1"
         d1.is_claimed = True
@@ -130,5 +132,6 @@ class TestWantedItems(unittest.TestCase):
         # Verify
         self.assertEqual(len(result), 0)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

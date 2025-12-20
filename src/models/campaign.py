@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 
 from dateutil.parser import isoparse
 
-from src.config.constants import State, URLType
+from src.config.constants import State
 from src.models.channel import Channel
-from src.models.drop import TimedDrop, remove_dimensions
+from src.models.drop import TimedDrop
 from src.models.game import Game
 
 

@@ -87,7 +87,6 @@ class Settings:
     def __init__(self, args: ParsedArgs):
         self._settings: SettingsFile = json_load(SETTINGS_PATH, default_settings)
         self._args: ParsedArgs = args
-        self._altered: bool = False
 
     # default logic of reading settings is to check args first, then the settings file
     def __getattr__(self, name: str, /) -> Any:
@@ -106,16 +105,11 @@ class Settings:
             return super().__setattr__(name, value)
         elif name in self._settings:
             self._settings[name] = value  # type: ignore[literal-required]
-            self._altered = True
             return
         raise TypeError(f"{name} is missing a custom setter")
 
     def __delattr__(self, name: str, /) -> None:
         raise RuntimeError("settings can't be deleted")
 
-    def alter(self) -> None:
-        self._altered = True
-
-    def save(self, *, force: bool = False) -> None:
-        if self._altered or force:
-            json_save(SETTINGS_PATH, self._settings, sort=True)
+    def save(self) -> None:
+        json_save(SETTINGS_PATH, self._settings, sort=True)
