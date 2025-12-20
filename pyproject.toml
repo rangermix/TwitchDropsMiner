@@ -19,6 +19,8 @@ dependencies = [
 dev = [
     "ruff",
     "mypy",
+    "pytest",
+    "pytest-asyncio",
 ]
 
 [build-system]

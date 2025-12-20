@@ -6,8 +6,9 @@ from src.models.game import Game
 
 
 class StreamSelector:
-
-    def _get_wanted_game_tree(self, settings: Settings, campaigns: list[DropsCampaign]) -> list[dict]:
+    def _get_wanted_game_tree(
+        self, settings: Settings, campaigns: list[DropsCampaign]
+    ) -> list[dict]:
         """
         Get the hierarchical tree of wanted items (Games -> Campaigns -> Drops -> Benefits).
         Ignoring 'can earn within' time constraint.
@@ -40,33 +41,38 @@ class StreamSelector:
 
                     filtered_benefits = drop.get_wanted_unclaimed_benefits(mining_benefits)
 
-                    if filtered_benefits:
-                        wanted_drops.append({
-                            "name": drop.name,
-                            "benefits": filtered_benefits
-                        })
+                    if len(filtered_benefits) > 0:
+                        wanted_drops.append({"name": drop.name, "benefits": filtered_benefits})
 
-                if wanted_drops:
-                    wanted_campaigns.append({
-                        "id": campaign.id,
-                        "name": campaign.name,
-                        "url": campaign.campaign_url,
-                        "drops": wanted_drops
-                    })
+                if len(wanted_drops) > 0:
+                    wanted_campaigns.append(
+                        {
+                            "id": campaign.id,
+                            "name": campaign.name,
+                            "url": campaign.campaign_url,
+                            "drops": wanted_drops,
+                        }
+                    )
 
-            if wanted_campaigns:
-                wanted_games.append({
-                    "game_id": game_obj.id if game_obj else None,
-                    "game_name": game_name,
-                    "game_icon": game_obj.box_art_url if game_obj else None,
-                    "game_obj": game_obj,
-                    "campaigns": wanted_campaigns
-                })
+            if len(wanted_campaigns) > 0:
+                wanted_games.append(
+                    {
+                        "game_id": game_obj.id if game_obj else None,
+                        "game_name": game_name,
+                        "game_icon": game_obj.box_art_url if game_obj else None,
+                        "game_obj": game_obj,
+                        "campaigns": wanted_campaigns,
+                    }
+                )
 
         return wanted_games
 
-    def get_wanted_game_tree(self, settings: Settings, campaigns: list[DropsCampaign]) -> list[dict]:
-        return [{**game, "game_obj": None} for game in self._get_wanted_game_tree(settings, campaigns)]
+    def get_wanted_game_tree(
+        self, settings: Settings, campaigns: list[DropsCampaign]
+    ) -> list[dict]:
+        return [
+            {**game, "game_obj": None} for game in self._get_wanted_game_tree(settings, campaigns)
+        ]
 
     def get_wanted_games(self, settings: Settings, campaigns: list[DropsCampaign]) -> list[Game]:
         return [game["game_obj"] for game in self._get_wanted_game_tree(settings, campaigns)]

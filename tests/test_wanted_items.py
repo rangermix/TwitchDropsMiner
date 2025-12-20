@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 
+import src
 from src.core.client import Twitch
 from src.models.benefit import Benefit, BenefitType
 from src.models.campaign import DropsCampaign
@@ -14,7 +15,7 @@ class TestWantedItems(unittest.TestCase):
         # Mock Twitch Client
         self.twitch = MagicMock(spec=Twitch)
         self.twitch.settings = MagicMock()
-        self.twitch.state_change.return_value = lambda: None
+        self.twitch.get_change_state_callable.return_value = lambda: None
 
         # Mock dependencies created in __init__
         # We can't easily mock internal creation of sub-managers without patching,
@@ -87,7 +88,8 @@ class TestWantedItems(unittest.TestCase):
         self.twitch.inventory = [c1, c2, c3]
 
         # Execute
-        result = self.gui.get_wanted_tree()
+        result = self.gui.get_wanted_game_tree()
+        print(result)
 
         # Verify
         # Expected: Game1 only
@@ -127,7 +129,7 @@ class TestWantedItems(unittest.TestCase):
         self.twitch.inventory = [c1]
 
         # Execute
-        result = self.gui.get_wanted_tree()
+        result = self.gui.get_wanted_game_tree()
 
         # Verify
         self.assertEqual(len(result), 0)
