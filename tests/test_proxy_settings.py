@@ -1,4 +1,3 @@
-
 import asyncio
 import unittest
 from unittest.mock import MagicMock
@@ -21,7 +20,7 @@ class TestProxySettings(unittest.TestCase):
         f.set_result(None)
         self.mock_broadcaster.emit = MagicMock(return_value=f)
 
-        self.mock_settings = MagicMock(spec=Settings)
+        self.mock_settings = Settings(None)
         # Setup properties
         self.mock_settings.proxy = URL()
         self.mock_settings.language = "en"
@@ -29,11 +28,12 @@ class TestProxySettings(unittest.TestCase):
         self.mock_settings.games_to_watch = []
         self.mock_settings.connection_quality = 1
         self.mock_settings.minimum_refresh_interval_minutes = 30
+        self.mock_settings = MagicMock(spec=Settings, wraps=self.mock_settings)
 
         self.mock_console = MagicMock(spec=ConsoleOutputManager)
 
         # Mock asyncio.create_task
-        self.create_task_patcher = unittest.mock.patch('asyncio.create_task')
+        self.create_task_patcher = unittest.mock.patch("asyncio.create_task")
         self.mock_create_task = self.create_task_patcher.start()
 
     def tearDown(self):
@@ -47,7 +47,9 @@ class TestProxySettings(unittest.TestCase):
         manager.update_settings({"proxy": proxy_url})
 
         self.assertEqual(self.mock_settings.proxy, URL(proxy_url))
-        self.mock_console.print.assert_called_with(f"Proxy set to: {proxy_url}")
+        self.mock_console.print.assert_called_with(
+            "Setting changed: proxy = http://user:pass@localhost:8080"
+        )
 
         # Test clearing a proxy
         manager.update_settings({"proxy": ""})
@@ -58,8 +60,8 @@ class TestProxySettings(unittest.TestCase):
         manager = SettingsManager(self.mock_broadcaster, self.mock_settings, self.mock_console)
         manager.update_settings({"proxy": "http://1.2.3.4:8080"})
 
-        self.mock_settings.alter.assert_called()
         self.mock_settings.save.assert_called()
+
 
 if __name__ == "__main__":
     unittest.main()

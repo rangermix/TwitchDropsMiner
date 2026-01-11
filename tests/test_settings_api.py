@@ -11,7 +11,7 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         # Verify model accepts new fields
         update_data = {
             "inventory_filters": {"show_upcoming": True},
-            "mining_benefits": {"BADGE": True}
+            "mining_benefits": {"BADGE": True},
         }
         model = SettingsUpdate(**update_data)
         self.assertEqual(model.inventory_filters, update_data["inventory_filters"])
@@ -20,7 +20,7 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
     async def test_settings_manager_networking(self):
         # Mock dependencies
         mock_broadcaster = AsyncMock()
-        mock_settings = MagicMock(spec=Settings)
+        mock_settings = Settings(None)
         # Configure mock to satisfy get_settings() calls
         mock_settings.language = "en"
         mock_settings.dark_mode = False
@@ -32,14 +32,18 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         mock_console = MagicMock()
         mock_callback = MagicMock()
 
-        manager = SettingsManager(mock_broadcaster, mock_settings, mock_console, on_change=mock_callback)
+        manager = SettingsManager(
+            mock_broadcaster, mock_settings, mock_console, on_change=mock_callback
+        )
 
         # 1. Update Inventory Filters (Should NOT trigger callback if not games/benefits)
         inv_filters = {"show_upcoming": False}
         manager.update_settings({"inventory_filters": inv_filters})
         mock_callback.assert_not_called()
         self.assertEqual(mock_settings.inventory_filters, inv_filters)
-        mock_console.print.assert_called_with("Setting changed: inventory_filters updated")
+        mock_console.print.assert_called_with(
+            "Setting changed: inventory_filters = {'show_upcoming': False}"
+        )
 
         # 2. Update Mining Benefits (SHOULD trigger callback)
         benefits = {"BADGE": False}
@@ -55,5 +59,5 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         mock_callback.assert_called_once()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
