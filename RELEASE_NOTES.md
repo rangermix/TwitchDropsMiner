@@ -1,3 +1,16 @@
+# Release Notes - v1.2.1
+
+We've released v1.2.1 focused entirely on making your drop mining more reliable and robust. This crucial stability update ensures the Miner continues to track drops consistently, even when Twitch makes minor, behind-the-scenes adjustments to its tracking URLs.
+
+### 🐛 Bug Fixes
+
+-   **Enhanced Drop Tracking Stability**: We've relaxed the internal logic (regex) used to identify official Twitch drop tracking URLs.
+    *   **Why you'll like it**: This means the Miner is now much more resilient to minor changes on Twitch's platform. If Twitch slightly alters how their drop URLs look, your mining won't break, ensuring consistent and reliable drop accumulation.
+
+### 📚 Under the Hood Improvements
+
+-   **Internal Configuration Cleanup**: Removed unnecessary internal developer configurations and identifiers. This keeps the application code tidy and focused on core drop mining functionality.
+
 # Release Notes - v1.2.0
 
 This release brings a major overhaul to the dashboard, making drop management much cleaner and more intuitive. We've also introduced automated update checks and powerful new filtering options to help you prioritize your farming efforts!
