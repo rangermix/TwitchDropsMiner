@@ -1,6 +1,6 @@
 [project]
 name = "twitch-drops-miner"
-version = "1.2.0"  # Update from src/version.py as needed
+version = "1.2.1"  # Update from src/version.py as needed
 description = "Automatically mine Twitch drops without downloading stream data"
 readme = "README.md"
 requires-python = ">=3.12"
