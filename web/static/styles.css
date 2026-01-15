@@ -509,6 +509,46 @@ header h1 {
     gap: 15px;
 }
 
+.filter-dropdowns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+}
+
+.filter-dropdown {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.filter-dropdown span {
+    font-weight: 500;
+}
+
+.filter-dropdown select {
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.filter-dropdown select:hover {
+    border-color: var(--accent-color);
+}
+
+.filter-dropdown select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(145, 70, 255, 0.2);
+}
+
 .filter-checkboxes {
     display: flex;
     flex-wrap: wrap;

@@ -570,13 +570,13 @@ function updateDrop(campaignId, dropData) {
 // ==================== Inventory Filtering ====================
 
 function getInventoryFilters() {
-    // Get filter state from UI checkboxes and selected games array
+    // Get filter state from UI dropdowns, checkboxes, and selected games array
     return {
+        account_link_filter: document.getElementById('filter-account-link')?.value || 'all',
+        progress_filter: document.getElementById('filter-progress')?.value || 'all',
         show_active: document.getElementById('filter-active')?.checked || false,
-        show_not_linked: document.getElementById('filter-not-linked')?.checked || false,
         show_upcoming: document.getElementById('filter-upcoming')?.checked || false,
         show_expired: document.getElementById('filter-expired')?.checked || false,
-        show_finished: document.getElementById('filter-finished')?.checked || false,
         game_name_search: [...selectedInventoryGames],  // Array of selected game names
         // Benefit type filters (default to true if checkbox doesn't exist)
         show_benefit_item: document.getElementById('filter-benefit-item')?.checked !== false,
@@ -591,38 +591,38 @@ function campaignMatchesFilters(campaign, filters) {
     // Calculate "finished" status: all drops claimed
     const isFinished = campaign.total_drops > 0 && campaign.claimed_drops === campaign.total_drops;
 
-    // Check if any filter is enabled
-    const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
-    const anyFilterEnabled = filters.show_active || filters.show_not_linked ||
-        filters.show_upcoming || filters.show_expired ||
-        filters.show_finished || hasGameFilter;
-
-    // If no filters enabled, show all campaigns
-    if (!anyFilterEnabled) {
-        return true;
+    // Check account link filter (3-way: all/linked/not_linked)
+    if (filters.account_link_filter === 'linked' && !campaign.linked) {
+        return false;
     }
-
-    // Check status filters (OR logic - campaign matches if ANY checked filter applies)
-    let statusMatch = false;
-
-    if (filters.show_active && campaign.active) statusMatch = true;
-    if (filters.show_not_linked && !campaign.linked) statusMatch = true;
-    if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
-    if (filters.show_expired && campaign.expired) statusMatch = true;
-    if (filters.show_finished && isFinished) statusMatch = true;
-
-    // If status filters are enabled but campaign doesn't match any, filter it out
-    const hasStatusFilters = filters.show_active || filters.show_not_linked ||
-        filters.show_upcoming || filters.show_expired ||
-        filters.show_finished;
-    if (hasStatusFilters && !statusMatch) {
+    if (filters.account_link_filter === 'not_linked' && campaign.linked) {
         return false;
     }
 
-    // Check game name filter (AND logic with status filters, OR logic among selected games)
+    // Check progress filter (3-way: all/finished/unfinished)
+    if (filters.progress_filter === 'finished' && !isFinished) {
+        return false;
+    }
+    if (filters.progress_filter === 'unfinished' && isFinished) {
+        return false;
+    }
+
+    // Check time status filters (OR logic - if any checked, campaign must match at least one)
+    const hasTimeStatusFilters = filters.show_active || filters.show_upcoming || filters.show_expired;
+    if (hasTimeStatusFilters) {
+        let timeStatusMatch = false;
+        if (filters.show_active && campaign.active) timeStatusMatch = true;
+        if (filters.show_upcoming && campaign.upcoming) timeStatusMatch = true;
+        if (filters.show_expired && campaign.expired) timeStatusMatch = true;
+        if (!timeStatusMatch) {
+            return false;
+        }
+    }
+
+    // Check game name filter (AND logic - campaign must match at least ONE selected game)
+    const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
     if (hasGameFilter) {
         const gameName = campaign.game_name;
-        // Campaign must match at least ONE of the selected games
         const gameMatch = filters.game_name_search.includes(gameName);
         if (!gameMatch) {
             return false;
@@ -653,7 +653,6 @@ function campaignMatchesFilters(campaign, filters) {
         }
     }
 
-
     return true;
 }
 
@@ -665,12 +664,16 @@ function onInventoryFilterChange() {
 }
 
 function clearInventoryFilters() {
-    // Uncheck all filter checkboxes
+    // Reset dropdown filters to "all"
+    document.getElementById('filter-account-link').value = 'all';
+    document.getElementById('filter-progress').value = 'all';
+
+    // Uncheck all time status filter checkboxes
     document.getElementById('filter-active').checked = false;
-    document.getElementById('filter-not-linked').checked = false;
     document.getElementById('filter-upcoming').checked = false;
     document.getElementById('filter-expired').checked = false;
-    document.getElementById('filter-finished').checked = false;
+
+    // Clear game search
     document.getElementById('inventory-game-search').value = '';
 
     // Reset benefit type filters to checked (show all)
@@ -1076,11 +1079,14 @@ function updateSettingsUI(settings) {
 
     // Restore inventory filters from settings
     if (settings.inventory_filters) {
+        // Restore dropdown filters
+        document.getElementById('filter-account-link').value = settings.inventory_filters.account_link_filter || 'all';
+        document.getElementById('filter-progress').value = settings.inventory_filters.progress_filter || 'all';
+
+        // Restore time status filter checkboxes
         document.getElementById('filter-active').checked = settings.inventory_filters.show_active || false;
-        document.getElementById('filter-not-linked').checked = settings.inventory_filters.show_not_linked || false;
         document.getElementById('filter-upcoming').checked = settings.inventory_filters.show_upcoming || false;
         document.getElementById('filter-expired').checked = settings.inventory_filters.show_expired || false;
-        document.getElementById('filter-finished').checked = settings.inventory_filters.show_finished || false;
 
         // Restore selected games array
         selectedInventoryGames = Array.isArray(settings.inventory_filters.game_name_search)
@@ -1952,17 +1958,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('deselect-all-btn').addEventListener('click', deselectAllGames);
     document.getElementById('games-filter').addEventListener('input', renderGamesToWatch);
 
-    // Inventory filters
+    // Inventory filters - dropdowns
+    document.getElementById('filter-account-link').addEventListener('change', onInventoryFilterChange);
+    document.getElementById('filter-progress').addEventListener('change', onInventoryFilterChange);
+    // Inventory filters - time status checkboxes
     document.getElementById('filter-active').addEventListener('change', onInventoryFilterChange);
-    document.getElementById('filter-not-linked').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-upcoming').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-expired').addEventListener('change', onInventoryFilterChange);
-    document.getElementById('filter-finished').addEventListener('change', onInventoryFilterChange);
     // Benefit type filters
     document.getElementById('filter-benefit-item').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-benefit-badge').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-benefit-emote').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-benefit-other').addEventListener('change', onInventoryFilterChange);
+    // Clear filters button
     document.getElementById('clear-filters-btn').addEventListener('click', clearInventoryFilters);
 
     // Mining benefit settings

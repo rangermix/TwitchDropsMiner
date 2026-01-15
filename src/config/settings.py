@@ -13,11 +13,11 @@ if TYPE_CHECKING:
 
 
 class InventoryFilters(TypedDict):
+    account_link_filter: str  # "all", "linked", "not_linked"
+    progress_filter: str  # "all", "finished", "unfinished"
     show_active: bool
-    show_not_linked: bool
     show_upcoming: bool
     show_expired: bool
-    show_finished: bool
     show_benefit_item: bool
     show_benefit_badge: bool
     show_benefit_emote: bool
@@ -44,11 +44,11 @@ default_settings: SettingsFile = {
     "language": DEFAULT_LANG,
     "minimum_refresh_interval_minutes": 30,
     "inventory_filters": {
+        "account_link_filter": "all",
+        "progress_filter": "all",
         "show_active": False,
-        "show_not_linked": True,
-        "show_upcoming": True,
+        "show_upcoming": False,
         "show_expired": False,
-        "show_finished": False,
         "show_benefit_item": True,
         "show_benefit_badge": True,
         "show_benefit_emote": True,

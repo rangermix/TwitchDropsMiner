@@ -116,26 +116,39 @@
         <div id="inventory-tab" class="tab-content">
             <div class="inventory-filters">
                 <div class="filter-controls">
+                    <!-- Dropdown Filters -->
+                    <div class="filter-dropdowns">
+                        <label class="filter-dropdown">
+                            <span>Account:</span>
+                            <select id="filter-account-link">
+                                <option value="all">All</option>
+                                <option value="linked">Linked</option>
+                                <option value="not_linked">Not Linked</option>
+                            </select>
+                        </label>
+                        <label class="filter-dropdown">
+                            <span>Progress:</span>
+                            <select id="filter-progress">
+                                <option value="all">All</option>
+                                <option value="finished">Finished</option>
+                                <option value="unfinished">Unfinished</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <!-- Checkbox Filters -->
                     <div class="filter-checkboxes">
                         <label class="filter-checkbox">
                             <input type="checkbox" id="filter-active" />
                             <span>Active</span>
                         </label>
                         <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-not-linked" checked />
-                            <span>Not Linked</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-upcoming" checked />
+                            <input type="checkbox" id="filter-upcoming" />
                             <span>Upcoming</span>
                         </label>
                         <label class="filter-checkbox">
                             <input type="checkbox" id="filter-expired" />
                             <span>Expired</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-finished" />
-                            <span>Finished</span>
                         </label>
                         <div class="filter-separator"
                             style="width: 1px; height: 24px; background: var(--border-color); margin: 0 10px;">
@@ -157,6 +170,8 @@
                             <span>Other</span>
                         </label>
                     </div>
+
+                    <!-- Game Search -->
                     <div class="filter-search">
                         <div class="game-dropdown-container">
                             <div class="game-tags-display" id="selected-game-tags">
