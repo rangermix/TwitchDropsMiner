@@ -16,6 +16,20 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(model.inventory_filters, update_data["inventory_filters"])
         self.assertEqual(model.mining_benefits, update_data["mining_benefits"])
 
+    def test_settings_update_new_dropdown_filters(self):
+        # Verify new dropdown filter fields (account_link_filter, progress_filter)
+        update_data = {
+            "inventory_filters": {
+                "account_link_filter": "linked",
+                "progress_filter": "finished",
+                "show_active": True
+            }
+        }
+        model = SettingsUpdate(**update_data)
+        self.assertEqual(model.inventory_filters["account_link_filter"], "linked")
+        self.assertEqual(model.inventory_filters["progress_filter"], "finished")
+        self.assertEqual(model.inventory_filters["show_active"], True)
+
     async def test_settings_manager_networking(self):
         # Mock dependencies
         mock_broadcaster = AsyncMock()
