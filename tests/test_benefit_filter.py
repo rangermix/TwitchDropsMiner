@@ -13,7 +13,7 @@ class TestBenefitFilter(unittest.TestCase):
                 "id": "b1",
                 "name": "Test Badge",
                 "distributionType": "BADGE",
-                "imageAssetURL": "url"
+                "imageAssetURL": "url",
             }
         }
         self.benefit_item_data = {
@@ -21,7 +21,7 @@ class TestBenefitFilter(unittest.TestCase):
                 "id": "b2",
                 "name": "Test Item",
                 "distributionType": "DIRECT_ENTITLEMENT",
-                "imageAssetURL": "url"
+                "imageAssetURL": "url",
             }
         }
 
@@ -47,6 +47,7 @@ class TestBenefitFilter(unittest.TestCase):
         drop1.is_claimed = False
         drop1.benefits = [self.badge]
         drop1.has_wanted_unclaimed_benefits = TimedDrop.has_wanted_unclaimed_benefits.__get__(drop1)
+        drop1.get_wanted_unclaimed_benefits = TimedDrop.get_wanted_unclaimed_benefits.__get__(drop1)
 
         allowed = {"BADGE": True, "DIRECT_ENTITLEMENT": False}
         self.assertTrue(drop1.has_wanted_unclaimed_benefits(allowed))
@@ -59,6 +60,7 @@ class TestBenefitFilter(unittest.TestCase):
         drop2.is_claimed = True
         drop2.benefits = [self.badge]
         drop2.has_wanted_unclaimed_benefits = TimedDrop.has_wanted_unclaimed_benefits.__get__(drop2)
+        drop2.get_wanted_unclaimed_benefits = TimedDrop.get_wanted_unclaimed_benefits.__get__(drop2)
 
         self.assertFalse(drop2.has_wanted_unclaimed_benefits(allowed))
 
@@ -67,6 +69,7 @@ class TestBenefitFilter(unittest.TestCase):
         drop3.is_claimed = False
         drop3.benefits = [self.badge, self.item]
         drop3.has_wanted_unclaimed_benefits = TimedDrop.has_wanted_unclaimed_benefits.__get__(drop3)
+        drop3.get_wanted_unclaimed_benefits = TimedDrop.get_wanted_unclaimed_benefits.__get__(drop3)
 
         # Only want Item (which it has)
         allowed_item = {"BADGE": False, "DIRECT_ENTITLEMENT": True}
@@ -84,7 +87,9 @@ class TestBenefitFilter(unittest.TestCase):
 
         campaign.drops = [drop1, drop2]
         # Bind method
-        campaign.has_wanted_unclaimed_benefits = DropsCampaign.has_wanted_unclaimed_benefits.__get__(campaign)
+        campaign.has_wanted_unclaimed_benefits = (
+            DropsCampaign.has_wanted_unclaimed_benefits.__get__(campaign)
+        )
 
         allowed = {"BADGE": True}
         # Since drop2 returns True, campaign should return True
@@ -94,5 +99,6 @@ class TestBenefitFilter(unittest.TestCase):
         drop2.has_wanted_unclaimed_benefits.return_value = False
         self.assertFalse(campaign.has_wanted_unclaimed_benefits(allowed))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

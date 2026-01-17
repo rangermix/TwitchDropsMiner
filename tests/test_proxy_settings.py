@@ -19,17 +19,7 @@ class TestProxySettings(unittest.TestCase):
         f = asyncio.Future()
         f.set_result(None)
         self.mock_broadcaster.emit = MagicMock(return_value=f)
-
-        self.mock_settings = Settings(None)
-        # Setup properties
-        self.mock_settings.proxy = URL()
-        self.mock_settings.language = "en"
-        self.mock_settings.dark_mode = False
-        self.mock_settings.games_to_watch = []
-        self.mock_settings.connection_quality = 1
-        self.mock_settings.minimum_refresh_interval_minutes = 30
-        self.mock_settings = MagicMock(spec=Settings, wraps=self.mock_settings)
-
+        self.mock_settings = MagicMock(spec=Settings, wraps=Settings())
         self.mock_console = MagicMock(spec=ConsoleOutputManager)
 
         # Mock asyncio.create_task

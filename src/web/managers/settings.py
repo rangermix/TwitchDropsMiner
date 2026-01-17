@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
+from pprint import pprint
 from typing import TYPE_CHECKING, Any
 
 from yarl import URL
@@ -48,17 +49,8 @@ class SettingsManager:
         Returns:
             Dictionary containing all user-configurable settings
         """
-        return {
-            "language": self._settings.language,
-            "dark_mode": self._settings.dark_mode,
-            "games_to_watch": list(self._settings.games_to_watch),
-            "games_available": self._available_games,
-            "proxy": str(self._settings.proxy),
-            "connection_quality": self._settings.connection_quality,
-            "minimum_refresh_interval_minutes": self._settings.minimum_refresh_interval_minutes,
-            "inventory_filters": self._settings.inventory_filters,
-            "mining_benefits": self._settings.mining_benefits,
-        }
+        settings = self._settings.__dict__.copy()
+        return settings
 
     def get_languages(self) -> dict[str, Any]:
         """Get available languages and current selection.
@@ -125,7 +117,7 @@ class SettingsManager:
         should_trigger_update: bool = False,
         action: Callable[[Any], None] = lambda x: None,
     ):
-        if new_value is None or getattr(self._settings, key) == new_value:
+        if new_value is None or getattr(self._settings, key, None) == new_value:
             return False
         setattr(self._settings, key, new_value)
         self._log_change(f"Setting changed: {key} = {new_value}")

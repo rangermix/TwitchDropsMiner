@@ -20,7 +20,7 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
     async def test_settings_manager_networking(self):
         # Mock dependencies
         mock_broadcaster = AsyncMock()
-        mock_settings = Settings(None)
+        mock_settings = Settings()
         # Configure mock to satisfy get_settings() calls
         mock_settings.language = "en"
         mock_settings.dark_mode = False
