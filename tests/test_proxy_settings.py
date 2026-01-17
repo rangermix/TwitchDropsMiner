@@ -1,12 +1,8 @@
-import asyncio
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from yarl import URL
 
-# Mock the imports that depend on application structure if needed,
-# or just import them if PYTHONPATH is set correctly.
-# Assuming run from root, imports should work.
 from src.config.settings import Settings
 from src.web.managers.console import ConsoleOutputManager
 from src.web.managers.settings import SettingsManager
@@ -15,11 +11,13 @@ from src.web.managers.settings import SettingsManager
 class TestProxySettings(unittest.TestCase):
     def setUp(self):
         self.mock_broadcaster = MagicMock()
-        # Mock emit to be awaitable
-        f = asyncio.Future()
-        f.set_result(None)
-        self.mock_broadcaster.emit = MagicMock(return_value=f)
-        self.mock_settings = MagicMock(spec=Settings, wraps=Settings())
+        # Use AsyncMock for emit - it returns a coroutine without needing an event loop
+        self.mock_broadcaster.emit = AsyncMock()
+
+        # Create a pure mock Settings without wrapping a real instance
+        # This avoids file I/O during tests
+        self.mock_settings = MagicMock(spec=Settings)
+        self.mock_settings.proxy = URL()  # Default empty proxy
         self.mock_console = MagicMock(spec=ConsoleOutputManager)
 
         # Mock asyncio.create_task

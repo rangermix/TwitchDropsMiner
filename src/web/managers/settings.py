@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
-from pprint import pprint
 from typing import TYPE_CHECKING, Any
 
 from yarl import URL
@@ -49,7 +48,7 @@ class SettingsManager:
         Returns:
             Dictionary containing all user-configurable settings
         """
-        settings = self._settings.__dict__.copy()
+        settings = vars(self._settings).copy()
         return settings
 
     def get_languages(self) -> dict[str, Any]:
