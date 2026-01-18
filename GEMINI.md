@@ -335,11 +335,8 @@ source env/bin/activate && python -m pytest tests/
 ### Manual Testing
 
 1. Run with `-vvv` for maximum verbosity (levels: -v, -vv, -vvv, -vvvv)
-2. Use `--dump` to generate debug data dumps
-3. Check log files in `./logs/` directory
-4. Use `--debug-ws` for websocket debug logging
-5. Use `--debug-gql` for GraphQL debug logging
-6. Monitor web GUI console output and browser developer tools
+2. Check log files in `./logs/` directory
+3. Monitor web GUI console output and browser developer tools
 
 ## Web GUI Architecture
 

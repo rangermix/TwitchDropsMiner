@@ -29,6 +29,7 @@ from src.services.channel_service import ChannelService
 from src.services.inventory_service import InventoryService
 from src.services.maintenance import MaintenanceService
 from src.services.message_handlers import MessageHandlerService
+from src.services.stream_selector import StreamSelector
 from src.services.watch_service import WatchService
 from src.utils import (
     AwaitableValue,
@@ -86,6 +87,7 @@ class Twitch:
         self._message_handler_service: MessageHandlerService = MessageHandlerService(self)
         self._inventory_service: InventoryService = InventoryService(self)
         self._watch_service: WatchService = WatchService(self)
+        self._stream_selector: StreamSelector = StreamSelector()
 
     def _ensure_api_clients(self) -> None:
         """Ensure API clients are initialized (called after GUI is set)."""
@@ -148,7 +150,7 @@ class Twitch:
             self._state = state
         self._state_change.set()
 
-    def state_change(self, state: State) -> abc.Callable[[], None]:
+    def get_change_state_callable(self, state: State) -> abc.Callable[[], None]:
         """Return a callable that changes state when invoked (deferred call for GUI usage)."""
         return partial(self.change_state, state)
 
@@ -162,11 +164,6 @@ class Twitch:
     def print(self, message: str) -> None:
         """Print a message in the GUI."""
         self.gui.print(message)
-
-    def save(self, *, force: bool = False) -> None:
-        """Save the application state (settings and GUI state)."""
-        self.gui.save(force=force)
-        self.settings.save(force=force)
 
     def _remove_channel_topics(self, channels: abc.Iterable[Channel]) -> None:
         """Remove websocket topics for a list of channels."""
@@ -224,9 +221,6 @@ class Twitch:
         self.change_state(State.INVENTORY_FETCH)
         while True:
             if self._state is State.IDLE:
-                if self.settings.dump:
-                    self.close()
-                    continue
                 self.gui.status.update(_.t["gui"]["status"]["idle"])
                 self.stop_watching()
                 # clear the flag and wait until it's set again
@@ -239,7 +233,6 @@ class Twitch:
                 # Broadcast unwanted items (based on settings)
                 self.gui.broadcast_wanted_items()
                 # Save state on every inventory fetch
-                self.save()
                 self.change_state(State.GAMES_UPDATE)
             elif self._state is State.GAMES_UPDATE:
                 # claim drops from expired and active campaigns
@@ -263,48 +256,14 @@ class Twitch:
 
                 # Log detailed game -> campaigns -> channels mapping
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.info("=== Active Campaigns Mapping ===")
-                    from collections import defaultdict
+                    self._output_campaign_mapping(next_hour)
 
-                    game_campaign_map: dict[str, list[tuple[DropsCampaign, list[str]]]] = (
-                        defaultdict(list)
-                    )
-                    for campaign in self.inventory:
-                        if campaign.eligible and not campaign.finished:
-                            logger.info(
-                                "eligible Campaign: %s - %s", campaign.name, campaign.game.name
-                            )
-                        if campaign.can_earn_within(next_hour):
-                            channel_names = []
-                            if campaign.allowed_channels:
-                                channel_names = [ch.name for ch in campaign.allowed_channels]
-                            else:
-                                channel_names = ["<directory>"]
-                            game_campaign_map[campaign.game.name].append((campaign, channel_names))
-                    for game_name in sorted(game_campaign_map.keys()):
-                        logger.debug(f"Game: {game_name}")
-                        for campaign, channel_list in game_campaign_map[game_name]:
-                            status_info = f"{'ACTIVE' if campaign.active else 'UPCOMING'}"
-                            ends_info = campaign.ends_at.astimezone().strftime("%Y-%m-%d %H:%M")
-                            channel_info = (
-                                f"{len(channel_list)} channels"
-                                if channel_list[0] != "<directory>"
-                                else "directory"
-                            )
-                            logger.debug(
-                                f"  └─ Campaign: {campaign.name} [{status_info}] (ends: {ends_info})"
-                            )
-                            logger.debug(f"     Channels: {channel_info}")
-                            if channel_list[0] != "<directory>" and len(channel_list) <= 10:
-                                logger.debug(f"     └─ {', '.join(channel_list)}")
-                            elif channel_list[0] != "<directory>":
-                                logger.debug(
-                                    f"     └─ {', '.join(channel_list[:10])} ... (+{len(channel_list) - 10} more)"
-                                )
-                    logger.info("=== End Campaigns Mapping ===")
-
+                logger.info("Building wanted games list")
                 # Build wanted_games list preserving the order from games_to_watch
-                self.wanted_games = self._filter_wanted_campaigns(next_hour)
+                self.wanted_games = self._stream_selector.get_wanted_games(
+                    self.settings, self.inventory
+                )
+                logger.info("Wanted games list built")
 
                 if self.wanted_games:
                     logger.info(
@@ -470,9 +429,6 @@ class Twitch:
                     watching_channel,
                 )
             elif self._state is State.CHANNEL_SWITCH:
-                if self.settings.dump:
-                    self.close()
-                    continue
                 self.gui.status.update(_.t["gui"]["status"]["switching"])
 
                 # Determine the best channel to watch
@@ -698,5 +654,40 @@ class Twitch:
                     and campaign.has_wanted_unclaimed_benefits(mining_benefits)
                 ):
                     wanted_games.append(game)
-                    break 
+                    break
         return wanted_games
+
+    def _output_campaign_mapping(self, next_hour: datetime) -> None:
+        logger.info("=== Active Campaigns Mapping ===")
+        from collections import defaultdict
+
+        game_campaign_map: dict[str, list[tuple[DropsCampaign, list[str]]]] = defaultdict(list)
+        for campaign in self.inventory:
+            if campaign.eligible and not campaign.finished:
+                logger.info("eligible Campaign: %s - %s", campaign.name, campaign.game.name)
+            if campaign.can_earn_within(next_hour):
+                channel_names = []
+                if campaign.allowed_channels:
+                    channel_names = [ch.name for ch in campaign.allowed_channels]
+                else:
+                    channel_names = ["<directory>"]
+                game_campaign_map[campaign.game.name].append((campaign, channel_names))
+        for game_name in sorted(game_campaign_map.keys()):
+            logger.debug(f"Game: {game_name}")
+            for campaign, channel_list in game_campaign_map[game_name]:
+                status_info = f"{'ACTIVE' if campaign.active else 'UPCOMING'}"
+                ends_info = campaign.ends_at.astimezone().strftime("%Y-%m-%d %H:%M")
+                channel_info = (
+                    f"{len(channel_list)} channels"
+                    if channel_list[0] != "<directory>"
+                    else "directory"
+                )
+                logger.debug(f"  └─ Campaign: {campaign.name} [{status_info}] (ends: {ends_info})")
+                logger.debug(f"     Channels: {channel_info}")
+                if channel_list[0] != "<directory>" and len(channel_list) <= 10:
+                    logger.debug(f"     └─ {', '.join(channel_list)}")
+                elif channel_list[0] != "<directory>":
+                    logger.debug(
+                        f"     └─ {', '.join(channel_list[:10])} ... (+{len(channel_list) - 10} more)"
+                    )
+        logger.info("=== End Campaigns Mapping ===")
