@@ -223,9 +223,10 @@ async def verify_proxy(request: ProxyVerifyRequest):
     try:
         start_time = time.time()
         # Test connection to Twitch
-        async with aiohttp.ClientSession() as session, session.get(
-            "https://www.twitch.tv", proxy=proxy_url, timeout=10
-        ) as response:
+        async with (
+            aiohttp.ClientSession() as session,
+            session.get("https://www.twitch.tv", proxy=proxy_url, timeout=10) as response,
+        ):
             # Just checking if we can connect and get a response
             if response.status < 500:
                 latency = round((time.time() - start_time) * 1000)
@@ -257,14 +258,16 @@ async def get_version():
 
     try:
         # Check GitHub API for latest release
-        async with aiohttp.ClientSession() as session, session.get(
-            "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest",
-            timeout=5
-        ) as response:
+        async with (
+            aiohttp.ClientSession() as session,
+            session.get(
+                "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest", timeout=5
+            ) as response,
+        ):
             if response.status == 200:
                 data = await response.json()
-                latest_version = data.get('tag_name', '').lstrip('v')
-                download_url = data.get('html_url')
+                latest_version = data.get("tag_name", "").lstrip("v")
+                download_url = data.get("html_url")
 
                 # Compare versions (simple string comparison works for semantic versioning)
                 if latest_version and latest_version > current_version:
@@ -276,7 +279,7 @@ async def get_version():
         "current_version": current_version,
         "latest_version": latest_version,
         "update_available": update_available,
-        "download_url": download_url or "https://github.com/rangermix/TwitchDropsMiner/releases"
+        "download_url": download_url or "https://github.com/rangermix/TwitchDropsMiner/releases",
     }
 
 
@@ -389,11 +392,7 @@ async def request_reload(sid):
 async def get_wanted_items(sid):
     """Client requested wanted items list"""
     if gui_manager:
-        await sio.emit(
-            "wanted_items_update",
-            gui_manager.get_wanted_game_tree(),
-            to=sid
-        )
+        await sio.emit("wanted_items_update", gui_manager.get_wanted_game_tree(), to=sid)
 
 
 # Mount static files (CSS, JS, images)

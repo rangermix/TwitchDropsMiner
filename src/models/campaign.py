@@ -201,6 +201,4 @@ class DropsCampaign:
             first_drop.display()
 
     def has_wanted_unclaimed_benefits(self, allowed_benefits: dict[str, bool]) -> bool:
-        return any(
-            drop.has_wanted_unclaimed_benefits(allowed_benefits) for drop in self.drops
-        )
+        return any(drop.has_wanted_unclaimed_benefits(allowed_benefits) for drop in self.drops)

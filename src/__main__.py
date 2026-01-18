@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import asyncio
 import logging
 import signal
@@ -16,7 +15,7 @@ import truststore
 if __name__ == "__main__":
     truststore.inject_into_ssl()
 
-    from src.config import FILE_FORMATTER, LOGGING_LEVELS
+    from src.config import FILE_FORMATTER
     from src.config.settings import Settings
     from src.core.client import Twitch
     from src.exceptions import CaptchaRequired

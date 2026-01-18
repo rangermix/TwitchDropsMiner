@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import MagicMock
 
-import src
 from src.core.client import Twitch
 from src.models.benefit import Benefit, BenefitType
 from src.models.campaign import DropsCampaign

@@ -1,8 +1,6 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock
 
-from yarl import URL
-
 from src.config.settings import Settings
 from src.web.managers.console import ConsoleOutputManager
 from src.web.managers.settings import SettingsManager

@@ -12,11 +12,11 @@ if TYPE_CHECKING:
     from src.web.managers.broadcaster import WebSocketBroadcaster
 
 
-
 import logging
 
 
 logger = logging.getLogger("TwitchDrops")
+
 
 class ConsoleOutputManager:
     """Manages console output display in the web interface.

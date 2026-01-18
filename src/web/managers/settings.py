@@ -7,8 +7,6 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from yarl import URL
-
 from src.i18n.translator import _
 from src.models.game import Game
 
@@ -86,9 +84,10 @@ class SettingsManager:
             "connection_quality", settings_data.get("connection_quality")
         )
         if "proxy" in settings_data:
+            proxy_value = settings_data["proxy"]
             should_trigger_update |= self.check_and_update_setting(
                 "proxy",
-                settings_data.get("proxy").strip(),
+                str(proxy_value).strip() if proxy_value else "",
                 True,
                 lambda proxy: self._log_change("Proxy cleared") if proxy == "" else None,
             )

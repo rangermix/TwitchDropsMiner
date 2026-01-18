@@ -60,10 +60,7 @@ class WebGUIManager:
         # Callback to trigger game update when relevant settings change
         on_settings_change = self._twitch.get_change_state_callable(State.GAMES_UPDATE)
         self.settings = SettingsManager(
-            self._broadcaster,
-            twitch.settings,
-            self.output,
-            on_change=on_settings_change
+            self._broadcaster, twitch.settings, self.output, on_change=on_settings_change
         )
 
         # Selected channel tracking (set by web client)
@@ -160,7 +157,9 @@ class WebGUIManager:
         asyncio.create_task(self._broadcaster.emit("manual_mode_update", manual_mode_info))
 
     def get_wanted_game_tree(self) -> list[dict]:
-        return self._stream_selector.get_wanted_game_tree(self._twitch.settings, self._twitch.inventory)
+        return self._stream_selector.get_wanted_game_tree(
+            self._twitch.settings, self._twitch.inventory
+        )
 
     def broadcast_wanted_items(self):
         """Broadcast the list of wanted items to connected clients."""
