@@ -88,9 +88,9 @@ class SettingsManager:
         if "proxy" in settings_data:
             should_trigger_update |= self.check_and_update_setting(
                 "proxy",
-                URL(settings_data.get("proxy").strip()),
+                settings_data.get("proxy").strip(),
                 True,
-                lambda proxy: self._log_change("Proxy cleared") if proxy == URL() else None,
+                lambda proxy: self._log_change("Proxy cleared") if proxy == "" else None,
             )
         should_trigger_update |= self.check_and_update_setting(
             "minimum_refresh_interval_minutes",

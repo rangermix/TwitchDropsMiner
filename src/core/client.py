@@ -221,9 +221,6 @@ class Twitch:
         self.change_state(State.INVENTORY_FETCH)
         while True:
             if self._state is State.IDLE:
-                if self.settings.dump:
-                    self.close()
-                    continue
                 self.gui.status.update(_.t["gui"]["status"]["idle"])
                 self.stop_watching()
                 # clear the flag and wait until it's set again
@@ -263,7 +260,9 @@ class Twitch:
 
                 logger.info("Building wanted games list")
                 # Build wanted_games list preserving the order from games_to_watch
-                self.wanted_games = self._stream_selector.get_wanted_games(self.settings, self.inventory)
+                self.wanted_games = self._stream_selector.get_wanted_games(
+                    self.settings, self.inventory
+                )
                 logger.info("Wanted games list built")
 
                 if self.wanted_games:
@@ -430,9 +429,6 @@ class Twitch:
                     watching_channel,
                 )
             elif self._state is State.CHANNEL_SWITCH:
-                if self.settings.dump:
-                    self.close()
-                    continue
                 self.gui.status.update(_.t["gui"]["status"]["switching"])
 
                 # Determine the best channel to watch
@@ -665,14 +661,10 @@ class Twitch:
         logger.info("=== Active Campaigns Mapping ===")
         from collections import defaultdict
 
-        game_campaign_map: dict[str, list[tuple[DropsCampaign, list[str]]]] = (
-            defaultdict(list)
-        )
+        game_campaign_map: dict[str, list[tuple[DropsCampaign, list[str]]]] = defaultdict(list)
         for campaign in self.inventory:
             if campaign.eligible and not campaign.finished:
-                logger.info(
-                    "eligible Campaign: %s - %s", campaign.name, campaign.game.name
-                )
+                logger.info("eligible Campaign: %s - %s", campaign.name, campaign.game.name)
             if campaign.can_earn_within(next_hour):
                 channel_names = []
                 if campaign.allowed_channels:
@@ -690,9 +682,7 @@ class Twitch:
                     if channel_list[0] != "<directory>"
                     else "directory"
                 )
-                logger.debug(
-                    f"  └─ Campaign: {campaign.name} [{status_info}] (ends: {ends_info})"
-                )
+                logger.debug(f"  └─ Campaign: {campaign.name} [{status_info}] (ends: {ends_info})")
                 logger.debug(f"     Channels: {channel_info}")
                 if channel_list[0] != "<directory>" and len(channel_list) <= 10:
                     logger.debug(f"     └─ {', '.join(channel_list)}")

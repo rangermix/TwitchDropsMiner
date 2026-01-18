@@ -46,7 +46,7 @@ default_settings = {
         "EMOTE": True,
         "UNKNOWN": True,
     },
-    "proxy": URL(),
+    "proxy": "",
 }
 
 
@@ -59,7 +59,7 @@ class Settings:
     inventory_filters: InventoryFilters
     minimum_refresh_interval_minutes: int
     mining_benefits: dict[str, bool]
-    proxy: URL
+    proxy: str
 
     def __init__(self):
         self.load()
@@ -67,7 +67,10 @@ class Settings:
     def load(self):
         settings = json_load(SETTINGS_PATH, default_settings, merge=True)
         for key, value in settings.items():
-            setattr(self, key, value)
+            if value is URL:
+                setattr(self, key, str(value))
+            else:
+                setattr(self, key, value)
 
     def save(self) -> None:
         json_save(SETTINGS_PATH, vars(self), sort=True)

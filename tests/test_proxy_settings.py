@@ -17,7 +17,6 @@ class TestProxySettings(unittest.TestCase):
         # Create a pure mock Settings without wrapping a real instance
         # This avoids file I/O during tests
         self.mock_settings = MagicMock(spec=Settings)
-        self.mock_settings.proxy = URL()  # Default empty proxy
         self.mock_console = MagicMock(spec=ConsoleOutputManager)
 
         # Mock asyncio.create_task
@@ -34,14 +33,14 @@ class TestProxySettings(unittest.TestCase):
         proxy_url = "http://user:pass@localhost:8080"
         manager.update_settings({"proxy": proxy_url})
 
-        self.assertEqual(self.mock_settings.proxy, URL(proxy_url))
+        self.assertEqual(self.mock_settings.proxy, proxy_url)
         self.mock_console.print.assert_called_with(
             "Setting changed: proxy = http://user:pass@localhost:8080"
         )
 
         # Test clearing a proxy
         manager.update_settings({"proxy": ""})
-        self.assertEqual(self.mock_settings.proxy, URL())
+        self.assertEqual(self.mock_settings.proxy, "")
         self.mock_console.print.assert_called_with("Proxy cleared")
 
     def test_proxy_persistence_trigger(self):
