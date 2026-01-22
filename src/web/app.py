@@ -212,8 +212,9 @@ async def update_settings(settings: SettingsUpdate):
 @app.post("/api/settings/verify-proxy")
 async def verify_proxy(request: ProxyVerifyRequest):
     """Verify proxy connectivity"""
-    import aiohttp
     import time
+
+    import aiohttp
 
     proxy_url = request.proxy.strip()
     if not proxy_url:
@@ -222,23 +223,23 @@ async def verify_proxy(request: ProxyVerifyRequest):
     try:
         start_time = time.time()
         # Test connection to Twitch
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                "https://www.twitch.tv", proxy=proxy_url, timeout=10
-            ) as response:
-                # Just checking if we can connect and get a response
-                if response.status < 500:
-                    latency = round((time.time() - start_time) * 1000)
-                    return {
-                        "success": True,
-                        "message": f"Connected! ({latency}ms)",
-                        "latency": latency,
-                    }
-                else:
-                    return {
-                        "success": False,
-                        "message": f"Proxy reachable but returned {response.status}",
-                    }
+        async with (
+            aiohttp.ClientSession() as session,
+            session.get("https://www.twitch.tv", proxy=proxy_url, timeout=10) as response,
+        ):
+            # Just checking if we can connect and get a response
+            if response.status < 500:
+                latency = round((time.time() - start_time) * 1000)
+                return {
+                    "success": True,
+                    "message": f"Connected! ({latency}ms)",
+                    "latency": latency,
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": f"Proxy reachable but returned {response.status}",
+                }
     except Exception as e:
         return {"success": False, "message": f"Connection failed: {str(e)}"}
 
@@ -246,8 +247,9 @@ async def verify_proxy(request: ProxyVerifyRequest):
 @app.get("/api/version")
 async def get_version():
     """Get current application version and check for updates"""
-    from src.version import __version__
     import aiohttp
+
+    from src.version import __version__
 
     current_version = __version__
     latest_version = None
@@ -256,19 +258,20 @@ async def get_version():
 
     try:
         # Check GitHub API for latest release
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest",
-                timeout=5
-            ) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    latest_version = data.get('tag_name', '').lstrip('v')
-                    download_url = data.get('html_url')
+        async with (
+            aiohttp.ClientSession() as session,
+            session.get(
+                "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest", timeout=5
+            ) as response,
+        ):
+            if response.status == 200:
+                data = await response.json()
+                latest_version = data.get("tag_name", "").lstrip("v")
+                download_url = data.get("html_url")
 
-                    # Compare versions (simple string comparison works for semantic versioning)
-                    if latest_version and latest_version > current_version:
-                        update_available = True
+                # Compare versions (simple string comparison works for semantic versioning)
+                if latest_version and latest_version > current_version:
+                    update_available = True
     except Exception as e:
         logger.warning(f"Failed to check for updates: {str(e)}")
 
@@ -276,7 +279,7 @@ async def get_version():
         "current_version": current_version,
         "latest_version": latest_version,
         "update_available": update_available,
-        "download_url": download_url or "https://github.com/rangermix/TwitchDropsMiner/releases"
+        "download_url": download_url or "https://github.com/rangermix/TwitchDropsMiner/releases",
     }
 
 
@@ -357,7 +360,7 @@ async def connect(sid, environ):
                 "login": gui_manager.login.get_status(),
                 "manual_mode": twitch_client.get_manual_mode_info(),
                 "current_drop": gui_manager.progress.get_current_drop(),
-                "wanted_items": gui_manager.get_wanted_tree(),
+                "wanted_items": gui_manager.get_wanted_game_tree(),
             },
             room=sid,
         )
@@ -389,11 +392,7 @@ async def request_reload(sid):
 async def get_wanted_items(sid):
     """Client requested wanted items list"""
     if gui_manager:
-        await sio.emit(
-            "wanted_items_update",
-            gui_manager.get_wanted_tree(),
-            to=sid
-        )
+        await sio.emit("wanted_items_update", gui_manager.get_wanted_game_tree(), to=sid)
 
 
 # Mount static files (CSS, JS, images)

@@ -63,7 +63,9 @@ class WebsocketClosed(RequestException):
         self.raw_message: str = raw_message
 
     def __str__(self):
-        return f"Websocket has been closed. received: {self.received}, raw_message: {self.raw_message}"
+        return (
+            f"Websocket has been closed. received: {self.received}, raw_message: {self.raw_message}"
+        )
 
 
 class LoginException(RequestException):
