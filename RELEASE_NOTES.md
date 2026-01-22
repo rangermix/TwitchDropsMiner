@@ -1,3 +1,20 @@
+# Release Notes - v1.2.2
+
+This release brings significant enhancements to the core efficiency of the Twitch Drops Miner! We focused on unifying and smartening up the logic that selects games and tracks drops, ensuring your mining time is spent more effectively.
+
+### 🎮 Mining Efficiency & Automation
+
+We've overhauled the core systems responsible for identifying and tracking drops, making the Miner much more reliable and intelligent.
+
+-   **Unified Drop Logic**: The processes for selecting the next game to watch and tracking the expected drop progress have been merged into a single, cohesive system. This means the Miner is now smarter and more consistent about identifying active campaigns, reducing unnecessary stream switching and ensuring maximum drop uptime.
+
+### 📚 Under the Hood Improvements
+
+These changes are focused on stability and future development, but they ensure your application runs smoothly.
+
+-   **Refactored Settings Manager**: The internal framework for managing your configurations and settings has been completely refactored. This update significantly improves the stability and reliability of your saved preferences and prepares the Miner for more advanced customization options in upcoming releases.
+-   **Code Maintenance**: General code cleanup and formatting were performed to improve overall code quality and maintainability.
+
 # Release Notes - v1.2.1
 
 We've released v1.2.1 focused entirely on making your drop mining more reliable and robust. This crucial stability update ensures the Miner continues to track drops consistently, even when Twitch makes minor, behind-the-scenes adjustments to its tracking URLs.
