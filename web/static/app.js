@@ -1221,7 +1221,9 @@ function renderAvailableGames(games, filterText) {
     if (games.length === 0) {
         if (filterText) {
             const emptyMsg = t.gui?.settings?.no_games_match || 'No games match your search.';
-            container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
+            // Add hint to use the Add Game button
+            const addHint = t.gui?.settings?.add_game_hint || ' Click "Add Game" to add it manually.';
+            container.innerHTML = `<p class="empty-message">${emptyMsg}${addHint}</p>`;
         } else {
             const emptyMsg = t.gui?.settings?.all_games_selected || 'All games are selected or no games available.';
             container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
@@ -1340,6 +1342,37 @@ function selectAllGames() {
 
 function deselectAllGames() {
     state.settings.games_to_watch = [];
+    renderGamesToWatch();
+    renderChannels();
+    saveSettings();
+}
+
+function addGameFromSearch() {
+    const searchInput = document.getElementById('games-filter');
+    const gameName = searchInput.value.trim();
+
+    if (!gameName) {
+        return;
+    }
+
+    const games = state.settings.games_to_watch || [];
+    
+    // Check if already selected
+    if (games.includes(gameName)) {
+        searchInput.value = ''; // Clear input if already added
+        renderGamesToWatch(); // Just re-render to clear any filtering state if needed
+        return;
+    }
+
+    // Add to selected games
+    games.push(gameName);
+    state.settings.games_to_watch = games;
+
+    // Add to available games set so it shows up in lists
+    availableGames.add(gameName);
+
+    // Clear search and update UI
+    searchInput.value = '';
     renderGamesToWatch();
     renderChannels();
     saveSettings();
@@ -1690,6 +1723,9 @@ function applyTranslations(t) {
         const deselectAllBtn = document.getElementById('deselect-all-btn');
         if (deselectAllBtn) deselectAllBtn.textContent = t.gui.settings.deselect_all;
 
+        const addGameBtn = document.getElementById('add-game-btn');
+        if (addGameBtn && t.gui.settings.add_game) addGameBtn.textContent = t.gui.settings.add_game;
+
         const selectedGamesHeader = settingsTab.querySelector('.selected-games h3');
         if (selectedGamesHeader) selectedGamesHeader.textContent = t.gui.settings.selected_games;
 
@@ -1950,6 +1986,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Games to watch management
     document.getElementById('select-all-btn').addEventListener('click', selectAllGames);
     document.getElementById('deselect-all-btn').addEventListener('click', deselectAllGames);
+    document.getElementById('add-game-btn').addEventListener('click', addGameFromSearch);
     document.getElementById('games-filter').addEventListener('input', renderGamesToWatch);
 
     // Inventory filters
