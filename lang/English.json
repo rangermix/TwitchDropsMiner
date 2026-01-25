@@ -109,6 +109,8 @@
             "games_to_watch": "Games to Watch",
             "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
             "search_games": "Search games...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Select All",
             "deselect_all": "Deselect All",
             "selected_games": "Selected Games (drag to reorder)",
