@@ -353,7 +353,9 @@ function renderChannels() {
     const channels = Object.values(state.channels);
     if (channels.length === 0) {
         const emptyMsg = t.gui?.channels?.no_channels || 'No channels tracked yet...';
-        container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
+        container.replaceChildren(
+            makeElement('p', { class: 'empty-message' }, emptyMsg),
+        );
         return;
     }
 
@@ -371,7 +373,9 @@ function renderChannels() {
 
     if (filteredChannels.length === 0) {
         const emptyMsg = t.gui?.channels?.no_channels_for_games || 'No channels found for selected games...';
-        container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
+        container.replaceChildren(
+            makeElement('p', { class: 'empty-message' }, emptyMsg),
+        );
         return;
     }
 
@@ -412,13 +416,6 @@ function renderChannels() {
         const gameHeader = document.createElement('div');
         gameHeader.className = 'game-group-header';
 
-        let iconHtml = '';
-        if (group.icon) {
-            // Resize the box art to 40x53 (Twitch's standard small size)
-            const iconUrl = group.icon.replace('{width}', '40').replace('{height}', '53');
-            iconHtml = `<img src="${iconUrl}" alt="${group.name}" class="game-icon" onerror="this.style.display='none'">`;
-        }
-
         const channelCount = group.channels.length;
         const totalViewers = group.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
 
@@ -427,13 +424,15 @@ function renderChannels() {
             : (t.gui?.channels?.channel_count_plural || 'channels');
         const viewersText = t.gui?.channels?.viewers || 'viewers';
 
-        gameHeader.innerHTML = `
-            ${iconHtml}
-            <div class="game-group-info">
-                <div class="game-group-name">${group.name}</div>
-                <div class="game-group-stats">${channelCount} ${channelText} • ${totalViewers.toLocaleString()} ${viewersText}</div>
-            </div>
-        `;
+        gameHeader.replaceChildren(
+            makeElement('div', { class: 'game-group-info' }, '', el => {
+                if (group.icon) {
+                    el.appendChild(makeElement('img', { src: group.icon.replace('{width}', '40').replace('{height}', '53'), alt: group.name, class: 'game-icon', onerror: 'this.style.display=\'none\'' }, ''));
+                }
+                el.appendChild(makeElement('div', { class: 'game-group-name' }, group.name));
+                el.appendChild(makeElement('div', { class: 'game-group-stats' }, `${channelCount} ${channelText} • ${totalViewers.toLocaleString()} ${viewersText}`));
+            }),
+        );
 
         container.appendChild(gameHeader);
 
@@ -452,17 +451,23 @@ function renderChannels() {
             if (channel.online) div.classList.add('online');
             else div.classList.add('offline');
 
-            let badges = '';
-            if (channel.drops_enabled) badges += '<span class="channel-badge drops">DROPS</span>';
-            if (channel.acl_based) badges += '<span class="channel-badge acl">ACL</span>';
-
-            div.innerHTML = `
-                <div class="channel-name">${channel.name} ${badges}</div>
-                <div class="channel-info">
-                    ${channel.viewers !== null ? channel.viewers.toLocaleString() + ' viewers' : 'Offline'}
-                    ${channel.watching ? ' • <strong>WATCHING</strong>' : ''}
-                </div>
-            `;
+            const nameDiv = makeElement('div', { class: 'channel-name' }, channel.name, el => {
+                if (channel.drops_enabled) {
+                    el.appendChild(document.createTextNode(' '));
+                    el.appendChild(makeElement('span', { class: 'channel-badge drops' }, 'DROPS'));
+                }
+                if (channel.acl_based) {
+                    el.appendChild(document.createTextNode(' '));
+                    el.appendChild(makeElement('span', { class: 'channel-badge acl' }, 'ACL'));
+                }
+            });
+            const infoDiv = makeElement('div', { class: 'channel-info' }, channel.viewers !== null ? channel.viewers.toLocaleString() + ' viewers' : 'Offline', el => {
+                if (channel.watching) {
+                    el.appendChild(document.createTextNode(' • '));
+                    el.appendChild(makeElement('strong', {}, 'WATCHING'));
+                }
+            });
+            div.replaceChildren(nameDiv, infoDiv);
 
             div.onclick = () => selectChannel(channel.id);
             container.appendChild(div);
@@ -489,7 +494,10 @@ function updateDropProgress(data) {
     const dropGameEl = document.getElementById('drop-game');
     if (data.campaign_id) {
         const campaignUrl = `https://www.twitch.tv/drops/campaigns?dropID=${data.campaign_id}`;
-        dropGameEl.innerHTML = `<a href="${campaignUrl}" target="_blank" rel="noopener noreferrer" class="drop-campaign-link">${data.campaign_name}</a> (${data.game_name})`;
+        dropGameEl.replaceChildren(
+            makeElement('a', { href: campaignUrl, target: '_blank', rel: 'noopener noreferrer', class: 'drop-campaign-link' }, data.campaign_name),
+            document.createTextNode(` (${data.game_name})`),
+        );
     } else {
         dropGameEl.textContent = `${data.campaign_name} (${data.game_name})`;
     }
@@ -721,7 +729,7 @@ function renderGameDropdown(searchTerm = '') {
     dropdown.innerHTML = '';
 
     if (filteredGames.length === 0) {
-        dropdown.innerHTML = '<div class="dropdown-item no-results">No games found</div>';
+        dropdown.replaceChildren(makeElement('div', { class: 'dropdown-item no-results' }, 'No games found'));
         gameDropdownFocusedIndex = -1;
         return;
     }
@@ -798,7 +806,7 @@ function updateGameTagsDisplay() {
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'game-tag-remove';
-        removeBtn.innerHTML = '×';
+        removeBtn.textContent = '×';
         removeBtn.setAttribute('aria-label', `Remove ${gameName}`);
         removeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -884,12 +892,12 @@ function renderInventory() {
 
     if (allCampaigns.length === 0) {
         const emptyMsg = t.gui?.inventory?.no_campaigns || 'No campaigns loaded yet...';
-        container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
+        container.replaceChildren(makeElement('p', { class: 'empty-message' }, emptyMsg));
         return;
     }
 
     if (campaigns.length === 0) {
-        container.innerHTML = `<p class="empty-message">No campaigns match the current filters.</p>`;
+        container.replaceChildren(makeElement('p', { class: 'empty-message' }, 'No campaigns match the current filters.'));
         return;
     }
 
@@ -911,94 +919,95 @@ function renderInventory() {
         }
 
         const claimedText = t.gui?.inventory?.status?.claimed || 'Claimed';
-        const dropsHtml = campaign.drops.map(drop => {
-            // Generate HTML for each benefit as its own line
-            let benefitsHtml = '';
-            if (drop.benefits && drop.benefits.length > 0) {
-                benefitsHtml = drop.benefits.map(benefit =>
-                    `<div class="benefit-item">
-                        <img src="${benefit.image_url}" alt="${benefit.name}" class="benefit-icon" onerror="this.style.display='none'">
-                        <div class="benefit-info">
-                            <span class="benefit-name">${benefit.name}</span>
-                            <span class="benefit-type">(${benefit.type})</span>
-                        </div>
-                    </div>`
-                ).join('');
-            }
-
-            return `
-                <div class="drop-item ${drop.is_claimed ? 'claimed' : ''} ${drop.can_claim ? 'active' : ''}">
-                    <div class="drop-item-header">
-                        <div class="drop-item-info">
-                            <div><strong>${drop.name}</strong></div>
-                        </div>
-                    </div>
-                    <div class="benefits-list">
-                        ${benefitsHtml}
-                    </div>
-                    <div>${drop.current_minutes} / ${drop.required_minutes} minutes (${Math.round(drop.progress * 100)}%)</div>
-                    ${drop.is_claimed ? `<div>✓ ${claimedText}</div>` : ''}
-                </div>
-            `;
-        }).join('');
-
-        const campaignNameHtml = `<a href="${campaign.campaign_url}" target="_blank" rel="noopener noreferrer" class="campaign-name-link">${campaign.name} <span class="external-link-icon">🔗</span></a>`
-
-        // Add LINKED or NOT LINKED badge
-        const linkStatusBadgeHtml = campaign.linked
-            ? `<span class="campaign-badge linked" title="Account is linked">LINKED</span>`
-            : `<span class="campaign-badge not-linked" onclick="window.open('${campaign.link_url}', '_blank')" title="Click to link your account">NOT LINKED</span>`;
-
-        const linkAccountButtonHtml = !campaign.linked && campaign.link_url
-            ? `<button class="link-account-btn" onclick="window.open('${campaign.link_url}', '_blank')">Link Account</button>`
-            : '';
-
-        // Add game icon if available
-        let gameIconHtml = '';
-        if (campaign.game_box_art_url) {
-            const iconUrl = campaign.game_box_art_url.replace('{width}', '52').replace('{height}', '70');
-            gameIconHtml = `<img src="${iconUrl}" alt="${campaign.game_name}" class="game-icon" onerror="this.style.display='none'">`;
-        }
-
-        // Format campaign timing based on status
-        let timingHtml = '';
-        if (campaign.active && campaign.ends_at) {
-            const endDate = new Date(campaign.ends_at);
-            const formattedDate = endDate.toLocaleString();
-            const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
-            timingHtml = `<div class="campaign-timing">${endsLabel.replace('{time}', formattedDate)}</div>`;
-        } else if (campaign.upcoming && campaign.starts_at) {
-            const startDate = new Date(campaign.starts_at);
-            const formattedDate = startDate.toLocaleString();
-            const startsLabel = t.gui?.inventory?.starts || 'Starts: {time}';
-            timingHtml = `<div class="campaign-timing">${startsLabel.replace('{time}', formattedDate)}</div>`;
-        } else if (campaign.expired && campaign.ends_at) {
-            const endDate = new Date(campaign.ends_at);
-            const formattedDate = endDate.toLocaleString();
-            const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
-            timingHtml = `<div class="campaign-timing">${endsLabel.replace('{time}', formattedDate)}</div>`;
-        }
-
         const claimedCountText = t.gui?.inventory?.claimed_drops || 'claimed';
-        card.innerHTML = `
-            <div class="campaign-header">
-                <div class="campaign-game">
-                    ${gameIconHtml}
-                    <span class="campaign-game-name">${campaign.game_name}</span>
-                    ${linkStatusBadgeHtml}
-                </div>
-                ${campaignNameHtml}
-                ${linkAccountButtonHtml}
-            </div>
-            <div class="campaign-status">
-                <span>${statusText}</span>
-                <span>${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}</span>
-            </div>
-            ${timingHtml}
-            <div class="campaign-drops">
-                ${dropsHtml}
-            </div>
-        `;
+
+        // Build drops elements
+        const dropsEl = makeElement('div', { class: 'campaign-drops' });
+        campaign.drops.forEach(drop => {
+            const dropItem = makeElement('div', { class: `drop-item${drop.is_claimed ? ' claimed' : ''}${drop.can_claim ? ' active' : ''}` });
+            dropItem.appendChild(
+                makeElement('div', { class: 'drop-item-header' }, '', el =>
+                    el.appendChild(makeElement('div', { class: 'drop-item-info' }, '', el2 =>
+                        el2.appendChild(makeElement('div', {}, '', el3 =>
+                            el3.appendChild(makeElement('strong', {}, drop.name))
+                        ))
+                    ))
+                )
+            );
+            const benefitsList = makeElement('div', { class: 'benefits-list' });
+            if (drop.benefits && drop.benefits.length > 0) {
+                drop.benefits.forEach(benefit => {
+                    benefitsList.appendChild(
+                        makeElement('div', { class: 'benefit-item' }, '', el => {
+                            el.appendChild(makeElement('img', { src: benefit.image_url, alt: benefit.name, class: 'benefit-icon', onerror: "this.style.display='none'" }));
+                            el.appendChild(makeElement('div', { class: 'benefit-info' }, '', el2 => {
+                                el2.appendChild(makeElement('span', { class: 'benefit-name' }, benefit.name));
+                                el2.appendChild(makeElement('span', { class: 'benefit-type' }, `(${benefit.type})`));
+                            }));
+                        })
+                    );
+                });
+            }
+            dropItem.appendChild(benefitsList);
+            dropItem.appendChild(makeElement('div', {}, `${drop.current_minutes} / ${drop.required_minutes} minutes (${Math.round(drop.progress * 100)}%)`));
+            if (drop.is_claimed) {
+                dropItem.appendChild(makeElement('div', {}, `✓ ${claimedText}`));
+            }
+            dropsEl.appendChild(dropItem);
+        });
+
+        // Campaign name link
+        const campaignNameLink = makeElement('a', { href: campaign.campaign_url, target: '_blank', rel: 'noopener noreferrer', class: 'campaign-name-link' }, campaign.name, el =>
+            el.appendChild(makeElement('span', { class: 'external-link-icon' }, '🔗'))
+        );
+
+        // Linked/not linked badge
+        const linkStatusBadge = campaign.linked
+            ? makeElement('span', { class: 'campaign-badge linked', title: 'Account is linked' }, 'LINKED')
+            : makeElement('span', { class: 'campaign-badge not-linked', title: 'Click to link your account' }, 'NOT LINKED', el => {
+                el.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
+            });
+
+        // Link account button
+        const campaignGameDiv = makeElement('div', { class: 'campaign-game' }, '', el => {
+            if (campaign.game_box_art_url) {
+                const iconUrl = campaign.game_box_art_url.replace('{width}', '52').replace('{height}', '70');
+                el.appendChild(makeElement('img', { src: iconUrl, alt: campaign.game_name, class: 'game-icon', onerror: "this.style.display='none'" }));
+            }
+            el.appendChild(makeElement('span', { class: 'campaign-game-name' }, campaign.game_name));
+            el.appendChild(linkStatusBadge);
+        });
+
+        const campaignHeader = makeElement('div', { class: 'campaign-header' }, '', el => {
+            el.appendChild(campaignGameDiv);
+            el.appendChild(campaignNameLink);
+            if (!campaign.linked && campaign.link_url) {
+                el.appendChild(makeElement('button', { class: 'link-account-btn' }, 'Link Account', btn => {
+                    btn.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
+                }));
+            }
+        });
+
+        const campaignStatus = makeElement('div', { class: 'campaign-status' }, '', el => {
+            el.appendChild(makeElement('span', {}, statusText));
+            el.appendChild(makeElement('span', {}, `${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}`));
+        });
+
+        card.replaceChildren(campaignHeader, campaignStatus);
+
+        // Campaign timing
+        if (campaign.active && campaign.ends_at) {
+            const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
+            card.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
+        } else if (campaign.upcoming && campaign.starts_at) {
+            const startsLabel = t.gui?.inventory?.starts || 'Starts: {time}';
+            card.appendChild(makeElement('div', { class: 'campaign-timing' }, startsLabel.replace('{time}', new Date(campaign.starts_at).toLocaleString())));
+        } else if (campaign.expired && campaign.ends_at) {
+            const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
+            card.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
+        }
+
+        card.appendChild(dropsEl);
 
         container.appendChild(card);
     });
@@ -1181,7 +1190,7 @@ function renderSelectedGames(games) {
 
     if (games.length === 0) {
         const emptyMsg = t.gui?.settings?.no_games_selected || 'No games selected. Check games below to add them.';
-        container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
+        container.replaceChildren(makeElement('p', { class: 'empty-message' }, emptyMsg));
         return;
     }
 
@@ -1190,12 +1199,12 @@ function renderSelectedGames(games) {
         div.className = 'sortable-item';
         div.draggable = true;
         div.dataset.game = game;
-        div.innerHTML = `
-            <span class="drag-handle">☰</span>
-            <span class="priority-number">${index + 1}</span>
-            <span class="game-name">${game}</span>
-            <button class="remove-btn">✕</button>
-        `;
+        div.replaceChildren(
+            makeElement('span', { class: 'drag-handle' }, '☰'),
+            makeElement('span', { class: 'priority-number' }, String(index + 1)),
+            makeElement('span', { class: 'game-name' }, game),
+            makeElement('button', { class: 'remove-btn' }, '✕'),
+        );
 
         // Event listener for the delete button
         const removeBtn = div.querySelector('.remove-btn');
@@ -1221,10 +1230,10 @@ function renderAvailableGames(games, filterText) {
     if (games.length === 0) {
         if (filterText) {
             const emptyMsg = t.gui?.settings?.no_games_match || 'No games match your search.';
-            container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
+            container.replaceChildren(makeElement('p', { class: 'empty-message' }, emptyMsg));
         } else {
             const emptyMsg = t.gui?.settings?.all_games_selected || 'All games are selected or no games available.';
-            container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
+            container.replaceChildren(makeElement('p', { class: 'empty-message' }, emptyMsg));
         }
         return;
     }
@@ -1232,10 +1241,10 @@ function renderAvailableGames(games, filterText) {
     games.forEach(game => {
         const label = document.createElement('label');
         label.className = 'game-checkbox';
-        label.innerHTML = `
-            <input type="checkbox" value="${game}">
-            <span>${game}</span>
-        `;
+        label.replaceChildren(
+            makeElement('input', { type: 'checkbox', value: game }),
+            makeElement('span', {}, game),
+        );
 
         const checkbox = label.querySelector('input[type="checkbox"]');
         checkbox.addEventListener('change', (e) => toggleGameWatch(game, e.target.checked));
@@ -1528,7 +1537,7 @@ async function fetchAndPopulateLanguages() {
         console.error('Failed to fetch languages:', error);
         const languageSelect = document.getElementById('language');
         if (languageSelect) {
-            languageSelect.innerHTML = '<option value="">Failed to load languages</option>';
+            languageSelect.replaceChildren(makeElement('option', { value: '' }, 'Failed to load languages'));
         }
         addConsoleLine('Error: Unable to fetch available languages. Please check your connection or try again later.');
     }
@@ -1733,45 +1742,43 @@ function applyTranslations(t) {
             // Actually, the best approach for the lists is to find the UL/OL elements.
             // But they don't have IDs. TO be fully robust I should have added IDs to the lists too.
             // But for now, let's stick to the previous innerHTML approach but ensuring IDs are preserved in the template string.
-            helpContent.innerHTML = `
-                <h2 id="help-about-header">${t.gui.help.about || 'About Twitch Drops Miner'}</h2>
-                <p>${t.gui.help.about_text || 'This application automatically mines timed Twitch drops without downloading stream data.'}</p>
+            const makeList = (tag, items) => makeElement(tag, {}, '', el => {
+                items.forEach(item => el.appendChild(makeElement('li', {}, item)));
+            });
 
-                <h3 id="help-howto-header">${t.gui.help.how_to_use || 'How to Use'}</h3>
-                <ol>
-                    ${(t.gui.help.how_to_use_items || [
-                    'Login using your Twitch account (OAuth device code flow)',
-                    'Link your accounts at <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a>',
-                    'The miner will automatically discover campaigns and start mining',
-                    'Configure priority games in Settings to focus on what you want',
-                    'Monitor progress in the Main and Inventory tabs'
-                ]).map(item => `<li>${item}</li>`).join('')}
-                </ol>
+            const howToItems = t.gui.help.how_to_use_items || [
+                'Login using your Twitch account (OAuth device code flow)',
+                'Link your accounts at twitch.tv/drops/campaigns',
+                'The miner will automatically discover campaigns and start mining',
+                'Configure priority games in Settings to focus on what you want',
+                'Monitor progress in the Main and Inventory tabs'
+            ];
+            const featuresItems = t.gui.help.features_items || [
+                'Stream-less drop mining - saves bandwidth',
+                'Game priority and exclusion lists',
+                'Tracks up to 199 channels simultaneously',
+                'Automatic channel switching',
+                'Real-time progress tracking'
+            ];
+            const notesItems = t.gui.help.important_notes_items || [
+                'Do not watch streams on the same account while mining',
+                'Keep your cookies.jar file secure',
+                'Requires linked game accounts for drops'
+            ];
 
-                <h3 id="help-features-header">${t.gui.help.features || 'Features'}</h3>
-                <ul>
-                    ${(t.gui.help.features_items || [
-                    'Stream-less drop mining - saves bandwidth',
-                    'Game priority and exclusion lists',
-                    'Tracks up to 199 channels simultaneously',
-                    'Automatic channel switching',
-                    'Real-time progress tracking'
-                ]).map(item => `<li>${item}</li>`).join('')}
-                </ul>
-
-                <h3 id="help-notes-header">${t.gui.help.important_notes || 'Important Notes'}</h3>
-                <ul>
-                    ${(t.gui.help.important_notes_items || [
-                    'Do not watch streams on the same account while mining',
-                    'Keep your cookies.jar file secure',
-                    'Requires linked game accounts for drops'
-                ]).map(item => `<li>${item}</li>`).join('')}
-                </ul>
-
-                <div class="help-links">
-                    <a href="https://github.com/rangermix/TwitchDropsMiner" target="_blank">${t.gui.help.github_repo || 'GitHub Repository'}</a>
-                </div>
-            `;
+            helpContent.replaceChildren(
+                makeElement('h2', { id: 'help-about-header' }, t.gui.help.about || 'About Twitch Drops Miner'),
+                makeElement('p', {}, t.gui.help.about_text || 'This application automatically mines timed Twitch drops without downloading stream data.'),
+                makeElement('h3', { id: 'help-howto-header' }, t.gui.help.how_to_use || 'How to Use'),
+                makeList('ol', howToItems),
+                makeElement('h3', { id: 'help-features-header' }, t.gui.help.features || 'Features'),
+                makeList('ul', featuresItems),
+                makeElement('h3', { id: 'help-notes-header' }, t.gui.help.important_notes || 'Important Notes'),
+                makeList('ul', notesItems),
+                makeElement('div', { class: 'help-links' }, '', el =>
+                    el.appendChild(makeElement('a', { href: 'https://github.com/rangermix/TwitchDropsMiner', target: '_blank' }, t.gui.help.github_repo || 'GitHub Repository'))
+                ),
+            );
         }
     }
 
@@ -2019,7 +2026,7 @@ function renderWantedItems(tree) {
 
     if (!tree || tree.length === 0) {
         const emptyMsg = state.translations.gui?.wanted?.none || 'No wanted drops queued...';
-        container.innerHTML = `<p class="empty-message-small">${emptyMsg}</p>`;
+        container.replaceChildren(makeElement('p', { class: 'empty-message-small' }, emptyMsg));
         return;
     }
 
@@ -2027,57 +2034,44 @@ function renderWantedItems(tree) {
         const groupEl = document.createElement('div');
         groupEl.className = 'wanted-game-group';
 
-        const headerEl = document.createElement('div');
-        headerEl.className = 'wanted-game-header';
-
         // Game Icon
         let iconUrl = gameGroup.game_icon;
         if (iconUrl) {
-            iconUrl = iconUrl.replace('{width}', '40').replace('{height}', '53'); // 3:4 aspect ratio approx
+            iconUrl = iconUrl.replace('{width}', '40').replace('{height}', '53');
         }
 
-        const iconHtml = iconUrl
-            ? `<img src="${iconUrl}" alt="${gameGroup.game_name}" class="wanted-game-icon" onerror="this.style.display='none'">`
-            : '';
+        const headerChildren = [makeElement('span', { class: 'wanted-game-index' }, `#${index + 1}`)];
+        if (iconUrl) {
+            headerChildren.push(makeElement('img', { src: iconUrl, alt: gameGroup.game_name, class: 'wanted-game-icon', onerror: "this.style.display='none'" }));
+        }
+        headerChildren.push(makeElement('span', { class: 'wanted-game-title' }, gameGroup.game_name));
 
-        headerEl.innerHTML = `
-            <span class="wanted-game-index">#${index + 1}</span>
-            ${iconHtml}
-            <span class="wanted-game-title">${gameGroup.game_name}</span>
-        `;
+        const headerEl = makeElement('div', { class: 'wanted-game-header' }, '', el => {
+            headerChildren.forEach(child => el.appendChild(child));
+        });
         groupEl.appendChild(headerEl);
 
         const campaignListEl = document.createElement('div');
         campaignListEl.className = 'wanted-campaign-list';
 
         gameGroup.campaigns.forEach(campaign => {
-            const cardEl = document.createElement('div');
-            cardEl.className = 'wanted-card';
-
-            cardEl.innerHTML = `
-                <div class="wanted-card-header">
-                     <a href="${campaign.url}" target="_blank" rel="noopener noreferrer" class="wanted-card-campaign-link" title="${campaign.name}">
-                        ${campaign.name}
-                    </a>
-                </div>
-                <div class="wanted-card-body">
-                    <div id="wanted-drops-${campaign.id}"></div>
-                </div>
-            `;
-
-            const dropContainer = cardEl.querySelector(`#wanted-drops-${campaign.id}`);
+            const dropContainer = makeElement('div', {});
+            const cardEl = makeElement('div', { class: 'wanted-card' }, '', el => {
+                el.appendChild(makeElement('div', { class: 'wanted-card-header' }, '', h =>
+                    h.appendChild(makeElement('a', { href: campaign.url, target: '_blank', rel: 'noopener noreferrer', class: 'wanted-card-campaign-link', title: campaign.name }, campaign.name))
+                ));
+                el.appendChild(makeElement('div', { class: 'wanted-card-body' }, '', b =>
+                    b.appendChild(dropContainer)
+                ));
+            });
 
             campaign.drops.forEach(drop => {
-                const dropEl = document.createElement('div');
-                dropEl.className = 'wanted-drop-item';
-
-                let html = `<span class="wanted-drop-name">${drop.name}</span>`;
-
-                drop.benefits.forEach(benefit => {
-                    html += `<span class="wanted-benefit-pill">${benefit}</span>`;
+                const dropEl = makeElement('div', { class: 'wanted-drop-item' }, '', el => {
+                    el.appendChild(makeElement('span', { class: 'wanted-drop-name' }, drop.name));
+                    drop.benefits.forEach(benefit => {
+                        el.appendChild(makeElement('span', { class: 'wanted-benefit-pill' }, benefit));
+                    });
                 });
-
-                dropEl.innerHTML = html;
                 dropContainer.appendChild(dropEl);
             });
 
@@ -2087,4 +2081,24 @@ function renderWantedItems(tree) {
         groupEl.appendChild(campaignListEl);
         container.appendChild(groupEl);
     });
+}
+
+// ==================== DOM Utilities ====================
+
+/**
+ * @param {string} tag
+ * @param {Record<string, string|number|boolean>} attrs
+ * @param {string|null} text
+ * @param {(el: HTMLElement) => {}|null} callback
+ */
+function makeElement(tag, attrs, text = null, callback = null) {
+    const el = document.createElement(tag);
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+    if (text) {
+        el.textContent = text;
+    }
+    if (callback) {
+        callback(el);
+    }
+    return el;
 }
