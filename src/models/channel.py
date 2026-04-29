@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import gzip
 import json
 import logging
 import re
@@ -11,11 +12,11 @@ from typing import TYPE_CHECKING, Any, SupportsInt, cast
 import aiohttp
 from yarl import URL
 
-from src.config.constants import CALL, ONLINE_DELAY, GQLOperation, JsonType, URLType
+from src.config.constants import CALL, ONLINE_DELAY, GQLOperation, GQLQuery, JsonType, URLType
 from src.config.operations import GQL_OPERATIONS
 from src.exceptions import MinerException, RequestException
 from src.models.game import Game
-from src.utils.json_utils import json_minify
+from src.utils.json_utils import isonow, json_minify
 
 
 if TYPE_CHECKING:
@@ -64,6 +65,36 @@ class Stream:
             }
         ]
         return {"data": (b64encode(json_minify(payload).encode("utf8"))).decode("utf8")}
+
+    @property
+    def _gql_payload(self) -> GQLQuery:
+        payload = [
+            {
+                "event": "minute-watched",
+                "properties": {
+                    "broadcast_id": str(self.broadcast_id),
+                    "channel_id": str(self.channel.id),
+                    "channel": self.channel._login,
+                    "client_time": isonow(),
+                    "game": self.game.name if self.game is not None else "",
+                    "game_id": str(self.game.id) if self.game is not None else "",
+                    "hidden": False,
+                    "is_live": True,
+                    "live": True,
+                    "logged_in": True,
+                    "minutes_logged": 1,
+                    "muted": False,
+                    "user_id": self.channel._twitch._auth_state.user_id,
+                },
+            }
+        ]
+        return GQLQuery(
+            (
+                "\n mutation SendEvents($input: SendSpadeEventsInput!) "
+                "{\n sendSpadeEvents(input: $input) {\n statusCode\n}\n}\n"
+            ),
+            b64encode(gzip.compress(json_minify(payload).encode("utf8"))).decode("utf8"),
+        )
 
     @classmethod
     def from_get_stream(cls, channel: Channel, channel_data: JsonType) -> Stream:
@@ -419,7 +450,7 @@ class Channel:
             self.display()
 
     # NOTE: This is currently unused.
-    async def _send_watch(self) -> bool:
+    async def _send_watch_playlist(self) -> bool:
         """
         This performs a HEAD request on the stream's current playlist,
         to simulate watching the stream.
@@ -471,7 +502,8 @@ class Channel:
         async with self._twitch.request("HEAD", stream_chunk_url) as head_response:
             return head_response.status == 200
 
-    async def send_watch(self) -> bool:
+    # NOTE: This is currently unused.
+    async def _send_watch_spade(self) -> bool:
         if self._stream is None:
             return False
         if self._spade_url is None:
@@ -481,5 +513,14 @@ class Channel:
                 "POST", self._spade_url, data=self._stream._spade_payload
             ) as response:
                 return response.status == 204
+        except RequestException:
+            return False
+
+    async def send_watch(self) -> bool:
+        if self._stream is None:
+            return False
+        try:
+            watch_response: JsonType = await self._twitch.gql_request(self._stream._gql_payload)
+            return watch_response["data"]["sendSpadeEvents"]["statusCode"] == 204
         except RequestException:
             return False
