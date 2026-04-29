@@ -31,6 +31,11 @@ def json_minify(data: JsonType | list[JsonType]) -> str:
     return json.dumps(data, separators=(",", ":"))
 
 
+def isonow() -> str:
+    """Return the current UTC time in Twitch's expected ISO-8601 format."""
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
 def _serialize(obj: Any) -> Any:
     """
     Custom JSON encoder for special types.
