@@ -23,6 +23,7 @@ No more tab juggling, channel switching, or missing rewards — just set it, for
 - ⚙️ **Auto Channel Switching** — Always mines the best available stream
 - 💾 **Persistent Login** — OAuth login saved via cookies
 - 🕹️ **Simple Web UI** — Manage everything from your browser
+- 🛡️ **Safe Frontend Rendering** — Dynamic UI content is rendered with DOM APIs to avoid HTML injection
 - 🧩 **Docker-Ready** — One command to deploy anywhere
 
 ---

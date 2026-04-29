@@ -424,15 +424,13 @@ function renderChannels() {
             : (t.gui?.channels?.channel_count_plural || 'channels');
         const viewersText = t.gui?.channels?.viewers || 'viewers';
 
-        gameHeader.replaceChildren(
-            makeElement('div', { class: 'game-group-info' }, '', el => {
-                if (group.icon) {
-                    el.appendChild(makeElement('img', { src: group.icon.replace('{width}', '40').replace('{height}', '53'), alt: group.name, class: 'game-icon', onerror: 'this.style.display=\'none\'' }, ''));
-                }
-                el.appendChild(makeElement('div', { class: 'game-group-name' }, group.name));
-                el.appendChild(makeElement('div', { class: 'game-group-stats' }, `${channelCount} ${channelText} • ${totalViewers.toLocaleString()} ${viewersText}`));
-            }),
-        );
+        if (group.icon) {
+            gameHeader.appendChild(makeImageElement(group.icon.replace('{width}', '40').replace('{height}', '53'), group.name, 'game-icon'));
+        }
+        gameHeader.appendChild(makeElement('div', { class: 'game-group-info' }, null, el => {
+            el.appendChild(makeElement('div', { class: 'game-group-name' }, group.name));
+            el.appendChild(makeElement('div', { class: 'game-group-stats' }, `${channelCount} ${channelText} • ${totalViewers.toLocaleString()} ${viewersText}`));
+        }));
 
         container.appendChild(gameHeader);
 
@@ -939,7 +937,7 @@ function renderInventory() {
                 drop.benefits.forEach(benefit => {
                     benefitsList.appendChild(
                         makeElement('div', { class: 'benefit-item' }, '', el => {
-                            el.appendChild(makeElement('img', { src: benefit.image_url, alt: benefit.name, class: 'benefit-icon', onerror: "this.style.display='none'" }));
+                            el.appendChild(makeImageElement(benefit.image_url, benefit.name, 'benefit-icon'));
                             el.appendChild(makeElement('div', { class: 'benefit-info' }, '', el2 => {
                                 el2.appendChild(makeElement('span', { class: 'benefit-name' }, benefit.name));
                                 el2.appendChild(makeElement('span', { class: 'benefit-type' }, `(${benefit.type})`));
@@ -972,7 +970,7 @@ function renderInventory() {
         const campaignGameDiv = makeElement('div', { class: 'campaign-game' }, '', el => {
             if (campaign.game_box_art_url) {
                 const iconUrl = campaign.game_box_art_url.replace('{width}', '52').replace('{height}', '70');
-                el.appendChild(makeElement('img', { src: iconUrl, alt: campaign.game_name, class: 'game-icon', onerror: "this.style.display='none'" }));
+                el.appendChild(makeImageElement(iconUrl, campaign.game_name, 'game-icon'));
             }
             el.appendChild(makeElement('span', { class: 'campaign-game-name' }, campaign.game_name));
             el.appendChild(linkStatusBadge);
@@ -1731,24 +1729,9 @@ function applyTranslations(t) {
         // Update list items and links (keeping innerHTML approach for lists as they are dynamic content blocks)
         const helpContent = helpTab.querySelector('.help-content');
         if (helpContent) {
-            // We only need to update the dynamic lists and the github link, preserving the headers we just updated?
-            // Actually, the previous code was nuke-and-rebuild via innerHTML.
-            // To keep it consistent with our "ID-based update" philosophy, we should probably avoid nuke-and-rebuild if possible,
-            // OR just rebuild but include the IDs.
-            // Since I added IDs to the static HTML, rebuilding via innerHTML will wipe them unless I include them in the template string.
-            // Strategy: Update the dynamic parts (lists) safely, or just update the whole thing but INCLUDE the IDs.
-            // Let's update the lists directly if possible, or just re-render properly.
-
-            // Actually, the best approach for the lists is to find the UL/OL elements.
-            // But they don't have IDs. TO be fully robust I should have added IDs to the lists too.
-            // But for now, let's stick to the previous innerHTML approach but ensuring IDs are preserved in the template string.
-            const makeList = (tag, items) => makeElement(tag, {}, '', el => {
-                items.forEach(item => el.appendChild(makeElement('li', {}, item)));
-            });
-
             const howToItems = t.gui.help.how_to_use_items || [
                 'Login using your Twitch account (OAuth device code flow)',
-                'Link your accounts at twitch.tv/drops/campaigns',
+                'Link your accounts at <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a>',
                 'The miner will automatically discover campaigns and start mining',
                 'Configure priority games in Settings to focus on what you want',
                 'Monitor progress in the Main and Inventory tabs'
@@ -1770,13 +1753,13 @@ function applyTranslations(t) {
                 makeElement('h2', { id: 'help-about-header' }, t.gui.help.about || 'About Twitch Drops Miner'),
                 makeElement('p', {}, t.gui.help.about_text || 'This application automatically mines timed Twitch drops without downloading stream data.'),
                 makeElement('h3', { id: 'help-howto-header' }, t.gui.help.how_to_use || 'How to Use'),
-                makeList('ol', howToItems),
+                makeHelpList('ol', howToItems),
                 makeElement('h3', { id: 'help-features-header' }, t.gui.help.features || 'Features'),
-                makeList('ul', featuresItems),
+                makeHelpList('ul', featuresItems),
                 makeElement('h3', { id: 'help-notes-header' }, t.gui.help.important_notes || 'Important Notes'),
-                makeList('ul', notesItems),
+                makeHelpList('ul', notesItems),
                 makeElement('div', { class: 'help-links' }, '', el =>
-                    el.appendChild(makeElement('a', { href: 'https://github.com/rangermix/TwitchDropsMiner', target: '_blank' }, t.gui.help.github_repo || 'GitHub Repository'))
+                    el.appendChild(makeElement('a', { href: 'https://github.com/rangermix/TwitchDropsMiner', target: '_blank', rel: 'noopener noreferrer' }, t.gui.help.github_repo || 'GitHub Repository'))
                 ),
             );
         }
@@ -2042,7 +2025,7 @@ function renderWantedItems(tree) {
 
         const headerChildren = [makeElement('span', { class: 'wanted-game-index' }, `#${index + 1}`)];
         if (iconUrl) {
-            headerChildren.push(makeElement('img', { src: iconUrl, alt: gameGroup.game_name, class: 'wanted-game-icon', onerror: "this.style.display='none'" }));
+            headerChildren.push(makeImageElement(iconUrl, gameGroup.game_name, 'wanted-game-icon'));
         }
         headerChildren.push(makeElement('span', { class: 'wanted-game-title' }, gameGroup.game_name));
 
@@ -2085,20 +2068,69 @@ function renderWantedItems(tree) {
 
 // ==================== DOM Utilities ====================
 
+const TRUSTED_HELP_LINKS = new Set(['https://www.twitch.tv/drops/campaigns']);
+
 /**
  * @param {string} tag
  * @param {Record<string, string|number|boolean>} attrs
- * @param {string|null} text
- * @param {(el: HTMLElement) => {}|null} callback
+ * @param {string|number|null} text
+ * @param {(el: HTMLElement) => void|null} callback
  */
-function makeElement(tag, attrs, text = null, callback = null) {
+function makeElement(tag, attrs = {}, text = null, callback = null) {
     const el = document.createElement(tag);
-    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
-    if (text) {
-        el.textContent = text;
+    Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, String(value)));
+    if (text !== null && text !== undefined) {
+        el.textContent = String(text);
     }
     if (callback) {
         callback(el);
     }
     return el;
+}
+
+function makeImageElement(src, alt, className) {
+    const image = makeElement('img', { src, alt, class: className });
+    image.onerror = () => {
+        image.style.display = 'none';
+    };
+    return image;
+}
+
+function makeHelpList(tag, items) {
+    return makeElement(tag, {}, null, list => {
+        items.forEach(item => {
+            list.appendChild(makeElement('li', {}, null, li => appendTrustedHelpContent(li, item)));
+        });
+    });
+}
+
+function appendTrustedHelpContent(parent, text) {
+    const source = String(text);
+    const linkPattern = /<a\b[^>]*\bhref=(["'])(https:\/\/www\.twitch\.tv\/drops\/campaigns)\1[^>]*>(.*?)<\/a>/gi;
+    let lastIndex = 0;
+    let match;
+    let matched = false;
+
+    while ((match = linkPattern.exec(source)) !== null) {
+        matched = true;
+        if (match.index > lastIndex) {
+            parent.appendChild(document.createTextNode(source.slice(lastIndex, match.index)));
+        }
+        const href = match[2];
+        if (TRUSTED_HELP_LINKS.has(href)) {
+            parent.appendChild(makeElement('a', { href, target: '_blank', rel: 'noopener noreferrer' }, match[3]));
+        } else {
+            parent.appendChild(document.createTextNode(match[0]));
+        }
+        lastIndex = linkPattern.lastIndex;
+    }
+
+    if (!matched) {
+        parent.textContent = source;
+        return;
+    }
+
+    if (lastIndex < source.length) {
+        parent.appendChild(document.createTextNode(source.slice(lastIndex)));
+    }
 }
