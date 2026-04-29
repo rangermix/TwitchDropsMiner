@@ -38,7 +38,7 @@ from src.websocket import WebsocketPool
 
 
 if TYPE_CHECKING:
-    from src.config import ClientInfo, GQLOperation, JsonType
+    from src.config import ClientInfo, GQLRequest, JsonType
     from src.config.settings import Settings
     from src.models.channel import Stream
     from src.models.drop import TimedDrop
@@ -597,9 +597,7 @@ class Twitch:
         await self._auth_state.validate()
         return self._auth_state
 
-    async def gql_request(
-        self, ops: GQLOperation | list[GQLOperation]
-    ) -> JsonType | list[JsonType]:
+    async def gql_request(self, ops: GQLRequest | list[GQLRequest]) -> JsonType | list[JsonType]:
         """
         Execute GraphQL request(s).
 

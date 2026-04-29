@@ -18,7 +18,7 @@ No more tab juggling, channel switching, or missing rewards — just set it, for
 
 ## ✨ Features
 
-- 🚀 **Streamless Mining** — Earn drops without streaming video (save bandwidth)
+- 🚀 **Streamless Mining** — Earn drops without streaming video by sending Twitch GraphQL watch events
 - 🔍 **Automatic Campaign Discovery** — Detects new drop events automatically
 - ⚙️ **Auto Channel Switching** — Always mines the best available stream
 - 💾 **Persistent Login** — OAuth login saved via cookies
