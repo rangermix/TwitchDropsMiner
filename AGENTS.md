@@ -21,6 +21,7 @@ This file provides guidance to AI Agents when working with code in this reposito
 
 4. **Localization (i18n)**:
    - Update translation files if there are changes to UI text or console messages.
+   - Frontend translation rendering must use safe DOM construction. Do not inject translated strings with non-clearing `innerHTML`; allowlist any intentional links and build them as DOM nodes.
 
 5. **Documentation**:
    - Always update `README.md` and all agent instruction files when making changes.

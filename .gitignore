@@ -27,3 +27,5 @@ data/
 *.log
 *.egg-info/
 .coverage
+
+artifacts/
