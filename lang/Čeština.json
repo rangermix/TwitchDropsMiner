@@ -133,6 +133,8 @@
             "games_to_watch": "Hry ke sledování",
             "games_help": "Vyberte hry ke sledování. Záleží na pořadí - přetáhněte pro změnu priority (nahoře = nejvyšší priorita).",
             "search_games": "Hledat hry...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Vybrat vše",
             "deselect_all": "Zrušit výběr",
             "selected_games": "Vybrané hry (přetáhněte pro změnu pořadí)",

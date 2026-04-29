@@ -133,6 +133,8 @@
             "games_to_watch": "Ігри для перегляду",
             "games_help": "Виберіть ігри для перегляду. Порядок має значення - перетягніть для зміни пріоритету (вгорі = найвищий пріоритет).",
             "search_games": "Пошук ігор...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Вибрати все",
             "deselect_all": "Зняти вибір",
             "selected_games": "Вибрані ігри (перетягніть для зміни порядку)",

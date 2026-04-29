@@ -133,6 +133,8 @@
             "games_to_watch": "視聴するゲーム",
             "games_help": "視聴するゲームを選択してください。順序が重要です - ドラッグして優先順位を並べ替えます（上 = 最高優先度）。",
             "search_games": "ゲームを検索...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "すべて選択",
             "deselect_all": "すべて選択解除",
             "selected_games": "選択されたゲーム（ドラッグして並べ替え）",

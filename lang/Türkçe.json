@@ -133,6 +133,8 @@
             "games_to_watch": "İzlenecek Oyunlar",
             "games_help": "İzlenecek oyunları seçin. Sıralama önemlidir - önceliği yeniden sıralamak için sürükleyin (üst = en yüksek öncelik).",
             "search_games": "Oyun ara...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Tümünü seç",
             "deselect_all": "Tümünü kaldır",
             "selected_games": "Seçilen oyunlar (yeniden sıralamak için sürükleyin)",

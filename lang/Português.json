@@ -133,6 +133,8 @@
             "games_to_watch": "Jogos para assistir",
             "games_help": "Selecione os jogos para assistir. A ordem importa - arraste para reordenar a prioridade (topo = maior prioridade).",
             "search_games": "Procurar jogos...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Selecionar tudo",
             "deselect_all": "Desmarcar tudo",
             "selected_games": "Jogos selecionados (arraste para reordenar)",

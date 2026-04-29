@@ -131,6 +131,8 @@
             "games_to_watch": "Spiele zum Ansehen",
             "games_help": "Wählen Sie Spiele zum Ansehen aus. Die Reihenfolge ist wichtig - ziehen Sie, um die Priorität zu ändern (oben = höchste Priorität).",
             "search_games": "Spiele suchen...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Alle auswählen",
             "deselect_all": "Alle abwählen",
             "selected_games": "Ausgewählte Spiele (ziehen zum Neuordnen)",

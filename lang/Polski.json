@@ -134,6 +134,8 @@
             "games_to_watch": "Gry do oglądania",
             "games_help": "Wybierz gry do oglądania. Kolejność ma znaczenie - przeciągnij, aby zmienić priorytet (góra = najwyższy priorytet).",
             "search_games": "Szukaj gier...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Zaznacz wszystko",
             "deselect_all": "Odznacz wszystko",
             "selected_games": "Wybrane gry (przeciągnij, aby zmienić kolejność)",

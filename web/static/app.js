@@ -1228,9 +1228,8 @@ function renderAvailableGames(games, filterText) {
     if (games.length === 0) {
         if (filterText) {
             const emptyMsg = t.gui?.settings?.no_games_match || 'No games match your search.';
-            // Add hint to use the Add Game button
             const addHint = t.gui?.settings?.add_game_hint || ' Click "Add Game" to add it manually.';
-            container.innerHTML = `<p class="empty-message">${emptyMsg}${addHint}</p>`;
+            container.replaceChildren(makeElement('p', { class: 'empty-message' }, `${emptyMsg}${addHint}`));
         } else {
             const emptyMsg = t.gui?.settings?.all_games_selected || 'All games are selected or no games available.';
             container.replaceChildren(makeElement('p', { class: 'empty-message' }, emptyMsg));

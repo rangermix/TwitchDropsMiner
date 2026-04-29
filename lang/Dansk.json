@@ -130,6 +130,8 @@
             "games_to_watch": "Spil at se",
             "games_help": "Vælg spil at se. Rækkefølgen er vigtig - træk for at ændre prioritet (top = højeste prioritet).",
             "search_games": "Søg spil...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Vælg alle",
             "deselect_all": "Fravælg alle",
             "selected_games": "Valgte spil (træk for at ændre rækkefølge)",

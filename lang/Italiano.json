@@ -133,6 +133,8 @@
             "games_to_watch": "Giochi da guardare",
             "games_help": "Seleziona i giochi da guardare. L'ordine è importante - trascina per riordinare la priorità (in alto = priorità massima).",
             "search_games": "Cerca giochi...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Seleziona tutto",
             "deselect_all": "Deseleziona tutto",
             "selected_games": "Giochi selezionati (trascina per riordinare)",
