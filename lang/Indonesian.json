@@ -133,6 +133,8 @@
             "games_to_watch": "Game untuk Ditonton",
             "games_help": "Pilih game untuk ditonton. Urutan penting - seret untuk mengatur ulang prioritas (atas = prioritas tertinggi).",
             "search_games": "Cari game...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Pilih Semua",
             "deselect_all": "Batalkan Semua",
             "selected_games": "Game yang Dipilih (seret untuk mengatur ulang)",

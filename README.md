@@ -72,7 +72,7 @@ Visit 👉 **<http://localhost:8080>**
 1. Open `http://localhost:8080`
 2. Login with your Twitch account (OAuth device flow)
 3. The miner auto-fetches available campaigns
-4. Select games you want to farm → click **Reload**
+4. Select games you want to farm, or type a custom game and click **Add Game** → click **Reload**
 5. TDM starts mining drops automatically 🎉
 
 📝 **Tip:**  

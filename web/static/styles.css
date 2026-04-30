@@ -1170,7 +1170,7 @@ header h1 {
     margin-bottom: 20px;
 }
 
-.games-filter input {
+.games-filter input[type="text"] {
     width: 100%;
     padding: 10px;
     border: 1px solid var(--border-color);
@@ -1179,6 +1179,7 @@ header h1 {
     color: var(--text-primary);
     font-size: 14px;
     margin-bottom: 10px;
+    margin-left: 0;
 }
 
 .filter-actions {

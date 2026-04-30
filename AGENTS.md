@@ -146,6 +146,7 @@ lang/                # Translation JSON files (19 languages)
 **src/config/settings.py** - Application settings:
 
 - Games to watch list (auto-populated from available campaigns if empty)
+- Games can also be added manually from the web settings search box
 - Connection quality multiplier
 - Language selection
 - Proxy support (including verification)

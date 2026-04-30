@@ -131,6 +131,8 @@
             "games_to_watch": "Jeux à regarder",
             "games_help": "Sélectionnez les jeux à regarder. L'ordre est important - faites glisser pour réorganiser la priorité (haut = priorité la plus élevée).",
             "search_games": "Rechercher des jeux...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Tout sélectionner",
             "deselect_all": "Tout désélectionner",
             "selected_games": "Jeux sélectionnés (glisser pour réorganiser)",

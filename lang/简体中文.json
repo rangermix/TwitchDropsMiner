@@ -130,6 +130,8 @@
             "games_to_watch": "观看游戏",
             "games_help": "选择要观看的游戏。顺序很重要 - 拖动以重新排序优先级（顶部 = 最高优先级）。",
             "search_games": "搜索游戏...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "全选",
             "deselect_all": "取消全选",
             "selected_games": "已选游戏（拖动以重新排序）",

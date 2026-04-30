@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import MagicMock
 
 from src.models.benefit import Benefit
 from src.models.campaign import DropsCampaign
@@ -98,6 +99,29 @@ class TestBenefitFilter(unittest.TestCase):
         # Case where all drops return False
         drop2.has_wanted_unclaimed_benefits.return_value = False
         self.assertFalse(campaign.has_wanted_unclaimed_benefits(allowed))
+
+    def test_campaign_preserves_account_link_status(self):
+        campaign_data = {
+            "id": "campaign-1",
+            "name": "Test Campaign",
+            "game": {
+                "id": "1",
+                "name": "Test Game",
+                "displayName": "Test Game",
+                "boxArtURL": "https://example.test/game-{width}x{height}.jpg",
+            },
+            "self": {"isAccountConnected": False},
+            "accountLinkURL": "https://example.test/link",
+            "startAt": "2026-01-01T00:00:00Z",
+            "endAt": "2026-01-02T00:00:00Z",
+            "status": "ACTIVE",
+            "allow": {"channels": [], "isEnabled": True},
+            "timeBasedDrops": [],
+        }
+
+        campaign = DropsCampaign(MagicMock(), campaign_data, {})
+
+        self.assertFalse(campaign.linked)
 
 
 if __name__ == "__main__":

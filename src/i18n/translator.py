@@ -177,6 +177,8 @@ class GUISettings(TypedDict):
     games_to_watch: str
     games_help: str
     search_games: str
+    add_game: str
+    add_game_hint: str
     select_all: str
     deselect_all: str
     selected_games: str

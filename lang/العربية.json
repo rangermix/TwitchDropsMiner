@@ -133,6 +133,8 @@
             "games_to_watch": "ألعاب للمشاهدة",
             "games_help": "حدد الألعاب للمشاهدة. الترتيب مهم - اسحب لإعادة ترتيب الأولوية (الأعلى = أعلى أولوية).",
             "search_games": "البحث عن الألعاب...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "تحديد الكل",
             "deselect_all": "إلغاء تحديد الكل",
             "selected_games": "الألعاب المحددة (اسحب لإعادة الترتيب)",
