@@ -7,7 +7,7 @@
   <a href="https://github.com/rangermix/TwitchDropsMiner/releases"><img src="https://img.shields.io/github/v/release/rangermix/TwitchDropsMiner?style=for-the-badge&color=brightgreen" alt="Release"></a>
   <a href="https://hub.docker.com/r/rangermix/twitch-drops-miner"><img src="https://img.shields.io/docker/pulls/rangermix/twitch-drops-miner?style=for-the-badge&color=blue" alt="Docker Pulls"></a>
   <a href="https://github.com/rangermix/TwitchDropsMiner/blob/main/LICENSE"><img src="https://img.shields.io/github/license/rangermix/TwitchDropsMiner?style=for-the-badge&color=orange" alt="License"></a>
-  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python" alt="Python"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.12+-blue?style=for-the-badge&logo=python" alt="Python"></a>
 </p>
 
 A modern, AI-assisted fork of [DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner) — rebuilt for reliability, simplicity, and automation.  
@@ -58,9 +58,8 @@ services:
 ### 🧑‍💻 From Source (for Developers)
 
 ```bash
-# Python 3.10+
-pip install -e .
-python main.py
+uv sync
+uv run main.py
 ```
 
 Visit 👉 **<http://localhost:8080>**
@@ -88,7 +87,7 @@ Make sure your Twitch account is linked to your game accounts →
 > Use a different account if you want to watch live streams while mining.
 
 > 💡 **Requirements**  
-> Python 3.10+  
+> Python 3.12+  
 > Docker optional but recommended  
 > Persistent data stored in `/data`
 
