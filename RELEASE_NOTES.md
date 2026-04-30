@@ -1,3 +1,20 @@
+# Release Notes - v1.2.3
+
+This update introduces a highly requested custom game management feature and addresses critical stability issues to ensure your drops keep rolling in smoothly. We've also bolstered the application's security and refined our internal processing logic for a more reliable experience.
+
+### 🎮 Game Management
+- **Add Custom Games**: You can now manually add your favorite games to the "Games to Watch" list directly from the Settings tab! Use the new search input to find and link any game you want to farm.
+- **UI Polish**: We’ve cleaned up the alignment of the games filter search bar to make your settings page look sharper and easier to navigate.
+
+### 🐛 Bug Fixes
+- **Twitch Watch Events**: We’ve updated the GQL integration to ensure watch events are tracked correctly, preventing drops from getting stuck.
+- **Security Hardening**: Replaced `innerHTML` with safe DOM APIs throughout the frontend to protect the app against XSS vulnerabilities.
+- **Rendering Fixes**: Addressed regressions in the UI to ensure everything displays exactly as it should after our security updates.
+
+### ⚙️ Performance & Internal Improvements
+- **Optimized Agent Logic**: Simplified our AI agent instructions and updated the Gemini model to provide more efficient and accurate performance.
+- **Maintenance**: Cleaned up project configuration files to keep our repository tidy and efficient.
+
 # Release Notes - v1.2.2
 
 This release brings significant enhancements to the core efficiency of the Twitch Drops Miner! We focused on unifying and smartening up the logic that selects games and tracks drops, ensuring your mining time is spent more effectively.
