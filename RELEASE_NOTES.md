@@ -1,3 +1,16 @@
+# Release Notes - v1.2.4
+
+This update ensures compatibility with the latest Twitch systems and modernizes our environment requirements for a smoother experience. We’ve updated essential game directory hashes and bumped our Python requirements to keep the miner running at peak performance.
+
+### 🔄 System Updates
+- **Game Directory Hash**: We’ve updated the internal hash for the Game Directory to ensure the miner stays synced with the latest Twitch data, preventing potential connection issues.
+
+### ⚙️ Infrastructure
+- **Python Version Requirement**: To take advantage of the latest performance improvements and security patches, we have updated the minimum Python requirement from 3.10 to 3.12. Please make sure to update your local environment to continue using the miner!
+
+### 📚 Documentation
+- **README Updates**: The README file has been refreshed to reflect the new Python 3.12+ requirement, making it easier for new users to get started with the correct setup.
+
 # Release Notes - v1.2.3
 
 This update introduces a highly requested custom game management feature and addresses critical stability issues to ensure your drops keep rolling in smoothly. We've also bolstered the application's security and refined our internal processing logic for a more reliable experience.
