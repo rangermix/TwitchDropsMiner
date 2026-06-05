@@ -597,13 +597,19 @@ function campaignMatchesFilters(campaign, filters) {
     // Calculate "finished" status: all drops claimed
     const isFinished = campaign.total_drops > 0 && campaign.claimed_drops === campaign.total_drops;
 
+    // Always hide finished campaigns unless explicitly shown (fix #52)
+    if (!filters.show_finished && isFinished) return false;
+
+    // Always hide not-linked campaigns unless explicitly shown (fix #51)
+    if (!filters.show_not_linked && !campaign.linked) return false;
+
     // Check if any filter is enabled
     const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
     const anyFilterEnabled = filters.show_active || filters.show_not_linked ||
         filters.show_upcoming || filters.show_expired ||
         filters.show_finished || hasGameFilter;
 
-    // If no filters enabled, show all campaigns
+    // If no filters enabled, show all remaining campaigns
     if (!anyFilterEnabled) {
         return true;
     }

@@ -36,7 +36,7 @@ default_settings = {
         "show_benefit_other": True,
         "show_expired": False,
         "show_finished": False,
-        "show_not_linked": True,
+        "show_not_linked": False,
         "show_upcoming": True,
     },
     "minimum_refresh_interval_minutes": 30,
