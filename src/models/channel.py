@@ -521,6 +521,7 @@ class Channel:
             return False
         try:
             watch_response: JsonType = await self._twitch.gql_request(self._stream._gql_payload)
-            return watch_response["data"]["sendSpadeEvents"]["statusCode"] == 204
-        except RequestException:
+            send_events = (watch_response.get("data") or {}).get("sendSpadeEvents")
+            return send_events is not None and send_events.get("statusCode") == 204
+        except (RequestException, TypeError, AttributeError):
             return False
