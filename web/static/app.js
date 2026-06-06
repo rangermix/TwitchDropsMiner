@@ -597,38 +597,24 @@ function campaignMatchesFilters(campaign, filters) {
     // Calculate "finished" status: all drops claimed
     const isFinished = campaign.total_drops > 0 && campaign.claimed_drops === campaign.total_drops;
 
-    // Always hide finished campaigns unless explicitly shown (fix #52)
+    const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
+
+    // Exclusion filters: always hide these unless the checkbox is ON (closes #52)
     if (!filters.show_finished && isFinished) return false;
 
-    // Always hide not-linked campaigns unless explicitly shown (fix #51)
-    if (!filters.show_not_linked && !campaign.linked) return false;
+    // Linked/Not Linked: AND filters applied on top of status (closes #51)
+    if (filters.show_linked && !campaign.linked) return false;
+    if (filters.show_not_linked && campaign.linked) return false;
 
-    // Check if any filter is enabled
-    const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
-    const anyFilterEnabled = filters.show_active || filters.show_not_linked ||
-        filters.show_upcoming || filters.show_expired ||
-        filters.show_finished || hasGameFilter;
+    // Status filters: OR logic — if any checked, show only matching campaigns
+    const hasStatusFilters = filters.show_active || filters.show_upcoming || filters.show_expired;
 
-    // If no filters enabled, show all remaining campaigns
-    if (!anyFilterEnabled) {
-        return true;
-    }
-
-    // Check status filters (OR logic - campaign matches if ANY checked filter applies)
-    let statusMatch = false;
-
-    if (filters.show_active && campaign.active) statusMatch = true;
-    if (filters.show_not_linked && !campaign.linked) statusMatch = true;
-    if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
-    if (filters.show_expired && campaign.expired) statusMatch = true;
-    if (filters.show_finished && isFinished) statusMatch = true;
-
-    // If status filters are enabled but campaign doesn't match any, filter it out
-    const hasStatusFilters = filters.show_active || filters.show_not_linked ||
-        filters.show_upcoming || filters.show_expired ||
-        filters.show_finished;
-    if (hasStatusFilters && !statusMatch) {
-        return false;
+    if (hasStatusFilters) {
+        let statusMatch = false;
+        if (filters.show_active && campaign.active) statusMatch = true;
+        if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
+        if (filters.show_expired && campaign.expired) statusMatch = true;
+        if (!statusMatch) return false;
     }
 
     // Check game name filter (AND logic with status filters, OR logic among selected games)
