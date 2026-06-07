@@ -47,6 +47,7 @@ default_settings = {
         "UNKNOWN": True,
     },
     "proxy": "",
+    "drop_name_blacklist": [],
 }
 
 
@@ -60,6 +61,7 @@ class Settings:
     minimum_refresh_interval_minutes: int
     mining_benefits: dict[str, bool]
     proxy: str
+    drop_name_blacklist: list[str]
 
     def __init__(self):
         self.load()
