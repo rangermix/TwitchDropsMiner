@@ -356,7 +356,10 @@ class Twitch:
                 for game in no_acl:
                     # for every campaign without an ACL, for it's game,
                     # add a list of live channels with drops enabled
-                    new_channels.update(await self.get_live_streams(game, drops_enabled=True))
+                    try:
+                        new_channels.update(await self.get_live_streams(game, drops_enabled=True))
+                    except Exception as exc:
+                        logger.warning(f"Failed to fetch channels for {game.name}: {exc} — skipping")
                 # sort them descending by viewers, by priority and by game priority
                 # NOTE: Viewers sort also ensures ONLINE channels are sorted to the top
                 # NOTE: We can drop using the set now, because there's no more channels being added
