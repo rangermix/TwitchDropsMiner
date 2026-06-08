@@ -15,6 +15,8 @@ class StatusMessages(TypedDict):
     claimed_drop: str
     no_channel: str
     no_campaign: str
+    paused: str
+    resumed: str
 
 
 class LoginStatus(TypedDict):
@@ -45,6 +47,7 @@ class ErrorMessages(TypedDict):
 class GUIStatus(TypedDict):
     name: str
     idle: str
+    paused: str
     ready: str
     exiting: str
     terminated: str
@@ -189,6 +192,11 @@ class GUISettings(TypedDict):
     actions: str
     connection_quality: str
     minimum_refresh: str
+    scheduler: str
+    scheduler_help: str
+    scheduler_enabled: str
+    scheduler_start: str
+    scheduler_stop: str
 
 
 class GUIHelp(TypedDict):
@@ -211,6 +219,8 @@ class GUIHeader(TypedDict):
     manual_mode: str
     connected: str
     disconnected: str
+    pause: str
+    resume: str
 
 
 class GUIMessages(TypedDict):

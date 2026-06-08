@@ -8,7 +8,9 @@
         "goes_offline": "{channel} 頻道已結束實況，正在跳轉…",
         "claimed_drop": "已領取掉寶：{drop}",
         "no_channel": "沒有可觀看的頻道，正在等待一個正在實況的頻道…",
-        "no_campaign": "沒有可用於掉寶的活動，正在等待一個有效的掉寶活動…"
+        "no_campaign": "沒有可用於掉寶的活動，正在等待一個有效的掉寶活動…",
+        "paused": "挖礦已暫停",
+        "resumed": "挖礦已恢復"
     },
     "login": {
         "unexpected_content": "回傳的內容類型有誤，通常是由於被重新導向導致。您需要設置 VPN 或者確認登入頁面才能上網嗎？",
@@ -46,7 +48,8 @@
             "switching": "正在切換實況頻道…",
             "fetching_inventory": "正在獲取庫存…",
             "fetching_campaigns": "正在獲取掉寶活動…",
-            "adding_campaigns": "將掉寶活動列表新增至庫存… {counter}"
+            "adding_campaigns": "將掉寶活動列表新增至庫存… {counter}",
+            "paused": "已暫停"
         },
         "tabs": {
             "main": "主要",
@@ -147,7 +150,12 @@
             "minimum_refresh": "最小重新整理間隔（分鐘）：",
             "reload_campaigns": "重新載入活動",
             "mining_benefits": "挖掘獎勵",
-            "mining_benefits_help": "選擇您想要獲取的掉落類型。"
+            "mining_benefits_help": "選擇您想要獲取的掉落類型。",
+            "scheduler": "排程器",
+            "scheduler_help": "在排程時間自動暫停和恢復挖礦。",
+            "scheduler_enabled": "啟用排程器",
+            "scheduler_start": "開始挖礦：",
+            "scheduler_stop": "停止挖礦："
         },
         "help": {
             "about": "關於 Twitch Drops Miner",
@@ -183,7 +191,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "手動",
             "connected": "已連接",
-            "disconnected": "已中斷連接"
+            "disconnected": "已中斷連接",
+            "pause": "暫停挖礦",
+            "resume": "恢復挖礦"
         },
         "footer": {
             "version": "版本:",

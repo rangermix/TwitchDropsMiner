@@ -9,7 +9,8 @@ const state = {
     settings: {},
     currentDrop: null,
     countdownTimer: null,  // Track the active countdown timer
-    translations: {}  // Store current translations
+    translations: {},  // Store current translations
+    paused: false  // Track paused state
 };
 
 // ==================== Version Checking ====================
@@ -153,6 +154,10 @@ socket.on('initial_state', (data) => {
     if (data.wanted_items) {
         renderWantedItems(data.wanted_items);
     }
+
+    if (data.paused !== undefined) {
+        updatePauseState(data.paused);
+    }
 });
 
 socket.on('status_update', (data) => {
@@ -289,6 +294,10 @@ socket.on('language_changed', (data) => {
 
 socket.on('wanted_items_update', (data) => {
     renderWantedItems(data);
+});
+
+socket.on('pause_state', (data) => {
+    updatePauseState(data.paused);
 });
 
 // ==================== UI Update Functions ====================
@@ -1110,6 +1119,17 @@ function updateSettingsUI(settings) {
         if (document.getElementById('mining-benefit-unknown')) document.getElementById('mining-benefit-unknown').checked = settings.mining_benefits.UNKNOWN;
     }
 
+    // Restore scheduler settings
+    if (document.getElementById('scheduler-enabled')) {
+        document.getElementById('scheduler-enabled').checked = settings.scheduler_enabled || false;
+    }
+    if (document.getElementById('scheduler-start')) {
+        document.getElementById('scheduler-start').value = settings.scheduler_start || '22:00';
+    }
+    if (document.getElementById('scheduler-stop')) {
+        document.getElementById('scheduler-stop').value = settings.scheduler_stop || '08:00';
+    }
+
 
     // Update games to watch lists
     renderGamesToWatch();
@@ -1150,6 +1170,30 @@ function updateManualModeUI(manualModeInfo) {
         if (manualControls) {
             manualControls.classList.add('hidden');
         }
+    }
+}
+
+function updatePauseState(paused) {
+    state.paused = paused;
+    const btn = document.getElementById('pause-resume-btn');
+    if (!btn) return;
+    if (paused) {
+        btn.textContent = '▶';
+        btn.classList.add('paused');
+        btn.title = state.translations.gui?.header?.resume || 'Resume mining';
+    } else {
+        btn.textContent = '⏸';
+        btn.classList.remove('paused');
+        btn.title = state.translations.gui?.header?.pause || 'Pause mining';
+    }
+}
+
+async function togglePause() {
+    try {
+        const endpoint = state.paused ? '/api/resume' : '/api/pause';
+        await fetch(endpoint, { method: 'POST' });
+    } catch (error) {
+        console.error('Failed to toggle pause:', error);
     }
 }
 
@@ -1522,7 +1566,10 @@ async function saveSettings() {
             "BADGE": document.getElementById('mining-benefit-badge')?.checked,
             "EMOTE": document.getElementById('mining-benefit-emote')?.checked,
             "UNKNOWN": document.getElementById('mining-benefit-unknown')?.checked
-        }
+        },
+        scheduler_enabled: document.getElementById('scheduler-enabled')?.checked || false,
+        scheduler_start: document.getElementById('scheduler-start')?.value || '22:00',
+        scheduler_stop: document.getElementById('scheduler-stop')?.value || '08:00'
     };
 
     try {
@@ -1740,6 +1787,35 @@ function applyTranslations(t) {
 
         const reloadBtn = document.getElementById('reload-btn');
         if (reloadBtn) reloadBtn.textContent = t.gui.settings.reload_campaigns;
+
+        // Scheduler settings
+        const schedulerHeader = document.getElementById('settings-scheduler-header');
+        if (schedulerHeader) schedulerHeader.textContent = t.gui.settings.scheduler || 'Scheduler';
+
+        const schedulerHelp = document.getElementById('settings-scheduler-help');
+        if (schedulerHelp) schedulerHelp.textContent = t.gui.settings.scheduler_help || 'Automatically pause and resume mining at scheduled times.';
+
+        const schedulerEnabledLabel = settingsTab.querySelector('label:has(#scheduler-enabled)');
+        if (schedulerEnabledLabel) {
+            const checkbox = schedulerEnabledLabel.querySelector('input');
+            schedulerEnabledLabel.textContent = '';
+            schedulerEnabledLabel.appendChild(checkbox);
+            schedulerEnabledLabel.appendChild(document.createTextNode(' ' + (t.gui.settings.scheduler_enabled || 'Enable Scheduler')));
+        }
+
+        const schedulerStartLabel = settingsTab.querySelector('#scheduler-times label:first-child');
+        if (schedulerStartLabel) {
+            const input = schedulerStartLabel.querySelector('input');
+            schedulerStartLabel.textContent = (t.gui.settings.scheduler_start || 'Start mining:') + ' ';
+            schedulerStartLabel.appendChild(input);
+        }
+
+        const schedulerStopLabel = settingsTab.querySelector('#scheduler-times label:last-child');
+        if (schedulerStopLabel) {
+            const input = schedulerStopLabel.querySelector('input');
+            schedulerStopLabel.textContent = (t.gui.settings.scheduler_stop || 'Stop mining:') + ' ';
+            schedulerStopLabel.appendChild(input);
+        }
 
         // Re-render games to watch with translated empty messages
         renderGamesToWatch();
@@ -2020,6 +2096,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const exitManualBtn = document.getElementById('exit-manual-btn');
     if (exitManualBtn) {
         exitManualBtn.addEventListener('click', exitManualMode);
+    }
+
+    // Pause/Resume button
+    const pauseResumeBtn = document.getElementById('pause-resume-btn');
+    if (pauseResumeBtn) {
+        pauseResumeBtn.addEventListener('click', togglePause);
+    }
+
+    // Scheduler settings
+    const schedulerEnabled = document.getElementById('scheduler-enabled');
+    if (schedulerEnabled) {
+        schedulerEnabled.addEventListener('change', saveSettings);
+    }
+    const schedulerStart = document.getElementById('scheduler-start');
+    if (schedulerStart) {
+        schedulerStart.addEventListener('change', saveSettings);
+    }
+    const schedulerStop = document.getElementById('scheduler-stop');
+    if (schedulerStop) {
+        schedulerStop.addEventListener('change', saveSettings);
     }
 
     // Fetch and populate available languages

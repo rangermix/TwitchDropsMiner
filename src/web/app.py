@@ -76,6 +76,9 @@ class SettingsUpdate(BaseModel):
     minimum_refresh_interval_minutes: int | None = None
     inventory_filters: dict | None = None
     mining_benefits: dict[str, bool] | None = None
+    scheduler_enabled: bool | None = None
+    scheduler_start: str | None = None
+    scheduler_stop: str | None = None
 
 
 class ProxyVerifyRequest(BaseModel):
@@ -112,6 +115,7 @@ async def get_status():
         "status": gui_manager.status.get(),
         "login": gui_manager.login.get_status(),
         "manual_mode": twitch_client.get_manual_mode_info(),
+        "paused": twitch_client.is_paused(),
     }
 
 
@@ -339,6 +343,26 @@ async def exit_manual_mode():
     return {"success": True}
 
 
+@app.post("/api/pause")
+async def pause_mining():
+    """Pause mining, keeping websocket connections alive"""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    twitch_client.pause(source="user")
+    return {"success": True}
+
+
+@app.post("/api/resume")
+async def resume_mining():
+    """Resume mining after a pause"""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    twitch_client.resume(user_override=True)
+    return {"success": True}
+
+
 # ==================== Socket.IO Events ====================
 
 
@@ -361,6 +385,7 @@ async def connect(sid, environ):
                 "manual_mode": twitch_client.get_manual_mode_info(),
                 "current_drop": gui_manager.progress.get_current_drop(),
                 "wanted_items": gui_manager.get_wanted_game_tree(),
+                "paused": twitch_client.is_paused(),
             },
             room=sid,
         )

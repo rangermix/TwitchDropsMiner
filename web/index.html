@@ -25,18 +25,25 @@
                 </div>
             </div>
             <div class="status-bar">
-                <span id="status-text">Initializing...</span>
-                <span id="manual-mode-badge" class="mode-badge hidden"
-                    title="Manual mode active - watching specific game">
-                    🎯 MANUAL: <span id="manual-game-name"></span>
-                </span>
-                <span id="auto-mode-badge" class="mode-badge" title="Automatic mode - following game priority">
-                    🤖 AUTO
-                </span>
-                <span id="proxy-indicator" class="proxy-badge" style="display: none;" title="Proxy connection active">
-                    🔒 PROXY
-                </span>
-                <span id="connection-indicator" class="connected">● Connected</span>
+                <div class="status-left">
+                    <span id="status-text">Initializing...</span>
+                    <span id="proxy-indicator" class="proxy-badge" style="display: none;" title="Proxy connection active">
+                        🔒 PROXY
+                    </span>
+                </div>
+                <div class="status-center">
+                    <span id="manual-mode-badge" class="mode-badge hidden"
+                        title="Manual mode active - watching specific game">
+                        🎯 MANUAL: <span id="manual-game-name"></span>
+                    </span>
+                    <span id="auto-mode-badge" class="mode-badge" title="Automatic mode - following game priority">
+                        🤖 AUTO
+                    </span>
+                </div>
+                <div class="status-right">
+                    <button id="pause-resume-btn" class="pause-resume-btn" title="Pause mining">⏸</button>
+                    <span id="connection-indicator" class="connected">● Connected</span>
+                </div>
             </div>
         </header>
 
@@ -263,6 +270,24 @@
                     <h2 id="settings-actions-header">Actions</h2>
                     <div class="settings-actions">
                         <button id="reload-btn" class="action-button">Reload</button>
+                    </div>
+                </section>
+
+                <section class="settings-section">
+                    <h2 id="settings-scheduler-header">Scheduler</h2>
+                    <p id="settings-scheduler-help" class="help-text">Automatically pause and resume mining at scheduled times.</p>
+                    <label>
+                        <input type="checkbox" id="scheduler-enabled"> Enable Scheduler
+                    </label>
+                    <div id="scheduler-times" class="scheduler-times">
+                        <label>
+                            Start mining:
+                            <input type="time" id="scheduler-start" value="22:00">
+                        </label>
+                        <label>
+                            Stop mining:
+                            <input type="time" id="scheduler-stop" value="08:00">
+                        </label>
                     </div>
                 </section>
             </div>

@@ -8,7 +8,9 @@
         "goes_offline": "...اصبح غير نشط ، تبديل {channel}",
         "claimed_drop": "{drop} :تم الحصول على",
         "no_channel": "...لا توجد قنوات نشطة متاحة للمشاهدة. في انتظار قناة نشطة",
-        "no_campaign": "...لا توجد حملات نشطة من اجل تنقيب الإسقاطات. في انتظار حملة نشطة"
+        "no_campaign": "...لا توجد حملات نشطة من اجل تنقيب الإسقاطات. في انتظار حملة نشطة",
+        "paused": "تم إيقاف التعدين مؤقتاً",
+        "resumed": "تم استئناف التعدين"
     },
     "login": {
         "unexpected_content": "تم إرجاع نوع محتوى غير متوقع ، يحدث عادة بسبب إعادة التوجيه. هل تحتاج إلى تسجيل الدخول للوصول إلى الإنترنت؟",
@@ -46,7 +48,8 @@
             "switching": "...تبديل القناة",
             "fetching_inventory": "...جلب محتويات الحقيبة",
             "fetching_campaigns": "...جلب الحملات",
-            "adding_campaigns": "{counter} ...إضافة الحملات إلى الحقيبة"
+            "adding_campaigns": "{counter} ...إضافة الحملات إلى الحقيبة",
+            "paused": "متوقف مؤقتاً"
         },
         "tabs": {
             "main": "الرئيسية",
@@ -147,7 +150,12 @@
             "minimum_refresh": "الحد الأدنى لفترة التحديث (بالدقائق):",
             "reload_campaigns": "إعادة تحميل الحملات",
             "mining_benefits": "فوائد التعدين",
-            "mining_benefits_help": "اختر أنواع الجوائز التي تريد تعدينها."
+            "mining_benefits_help": "اختر أنواع الجوائز التي تريد تعدينها.",
+            "scheduler": "المجدول",
+            "scheduler_help": "إيقاف واستئناف التعدين تلقائياً في الأوقات المحددة.",
+            "scheduler_enabled": "تفعيل المجدول",
+            "scheduler_start": "بدء التعدين:",
+            "scheduler_stop": "إيقاف التعدين:"
         },
         "help": {
             "about": "حول Twitch Drops Miner",
@@ -183,7 +191,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "يدوي",
             "connected": "متصل",
-            "disconnected": "غير متصل"
+            "disconnected": "غير متصل",
+            "pause": "إيقاف التعدين مؤقتاً",
+            "resume": "استئناف التعدين"
         },
         "footer": {
             "version": "النسخة:",

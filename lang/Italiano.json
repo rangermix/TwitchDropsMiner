@@ -8,7 +8,9 @@
         "goes_offline": "{channel} è OFFLINE, cambiando...",
         "claimed_drop": "Contenuti riscattati: {drop}",
         "no_channel": "Nessun canale disponibile da guardare. In attesa di un canale ONLINE...",
-        "no_campaign": "Nessuna campagna attiva per ottenere i premi. In attesa di una campagna attiva..."
+        "no_campaign": "Nessuna campagna attiva per ottenere i premi. In attesa di una campagna attiva...",
+        "paused": "Mining in pausa",
+        "resumed": "Mining ripreso"
     },
     "login": {
         "unexpected_content": "Tipo di contenuto inaspettato restituito, di solito a causa di un reindirizzamento. Hai bisogno di fare il login per accedere a internet?",
@@ -46,7 +48,8 @@
             "switching": "Cambiando canale...",
             "fetching_inventory": "Recupero dell'inventario...",
             "fetching_campaigns": "Recupero delle campagne...",
-            "adding_campaigns": "Aggiunta delle campagne all'inventario... {counter}"
+            "adding_campaigns": "Aggiunta delle campagne all'inventario... {counter}",
+            "paused": "In pausa"
         },
         "tabs": {
             "main": "Principale",
@@ -147,7 +150,12 @@
             "minimum_refresh": "Intervallo minimo di aggiornamento (minuti):",
             "reload_campaigns": "Ricarica campagne",
             "mining_benefits": "Vantaggi Minatori",
-            "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare."
+            "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare.",
+            "scheduler": "Pianificatore",
+            "scheduler_help": "Metti in pausa e riprendi automaticamente il mining agli orari pianificati.",
+            "scheduler_enabled": "Abilita pianificatore",
+            "scheduler_start": "Avvia mining:",
+            "scheduler_stop": "Ferma mining:"
         },
         "help": {
             "about": "Informazioni su Twitch Drops Miner",
@@ -183,7 +191,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "MANUALE",
             "connected": "Connesso",
-            "disconnected": "Disconnesso"
+            "disconnected": "Disconnesso",
+            "pause": "Metti in pausa",
+            "resume": "Riprendi mining"
         },
         "footer": {
             "version": "Versione:",

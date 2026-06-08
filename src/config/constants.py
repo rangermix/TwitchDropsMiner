@@ -63,6 +63,7 @@ class State(Enum):
     """Application state machine states."""
 
     IDLE = auto()
+    PAUSED = auto()
     INVENTORY_FETCH = auto()
     GAMES_UPDATE = auto()
     CHANNELS_FETCH = auto()

@@ -8,7 +8,9 @@
         "goes_offline": "{channel} menjadi OFF-LINE, ubah...",
         "claimed_drop": "Drop dipulihkan : {drop}",
         "no_channel": "Tidak ada saluran yang tersedia untuk ditonton. Menunggu saluran secara ONLINE...",
-        "no_campaign": "Tidak ada kampanye aktif yang bisa ditambang. Menunggu kampanye aktif..."
+        "no_campaign": "Tidak ada kampanye aktif yang bisa ditambang. Menunggu kampanye aktif...",
+        "paused": "Mining dijeda",
+        "resumed": "Mining dilanjutkan"
     },
     "login": {
         "error_code": "Kode kesalahan koneksi: {error_code}",
@@ -46,7 +48,8 @@
             "switching": "Koleksi saluran yang sedang berlangsung...",
             "fetching_inventory": "Mmengambil inventaris...",
             "fetching_campaigns": "Mengambil kampanye...",
-            "adding_campaigns": "Menambahkan daftar kampanye ke inventaris... {counter}"
+            "adding_campaigns": "Menambahkan daftar kampanye ke inventaris... {counter}",
+            "paused": "Dijeda"
         },
         "tabs": {
             "main": "Utama",
@@ -147,7 +150,12 @@
             "minimum_refresh": "Interval Refresh Minimum (menit):",
             "reload_campaigns": "Muat Ulang Kampanye",
             "mining_benefits": "Manfaat Penambangan",
-            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang."
+            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang.",
+            "scheduler": "Penjadwal",
+            "scheduler_help": "Otomatis jeda dan lanutkan mining pada waktu terjadwal.",
+            "scheduler_enabled": "Aktifkan penjadwal",
+            "scheduler_start": "Mulai mining:",
+            "scheduler_stop": "Hentikan mining:"
         },
         "help": {
             "about": "Tentang Twitch Drops Miner",
@@ -183,7 +191,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "MANUAL",
             "connected": "Terhubung",
-            "disconnected": "Terputus"
+            "disconnected": "Terputus",
+            "pause": "Jeda mining",
+            "resume": "Lanjutkan mining"
         },
         "footer": {
             "version": "Versi:",

@@ -8,7 +8,9 @@
         "goes_offline": "{channel} がオフラインになりました。切り替え中...",
         "claimed_drop": "ドロップを取得しました：{drop}",
         "no_channel": "視聴可能なチャンネルがありません。オンラインになるチャンネルを待機中...",
-        "no_campaign": "マイニングするドロップがないアクティブなキャンペーンはありません。アクティブなキャンペーンを待機中..."
+        "no_campaign": "マイニングするドロップがないアクティブなキャンペーンはありません。アクティブなキャンペーンを待機中...",
+        "paused": "マイニング一時停止中",
+        "resumed": "マイニング再開"
     },
     "login": {
         "unexpected_content": "予期しないコンテンツタイプが返されました。リダイレクトされたためかもしれません。インターネットアクセスのためにログインが必要ですか？",
@@ -46,7 +48,8 @@
             "switching": "チャンネルを切り替え中...",
             "fetching_inventory": "インベントリを取得中...",
             "fetching_campaigns": "キャンペーンを取得中...",
-            "adding_campaigns": "キャンペーンをインベントリに追加中... {counter}"
+            "adding_campaigns": "キャンペーンをインベントリに追加中... {counter}",
+            "paused": "一時停止"
         },
         "tabs": {
             "main": "メイン",
@@ -147,7 +150,12 @@
             "minimum_refresh": "最小更新間隔（分）：",
             "reload_campaigns": "キャンペーンを再読み込み",
             "mining_benefits": "マイニング特典",
-            "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。"
+            "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。",
+            "scheduler": "スケジューラ",
+            "scheduler_help": "設定された時刻に自動的にマイニングを一時停止・再開します。",
+            "scheduler_enabled": "スケジューラを有効にする",
+            "scheduler_start": "マイニング開始:",
+            "scheduler_stop": "マイニング停止:"
         },
         "help": {
             "about": "Twitch Drops Minerについて",
@@ -183,7 +191,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "手動",
             "connected": "接続済み",
-            "disconnected": "切断"
+            "disconnected": "切断",
+            "pause": "マイニングを一時停止",
+            "resume": "マイニングを再開"
         },
         "footer": {
             "version": "バージョン:",

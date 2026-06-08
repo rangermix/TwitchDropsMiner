@@ -8,7 +8,9 @@
         "goes_offline": "{channel} intră OFFLINE, se schimbă...",
         "claimed_drop": "Drop-ul a fost recuperat : {drop}",
         "no_channel": "Nu există canale disponibile pentru vizionare. În așteptarea unui canal ONLINE...",
-        "no_campaign": "Nu există campanii active pentru a mina drop-uri. În așteptarea unei campanii active..."
+        "no_campaign": "Nu există campanii active pentru a mina drop-uri. În așteptarea unei campanii active...",
+        "paused": "Minarea pusă în pauză",
+        "resumed": "Minarea reluată"
     },
     "login": {
         "error_code": "Cod de eroare de conexiune: {error_code}",
@@ -46,7 +48,8 @@
             "switching": "Colectarea canalelor în curs...",
             "fetching_inventory": "Se precuperează inventarul...",
             "fetching_campaigns": "Se recuperează campaniile...",
-            "adding_campaigns": "S-a adăugat lista de campanii la inventar... {counter}"
+            "adding_campaigns": "S-a adăugat lista de campanii la inventar... {counter}",
+            "paused": "În pauză"
         },
         "tabs": {
             "main": "Principal",
@@ -147,7 +150,12 @@
             "minimum_refresh": "Interval minim de reîmprospătare (minute):",
             "reload_campaigns": "Reîncarcă campaniile",
             "mining_benefits": "Beneficii Minerit",
-            "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați."
+            "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați.",
+            "scheduler": "Programator",
+            "scheduler_help": "Pune și reia automat minarea la orele programate.",
+            "scheduler_enabled": "Activează programatorul",
+            "scheduler_start": "Pornește minarea:",
+            "scheduler_stop": "Oprește minarea:"
         },
         "help": {
             "about": "Despre Twitch Drops Miner",
@@ -183,7 +191,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "MANUAL",
             "connected": "Conectat",
-            "disconnected": "Deconectat"
+            "disconnected": "Deconectat",
+            "pause": "Pune minarea în pauză",
+            "resume": "Reia minarea"
         },
         "footer": {
             "version": "Versiune:",

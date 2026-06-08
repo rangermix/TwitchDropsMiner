@@ -47,6 +47,9 @@ default_settings = {
         "UNKNOWN": True,
     },
     "proxy": "",
+    "scheduler_enabled": False,
+    "scheduler_start": "22:00",
+    "scheduler_stop": "08:00",
 }
 
 
@@ -60,6 +63,9 @@ class Settings:
     minimum_refresh_interval_minutes: int
     mining_benefits: dict[str, bool]
     proxy: str
+    scheduler_enabled: bool
+    scheduler_start: str
+    scheduler_stop: str
 
     def __init__(self):
         self.load()

@@ -8,7 +8,9 @@
         "goes_offline": "{channel} ficou OFFLINE, Mudando...",
         "claimed_drop": "Coletou o drop: {drop}",
         "no_channel": "Sem canal disponivel para assisitir. Esperando por um canal ONLINE...",
-        "no_campaign": "Sem campanhas ativas no momento para minerar. Esperando por uma campanha ativa..."
+        "no_campaign": "Sem campanhas ativas no momento para minerar. Esperando por uma campanha ativa...",
+        "paused": "Mineração pausada",
+        "resumed": "Mineração retomada"
     },
     "login": {
         "error_code": "Código de erro do login: {error_code}",
@@ -46,7 +48,8 @@
             "switching": "Mudando o canal...",
             "fetching_inventory": "Coletando inventário...",
             "fetching_campaigns": "Coletando campanhas...",
-            "adding_campaigns": "Adicionando as campanhas para o sistema... {counter}"
+            "adding_campaigns": "Adicionando as campanhas para o sistema... {counter}",
+            "paused": "Pausado"
         },
         "tabs": {
             "main": "Principal",
@@ -147,7 +150,12 @@
             "minimum_refresh": "Intervalo mínimo de atualização (minutos):",
             "reload_campaigns": "Recarregar Campanhas",
             "mining_benefits": "Benefícios de Mineração",
-            "mining_benefits_help": "Selecione quais tipos de drops você deseja minerar."
+            "mining_benefits_help": "Selecione quais tipos de drops você deseja minerar.",
+            "scheduler": "Agendador",
+            "scheduler_help": "Pausar e retomar automaticamente a mineração nos horários agendados.",
+            "scheduler_enabled": "Ativar agendador",
+            "scheduler_start": "Iniciar mineração:",
+            "scheduler_stop": "Parar mineração:"
         },
         "help": {
             "about": "Sobre o Twitch Drops Miner",
@@ -183,7 +191,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "MANUAL",
             "connected": "Conectado",
-            "disconnected": "Desconectado"
+            "disconnected": "Desconectado",
+            "pause": "Pausar mineração",
+            "resume": "Retomar mineração"
         },
         "footer": {
             "version": "Versão:",

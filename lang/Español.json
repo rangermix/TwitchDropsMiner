@@ -8,7 +8,9 @@
         "goes_offline": "El canal {channel} se ha desconectado, cambiando...",
         "claimed_drop": "Drop reclamado: {drop}",
         "no_channel": "No se ha encontrado un canal en vivo para mirar. \nEsperando un canal en vivo...",
-        "no_campaign": "No se ha encontrado una campaña activa. \nEsperando una nueva campaña..."
+        "no_campaign": "No se ha encontrado una campaña activa. \nEsperando una nueva campaña...",
+        "paused": "Minería pausada",
+        "resumed": "Minería reanudada"
     },
     "login": {
         "unexpected_content": "Se produjo un error inesperado, \ngeneralmente debido a una redirección.\n¿Necesitas un VPN o iniciar sesión para acceder a internet?",
@@ -43,7 +45,8 @@
             "switching": "Cambiando de canal...",
             "fetching_inventory": "Obteniendo inventario...",
             "fetching_campaigns": "Obteniendo campañas...",
-            "adding_campaigns": "Agregando lista de campañas al inventario... {counter}"
+            "adding_campaigns": "Agregando lista de campañas al inventario... {counter}",
+            "paused": "Pausado"
         },
         "tabs": {
             "main": "Principal",
@@ -144,7 +147,12 @@
             "connection_quality": "Calidad de conexión:",
             "minimum_refresh": "Intervalo mínimo de actualización (minutos):",
             "mining_benefits": "Beneficios de Minería",
-            "mining_benefits_help": "Selecciona qué tipos de drops deseas minar."
+            "mining_benefits_help": "Selecciona qué tipos de drops deseas minar.",
+            "scheduler": "Programador",
+            "scheduler_help": "Pausar y reanudar automáticamente la minería en horarios programados.",
+            "scheduler_enabled": "Habilitar programador",
+            "scheduler_start": "Iniciar minería:",
+            "scheduler_stop": "Detener minería:"
         },
         "help": {
             "about": "Acerca de Twitch Drops Miner",
@@ -180,7 +188,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "MANUAL",
             "connected": "Conectado",
-            "disconnected": "Desconectado"
+            "disconnected": "Desconectado",
+            "pause": "Pausar minería",
+            "resume": "Reanudar minería"
         },
         "footer": {
             "version": "Versión:",

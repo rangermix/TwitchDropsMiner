@@ -101,6 +101,15 @@ class SettingsManager:
         should_trigger_update |= self.check_and_update_setting(
             "mining_benefits", settings_data.get("mining_benefits"), True
         )
+        should_trigger_update |= self.check_and_update_setting(
+            "scheduler_enabled", settings_data.get("scheduler_enabled")
+        )
+        should_trigger_update |= self.check_and_update_setting(
+            "scheduler_start", settings_data.get("scheduler_start")
+        )
+        should_trigger_update |= self.check_and_update_setting(
+            "scheduler_stop", settings_data.get("scheduler_stop")
+        )
 
         self._settings.save()
         asyncio.create_task(self._broadcaster.emit("settings_updated", self.get_settings()))

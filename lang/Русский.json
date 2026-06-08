@@ -8,7 +8,9 @@
         "goes_offline": "Изменение: {channel} онлайн",
         "claimed_drop": "Drop получено: {drop}",
         "no_channel": "Нет участвующих каналов онлайн. Ожидание каналов...",
-        "no_campaign": "Нет участвующих кампаний онлайн. Ожидание кампаний..."
+        "no_campaign": "Нет участвующих кампаний онлайн. Ожидание кампаний...",
+        "paused": "Майнинг приостановлен",
+        "resumed": "Майнинг возобновлён"
     },
     "login": {
         "error_code": "Код ошибки входа в систему: {error_code}",
@@ -46,7 +48,8 @@
             "switching": "Переключение канала...",
             "fetching_inventory": "Получение инвентаря...",
             "fetching_campaigns": "Получение кампаний...",
-            "adding_campaigns": "Добавление кампаний в инвентарь... {counter}"
+            "adding_campaigns": "Добавление кампаний в инвентарь... {counter}",
+            "paused": "Приостановлено"
         },
         "tabs": {
             "main": "Главная",
@@ -148,7 +151,12 @@
             "minimum_refresh": "Минимальный интервал обновления (минуты):",
             "reload_campaigns": "Перезагрузить кампании",
             "mining_benefits": "Преимущества майнинга",
-            "mining_benefits_help": "Выберите типы drops, которые вы хотите майнить."
+            "mining_benefits_help": "Выберите типы drops, которые вы хотите майнить.",
+            "scheduler": "Планировщик",
+            "scheduler_help": "Автоматически приостанавливать и возобновлять майнинг по расписанию.",
+            "scheduler_enabled": "Включить планировщик",
+            "scheduler_start": "Начать майнинг:",
+            "scheduler_stop": "Остановить майнинг:"
         },
         "help": {
             "about": "О Twitch Drops Miner",
@@ -184,7 +192,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "РУЧНОЙ",
             "connected": "Подключено",
-            "disconnected": "Отключено"
+            "disconnected": "Отключено",
+            "pause": "Приостановить майнинг",
+            "resume": "Возобновить майнинг"
         },
         "footer": {
             "version": "Версия:",

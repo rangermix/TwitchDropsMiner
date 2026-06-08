@@ -8,7 +8,9 @@
         "goes_offline": "{channel} 该频道已离线, 正在切换...",
         "claimed_drop": "已领取掉宝: {drop}",
         "no_channel": "没有可观看的频道，等待一个在线直播频道...",
-        "no_campaign": "没有可用于掉宝的活动，等待一个有效的掉宝活动..."
+        "no_campaign": "没有可用于掉宝的活动，等待一个有效的掉宝活动...",
+        "paused": "挖矿已暂停",
+        "resumed": "挖矿已恢复"
     },
     "login": {
         "unexpected_content": "返回的内容类型有误通常是由于被重定向.您需要VPN才能登录吗？ ",
@@ -43,7 +45,8 @@
             "switching": "切换直播频道中...",
             "fetching_inventory": "获取库存中...",
             "fetching_campaigns": "获取掉宝活动...",
-            "adding_campaigns": "将掉宝活动列表添加至库存... {counter}"
+            "adding_campaigns": "将掉宝活动列表添加至库存... {counter}",
+            "paused": "已暂停"
         },
         "tabs": {
             "main": "主面板",
@@ -144,7 +147,12 @@
             "minimum_refresh": "最小刷新间隔（分钟）：",
             "reload_campaigns": "重新加载活动",
             "mining_benefits": "挖掘奖励",
-            "mining_benefits_help": "选择您想要获取的掉落类型。"
+            "mining_benefits_help": "选择您想要获取的掉落类型。",
+            "scheduler": "计划任务",
+            "scheduler_help": "在计划时间自动暂停和恢复挖矿。",
+            "scheduler_enabled": "启用计划任务",
+            "scheduler_start": "开始挖矿：",
+            "scheduler_stop": "停止挖矿："
         },
         "help": {
             "about": "关于 Twitch 掉宝矿工",
@@ -180,7 +188,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "MANUAL",
             "connected": "已连接",
-            "disconnected": "已断开"
+            "disconnected": "已断开",
+            "pause": "暂停挖矿",
+            "resume": "恢复挖矿"
         },
         "footer": {
             "version": "版本:",

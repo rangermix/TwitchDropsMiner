@@ -8,7 +8,9 @@
         "goes_offline": "{channel} ist OFFLINE gegangen, wechseln...",
         "claimed_drop": "Drop abgeholt: {drop}",
         "no_channel": "Keine teilnehmenden Kanäle online. Warten auf Kanäle...",
-        "no_campaign": "Keine aktiven Kampagnen verfügbar. Warten auf neue Kampagne..."
+        "no_campaign": "Keine aktiven Kampagnen verfügbar. Warten auf neue Kampagne...",
+        "paused": "Mining pausiert",
+        "resumed": "Mining fortgesetzt"
     },
     "login": {
         "error_code": "Login-Fehlercode: {error_code}",
@@ -43,7 +45,8 @@
             "switching": "Wechsel des Kanals...",
             "fetching_inventory": "Lade Inventar...",
             "fetching_campaigns": "Lade Kampagnen...",
-            "adding_campaigns": "Kampagnen dem Inventar hinzufügen... {counter}"
+            "adding_campaigns": "Kampagnen dem Inventar hinzufügen... {counter}",
+            "paused": "Pausiert"
         },
         "tabs": {
             "main": "Hauptseite",
@@ -144,7 +147,12 @@
             "connection_quality": "Verbindungsqualität:",
             "minimum_refresh": "Minimales Aktualisierungsintervall (Minuten):",
             "mining_benefits": "Mining-Vorteile",
-            "mining_benefits_help": "Wählen Sie, welche Arten von Drops Sie minen möchten."
+            "mining_benefits_help": "Wählen Sie, welche Arten von Drops Sie minen möchten.",
+            "scheduler": "Zeitplan",
+            "scheduler_help": "Mining automatisch zu festgelegten Zeiten pausieren und fortsetzen.",
+            "scheduler_enabled": "Zeitplan aktivieren",
+            "scheduler_start": "Mining starten:",
+            "scheduler_stop": "Mining stoppen:"
         },
         "help": {
             "about": "Über Twitch Drops Miner",
@@ -180,7 +188,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "MANUELL",
             "connected": "Verbunden",
-            "disconnected": "Getrennt"
+            "disconnected": "Getrennt",
+            "pause": "Mining pausieren",
+            "resume": "Mining fortsetzen"
         },
         "footer": {
             "version": "Version:",

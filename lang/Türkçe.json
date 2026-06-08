@@ -8,7 +8,9 @@
         "goes_offline": "{channel} ÇEVRİMDIŞI duruma geçti, geçiş yapın...",
         "claimed_drop": "Alınan drop: {drop}",
         "no_channel": "Çevrimiçi katılımcı kanal yok. Kanallar bekleniyor...",
-        "no_campaign": "Etkin kampanya yok. Yeni kampanya bekleniyor..."
+        "no_campaign": "Etkin kampanya yok. Yeni kampanya bekleniyor...",
+        "paused": "Madencilik duraklatıldı",
+        "resumed": "Madencilik devam ettiriliyor"
     },
     "login": {
         "error_code": "Giriş Hata Kodu: {error_code}",
@@ -46,7 +48,8 @@
             "switching": "Kanal değiştiriliyor...",
             "fetching_inventory": "Envanter getiriliyor...",
             "fetching_campaigns": "Kampanyalar getiriliyor...",
-            "adding_campaigns": "Kampanyaları envantere ekle... {counter}"
+            "adding_campaigns": "Kampanyaları envantere ekle... {counter}",
+            "paused": "Duraklatıldı"
         },
         "tabs": {
             "main": "Ana",
@@ -147,7 +150,12 @@
             "minimum_refresh": "Minimum yenileme aralığı (dakika):",
             "reload_campaigns": "Kampanyaları Yeniden Yükle",
             "mining_benefits": "Madencilik Avantajları",
-            "mining_benefits_help": "Hangi tür dropları toplamak istediğinizi seçin."
+            "mining_benefits_help": "Hangi tür dropları toplamak istediğinizi seçin.",
+            "scheduler": "Zamanlayıcı",
+            "scheduler_help": "Madenciliği planlanan saatlerde otomatik olarak duraklat ve devam ettir.",
+            "scheduler_enabled": "Zamanlayıcıyı etkinleştir",
+            "scheduler_start": "Madenciliği başlat:",
+            "scheduler_stop": "Madenciliği durdur:"
         },
         "help": {
             "about": "Twitch Drops Miner Hakkında",
@@ -183,7 +191,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "MANUEL",
             "connected": "Bağlandı",
-            "disconnected": "Bağlantı kesildi"
+            "disconnected": "Bağlantı kesildi",
+            "pause": "Madenciliği duraklat",
+            "resume": "Madenciliği devam ettir"
         },
         "footer": {
             "version": "Sürüm:",

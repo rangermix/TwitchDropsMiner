@@ -8,7 +8,9 @@
         "goes_offline": "Kanál {channel} je offline, přepínám na další...",
         "claimed_drop": "Drop vyzvednut: {drop}",
         "no_channel": "Žádný kanál není dostupný, čekání na další...",
-        "no_campaign": "Žádné dropy k dispozici, čekání na další dostupné dropy..."
+        "no_campaign": "Žádné dropy k dispozici, čekání na další dostupné dropy...",
+        "paused": "Těžení pozastaveno",
+        "resumed": "Těžení obnoveno"
     },
     "login": {
         "unexpected_content": "Chyba při přesměrování. Nepoužíváte VPN?",
@@ -45,7 +47,8 @@
             "switching": "Přepínám mezi kanály...",
             "fetching_inventory": "Načítání inventáře...",
             "fetching_campaigns": "Načítání dropů...",
-            "adding_campaigns": "Přidávám dropy... {counter}"
+            "adding_campaigns": "Přidávám dropy... {counter}",
+            "paused": "Pozastaveno"
         },
         "tabs": {
             "main": "Hlavní",
@@ -147,7 +150,12 @@
             "minimum_refresh": "Minimální interval obnovení (minuty):",
             "reload_campaigns": "Znovu načíst kampaně",
             "mining_benefits": "Výhody Těžby",
-            "mining_benefits_help": "Vyberte typy dropů, které chcete těžit."
+            "mining_benefits_help": "Vyberte typy dropů, které chcete těžit.",
+            "scheduler": "Plánovač",
+            "scheduler_help": "Automaticky pozastavovat a obnovovat těžení podle plánu.",
+            "scheduler_enabled": "Povolit plánovač",
+            "scheduler_start": "Spustit těžení:",
+            "scheduler_stop": "Zastavit těžení:"
         },
         "help": {
             "about": "O Twitch Drops Miner",
@@ -183,7 +191,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "MANUÁLNÍ",
             "connected": "Připojeno",
-            "disconnected": "Odpojeno"
+            "disconnected": "Odpojeno",
+            "pause": "Pozastavit těžení",
+            "resume": "Obnovit těžení"
         },
         "footer": {
             "version": "Verze:",

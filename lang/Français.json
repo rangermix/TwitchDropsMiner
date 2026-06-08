@@ -8,7 +8,9 @@
         "goes_offline": "{channel} passe HORS LIGNE, changement...",
         "claimed_drop": "Drop récupéré : {drop}",
         "no_channel": "Aucune chaîne disponible à regarder. En attente d'une chaîne EN LIGNE...",
-        "no_campaign": "Aucune campagne active pour laquelle miner des drops. En attente d'une campagne active..."
+        "no_campaign": "Aucune campagne active pour laquelle miner des drops. En attente d'une campagne active...",
+        "paused": "Minage en pause",
+        "resumed": "Minage repris"
     },
     "login": {
         "error_code": "Code d'erreur de connexion : {error_code}",
@@ -43,7 +45,8 @@
             "switching": "Collecte des chaînes en cours...",
             "fetching_inventory": "Récupération de l'inventaire...",
             "fetching_campaigns": "Récupération des campagnes...",
-            "adding_campaigns": "Ajout de la liste des campagnes à l'inventaire... {counter}"
+            "adding_campaigns": "Ajout de la liste des campagnes à l'inventaire... {counter}",
+            "paused": "En pause"
         },
         "tabs": {
             "main": "Principal",
@@ -144,7 +147,12 @@
             "connection_quality": "Qualité de connexion :",
             "minimum_refresh": "Intervalle minimum de rafraîchissement (minutes) :",
             "mining_benefits": "Avantages du Minage",
-            "mining_benefits_help": "Sélectionnez les types de drops que vous souhaitez miner."
+            "mining_benefits_help": "Sélectionnez les types de drops que vous souhaitez miner.",
+            "scheduler": "Planificateur",
+            "scheduler_help": "Mettre en pause et reprendre automatiquement le minage aux heures programmées.",
+            "scheduler_enabled": "Activer le planificateur",
+            "scheduler_start": "Démarrer le minage :",
+            "scheduler_stop": "Arrêter le minage :"
         },
         "help": {
             "about": "À propos de Twitch Drops Miner",
@@ -180,7 +188,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "MANUEL",
             "connected": "Connecté",
-            "disconnected": "Déconnecté"
+            "disconnected": "Déconnecté",
+            "pause": "Mettre en pause",
+            "resume": "Reprendre le minage"
         },
         "footer": {
             "version": "Version :",

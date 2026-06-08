@@ -166,6 +166,10 @@ class WebGUIManager:
         tree = self.get_wanted_game_tree()
         asyncio.create_task(self._broadcaster.emit("wanted_items_update", tree))
 
+    def broadcast_pause_state(self, paused: bool):
+        """Broadcast pause/resume state to connected clients."""
+        asyncio.create_task(self._broadcaster.emit("pause_state", {"paused": paused}))
+
 
 # Type aliases for backwards compatibility with code that imports from gui
 LoginForm = LoginFormManager

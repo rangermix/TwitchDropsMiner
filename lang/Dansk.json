@@ -8,7 +8,9 @@
         "goes_offline": "{channel} går OFFLINE, skifter...",
         "claimed_drop": "Hentet belønning: {drop}",
         "no_channel": "Ingen tilgængelige kanaler at se. Venter på en ONLINE kanal...",
-        "no_campaign": "Der er ingen aktive kampagner at hente. Venter på en aktiv kampagne..."
+        "no_campaign": "Der er ingen aktive kampagner at hente. Venter på en aktiv kampagne...",
+        "paused": "Mining sat på pause",
+        "resumed": "Mining genoptaget"
     },
     "login": {
         "unexpected_content": "Uventet indholdstype returneres, normalt på grund af at blive omdirigeret. Skal du logge ind for internetadgang?",
@@ -43,7 +45,8 @@
             "switching": "Skifter kanal...",
             "fetching_inventory": "Henter beholdning...",
             "fetching_campaigns": "Henter kampagner...",
-            "adding_campaigns": "Tilføjer kampagner til beholdning... {counter}"
+            "adding_campaigns": "Tilføjer kampagner til beholdning... {counter}",
+            "paused": "På pause"
         },
         "tabs": {
             "main": "Hoved",
@@ -144,7 +147,12 @@
             "minimum_refresh": "Minimum opdateringsinterval (minutter):",
             "reload_campaigns": "Genindlæs kampagner",
             "mining_benefits": "Mining Fordele",
-            "mining_benefits_help": "Vælg hvilke typer drops du vil mine."
+            "mining_benefits_help": "Vælg hvilke typer drops du vil mine.",
+            "scheduler": "Planlægger",
+            "scheduler_help": "Sæt mining automatisk på pause og genoptag det på planlagte tidspunkter.",
+            "scheduler_enabled": "Aktiver planlægger",
+            "scheduler_start": "Start mining:",
+            "scheduler_stop": "Stop mining:"
         },
         "help": {
             "about": "Om Twitch Drops Miner",
@@ -180,7 +188,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "MANUEL",
             "connected": "Tilsluttet",
-            "disconnected": "Afbrudt"
+            "disconnected": "Afbrudt",
+            "pause": "Sæt mining på pause",
+            "resume": "Genoptag mining"
         },
         "footer": {
             "version": "Version:",

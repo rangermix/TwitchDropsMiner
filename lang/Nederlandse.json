@@ -8,7 +8,9 @@
         "goes_offline": "{channel} is OFFLINE gegaan, wijzig...",
         "claimed_drop": "Drop verkregen: {drop}",
         "no_channel": "Geen deelnemende kanalen online. Wachten op steamers...",
-        "no_campaign": "Geen actieve campagnes beschikbaar. Wachten op nieuwe campagne..."
+        "no_campaign": "Geen actieve campagnes beschikbaar. Wachten op nieuwe campagne...",
+        "paused": "Mining gepauzeerd",
+        "resumed": "Mining hervat"
     },
     "login": {
         "error_code": "Login Foutcode: {error_code}",
@@ -46,7 +48,8 @@
             "switching": "Het kanaal wijzigen...",
             "fetching_inventory": "Ophalen van inventaris...",
             "fetching_campaigns": "Ophalen van de campagne...",
-            "adding_campaigns": "De campagnelijst toevoegen aan de inventaris... {counter}"
+            "adding_campaigns": "De campagnelijst toevoegen aan de inventaris... {counter}",
+            "paused": "Gepauzeerd"
         },
         "tabs": {
             "main": "Hoofd",
@@ -147,7 +150,12 @@
             "minimum_refresh": "Minimaal verversingsinterval (minuten):",
             "reload_campaigns": "Herlaad Campagnes",
             "mining_benefits": "Mining Voordelen",
-            "mining_benefits_help": "Selecteer welke soorten drops je wilt minen."
+            "mining_benefits_help": "Selecteer welke soorten drops je wilt minen.",
+            "scheduler": "Planner",
+            "scheduler_help": "Automatisch pauzeren en hervatten van mining op geplande tijden.",
+            "scheduler_enabled": "Planner inschakelen",
+            "scheduler_start": "Start mining:",
+            "scheduler_stop": "Stop mining:"
         },
         "help": {
             "about": "Over Twitch Drops Miner",
@@ -183,7 +191,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "HANDMATIG",
             "connected": "Verbonden",
-            "disconnected": "Verbinding verbroken"
+            "disconnected": "Verbinding verbroken",
+            "pause": "Pauzeer mining",
+            "resume": "Hervat mining"
         },
         "footer": {
             "version": "Versie:",

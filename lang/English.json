@@ -8,7 +8,9 @@
         "goes_offline": "{channel} goes OFFLINE, switching...",
         "claimed_drop": "Claimed drop: {drop}",
         "no_channel": "No available channels to watch. Waiting for an ONLINE channel...",
-        "no_campaign": "No active campaigns to mine drops for. Waiting for an active campaign..."
+        "no_campaign": "No active campaigns to mine drops for. Waiting for an active campaign...",
+        "paused": "Mining paused",
+        "resumed": "Mining resumed"
     },
     "login": {
         "unexpected_content": "Unexpected content type returned, usually due to being redirected. Do you need to login for internet access?",
@@ -36,6 +38,7 @@
         "status": {
             "name": "Status",
             "idle": "Idle",
+            "paused": "Paused",
             "ready": "Ready",
             "exiting": "Exiting...",
             "terminated": "Terminated",
@@ -120,7 +123,12 @@
             "all_games_selected": "All games are selected or no games available.",
             "actions": "Actions",
             "connection_quality": "Connection Quality:",
-            "minimum_refresh": "Minimum Refresh Interval (minutes):"
+            "minimum_refresh": "Minimum Refresh Interval (minutes):",
+            "scheduler": "Scheduler",
+            "scheduler_help": "Automatically pause and resume mining at scheduled times.",
+            "scheduler_enabled": "Enable Scheduler",
+            "scheduler_start": "Start mining:",
+            "scheduler_stop": "Stop mining:"
         },
         "help": {
             "about": "About Twitch Drops Miner",
@@ -156,7 +164,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "MANUAL",
             "connected": "Connected",
-            "disconnected": "Disconnected"
+            "disconnected": "Disconnected",
+            "pause": "Pause mining",
+            "resume": "Resume mining"
         },
         "footer": {
             "version": "Version:",

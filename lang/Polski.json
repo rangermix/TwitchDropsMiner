@@ -8,7 +8,9 @@
         "goes_offline": "Nowy status kanału {channel}: OFFLINE, zmieniam...",
         "claimed_drop": "Odebrano drop: {drop}",
         "no_channel": "Brak możliwych kanałów do oglądania. Oczekiwanie na nową kampanię...",
-        "no_campaign": "Brak dostępnych aktywnych kampanii. Oczekiwanie na nową kampanię..."
+        "no_campaign": "Brak dostępnych aktywnych kampanii. Oczekiwanie na nową kampanię...",
+        "paused": "Kopanie wstrzymane",
+        "resumed": "Kopanie wznowione"
     },
     "login": {
         "unexpected_content": "Nieoczekiwany błąd zawartości, zwykle z powodu przekierowania.\nUpewnij się że nie jest wymagane dodatkowe logowanie bądź potwierdzenie dostępu do internetu.",
@@ -46,7 +48,8 @@
             "switching": "Zmiana kanałów...",
             "fetching_inventory": "Odświeżanie ekwipunku...",
             "fetching_campaigns": "Odświeżanie kampanii...",
-            "adding_campaigns": "Dodawanie kampanii do ekwipunku... {counter}"
+            "adding_campaigns": "Dodawanie kampanii do ekwipunku... {counter}",
+            "paused": "Wstrzymano"
         },
         "tabs": {
             "main": "Główna",
@@ -148,7 +151,12 @@
             "minimum_refresh": "Minimalny interwał odświeżania (minuty):",
             "reload_campaigns": "Przeładuj kampanie",
             "mining_benefits": "Korzyści z Minowania",
-            "mining_benefits_help": "Wybierz rodzaje dropów, które chcesz zdobywać."
+            "mining_benefits_help": "Wybierz rodzaje dropów, które chcesz zdobywać.",
+            "scheduler": "Harmonogram",
+            "scheduler_help": "Automatycznie wstrzymuj i wznawiaj kopanie według harmonogramu.",
+            "scheduler_enabled": "Włącz harmonogram",
+            "scheduler_start": "Rozpocznij kopanie:",
+            "scheduler_stop": "Zatrzymaj kopanie:"
         },
         "help": {
             "about": "O Twitch Drops Miner",
@@ -184,7 +192,9 @@
             "auto_mode": "AUTO",
             "manual_mode": "RĘCZNY",
             "connected": "Połączono",
-            "disconnected": "Rozłączono"
+            "disconnected": "Rozłączono",
+            "pause": "Wstrzymaj kopanie",
+            "resume": "Wznów kopanie"
         },
         "footer": {
             "version": "Wersja:",
