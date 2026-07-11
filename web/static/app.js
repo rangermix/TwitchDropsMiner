@@ -991,21 +991,23 @@ function renderInventory() {
             el.appendChild(makeElement('span', {}, `${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}`));
         });
 
-        card.replaceChildren(campaignHeader, campaignStatus);
+        const campaignInfo = makeElement('div', { class: 'campaign-info' });
+        campaignInfo.appendChild(campaignHeader);
+        campaignInfo.appendChild(campaignStatus);
 
         // Campaign timing
         if (campaign.active && campaign.ends_at) {
             const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
-            card.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
+            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
         } else if (campaign.upcoming && campaign.starts_at) {
             const startsLabel = t.gui?.inventory?.starts || 'Starts: {time}';
-            card.appendChild(makeElement('div', { class: 'campaign-timing' }, startsLabel.replace('{time}', new Date(campaign.starts_at).toLocaleString())));
+            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, startsLabel.replace('{time}', new Date(campaign.starts_at).toLocaleString())));
         } else if (campaign.expired && campaign.ends_at) {
             const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
-            card.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
+            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
         }
 
-        card.appendChild(dropsEl);
+        card.replaceChildren(campaignInfo, dropsEl);
 
         container.appendChild(card);
     });

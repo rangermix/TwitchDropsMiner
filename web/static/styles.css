@@ -669,10 +669,11 @@ header h1 {
     background: none;
 }
 
-/* Inventory Grid */
+/* Inventory List */
 .inventory-grid {
-    column-width: 350px;
-    column-gap: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 .campaign-card {
@@ -681,9 +682,18 @@ header h1 {
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: stretch;
+}
+
+.campaign-info {
+    flex: 0 0 320px;
+    min-width: 0;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
     position: relative;
-    break-inside: avoid;
-    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
 }
 
 .campaign-header {
@@ -804,6 +814,12 @@ header h1 {
 
 .campaign-drops {
     padding: 15px;
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+    align-content: start;
 }
 
 
@@ -938,7 +954,6 @@ header h1 {
 
 .drop-item {
     padding: 10px;
-    margin-bottom: 8px;
     background: var(--bg-secondary);
     border-radius: 4px;
     border-left: 3px solid var(--border-color);
@@ -1483,8 +1498,14 @@ header h1 {
         grid-row: auto;
     }
 
-    .inventory-grid {
-        grid-template-columns: 1fr;
+    .campaign-card {
+        flex-direction: column;
+    }
+
+    .campaign-info {
+        flex: none;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
     }
 }
 
