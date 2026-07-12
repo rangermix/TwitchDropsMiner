@@ -877,6 +877,10 @@ function handleGameSearchKeydown(event) {
     }
 }
 
+function applyInventoryViewMode(listView) {
+    document.getElementById('inventory-grid').classList.toggle('list-view', listView);
+}
+
 function renderInventory() {
     const container = document.getElementById('inventory-grid');
     container.innerHTML = '';
@@ -1050,6 +1054,8 @@ function updateLoginStatus(data) {
 function updateSettingsUI(settings) {
     state.settings = settings;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
+    document.getElementById('inventory-list-view').checked = settings.inventory_list_view || false;
+    applyInventoryViewMode(settings.inventory_list_view || false);
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
 
@@ -1513,6 +1519,7 @@ async function verifyProxy() {
 async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
+        inventory_list_view: document.getElementById('inventory-list-view').checked,
         language: document.getElementById('language').value,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
@@ -1954,6 +1961,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.remove('dark-mode');
         }
         // Then save settings
+        saveSettings();
+    });
+
+    document.getElementById('inventory-list-view').addEventListener('change', (e) => {
+        // Apply the view mode immediately for instant feedback
+        applyInventoryViewMode(e.target.checked);
         saveSettings();
     });
     document.getElementById('language').addEventListener('change', saveSettings);

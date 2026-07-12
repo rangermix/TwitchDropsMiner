@@ -99,6 +99,9 @@ class SettingsManager:
             "inventory_filters", settings_data.get("inventory_filters")
         )
         should_trigger_update |= self.check_and_update_setting(
+            "inventory_list_view", settings_data.get("inventory_list_view")
+        )
+        should_trigger_update |= self.check_and_update_setting(
             "mining_benefits", settings_data.get("mining_benefits"), True
         )
 
