@@ -39,6 +39,7 @@ default_settings = {
         "show_not_linked": True,
         "show_upcoming": True,
     },
+    "inventory_list_view": False,
     "minimum_refresh_interval_minutes": 30,
     "mining_benefits": {
         "BADGE": True,
@@ -57,6 +58,7 @@ class Settings:
     games_to_watch: list[str]
     language: str
     inventory_filters: InventoryFilters
+    inventory_list_view: bool
     minimum_refresh_interval_minutes: int
     mining_benefits: dict[str, bool]
     proxy: str

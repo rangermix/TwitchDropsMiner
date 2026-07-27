@@ -877,6 +877,10 @@ function handleGameSearchKeydown(event) {
     }
 }
 
+function applyInventoryViewMode(listView) {
+    document.getElementById('inventory-grid').classList.toggle('list-view', listView);
+}
+
 function renderInventory() {
     const container = document.getElementById('inventory-grid');
     container.innerHTML = '';
@@ -991,21 +995,23 @@ function renderInventory() {
             el.appendChild(makeElement('span', {}, `${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}`));
         });
 
-        card.replaceChildren(campaignHeader, campaignStatus);
+        const campaignInfo = makeElement('div', { class: 'campaign-info' });
+        campaignInfo.appendChild(campaignHeader);
+        campaignInfo.appendChild(campaignStatus);
 
         // Campaign timing
         if (campaign.active && campaign.ends_at) {
             const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
-            card.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
+            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
         } else if (campaign.upcoming && campaign.starts_at) {
             const startsLabel = t.gui?.inventory?.starts || 'Starts: {time}';
-            card.appendChild(makeElement('div', { class: 'campaign-timing' }, startsLabel.replace('{time}', new Date(campaign.starts_at).toLocaleString())));
+            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, startsLabel.replace('{time}', new Date(campaign.starts_at).toLocaleString())));
         } else if (campaign.expired && campaign.ends_at) {
             const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
-            card.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
+            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
         }
 
-        card.appendChild(dropsEl);
+        card.replaceChildren(campaignInfo, dropsEl);
 
         container.appendChild(card);
     });
@@ -1048,6 +1054,8 @@ function updateLoginStatus(data) {
 function updateSettingsUI(settings) {
     state.settings = settings;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
+    document.getElementById('inventory-list-view').checked = settings.inventory_list_view || false;
+    applyInventoryViewMode(settings.inventory_list_view || false);
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
 
@@ -1511,6 +1519,7 @@ async function verifyProxy() {
 async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
+        inventory_list_view: document.getElementById('inventory-list-view').checked,
         language: document.getElementById('language').value,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
@@ -1952,6 +1961,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.remove('dark-mode');
         }
         // Then save settings
+        saveSettings();
+    });
+
+    document.getElementById('inventory-list-view').addEventListener('change', (e) => {
+        // Apply the view mode immediately for instant feedback
+        applyInventoryViewMode(e.target.checked);
         saveSettings();
     });
     document.getElementById('language').addEventListener('change', saveSettings);

@@ -669,7 +669,7 @@ header h1 {
     background: none;
 }
 
-/* Inventory Grid */
+/* Inventory - card view (default) */
 .inventory-grid {
     column-width: 350px;
     column-gap: 20px;
@@ -681,9 +681,34 @@ header h1 {
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    position: relative;
     break-inside: avoid;
     margin-bottom: 20px;
+}
+
+.campaign-info {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Inventory - list view (each campaign as a horizontal row) */
+.inventory-grid.list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.inventory-grid.list-view .campaign-card {
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 0;
+}
+
+.inventory-grid.list-view .campaign-info {
+    flex: 0 0 320px;
+    min-width: 0;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
 }
 
 .campaign-header {
@@ -804,6 +829,15 @@ header h1 {
 
 .campaign-drops {
     padding: 15px;
+}
+
+.inventory-grid.list-view .campaign-drops {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+    align-content: start;
 }
 
 
@@ -942,6 +976,10 @@ header h1 {
     background: var(--bg-secondary);
     border-radius: 4px;
     border-left: 3px solid var(--border-color);
+}
+
+.inventory-grid.list-view .drop-item {
+    margin-bottom: 0;
 }
 
 .drop-item.claimed {
@@ -1483,8 +1521,14 @@ header h1 {
         grid-row: auto;
     }
 
-    .inventory-grid {
-        grid-template-columns: 1fr;
+    .inventory-grid.list-view .campaign-card {
+        flex-direction: column;
+    }
+
+    .inventory-grid.list-view .campaign-info {
+        flex: none;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
     }
 
     /* "Selected Games" / "Available Games" were still forced side-by-side here,
