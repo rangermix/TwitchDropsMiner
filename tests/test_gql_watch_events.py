@@ -1,52 +1,54 @@
 import base64
-import gzip
 import json
 import unittest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.config.constants import GQLQuery
 from src.exceptions import RequestException
 from src.models.channel import Channel, Stream
 
 
-def _decode_gql_events(operation: GQLQuery):
-    encoded = operation["variables"]["input"]["data"]
-    return json.loads(gzip.decompress(base64.b64decode(encoded)).decode("utf8"))
+def _decode_spade_payload(payload):
+    return json.loads(base64.b64decode(payload["data"]).decode("utf8"))
 
 
-class TestGQLWatchEvents(unittest.IsolatedAsyncioTestCase):
-    def test_gql_query_wraps_gzip_base64_payload(self):
-        event_payload = [{"event": "minute-watched", "properties": {"channel": "test"}}]
-        compressed = base64.b64encode(gzip.compress(json.dumps(event_payload).encode("utf8"))).decode(
-            "utf8"
-        )
+class _FakeResponse:
+    def __init__(self, status: int):
+        self.status = status
 
-        operation = GQLQuery("mutation Example { ok }", compressed)
 
-        self.assertEqual(operation["query"], "mutation Example { ok }")
-        self.assertEqual(operation["variables"]["input"]["repository"], "twilight")
-        self.assertEqual(operation["variables"]["input"]["encoding"], "GZIP_B64")
-        self.assertEqual(_decode_gql_events(operation), event_payload)
+class _FakeRequestCM:
+    def __init__(self, response: _FakeResponse):
+        self._response = response
 
-    def test_stream_gql_payload_contains_minute_watched_event(self):
+    async def __aenter__(self):
+        return self._response
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+
+def _make_stream(twitch) -> Stream:
+    channel = MagicMock(spec=Channel)
+    channel.id = 67890
+    channel._login = "example_channel"
+    channel._twitch = twitch
+    return Stream(
+        channel,
+        id=24680,
+        game={"id": "13579", "name": "Example Game"},
+        viewers=100,
+        title="Example Stream",
+    )
+
+
+class TestSpadeWatchEvents(unittest.IsolatedAsyncioTestCase):
+    def test_spade_payload_contains_minute_watched_event(self):
         twitch = MagicMock()
-        twitch._auth_state.user_id = 12345
-        channel = MagicMock(spec=Channel)
-        channel.id = 67890
-        channel._login = "example_channel"
-        channel._twitch = twitch
-        stream = Stream(
-            channel,
-            id=24680,
-            game={"id": "13579", "name": "Example Game"},
-            viewers=100,
-            title="Example Stream",
-        )
+        twitch._auth_state.user_id = "12345"
+        stream = _make_stream(twitch)
 
-        operation = stream._gql_payload
-        events = _decode_gql_events(operation)
+        events = _decode_spade_payload(stream._spade_payload)
 
-        self.assertIn("mutation SendEvents", operation["query"])
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0]["event"], "minute-watched")
         properties = events[0]["properties"]
@@ -55,8 +57,12 @@ class TestGQLWatchEvents(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(properties["channel"], "example_channel")
         self.assertEqual(properties["game"], "Example Game")
         self.assertEqual(properties["game_id"], "13579")
+        self.assertEqual(properties["location"], "channel")
+        self.assertEqual(properties["player"], "site")
+        self.assertIs(properties["is_live"], True)
         self.assertEqual(properties["minutes_logged"], 1)
         self.assertEqual(properties["user_id"], 12345)
+        self.assertIsInstance(properties["user_id"], int)
         self.assertRegex(properties["client_time"], r"^\d{4}-\d{2}-\d{2}T.*Z$")
 
     def test_stream_spade_payload_is_not_cached(self):
@@ -75,18 +81,20 @@ class TestGQLWatchEvents(unittest.IsolatedAsyncioTestCase):
         )
 
         first_payload = stream._spade_payload
-        first_payload["data"] = "mutated"
-
         second_payload = stream._spade_payload
+
+        self.assertIsNot(first_payload, second_payload)
+        first_payload["data"] = "mutated"
 
         self.assertNotEqual(second_payload["data"], "mutated")
 
-    async def test_send_watch_uses_gql_and_returns_true_for_204(self):
+    async def test_send_watch_posts_to_spade_url_and_returns_true_for_204(self):
         twitch = MagicMock()
         twitch.gui.channels = MagicMock()
-        twitch._auth_state.user_id = 12345
-        twitch.gql_request = AsyncMock(return_value={"data": {"sendSpadeEvents": {"statusCode": 204}}})
+        twitch._auth_state.user_id = "12345"
+        twitch.request = MagicMock(return_value=_FakeRequestCM(_FakeResponse(204)))
         channel = Channel(twitch, id=67890, login="example_channel")
+        channel._spade_url = "https://spade.twitch.tv/"
         channel._stream = Stream(
             channel,
             id=24680,
@@ -98,7 +106,66 @@ class TestGQLWatchEvents(unittest.IsolatedAsyncioTestCase):
         result = await channel.send_watch()
 
         self.assertTrue(result)
-        twitch.gql_request.assert_awaited_once()
+        twitch.request.assert_called_once_with(
+            "POST", channel._spade_url, data=channel._stream._spade_payload
+        )
+
+    async def test_send_watch_fetches_spade_url_when_missing(self):
+        twitch = MagicMock()
+        twitch.gui.channels = MagicMock()
+        twitch._auth_state.user_id = "12345"
+        twitch.request = MagicMock(return_value=_FakeRequestCM(_FakeResponse(204)))
+        channel = Channel(twitch, id=67890, login="example_channel")
+        channel._stream = Stream(
+            channel,
+            id=24680,
+            game={"id": "13579", "name": "Example Game"},
+            viewers=100,
+            title="Example Stream",
+        )
+        with patch.object(
+            Channel, "get_spade_url", AsyncMock(return_value="https://spade.twitch.tv/fetched")
+        ) as mock_get_spade_url:
+            result = await channel.send_watch()
+
+        self.assertTrue(result)
+        mock_get_spade_url.assert_awaited_once()
+        self.assertEqual(channel._spade_url, "https://spade.twitch.tv/fetched")
+
+    async def test_send_watch_returns_false_when_spade_url_fetch_fails(self):
+        from src.exceptions import MinerException
+
+        twitch = MagicMock()
+        twitch.gui.channels = MagicMock()
+        twitch._auth_state.user_id = "12345"
+        twitch.request = MagicMock(return_value=_FakeRequestCM(_FakeResponse(204)))
+        channel = Channel(twitch, id=67890, login="example_channel")
+        channel._stream = Stream(
+            channel,
+            id=24680,
+            game={"id": "13579", "name": "Example Game"},
+            viewers=100,
+            title="Example Stream",
+        )
+
+        with patch.object(Channel, "get_spade_url", AsyncMock(side_effect=MinerException("fail"))):
+            self.assertFalse(await channel.send_watch())
+    async def test_send_watch_returns_false_for_non_204_status(self):
+        twitch = MagicMock()
+        twitch.gui.channels = MagicMock()
+        twitch._auth_state.user_id = "12345"
+        twitch.request = MagicMock(return_value=_FakeRequestCM(_FakeResponse(400)))
+        channel = Channel(twitch, id=67890, login="example_channel")
+        channel._spade_url = "https://spade.twitch.tv/"
+        channel._stream = Stream(
+            channel,
+            id=24680,
+            game={"id": "13579", "name": "Example Game"},
+            viewers=100,
+            title="Example Stream",
+        )
+
+        self.assertFalse(await channel.send_watch())
 
     async def test_send_watch_returns_false_without_stream(self):
         twitch = MagicMock()
@@ -107,12 +174,13 @@ class TestGQLWatchEvents(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(await channel.send_watch())
 
-    async def test_send_watch_returns_false_when_gql_request_fails(self):
+    async def test_send_watch_returns_false_when_request_fails(self):
         twitch = MagicMock()
         twitch.gui.channels = MagicMock()
-        twitch._auth_state.user_id = 12345
-        twitch.gql_request = AsyncMock(side_effect=RequestException())
+        twitch._auth_state.user_id = "12345"
+        twitch.request = MagicMock(side_effect=RequestException())
         channel = Channel(twitch, id=67890, login="example_channel")
+        channel._spade_url = "https://spade.twitch.tv/"
         channel._stream = Stream(
             channel,
             id=24680,
