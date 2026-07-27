@@ -1,0 +1,68 @@
+name: Credit merged PR contributors
+
+on:
+  pull_request_target:
+    branches:
+      - main
+    types:
+      - closed
+
+permissions:
+  contents: write
+
+concurrency:
+  group: readme-contributors-${{ github.event.repository.id }}
+  cancel-in-progress: false
+
+jobs:
+  add-contributor:
+    name: Add contributor to README
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+
+    steps:
+      # pull_request_target has a write token. Keep this checkout on the trusted
+      # default branch and never fetch or execute code from the PR head.
+      - name: Checkout default branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Update contributor credits
+        env:
+          CONTRIBUTOR_LOGIN: ${{ github.event.pull_request.user.login }}
+          CONTRIBUTOR_URL: ${{ github.event.pull_request.user.html_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: >-
+          python .github/scripts/update_contributors.py
+          --readme README.md
+          --login "$CONTRIBUTOR_LOGIN"
+          --profile-url "$CONTRIBUTOR_URL"
+          --pr-number "$PR_NUMBER"
+          --pr-url "$PR_URL"
+
+      - name: Commit contributor credits
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "PR #${PR_NUMBER} is already credited."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- README.md
+          git commit -m "docs: credit contributor for PR #${PR_NUMBER}"
+          git pull --rebase origin "$DEFAULT_BRANCH"
+          git push origin "HEAD:$DEFAULT_BRANCH"

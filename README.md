@@ -130,6 +130,22 @@ You can also support the original author [@DevilXD](https://github.com/DevilXD):
 
 ---
 
+## 🤝 Contributors
+
+<!-- contributors:start -->
+- [@birdhimself](https://github.com/birdhimself) — [#41](https://github.com/rangermix/TwitchDropsMiner/pull/41)
+- [@capkz](https://github.com/capkz) — [#70](https://github.com/rangermix/TwitchDropsMiner/pull/70)
+- [@EthanBlazkowicz](https://github.com/EthanBlazkowicz) — [#33](https://github.com/rangermix/TwitchDropsMiner/pull/33)
+- [@Knight-sys](https://github.com/Knight-sys) — [#3](https://github.com/rangermix/TwitchDropsMiner/pull/3)
+- [@rangermix](https://github.com/rangermix) — [#1](https://github.com/rangermix/TwitchDropsMiner/pull/1), [#2](https://github.com/rangermix/TwitchDropsMiner/pull/2), [#7](https://github.com/rangermix/TwitchDropsMiner/pull/7), [#8](https://github.com/rangermix/TwitchDropsMiner/pull/8), [#9](https://github.com/rangermix/TwitchDropsMiner/pull/9), [#13](https://github.com/rangermix/TwitchDropsMiner/pull/13), [#20](https://github.com/rangermix/TwitchDropsMiner/pull/20), [#24](https://github.com/rangermix/TwitchDropsMiner/pull/24), [#29](https://github.com/rangermix/TwitchDropsMiner/pull/29), [#32](https://github.com/rangermix/TwitchDropsMiner/pull/32), [#45](https://github.com/rangermix/TwitchDropsMiner/pull/45)
+- [@Sean-Destefano](https://github.com/Sean-Destefano) — [#49](https://github.com/rangermix/TwitchDropsMiner/pull/49)
+- [@SimpliAj](https://github.com/SimpliAj) — [#72](https://github.com/rangermix/TwitchDropsMiner/pull/72)
+- [@Stein-N](https://github.com/Stein-N) — [#71](https://github.com/rangermix/TwitchDropsMiner/pull/71)
+- [@vurmil](https://github.com/vurmil) — [#12](https://github.com/rangermix/TwitchDropsMiner/pull/12), [#17](https://github.com/rangermix/TwitchDropsMiner/pull/17)
+<!-- contributors:end -->
+
+---
+
 ## 🙏 Acknowledgments
 
 This project is a fork of the brilliant [TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner) by [@DevilXD](https://github.com/DevilXD).  

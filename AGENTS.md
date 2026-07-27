@@ -330,10 +330,21 @@ The project includes a test suite in the `tests/` directory:
 source env/bin/activate && python -m pytest tests/
 ```
 
-**Test Files:**
+The suite covers settings and proxy behavior, API filtering, GraphQL watch events,
+translation consistency, frontend DOM safety, and contributor README automation.
 
-- `tests/test_proxy_settings.py` - Tests for proxy settings configuration
-- `tests/test_verify_proxy.py` - Tests for proxy verification functionality
+### Continuous Integration
+
+- `.github/workflows/validation.yml` runs Ruff, Mypy, the Python test suite, language
+  JSON validation, and Docker build validation for pull requests and pushes to `main`.
+- `.github/workflows/contributors.yml` credits the human author of each pull request
+  merged into `main`, including linked pull request numbers in the managed Contributors
+  section of `README.md`.
+- The contributor workflow runs with write access through `pull_request_target`. It must
+  only check out and execute trusted code from the default branch; never fetch or run
+  pull request head code in that workflow.
+- Keep the `<!-- contributors:start -->` and `<!-- contributors:end -->` markers in
+  `README.md`; the updater fails closed if either marker is missing or duplicated.
 
 
 ### Manual Testing
