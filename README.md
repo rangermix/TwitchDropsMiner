@@ -1,207 +1,168 @@
-# 🌟 Twitch Drops Miner (TDM)
+# Twitch Drops Miner
 
-> 🎮 **Automate Twitch Drop Farming — Effortlessly, Headlessly, and Bandwidth-Free**
+> Automatically mine timed Twitch Drops without streaming video or audio.
 
 <p align="center">
-  <a href="https://github.com/rangermix/TwitchDropsMiner/stargazers"><img src="https://img.shields.io/github/stars/rangermix/TwitchDropsMiner?style=for-the-badge&color=yellow" alt="Stars"></a>
-  <a href="https://github.com/rangermix/TwitchDropsMiner/releases"><img src="https://img.shields.io/github/v/release/rangermix/TwitchDropsMiner?style=for-the-badge&color=brightgreen" alt="Release"></a>
-  <a href="https://hub.docker.com/r/rangermix/twitch-drops-miner"><img src="https://img.shields.io/docker/pulls/rangermix/twitch-drops-miner?style=for-the-badge&color=blue" alt="Docker Pulls"></a>
+  <a href="https://github.com/rangermix/TwitchDropsMiner/stargazers"><img src="https://img.shields.io/github/stars/rangermix/TwitchDropsMiner?style=for-the-badge&color=yellow" alt="GitHub stars"></a>
+  <a href="https://github.com/rangermix/TwitchDropsMiner/releases"><img src="https://img.shields.io/github/v/release/rangermix/TwitchDropsMiner?style=for-the-badge&color=brightgreen" alt="Latest release"></a>
+  <a href="https://hub.docker.com/r/rangermix/twitch-drops-miner"><img src="https://img.shields.io/docker/pulls/rangermix/twitch-drops-miner?style=for-the-badge&color=blue" alt="Docker pulls"></a>
   <a href="https://github.com/rangermix/TwitchDropsMiner/blob/main/LICENSE"><img src="https://img.shields.io/github/license/rangermix/TwitchDropsMiner?style=for-the-badge&color=orange" alt="License"></a>
-  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.12+-blue?style=for-the-badge&logo=python" alt="Python"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.12+-blue?style=for-the-badge&logo=python" alt="Python 3.12 or newer"></a>
 </p>
 
-A modern, AI-assisted fork of [DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner) — rebuilt for reliability, simplicity, and automation.  
-**Twitch Drops Miner** lets you automatically farm Twitch drops without ever opening a stream.  
-No more tab juggling, channel switching, or missing rewards — just set it, forget it, and collect.
+Twitch Drops Miner is a low-bandwidth, headless application that discovers eligible
+campaigns, selects an appropriate live channel, and tracks drop progress from a web
+dashboard. It sends Twitch watch events without downloading the stream itself.
 
----
+![Twitch Drops Miner web dashboard showing campaign progress, output, and channels](./screenshot.png)
 
-## ✨ Features
+## Features
 
-- 🚀 **Streamless Mining** — Earn drops without streaming video by sending Twitch GraphQL watch events
-- 🔍 **Automatic Campaign Discovery** — Detects new drop events automatically
-- ⚙️ **Auto Channel Switching** — Always mines the best available stream
-- 💾 **Persistent Login** — OAuth login saved via cookies
-- 🕹️ **Simple Web UI** — Manage everything from your browser
-- 🛡️ **Safe Frontend Rendering** — Dynamic UI content is rendered with DOM APIs to avoid HTML injection
-- 🧩 **Docker-Ready** — One command to deploy anywhere
+- **Low-bandwidth mining** — progresses timed drops without downloading video or audio
+- **Automatic campaign discovery** — detects active and upcoming drop campaigns
+- **Smart channel selection** — prioritizes eligible channels, preferred games, and viewers
+- **Persistent sessions** — saves OAuth login state between runs
+- **Web dashboard** — manages campaigns, channels, inventory, settings, and login status
+- **Headless deployment** — runs locally, remotely, or in Docker without a desktop GUI
+- **Safe rendering** — builds dynamic translated content with DOM APIs instead of raw HTML
 
----
+## Quick start
 
-## 🧰 Quick Start (Docker Recommended)
+### Docker (recommended)
 
-### 🐳 Using Pre-Built Image (Docker run)
+Docker stores persistent application data in `/app/data`. The command below binds that
+directory to `./data` on the host:
 
 ```bash
-docker pull rangermix/twitch-drops-miner:latest
-docker run -d -p 8080:8080 -v $(pwd)/data:/app/data rangermix/twitch-drops-miner:latest
+docker run -d \
+  --name twitch-drops-miner \
+  -p 8080:8080 \
+  -v "${PWD}/data:/app/data" \
+  --restart unless-stopped \
+  rangermix/twitch-drops-miner:latest
 ```
 
-### 📦 Using Docker Compose
+Open <http://localhost:8080>.
 
-```yaml
-services:
-  twitch-drops-miner:
-    image: rangermix/twitch-drops-miner:latest
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./data:/app/data
-      # optional, use if you want to persist logs
-      - ./logs:/app/logs
-    environment:
-      # Set timezone (optional, defaults to UTC)
-      - TZ=Australia/Sydney
-    restart: unless-stopped
+### Docker Compose
+
+From the repository root, build and start the included
+[`docker-compose.yml`](./docker-compose.yml):
+
+```bash
+docker compose up -d --build
 ```
 
-### 🧑‍💻 From Source (for Developers)
+### From source
+
+Source installations require Python 3.12 or newer and
+[`uv`](https://docs.astral.sh/uv/):
 
 ```bash
 uv sync
 uv run main.py
 ```
 
-Visit 👉 **<http://localhost:8080>**
+Then open <http://localhost:8080>.
 
----
+## Using the web app
 
-## 🌈 Using the Web App
+1. Log in with your Twitch account through the OAuth device flow.
+2. Wait for the miner to discover available campaigns.
+3. Choose the games you want to prioritize. You can also search for a game, select
+   **Add Game**, and then select **Reload**.
+4. Leave the miner running while it selects eligible channels and tracks drop progress.
 
-1. Open `http://localhost:8080`
-2. Login with your Twitch account (OAuth device flow)
-3. The miner auto-fetches available campaigns
-4. Select games you want to farm, or type a custom game and click **Add Game** → click **Reload**
-5. TDM starts mining drops automatically 🎉
+> [!NOTE]
+> Your Twitch account must be linked to the relevant game accounts. Review your
+> [Twitch Drops campaigns](https://www.twitch.tv/drops/campaigns) before mining.
 
-📝 **Tip:**  
-Make sure your Twitch account is linked to your game accounts →  
-👉 [https://www.twitch.tv/drops/campaigns](https://www.twitch.tv/drops/campaigns)
+## Important notes
 
----
+> [!WARNING]
+> Avoid watching Twitch manually with the same account while the miner is running.
+> Simultaneous viewing can cause drop-progress desynchronization.
 
-## ⚠️ Notes & Warnings
+- Docker data is stored inside the container at `/app/data`; the examples persist it
+  to `./data` on the host.
+- Source installations store persistent data in the repository's `data/` directory.
+- Logs can be persisted separately by mounting `./logs:/app/logs`.
 
-> ⚠️ **Avoid Watching on the Same Account**  
-> Watching Twitch manually while the miner runs can cause progress desync.  
-> Use a different account if you want to watch live streams while mining.
+## Contributors
 
-> 💡 **Requirements**  
-> Python 3.12+  
-> Docker optional but recommended  
-> Persistent data stored in `/data`
-
----
-
-## 🖼️ Screenshot
-
-![screenshot](./screenshot.png)
-> A clean, modern web UI lets you control everything from your browser.
-
----
-
-## 💖 Support the Project
-
-If TwitchDropsMiner saves you time or bandwidth, please consider supporting continued development:
-
-<div align="center">
-
-[![Buy Me a Coffee](https://i.imgur.com/cL95gzE.png)](https://buymeacoffee.com/rangermix)
-
-⭐ **Star this repo** → it really helps visibility!  
-💬 [Open an issue](../../issues) or [submit a PR](../../pulls) if you want to contribute.
-
-</div>
-
-You can also support the original author [@DevilXD](https://github.com/DevilXD):  
-👉 [buymeacoffee.com/DevilXD](https://www.buymeacoffee.com/DevilXD) or [Patreon](https://www.patreon.com/bePatron?u=26937862).
-
----
-
-## 🎯 Project Goals
-
-| Goal | Description |
-|------|--------------|
-| 🎯 **Focus** | Twitch Drops automation |
-| 🧩 **Ease of Use** | Simple web UI |
-| 🛡️ **Reliability** | Designed for continuous operation |
-| ⚙️ **Efficiency** | Minimal API calls, Twitch-friendly |
-| 🐳 **Deployment** | Docker-first, headless operation |
-
----
-
-## 🤝 Contributors
+Contributors are credited automatically when their pull requests are merged into `main`.
 
 <!-- contributors:start -->
-- [@birdhimself](https://github.com/birdhimself) — [#41](https://github.com/rangermix/TwitchDropsMiner/pull/41)
-- [@capkz](https://github.com/capkz) — [#70](https://github.com/rangermix/TwitchDropsMiner/pull/70)
-- [@EthanBlazkowicz](https://github.com/EthanBlazkowicz) — [#33](https://github.com/rangermix/TwitchDropsMiner/pull/33)
-- [@Knight-sys](https://github.com/Knight-sys) — [#3](https://github.com/rangermix/TwitchDropsMiner/pull/3)
-- [@rangermix](https://github.com/rangermix) — [#1](https://github.com/rangermix/TwitchDropsMiner/pull/1), [#2](https://github.com/rangermix/TwitchDropsMiner/pull/2), [#7](https://github.com/rangermix/TwitchDropsMiner/pull/7), [#8](https://github.com/rangermix/TwitchDropsMiner/pull/8), [#9](https://github.com/rangermix/TwitchDropsMiner/pull/9), [#13](https://github.com/rangermix/TwitchDropsMiner/pull/13), [#20](https://github.com/rangermix/TwitchDropsMiner/pull/20), [#24](https://github.com/rangermix/TwitchDropsMiner/pull/24), [#29](https://github.com/rangermix/TwitchDropsMiner/pull/29), [#32](https://github.com/rangermix/TwitchDropsMiner/pull/32), [#45](https://github.com/rangermix/TwitchDropsMiner/pull/45)
-- [@Sean-Destefano](https://github.com/Sean-Destefano) — [#49](https://github.com/rangermix/TwitchDropsMiner/pull/49)
-- [@SimpliAj](https://github.com/SimpliAj) — [#72](https://github.com/rangermix/TwitchDropsMiner/pull/72)
-- [@Stein-N](https://github.com/Stein-N) — [#71](https://github.com/rangermix/TwitchDropsMiner/pull/71)
-- [@vurmil](https://github.com/vurmil) — [#12](https://github.com/rangermix/TwitchDropsMiner/pull/12), [#17](https://github.com/rangermix/TwitchDropsMiner/pull/17)
+| Contributor | Merged pull requests |
+| --- | --- |
+| [@birdhimself](https://github.com/birdhimself) | [#41](https://github.com/rangermix/TwitchDropsMiner/pull/41) |
+| [@capkz](https://github.com/capkz) | [#70](https://github.com/rangermix/TwitchDropsMiner/pull/70) |
+| [@EthanBlazkowicz](https://github.com/EthanBlazkowicz) | [#33](https://github.com/rangermix/TwitchDropsMiner/pull/33) |
+| [@Knight-sys](https://github.com/Knight-sys) | [#3](https://github.com/rangermix/TwitchDropsMiner/pull/3) |
+| [@rangermix](https://github.com/rangermix) | [#1](https://github.com/rangermix/TwitchDropsMiner/pull/1) · [#2](https://github.com/rangermix/TwitchDropsMiner/pull/2) · [#7](https://github.com/rangermix/TwitchDropsMiner/pull/7) · [#8](https://github.com/rangermix/TwitchDropsMiner/pull/8) · [#9](https://github.com/rangermix/TwitchDropsMiner/pull/9) · [#13](https://github.com/rangermix/TwitchDropsMiner/pull/13) · [#20](https://github.com/rangermix/TwitchDropsMiner/pull/20) · [#24](https://github.com/rangermix/TwitchDropsMiner/pull/24) · [#29](https://github.com/rangermix/TwitchDropsMiner/pull/29) · [#32](https://github.com/rangermix/TwitchDropsMiner/pull/32) · [#45](https://github.com/rangermix/TwitchDropsMiner/pull/45) |
+| [@Sean-Destefano](https://github.com/Sean-Destefano) | [#49](https://github.com/rangermix/TwitchDropsMiner/pull/49) |
+| [@SimpliAj](https://github.com/SimpliAj) | [#72](https://github.com/rangermix/TwitchDropsMiner/pull/72) |
+| [@Stein-N](https://github.com/Stein-N) | [#71](https://github.com/rangermix/TwitchDropsMiner/pull/71) |
+| [@vurmil](https://github.com/vurmil) | [#12](https://github.com/rangermix/TwitchDropsMiner/pull/12) · [#17](https://github.com/rangermix/TwitchDropsMiner/pull/17) |
 <!-- contributors:end -->
 
----
+## Support
 
-## 🙏 Acknowledgments
+If Twitch Drops Miner saves you time or bandwidth, you can support the project by:
 
-This project is a fork of the brilliant [TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner) by [@DevilXD](https://github.com/DevilXD).  
-Huge thanks to DevilXD and all contributors who built the foundation.
+- [starring the repository](https://github.com/rangermix/TwitchDropsMiner)
+- [reporting an issue](https://github.com/rangermix/TwitchDropsMiner/issues) or
+  [submitting a pull request](https://github.com/rangermix/TwitchDropsMiner/pulls)
+- [buying the maintainer a coffee](https://buymeacoffee.com/rangermix)
 
-For detailed translation and contribution credits, see [Acknowledgments](#original-project-credits) below.
+## Credits
 
----
+This project is a modern fork of
+[DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner), created by
+[@DevilXD](https://github.com/DevilXD). You can support the original author through
+[Buy Me a Coffee](https://www.buymeacoffee.com/DevilXD) or
+[Patreon](https://www.patreon.com/bePatron?u=26937862).
 
-## 🧾 Disclaimer
+<details>
+<summary>Original project and translation credits</summary>
 
-> ⚙️ This fork is heavily maintained and developed using AI-assisted coding (Claude Code).  
-> While stable, the codebase reflects “vibe coding” patterns — always review changes before deployment.  
-> Use responsibly.
+### Original project contributions
 
----
+- [@guihkx](https://github.com/guihkx) — CI scripts, CI maintenance, and Linux builds
+- [@kWAYTV](https://github.com/kWAYTV) — dark mode theme
 
-## 🧑‍💻 Original Project Credits
+### Translation credits
 
-<!---
-Note: The translations credits are sorted alphabetically, based on their English language name.
-When adding a new entry, please ensure to insert it in the correct place in the second section.
-Non-translations related credits should be added to the first section instead.
+- **Arabic** — [@Bamboozul](https://github.com/Bamboozul)
+- **Chinese (Simplified)** — [@Suz1e](https://github.com/Suz1e),
+  [@wwj010](https://github.com/wwj010), and
+  [@zhangminghao1989](https://github.com/zhangminghao1989)
+- **Chinese (Traditional)** — [@Ricky103403](https://github.com/Ricky103403) and
+  [@LusTerCsI](https://github.com/LusTerCsI)
+- **Czech** — [@nwvh](https://github.com/nwvh)
+- **Danish** — [@Kjerne](https://github.com/Kjerne)
+- **French** — [@roobini-gamer](https://github.com/roobini-gamer) and
+  [@Calvineries](https://github.com/Calvineries)
+- **German** — [@ThisIsCyreX](https://github.com/ThisIsCyreX)
+- **Indonesian** — [@Eriza-Z](https://github.com/Eriza-Z)
+- **Italian** — [@casungo](https://github.com/casungo)
+- **Japanese** — [@ShimadaNanaki](https://github.com/ShimadaNanaki)
+- **Polish** — [@Patriot99](https://github.com/Patriot99), co-authored with
+  [@DevilXD](https://github.com/DevilXD)
+- **Portuguese** — [@zarigata](https://github.com/zarigata)
+- **Russian** — [@Sergo1217](https://github.com/Sergo1217) and
+  [@kilroy98](https://github.com/kilroy98)
+- **Spanish** — [@Shofuu](https://github.com/Shofuu)
+- **Turkish** — [@alikdb](https://github.com/alikdb)
+- **Ukrainian** — [@Nollasko](https://github.com/Nollasko) and
+  [@kilroy98](https://github.com/kilroy98)
 
-Note: When adding a new credits line below, please add two trailing spaces at the end
-of the previous line, if they aren't already there. Doing so ensures proper markdown
-rendering on Github. In short: Each credits line should end with two trailing spaces,
-placed past the period character at the end.
+</details>
 
-• Last line can have the two trailing spaces omitted.
-• Please ensure your editor won't trim the trailing spaces upon saving the file.
-• Please ensure to leave a single empty new line at the end of the file.
--->
+## Development disclosure
 
-@guihkx - For the CI script, CI maintenance, and everything related to Linux builds.  
-@kWAYTV - For the implementation of the dark mode theme.  
-
-@Bamboozul - For the entirety of the Arabic (العربية) translation.  
-@Suz1e - For the entirety of the Chinese (简体中文) translation and revisions.  
-@wwj010 - For the Chinese (简体中文) translation corrections and revisions.  
-@zhangminghao1989 - For the Chinese (简体中文) translation corrections and revisions.  
-@Ricky103403 - For the entirety of the Traditional Chinese (繁體中文) translation.  
-@LusTerCsI - For the Traditional Chinese (繁體中文) translation corrections and revisions.  
-@nwvh - For the entirety of the Czech (Čeština) translation.  
-@Kjerne - For the entirety of the Danish (Dansk) translation.  
-@roobini-gamer - For the entirety of the French (Français) translation.  
-@Calvineries - For the French (Français) translation revisions.  
-@ThisIsCyreX - For the entirety of the German (Deutsch) translation.  
-@Eriza-Z - For the entirety of the Indonesian translation.  
-@casungo - For the entirety of the Italian (Italiano) translation.  
-@ShimadaNanaki - For the entirety of the Japanese (日本語) translation.  
-@Patriot99 - For the Polish (Polski) translation and revisions (co-authored with @DevilXD).  
-@zarigata - For the entirety of the Portuguese (Português) translation.  
-@Sergo1217 - For the entirety of the Russian (Русский) translation.  
-@kilroy98 - For the Russian (Русский) translation corrections and revisions.  
-@Shofuu - For the entirety of the Spanish (Español) translation and revisions.  
-@alikdb - For the entirety of the Turkish (Türkçe) translation.  
-@Nollasko - For the entirety of the Ukrainian (Українська) translation and revisions.  
-@kilroy98 - For the Ukrainian (Українська) translation corrections and revisions.  
+This fork is maintained with AI-assisted development tools. Changes are validated through
+automated tests and code-quality checks, but users should still review updates before
+deploying them. The validation suite includes GraphQL watch events and batched channel
+discovery, alongside settings, translation, and frontend safety checks. Use the software
+responsibly.

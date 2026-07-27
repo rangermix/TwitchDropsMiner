@@ -1,7 +1,7 @@
 import base64
 import json
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 from src.exceptions import RequestException
 from src.models.channel import Channel, Stream
@@ -103,12 +103,15 @@ class TestSpadeWatchEvents(unittest.IsolatedAsyncioTestCase):
             title="Example Stream",
         )
 
-        result = await channel.send_watch()
+        payload = {"data": "encoded-minute-watched-event"}
+        with patch.object(
+            Stream, "_spade_payload", new_callable=PropertyMock, return_value=payload
+        ) as mock_payload:
+            result = await channel.send_watch()
 
         self.assertTrue(result)
-        twitch.request.assert_called_once_with(
-            "POST", channel._spade_url, data=channel._stream._spade_payload
-        )
+        twitch.request.assert_called_once_with("POST", channel._spade_url, data=payload)
+        mock_payload.assert_called_once_with()
 
     async def test_send_watch_fetches_spade_url_when_missing(self):
         twitch = MagicMock()

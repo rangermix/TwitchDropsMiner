@@ -19,7 +19,7 @@ from src.utils import chunk
 
 
 if TYPE_CHECKING:
-    from src.config import GQLOperation, JsonType
+    from src.config import GQLRequest, JsonType
     from src.core.client import Twitch
     from src.models.game import Game
 
@@ -142,8 +142,9 @@ class ChannelService:
         Args:
             channels: Iterable of Channel objects to check
         """
+        channel_list = list(channels)
         acl_streams_map: dict[int, JsonType] = {}
-        stream_gql_ops: list[GQLOperation] = [channel.stream_gql for channel in channels]
+        stream_gql_ops: list[GQLRequest] = [channel.stream_gql for channel in channel_list]
 
         if not stream_gql_ops:
             # shortcut for nothing to process
@@ -176,7 +177,7 @@ class ChannelService:
             raise
 
         # Update all channels with their stream data
-        for channel in channels:
+        for channel in channel_list:
             channel_id = channel.id
             if channel_id not in acl_streams_map:
                 continue

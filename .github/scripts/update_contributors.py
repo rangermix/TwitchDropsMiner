@@ -45,7 +45,7 @@ class PullRequestContribution:
 
     @property
     def readme_entry(self) -> str:
-        return f"- [@{self.login}]({self.profile_url}) — {self.pull_request_link}"
+        return f"| [@{self.login}]({self.profile_url}) | {self.pull_request_link} |"
 
 
 class ContributorReadmeUpdater:
@@ -53,8 +53,10 @@ class ContributorReadmeUpdater:
 
     START_MARKER = "<!-- contributors:start -->"
     END_MARKER = "<!-- contributors:end -->"
+    TABLE_HEADER = "| Contributor | Merged pull requests |"
+    TABLE_SEPARATOR = "| --- | --- |"
     ENTRY_PATTERN = re.compile(
-        r"^- \[@(?P<login>[A-Za-z0-9-]+)\]\(https://[^)]+\) — .+$"
+        r"^\| \[@(?P<login>[A-Za-z0-9-]+)\]\(https://[^)]+\) \| .+ \|$"
     )
 
     def update_file(self, readme_path: Path, contribution: PullRequestContribution) -> bool:
@@ -75,14 +77,27 @@ class ContributorReadmeUpdater:
         if any(contribution.pull_request_link in line for line in managed_lines):
             return text
 
+        contributor_rows: list[tuple[int, re.Match[str]]] = []
         for relative_index, line in enumerate(managed_lines):
             match = self.ENTRY_PATTERN.fullmatch(line)
-            if match and match.group("login").casefold() == contribution.login.casefold():
+            if match is None:
+                continue
+
+            contributor_rows.append((relative_index, match))
+            if match.group("login").casefold() == contribution.login.casefold():
                 absolute_index = start_index + 1 + relative_index
-                lines[absolute_index] = f"{line}, {contribution.pull_request_link}"
+                lines[absolute_index] = (
+                    f"{line[:-2]} · {contribution.pull_request_link} |"
+                )
                 return self._join_lines(lines, text)
 
-        lines.insert(end_index, contribution.readme_entry)
+        insert_index = end_index
+        for relative_index, match in contributor_rows:
+            if contribution.login.casefold() < match.group("login").casefold():
+                insert_index = start_index + 1 + relative_index
+                break
+
+        lines.insert(insert_index, contribution.readme_entry)
         return self._join_lines(lines, text)
 
     def _marker_indexes(self, lines: list[str]) -> tuple[int, int]:
@@ -93,6 +108,11 @@ class ContributorReadmeUpdater:
         end_index = lines.index(self.END_MARKER)
         if start_index >= end_index:
             raise ValueError("README contributor markers are out of order")
+        if lines[start_index + 1 : start_index + 3] != [
+            self.TABLE_HEADER,
+            self.TABLE_SEPARATOR,
+        ]:
+            raise ValueError("README contributor table header is missing or invalid")
         return start_index, end_index
 
     @staticmethod
