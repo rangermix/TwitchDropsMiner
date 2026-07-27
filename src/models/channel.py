@@ -1,18 +1,16 @@
 from __future__ import annotations
 
 import asyncio
-import gzip
 import json
 import logging
 import re
 from base64 import b64encode
-from functools import cached_property
 from typing import TYPE_CHECKING, Any, SupportsInt, cast
 
 import aiohttp
 from yarl import URL
 
-from src.config.constants import CALL, ONLINE_DELAY, GQLOperation, GQLQuery, JsonType, URLType
+from src.config.constants import CALL, ONLINE_DELAY, GQLOperation, JsonType, URLType
 from src.config.operations import GQL_OPERATIONS
 from src.exceptions import MinerException, RequestException
 from src.models.game import Game
@@ -45,29 +43,8 @@ class Stream:
         self.title: str = title
         self._stream_url: URLType | None = None
 
-    @cached_property
-    def _spade_payload(self) -> JsonType:
-        payload = [
-            {
-                "event": "minute-watched",
-                "properties": {
-                    "broadcast_id": str(self.broadcast_id),
-                    "channel_id": str(self.channel.id),
-                    "channel": self.channel._login,
-                    "hidden": False,
-                    "live": True,
-                    "location": "channel",
-                    "logged_in": True,
-                    "muted": False,
-                    "player": "site",
-                    "user_id": self.channel._twitch._auth_state.user_id,
-                },
-            }
-        ]
-        return {"data": (b64encode(json_minify(payload).encode("utf8"))).decode("utf8")}
-
     @property
-    def _gql_payload(self) -> GQLQuery:
+    def _spade_payload(self) -> JsonType:
         payload = [
             {
                 "event": "minute-watched",
@@ -81,20 +58,16 @@ class Stream:
                     "hidden": False,
                     "is_live": True,
                     "live": True,
+                    "location": "channel",
                     "logged_in": True,
                     "minutes_logged": 1,
                     "muted": False,
-                    "user_id": self.channel._twitch._auth_state.user_id,
+                    "player": "site",
+                    "user_id": int(self.channel._twitch._auth_state.user_id),
                 },
             }
         ]
-        return GQLQuery(
-            (
-                "\n mutation SendEvents($input: SendSpadeEventsInput!) "
-                "{\n sendSpadeEvents(input: $input) {\n statusCode\n}\n}\n"
-            ),
-            b64encode(gzip.compress(json_minify(payload).encode("utf8"))).decode("utf8"),
-        )
+        return {"data": (b64encode(json_minify(payload).encode("utf8"))).decode("utf8")}
 
     @classmethod
     def from_get_stream(cls, channel: Channel, channel_data: JsonType) -> Stream:
@@ -502,8 +475,7 @@ class Channel:
         async with self._twitch.request("HEAD", stream_chunk_url) as head_response:
             return head_response.status == 200
 
-    # NOTE: This is currently unused.
-    async def _send_watch_spade(self) -> bool:
+    async def send_watch(self) -> bool:
         if self._stream is None:
             return False
         if self._spade_url is None:
@@ -513,14 +485,5 @@ class Channel:
                 "POST", self._spade_url, data=self._stream._spade_payload
             ) as response:
                 return response.status == 204
-        except RequestException:
-            return False
-
-    async def send_watch(self) -> bool:
-        if self._stream is None:
-            return False
-        try:
-            watch_response: JsonType = await self._twitch.gql_request(self._stream._gql_payload)
-            return watch_response["data"]["sendSpadeEvents"]["statusCode"] == 204
         except RequestException:
             return False
