@@ -109,6 +109,24 @@ class TestSpadeWatchEvents(unittest.IsolatedAsyncioTestCase):
         mock_get_spade_url.assert_awaited_once()
         self.assertEqual(channel._spade_url, "https://spade.twitch.tv/fetched")
 
+    async def test_send_watch_returns_false_when_spade_url_fetch_fails(self):
+        from src.exceptions import MinerException
+
+        twitch = MagicMock()
+        twitch.gui.channels = MagicMock()
+        twitch._auth_state.user_id = "12345"
+        twitch.request = MagicMock(return_value=_FakeRequestCM(_FakeResponse(204)))
+        channel = Channel(twitch, id=67890, login="example_channel")
+        channel._stream = Stream(
+            channel,
+            id=24680,
+            game={"id": "13579", "name": "Example Game"},
+            viewers=100,
+            title="Example Stream",
+        )
+
+        with patch.object(Channel, "get_spade_url", AsyncMock(side_effect=MinerException("fail"))):
+            self.assertFalse(await channel.send_watch())
     async def test_send_watch_returns_false_for_non_204_status(self):
         twitch = MagicMock()
         twitch.gui.channels = MagicMock()
