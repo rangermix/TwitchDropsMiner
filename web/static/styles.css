@@ -1486,6 +1486,118 @@ header h1 {
     .inventory-grid {
         grid-template-columns: 1fr;
     }
+
+    /* "Selected Games" / "Available Games" were still forced side-by-side here,
+       squeezing both panels to ~180px and wrapping their headings mid-word. */
+    .games-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    header {
+        padding: 15px;
+    }
+
+    .header-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    header h1 {
+        font-size: 1.4em;
+    }
+
+    .header-controls {
+        width: 100%;
+    }
+
+    .status-bar {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 8px 12px;
+    }
+
+    .tab-button {
+        padding: 10px 6px;
+        font-size: 14px;
+    }
+
+    .panel,
+    .settings-section,
+    .inventory-filters {
+        padding: 15px;
+    }
+
+    .filter-controls {
+        gap: 10px;
+    }
+
+    .filter-search {
+        flex-wrap: wrap;
+    }
+
+    .inventory-grid {
+        column-width: 280px;
+        column-gap: 12px;
+    }
+
+    .help-content {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.2em;
+    }
+
+    .language-selector {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .status-bar {
+        font-size: 12px;
+    }
+
+    .mode-badge {
+        margin-left: 0;
+    }
+
+    .oauth-code {
+        font-size: 22px;
+        letter-spacing: 2px;
+        padding: 15px;
+    }
+
+    .tabs {
+        flex-wrap: wrap;
+    }
+
+    .tab-button {
+        flex: 1 1 40%;
+    }
+
+    /* column-width switches to single-column below this anyway since no card
+       fits two 280px columns at this viewport, but drop the min width so a
+       narrower phone doesn't get a horizontal scrollbar from the column box. */
+    .inventory-grid {
+        column-width: auto;
+    }
+
+    .filter-separator {
+        display: none;
+    }
+
+    #clear-filters-btn {
+        width: 100%;
+    }
 }
 
 /* Footer */
