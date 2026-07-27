@@ -6,7 +6,6 @@ import json
 import logging
 import re
 from base64 import b64encode
-from functools import cached_property
 from typing import TYPE_CHECKING, Any, SupportsInt, cast
 
 import aiohttp
@@ -45,7 +44,7 @@ class Stream:
         self.title: str = title
         self._stream_url: URLType | None = None
 
-    @cached_property
+    @property
     def _spade_payload(self) -> JsonType:
         payload = [
             {

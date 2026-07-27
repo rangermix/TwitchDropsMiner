@@ -59,6 +59,28 @@ class TestGQLWatchEvents(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(properties["user_id"], 12345)
         self.assertRegex(properties["client_time"], r"^\d{4}-\d{2}-\d{2}T.*Z$")
 
+    def test_stream_spade_payload_is_not_cached(self):
+        twitch = MagicMock()
+        twitch._auth_state.user_id = 12345
+        channel = MagicMock(spec=Channel)
+        channel.id = 67890
+        channel._login = "example_channel"
+        channel._twitch = twitch
+        stream = Stream(
+            channel,
+            id=24680,
+            game={"id": "13579", "name": "Example Game"},
+            viewers=100,
+            title="Example Stream",
+        )
+
+        first_payload = stream._spade_payload
+        first_payload["data"] = "mutated"
+
+        second_payload = stream._spade_payload
+
+        self.assertNotEqual(second_payload["data"], "mutated")
+
     async def test_send_watch_uses_gql_and_returns_true_for_204(self):
         twitch = MagicMock()
         twitch.gui.channels = MagicMock()
