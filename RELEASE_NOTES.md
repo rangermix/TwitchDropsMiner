@@ -1,3 +1,23 @@
+# Release Notes - v1.2.5
+
+This update brings a major boost to drop progress reliability, a fresh look for your inventory, and significant improvements to the mobile experience. We’ve also streamlined our development pipeline to ensure faster and more stable future updates.
+
+### 🎨 Web Dashboard Improvements
+- **Inventory List View**: You can now choose between the classic masonry grid or a new horizontal row layout for your campaigns. Head over to the **Settings** tab to toggle the "Inventory List View" and see your campaign info and drops organized side-by-side.
+- **Mobile Responsiveness**: We’ve overhauled the layout for phones and small tablets. The dashboard now gracefully stacks headers, tab bars, and panels, ensuring you can manage your drops on the go without any annoying horizontal scrolling.
+
+### 🛠️ Core Functionality
+- **Restored Drop Progress**: We’ve updated how watch events are sent to Twitch. By switching to a direct Spade POST method, we’ve bypassed the broken GraphQL mutation, ensuring your watch time is correctly counted toward those drops again!
+- **Streamlined Data Handling**: Removed stale Spade payload caching in the `Stream` module to keep data fresh and prevent potential tracking issues.
+
+### 🐛 Bug Fixes
+- **Settings Persistence**: Fixed an issue where the "Inventory List View" checkbox would reset itself due to API model validation; your preferences will now save correctly.
+- **UI Scaling**: Fixed overlapping text and squeezed elements on small screens, specifically in the OAuth and campaign card sections.
+
+### 📚 Maintenance & Credits
+- **Contributor Automation**: Added new testing and automation tools to speed up our development process and ensure higher code quality.
+- **Special Thanks**: A shoutout to **Fengqing Liu** for their contributions to this release!
+
 # Release Notes - v1.2.4
 
 This update ensures compatibility with the latest Twitch systems and modernizes our environment requirements for a smoother experience. We’ve updated essential game directory hashes and bumped our Python requirements to keep the miner running at peak performance.
