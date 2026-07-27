@@ -65,6 +65,29 @@ class TestSpadeWatchEvents(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(properties["user_id"], int)
         self.assertRegex(properties["client_time"], r"^\d{4}-\d{2}-\d{2}T.*Z$")
 
+    def test_stream_spade_payload_is_not_cached(self):
+        twitch = MagicMock()
+        twitch._auth_state.user_id = 12345
+        channel = MagicMock(spec=Channel)
+        channel.id = 67890
+        channel._login = "example_channel"
+        channel._twitch = twitch
+        stream = Stream(
+            channel,
+            id=24680,
+            game={"id": "13579", "name": "Example Game"},
+            viewers=100,
+            title="Example Stream",
+        )
+
+        first_payload = stream._spade_payload
+        second_payload = stream._spade_payload
+
+        self.assertIsNot(first_payload, second_payload)
+        first_payload["data"] = "mutated"
+
+        self.assertNotEqual(second_payload["data"], "mutated")
+
     async def test_send_watch_posts_to_spade_url_and_returns_true_for_204(self):
         twitch = MagicMock()
         twitch.gui.channels = MagicMock()
