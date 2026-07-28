@@ -363,12 +363,10 @@ function renderChannels() {
     const gamesToWatch = state.settings.games_to_watch || [];
     const gamesToWatchSet = new Set(gamesToWatch);
 
-    // Filter channels to only include those playing games in the watch list
+    // Filter channels to selected games unless all eligible campaigns are enabled.
     const filteredChannels = channels.filter(channel => {
         const gameName = channel.game;
-        // Include channels if: they have a game AND it's in the watch list
-        // OR if the watch list is empty (show all)
-        return gamesToWatch.length === 0 || (gameName && gamesToWatchSet.has(gameName));
+        return !state.settings.priority_list_only || gamesToWatch.length === 0 || (gameName && gamesToWatchSet.has(gameName));
     });
 
     if (filteredChannels.length === 0) {
@@ -1055,6 +1053,7 @@ function updateSettingsUI(settings) {
     state.settings = settings;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('inventory-list-view').checked = settings.inventory_list_view || false;
+    document.getElementById('priority-list-only').checked = settings.priority_list_only !== false;
     applyInventoryViewMode(settings.inventory_list_view || false);
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
@@ -1520,6 +1519,7 @@ async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
         inventory_list_view: document.getElementById('inventory-list-view').checked,
+        priority_list_only: document.getElementById('priority-list-only').checked,
         language: document.getElementById('language').value,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
@@ -1707,6 +1707,14 @@ function applyTranslations(t) {
             darkModeLabel.textContent = '';
             darkModeLabel.appendChild(checkbox);
             darkModeLabel.appendChild(document.createTextNode(' ' + t.gui.settings.general.dark_mode));
+        }
+
+        const priorityListOnlyLabel = settingsTab.querySelector('label:has(#priority-list-only)');
+        if (priorityListOnlyLabel && t.gui.settings.priority_list_only) {
+            const checkbox = priorityListOnlyLabel.querySelector('input');
+            priorityListOnlyLabel.textContent = '';
+            priorityListOnlyLabel.appendChild(checkbox);
+            priorityListOnlyLabel.appendChild(document.createTextNode(' ' + t.gui.settings.priority_list_only));
         }
 
         const connQualityLabel = settingsTab.querySelector('label:has(#connection-quality)');
@@ -1967,6 +1975,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('inventory-list-view').addEventListener('change', (e) => {
         // Apply the view mode immediately for instant feedback
         applyInventoryViewMode(e.target.checked);
+        saveSettings();
+    });
+    document.getElementById('priority-list-only').addEventListener('change', (e) => {
+        state.settings.priority_list_only = e.target.checked;
+        renderChannels();
         saveSettings();
     });
     document.getElementById('language').addEventListener('change', saveSettings);

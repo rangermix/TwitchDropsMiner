@@ -75,6 +75,9 @@ class SettingsManager:
             "games_to_watch", settings_data.get("games_to_watch"), True
         )
         should_trigger_update |= self.check_and_update_setting(
+            "priority_list_only", settings_data.get("priority_list_only"), True
+        )
+        should_trigger_update |= self.check_and_update_setting(
             "dark_mode", settings_data.get("dark_mode")
         )
         should_trigger_update |= self.check_and_update_setting(

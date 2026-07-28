@@ -21,6 +21,7 @@ dashboard. It sends Twitch watch events without downloading the stream itself.
 - **Low-bandwidth mining** — progresses timed drops without downloading video or audio
 - **Automatic campaign discovery** — detects active and upcoming drop campaigns
 - **Smart channel selection** — prioritizes eligible channels, preferred games, and viewers
+- **Flexible campaign mining** — either limit mining to selected games or watch all eligible campaigns with selected games prioritized
 - **Persistent sessions** — saves OAuth login state between runs
 - **Web dashboard** — manages campaigns, channels, inventory, settings, and login status
 - **Headless deployment** — runs locally, remotely, or in Docker without a desktop GUI
@@ -71,7 +72,9 @@ Then open <http://localhost:8080>.
 2. Wait for the miner to discover available campaigns.
 3. Choose the games you want to prioritize. You can also search for a game, select
    **Add Game**, and then select **Reload**.
-4. Leave the miner running while it selects eligible channels and tracks drop progress.
+4. Disable **Priority list only** in Settings if you want the selected
+   games to act as priorities instead of a strict filter.
+5. Leave the miner running while it selects eligible channels and tracks drop progress.
 
 > [!NOTE]
 > Your Twitch account must be linked to the relevant game accounts. Review your
