@@ -133,6 +133,7 @@
             "reload": "Przeładuj",
             "games_to_watch": "Gry do oglądania",
             "games_help": "Wybierz gry do oglądania. Kolejność ma znaczenie - przeciągnij, aby zmienić priorytet (góra = najwyższy priorytet).",
+            "priority_list_only": "Priority list only (mine selected games only)",
             "search_games": "Szukaj gier...",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",

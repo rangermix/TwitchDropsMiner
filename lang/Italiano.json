@@ -132,6 +132,7 @@
             "reload": "Ricarica",
             "games_to_watch": "Giochi da guardare",
             "games_help": "Seleziona i giochi da guardare. L'ordine è importante - trascina per riordinare la priorità (in alto = priorità massima).",
+            "priority_list_only": "Priority list only (mine selected games only)",
             "search_games": "Cerca giochi...",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",

@@ -132,6 +132,7 @@
             "reload": "Muat Ulang",
             "games_to_watch": "Game untuk Ditonton",
             "games_help": "Pilih game untuk ditonton. Urutan penting - seret untuk mengatur ulang prioritas (atas = prioritas tertinggi).",
+            "priority_list_only": "Priority list only (mine selected games only)",
             "search_games": "Cari game...",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",

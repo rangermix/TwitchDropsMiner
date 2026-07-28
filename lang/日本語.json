@@ -132,6 +132,7 @@
             "reload": "再読み込み",
             "games_to_watch": "視聴するゲーム",
             "games_help": "視聴するゲームを選択してください。順序が重要です - ドラッグして優先順位を並べ替えます（上 = 最高優先度）。",
+            "priority_list_only": "Priority list only (mine selected games only)",
             "search_games": "ゲームを検索...",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",

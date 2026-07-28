@@ -132,6 +132,7 @@
             "reload": "Herladen",
             "games_to_watch": "Games om te kijken",
             "games_help": "Selecteer games om te kijken. Volgorde is belangrijk - sleep om prioriteit te wijzigen (bovenaan = hoogste prioriteit).",
+            "priority_list_only": "Priority list only (mine selected games only)",
             "search_games": "Zoek games...",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",

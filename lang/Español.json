@@ -130,6 +130,7 @@
             "reload_campaigns": "Recargar campañas",
             "games_to_watch": "Juegos para ver",
             "games_help": "Selecciona los juegos a ver. El orden importa - arrastra para reordenar la prioridad (arriba = mayor prioridad).",
+            "priority_list_only": "Priority list only (mine selected games only)",
             "search_games": "Buscar juegos...",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",
