@@ -12,10 +12,12 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         update_data = {
             "inventory_filters": {"show_upcoming": True},
             "mining_benefits": {"BADGE": True},
+            "priority_list_only": True,
         }
         model = SettingsUpdate(**update_data)
         self.assertEqual(model.inventory_filters, update_data["inventory_filters"])
         self.assertEqual(model.mining_benefits, update_data["mining_benefits"])
+        self.assertEqual(model.priority_list_only, update_data["priority_list_only"])
 
     async def test_settings_manager_networking(self):
         # Mock dependencies
@@ -25,6 +27,7 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         mock_settings.inventory_filters = {}
         mock_settings.mining_benefits = {}
         mock_settings.games_to_watch = []
+        mock_settings.priority_list_only = False
 
         mock_console = MagicMock()
         mock_callback = MagicMock()
@@ -53,6 +56,11 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         # 3. Update Games to Watch (SHOULD trigger callback)
         games = ["Game 1"]
         manager.update_settings({"games_to_watch": games})
+        mock_callback.assert_called_once()
+        mock_callback.reset_mock()
+
+        # 4. Update Priority List Only (SHOULD trigger callback)
+        manager.update_settings({"priority_list_only": True})
         mock_callback.assert_called_once()
 
 
