@@ -15,6 +15,7 @@ This patch release makes inventory filtering more predictable and keeps version 
 ### 🔗 Issues and Pull Requests
 - Resolved [#51](https://github.com/rangermix/TwitchDropsMiner/issues/51) and [#52](https://github.com/rangermix/TwitchDropsMiner/issues/52) in [#79](https://github.com/rangermix/TwitchDropsMiner/pull/79).
 - PR #79 supersedes the earlier, closed [#60](https://github.com/rangermix/TwitchDropsMiner/pull/60).
+- Release-version consistency and rollback safety were fixed in [#80](https://github.com/rangermix/TwitchDropsMiner/pull/80).
 
 ### 🙌 Contributors
 - [@rangermix](https://github.com/rangermix) — implementation, migration, tests, and release maintenance.
