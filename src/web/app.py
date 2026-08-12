@@ -12,6 +12,8 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from src.version import __version__
+
 
 if TYPE_CHECKING:
     import uvicorn
@@ -23,7 +25,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("TwitchDrops")
 
 # Create FastAPI app
-app = FastAPI(title="Twitch Drops Miner Web", version="1.0.0")
+app = FastAPI(title="Twitch Drops Miner Web", version=__version__)
 
 # Add CORS middleware
 app.add_middleware(

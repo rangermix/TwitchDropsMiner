@@ -68,8 +68,20 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install ".[dev]"
 
+      - name: Check uv lockfile
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+
+      - name: Validate uv lockfile
+        run: uv lock --check
+
       - name: Run Python tests
         run: python -m pytest tests/
+
+      - name: Run release script tests
+        run: |
+          bash .github/scripts/test/test_validate_semver.sh
+          bash .github/scripts/test/test_github_output.sh
+          bash .github/scripts/test/test_extract_version.sh
 
   validate:
     name: Validate Language Files

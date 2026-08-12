@@ -1,3 +1,25 @@
+# Release Notes - v1.2.6
+
+This patch release makes inventory filtering more predictable and keeps version metadata synchronized across source and packaged installations.
+
+### 🐛 Inventory Filter Fixes
+- **Finished Campaigns**: Fully claimed campaigns now stay hidden until the **Finished** filter is selected.
+- **Not Linked Filtering**: **Not Linked** now narrows the selected campaign statuses instead of broadening them, so combinations such as **Active + Not Linked** behave as expected.
+- **Live Completion Updates**: Campaigns disappear as soon as their final drop is claimed instead of waiting for an inventory reload.
+- **Settings Compatibility**: Existing saved filter settings migrate safely without unexpectedly restricting the inventory.
+
+### ⚙️ Release Reliability
+- **Consistent Versions**: Release automation now updates and validates `src/version.py`, `pyproject.toml`, and `uv.lock` together before publishing a tag or Docker image.
+- **Expanded Validation**: Release-script contracts and frontend filter behavior now run in continuous integration.
+
+### 🔗 Issues and Pull Requests
+- Resolved [#51](https://github.com/rangermix/TwitchDropsMiner/issues/51) and [#52](https://github.com/rangermix/TwitchDropsMiner/issues/52) in [#79](https://github.com/rangermix/TwitchDropsMiner/pull/79).
+- PR #79 supersedes the earlier, closed [#60](https://github.com/rangermix/TwitchDropsMiner/pull/60).
+
+### 🙌 Contributors
+- [@rangermix](https://github.com/rangermix) — implementation, migration, tests, and release maintenance.
+- [@SimpliAj](https://github.com/SimpliAj) — original Inventory-filter proposal in PR #60.
+
 # Release Notes - v1.2.5
 
 This update brings a major boost to drop progress reliability, a fresh look for your inventory, and significant improvements to the mobile experience. We’ve also streamlined our development pipeline to ensure faster and more stable future updates.

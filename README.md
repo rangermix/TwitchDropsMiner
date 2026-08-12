@@ -169,4 +169,5 @@ This fork is maintained with AI-assisted development tools. Changes are validate
 automated tests and code-quality checks, but users should still review updates before
 deploying them. The validation suite includes GraphQL watch events and batched channel
 discovery, alongside settings, translation, and frontend safety checks. Use the software
-responsibly.
+responsibly. Release automation verifies that the runtime, package, and lockfile versions
+match before publishing tags and Docker images.
