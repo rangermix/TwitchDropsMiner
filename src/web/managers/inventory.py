@@ -29,6 +29,14 @@ class InventoryManager:
         self._campaigns: dict[str, dict[str, Any]] = {}
         self._batch_mode: bool = False
 
+    @staticmethod
+    def _campaign_progress(campaign: DropsCampaign) -> dict[str, int]:
+        """Return the live drop counts used by inventory filters."""
+        return {
+            "claimed_drops": campaign.claimed_drops,
+            "total_drops": campaign.total_drops,
+        }
+
     def clear(self):
         """Clear all campaigns from inventory."""
         self._campaigns.clear()
@@ -82,8 +90,7 @@ class InventoryManager:
             "active": campaign.active,
             "upcoming": campaign.upcoming,
             "expired": campaign.expired,
-            "claimed_drops": campaign.claimed_drops,
-            "total_drops": campaign.total_drops,
+            **self._campaign_progress(campaign),
             "drops": drops_data,
         }
 
@@ -101,6 +108,9 @@ class InventoryManager:
         """
         campaign_id = drop.campaign.id
         if campaign_id in self._campaigns:
+            campaign_progress = self._campaign_progress(drop.campaign)
+            self._campaigns[campaign_id].update(campaign_progress)
+
             # Find and update the drop in the campaign
             for drop_data in self._campaigns[campaign_id]["drops"]:
                 if drop_data["id"] == drop.id:
@@ -115,7 +125,12 @@ class InventoryManager:
                     )
                     asyncio.create_task(
                         self._broadcaster.emit(
-                            "drop_update", {"campaign_id": campaign_id, "drop": drop_data}
+                            "drop_update",
+                            {
+                                "campaign_id": campaign_id,
+                                "campaign": campaign_progress,
+                                "drop": drop_data,
+                            },
                         )
                     )
                     break

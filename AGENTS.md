@@ -152,7 +152,8 @@ lang/                # Translation JSON files (19 languages)
 - Proxy support (including verification)
 - Logging and dump flags from command-line arguments
 - Persistence to JSON file (`settings.json`) in DATA_DIR
-- Inventory filters (Status, Benefit Type, Game Search)
+- Inventory filters (Status, Benefit Type, Game Search); Active/Upcoming/Expired use
+  OR semantics, Not Linked narrows the result, and Finished opts claimed campaigns in
 
 ### State Machine Flow
 
@@ -309,6 +310,7 @@ The application requires:
 - Python 3.12+
 - Virtual environment at `env/` (must be activated before running commands)
 - Dependencies from `pyproject.toml` (includes FastAPI, uvicorn, Socket.IO)
+- Node.js 24 for frontend behavior tests
 
 Docker deployment:
 
@@ -330,9 +332,10 @@ The project includes a test suite in the `tests/` directory:
 source env/bin/activate && python -m pytest tests/
 ```
 
-The suite covers settings and proxy behavior, API filtering, GraphQL watch events,
-batched channel discovery, translation consistency, frontend DOM safety, and contributor
-README automation.
+The suite covers settings and proxy behavior, inventory-filter behavior, API filtering,
+GraphQL watch events, batched channel discovery, translation consistency, frontend DOM
+safety, and contributor README automation. Inventory-filter behavior tests use Node.js;
+the validation workflow provisions Node 24 before running pytest.
 
 ### Continuous Integration
 

@@ -73,6 +73,10 @@ Then open <http://localhost:8080>.
    **Add Game**, and then select **Reload**.
 4. Leave the miner running while it selects eligible channels and tracks drop progress.
 
+Inventory filters combine **Active**, **Upcoming**, and **Expired** as alternatives.
+**Not Linked** narrows that status result, while fully claimed campaigns stay hidden
+until **Finished** is selected.
+
 > [!NOTE]
 > Your Twitch account must be linked to the relevant game accounts. Review your
 > [Twitch Drops campaigns](https://www.twitch.tv/drops/campaigns) before mining.

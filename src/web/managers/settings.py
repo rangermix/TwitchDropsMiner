@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from src.config.settings import default_settings
 from src.i18n.translator import _
 from src.models.game import Game
+from src.utils import merge_json
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -95,9 +98,10 @@ class SettingsManager:
             "minimum_refresh_interval_minutes",
             settings_data.get("minimum_refresh_interval_minutes"),
         )
-        should_trigger_update |= self.check_and_update_setting(
-            "inventory_filters", settings_data.get("inventory_filters")
-        )
+        inventory_filters = settings_data.get("inventory_filters")
+        if inventory_filters is not None:
+            inventory_filters = self._normalize_inventory_filters(inventory_filters)
+        should_trigger_update |= self.check_and_update_setting("inventory_filters", inventory_filters)
         should_trigger_update |= self.check_and_update_setting(
             "inventory_list_view", settings_data.get("inventory_list_view")
         )
@@ -110,6 +114,17 @@ class SettingsManager:
 
         if should_trigger_update and self._on_change:
             self._on_change()
+
+    def _normalize_inventory_filters(self, updates: dict[str, Any]) -> dict[str, Any]:
+        """Merge partial filter updates and discard legacy or unknown keys."""
+        current: dict[str, Any] = copy.deepcopy(dict(self._settings.inventory_filters))
+        current.pop("show_not_linked", None)
+        current.update(updates)
+        current.pop("show_not_linked", None)
+        template = default_settings["inventory_filters"]
+        assert isinstance(template, dict)
+        merge_json(current, template)
+        return current
 
     def check_and_update_setting(
         self,

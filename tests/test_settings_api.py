@@ -1,7 +1,8 @@
+import asyncio
 import unittest
 from unittest.mock import AsyncMock, MagicMock
 
-from src.config.settings import Settings
+from src.config.settings import Settings, default_settings
 from src.web.app import SettingsUpdate
 from src.web.managers.settings import SettingsManager
 
@@ -16,6 +17,35 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         model = SettingsUpdate(**update_data)
         self.assertEqual(model.inventory_filters, update_data["inventory_filters"])
         self.assertEqual(model.mining_benefits, update_data["mining_benefits"])
+
+    async def test_inventory_filter_updates_merge_and_discard_legacy_key(self):
+        mock_broadcaster = AsyncMock()
+        mock_settings = MagicMock(spec=Settings)
+        mock_settings.inventory_filters = {
+            "game_name_search": ["Game A"],
+            "show_active": False,
+            "show_benefit_badge": True,
+            "show_benefit_emote": True,
+            "show_benefit_item": True,
+            "show_benefit_other": True,
+            "show_expired": False,
+            "show_finished": False,
+            "show_not_linked": True,
+            "show_upcoming": True,
+        }
+        manager = SettingsManager(mock_broadcaster, mock_settings, MagicMock())
+
+        manager.update_settings(
+            {"inventory_filters": {"show_active": True, "show_not_linked": True}}
+        )
+        await asyncio.sleep(0)
+
+        filters = mock_settings.inventory_filters
+        self.assertTrue(filters["show_active"])
+        self.assertEqual(filters["game_name_search"], ["Game A"])
+        self.assertFalse(filters["show_only_not_linked"])
+        self.assertNotIn("show_not_linked", filters)
+        mock_settings.save.assert_called_once()
 
     async def test_settings_manager_networking(self):
         # Mock dependencies
@@ -37,10 +67,12 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         inv_filters = {"show_upcoming": False}
         manager.update_settings({"inventory_filters": inv_filters})
         mock_callback.assert_not_called()  # inventory_filters has should_trigger_update=False
-        self.assertEqual(mock_settings.inventory_filters, inv_filters)
-        mock_console.print.assert_called_with(
-            "Setting changed: inventory_filters = {'show_upcoming': False}"
+        self.assertFalse(mock_settings.inventory_filters["show_upcoming"])
+        self.assertEqual(
+            set(mock_settings.inventory_filters),
+            set(default_settings["inventory_filters"]),
         )
+        self.assertIn("Setting changed: inventory_filters", mock_console.print.call_args.args[0])
 
         # 2. Update Mining Benefits (SHOULD trigger callback)
         benefits = {"BADGE": False}

@@ -18,7 +18,7 @@ class InventoryFilters(TypedDict):
     show_benefit_other: bool
     show_expired: bool
     show_finished: bool
-    show_not_linked: bool
+    show_only_not_linked: bool
     show_upcoming: bool
 
 
@@ -36,7 +36,7 @@ default_settings = {
         "show_benefit_other": True,
         "show_expired": False,
         "show_finished": False,
-        "show_not_linked": True,
+        "show_only_not_linked": False,
         "show_upcoming": True,
     },
     "inventory_list_view": False,

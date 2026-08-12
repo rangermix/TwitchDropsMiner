@@ -222,7 +222,7 @@ socket.on('inventory_batch_update', (data) => {
 });
 
 socket.on('drop_update', (data) => {
-    updateDrop(data.campaign_id, data.drop);
+    updateDrop(data.campaign_id, data.drop, data.campaign);
 });
 
 socket.on('login_required', () => {
@@ -562,9 +562,11 @@ function clearInventory() {
     renderInventory();
 }
 
-function updateDrop(campaignId, dropData) {
-    if (state.campaigns[campaignId]) {
-        const drops = state.campaigns[campaignId].drops;
+function updateDrop(campaignId, dropData, campaignData = {}) {
+    const campaign = state.campaigns[campaignId];
+    if (campaign) {
+        Object.assign(campaign, campaignData);
+        const drops = campaign.drops;
         const index = drops.findIndex(d => d.id === dropData.id);
         if (index !== -1) {
             drops[index] = dropData;
@@ -579,7 +581,7 @@ function getInventoryFilters() {
     // Get filter state from UI checkboxes and selected games array
     return {
         show_active: document.getElementById('filter-active')?.checked || false,
-        show_not_linked: document.getElementById('filter-not-linked')?.checked || false,
+        show_only_not_linked: document.getElementById('filter-not-linked')?.checked || false,
         show_upcoming: document.getElementById('filter-upcoming')?.checked || false,
         show_expired: document.getElementById('filter-expired')?.checked || false,
         show_finished: document.getElementById('filter-finished')?.checked || false,
@@ -594,35 +596,24 @@ function getInventoryFilters() {
 
 
 function campaignMatchesFilters(campaign, filters) {
-    // Calculate "finished" status: all drops claimed
     const isFinished = campaign.total_drops > 0 && campaign.claimed_drops === campaign.total_drops;
 
-    // Check if any filter is enabled
     const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
-    const anyFilterEnabled = filters.show_active || filters.show_not_linked ||
-        filters.show_upcoming || filters.show_expired ||
-        filters.show_finished || hasGameFilter;
 
-    // If no filters enabled, show all campaigns
-    if (!anyFilterEnabled) {
-        return true;
-    }
+    // Finished campaigns are excluded unless the user explicitly includes them.
+    if (!filters.show_finished && isFinished) return false;
 
-    // Check status filters (OR logic - campaign matches if ANY checked filter applies)
-    let statusMatch = false;
+    // Link state narrows the status result instead of joining its OR group.
+    if (filters.show_only_not_linked && campaign.linked) return false;
 
-    if (filters.show_active && campaign.active) statusMatch = true;
-    if (filters.show_not_linked && !campaign.linked) statusMatch = true;
-    if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
-    if (filters.show_expired && campaign.expired) statusMatch = true;
-    if (filters.show_finished && isFinished) statusMatch = true;
+    // Active, upcoming, and expired remain OR-based status filters.
+    const hasStatusFilters = filters.show_active || filters.show_upcoming || filters.show_expired;
 
-    // If status filters are enabled but campaign doesn't match any, filter it out
-    const hasStatusFilters = filters.show_active || filters.show_not_linked ||
-        filters.show_upcoming || filters.show_expired ||
-        filters.show_finished;
-    if (hasStatusFilters && !statusMatch) {
-        return false;
+    if (hasStatusFilters) {
+        const statusMatch = (filters.show_active && campaign.active) ||
+            (filters.show_upcoming && campaign.upcoming) ||
+            (filters.show_expired && campaign.expired);
+        if (!statusMatch) return false;
     }
 
     // Check game name filter (AND logic with status filters, OR logic among selected games)
@@ -1092,7 +1083,7 @@ function updateSettingsUI(settings) {
     // Restore inventory filters from settings
     if (settings.inventory_filters) {
         document.getElementById('filter-active').checked = settings.inventory_filters.show_active || false;
-        document.getElementById('filter-not-linked').checked = settings.inventory_filters.show_not_linked || false;
+        document.getElementById('filter-not-linked').checked = settings.inventory_filters.show_only_not_linked || false;
         document.getElementById('filter-upcoming').checked = settings.inventory_filters.show_upcoming || false;
         document.getElementById('filter-expired').checked = settings.inventory_filters.show_expired || false;
         document.getElementById('filter-finished').checked = settings.inventory_filters.show_finished || false;
