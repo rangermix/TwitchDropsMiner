@@ -132,6 +132,7 @@
             "reload": "إعادة تحميل",
             "games_to_watch": "ألعاب للمشاهدة",
             "games_help": "حدد الألعاب للمشاهدة. الترتيب مهم - اسحب لإعادة ترتيب الأولوية (الأعلى = أعلى أولوية).",
+            "priority_list_only": "قائمة الأولوية فقط (تعدين الألعاب المحددة فقط)",
             "search_games": "البحث عن الألعاب...",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",

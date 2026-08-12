@@ -132,6 +132,7 @@
             "reload": "重新載入",
             "games_to_watch": "觀看遊戲",
             "games_help": "選擇要觀看的遊戲。順序很重要 - 拖曳以重新排序優先級（頂部 = 最高優先級）。",
+            "priority_list_only": "僅優先清單（僅挖掘所選遊戲）",
             "search_games": "搜尋遊戲...",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",

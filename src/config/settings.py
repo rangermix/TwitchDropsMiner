@@ -27,6 +27,7 @@ default_settings = {
     "dark_mode": False,
     "games_to_watch": [],
     "language": DEFAULT_LANG,
+    "priority_list_only": True,
     "inventory_filters": {
         "game_name_search": [],
         "show_active": False,
@@ -57,6 +58,7 @@ class Settings:
     dark_mode: bool
     games_to_watch: list[str]
     language: str
+    priority_list_only: bool
     inventory_filters: InventoryFilters
     inventory_list_view: bool
     minimum_refresh_interval_minutes: int

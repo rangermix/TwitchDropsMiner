@@ -132,6 +132,7 @@
             "reload": "Tekrar yükle",
             "games_to_watch": "İzlenecek Oyunlar",
             "games_help": "İzlenecek oyunları seçin. Sıralama önemlidir - önceliği yeniden sıralamak için sürükleyin (üst = en yüksek öncelik).",
+            "priority_list_only": "Yalnızca öncelik listesi (sadece seçili oyunları kaz)",
             "search_games": "Oyun ara...",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",

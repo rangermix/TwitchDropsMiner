@@ -243,11 +243,12 @@ class Twitch:
                         for drop in campaign.drops:
                             if drop.can_claim:
                                 await drop.claim()
-                # figure out which games we want based on games_to_watch whitelist
+                # figure out which games we want based on selected priorities
                 self.wanted_games.clear()
                 games_to_watch: list[str] = self.settings.games_to_watch
                 next_hour: datetime = datetime.now(timezone.utc) + timedelta(hours=1)
                 logger.info("games_to_watch: %s", games_to_watch)
+                logger.info("priority_list_only: %s", self.settings.priority_list_only)
                 logger.info(
                     "inventory has %d eligible campaigns",
                     sum(1 for c in self.inventory if c.eligible),
@@ -259,7 +260,8 @@ class Twitch:
                     self._output_campaign_mapping(next_hour)
 
                 logger.info("Building wanted games list")
-                # Build wanted_games list preserving the order from games_to_watch
+                # Build wanted_games list preserving selected priority order,
+                # optionally appending all other eligible games as fallback.
                 self.wanted_games = self._stream_selector.get_wanted_games(
                     self.settings, self.inventory
                 )

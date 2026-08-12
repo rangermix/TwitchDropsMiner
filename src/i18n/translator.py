@@ -176,6 +176,7 @@ class GUISettings(TypedDict):
     reload_campaigns: str
     games_to_watch: str
     games_help: str
+    priority_list_only: str
     search_games: str
     add_game: str
     add_game_hint: str

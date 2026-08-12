@@ -129,6 +129,7 @@
             "reload": "Genindlæs",
             "games_to_watch": "Spil at se",
             "games_help": "Vælg spil at se. Rækkefølgen er vigtig - træk for at ændre prioritet (top = højeste prioritet).",
+            "priority_list_only": "Kun prioritetsliste (minér kun valgte spil)",
             "search_games": "Søg spil...",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",

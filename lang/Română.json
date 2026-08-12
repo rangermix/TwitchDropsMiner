@@ -132,6 +132,7 @@
             "reload": "Reîncarcă",
             "games_to_watch": "Jocuri de urmărit",
             "games_help": "Selectați jocurile de urmărit. Ordinea contează - trageți pentru a reordona prioritatea (sus = prioritate maximă).",
+            "priority_list_only": "Doar lista de priorități (minează doar jocurile selectate)",
             "search_games": "Căutați jocuri...",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",

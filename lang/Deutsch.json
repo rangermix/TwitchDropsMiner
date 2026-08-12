@@ -130,6 +130,7 @@
             "reload_campaigns": "Kampagnen neu laden",
             "games_to_watch": "Spiele zum Ansehen",
             "games_help": "Wählen Sie Spiele zum Ansehen aus. Die Reihenfolge ist wichtig - ziehen Sie, um die Priorität zu ändern (oben = höchste Priorität).",
+            "priority_list_only": "Nur Prioritätsliste (nur ausgewählte Spiele minen)",
             "search_games": "Spiele suchen...",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",

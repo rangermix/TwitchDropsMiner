@@ -129,6 +129,7 @@
             "reload": "刷新",
             "games_to_watch": "观看游戏",
             "games_help": "选择要观看的游戏。顺序很重要 - 拖动以重新排序优先级（顶部 = 最高优先级）。",
+            "priority_list_only": "仅优先列表（仅挖掘所选游戏）",
             "search_games": "搜索游戏...",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",

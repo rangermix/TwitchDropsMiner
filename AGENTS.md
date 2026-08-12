@@ -147,6 +147,7 @@ lang/                # Translation JSON files (19 languages)
 
 - Games to watch list (auto-populated from available campaigns if empty)
 - Games can also be added manually from the web settings search box
+- Optional priority-list-only setting can restrict mining to selected games or treat selected games as priority order with other eligible campaigns as fallback
 - Connection quality multiplier
 - Language selection
 - Proxy support (including verification)
