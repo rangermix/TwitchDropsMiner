@@ -1,10 +1,14 @@
 import asyncio
+import importlib
 import unittest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.config.settings import Settings, default_settings
 from src.web.app import SettingsUpdate
 from src.web.managers.settings import SettingsManager
+
+
+web_app = importlib.import_module("src.web.app")
 
 
 class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
@@ -18,7 +22,27 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(model.inventory_filters, update_data["inventory_filters"])
         self.assertEqual(model.mining_benefits, update_data["mining_benefits"])
 
-    async def test_inventory_filter_updates_merge_and_discard_legacy_key(self):
+    async def test_settings_endpoint_returns_request_scoped_compatibility_response(self):
+        expected = {
+            "inventory_filters": {
+                "show_only_not_linked": False,
+                "show_not_linked": True,
+            }
+        }
+        mock_gui = MagicMock()
+        mock_gui.settings.update_settings.return_value = expected
+
+        with patch.object(web_app, "gui_manager", mock_gui):
+            response = await web_app.update_settings(
+                SettingsUpdate(inventory_filters={"show_not_linked": True})
+            )
+
+        assert response == {"success": True, "settings": expected}
+        mock_gui.settings.update_settings.assert_called_once_with(
+            {"inventory_filters": {"show_not_linked": True}}
+        )
+
+    async def test_legacy_filter_request_is_echoed_without_changing_current_semantics(self):
         mock_broadcaster = AsyncMock()
         mock_settings = MagicMock(spec=Settings)
         mock_settings.inventory_filters = {
@@ -35,7 +59,7 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         }
         manager = SettingsManager(mock_broadcaster, mock_settings, MagicMock())
 
-        manager.update_settings(
+        response_settings = manager.update_settings(
             {"inventory_filters": {"show_active": True, "show_not_linked": True}}
         )
         await asyncio.sleep(0)
@@ -45,7 +69,32 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(filters["game_name_search"], ["Game A"])
         self.assertFalse(filters["show_only_not_linked"])
         self.assertNotIn("show_not_linked", filters)
+        self.assertTrue(response_settings["inventory_filters"]["show_not_linked"])
+        self.assertFalse(response_settings["inventory_filters"]["show_only_not_linked"])
+        self.assertNotIn("show_not_linked", manager.get_settings()["inventory_filters"])
+        mock_broadcaster.emit.assert_awaited_once_with(
+            "settings_updated", response_settings
+        )
         mock_settings.save.assert_called_once()
+
+    async def test_persisted_legacy_filter_is_removed_without_becoming_only_not_linked(self):
+        mock_broadcaster = AsyncMock()
+        mock_settings = MagicMock(spec=Settings)
+        mock_settings.inventory_filters = {
+            "show_not_linked": True,
+        }
+        manager = SettingsManager(mock_broadcaster, mock_settings, MagicMock())
+
+        response_settings = manager.update_settings(
+            {"inventory_filters": {"show_active": True}}
+        )
+        await asyncio.sleep(0)
+
+        filters = mock_settings.inventory_filters
+        self.assertTrue(filters["show_active"])
+        self.assertFalse(filters["show_only_not_linked"])
+        self.assertNotIn("show_not_linked", filters)
+        self.assertNotIn("show_not_linked", response_settings["inventory_filters"])
 
     async def test_settings_manager_networking(self):
         # Mock dependencies

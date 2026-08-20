@@ -43,13 +43,22 @@ class SettingsManager:
         self._on_change = on_change
         self._available_games: list[str] = []
 
-    def get_settings(self) -> dict[str, Any]:
+    def get_settings(self, legacy_show_not_linked: bool | None = None) -> dict[str, Any]:
         """Get current settings for display.
+
+        Args:
+            legacy_show_not_linked: Request-scoped value to echo to a legacy
+                frontend. It is never persisted or mapped to the current
+                ``show_only_not_linked`` restriction.
 
         Returns:
             Dictionary containing all user-configurable settings
         """
         settings = vars(self._settings).copy()
+        if legacy_show_not_linked is not None:
+            inventory_filters = copy.deepcopy(dict(self._settings.inventory_filters))
+            inventory_filters["show_not_linked"] = legacy_show_not_linked
+            settings["inventory_filters"] = inventory_filters
         return settings
 
     def get_languages(self) -> dict[str, Any]:
@@ -67,7 +76,7 @@ class SettingsManager:
         """Log setting change to both console and system logger."""
         self._console.print(message)
 
-    def update_settings(self, settings_data: dict[str, Any]):
+    def update_settings(self, settings_data: dict[str, Any]) -> dict[str, Any]:
         """Update settings from user input.
 
         Args:
@@ -99,7 +108,11 @@ class SettingsManager:
             settings_data.get("minimum_refresh_interval_minutes"),
         )
         inventory_filters = settings_data.get("inventory_filters")
+        legacy_show_not_linked = None
         if inventory_filters is not None:
+            legacy_value = inventory_filters.get("show_not_linked")
+            if isinstance(legacy_value, bool):
+                legacy_show_not_linked = legacy_value
             inventory_filters = self._normalize_inventory_filters(inventory_filters)
         should_trigger_update |= self.check_and_update_setting("inventory_filters", inventory_filters)
         should_trigger_update |= self.check_and_update_setting(
@@ -110,10 +123,13 @@ class SettingsManager:
         )
 
         self._settings.save()
-        asyncio.create_task(self._broadcaster.emit("settings_updated", self.get_settings()))
+        response_settings = self.get_settings(legacy_show_not_linked)
+        asyncio.create_task(self._broadcaster.emit("settings_updated", response_settings))
 
         if should_trigger_update and self._on_change:
             self._on_change()
+
+        return response_settings
 
     def _normalize_inventory_filters(self, updates: dict[str, Any]) -> dict[str, Any]:
         """Merge partial filter updates and discard legacy or unknown keys."""

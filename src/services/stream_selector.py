@@ -36,7 +36,7 @@ class StreamSelector:
 
                 wanted_drops = []
                 for drop in campaign.drops:
-                    if drop.is_claimed:
+                    if not drop.is_watch_drop or drop.is_claimed:
                         continue
 
                     filtered_benefits = drop.get_wanted_unclaimed_benefits(mining_benefits)

@@ -19,8 +19,8 @@ logger = logging.getLogger("TwitchDrops")
 class InventoryManager:
     """Manages drop campaign inventory display in the web interface.
 
-    Tracks all active, upcoming, and expired campaigns with their drops,
-    broadcasting real-time updates as drops are mined and claimed.
+    Tracks active, upcoming, and expired campaigns that contain watch drops,
+    broadcasting real-time updates as those drops are mined and claimed.
     """
 
     def __init__(self, broadcaster: WebSocketBroadcaster, cache: ImageCache):
@@ -31,10 +31,11 @@ class InventoryManager:
 
     @staticmethod
     def _campaign_progress(campaign: DropsCampaign) -> dict[str, int]:
-        """Return the live drop counts used by inventory filters."""
+        """Return live counts for the watch drops visible in inventory."""
+        watch_drops = [drop for drop in campaign.drops if drop.is_watch_drop]
         return {
-            "claimed_drops": campaign.claimed_drops,
-            "total_drops": campaign.total_drops,
+            "claimed_drops": sum(drop.is_claimed for drop in watch_drops),
+            "total_drops": len(watch_drops),
         }
 
     def clear(self):
@@ -50,8 +51,12 @@ class InventoryManager:
         """
         # Get campaign image from cache
 
+        watch_drops = [drop for drop in campaign.drops if drop.is_watch_drop]
+        if not watch_drops:
+            return
+
         drops_data = []
-        for drop in campaign.drops:
+        for drop in watch_drops:
             # Collect full benefit data (filter out benefits without images)
             benefits_data = [
                 {
@@ -108,11 +113,10 @@ class InventoryManager:
         """
         campaign_id = drop.campaign.id
         if campaign_id in self._campaigns:
-            campaign_progress = self._campaign_progress(drop.campaign)
-            self._campaigns[campaign_id].update(campaign_progress)
+            campaign_data = self._campaigns[campaign_id]
 
             # Find and update the drop in the campaign
-            for drop_data in self._campaigns[campaign_id]["drops"]:
+            for drop_data in campaign_data["drops"]:
                 if drop_data["id"] == drop.id:
                     drop_data.update(
                         {
@@ -123,6 +127,13 @@ class InventoryManager:
                             "can_claim": drop.can_claim,
                         }
                     )
+                    campaign_progress = {
+                        "claimed_drops": sum(
+                            item["is_claimed"] for item in campaign_data["drops"]
+                        ),
+                        "total_drops": len(campaign_data["drops"]),
+                    }
+                    campaign_data.update(campaign_progress)
                     asyncio.create_task(
                         self._broadcaster.emit(
                             "drop_update",

@@ -1,0 +1,207 @@
+{
+    "language_name": "Magyar",
+    "english_name": "Hungarian",
+    "status": {
+        "terminated": "\nAlkalmazás leállítva.\nZárja be az ablakot a kilépéshez.",
+        "watching": "Nézés: {channel}",
+        "goes_online": "{channel} online lesz, váltás...",
+        "goes_offline": "{channel} offline lett, váltás...",
+        "claimed_drop": "Átvett jutalom: {drop}",
+        "no_channel": "Nincsenek elérhető csatornák a nézéshez. Várakozás online csatornára...",
+        "no_campaign": "Nincsenek aktív kampányok jutalmak bányászásához. Várakozás aktív kampányra..."
+    },
+    "login": {
+        "unexpected_content": "Váratlan tartalomtípus érkezett, általában átirányítás miatt. Szükséges bejelentkezni az internethez való hozzáféréshez?",
+        "error_code": "Bejelentkezési hiba kódja: {error_code}",
+        "incorrect_login_pass": "Hibás felhasználónév vagy jelszó.",
+        "incorrect_email_code": "Hibás email kód.",
+        "incorrect_twofa_code": "Hibás 2FA kód.",
+        "email_code_required": "Email kód szükséges. Ellenőrizze az emailt.",
+        "twofa_code_required": "2FA token szükséges.",
+        "status": {
+            "logged_in": "Bejelentkezve",
+            "logged_out": "Kijelentkezve",
+            "logging_in": "Bejelentkezés...",
+            "required": "Bejelentkezés szükséges",
+            "waiting_auth": "Várakozás az autentikációra..."
+        }
+    },
+    "error": {
+        "captcha": "A bejelentkezési kísérletet a CAPTCHA megtagadta.\nPróbálja újra 12+ óra múlva.",
+        "site_down": "A Twitch nem elérhető, újrapróbálkozás {seconds} másodperc múlva...",
+        "no_connection": "Nem lehet csatlakozni a Twitch-hez, újrapróbálkozás {seconds} másodperc múlva..."
+    },
+    "gui": {
+        "output": "Kimenet",
+        "status": {
+            "name": "Állapot",
+            "idle": "Tétlen",
+            "ready": "Kész",
+            "exiting": "Kilépés...",
+            "terminated": "Leállítva",
+            "cleanup": "Csatornák tisztítása...",
+            "gathering": "Csatornák gyűjtése...",
+            "switching": "Csatorna váltása...",
+            "fetching_inventory": "Készlet lekérése...",
+            "fetching_campaigns": "Kampányok lekérése...",
+            "adding_campaigns": "Kampányok hozzáadása a készlethez... {counter}"
+        },
+        "tabs": {
+            "main": "Kezdőlap",
+            "inventory": "Készlet",
+            "settings": "Beállítások",
+            "help": "Súgó"
+        },
+        "login": {
+            "name": "Bejelentkezési űrlap",
+            "labels": "Állapot:\nFelhasználói azonosító:",
+            "request": "Kérjük, jelentkezzen be a folytatáshoz.",
+            "username": "Felhasználónév",
+            "password": "Jelszó",
+            "twofa_code": "2FA kód (opcionális)",
+            "button": "Bejelentkezés",
+            "oauth_prompt": "Adja meg ezt a kódot itt:",
+            "oauth_activate": "Twitch Aktiválás",
+            "oauth_confirm": "Megadtam a kódot"
+        },
+        "websocket": {
+            "name": "Websocket állapot",
+            "websocket": "Websocket #{id}:",
+            "initializing": "Inicializálás...",
+            "connected": "Csatlakoztatva",
+            "disconnected": "Nincs kapcsolat",
+            "connecting": "Csatlakozás...",
+            "disconnecting": "Kapcsolat bontása...",
+            "reconnecting": "Újracsatlakozás..."
+        },
+        "progress": {
+            "name": "Kampány előrehaladás",
+            "drop": "Jutalom:",
+            "game": "Játék:",
+            "campaign": "Kampány:",
+            "remaining": "{time} hátravan",
+            "drop_progress": "Előrehaladás:",
+            "campaign_progress": "Előrehaladás:",
+            "no_drop": "Nincs aktív jutalom",
+            "return_to_auto": "Vissza automatikus módba",
+            "manual_mode_info": "Kézi mód: Bányászás"
+        },
+        "channels": {
+            "name": "Csatornák",
+            "online": "ONLINE  ✔",
+            "pending": "OFFLINE ⏳",
+            "offline": "OFFLINE ❌",
+            "no_channels": "Még nincs követett csatorna...",
+            "no_channels_for_games": "Nincs csatorna a kiválasztott játékokhoz...",
+            "channel_count": "csatorna",
+            "channel_count_plural": "csatornák",
+            "viewers": "néző"
+        },
+        "settings": {
+            "general": {
+                "name": "Általános",
+                "dark_mode": "Sötét mód"
+            },
+            "mining_benefits": "Bányászati előnyök",
+            "mining_benefits_help": "Válassza ki, mely típusú jutalmakat szeretné bányászni.",
+            "reload": "Kampányok újratöltése",
+            "reload_campaigns": "Kampányok újratöltése",
+            "games_to_watch": "Nézendő játékok",
+            "games_help": "Válassza ki a nézendő játékokat. A sorrend számít - húzással módosítható a prioritás (felül = legmagasabb).",
+            "search_games": "Játékok keresése...",
+            "add_game": "Játék hozzáadása",
+            "add_game_hint": " A játék kézi hozzáadásához kattintson a „Játék hozzáadása” gombra.",
+            "select_all": "Összes kijelölése",
+            "deselect_all": "Összes kijelölés törlése",
+            "selected_games": "Kiválasztott játékok (húzással módosítható)",
+            "available_games": "Elérhető játékok",
+            "no_games_selected": "Nincs kiválasztott játék. Jelölje ki a lenti listából.",
+            "no_games_match": "Nincs a keresésnek megfelelő játék.",
+            "all_games_selected": "Minden játék ki van jelölve, vagy nincs elérhető játék.",
+            "actions": "Műveletek",
+            "connection_quality": "Kapcsolat minősége:",
+            "minimum_refresh": "Minimális frissítési intervallum (perc):"
+        },
+        "help": {
+            "about": "A Twitch Drops Miner-ről",
+            "about_text": "Ez az alkalmazás automatikusan bányássza a időzített Twitch jutalmakat anélkül, hogy letöltené a stream adatokat.",
+            "how_to_use": "Használati útmutató",
+            "how_to_use_items": [
+                "Jelentkezzen be a Twitch fiókjával (OAuth eszközkód folyamat)",
+                "Fiókok összekapcsolása a <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> oldalon",
+                "A miner automatikusan felfedezi a kampányokat és elkezdi a bányászást",
+                "Konfigurálja a prioritásos játékokat a beállításokban",
+                "Kövesse az előrehaladást a Kezdőlap és Készlet füleken"
+            ],
+            "features": "Funkciók",
+            "features_items": [
+                "Stream nélküli jutalmak bányászása - sávszélesség megtakarítás",
+                "Játék prioritási és kizárási listák",
+                "Akár 199 csatorna nyomon követése egyszerre",
+                "Automatikus csatornaváltás",
+                "Valós idejű előrehaladás követés"
+            ],
+            "important_notes": "Fontos tudnivalók",
+            "important_notes_items": [
+                "Ne nézzen streamet ugyanazzal a fiókkal a bányászás közben",
+                "Őrizze biztonságban a cookies.jar fájlt",
+                "A jutalmakhoz szükséges a játékfiókok összekapcsolása"
+            ],
+            "github_repo": "GitHub tároló"
+        },
+        "header": {
+            "title": "Twitch Drops Miner",
+            "language": "Nyelv:",
+            "initializing": "Inicializálás...",
+            "auto_mode": "AUTOMATIKUS",
+            "manual_mode": "KÉZI",
+            "connected": "Csatlakoztatva",
+            "disconnected": "Nincs kapcsolat"
+        },
+        "footer": {
+            "version": "Verzió:",
+            "loading": "Betöltés...",
+            "update_available": "Frissítés elérhető:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Kézi mód aktív - konkrét játék nézése"
+            },
+            "auto": {
+                "title": "Automatikus mód - játék prioritás követése"
+            },
+            "proxy": {
+                "title": "Proxy kapcsolat aktív"
+            }
+        },
+        "wanted": {
+            "name": "Kívánt jutalmak sorban",
+            "none": "Nincsenek kívánt jutalmak sorban..."
+        },
+        "inventory": {
+            "no_campaigns": "Még nincs betöltött kampány...",
+            "status": {
+                "active": "Aktív ✔",
+                "upcoming": "Hamarosan ⏳",
+                "expired": "Lejárt ❌",
+                "claimed": "Átvett ✔"
+            },
+            "starts": "Kezdés: {time}",
+            "ends": "Befejezés: {time}",
+            "claimed_drops": "átvett",
+            "filters": {
+                "active": "Aktív",
+                "not_linked": "Nincs összekapcsolva",
+                "upcoming": "Hamarosan",
+                "expired": "Lejárt",
+                "finished": "Befejezett",
+                "item": "Tárgy",
+                "badge": "Jelvény",
+                "emote": "Emotikon",
+                "other": "Egyéb",
+                "clear": "Szűrők törlése",
+                "search_placeholder": "Írjon a játékok kereséséhez..."
+            }
+        }
+    }
+}

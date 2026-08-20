@@ -228,6 +228,11 @@ class TimedDrop(BaseDrop):
         return self.real_current_minutes + self.extra_current_minutes
 
     @property
+    def is_watch_drop(self) -> bool:
+        """Return whether this drop can be earned by watching a stream."""
+        return self.required_minutes > 0
+
+    @property
     def remaining_minutes(self) -> int:
         return self.required_minutes - self.current_minutes
 
@@ -253,7 +258,7 @@ class TimedDrop(BaseDrop):
 
     @property
     def progress(self) -> float:
-        if self.current_minutes <= 0 or self.required_minutes <= 0:
+        if self.current_minutes <= 0 or not self.is_watch_drop:
             return 0.0
         elif self.current_minutes >= self.required_minutes:
             return 1.0
@@ -264,14 +269,14 @@ class TimedDrop(BaseDrop):
         import math
 
         now = datetime.now(timezone.utc)
-        if self.required_minutes > 0 and self.total_remaining_minutes > 0 and now < self.ends_at:
+        if self.is_watch_drop and self.total_remaining_minutes > 0 and now < self.ends_at:
             return ((self.ends_at - now).total_seconds() / 60) / self.total_remaining_minutes
         return math.inf
 
     def _base_earn_conditions(self) -> bool:
         return (
             super()._base_earn_conditions()
-            and self.required_minutes > 0
+            and self.is_watch_drop
             # NOTE: This may be a bad idea, as it invalidates the can_earn status
             # and provides no way to recover from this state until the next reload.
             and self.extra_current_minutes < MAX_EXTRA_MINUTES

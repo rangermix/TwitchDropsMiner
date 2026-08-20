@@ -75,7 +75,9 @@ Then open <http://localhost:8080>.
 
 Inventory filters combine **Active**, **Upcoming**, and **Expired** as alternatives.
 **Not Linked** narrows that status result, while fully claimed campaigns stay hidden
-until **Finished** is selected.
+until **Finished** is selected. Zero-minute subscription rewards are omitted from the
+Inventory and Wanted Drops Queue because they cannot be earned by watching. The channel
+list keeps the actively watched channel visible while game settings are changing.
 
 > [!NOTE]
 > Your Twitch account must be linked to the relevant game accounts. Review your
@@ -148,6 +150,7 @@ This project is a modern fork of
 - **French** — [@roobini-gamer](https://github.com/roobini-gamer) and
   [@Calvineries](https://github.com/Calvineries)
 - **German** — [@ThisIsCyreX](https://github.com/ThisIsCyreX)
+- **Hungarian** — [@centipederat](https://github.com/centipederat)
 - **Indonesian** — [@Eriza-Z](https://github.com/Eriza-Z)
 - **Italian** — [@casungo](https://github.com/casungo)
 - **Japanese** — [@ShimadaNanaki](https://github.com/ShimadaNanaki)

@@ -345,6 +345,12 @@ function clearWatchingChannel() {
     renderChannels();
 }
 
+function channelMatchesGameFilter(channel, gamesToWatchSet) {
+    return channel.watching ||
+        gamesToWatchSet.size === 0 ||
+        Boolean(channel.game && gamesToWatchSet.has(channel.game));
+}
+
 function renderChannels() {
     const container = document.getElementById('channels-list');
     container.innerHTML = '';
@@ -363,13 +369,11 @@ function renderChannels() {
     const gamesToWatch = state.settings.games_to_watch || [];
     const gamesToWatchSet = new Set(gamesToWatch);
 
-    // Filter channels to only include those playing games in the watch list
-    const filteredChannels = channels.filter(channel => {
-        const gameName = channel.game;
-        // Include channels if: they have a game AND it's in the watch list
-        // OR if the watch list is empty (show all)
-        return gamesToWatch.length === 0 || (gameName && gamesToWatchSet.has(gameName));
-    });
+    // The active channel remains visible while a settings update changes the
+    // game filter; all other channels must match the configured watch list.
+    const filteredChannels = channels.filter(
+        channel => channelMatchesGameFilter(channel, gamesToWatchSet)
+    );
 
     if (filteredChannels.length === 0) {
         const emptyMsg = t.gui?.channels?.no_channels_for_games || 'No channels found for selected games...';

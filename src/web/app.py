@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import socketio
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -98,7 +98,8 @@ async def serve_index():
         f"Looking for web files: __file__={__file__}, web_dir={web_dir}, index_file={index_file}, exists={index_file.exists()}"
     )
     if index_file.exists():
-        return FileResponse(index_file)
+        content = index_file.read_text(encoding="utf-8").replace("__APP_VERSION__", __version__)
+        return HTMLResponse(content=content, headers={"Cache-Control": "no-cache"})
     return HTMLResponse(
         content=f"<h1>Twitch Drops Miner</h1><p>Web interface files not found. Please check installation.</p><p>Debug: Looking for {index_file}</p>",
         status_code=500,
@@ -207,9 +208,9 @@ async def update_settings(settings: SettingsUpdate):
     if not gui_manager:
         raise HTTPException(status_code=503, detail="GUI not initialized")
 
-    settings_dict = settings.dict(exclude_unset=True)
-    gui_manager.settings.update_settings(settings_dict)
-    return {"success": True, "settings": gui_manager.settings.get_settings()}
+    settings_dict = settings.model_dump(exclude_unset=True)
+    updated_settings = gui_manager.settings.update_settings(settings_dict)
+    return {"success": True, "settings": updated_settings}
 
 
 @app.post("/api/settings/verify-proxy")

@@ -1,7 +1,34 @@
 import json
+from string import Formatter
+from typing import Any
 
 from src.config import LANG_PATH
 from src.i18n.translator import GUISettings
+
+
+def _assert_translation_shape(reference: Any, translation: Any, path: str = "root") -> None:
+    assert type(translation) is type(reference), path
+
+    if isinstance(reference, dict):
+        assert set(translation) == set(reference), path
+        for key, value in reference.items():
+            _assert_translation_shape(value, translation[key], f"{path}.{key}")
+    elif isinstance(reference, list):
+        assert len(translation) == len(reference), path
+        for index, value in enumerate(reference):
+            _assert_translation_shape(value, translation[index], f"{path}[{index}]")
+    elif isinstance(reference, str):
+        reference_fields = sorted(
+            field_name
+            for _, field_name, _, _ in Formatter().parse(reference)
+            if field_name is not None
+        )
+        translation_fields = sorted(
+            field_name
+            for _, field_name, _, _ in Formatter().parse(translation)
+            if field_name is not None
+        )
+        assert translation_fields == reference_fields, path
 
 
 def test_all_language_settings_include_gui_settings_schema_keys():
@@ -20,3 +47,12 @@ def test_all_language_settings_include_gui_settings_schema_keys():
 
     assert sorted(set(english_settings) - required_settings_keys) == []
     assert missing_by_language == {}
+
+
+def test_hungarian_translation_matches_english_schema_and_placeholders():
+    english = json.loads((LANG_PATH / "English.json").read_text(encoding="utf-8"))
+    hungarian = json.loads((LANG_PATH / "Magyar.json").read_text(encoding="utf-8"))
+
+    assert hungarian["language_name"] == "Magyar"
+    assert hungarian["english_name"] == "Hungarian"
+    _assert_translation_shape(english, hungarian)

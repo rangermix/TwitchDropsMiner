@@ -64,12 +64,12 @@ src/
 ├── version.py       # Version string
 └── __main__.py      # Entry point
 
-lang/                # Translation JSON files (19 languages)
+lang/                # Translation JSON files (20 languages)
 ├── English.json     # Default/fallback translations
 ├── Español.json
 ├── Français.json
 ├── Deutsch.json
-└── ...              # 15 more languages
+└── ...              # 16 more languages
 ```
 
 ### Core Components
@@ -153,7 +153,9 @@ lang/                # Translation JSON files (19 languages)
 - Logging and dump flags from command-line arguments
 - Persistence to JSON file (`settings.json`) in DATA_DIR
 - Inventory filters (Status, Benefit Type, Game Search); Active/Upcoming/Expired use
-  OR semantics, Not Linked narrows the result, and Finished opts claimed campaigns in
+  OR semantics, Not Linked narrows the result, and Finished opts claimed campaigns in.
+  Zero-minute subscription rewards are omitted from Inventory and Wanted Drops Queue;
+  the actively watched channel remains visible while game settings are changing
 
 ### State Machine Flow
 
@@ -216,7 +218,7 @@ Runs in background to trigger:
 
 **Architecture:**
 
-- All translations stored as JSON files in `lang/` directory (19 languages supported)
+- All translations stored as JSON files in `lang/` directory (20 languages supported)
 - English (`lang/English.json`) is the single source of truth and fallback language
 - Strongly typed with TypedDict schema defined in `src/i18n/translator.py`
 - Translator class (`src/i18n/translator.py`) handles language loading and fallback
@@ -225,7 +227,7 @@ Runs in background to trigger:
 **Supported Languages:**
 
 - English, Dansk (Danish), Deutsch (German), Español (Spanish), Français (French)
-- Indonesian, Italiano (Italian), Nederlandse (Dutch), Polski (Polish), Português (Portuguese)
+- Magyar (Hungarian), Indonesian, Italiano (Italian), Nederlandse (Dutch), Polski (Polish), Português (Portuguese)
 - Română (Romanian), Türkçe (Turkish), Čeština (Czech)
 - Русский (Russian), Українська (Ukrainian), العربية (Arabic)
 - 日本語 (Japanese), 简体中文 (Simplified Chinese), 繁體中文 (Traditional Chinese)
@@ -271,7 +273,7 @@ login_text = _.t["login"]["status"]["logged_in"]  # Returns "Logged in"
 - **src/i18n/** - Internationalization package with TypedDict schema and Translator class
   - **translator.py** - Translator class with typed translation schema (Translation TypedDict)
   - **__init__.py** - Exports translation types and `_` (Translator instance)
-- **lang/** - Translation JSON files for 19 languages (English.json is the single source of truth)
+- **lang/** - Translation JSON files for 20 languages (English.json is the single source of truth)
 - **src/version.py** - Version string
 - **src/web/app.py** - FastAPI application with REST API and Socket.IO
 - **src/web/managers/cache.py** - ImageCache for campaign artwork caching
