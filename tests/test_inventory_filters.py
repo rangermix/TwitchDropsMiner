@@ -1,7 +1,6 @@
 import asyncio
 import json
 import re
-import shutil
 import subprocess
 import unittest
 from pathlib import Path
@@ -13,29 +12,11 @@ import pytest
 from src.config.settings import default_settings
 from src.utils import merge_json
 from src.web.managers.inventory import InventoryManager
+from tests.javascript_helpers import APP_JS, NODE, extract_javascript_function
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-APP_JS = PROJECT_ROOT / "web" / "static" / "app.js"
 INDEX_HTML = PROJECT_ROOT / "web" / "index.html"
-NODE = shutil.which("node")
-
-
-def _extract_javascript_function(source: str, name: str) -> str:
-    signature = f"function {name}("
-    start = source.index(signature)
-    brace_start = source.index("{", start)
-    depth = 0
-
-    for index in range(brace_start, len(source)):
-        if source[index] == "{":
-            depth += 1
-        elif source[index] == "}":
-            depth -= 1
-            if depth == 0:
-                return source[start : index + 1]
-
-    raise AssertionError(f"Could not find the end of {name}()")
 
 
 def test_inventory_filter_defaults_hide_finished_without_restricting_link_state():
@@ -110,7 +91,7 @@ class TestInventoryDropUpdates(unittest.IsolatedAsyncioTestCase):
 
 @pytest.mark.skipif(NODE is None, reason="Node.js is required for frontend tests")
 def test_campaign_filter_behavior_matrix():
-    function_source = _extract_javascript_function(
+    function_source = extract_javascript_function(
         APP_JS.read_text(encoding="utf-8"), "campaignMatchesFilters"
     )
     base_filters = {

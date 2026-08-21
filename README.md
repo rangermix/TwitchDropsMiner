@@ -77,7 +77,9 @@ Inventory filters combine **Active**, **Upcoming**, and **Expired** as alternati
 **Not Linked** narrows that status result, while fully claimed campaigns stay hidden
 until **Finished** is selected. Zero-minute subscription rewards are omitted from the
 Inventory and Wanted Drops Queue because they cannot be earned by watching. The channel
-list keeps the actively watched channel visible while game settings are changing.
+list matches game names case-insensitively and keeps the actively watched channel visible
+while game settings are changing. Campaign totals and claim messages count only rewards
+that can be earned by watching.
 
 > [!NOTE]
 > Your Twitch account must be linked to the relevant game accounts. Review your

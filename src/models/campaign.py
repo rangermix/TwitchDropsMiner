@@ -56,6 +56,11 @@ class DropsCampaign:
     def drops(self) -> abc.Iterable[TimedDrop]:
         return self.timed_drops.values()
 
+    @cached_property
+    def watch_drops(self) -> tuple[TimedDrop, ...]:
+        """Return drops that can be earned by watching a stream."""
+        return tuple(drop for drop in self.drops if drop.is_watch_drop)
+
     @property
     def time_triggers(self) -> set[datetime]:
         return set(
@@ -79,7 +84,7 @@ class DropsCampaign:
 
     @property
     def total_drops(self) -> int:
-        return len(self.timed_drops)
+        return len(self.watch_drops)
 
     @property
     def eligible(self) -> bool:
@@ -93,36 +98,37 @@ class DropsCampaign:
 
     @property
     def finished(self) -> bool:
-        return all(d.is_claimed or not d.is_watch_drop for d in self.drops)
+        return all(drop.is_claimed for drop in self.watch_drops)
 
     @property
     def claimed_drops(self) -> int:
-        return sum(d.is_claimed for d in self.drops)
+        return sum(drop.is_claimed for drop in self.watch_drops)
 
     @property
     def remaining_drops(self) -> int:
-        return sum(not d.is_claimed for d in self.drops)
+        return sum(not drop.is_claimed for drop in self.watch_drops)
 
     @property
     def required_minutes(self) -> int:
-        return max(d.total_required_minutes for d in self.drops)
+        return max((drop.total_required_minutes for drop in self.watch_drops), default=0)
 
     @property
     def remaining_minutes(self) -> int:
-        return max(d.total_remaining_minutes for d in self.drops)
+        return max((drop.total_remaining_minutes for drop in self.watch_drops), default=0)
 
     @property
     def progress(self) -> float:
-        return sum(d.progress for d in self.drops) / self.total_drops
+        watch_drops = self.watch_drops
+        return sum(drop.progress for drop in watch_drops) / len(watch_drops) if watch_drops else 0.0
 
     @property
     def availability(self) -> float:
-        return min(d.availability for d in self.drops)
+        return min((drop.availability for drop in self.watch_drops), default=float("inf"))
 
     @property
     def first_drop(self) -> TimedDrop | None:
         drops: list[TimedDrop] = sorted(
-            (drop for drop in self.drops if drop.can_earn()),
+            (drop for drop in self.watch_drops if drop.can_earn()),
             key=lambda d: d.remaining_minutes,
         )
         return drops[0] if drops else None

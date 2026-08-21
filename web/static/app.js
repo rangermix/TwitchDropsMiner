@@ -348,7 +348,7 @@ function clearWatchingChannel() {
 function channelMatchesGameFilter(channel, gamesToWatchSet) {
     return channel.watching ||
         gamesToWatchSet.size === 0 ||
-        Boolean(channel.game && gamesToWatchSet.has(channel.game));
+        Boolean(channel.game && gamesToWatchSet.has(channel.game.toLowerCase()));
 }
 
 function renderChannels() {
@@ -367,7 +367,7 @@ function renderChannels() {
 
     // Get the games to watch list from settings
     const gamesToWatch = state.settings.games_to_watch || [];
-    const gamesToWatchSet = new Set(gamesToWatch);
+    const gamesToWatchSet = new Set(gamesToWatch.map(g => g.toLowerCase()));
 
     // The active channel remains visible while a settings update changes the
     // game filter; all other channels must match the configured watch list.

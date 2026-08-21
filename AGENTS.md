@@ -135,6 +135,10 @@ lang/                # Translation JSON files (20 languages)
 - Socket.IO server for real-time bi-directional communication
 - Serves static web frontend from `web/` directory
 - Integrates with WebGUIManager via `set_managers()`
+- `serve_index()` replaces the `__APP_VERSION__` placeholder in local CSS/JavaScript URLs
+  with the application version and serves `/` with `Cache-Control: no-cache`
+- Any `app.js` or `styles.css` change requires an application version bump through the release
+  workflow before deployment so existing clients receive a new asset cache key
 
 **src/websocket/pool.py** - WebSocket management:
 
@@ -336,7 +340,8 @@ source env/bin/activate && python -m pytest tests/
 
 The suite covers settings and proxy behavior, inventory-filter behavior, API filtering,
 GraphQL watch events, batched channel discovery, translation consistency, frontend DOM
-safety, and contributor README automation. Inventory-filter behavior tests use Node.js;
+safety, case-insensitive channel filtering, watch-drop count semantics, and contributor
+README automation. Frontend behavior tests share their JavaScript extraction helper and use Node.js;
 the validation workflow provisions Node 24 before running pytest. It also runs the release
 script contract tests under `.github/scripts/test/`.
 

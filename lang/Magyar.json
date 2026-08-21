@@ -124,7 +124,7 @@
         },
         "help": {
             "about": "A Twitch Drops Miner-ről",
-            "about_text": "Ez az alkalmazás automatikusan bányássza a időzített Twitch jutalmakat anélkül, hogy letöltené a stream adatokat.",
+            "about_text": "Ez az alkalmazás automatikusan bányássza az időzített Twitch jutalmakat anélkül, hogy letöltené a stream adatokat.",
             "how_to_use": "Használati útmutató",
             "how_to_use_items": [
                 "Jelentkezzen be a Twitch fiókjával (OAuth eszközkód folyamat)",

@@ -71,12 +71,44 @@ async def test_inventory_hides_subscription_drops_and_sub_only_campaigns():
     await manager.add_campaign(sub_only)
     await manager.add_campaign(mixed)
 
+    assert sub_only.total_drops == 0
+    assert sub_only.claimed_drops == 0
+    assert sub_only.remaining_drops == 0
+    assert sub_only.required_minutes == 0
+    assert sub_only.remaining_minutes == 0
+    assert sub_only.progress == 0.0
+    assert sub_only.availability == float("inf")
+    assert sub_only.finished is True
     assert [campaign["id"] for campaign in manager.get_campaigns()] == ["mixed"]
     mixed_data = manager.get_campaigns()[0]
     assert [drop["id"] for drop in mixed_data["drops"]] == ["watch"]
     assert mixed_data["claimed_drops"] == 0
     assert mixed_data["total_drops"] == 1
     broadcaster.emit.assert_awaited_once_with("campaign_add", mixed_data)
+
+
+@pytest.mark.asyncio
+async def test_mixed_campaign_claim_counts_only_watch_drops():
+    campaign = _campaign(
+        "mixed",
+        [
+            _drop("sub", "Subscribe", 0),
+            _drop("watch", "Watch", 30),
+        ],
+    )
+    watch_drop = campaign.timed_drops["watch"]
+    watch_drop._claim = AsyncMock(return_value=True)
+
+    assert campaign.total_drops == 1
+    assert campaign.claimed_drops == 0
+    assert campaign.remaining_drops == 1
+
+    await watch_drop.claim()
+
+    assert campaign.claimed_drops == 1
+    assert campaign.remaining_drops == 0
+    claim_message = campaign._twitch.print.call_args.args[0]
+    assert "(1/1)" in claim_message
 
 
 def test_wanted_queue_hides_subscription_drops_and_sub_only_campaigns():

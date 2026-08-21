@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any
 
 
@@ -30,12 +31,12 @@ class InventoryManager:
         self._batch_mode: bool = False
 
     @staticmethod
-    def _campaign_progress(campaign: DropsCampaign) -> dict[str, int]:
-        """Return live counts for the watch drops visible in inventory."""
-        watch_drops = [drop for drop in campaign.drops if drop.is_watch_drop]
+    def _campaign_progress(drops: Iterable[Mapping[str, Any]]) -> dict[str, int]:
+        """Return live counts for serialized drops visible in inventory."""
+        visible_drops = list(drops)
         return {
-            "claimed_drops": sum(drop.is_claimed for drop in watch_drops),
-            "total_drops": len(watch_drops),
+            "claimed_drops": sum(bool(drop["is_claimed"]) for drop in visible_drops),
+            "total_drops": len(visible_drops),
         }
 
     def clear(self):
@@ -95,7 +96,7 @@ class InventoryManager:
             "active": campaign.active,
             "upcoming": campaign.upcoming,
             "expired": campaign.expired,
-            **self._campaign_progress(campaign),
+            **self._campaign_progress(drops_data),
             "drops": drops_data,
         }
 
@@ -127,12 +128,7 @@ class InventoryManager:
                             "can_claim": drop.can_claim,
                         }
                     )
-                    campaign_progress = {
-                        "claimed_drops": sum(
-                            item["is_claimed"] for item in campaign_data["drops"]
-                        ),
-                        "total_drops": len(campaign_data["drops"]),
-                    }
+                    campaign_progress = self._campaign_progress(campaign_data["drops"])
                     campaign_data.update(campaign_progress)
                     asyncio.create_task(
                         self._broadcaster.emit(

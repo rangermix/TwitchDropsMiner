@@ -47,14 +47,17 @@ class SettingsManager:
         """Get current settings for display.
 
         Args:
-            legacy_show_not_linked: Request-scoped value to echo to a legacy
-                frontend. It is never persisted or mapped to the current
-                ``show_only_not_linked`` restriction.
+            legacy_show_not_linked: Request-scoped value echoed only in the
+                immediate settings POST response for a legacy frontend. It is
+                never persisted, mapped to ``show_only_not_linked``, or returned
+                by a later GET/page reload.
 
         Returns:
             Dictionary containing all user-configurable settings
         """
         settings = vars(self._settings).copy()
+        # TODO(remove in 1.3.x): Retain this POST-only echo long enough for stale
+        # pre-versioned frontends to age out; it never survives a page reload.
         if legacy_show_not_linked is not None:
             inventory_filters = copy.deepcopy(dict(self._settings.inventory_filters))
             inventory_filters["show_not_linked"] = legacy_show_not_linked
