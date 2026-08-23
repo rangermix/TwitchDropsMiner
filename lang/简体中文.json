@@ -36,6 +36,7 @@
         "status": {
             "name": "状态",
             "idle": "已完成获取",
+            "ready": "就绪",
             "exiting": "正在退出...",
             "terminated": "应用已终止运行",
             "cleanup": "清除频道中...",

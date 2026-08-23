@@ -24,10 +24,7 @@
             "logging_in": "Logowanie...",
             "required": "Wymagane zalogowanie",
             "waiting_auth": "Oczekiwanie na uwierzytelnienie..."
-        },
-        "oauth_prompt": "Wprowadź ten kod na:",
-        "oauth_activate": "Aktywuj Twitch",
-        "oauth_confirm": "Wprowadziłem kod"
+        }
     },
     "error": {
         "captcha": "Próba logowania została odrzucona przez CAPTCHA.\nProszę spróbować ponownie za co najmniej 12 godzin.",
@@ -39,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Bezczynność",
+            "ready": "Gotowy",
             "exiting": "Zamykanie...",
             "terminated": "Zatrzymano",
             "cleanup": "Czyszczenie kanałów...",
@@ -129,7 +127,6 @@
                 "name": "Ogólne",
                 "dark_mode": "Tryb ciemny"
             },
-            "exclude": "Wykluczone",
             "reload": "Przeładuj",
             "games_to_watch": "Gry do oglądania",
             "games_help": "Wybierz gry do oglądania. Kolejność ma znaczenie - przeciągnij, aby zmienić priorytet (góra = najwyższy priorytet).",

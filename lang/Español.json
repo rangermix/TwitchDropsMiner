@@ -36,6 +36,7 @@
         "status": {
             "name": "Estado",
             "idle": "En espera...",
+            "ready": "Listo",
             "exiting": "Saliendo...",
             "terminated": "Aplicación suspendida.",
             "cleanup": "Limpiando canales...",

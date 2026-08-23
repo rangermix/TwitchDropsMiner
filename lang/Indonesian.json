@@ -24,21 +24,19 @@
             "logging_in": "Koneksi dalam proses...",
             "required": "Diperlukan sambungan",
             "waiting_auth": "Menunggu autentikasi..."
-        },
-        "oauth_prompt": "Masukkan kode ini di:",
-        "oauth_activate": "Aktifkan Twitch",
-        "oauth_confirm": "Saya telah memasukkan kode"
+        }
     },
     "error": {
         "captcha": "Sambungan ditolak oleh CAPTCHA. Silakan coba lagi dalam waktu sekitar 12 jam.",
         "site_down": "Twitch tidak tersedia. Silakan coba lagi dalam {seconds} detik....",
-        "no_connection": "Tidak dapat tersambung ke Twitch. Silakan coba lagi dalam {detik} detik...."
+        "no_connection": "Tidak dapat tersambung ke Twitch. Silakan coba lagi dalam {seconds} detik...."
     },
     "gui": {
         "output": "Keluaran",
         "status": {
             "name": "Status",
             "idle": "Tidak aktif",
+            "ready": "Siap",
             "exiting": "Keluar...",
             "terminated": "Diakhiri",
             "cleanup": "Membersihkan saluran...",

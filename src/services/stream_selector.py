@@ -16,7 +16,8 @@ class StreamSelector:
         wanted_games = []
         games_to_watch = settings.games_to_watch
         mining_benefits = settings.mining_benefits
-        next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
+        now = datetime.now(timezone.utc)
+        next_hour = now + timedelta(hours=1)
 
         for game_name in games_to_watch:
             wanted_campaigns = []
@@ -36,7 +37,7 @@ class StreamSelector:
 
                 wanted_drops = []
                 for drop in campaign.drops:
-                    if not drop.is_watch_drop or drop.is_claimed:
+                    if not drop.is_watch_drop or drop.is_claimed or drop.ends_at <= now:
                         continue
 
                     filtered_benefits = drop.get_wanted_unclaimed_benefits(mining_benefits)

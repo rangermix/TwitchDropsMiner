@@ -162,7 +162,9 @@ lang/                # Translation JSON files (20 languages)
 - Inventory filters (Status, Benefit Type, Game Search); Active/Upcoming/Expired use
   OR semantics, Not Linked narrows the result, and Finished opts claimed campaigns in.
   Zero-minute subscription rewards are omitted from Inventory and Wanted Drops Queue;
-  the actively watched channel remains visible while game settings are changing
+  individually expired rewards are omitted from the queue without hiding upcoming or
+  sequential rewards; successful claims refresh the queue immediately; the actively
+  watched channel remains visible while game settings are changing
 
 ### State Machine Flow
 
@@ -342,8 +344,9 @@ source env/bin/activate && python -m pytest tests/
 ```
 
 The suite covers settings and proxy behavior, inventory-filter behavior, API filtering,
-GraphQL watch events, batched channel discovery, translation consistency, frontend DOM
-safety, case-insensitive channel filtering, watch-drop count semantics, and contributor
+GraphQL watch events, batched channel discovery, full-locale translation schema and
+placeholder consistency, frontend DOM safety, case-insensitive channel filtering,
+watch-drop count and expiry semantics, immediate claim refresh behavior, and contributor
 README automation. Frontend behavior tests share their JavaScript extraction helper and use Node.js;
 the validation workflow provisions Node 24 before running pytest. It also runs the release
 script contract tests under `.github/scripts/test/`.
@@ -353,6 +356,9 @@ script contract tests under `.github/scripts/test/`.
 - `.github/workflows/validation.yml` runs Ruff, Mypy, the Python test suite, language
   JSON validation, `uv lock --check`, release-script tests, and Docker build validation
   for pull requests and pushes to `main`.
+- Docker validation and release workflows pin the Node-24-native Docker Buildx v4.3.0
+  and Build Push v7.3.0 action commits. Update both workflows together when changing
+  either action so validation and release builds use the same trusted versions.
 - `.github/workflows/contributors.yml` credits the human author of each pull request
   merged into `main`, including linked pull request numbers in the alphabetically sorted
   Contributors table in `README.md`.

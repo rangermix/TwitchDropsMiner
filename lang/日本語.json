@@ -24,10 +24,7 @@
             "logging_in": "ログイン中...",
             "required": "ログインが必要です",
             "waiting_auth": "認証を待っています..."
-        },
-        "oauth_prompt": "このコードを次の場所に入力してください:",
-        "oauth_activate": "Twitchをアクティベート",
-        "oauth_confirm": "コードを入力しました"
+        }
     },
     "error": {
         "captcha": "ログイン試行がCAPTCHAによって拒否されました。\n12時間以上後に再試行してください。",
@@ -39,6 +36,7 @@
         "status": {
             "name": "ステータス",
             "idle": "アイドル",
+            "ready": "準備完了",
             "exiting": "終了しています...",
             "terminated": "終了",
             "cleanup": "チャンネルをクリーンアップ中...",

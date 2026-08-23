@@ -24,10 +24,7 @@
             "logging_in": "Aanmelden...",
             "required": "Aanmelden vereist",
             "waiting_auth": "Wachten op authenticatie..."
-        },
-        "oauth_prompt": "Voer deze code in op:",
-        "oauth_activate": "Activeer Twitch",
-        "oauth_confirm": "Ik heb de code ingevoerd"
+        }
     },
     "error": {
         "captcha": "De inlogpoging is geweigerd door CAPTCHA.\nProbeer het over minimaal 12 uur opnieuw.",
@@ -39,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Inactief",
+            "ready": "Klaar",
             "exiting": "Beëindigd...",
             "terminated": "Geannuleerd",
             "cleanup": "Kanalen opruimen..",
