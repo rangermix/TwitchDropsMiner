@@ -162,6 +162,7 @@ lang/                # Translation JSON files (20 languages)
 - Inventory filters (Status, Benefit Type, Game Search); Active/Upcoming/Expired use
   OR semantics, Not Linked narrows the result, and Finished opts claimed campaigns in.
   Zero-minute subscription rewards are omitted from Inventory and Wanted Drops Queue;
+  individually expired and non-mineable rewards are also excluded from Wanted Drops Queue;
   the actively watched channel remains visible while game settings are changing
 
 Drop-name ignore policy is dependency-aware: a matching unclaimed drop and its dependent
@@ -353,10 +354,11 @@ safety, case-insensitive channel filtering, watch-drop count semantics, and cont
 README automation. Frontend behavior tests share their JavaScript extraction helper and use Node.js;
 the validation workflow provisions Node 24 before running pytest. It also runs the release
 script contract tests under `.github/scripts/test/`. Ignore-list coverage includes
-normalization and settings persistence, dependency pruning, Wanted Queue and watch
-selection, truthful ignored/skipped inventory state, translated placeholder parity, and
-frontend rendering. Changes to `web/static/app.js` or `web/static/styles.css` still require
-the release workflow to bump the application version and asset cache key before deployment.
+normalization and settings persistence, dependency pruning, the combined expiry/ignore
+Wanted Queue guard, watch selection, truthful ignored/skipped inventory state, translated
+placeholder parity, and frontend rendering. Changes to `web/static/app.js` or
+`web/static/styles.css` still require the release workflow to bump the application version
+and asset cache key before deployment.
 
 ### Continuous Integration
 

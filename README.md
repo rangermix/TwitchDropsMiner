@@ -77,7 +77,8 @@ Then open <http://localhost:8080>.
 Inventory filters combine **Active**, **Upcoming**, and **Expired** as alternatives.
 **Not Linked** narrows that status result, while fully claimed campaigns stay hidden
 until **Finished** is selected. Zero-minute subscription rewards are omitted from the
-Inventory and Wanted Drops Queue because they cannot be earned by watching. The channel
+Inventory and Wanted Drops Queue because they cannot be earned by watching. Individually
+expired and non-mineable rewards are also omitted from the Wanted Drops Queue. The channel
 list matches game names case-insensitively and keeps the actively watched channel visible
 while game settings are changing. Campaign totals and claim messages count only rewards
 that can be earned by watching.
@@ -186,7 +187,8 @@ deploying them. The validation suite includes GraphQL watch events and batched c
 discovery, alongside settings, translation, and frontend safety checks. Use the software
 responsibly. Release automation verifies that the runtime, package, and lockfile versions
 match before publishing tags and Docker images. The suite also covers ignored-keyword
-normalization, dependency branches, Wanted Queue and watch selection, API persistence,
-translated placeholder parity, and frontend rendering. Any `web/static/app.js` or
+normalization, dependency branches, the combined expiry/ignore Wanted Queue guard, watch
+selection, API persistence, translated placeholder parity, and frontend rendering. Any
+`web/static/app.js` or
 `web/static/styles.css` change must go through the release workflow so the application
 version and browser asset cache key are bumped before deployment.

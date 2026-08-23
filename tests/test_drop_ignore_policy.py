@@ -17,6 +17,7 @@ def _drop(
     has_benefit: bool = True,
     claimed: bool = False,
     required_minutes: int = 15,
+    ends_at: str = "2099-01-01T00:00:00Z",
 ) -> dict:
     data = {
         "id": drop_id,
@@ -36,7 +37,7 @@ def _drop(
             else []
         ),
         "startAt": "2026-01-01T00:00:00Z",
-        "endAt": "2099-01-01T00:00:00Z",
+        "endAt": ends_at,
         "preconditionDrops": [{"id": drop_id} for drop_id in preconditions],
         "requiredMinutesWatched": required_minutes,
     }
@@ -211,6 +212,39 @@ def test_shared_prerequisite_remains_mineable_for_a_nonignored_branch():
         mining_benefits={"DIRECT_ENTITLEMENT": True},
     )
     wanted_tree = StreamSelector().get_wanted_game_tree(settings, [campaign])
+    assert [
+        drop["name"]
+        for game in wanted_tree
+        for campaign_data in game["campaigns"]
+        for drop in campaign_data["drops"]
+    ] == ["Wanted Reward"]
+
+
+def test_wanted_tree_rejects_expired_and_non_mineable_drops_together():
+    now = datetime.now(timezone.utc)
+    campaign = _campaign(
+        [
+            _drop(
+                "expired",
+                "Expired Reward",
+                ends_at=(now - timedelta(minutes=1)).isoformat(),
+            ),
+            _drop("ignored", "Mask Reward"),
+            _drop("wanted", "Wanted Reward"),
+        ],
+        blacklist=["mask"],
+    )
+
+    # Expiry and ignore policy are independent: neither predicate subsumes the other.
+    assert campaign.timed_drops["expired"].is_mineable is True
+    assert campaign.timed_drops["ignored"].is_mineable is False
+
+    settings = SimpleNamespace(
+        games_to_watch=["Test Game"],
+        mining_benefits={"DIRECT_ENTITLEMENT": True},
+    )
+    wanted_tree = StreamSelector().get_wanted_game_tree(settings, [campaign])
+
     assert [
         drop["name"]
         for game in wanted_tree
