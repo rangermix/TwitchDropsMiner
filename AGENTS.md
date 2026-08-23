@@ -339,8 +339,9 @@ source env/bin/activate && python -m pytest tests/
 ```
 
 The suite covers settings and proxy behavior, inventory-filter behavior, API filtering,
-GraphQL watch events, batched channel discovery, translation consistency, frontend DOM
-safety, case-insensitive channel filtering, watch-drop count semantics, and contributor
+GraphQL watch events, batched channel discovery, full-locale translation schema and
+placeholder consistency, frontend DOM safety, case-insensitive channel filtering,
+watch-drop count semantics, and contributor
 README automation. Frontend behavior tests share their JavaScript extraction helper and use Node.js;
 the validation workflow provisions Node 24 before running pytest. It also runs the release
 script contract tests under `.github/scripts/test/`.

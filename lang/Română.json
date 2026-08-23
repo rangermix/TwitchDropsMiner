@@ -24,10 +24,7 @@
             "logging_in": "Se conectează...",
             "required": "Este necesară conectarea",
             "waiting_auth": "Se așteaptă autentificarea..."
-        },
-        "oauth_prompt": "Introduceți acest cod la:",
-        "oauth_activate": "Activează Twitch",
-        "oauth_confirm": "Am introdus codul"
+        }
     },
     "error": {
         "captcha": "Conexiunea a fost respinsă de CAPTCHA. Vă rugăm să încercați din nou în aprox. 12 ore.",
@@ -39,6 +36,7 @@
         "status": {
             "name": "Statut",
             "idle": "Inactiv",
+            "ready": "Gata",
             "exiting": "Ieșire...",
             "terminated": "Terminat",
             "cleanup": "Curățarea canalelor...",

@@ -36,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Ledig",
+            "ready": "Klar",
             "exiting": "Afslutter...",
             "terminated": "Afsluttet",
             "cleanup": "Oprydning af kanaler...",
