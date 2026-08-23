@@ -36,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Ledig",
+            "ready": "Klar",
             "exiting": "Afslutter...",
             "terminated": "Afsluttet",
             "cleanup": "Oprydning af kanaler...",
@@ -143,6 +144,8 @@
             "connection_quality": "Forbindelseskvalitet:",
             "minimum_refresh": "Minimum opdateringsinterval (minutter):",
             "reload_campaigns": "Genindlæs kampagner",
+            "clear_all_cache": "Ryd hele cachen",
+            "clear_all_cache_help": "Rydder lokal kampagne-, kanal- og afledt minerstatus; bevarer login og indstillinger og genindlæser derefter data fra Twitch.",
             "mining_benefits": "Mining Fordele",
             "mining_benefits_help": "Vælg hvilke typer drops du vil mine."
         },

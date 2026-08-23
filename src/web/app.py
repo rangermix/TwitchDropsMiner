@@ -310,13 +310,23 @@ async def confirm_oauth():
 
 @app.post("/api/reload")
 async def trigger_reload():
-    """Trigger application reload"""
+    """Fetch fresh campaign and inventory data."""
     if not twitch_client:
         raise HTTPException(status_code=503, detail="Twitch client not initialized")
 
-    from src.config import State
+    if not twitch_client.request_inventory_refresh():
+        raise HTTPException(status_code=409, detail="Twitch client is shutting down")
+    return {"success": True}
 
-    twitch_client.change_state(State.INVENTORY_FETCH)
+
+@app.post("/api/cache/clear")
+async def clear_all_cache():
+    """Clear local derived miner state and fetch fresh Twitch data."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    if not twitch_client.request_inventory_refresh(clear_cache=True):
+        raise HTTPException(status_code=409, detail="Twitch client is shutting down")
     return {"success": True}
 
 
@@ -387,9 +397,7 @@ async def request_login(sid):
 async def request_reload(sid):
     """Client requested application reload"""
     if twitch_client:
-        from src.config import State
-
-        twitch_client.change_state(State.INVENTORY_FETCH)
+        twitch_client.request_inventory_refresh()
 
 
 @sio.event

@@ -148,8 +148,8 @@ class BaseDrop:
 
     async def claim(self) -> bool:
         result = await self._claim()
-        if result:
-            self.is_claimed = result
+        if result and not self.is_claimed:
+            self.is_claimed = True
             claim_text = (
                 f"{self.campaign.game.name}\n"
                 f"{self.rewards_text()} "
@@ -160,7 +160,8 @@ class BaseDrop:
             self._twitch.print(
                 _.t["status"]["claimed_drop"].format(drop=claim_text.replace("\n", " "))
             )
-        else:
+            await self._twitch.gui.broadcast_wanted_items_now()
+        elif not result:
             logger.error(f"Drop claim has potentially failed! Drop ID: {self.id}")
         return result
 

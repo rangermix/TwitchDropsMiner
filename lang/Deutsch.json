@@ -36,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Im Leerlauf",
+            "ready": "Bereit",
             "exiting": "Beenden...",
             "terminated": "Abgebrochen",
             "cleanup": "Kanäle aufräumen..",
@@ -128,6 +129,8 @@
             },
             "reload": "Neu laden",
             "reload_campaigns": "Kampagnen neu laden",
+            "clear_all_cache": "Gesamten Cache leeren",
+            "clear_all_cache_help": "Löscht lokale Kampagnen-, Kanal- und abgeleitete Miner-Daten; Anmeldung und Einstellungen bleiben erhalten, anschließend werden die Daten von Twitch neu geladen.",
             "games_to_watch": "Spiele zum Ansehen",
             "games_help": "Wählen Sie Spiele zum Ansehen aus. Die Reihenfolge ist wichtig - ziehen Sie, um die Priorität zu ändern (oben = höchste Priorität).",
             "search_games": "Spiele suchen...",

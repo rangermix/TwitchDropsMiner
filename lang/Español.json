@@ -36,6 +36,7 @@
         "status": {
             "name": "Estado",
             "idle": "En espera...",
+            "ready": "Listo",
             "exiting": "Saliendo...",
             "terminated": "Aplicación suspendida.",
             "cleanup": "Limpiando canales...",
@@ -128,6 +129,8 @@
             },
             "reload": "Recargar",
             "reload_campaigns": "Recargar campañas",
+            "clear_all_cache": "Borrar toda la caché",
+            "clear_all_cache_help": "Borra el estado local de campañas, canales y los datos derivados del minero; conserva el inicio de sesión y la configuración, y luego vuelve a cargar los datos desde Twitch.",
             "games_to_watch": "Juegos para ver",
             "games_help": "Selecciona los juegos a ver. El orden importa - arrastra para reordenar la prioridad (arriba = mayor prioridad).",
             "search_games": "Buscar juegos...",

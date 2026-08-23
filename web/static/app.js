@@ -1745,6 +1745,12 @@ function applyTranslations(t) {
         const reloadBtn = document.getElementById('reload-btn');
         if (reloadBtn) reloadBtn.textContent = t.gui.settings.reload_campaigns;
 
+        const clearCacheBtn = document.getElementById('clear-cache-btn');
+        if (clearCacheBtn) clearCacheBtn.textContent = t.gui.settings.clear_all_cache;
+
+        const clearCacheHelp = document.getElementById('clear-cache-help');
+        if (clearCacheHelp) clearCacheHelp.textContent = t.gui.settings.clear_all_cache_help;
+
         // Re-render games to watch with translated empty messages
         renderGamesToWatch();
     }
@@ -1904,13 +1910,30 @@ function applyTranslations(t) {
     }
 }
 
-async function reloadCampaigns() {
+async function requestCampaignRefresh(endpoint, button, actionName) {
+    if (button) button.disabled = true;
+
     try {
-        await fetch('/api/reload', { method: 'POST' });
+        const response = await fetch(endpoint, { method: 'POST' });
+        if (!response.ok) {
+            throw new Error(`${actionName} failed with HTTP ${response.status}`);
+        }
         // Status will update via Socket.IO when backend starts operation
     } catch (error) {
-        console.error('Failed to reload:', error);
+        console.error(`Failed to ${actionName}:`, error);
+    } finally {
+        if (button) button.disabled = false;
     }
+}
+
+async function reloadCampaigns() {
+    const button = document.getElementById('reload-btn');
+    await requestCampaignRefresh('/api/reload', button, 'reload campaigns');
+}
+
+async function clearAllCache() {
+    const button = document.getElementById('clear-cache-btn');
+    await requestCampaignRefresh('/api/cache/clear', button, 'clear cache');
 }
 
 
@@ -1980,6 +2003,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
+    document.getElementById('clear-cache-btn').addEventListener('click', clearAllCache);
 
 
     // Games to watch management

@@ -76,11 +76,18 @@ Then open <http://localhost:8080>.
 Inventory filters combine **Active**, **Upcoming**, and **Expired** as alternatives.
 **Not Linked** narrows that status result, while fully claimed campaigns stay hidden
 until **Finished** is selected. Zero-minute subscription rewards are omitted from the
-Inventory and Wanted Drops Queue because they cannot be earned by watching. The channel
-list matches game names case-insensitively and keeps the actively watched channel visible
-while game settings are changing. Campaign totals and claim messages count only rewards
-that can be earned by watching. Consecutive identical no-active-campaign console prompts
-are collapsed until another console message appears.
+Inventory and Wanted Drops Queue because they cannot be earned by watching. Individually
+expired rewards are also omitted from the queue, while upcoming and sequential rewards
+remain visible; successful claims refresh the queue immediately. The channel list matches
+game names case-insensitively and keeps the actively watched channel visible while game
+settings are changing. Campaign totals and claim messages count only rewards that can be
+earned by watching. Consecutive identical no-active-campaign console prompts are collapsed
+until another console message appears.
+
+In **Settings**, **Clear All Cache** calls `POST /api/cache/clear` to discard local
+campaign, channel, and other derived miner state while preserving your OAuth login and
+settings, then reloads the data from Twitch. This is a recovery and diagnostic action;
+it cannot correct inaccurate campaign metadata returned by Twitch.
 
 > [!NOTE]
 > Your Twitch account must be linked to the relevant game accounts. Review your
@@ -108,7 +115,7 @@ Contributors are credited automatically when their pull requests are merged into
 | [@capkz](https://github.com/capkz) | [#70](https://github.com/rangermix/TwitchDropsMiner/pull/70) |
 | [@EthanBlazkowicz](https://github.com/EthanBlazkowicz) | [#33](https://github.com/rangermix/TwitchDropsMiner/pull/33) |
 | [@Knight-sys](https://github.com/Knight-sys) | [#3](https://github.com/rangermix/TwitchDropsMiner/pull/3) |
-| [@rangermix](https://github.com/rangermix) | [#1](https://github.com/rangermix/TwitchDropsMiner/pull/1) · [#2](https://github.com/rangermix/TwitchDropsMiner/pull/2) · [#7](https://github.com/rangermix/TwitchDropsMiner/pull/7) · [#8](https://github.com/rangermix/TwitchDropsMiner/pull/8) · [#9](https://github.com/rangermix/TwitchDropsMiner/pull/9) · [#13](https://github.com/rangermix/TwitchDropsMiner/pull/13) · [#20](https://github.com/rangermix/TwitchDropsMiner/pull/20) · [#24](https://github.com/rangermix/TwitchDropsMiner/pull/24) · [#29](https://github.com/rangermix/TwitchDropsMiner/pull/29) · [#32](https://github.com/rangermix/TwitchDropsMiner/pull/32) · [#45](https://github.com/rangermix/TwitchDropsMiner/pull/45) · [#74](https://github.com/rangermix/TwitchDropsMiner/pull/74) · [#79](https://github.com/rangermix/TwitchDropsMiner/pull/79) · [#80](https://github.com/rangermix/TwitchDropsMiner/pull/80) · [#84](https://github.com/rangermix/TwitchDropsMiner/pull/84) · [#86](https://github.com/rangermix/TwitchDropsMiner/pull/86) |
+| [@rangermix](https://github.com/rangermix) | [#1](https://github.com/rangermix/TwitchDropsMiner/pull/1) · [#2](https://github.com/rangermix/TwitchDropsMiner/pull/2) · [#7](https://github.com/rangermix/TwitchDropsMiner/pull/7) · [#8](https://github.com/rangermix/TwitchDropsMiner/pull/8) · [#9](https://github.com/rangermix/TwitchDropsMiner/pull/9) · [#13](https://github.com/rangermix/TwitchDropsMiner/pull/13) · [#20](https://github.com/rangermix/TwitchDropsMiner/pull/20) · [#24](https://github.com/rangermix/TwitchDropsMiner/pull/24) · [#29](https://github.com/rangermix/TwitchDropsMiner/pull/29) · [#32](https://github.com/rangermix/TwitchDropsMiner/pull/32) · [#45](https://github.com/rangermix/TwitchDropsMiner/pull/45) · [#74](https://github.com/rangermix/TwitchDropsMiner/pull/74) · [#79](https://github.com/rangermix/TwitchDropsMiner/pull/79) · [#80](https://github.com/rangermix/TwitchDropsMiner/pull/80) · [#84](https://github.com/rangermix/TwitchDropsMiner/pull/84) · [#86](https://github.com/rangermix/TwitchDropsMiner/pull/86) · [#88](https://github.com/rangermix/TwitchDropsMiner/pull/88) · [#93](https://github.com/rangermix/TwitchDropsMiner/pull/93) · [#89](https://github.com/rangermix/TwitchDropsMiner/pull/89) · [#90](https://github.com/rangermix/TwitchDropsMiner/pull/90) |
 | [@Sean-Destefano](https://github.com/Sean-Destefano) | [#49](https://github.com/rangermix/TwitchDropsMiner/pull/49) |
 | [@SimpliAj](https://github.com/SimpliAj) | [#72](https://github.com/rangermix/TwitchDropsMiner/pull/72) |
 | [@Stein-N](https://github.com/Stein-N) | [#71](https://github.com/rangermix/TwitchDropsMiner/pull/71) |
@@ -174,6 +181,8 @@ This project is a modern fork of
 This fork is maintained with AI-assisted development tools. Changes are validated through
 automated tests and code-quality checks, but users should still review updates before
 deploying them. The validation suite includes GraphQL watch events and batched channel
-discovery, alongside settings, translation, and frontend safety checks. Use the software
+discovery, alongside settings, full-locale translation schema and placeholder checks,
+and frontend safety checks. Use the software
 responsibly. Release automation verifies that the runtime, package, and lockfile versions
-match before publishing tags and Docker images.
+match before publishing tags and Docker images. Docker validation and release jobs use
+the same pinned, Node-24-native Buildx and image-build action releases.

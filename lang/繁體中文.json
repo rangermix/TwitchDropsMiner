@@ -24,10 +24,7 @@
             "logging_in": "正在登入…",
             "required": "需要登入",
             "waiting_auth": "正在等待身份驗證..."
-        },
-        "oauth_prompt": "請在此處輸入此代碼：",
-        "oauth_activate": "啟用 Twitch",
-        "oauth_confirm": "我已輸入代碼"
+        }
     },
     "error": {
         "captcha": "您的登入被 CAPTCHA 拒絕，請於12小時後重試。",
@@ -39,6 +36,7 @@
         "status": {
             "name": "狀態",
             "idle": "已完成獲取",
+            "ready": "就緒",
             "exiting": "正在退出…",
             "terminated": "已終止運行",
             "cleanup": "正在清除頻道…",
@@ -146,6 +144,8 @@
             "connection_quality": "連線品質：",
             "minimum_refresh": "最小重新整理間隔（分鐘）：",
             "reload_campaigns": "重新載入活動",
+            "clear_all_cache": "清除所有快取",
+            "clear_all_cache_help": "清除本機活動、頻道和挖礦器衍生狀態；保留登入資訊和設定，然後從 Twitch 重新載入。",
             "mining_benefits": "挖掘獎勵",
             "mining_benefits_help": "選擇您想要獲取的掉落類型。"
         },

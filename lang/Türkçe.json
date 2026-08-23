@@ -24,10 +24,7 @@
             "logging_in": "Kayıt Ol...",
             "required": "Kaydolmak gerekiyor",
             "waiting_auth": "Kimlik doğrulama bekleniyor..."
-        },
-        "oauth_prompt": "Bu kodu şuraya girin:",
-        "oauth_activate": "Twitch'i Etkinleştir",
-        "oauth_confirm": "Kodu girdim"
+        }
     },
     "error": {
         "captcha": "Giriş girişimi CAPTCHA tarafından reddedildi.\nLütfen en az 12 saat içinde tekrar deneyin.",
@@ -39,6 +36,7 @@
         "status": {
             "name": "Durum",
             "idle": "Boşta",
+            "ready": "Hazır",
             "exiting": "Çıkış...",
             "terminated": "Sonlandırıldı",
             "cleanup": "Kanalları temizle..",
@@ -146,6 +144,8 @@
             "connection_quality": "Bağlantı kalitesi:",
             "minimum_refresh": "Minimum yenileme aralığı (dakika):",
             "reload_campaigns": "Kampanyaları Yeniden Yükle",
+            "clear_all_cache": "Tüm Önbelleği Temizle",
+            "clear_all_cache_help": "Yerel kampanya, kanal ve türetilmiş madenci durumunu temizler; oturum açma bilgilerini ve ayarları korur, ardından Twitch'ten yeniden yükler.",
             "mining_benefits": "Madencilik Avantajları",
             "mining_benefits_help": "Hangi tür dropları toplamak istediğinizi seçin."
         },
