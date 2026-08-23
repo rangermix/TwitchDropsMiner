@@ -162,8 +162,9 @@ lang/                # Translation JSON files (20 languages)
 - Inventory filters (Status, Benefit Type, Game Search); Active/Upcoming/Expired use
   OR semantics, Not Linked narrows the result, and Finished opts claimed campaigns in.
   Zero-minute subscription rewards are omitted from Inventory and Wanted Drops Queue;
-  individually expired and non-mineable rewards are also excluded from Wanted Drops Queue;
-  the actively watched channel remains visible while game settings are changing
+  individually expired and non-mineable rewards are omitted from the queue without hiding
+  upcoming or sequential rewards; successful claims refresh the queue immediately; the
+  actively watched channel remains visible while game settings are changing
 
 Drop-name ignore policy is dependency-aware: a matching unclaimed drop and its dependent
 branches are ignored dynamically. Prerequisite-only branches with no mineable reward are
@@ -350,7 +351,8 @@ source env/bin/activate && python -m pytest tests/
 
 The suite covers settings and proxy behavior, inventory-filter behavior, API filtering,
 GraphQL watch events, batched channel discovery, translation consistency, frontend DOM
-safety, case-insensitive channel filtering, watch-drop count semantics, and contributor
+safety, case-insensitive channel filtering, watch-drop count and expiry semantics,
+immediate claim refresh behavior, and contributor
 README automation. Frontend behavior tests share their JavaScript extraction helper and use Node.js;
 the validation workflow provisions Node 24 before running pytest. It also runs the release
 script contract tests under `.github/scripts/test/`. Ignore-list coverage includes
