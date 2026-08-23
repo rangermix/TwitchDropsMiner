@@ -173,6 +173,7 @@ This project is a modern fork of
 This fork is maintained with AI-assisted development tools. Changes are validated through
 automated tests and code-quality checks, but users should still review updates before
 deploying them. The validation suite includes GraphQL watch events and batched channel
-discovery, alongside settings, translation, and frontend safety checks. Use the software
+discovery, alongside settings, full-locale translation schema and placeholder checks,
+and frontend safety checks. Use the software
 responsibly. Release automation verifies that the runtime, package, and lockfile versions
 match before publishing tags and Docker images.

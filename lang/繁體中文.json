@@ -24,10 +24,7 @@
             "logging_in": "正在登入…",
             "required": "需要登入",
             "waiting_auth": "正在等待身份驗證..."
-        },
-        "oauth_prompt": "請在此處輸入此代碼：",
-        "oauth_activate": "啟用 Twitch",
-        "oauth_confirm": "我已輸入代碼"
+        }
     },
     "error": {
         "captcha": "您的登入被 CAPTCHA 拒絕，請於12小時後重試。",
@@ -39,6 +36,7 @@
         "status": {
             "name": "狀態",
             "idle": "已完成獲取",
+            "ready": "就緒",
             "exiting": "正在退出…",
             "terminated": "已終止運行",
             "cleanup": "正在清除頻道…",

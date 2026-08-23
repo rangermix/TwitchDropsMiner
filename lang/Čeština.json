@@ -11,6 +11,7 @@
         "no_campaign": "Žádné dropy k dispozici, čekání na další dostupné dropy..."
     },
     "login": {
+        "error_code": "Kód chyby přihlášení: {error_code}",
         "unexpected_content": "Chyba při přesměrování. Nepoužíváte VPN?",
         "incorrect_login_pass": "Nesprávné přihlašení.",
         "incorrect_email_code": "Nesprávný E-Mail kód.",
@@ -23,10 +24,7 @@
             "logging_in": "Přihlašování...",
             "required": "Potřebujete se nejdříve přihlásit",
             "waiting_auth": "Čekání na ověření..."
-        },
-        "oauth_prompt": "Zadejte tento kód na:",
-        "oauth_activate": "Aktivovat Twitch",
-        "oauth_confirm": "Zadal jsem kód"
+        }
     },
     "error": {
         "captcha": "Vaše připojení bylo zamítnuto službou Twitch, zkuste to znovu za 12 hodin.",
@@ -38,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Dokončeno načítání",
+            "ready": "Připraveno",
             "exiting": "Ukončování...",
             "terminated": "Aplikace ukončena",
             "cleanup": "Čištění...",
@@ -128,7 +127,6 @@
                 "name": "Obecné",
                 "dark_mode": "Tmavý režim"
             },
-            "exclude": "Vynechat",
             "reload": "Obnovit",
             "games_to_watch": "Hry ke sledování",
             "games_help": "Vyberte hry ke sledování. Záleží na pořadí - přetáhněte pro změnu priority (nahoře = nejvyšší priorita).",
