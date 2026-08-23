@@ -24,10 +24,7 @@
             "logging_in": "Logowanie...",
             "required": "Wymagane zalogowanie",
             "waiting_auth": "Oczekiwanie na uwierzytelnienie..."
-        },
-        "oauth_prompt": "Wprowadź ten kod na:",
-        "oauth_activate": "Aktywuj Twitch",
-        "oauth_confirm": "Wprowadziłem kod"
+        }
     },
     "error": {
         "captcha": "Próba logowania została odrzucona przez CAPTCHA.\nProszę spróbować ponownie za co najmniej 12 godzin.",
@@ -39,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Bezczynność",
+            "ready": "Gotowy",
             "exiting": "Zamykanie...",
             "terminated": "Zatrzymano",
             "cleanup": "Czyszczenie kanałów...",
@@ -136,7 +134,6 @@
                 "name": "Ogólne",
                 "dark_mode": "Tryb ciemny"
             },
-            "exclude": "Wykluczone",
             "reload": "Przeładuj",
             "games_to_watch": "Gry do oglądania",
             "games_help": "Wybierz gry do oglądania. Kolejność ma znaczenie - przeciągnij, aby zmienić priorytet (góra = najwyższy priorytet).",
@@ -157,6 +154,8 @@
             "drop_name_blacklist": "Ignorowane słowa kluczowe nazw dropów",
             "drop_name_blacklist_help": "Wpisz jedno słowo kluczowe w każdym wierszu. Dopasowanie wyszukuje dosłowny podciąg bez rozróżniania wielkości liter. Pasujące dropy i zależne od nich gałęzie są ignorowane; gałęzie będące tylko warunkami wstępnymi są pomijane, a wspólne warunki wstępne nadal można zdobywać.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Wyczyść całą pamięć podręczną",
+            "clear_all_cache_help": "Usuwa lokalny stan kampanii, kanałów i pochodne dane minera; zachowuje logowanie i ustawienia, a następnie ponownie pobiera dane z Twitcha.",
             "mining_benefits": "Korzyści z Minowania",
             "mining_benefits_help": "Wybierz rodzaje dropów, które chcesz zdobywać."
         },

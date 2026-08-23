@@ -36,6 +36,7 @@
         "status": {
             "name": "状态",
             "idle": "已完成获取",
+            "ready": "就绪",
             "exiting": "正在退出...",
             "terminated": "应用已终止运行",
             "cleanup": "清除频道中...",
@@ -153,6 +154,8 @@
             "drop_name_blacklist": "忽略的掉落名称关键词",
             "drop_name_blacklist_help": "每行输入一个关键词。匹配时不区分大小写，并按字面子串搜索。匹配的掉落及其依赖分支将被忽略；仅作为前置条件的分支将被跳过，而共享的前置条件仍可挖取。",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "清除所有缓存",
+            "clear_all_cache_help": "清除本地活动、频道和挖矿器派生状态；保留登录信息和设置，然后从 Twitch 重新加载。",
             "mining_benefits": "挖掘奖励",
             "mining_benefits_help": "选择您想要获取的掉落类型。"
         },

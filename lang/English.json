@@ -109,6 +109,8 @@
             "drop_name_blacklist": "Ignored Drop Keywords",
             "drop_name_blacklist_help": "Enter one keyword per line. Matching is a case-insensitive literal substring. Matching drops and their dependent branches are ignored; prerequisite-only branches are skipped while shared prerequisites remain mineable.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Clear All Cache",
+            "clear_all_cache_help": "Clears local campaign, channel, and derived miner state; keeps your login and settings, then reloads from Twitch.",
             "games_to_watch": "Games to Watch",
             "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
             "search_games": "Search games...",

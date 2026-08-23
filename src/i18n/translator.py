@@ -184,6 +184,8 @@ class GUISettings(TypedDict):
     drop_name_blacklist: str
     drop_name_blacklist_help: str
     drop_name_blacklist_placeholder: str
+    clear_all_cache: str
+    clear_all_cache_help: str
     games_to_watch: str
     games_help: str
     search_games: str

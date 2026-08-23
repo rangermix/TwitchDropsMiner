@@ -24,21 +24,19 @@
             "logging_in": "Koneksi dalam proses...",
             "required": "Diperlukan sambungan",
             "waiting_auth": "Menunggu autentikasi..."
-        },
-        "oauth_prompt": "Masukkan kode ini di:",
-        "oauth_activate": "Aktifkan Twitch",
-        "oauth_confirm": "Saya telah memasukkan kode"
+        }
     },
     "error": {
         "captcha": "Sambungan ditolak oleh CAPTCHA. Silakan coba lagi dalam waktu sekitar 12 jam.",
         "site_down": "Twitch tidak tersedia. Silakan coba lagi dalam {seconds} detik....",
-        "no_connection": "Tidak dapat tersambung ke Twitch. Silakan coba lagi dalam {detik} detik...."
+        "no_connection": "Tidak dapat tersambung ke Twitch. Silakan coba lagi dalam {seconds} detik...."
     },
     "gui": {
         "output": "Keluaran",
         "status": {
             "name": "Status",
             "idle": "Tidak aktif",
+            "ready": "Siap",
             "exiting": "Keluar...",
             "terminated": "Diakhiri",
             "cleanup": "Membersihkan saluran...",
@@ -156,6 +154,8 @@
             "drop_name_blacklist": "Kata Kunci Nama Drop yang Diabaikan",
             "drop_name_blacklist_help": "Masukkan satu kata kunci per baris. Pencocokan mencari substring literal tanpa membedakan huruf besar dan kecil. Drop yang cocok dan cabang yang bergantung padanya diabaikan; cabang yang hanya menjadi prasyarat dilewati, sementara prasyarat bersama tetap dapat ditambang.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Hapus Semua Cache",
+            "clear_all_cache_help": "Menghapus status kampanye, channel, dan data turunan miner lokal; mempertahankan login dan pengaturan, lalu memuat ulang data dari Twitch.",
             "mining_benefits": "Manfaat Penambangan",
             "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang."
         },

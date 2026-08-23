@@ -36,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Im Leerlauf",
+            "ready": "Bereit",
             "exiting": "Beenden...",
             "terminated": "Abgebrochen",
             "cleanup": "Kanäle aufräumen..",
@@ -138,6 +139,8 @@
             "drop_name_blacklist": "Ignorierte Schlüsselwörter in Drop-Namen",
             "drop_name_blacklist_help": "Geben Sie ein Schlüsselwort pro Zeile ein. Der Abgleich sucht ohne Beachtung der Groß-/Kleinschreibung nach einer wörtlichen Teilzeichenfolge. Passende Drops und ihre abhängigen Zweige werden ignoriert; reine Voraussetzungzweige werden übersprungen, während gemeinsame Voraussetzungen weiterhin erspielt werden können.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Gesamten Cache leeren",
+            "clear_all_cache_help": "Löscht lokale Kampagnen-, Kanal- und abgeleitete Miner-Daten; Anmeldung und Einstellungen bleiben erhalten, anschließend werden die Daten von Twitch neu geladen.",
             "games_to_watch": "Spiele zum Ansehen",
             "games_help": "Wählen Sie Spiele zum Ansehen aus. Die Reihenfolge ist wichtig - ziehen Sie, um die Priorität zu ändern (oben = höchste Priorität).",
             "search_games": "Spiele suchen...",

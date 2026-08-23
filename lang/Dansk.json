@@ -36,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Ledig",
+            "ready": "Klar",
             "exiting": "Afslutter...",
             "terminated": "Afsluttet",
             "cleanup": "Oprydning af kanaler...",
@@ -153,6 +154,8 @@
             "drop_name_blacklist": "Ignorerede nøgleord i dropnavne",
             "drop_name_blacklist_help": "Angiv ét nøgleord pr. linje. Der søges efter en bogstavelig delstreng uden forskel på store og små bogstaver. Matchende drops og deres afhængige grene ignoreres; grene, der kun er forudsætninger, springes over, mens delte forudsætninger stadig kan optjenes.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Ryd hele cachen",
+            "clear_all_cache_help": "Rydder lokal kampagne-, kanal- og afledt minerstatus; bevarer login og indstillinger og genindlæser derefter data fra Twitch.",
             "mining_benefits": "Mining Fordele",
             "mining_benefits_help": "Vælg hvilke typer drops du vil mine."
         },

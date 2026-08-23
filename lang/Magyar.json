@@ -109,6 +109,8 @@
             "drop_name_blacklist": "Figyelmen kívül hagyott dropkulcsszavak",
             "drop_name_blacklist_help": "Adjon meg soronként egy kulcsszót. Az egyezés kis- és nagybetűtől független, literális részkarakterláncot keres. Az egyező dropok és a tőlük függő ágak figyelmen kívül maradnak; a csak előfeltételként szolgáló ágak kimaradnak, míg a megosztott előfeltételek továbbra is megszerezhetők.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Teljes gyorsítótár törlése",
+            "clear_all_cache_help": "Törli a helyi kampány-, csatorna- és származtatott bányászállapotot; megtartja a bejelentkezést és a beállításokat, majd újratölti az adatokat a Twitchről.",
             "games_to_watch": "Nézendő játékok",
             "games_help": "Válassza ki a nézendő játékokat. A sorrend számít - húzással módosítható a prioritás (felül = legmagasabb).",
             "search_games": "Játékok keresése...",

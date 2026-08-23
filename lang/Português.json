@@ -24,10 +24,7 @@
             "logging_in": "Entrando...",
             "required": "Login necessário",
             "waiting_auth": "Aguardando autenticação..."
-        },
-        "oauth_prompt": "Digite este código em:",
-        "oauth_activate": "Ativar Twitch",
-        "oauth_confirm": "Eu digitei o código"
+        }
     },
     "error": {
         "captcha": "Seu login foi negado pelo CAPTCHA.\nPor favor tente em aproximadamente 12+ horas.",
@@ -39,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Em espera",
+            "ready": "Pronto",
             "exiting": "Saindo",
             "terminated": "Finalizado",
             "cleanup": "Limpando os Canais...",
@@ -156,6 +154,8 @@
             "drop_name_blacklist": "Palavras-chave de drops ignorados",
             "drop_name_blacklist_help": "Digite uma palavra-chave por linha. A correspondência procura uma substring literal sem diferenciar maiúsculas de minúsculas. Os drops correspondentes e seus ramos dependentes são ignorados; ramos usados apenas como pré-requisitos não são minerados, enquanto pré-requisitos compartilhados continuam mineráveis.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Limpar todo o cache",
+            "clear_all_cache_help": "Limpa o estado local de campanhas, canais e dados derivados do minerador; mantém o login e as configurações e depois recarrega os dados da Twitch.",
             "mining_benefits": "Benefícios de Mineração",
             "mining_benefits_help": "Selecione quais tipos de drops você deseja minerar."
         },

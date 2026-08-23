@@ -24,10 +24,7 @@
             "logging_in": "Loggando...",
             "required": "Login richiesto",
             "waiting_auth": "In attesa di autenticazione..."
-        },
-        "oauth_prompt": "Inserisci questo codice su:",
-        "oauth_activate": "Attiva Twitch",
-        "oauth_confirm": "Ho inserito il codice"
+        }
     },
     "error": {
         "captcha": "Il tuo tentativo di login è stato negato da CAPTCHA.\nRiprova tra 12+ ore.",
@@ -39,6 +36,7 @@
         "status": {
             "name": "Stato",
             "idle": "Inattivo",
+            "ready": "Pronto",
             "exiting": "Uscendo...",
             "terminated": "Terminato",
             "cleanup": "Pulendo i canali...",
@@ -156,6 +154,8 @@
             "drop_name_blacklist": "Parole chiave dei drop ignorati",
             "drop_name_blacklist_help": "Inserisci una parola chiave per riga. La corrispondenza cerca una sottostringa letterale senza distinguere maiuscole e minuscole. I drop corrispondenti e i relativi rami dipendenti vengono ignorati; i rami che servono solo da prerequisito vengono saltati, mentre i prerequisiti condivisi restano ottenibili.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Svuota tutta la cache",
+            "clear_all_cache_help": "Cancella lo stato locale di campagne, canali e i dati derivati del miner; mantiene l’accesso e le impostazioni, quindi ricarica i dati da Twitch.",
             "mining_benefits": "Vantaggi Minatori",
             "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare."
         },
