@@ -81,6 +81,11 @@ list matches game names case-insensitively and keeps the actively watched channe
 while game settings are changing. Campaign totals and claim messages count only rewards
 that can be earned by watching.
 
+In **Settings**, **Clear All Cache** calls `POST /api/cache/clear` to discard local
+campaign, channel, and other derived miner state while preserving your OAuth login and
+settings, then reloads the data from Twitch. This is a recovery and diagnostic action;
+it cannot correct inaccurate campaign metadata returned by Twitch.
+
 > [!NOTE]
 > Your Twitch account must be linked to the relevant game accounts. Review your
 > [Twitch Drops campaigns](https://www.twitch.tv/drops/campaigns) before mining.

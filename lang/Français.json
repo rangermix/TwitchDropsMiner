@@ -128,6 +128,8 @@
             },
             "reload": "Recharger",
             "reload_campaigns": "Recharger les campagnes",
+            "clear_all_cache": "Vider tout le cache",
+            "clear_all_cache_help": "Efface l’état local des campagnes, des chaînes et les données dérivées du mineur ; conserve la connexion et les paramètres, puis recharge les données depuis Twitch.",
             "games_to_watch": "Jeux à regarder",
             "games_help": "Sélectionnez les jeux à regarder. L'ordre est important - faites glisser pour réorganiser la priorité (haut = priorité la plus élevée).",
             "search_games": "Rechercher des jeux...",

@@ -146,6 +146,8 @@
             "connection_quality": "Verbindingskwaliteit:",
             "minimum_refresh": "Minimaal verversingsinterval (minuten):",
             "reload_campaigns": "Herlaad Campagnes",
+            "clear_all_cache": "Volledige cache wissen",
+            "clear_all_cache_help": "Wist de lokale campagne-, kanaal- en afgeleide minerstatus; behoudt je aanmelding en instellingen en laadt daarna opnieuw vanaf Twitch.",
             "mining_benefits": "Mining Voordelen",
             "mining_benefits_help": "Selecteer welke soorten drops je wilt minen."
         },

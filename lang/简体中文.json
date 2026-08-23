@@ -143,6 +143,8 @@
             "connection_quality": "连接质量：",
             "minimum_refresh": "最小刷新间隔（分钟）：",
             "reload_campaigns": "重新加载活动",
+            "clear_all_cache": "清除所有缓存",
+            "clear_all_cache_help": "清除本地活动、频道和挖矿器派生状态；保留登录信息和设置，然后从 Twitch 重新加载。",
             "mining_benefits": "挖掘奖励",
             "mining_benefits_help": "选择您想要获取的掉落类型。"
         },

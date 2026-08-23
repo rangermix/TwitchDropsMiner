@@ -106,6 +106,8 @@
             "mining_benefits_help": "Válassza ki, mely típusú jutalmakat szeretné bányászni.",
             "reload": "Kampányok újratöltése",
             "reload_campaigns": "Kampányok újratöltése",
+            "clear_all_cache": "Teljes gyorsítótár törlése",
+            "clear_all_cache_help": "Törli a helyi kampány-, csatorna- és származtatott bányászállapotot; megtartja a bejelentkezést és a beállításokat, majd újratölti az adatokat a Twitchről.",
             "games_to_watch": "Nézendő játékok",
             "games_help": "Válassza ki a nézendő játékokat. A sorrend számít - húzással módosítható a prioritás (felül = legmagasabb).",
             "search_games": "Játékok keresése...",

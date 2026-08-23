@@ -106,6 +106,8 @@
             "mining_benefits_help": "Select which types of drops you want to mine.",
             "reload": "Reload Campaigns",
             "reload_campaigns": "Reload Campaigns",
+            "clear_all_cache": "Clear All Cache",
+            "clear_all_cache_help": "Clears local campaign, channel, and derived miner state; keeps your login and settings, then reloads from Twitch.",
             "games_to_watch": "Games to Watch",
             "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
             "search_games": "Search games...",

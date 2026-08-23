@@ -146,6 +146,8 @@
             "connection_quality": "Kvalita připojení:",
             "minimum_refresh": "Minimální interval obnovení (minuty):",
             "reload_campaigns": "Znovu načíst kampaně",
+            "clear_all_cache": "Vymazat veškerou mezipaměť",
+            "clear_all_cache_help": "Vymaže místní stav kampaní, kanálů a odvozený stav mineru; zachová přihlášení a nastavení a poté znovu načte data z Twitche.",
             "mining_benefits": "Výhody Těžby",
             "mining_benefits_help": "Vyberte typy dropů, které chcete těžit."
         },

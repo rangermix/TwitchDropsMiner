@@ -56,6 +56,8 @@ class Twitch:
         # State management
         self._state: State = State.IDLE
         self._state_change = asyncio.Event()
+        self._inventory_refresh_pending = False
+        self._clear_cache_pending = False
         self.wanted_games: list[Game] = []
         self.inventory: list[DropsCampaign] = []
         self._drops: dict[str, TimedDrop] = {}
@@ -150,6 +152,29 @@ class Twitch:
             self._state = state
         self._state_change.set()
 
+    def request_inventory_refresh(self, *, clear_cache: bool = False) -> bool:
+        """Queue an inventory refresh without racing the active state-machine step.
+
+        Args:
+            clear_cache: Clear local derived miner state before fetching fresh data.
+
+        Returns:
+            ``True`` when the request was accepted, or ``False`` during shutdown.
+        """
+        if self._state is State.EXIT:
+            return False
+
+        self._inventory_refresh_pending = True
+        self._clear_cache_pending = self._clear_cache_pending or clear_cache
+        self._state_change.set()
+        return True
+
+    def _activate_pending_inventory_refresh(self) -> None:
+        """Prioritize a queued refresh over the next normal state transition."""
+        if self._inventory_refresh_pending and self._state is not State.EXIT:
+            self._state = State.INVENTORY_FETCH
+            self._state_change.set()
+
     def get_change_state_callable(self, state: State) -> abc.Callable[[], None]:
         """Return a callable that changes state when invoked (deferred call for GUI usage)."""
         return partial(self.change_state, state)
@@ -218,14 +243,20 @@ class Twitch:
         )
         full_cleanup: bool = False
         channels: Final[OrderedDict[int, Channel]] = self.channels
-        self.change_state(State.INVENTORY_FETCH)
+        self.request_inventory_refresh()
         while True:
+            self._activate_pending_inventory_refresh()
             if self._state is State.IDLE:
                 self.gui.status.update(_.t["gui"]["status"]["idle"])
                 self.stop_watching()
                 # clear the flag and wait until it's set again
                 self._state_change.clear()
             elif self._state is State.INVENTORY_FETCH:
+                self._inventory_refresh_pending = False
+                clear_cached_state = self._clear_cache_pending
+                self._clear_cache_pending = False
+                if clear_cached_state:
+                    self._inventory_service.clear_cached_state()
                 # ensure the websocket is running
                 await self.websocket.start()
                 await self.fetch_inventory()
@@ -501,6 +532,10 @@ class Twitch:
                 self.gui.status.update(_.t["gui"]["status"]["exiting"])
                 # we've been requested to exit the application
                 break
+            # A request can arrive while a state performs asynchronous work or
+            # after that state clears the event. Re-apply it before waiting so
+            # the request cannot be overwritten by the state's normal transition.
+            self._activate_pending_inventory_refresh()
             await self._state_change.wait()
 
     def can_watch(self, channel: Channel) -> bool:
@@ -545,6 +580,24 @@ class Twitch:
         # Broadcast manual mode change to GUI
         self.gui.broadcast_manual_mode_change(self.get_manual_mode_info())
 
+    def clear_manual_mode(self, reason: str = "") -> bool:
+        """Clear manual targeting without changing the state machine.
+
+        Returns whether any manual target was present.
+        """
+        if self._manual_target_channel is None and self._manual_target_game is None:
+            return False
+
+        game_name = self._manual_target_game.name if self._manual_target_game else "Unknown"
+        logger.info(
+            f"Clearing manual mode for game: {game_name}. Reason: {reason or 'User requested'}"
+        )
+
+        self._manual_target_channel = None
+        self._manual_target_game = None
+        self.gui.broadcast_manual_mode_change(self.get_manual_mode_info())
+        return True
+
     def exit_manual_mode(self, reason: str = "") -> None:
         """
         Exit manual mode and return to automatic channel selection.
@@ -552,19 +605,8 @@ class Twitch:
         Args:
             reason: Optional reason for exiting manual mode (for logging)
         """
-        if not self.is_manual_mode():
+        if not self.clear_manual_mode(reason):
             return
-
-        game_name = self._manual_target_game.name if self._manual_target_game else "Unknown"
-        logger.info(
-            f"Exiting manual mode for game: {game_name}. Reason: {reason or 'User requested'}"
-        )
-
-        self._manual_target_channel = None
-        self._manual_target_game = None
-
-        # Broadcast manual mode change to GUI
-        self.gui.broadcast_manual_mode_change(self.get_manual_mode_info())
 
         # Trigger channel switch to select new channel automatically
         self.change_state(State.CHANNEL_SWITCH)

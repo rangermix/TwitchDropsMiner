@@ -147,6 +147,8 @@
             "connection_quality": "Jakość połączenia:",
             "minimum_refresh": "Minimalny interwał odświeżania (minuty):",
             "reload_campaigns": "Przeładuj kampanie",
+            "clear_all_cache": "Wyczyść całą pamięć podręczną",
+            "clear_all_cache_help": "Usuwa lokalny stan kampanii, kanałów i pochodne dane minera; zachowuje logowanie i ustawienia, a następnie ponownie pobiera dane z Twitcha.",
             "mining_benefits": "Korzyści z Minowania",
             "mining_benefits_help": "Wybierz rodzaje dropów, które chcesz zdobywać."
         },

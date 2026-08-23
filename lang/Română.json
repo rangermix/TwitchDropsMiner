@@ -146,6 +146,8 @@
             "connection_quality": "Calitatea conexiunii:",
             "minimum_refresh": "Interval minim de reîmprospătare (minute):",
             "reload_campaigns": "Reîncarcă campaniile",
+            "clear_all_cache": "Șterge tot cache-ul",
+            "clear_all_cache_help": "Șterge starea locală a campaniilor, canalelor și datele derivate ale minerului; păstrează autentificarea și setările, apoi reîncarcă datele de pe Twitch.",
             "mining_benefits": "Beneficii Minerit",
             "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați."
         },

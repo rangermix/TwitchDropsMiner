@@ -131,10 +131,13 @@ lang/                # Translation JSON files (20 languages)
 
 **src/web/app.py** - FastAPI application:
 
-- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/login`, `/api/oauth/confirm`, `/api/reload`, `/api/close`, `/api/version`
+- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/login`, `/api/oauth/confirm`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`
 - Socket.IO server for real-time bi-directional communication
 - Serves static web frontend from `web/` directory
 - Integrates with WebGUIManager via `set_managers()`
+- The Settings **Clear All Cache** action discards local campaign, channel, and other
+  derived miner state, preserves OAuth login and settings, and then reloads from Twitch.
+  It is a recovery and diagnostic action, not a correction for Twitch campaign metadata.
 - `serve_index()` replaces the `__APP_VERSION__` placeholder in local CSS/JavaScript URLs
   with the application version and serves `/` with `Cache-Control: no-cache`
 - Any `app.js` or `styles.css` change requires an application version bump through the release
@@ -384,7 +387,7 @@ The application uses a web-based interface accessible via browser:
 
 **src/web/app.py** - FastAPI application:
 
-- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/login`, `/api/oauth/confirm`, `/api/reload`, `/api/close`, `/api/version`
+- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/login`, `/api/oauth/confirm`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`
 - Socket.IO server for real-time bi-directional communication
 - Serves static web frontend from `web/` directory
 - Integrates with WebGUIManager via `set_managers()`

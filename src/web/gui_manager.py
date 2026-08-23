@@ -140,6 +140,10 @@ class WebGUIManager:
         self._selected_channel_id = None  # Clear after reading
         return result
 
+    def clear_channel_selection(self) -> None:
+        """Discard a pending channel selection."""
+        self._selected_channel_id = None
+
     def apply_theme(self, dark_mode: bool):
         """Apply UI theme (handled client-side in web mode).
 

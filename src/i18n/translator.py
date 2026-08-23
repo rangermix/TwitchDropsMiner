@@ -174,6 +174,8 @@ class GUISettings(TypedDict):
     mining_benefits_help: str
     reload: str
     reload_campaigns: str
+    clear_all_cache: str
+    clear_all_cache_help: str
     games_to_watch: str
     games_help: str
     search_games: str
