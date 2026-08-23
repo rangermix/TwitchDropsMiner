@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta, timezone
 from types import MethodType, SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
@@ -109,7 +110,7 @@ async def test_mixed_campaign_claim_counts_only_watch_drops():
     )
     watch_drop = campaign.timed_drops["watch"]
     watch_drop._claim = AsyncMock(return_value=True)
-    campaign._twitch.gui.broadcast_wanted_items = AsyncMock()
+    campaign._twitch.gui.broadcast_wanted_items_now = AsyncMock()
 
     assert campaign.total_drops == 1
     assert campaign.claimed_drops == 0
@@ -122,7 +123,7 @@ async def test_mixed_campaign_claim_counts_only_watch_drops():
     assert campaign.remaining_drops == 0
     claim_message = campaign._twitch.print.call_args.args[0]
     assert "(1/1)" in claim_message
-    campaign._twitch.gui.broadcast_wanted_items.assert_awaited_once_with()
+    campaign._twitch.gui.broadcast_wanted_items_now.assert_awaited_once_with()
     campaign._twitch.print.assert_called_once()
 
 
@@ -131,11 +132,11 @@ async def test_failed_claim_does_not_refresh_wanted_queue():
     campaign = _campaign("claim-failed", [_drop("watch", "Watch", 30)])
     watch_drop = campaign.timed_drops["watch"]
     watch_drop._claim = AsyncMock(return_value=False)
-    campaign._twitch.gui.broadcast_wanted_items = AsyncMock()
+    campaign._twitch.gui.broadcast_wanted_items_now = AsyncMock()
 
     assert await watch_drop.claim() is False
 
-    campaign._twitch.gui.broadcast_wanted_items.assert_not_awaited()
+    campaign._twitch.gui.broadcast_wanted_items_now.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -149,13 +150,35 @@ async def test_successful_claim_survives_wanted_queue_broadcast_failure():
         get_wanted_game_tree=lambda: [],
         inv=MagicMock(),
     )
-    gui.broadcast_wanted_items = MethodType(WebGUIManager.broadcast_wanted_items, gui)
+    gui.broadcast_wanted_items_now = MethodType(
+        WebGUIManager.broadcast_wanted_items_now, gui
+    )
     campaign._twitch.gui = gui
 
     assert await watch_drop.claim() is True
 
     assert watch_drop.is_claimed is True
     gui.inv.update_drop.assert_called_once_with(watch_drop)
+
+
+@pytest.mark.asyncio
+async def test_wanted_items_broadcast_preserves_synchronous_callers():
+    broadcaster = SimpleNamespace(emit=AsyncMock())
+    gui = SimpleNamespace(
+        _broadcaster=broadcaster,
+        get_wanted_game_tree=lambda: [{"game_name": "Test Game"}],
+    )
+    gui.broadcast_wanted_items_now = MethodType(
+        WebGUIManager.broadcast_wanted_items_now, gui
+    )
+    gui.broadcast_wanted_items = MethodType(WebGUIManager.broadcast_wanted_items, gui)
+
+    assert gui.broadcast_wanted_items() is None
+    await asyncio.sleep(0)
+
+    broadcaster.emit.assert_awaited_once_with(
+        "wanted_items_update", [{"game_name": "Test Game"}]
+    )
 
 
 def test_wanted_queue_hides_subscription_drops_and_sub_only_campaigns():

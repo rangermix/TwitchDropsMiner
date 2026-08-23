@@ -160,7 +160,7 @@ class BaseDrop:
             self._twitch.print(
                 _.t["status"]["claimed_drop"].format(drop=claim_text.replace("\n", " "))
             )
-            await self._twitch.gui.broadcast_wanted_items()
+            await self._twitch.gui.broadcast_wanted_items_now()
         elif not result:
             logger.error(f"Drop claim has potentially failed! Drop ID: {self.id}")
         return result
