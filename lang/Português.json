@@ -24,10 +24,7 @@
             "logging_in": "Entrando...",
             "required": "Login necessário",
             "waiting_auth": "Aguardando autenticação..."
-        },
-        "oauth_prompt": "Digite este código em:",
-        "oauth_activate": "Ativar Twitch",
-        "oauth_confirm": "Eu digitei o código"
+        }
     },
     "error": {
         "captcha": "Seu login foi negado pelo CAPTCHA.\nPor favor tente em aproximadamente 12+ horas.",
@@ -39,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Em espera",
+            "ready": "Pronto",
             "exiting": "Saindo",
             "terminated": "Finalizado",
             "cleanup": "Limpando os Canais...",

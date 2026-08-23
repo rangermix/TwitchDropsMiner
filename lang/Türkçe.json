@@ -24,10 +24,7 @@
             "logging_in": "Kayıt Ol...",
             "required": "Kaydolmak gerekiyor",
             "waiting_auth": "Kimlik doğrulama bekleniyor..."
-        },
-        "oauth_prompt": "Bu kodu şuraya girin:",
-        "oauth_activate": "Twitch'i Etkinleştir",
-        "oauth_confirm": "Kodu girdim"
+        }
     },
     "error": {
         "captcha": "Giriş girişimi CAPTCHA tarafından reddedildi.\nLütfen en az 12 saat içinde tekrar deneyin.",
@@ -39,6 +36,7 @@
         "status": {
             "name": "Durum",
             "idle": "Boşta",
+            "ready": "Hazır",
             "exiting": "Çıkış...",
             "terminated": "Sonlandırıldı",
             "cleanup": "Kanalları temizle..",

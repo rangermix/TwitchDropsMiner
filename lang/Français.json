@@ -36,6 +36,7 @@
         "status": {
             "name": "État",
             "idle": "Inactif",
+            "ready": "Prêt",
             "exiting": "Sortie...",
             "terminated": "Terminé",
             "cleanup": "Nettoyage des canaux...",

@@ -36,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Im Leerlauf",
+            "ready": "Bereit",
             "exiting": "Beenden...",
             "terminated": "Abgebrochen",
             "cleanup": "Kanäle aufräumen..",
