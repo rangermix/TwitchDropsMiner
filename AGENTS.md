@@ -350,6 +350,9 @@ script contract tests under `.github/scripts/test/`.
 - `.github/workflows/validation.yml` runs Ruff, Mypy, the Python test suite, language
   JSON validation, `uv lock --check`, release-script tests, and Docker build validation
   for pull requests and pushes to `main`.
+- Docker validation and release workflows pin the Node-24-native Docker Buildx v4.3.0
+  and Build Push v7.3.0 action commits. Update both workflows together when changing
+  either action so validation and release builds use the same trusted versions.
 - `.github/workflows/contributors.yml` credits the human author of each pull request
   merged into `main`, including linked pull request numbers in the alphabetically sorted
   Contributors table in `README.md`.
