@@ -161,9 +161,9 @@ class Twitch:
         """
         self.change_state(State.EXIT)
 
-    def print(self, message: str) -> None:
+    def print(self, message: str, *, collapse_key: str | None = None) -> None:
         """Print a message in the GUI."""
-        self.gui.print(message)
+        self.gui.print(message, collapse_key=collapse_key)
 
     def _remove_channel_topics(self, channels: abc.Iterable[Channel]) -> None:
         """Remove websocket topics for a list of channels."""
@@ -328,7 +328,10 @@ class Twitch:
                     self.change_state(State.CHANNELS_FETCH)
                 else:
                     # with no games available, we switch to IDLE after cleanup
-                    self.print(_.t["status"]["no_campaign"])
+                    self.print(
+                        _.t["status"]["no_campaign"],
+                        collapse_key="status.no_campaign",
+                    )
                     self.change_state(State.IDLE)
             elif self._state is State.CHANNELS_FETCH:
                 self.gui.status.update(_.t["gui"]["status"]["gathering"])

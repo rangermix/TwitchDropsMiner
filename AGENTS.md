@@ -160,6 +160,8 @@ lang/                # Translation JSON files (20 languages)
   OR semantics, Not Linked narrows the result, and Finished opts claimed campaigns in.
   Zero-minute subscription rewards are omitted from Inventory and Wanted Drops Queue;
   the actively watched channel remains visible while game settings are changing
+- Consecutive identical no-active-campaign console prompts are collapsed until another
+  console message appears
 
 ### State Machine Flow
 
@@ -340,8 +342,9 @@ source env/bin/activate && python -m pytest tests/
 
 The suite covers settings and proxy behavior, inventory-filter behavior, API filtering,
 GraphQL watch events, batched channel discovery, translation consistency, frontend DOM
-safety, case-insensitive channel filtering, watch-drop count semantics, and contributor
-README automation. Frontend behavior tests share their JavaScript extraction helper and use Node.js;
+safety, case-insensitive channel filtering, watch-drop count semantics, consecutive
+no-campaign console collapsing, and contributor README automation. Frontend behavior tests
+share their JavaScript extraction helper and use Node.js;
 the validation workflow provisions Node 24 before running pytest. It also runs the release
 script contract tests under `.github/scripts/test/`.
 

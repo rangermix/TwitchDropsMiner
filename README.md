@@ -79,7 +79,8 @@ until **Finished** is selected. Zero-minute subscription rewards are omitted fro
 Inventory and Wanted Drops Queue because they cannot be earned by watching. The channel
 list matches game names case-insensitively and keeps the actively watched channel visible
 while game settings are changing. Campaign totals and claim messages count only rewards
-that can be earned by watching.
+that can be earned by watching. Consecutive identical no-active-campaign console prompts
+are collapsed until another console message appears.
 
 > [!NOTE]
 > Your Twitch account must be linked to the relevant game accounts. Review your
