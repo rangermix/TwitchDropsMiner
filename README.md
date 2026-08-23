@@ -76,10 +76,12 @@ Then open <http://localhost:8080>.
 Inventory filters combine **Active**, **Upcoming**, and **Expired** as alternatives.
 **Not Linked** narrows that status result, while fully claimed campaigns stay hidden
 until **Finished** is selected. Zero-minute subscription rewards are omitted from the
-Inventory and Wanted Drops Queue because they cannot be earned by watching. The channel
-list matches game names case-insensitively and keeps the actively watched channel visible
-while game settings are changing. Campaign totals and claim messages count only rewards
-that can be earned by watching.
+Inventory and Wanted Drops Queue because they cannot be earned by watching. Individually
+expired rewards are also omitted from the queue, while upcoming and sequential rewards
+remain visible; successful claims refresh the queue immediately. The channel list matches
+game names case-insensitively and keeps the actively watched channel visible while game
+settings are changing. Campaign totals and claim messages count only rewards that can be
+earned by watching.
 
 > [!NOTE]
 > Your Twitch account must be linked to the relevant game accounts. Review your

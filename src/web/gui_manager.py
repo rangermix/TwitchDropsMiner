@@ -161,10 +161,13 @@ class WebGUIManager:
             self._twitch.settings, self._twitch.inventory
         )
 
-    def broadcast_wanted_items(self):
+    async def broadcast_wanted_items(self) -> None:
         """Broadcast the list of wanted items to connected clients."""
         tree = self.get_wanted_game_tree()
-        asyncio.create_task(self._broadcaster.emit("wanted_items_update", tree))
+        try:
+            await self._broadcaster.emit("wanted_items_update", tree)
+        except Exception:
+            logger.exception("Failed to broadcast wanted items update")
 
 
 # Type aliases for backwards compatibility with code that imports from gui

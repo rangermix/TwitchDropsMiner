@@ -231,7 +231,7 @@ class Twitch:
                 await self.fetch_inventory()
                 self.gui.set_games({campaign.game for campaign in self.inventory})
                 # Broadcast unwanted items (based on settings)
-                self.gui.broadcast_wanted_items()
+                await self.gui.broadcast_wanted_items()
                 # Save state on every inventory fetch
                 self.change_state(State.GAMES_UPDATE)
             elif self._state is State.GAMES_UPDATE:
