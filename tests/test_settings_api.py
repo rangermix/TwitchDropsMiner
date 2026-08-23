@@ -1,6 +1,8 @@
 import asyncio
+import copy
 import importlib
 import unittest
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.config.settings import Settings, default_settings
@@ -17,10 +19,38 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         update_data = {
             "inventory_filters": {"show_upcoming": True},
             "mining_benefits": {"BADGE": True},
+            "drop_name_blacklist": ["Mask", "Badge"],
         }
         model = SettingsUpdate(**update_data)
         self.assertEqual(model.inventory_filters, update_data["inventory_filters"])
         self.assertEqual(model.mining_benefits, update_data["mining_benefits"])
+        self.assertEqual(model.drop_name_blacklist, update_data["drop_name_blacklist"])
+
+    def test_settings_load_and_save_normalize_persisted_blacklist(self):
+        persisted = copy.deepcopy(default_settings)
+        persisted["drop_name_blacklist"] = [
+            "  Gold Mask ",
+            "gold mask",
+            "",
+            42,
+            "Badge",
+        ]
+
+        with (
+            patch("src.config.settings.json_load", return_value=persisted),
+            patch("src.config.settings.json_save") as json_save,
+        ):
+            settings = Settings()
+            self.assertEqual(settings.drop_name_blacklist, ["Gold Mask", "Badge"])
+
+            settings.drop_name_blacklist.extend([" badge ", "Token"])
+            settings.save()
+
+        self.assertEqual(settings.drop_name_blacklist, ["Gold Mask", "Badge", "Token"])
+        saved_settings = json_save.call_args.args[1]
+        self.assertEqual(
+            saved_settings["drop_name_blacklist"], ["Gold Mask", "Badge", "Token"]
+        )
 
     async def test_settings_endpoint_returns_request_scoped_compatibility_response(self):
         expected = {
@@ -41,6 +71,49 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         mock_gui.settings.update_settings.assert_called_once_with(
             {"inventory_filters": {"show_not_linked": True}}
         )
+
+    async def test_blacklist_endpoint_normalizes_and_triggers_one_policy_refresh(self):
+        settings_values = copy.deepcopy(default_settings)
+        settings = SimpleNamespace(**settings_values)
+        settings.save = MagicMock()
+        broadcaster = AsyncMock()
+        callback = MagicMock()
+        manager = SettingsManager(
+            broadcaster,
+            settings,
+            MagicMock(),
+            on_change=callback,
+        )
+        mock_gui = SimpleNamespace(settings=manager)
+
+        with patch.object(web_app, "gui_manager", mock_gui):
+            response = await web_app.update_settings(
+                SettingsUpdate(
+                    drop_name_blacklist=[
+                        "  Gold Mask ",
+                        "gold mask",
+                        "",
+                        "Badge",
+                    ]
+                )
+            )
+        await asyncio.sleep(0)
+
+        self.assertTrue(response["success"])
+        self.assertEqual(
+            response["settings"]["drop_name_blacklist"], ["Gold Mask", "Badge"]
+        )
+        self.assertEqual(settings.drop_name_blacklist, ["Gold Mask", "Badge"])
+        callback.assert_called_once_with()
+        settings.save.assert_called_once_with()
+        broadcaster.emit.assert_awaited_once()
+
+        callback.reset_mock()
+        manager.update_settings(
+            {"drop_name_blacklist": [" Gold Mask ", "Badge", "gold mask"]}
+        )
+        await asyncio.sleep(0)
+        callback.assert_not_called()
 
     async def test_legacy_filter_request_is_echoed_without_changing_current_semantics(self):
         mock_broadcaster = AsyncMock()

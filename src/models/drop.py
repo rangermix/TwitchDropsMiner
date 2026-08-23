@@ -12,6 +12,7 @@ from src.config.operations import GQL_OPERATIONS
 from src.exceptions import GQLException
 from src.i18n import _
 from src.models.benefit import Benefit
+from src.utils import DropIgnoreReason
 
 
 if TYPE_CHECKING:
@@ -77,7 +78,34 @@ class BaseDrop:
     @property
     def preconditions_met(self) -> bool:
         campaign = self.campaign
-        return all(campaign.timed_drops[pid].is_claimed for pid in self.precondition_drops)
+        return all(
+            (prerequisite := campaign.timed_drops.get(pid)) is not None
+            and prerequisite.is_claimed
+            for pid in self.precondition_drops
+        )
+
+    @property
+    def ignore_reason(self) -> DropIgnoreReason | None:
+        """Return why this unclaimed drop is ignored, if applicable."""
+        if self.is_claimed:
+            return None
+        return self.campaign.get_drop_ignore_reason(self.id)
+
+    @property
+    def is_directly_ignored(self) -> bool:
+        """Return whether this drop's name directly matches a configured keyword."""
+        reason = self.ignore_reason
+        return reason is not None and reason.kind == "keyword"
+
+    @property
+    def is_ignored(self) -> bool:
+        """Return whether this drop is ignored directly or by a blocked dependency."""
+        return self.ignore_reason is not None
+
+    @property
+    def is_mineable(self) -> bool:
+        """Return whether this drop still contributes to a useful reward branch."""
+        return not self.is_claimed and self.campaign.is_drop_mineable(self.id)
 
     def _on_state_changed(self) -> None:
         raise NotImplementedError
@@ -85,10 +113,8 @@ class BaseDrop:
     def _base_earn_conditions(self) -> bool:
         # define when a drop can be earned or not
         return (
-            self.preconditions_met  # preconditions are met
-            and not self.is_claimed  # isn't already claimed
-            # has at least one benefit, or participates in a preconditions chain
-            and (bool(self.benefits) or self.id in self.campaign.preconditions_chain())
+            self.is_mineable  # unclaimed and contributes to a nonignored reward branch
+            and self.preconditions_met  # preconditions are met
         )
 
     def _base_can_earn(self) -> bool:
@@ -142,7 +168,7 @@ class BaseDrop:
         return len(self.get_wanted_unclaimed_benefits(allowed_benefits)) > 0
 
     def get_wanted_unclaimed_benefits(self, allowed_benefits: dict[str, bool]) -> list[str]:
-        if self.is_claimed:
+        if self.is_claimed or not self.is_mineable:
             return []
         return [benefit.name for benefit in self.benefits if benefit.is_wanted(allowed_benefits)]
 
@@ -238,23 +264,30 @@ class TimedDrop(BaseDrop):
 
     @property
     def total_required_minutes(self) -> int:
-        return self.required_minutes + max(
-            (
-                self.campaign.timed_drops[pid].total_required_minutes
-                for pid in self.precondition_drops
-            ),
-            default=0,
-        )
+        return self._total_chain_minutes(remaining=False, visiting=frozenset())
 
     @property
     def total_remaining_minutes(self) -> int:
-        return self.remaining_minutes + max(
-            (
-                self.campaign.timed_drops[pid].total_remaining_minutes
-                for pid in self.precondition_drops
-            ),
-            default=0,
+        return self._total_chain_minutes(remaining=True, visiting=frozenset())
+
+    def _total_chain_minutes(
+        self, *, remaining: bool, visiting: frozenset[str]
+    ) -> int:
+        """Return the longest prerequisite chain without recursing through cycles."""
+        if self.id in visiting or remaining and self.is_claimed:
+            return 0
+
+        next_visiting = visiting | {self.id}
+        prerequisite_minutes = (
+            prerequisite._total_chain_minutes(
+                remaining=remaining, visiting=next_visiting
+            )
+            for prerequisite_id in self.precondition_drops
+            if (prerequisite := self.campaign.timed_drops.get(prerequisite_id))
+            is not None
         )
+        own_minutes = self.remaining_minutes if remaining else self.required_minutes
+        return own_minutes + max(prerequisite_minutes, default=0)
 
     @property
     def progress(self) -> float:

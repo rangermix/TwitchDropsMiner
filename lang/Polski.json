@@ -104,12 +104,19 @@
                 "active": "Aktywna ✔",
                 "upcoming": "Nadchodząca ⏳",
                 "expired": "Wygasła ❌",
-                "claimed": "Odebrano ✔"
+                "claimed": "Odebrano ✔",
+                "ignored": "Ignorowane",
+                "skipped": "Pominięte"
             },
             "starts": "Rozpoczęcie: {time}",
             "ends": "Koniec: {time}",
             "no_campaigns": "Nie załadowano jeszcze żadnych kampanii...",
             "claimed_drops": "odebrano",
+            "ignored_drops": "{count} ignorowanych",
+            "skipped_drops": "{count} pominiętych",
+            "ignored_keyword_reason": "Zignorowano z powodu słowa kluczowego: {keyword}",
+            "ignored_precondition_reason": "Zignorowano, ponieważ zależy od {drop}",
+            "skipped_branch_reason": "Pominięto, ponieważ od tego dropu nie zależy żadna możliwa do zdobycia nagroda.",
             "filters": {
                 "active": "Aktywne",
                 "not_linked": "Niepołączone",
@@ -147,6 +154,9 @@
             "connection_quality": "Jakość połączenia:",
             "minimum_refresh": "Minimalny interwał odświeżania (minuty):",
             "reload_campaigns": "Przeładuj kampanie",
+            "drop_name_blacklist": "Ignorowane słowa kluczowe nazw dropów",
+            "drop_name_blacklist_help": "Wpisz jedno słowo kluczowe w każdym wierszu. Dopasowanie wyszukuje dosłowny podciąg bez rozróżniania wielkości liter. Pasujące dropy i zależne od nich gałęzie są ignorowane; gałęzie będące tylko warunkami wstępnymi są pomijane, a wspólne warunki wstępne nadal można zdobywać.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "mining_benefits": "Korzyści z Minowania",
             "mining_benefits_help": "Wybierz rodzaje dropów, które chcesz zdobywać."
         },

@@ -14,6 +14,13 @@ from .async_helpers import (
 # Backoff
 from .backoff import ExponentialBackoff
 
+# Drop ignore policy
+from .drop_ignore_policy import (
+    DropIgnoreEvaluation,
+    DropIgnorePolicy,
+    DropIgnoreReason,
+)
+
 # JSON utilities
 from .json_utils import (
     SERIALIZE_ENV,
@@ -63,4 +70,8 @@ __all__ = [
     "RateLimiter",
     # Backoff
     "ExponentialBackoff",
+    # Drop ignore policy
+    "DropIgnoreEvaluation",
+    "DropIgnorePolicy",
+    "DropIgnoreReason",
 ]

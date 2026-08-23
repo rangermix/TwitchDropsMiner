@@ -156,10 +156,19 @@ lang/                # Translation JSON files (20 languages)
 - Proxy support (including verification)
 - Logging and dump flags from command-line arguments
 - Persistence to JSON file (`settings.json`) in DATA_DIR
+- Drop-name ignore list (`drop_name_blacklist`), empty by default. Entries are literal,
+  case-insensitive substrings entered one per line; whitespace and blanks are removed and
+  duplicates are casefolded while preserving the first spelling/order.
 - Inventory filters (Status, Benefit Type, Game Search); Active/Upcoming/Expired use
   OR semantics, Not Linked narrows the result, and Finished opts claimed campaigns in.
   Zero-minute subscription rewards are omitted from Inventory and Wanted Drops Queue;
   the actively watched channel remains visible while game settings are changing
+
+Drop-name ignore policy is dependency-aware: a matching unclaimed drop and its dependent
+branches are ignored dynamically. Prerequisite-only branches with no mineable reward are
+skipped, while shared prerequisites required by an allowed reward remain mineable. Ignored
+and skipped drops are never counted as claimed. Twitch can still award simultaneous
+progress to an ignored drop while the miner intentionally targets another reward.
 
 ### State Machine Flow
 
@@ -343,7 +352,11 @@ GraphQL watch events, batched channel discovery, translation consistency, fronte
 safety, case-insensitive channel filtering, watch-drop count semantics, and contributor
 README automation. Frontend behavior tests share their JavaScript extraction helper and use Node.js;
 the validation workflow provisions Node 24 before running pytest. It also runs the release
-script contract tests under `.github/scripts/test/`.
+script contract tests under `.github/scripts/test/`. Ignore-list coverage includes
+normalization and settings persistence, dependency pruning, Wanted Queue and watch
+selection, truthful ignored/skipped inventory state, translated placeholder parity, and
+frontend rendering. Changes to `web/static/app.js` or `web/static/styles.css` still require
+the release workflow to bump the application version and asset cache key before deployment.
 
 ### Continuous Integration
 

@@ -104,12 +104,19 @@
                 "active": "已上線 ✔",
                 "upcoming": "即將開始 ⏳",
                 "expired": "已結束 ❌",
-                "claimed": "已領取 ✔"
+                "claimed": "已領取 ✔",
+                "ignored": "已忽略",
+                "skipped": "已跳過"
             },
             "starts": "開始時間：{time}",
             "ends": "結束時間：{time}",
             "no_campaigns": "尚未載入任何活動...",
             "claimed_drops": "已領取",
+            "ignored_drops": "已忽略 {count} 個",
+            "skipped_drops": "已跳過 {count} 個",
+            "ignored_keyword_reason": "因關鍵字而忽略：{keyword}",
+            "ignored_precondition_reason": "因依賴 {drop} 而忽略",
+            "skipped_branch_reason": "已跳過，因為沒有可挖掘的獎勵依賴此掉落。",
             "filters": {
                 "active": "活動中",
                 "not_linked": "未連結",
@@ -146,6 +153,9 @@
             "connection_quality": "連線品質：",
             "minimum_refresh": "最小重新整理間隔（分鐘）：",
             "reload_campaigns": "重新載入活動",
+            "drop_name_blacklist": "忽略的掉落名稱關鍵字",
+            "drop_name_blacklist_help": "每行輸入一個關鍵字。比對時不區分大小寫，並以字面子字串搜尋。符合的掉落及其依賴分支將被忽略；僅作為前置條件的分支將被跳過，而共用的前置條件仍可挖掘。",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "mining_benefits": "挖掘獎勵",
             "mining_benefits_help": "選擇您想要獲取的掉落類型。"
         },

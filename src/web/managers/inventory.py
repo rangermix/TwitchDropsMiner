@@ -31,35 +31,50 @@ class InventoryManager:
         self._batch_mode: bool = False
 
     @staticmethod
-    def _campaign_progress(drops: Iterable[Mapping[str, Any]]) -> dict[str, int]:
+    def _campaign_progress(
+        drops: Iterable[Mapping[str, Any]],
+    ) -> dict[str, int | bool]:
         """Return live counts for serialized drops visible in inventory."""
         visible_drops = list(drops)
         return {
             "claimed_drops": sum(bool(drop["is_claimed"]) for drop in visible_drops),
             "total_drops": len(visible_drops),
+            "ignored_drops": sum(bool(drop["is_ignored"]) for drop in visible_drops),
+            "skipped_drops": sum(bool(drop["is_skipped"]) for drop in visible_drops),
+            "finished": all(bool(drop["is_claimed"]) for drop in visible_drops),
+            "mining_finished": not any(
+                not drop["is_claimed"] and drop["is_mineable"]
+                for drop in visible_drops
+            ),
         }
 
-    def clear(self):
-        """Clear all campaigns from inventory."""
-        self._campaigns.clear()
-        asyncio.create_task(self._broadcaster.emit("inventory_clear", {}))
-
-    async def add_campaign(self, campaign: DropsCampaign):
-        """Add a campaign to the inventory display.
-
-        Args:
-            campaign: The drop campaign to add
-        """
-        # Get campaign image from cache
-
-        watch_drops = [drop for drop in campaign.drops if drop.is_watch_drop]
-        if not watch_drops:
-            return
-
-        drops_data = []
-        for drop in watch_drops:
-            # Collect full benefit data (filter out benefits without images)
-            benefits_data = [
+    @staticmethod
+    def _serialize_drop(drop: TimedDrop) -> dict[str, Any]:
+        """Serialize one drop with truthful claim, ignore, and mineability state."""
+        reason = drop.ignore_reason
+        is_mineable = drop.is_mineable
+        is_ignored = reason is not None
+        return {
+            "id": drop.id,
+            "name": drop.name,
+            "current_minutes": drop.current_minutes,
+            "required_minutes": drop.required_minutes,
+            "progress": drop.progress,
+            "is_claimed": drop.is_claimed,
+            "can_claim": drop.can_claim,
+            "is_ignored": is_ignored,
+            "is_mineable": is_mineable,
+            "is_skipped": not drop.is_claimed and not is_ignored and not is_mineable,
+            "ignored_reason": reason.kind if reason is not None else None,
+            "ignored_keyword": (
+                reason.detail if reason is not None and reason.kind == "keyword" else None
+            ),
+            "ignored_precondition": (
+                reason.detail
+                if reason is not None and reason.kind == "precondition"
+                else None
+            ),
+            "benefits": [
                 {
                     "name": benefit.name,
                     "type": benefit.type.name,
@@ -67,23 +82,18 @@ class InventoryManager:
                 }
                 for benefit in drop.benefits
                 if benefit.image_url
-            ]
-            drops_data.append(
-                {
-                    "id": drop.id,
-                    "name": drop.name,
-                    "current_minutes": drop.current_minutes,
-                    "required_minutes": drop.required_minutes,
-                    "progress": drop.progress,
-                    "is_claimed": drop.is_claimed,
-                    "can_claim": drop.can_claim,
-                    "benefits": benefits_data,
-                    "starts_at": drop.starts_at.isoformat(),
-                    "ends_at": drop.ends_at.isoformat(),
-                }
-            )
+            ],
+            "starts_at": drop.starts_at.isoformat(),
+            "ends_at": drop.ends_at.isoformat(),
+        }
 
-        campaign_data = {
+    def _serialize_campaign(self, campaign: DropsCampaign) -> dict[str, Any] | None:
+        """Serialize a campaign using the same contract for every update path."""
+        watch_drops = [drop for drop in campaign.drops if drop.is_watch_drop]
+        if not watch_drops:
+            return None
+        drops_data = [self._serialize_drop(drop) for drop in watch_drops]
+        return {
             "id": campaign.id,
             "name": campaign.name,
             "game_name": campaign.game.name,
@@ -100,6 +110,21 @@ class InventoryManager:
             "drops": drops_data,
         }
 
+    def clear(self):
+        """Clear all campaigns from inventory."""
+        self._campaigns.clear()
+        asyncio.create_task(self._broadcaster.emit("inventory_clear", {}))
+
+    async def add_campaign(self, campaign: DropsCampaign):
+        """Add a campaign to the inventory display.
+
+        Args:
+            campaign: The drop campaign to add
+        """
+        campaign_data = self._serialize_campaign(campaign)
+        if campaign_data is None:
+            return
+
         self._campaigns[campaign.id] = campaign_data
 
         # Only emit immediately if not in batch mode
@@ -114,33 +139,51 @@ class InventoryManager:
         """
         campaign_id = drop.campaign.id
         if campaign_id in self._campaigns:
-            campaign_data = self._campaigns[campaign_id]
+            campaign_data = self._serialize_campaign(drop.campaign)
+            if campaign_data is None:
+                return
+            self._campaigns[campaign_id] = campaign_data
+            drop_data = next(
+                (item for item in campaign_data["drops"] if item["id"] == drop.id),
+                None,
+            )
+            if drop_data is None:
+                # Zero-minute rewards are intentionally omitted from Inventory, but
+                # claiming one can still change whether a visible dependent drop is
+                # mineable. Re-broadcast the complete inventory using the established
+                # batch contract instead of sending an invalid hidden-drop update.
+                asyncio.create_task(
+                    self._broadcaster.emit(
+                        "inventory_batch_update",
+                        {"campaigns": list(self._campaigns.values())},
+                    )
+                )
+                return
+            campaign_progress = self._campaign_progress(campaign_data["drops"])
+            asyncio.create_task(
+                self._broadcaster.emit(
+                    "drop_update",
+                    {
+                        "campaign_id": campaign_id,
+                        "campaign": campaign_progress,
+                        "drop": drop_data,
+                        "drops": campaign_data["drops"],
+                    },
+                )
+            )
 
-            # Find and update the drop in the campaign
-            for drop_data in campaign_data["drops"]:
-                if drop_data["id"] == drop.id:
-                    drop_data.update(
-                        {
-                            "current_minutes": drop.current_minutes,
-                            "required_minutes": drop.required_minutes,
-                            "progress": drop.progress,
-                            "is_claimed": drop.is_claimed,
-                            "can_claim": drop.can_claim,
-                        }
-                    )
-                    campaign_progress = self._campaign_progress(campaign_data["drops"])
-                    campaign_data.update(campaign_progress)
-                    asyncio.create_task(
-                        self._broadcaster.emit(
-                            "drop_update",
-                            {
-                                "campaign_id": campaign_id,
-                                "campaign": campaign_progress,
-                                "drop": drop_data,
-                            },
-                        )
-                    )
-                    break
+    def refresh_campaigns(self, campaigns: Iterable[DropsCampaign]) -> None:
+        """Re-serialize and broadcast all campaign policy state atomically."""
+        refreshed: dict[str, dict[str, Any]] = {}
+        for campaign in campaigns:
+            if (campaign_data := self._serialize_campaign(campaign)) is not None:
+                refreshed[campaign.id] = campaign_data
+        self._campaigns = refreshed
+        asyncio.create_task(
+            self._broadcaster.emit(
+                "inventory_batch_update", {"campaigns": list(refreshed.values())}
+            )
+        )
 
     def start_batch(self):
         """Start batch mode - prevents individual campaign_add emissions.

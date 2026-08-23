@@ -101,12 +101,19 @@
                 "active": "Aktiv ✔",
                 "upcoming": "Kommende ⏳",
                 "expired": "Udløbet ❌",
-                "claimed": "Hentet ✔"
+                "claimed": "Hentet ✔",
+                "ignored": "Ignoreret",
+                "skipped": "Sprunget over"
             },
             "starts": "Starter: {time}",
             "ends": "Slutter: {time}",
             "no_campaigns": "Ingen kampagner indlæst endnu...",
             "claimed_drops": "hentet",
+            "ignored_drops": "{count} ignoreret",
+            "skipped_drops": "{count} sprunget over",
+            "ignored_keyword_reason": "Ignoreret på grund af nøgleordet: {keyword}",
+            "ignored_precondition_reason": "Ignoreret, fordi dette drop afhænger af {drop}",
+            "skipped_branch_reason": "Sprunget over, fordi ingen drop, der kan optjenes, afhænger af dette drop.",
             "filters": {
                 "active": "Aktiv",
                 "not_linked": "Ikke forbundet",
@@ -143,6 +150,9 @@
             "connection_quality": "Forbindelseskvalitet:",
             "minimum_refresh": "Minimum opdateringsinterval (minutter):",
             "reload_campaigns": "Genindlæs kampagner",
+            "drop_name_blacklist": "Ignorerede nøgleord i dropnavne",
+            "drop_name_blacklist_help": "Angiv ét nøgleord pr. linje. Der søges efter en bogstavelig delstreng uden forskel på store og små bogstaver. Matchende drops og deres afhængige grene ignoreres; grene, der kun er forudsætninger, springes over, mens delte forudsætninger stadig kan optjenes.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "mining_benefits": "Mining Fordele",
             "mining_benefits_help": "Vælg hvilke typer drops du vil mine."
         },

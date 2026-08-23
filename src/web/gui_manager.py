@@ -6,7 +6,6 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from src.config import State
 from src.models.game import Game
 from src.services.stream_selector import StreamSelector
 from src.web.managers.broadcaster import WebSocketBroadcaster
@@ -58,7 +57,9 @@ class WebGUIManager:
         self.login = LoginFormManager(self._broadcaster, self)
 
         # Callback to trigger game update when relevant settings change
-        on_settings_change = self._twitch.get_change_state_callable(State.GAMES_UPDATE)
+        def on_settings_change() -> None:
+            self._twitch.request_games_update()
+
         self.settings = SettingsManager(
             self._broadcaster, twitch.settings, self.output, on_change=on_settings_change
         )

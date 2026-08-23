@@ -104,12 +104,19 @@
                 "active": "Aktif ✔",
                 "upcoming": "Gelecek ⏳",
                 "expired": "Süresi dolmuş ❌",
-                "claimed": "Alındı ​​✔"
+                "claimed": "Alındı ​​✔",
+                "ignored": "Yoksayıldı",
+                "skipped": "Atlandı"
             },
             "starts": "Başladı: {time}",
             "ends": "Bitiş: {time}",
             "no_campaigns": "Henüz yüklenen kampanya yok...",
             "claimed_drops": "talep edildi",
+            "ignored_drops": "{count} yoksayıldı",
+            "skipped_drops": "{count} atlandı",
+            "ignored_keyword_reason": "Anahtar kelime nedeniyle yoksayıldı: {keyword}",
+            "ignored_precondition_reason": "{drop} drop'una bağlı olduğu için yoksayıldı",
+            "skipped_branch_reason": "Madenciliği yapılabilir hiçbir ödül bu drop'a bağlı olmadığı için atlandı.",
             "filters": {
                 "active": "Aktif",
                 "not_linked": "Bağlı Değil",
@@ -146,6 +153,9 @@
             "connection_quality": "Bağlantı kalitesi:",
             "minimum_refresh": "Minimum yenileme aralığı (dakika):",
             "reload_campaigns": "Kampanyaları Yeniden Yükle",
+            "drop_name_blacklist": "Yoksayılan Drop Anahtar Kelimeleri",
+            "drop_name_blacklist_help": "Her satıra bir anahtar kelime girin. Eşleştirme, büyük/küçük harfe duyarsız gerçek bir alt dize arar. Eşleşen droplar ve bunlara bağlı dallar yoksayılır; yalnızca ön koşul olan dallar atlanırken ortak ön koşulların madenciliği yapılabilir.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "mining_benefits": "Madencilik Avantajları",
             "mining_benefits_help": "Hangi tür dropları toplamak istediğinizi seçin."
         },

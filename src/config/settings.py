@@ -6,7 +6,7 @@ from typing import TypedDict
 from yarl import URL
 
 from src.config import DEFAULT_LANG, SETTINGS_PATH
-from src.utils import json_load, json_save
+from src.utils import DropIgnorePolicy, json_load, json_save
 
 
 class InventoryFilters(TypedDict):
@@ -25,6 +25,7 @@ class InventoryFilters(TypedDict):
 default_settings = {
     "connection_quality": 1,
     "dark_mode": False,
+    "drop_name_blacklist": [],
     "games_to_watch": [],
     "language": DEFAULT_LANG,
     "inventory_filters": {
@@ -55,6 +56,7 @@ default_settings = {
 class Settings:
     connection_quality: int
     dark_mode: bool
+    drop_name_blacklist: list[str]
     games_to_watch: list[str]
     language: str
     inventory_filters: InventoryFilters
@@ -74,6 +76,12 @@ class Settings:
                 setattr(self, key, str(value))
             else:
                 setattr(self, key, value)
+        self.drop_name_blacklist = DropIgnorePolicy.normalize_keywords(
+            self.drop_name_blacklist
+        )
 
     def save(self) -> None:
+        self.drop_name_blacklist = DropIgnorePolicy.normalize_keywords(
+            self.drop_name_blacklist
+        )
         json_save(SETTINGS_PATH, vars(self), sort=True)

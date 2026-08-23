@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 from src.config.settings import default_settings
 from src.i18n.translator import _
 from src.models.game import Game
-from src.utils import merge_json
+from src.utils import DropIgnorePolicy, merge_json
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -88,6 +88,14 @@ class SettingsManager:
         should_trigger_update = False
         should_trigger_update |= self.check_and_update_setting(
             "games_to_watch", settings_data.get("games_to_watch"), True
+        )
+        drop_name_blacklist = settings_data.get("drop_name_blacklist")
+        if drop_name_blacklist is not None:
+            drop_name_blacklist = DropIgnorePolicy.normalize_keywords(
+                drop_name_blacklist
+            )
+        should_trigger_update |= self.check_and_update_setting(
+            "drop_name_blacklist", drop_name_blacklist, True
         )
         should_trigger_update |= self.check_and_update_setting(
             "dark_mode", settings_data.get("dark_mode")

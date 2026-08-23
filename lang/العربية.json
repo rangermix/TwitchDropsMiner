@@ -104,12 +104,19 @@
                 "active": "✔ نشط",
                 "upcoming": "⏳ قادم",
                 "expired": "❌ منتهي",
-                "claimed": "✔ تم الحصول عليه"
+                "claimed": "✔ تم الحصول عليه",
+                "ignored": "تم التجاهل",
+                "skipped": "تم التخطي"
             },
             "starts": "{time} :يبدأ",
             "ends": "{time} :ينتهي",
             "no_campaigns": "لم يتم تحميل أي حملات بعد...",
             "claimed_drops": "تم المطالبة",
+            "ignored_drops": "تم تجاهل {count}",
+            "skipped_drops": "تم تخطي {count}",
+            "ignored_keyword_reason": "تم التجاهل بسبب الكلمة المفتاحية: {keyword}",
+            "ignored_precondition_reason": "تم التجاهل لأنه يعتمد على {drop}",
+            "skipped_branch_reason": "تم التخطي لأنه لا تعتمد أي مكافأة قابلة للتعدين على هذا الدروب.",
             "filters": {
                 "active": "نشط",
                 "not_linked": "غير مرتبط",
@@ -146,6 +153,9 @@
             "connection_quality": "جودة الاتصال:",
             "minimum_refresh": "الحد الأدنى لفترة التحديث (بالدقائق):",
             "reload_campaigns": "إعادة تحميل الحملات",
+            "drop_name_blacklist": "الكلمات المفتاحية لأسماء الدروب المتجاهلة",
+            "drop_name_blacklist_help": "أدخل كلمة مفتاحية واحدة في كل سطر. يبحث التطابق عن مقطع نصي حرفي دون حساسية لحالة الأحرف. يتم تجاهل الدروبات المطابقة وفروعها التابعة؛ ويتم تخطي الفروع التي تعمل فقط كمتطلبات مسبقة، بينما تظل المتطلبات المسبقة المشتركة قابلة للتعدين.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "mining_benefits": "فوائد التعدين",
             "mining_benefits_help": "اختر أنواع الجوائز التي تريد تعدينها."
         },

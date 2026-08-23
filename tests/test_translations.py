@@ -56,3 +56,39 @@ def test_hungarian_translation_matches_english_schema_and_placeholders():
     assert hungarian["language_name"] == "Magyar"
     assert hungarian["english_name"] == "Hungarian"
     _assert_translation_shape(english, hungarian)
+
+
+def test_all_languages_include_drop_ignore_text_with_matching_placeholders():
+    english = json.loads((LANG_PATH / "English.json").read_text(encoding="utf-8"))
+    settings_keys = {
+        "drop_name_blacklist",
+        "drop_name_blacklist_help",
+        "drop_name_blacklist_placeholder",
+    }
+    inventory_keys = {
+        "ignored_drops",
+        "skipped_drops",
+        "ignored_keyword_reason",
+        "ignored_precondition_reason",
+        "skipped_branch_reason",
+    }
+
+    for filepath in LANG_PATH.glob("*.json"):
+        translation = json.loads(filepath.read_text(encoding="utf-8"))
+        assert settings_keys <= set(translation["gui"]["settings"]), filepath.name
+        for key in inventory_keys:
+            reference_fields = {
+                field_name
+                for _, field_name, _, _ in Formatter().parse(
+                    english["gui"]["inventory"][key]
+                )
+                if field_name is not None
+            }
+            translation_fields = {
+                field_name
+                for _, field_name, _, _ in Formatter().parse(
+                    translation["gui"]["inventory"][key]
+                )
+                if field_name is not None
+            }
+            assert translation_fields == reference_fields, f"{filepath.name}: {key}"

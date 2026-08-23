@@ -103,12 +103,19 @@
                 "active": "ŽIVĚ ✔",
                 "upcoming": "Nadcházející ⏳",
                 "expired": "Ukončeno ❌",
-                "claimed": "Vyzvednuto ✔"
+                "claimed": "Vyzvednuto ✔",
+                "ignored": "Ignorováno",
+                "skipped": "Přeskočeno"
             },
             "starts": "Začíná: {time}",
             "ends": "Začíná: {time}",
             "no_campaigns": "Zatím nejsou načteny žádné kampaně...",
             "claimed_drops": "získáno",
+            "ignored_drops": "{count} ignorováno",
+            "skipped_drops": "{count} přeskočeno",
+            "ignored_keyword_reason": "Ignorováno kvůli klíčovému slovu: {keyword}",
+            "ignored_precondition_reason": "Ignorováno, protože závisí na odměně {drop}",
+            "skipped_branch_reason": "Přeskočeno, protože na této odměně nezávisí žádná získatelná odměna.",
             "filters": {
                 "active": "Aktivní",
                 "not_linked": "Nepřipojeno",
@@ -146,6 +153,9 @@
             "connection_quality": "Kvalita připojení:",
             "minimum_refresh": "Minimální interval obnovení (minuty):",
             "reload_campaigns": "Znovu načíst kampaně",
+            "drop_name_blacklist": "Ignorovaná klíčová slova v názvech odměn",
+            "drop_name_blacklist_help": "Zadejte jedno klíčové slovo na řádek. Hledá se jako doslovný podřetězec bez rozlišení velikosti písmen. Odpovídající odměny a jejich závislé větve budou ignorovány; větve sloužící pouze jako předpoklad budou přeskočeny, zatímco sdílené předpoklady zůstanou získatelné.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "mining_benefits": "Výhody Těžby",
             "mining_benefits_help": "Vyberte typy dropů, které chcete těžit."
         },

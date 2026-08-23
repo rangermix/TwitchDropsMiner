@@ -991,6 +991,27 @@ header h1 {
     border-left-color: var(--accent-color);
 }
 
+.drop-item.ignored,
+.drop-item.skipped {
+    opacity: 0.55;
+    filter: grayscale(0.55);
+}
+
+.drop-item.ignored {
+    border-left-color: var(--error-color);
+}
+
+.drop-item.skipped {
+    border-left-color: var(--text-secondary);
+}
+
+.drop-policy-status {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-style: italic;
+    margin-top: 6px;
+}
+
 .drop-item-header {
     display: flex;
     align-items: center;
@@ -1086,6 +1107,18 @@ header h1 {
     background: var(--bg-secondary);
     color: var(--text-primary);
     margin-left: 10px;
+}
+
+.settings-section textarea {
+    width: 100%;
+    min-height: 110px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font: inherit;
+    resize: vertical;
 }
 
 .list-manager {

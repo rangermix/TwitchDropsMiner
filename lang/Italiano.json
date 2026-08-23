@@ -104,12 +104,19 @@
                 "active": "Attivo ✔",
                 "upcoming": "In arrivo ⏳",
                 "expired": "Scaduto ❌",
-                "claimed": "Riscattato ✔"
+                "claimed": "Riscattato ✔",
+                "ignored": "Ignorato",
+                "skipped": "Saltato"
             },
             "starts": "Inizia: {time}",
             "ends": "Finisce: {time}",
             "no_campaigns": "Nessuna campagna caricata ancora...",
             "claimed_drops": "reclamato",
+            "ignored_drops": "{count} ignorati",
+            "skipped_drops": "{count} saltati",
+            "ignored_keyword_reason": "Ignorato per la parola chiave: {keyword}",
+            "ignored_precondition_reason": "Ignorato perché dipende da {drop}",
+            "skipped_branch_reason": "Saltato perché nessuna ricompensa ottenibile dipende da questo drop.",
             "filters": {
                 "active": "Attivo",
                 "not_linked": "Non Collegato",
@@ -146,6 +153,9 @@
             "connection_quality": "Qualità della connessione:",
             "minimum_refresh": "Intervallo minimo di aggiornamento (minuti):",
             "reload_campaigns": "Ricarica campagne",
+            "drop_name_blacklist": "Parole chiave dei drop ignorati",
+            "drop_name_blacklist_help": "Inserisci una parola chiave per riga. La corrispondenza cerca una sottostringa letterale senza distinguere maiuscole e minuscole. I drop corrispondenti e i relativi rami dipendenti vengono ignorati; i rami che servono solo da prerequisito vengono saltati, mentre i prerequisiti condivisi restano ottenibili.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "mining_benefits": "Vantaggi Minatori",
             "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare."
         },

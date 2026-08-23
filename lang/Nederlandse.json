@@ -104,12 +104,19 @@
                 "active": "Actief ✔",
                 "upcoming": "Verwacht ⏳",
                 "expired": "Verlopen ❌",
-                "claimed": "Verkregen ✔"
+                "claimed": "Verkregen ✔",
+                "ignored": "Genegeerd",
+                "skipped": "Overgeslagen"
             },
             "starts": "Begint: {time}",
             "ends": "Eindigt: {time}",
             "no_campaigns": "Nog geen campagnes geladen...",
             "claimed_drops": "geclaimd",
+            "ignored_drops": "{count} genegeerd",
+            "skipped_drops": "{count} overgeslagen",
+            "ignored_keyword_reason": "Genegeerd vanwege trefwoord: {keyword}",
+            "ignored_precondition_reason": "Genegeerd omdat deze drop afhankelijk is van {drop}",
+            "skipped_branch_reason": "Overgeslagen omdat geen enkele te verdienen beloning van deze drop afhankelijk is.",
             "filters": {
                 "active": "Actief",
                 "not_linked": "Niet gekoppeld",
@@ -146,6 +153,9 @@
             "connection_quality": "Verbindingskwaliteit:",
             "minimum_refresh": "Minimaal verversingsinterval (minuten):",
             "reload_campaigns": "Herlaad Campagnes",
+            "drop_name_blacklist": "Genegeerde trefwoorden in dropnamen",
+            "drop_name_blacklist_help": "Voer één trefwoord per regel in. Er wordt hoofdletterongevoelig gezocht naar een letterlijke tekenreeks. Overeenkomende drops en hun afhankelijke takken worden genegeerd; takken die alleen als voorwaarde dienen worden overgeslagen, terwijl gedeelde voorwaarden te verdienen blijven.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "mining_benefits": "Mining Voordelen",
             "mining_benefits_help": "Selecteer welke soorten drops je wilt minen."
         },

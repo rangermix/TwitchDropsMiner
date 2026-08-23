@@ -104,12 +104,19 @@
                 "active": "アクティブ ✔",
                 "upcoming": "予定 ⏳",
                 "expired": "期限切れ ❌",
-                "claimed": "受け取り済み ✔"
+                "claimed": "受け取り済み ✔",
+                "ignored": "無視",
+                "skipped": "スキップ"
             },
             "starts": "開始：{time}",
             "ends": "終了：{time}",
             "no_campaigns": "まだキャンペーンが読み込まれていません...",
             "claimed_drops": "受け取り済み",
+            "ignored_drops": "{count}件を無視",
+            "skipped_drops": "{count}件をスキップ",
+            "ignored_keyword_reason": "キーワードにより無視: {keyword}",
+            "ignored_precondition_reason": "{drop} に依存するため無視",
+            "skipped_branch_reason": "マイニング可能な報酬がこのドロップに依存していないためスキップ。",
             "filters": {
                 "active": "アクティブ",
                 "not_linked": "未連携",
@@ -146,6 +153,9 @@
             "connection_quality": "接続品質：",
             "minimum_refresh": "最小更新間隔（分）：",
             "reload_campaigns": "キャンペーンを再読み込み",
+            "drop_name_blacklist": "無視するドロップ名のキーワード",
+            "drop_name_blacklist_help": "1行に1つキーワードを入力してください。大文字と小文字を区別せず、文字列をそのまま部分一致で検索します。一致するドロップとその依存ブランチは無視され、前提条件のみのブランチはスキップされます。共通の前提条件は引き続きマイニングできます。",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "mining_benefits": "マイニング特典",
             "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。"
         },

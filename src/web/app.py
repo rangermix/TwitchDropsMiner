@@ -71,6 +71,7 @@ class ChannelSelectRequest(BaseModel):
 
 class SettingsUpdate(BaseModel):
     games_to_watch: list[str] | None = None
+    drop_name_blacklist: list[str] | None = None
     dark_mode: bool | None = None
     language: str | None = None
     proxy: str | None = None

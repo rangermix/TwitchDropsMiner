@@ -152,6 +152,8 @@ class GUIInvStatus(TypedDict):
     expired: str
     upcoming: str
     claimed: str
+    ignored: str
+    skipped: str
 
 
 class GUIInventory(TypedDict):
@@ -160,6 +162,11 @@ class GUIInventory(TypedDict):
     starts: str
     ends: str
     claimed_drops: str
+    ignored_drops: str
+    skipped_drops: str
+    ignored_keyword_reason: str
+    ignored_precondition_reason: str
+    skipped_branch_reason: str
     filters: GUIInvFilters
 
 
@@ -174,6 +181,9 @@ class GUISettings(TypedDict):
     mining_benefits_help: str
     reload: str
     reload_campaigns: str
+    drop_name_blacklist: str
+    drop_name_blacklist_help: str
+    drop_name_blacklist_placeholder: str
     games_to_watch: str
     games_help: str
     search_games: str

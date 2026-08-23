@@ -104,12 +104,19 @@
                 "active": "Aktif ✔",
                 "upcoming": "Segera hadir ⏳",
                 "expired": "Kedaluarsa ❌",
-                "claimed": "Diklaim ✔"
+                "claimed": "Diklaim ✔",
+                "ignored": "Diabaikan",
+                "skipped": "Dilewati"
             },
             "starts": "Mulai : {time}",
             "ends": "Akhir : {time}",
             "no_campaigns": "Belum ada kampanye yang dimuat...",
             "claimed_drops": "diklaim",
+            "ignored_drops": "{count} diabaikan",
+            "skipped_drops": "{count} dilewati",
+            "ignored_keyword_reason": "Diabaikan karena kata kunci: {keyword}",
+            "ignored_precondition_reason": "Diabaikan karena bergantung pada {drop}",
+            "skipped_branch_reason": "Dilewati karena tidak ada hadiah yang dapat ditambang yang bergantung pada drop ini.",
             "filters": {
                 "active": "Aktif",
                 "not_linked": "Tidak Terhubung",
@@ -146,6 +153,9 @@
             "connection_quality": "Kualitas Koneksi:",
             "minimum_refresh": "Interval Refresh Minimum (menit):",
             "reload_campaigns": "Muat Ulang Kampanye",
+            "drop_name_blacklist": "Kata Kunci Nama Drop yang Diabaikan",
+            "drop_name_blacklist_help": "Masukkan satu kata kunci per baris. Pencocokan mencari substring literal tanpa membedakan huruf besar dan kecil. Drop yang cocok dan cabang yang bergantung padanya diabaikan; cabang yang hanya menjadi prasyarat dilewati, sementara prasyarat bersama tetap dapat ditambang.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "mining_benefits": "Manfaat Penambangan",
             "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang."
         },

@@ -222,7 +222,7 @@ socket.on('inventory_batch_update', (data) => {
 });
 
 socket.on('drop_update', (data) => {
-    updateDrop(data.campaign_id, data.drop, data.campaign);
+    updateDrop(data.campaign_id, data.drop, data.campaign, data.drops);
 });
 
 socket.on('login_required', () => {
@@ -566,10 +566,15 @@ function clearInventory() {
     renderInventory();
 }
 
-function updateDrop(campaignId, dropData, campaignData = {}) {
+function updateDrop(campaignId, dropData, campaignData = {}, dropsData = null) {
     const campaign = state.campaigns[campaignId];
     if (campaign) {
         Object.assign(campaign, campaignData);
+        if (Array.isArray(dropsData)) {
+            campaign.drops = dropsData;
+            renderInventory();
+            return;
+        }
         const drops = campaign.drops;
         const index = drops.findIndex(d => d.id === dropData.id);
         if (index !== -1) {
@@ -600,7 +605,8 @@ function getInventoryFilters() {
 
 
 function campaignMatchesFilters(campaign, filters) {
-    const isFinished = campaign.total_drops > 0 && campaign.claimed_drops === campaign.total_drops;
+    const isFinished = campaign.mining_finished ??
+        (campaign.total_drops > 0 && campaign.claimed_drops === campaign.total_drops);
 
     const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
 
@@ -916,12 +922,34 @@ function renderInventory() {
         }
 
         const claimedText = t.gui?.inventory?.status?.claimed || 'Claimed';
+        const ignoredText = t.gui?.inventory?.status?.ignored || 'Ignored';
+        const skippedText = t.gui?.inventory?.status?.skipped || 'Skipped';
         const claimedCountText = t.gui?.inventory?.claimed_drops || 'claimed';
 
         // Build drops elements
         const dropsEl = makeElement('div', { class: 'campaign-drops' });
         campaign.drops.forEach(drop => {
-            const dropItem = makeElement('div', { class: `drop-item${drop.is_claimed ? ' claimed' : ''}${drop.can_claim ? ' active' : ''}` });
+            const policyClass = drop.is_ignored ? ' ignored' : (drop.is_skipped ? ' skipped' : '');
+            let policyStatus = '';
+            let policyReason = '';
+            if (drop.is_ignored) {
+                policyStatus = `⊘ ${ignoredText}`;
+                if (drop.ignored_reason === 'keyword') {
+                    const template = t.gui?.inventory?.ignored_keyword_reason || 'Ignored by keyword: {keyword}';
+                    policyReason = template.replace('{keyword}', drop.ignored_keyword || '');
+                } else if (drop.ignored_reason === 'precondition') {
+                    const template = t.gui?.inventory?.ignored_precondition_reason || 'Ignored because it depends on {drop}';
+                    policyReason = template.replace('{drop}', drop.ignored_precondition || '');
+                }
+            } else if (drop.is_skipped) {
+                policyStatus = `⊘ ${skippedText}`;
+                policyReason = t.gui?.inventory?.skipped_branch_reason || 'Skipped because no mineable reward depends on this drop.';
+            }
+
+            const dropItem = makeElement('div', {
+                class: `drop-item${drop.is_claimed ? ' claimed' : ''}${drop.can_claim ? ' active' : ''}${policyClass}`,
+                ...(policyReason ? { title: policyReason } : {}),
+            });
             dropItem.appendChild(
                 makeElement('div', { class: 'drop-item-header' }, '', el =>
                     el.appendChild(makeElement('div', { class: 'drop-item-info' }, '', el2 =>
@@ -949,6 +977,8 @@ function renderInventory() {
             dropItem.appendChild(makeElement('div', {}, `${drop.current_minutes} / ${drop.required_minutes} minutes (${Math.round(drop.progress * 100)}%)`));
             if (drop.is_claimed) {
                 dropItem.appendChild(makeElement('div', {}, `✓ ${claimedText}`));
+            } else if (policyStatus) {
+                dropItem.appendChild(makeElement('div', { class: 'drop-policy-status' }, policyStatus));
             }
             dropsEl.appendChild(dropItem);
         });
@@ -987,7 +1017,16 @@ function renderInventory() {
 
         const campaignStatus = makeElement('div', { class: 'campaign-status' }, '', el => {
             el.appendChild(makeElement('span', {}, statusText));
-            el.appendChild(makeElement('span', {}, `${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}`));
+            let countText = `${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}`;
+            if (campaign.ignored_drops > 0) {
+                const ignoredCount = t.gui?.inventory?.ignored_drops || '{count} ignored';
+                countText += ` · ${ignoredCount.replace('{count}', campaign.ignored_drops)}`;
+            }
+            if (campaign.skipped_drops > 0) {
+                const skippedCount = t.gui?.inventory?.skipped_drops || '{count} skipped';
+                countText += ` · ${skippedCount.replace('{count}', campaign.skipped_drops)}`;
+            }
+            el.appendChild(makeElement('span', {}, countText));
         });
 
         const campaignInfo = makeElement('div', { class: 'campaign-info' });
@@ -1053,6 +1092,13 @@ function updateSettingsUI(settings) {
     applyInventoryViewMode(settings.inventory_list_view || false);
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
+
+    const dropBlacklist = document.getElementById('drop-name-blacklist');
+    if (dropBlacklist) {
+        dropBlacklist.value = Array.isArray(settings.drop_name_blacklist)
+            ? settings.drop_name_blacklist.join('\n')
+            : '';
+    }
 
     // Update proxy settings and indicator
     const proxyUrl = settings.proxy || '';
@@ -1511,6 +1557,13 @@ async function verifyProxy() {
     }
 }
 
+function parseDropNameBlacklist(value) {
+    return String(value || '')
+        .split(/\r?\n/)
+        .map(keyword => keyword.trim())
+        .filter(Boolean);
+}
+
 async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
@@ -1520,6 +1573,9 @@ async function saveSettings() {
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
         proxy: state.settings.proxy || '',
         games_to_watch: state.settings.games_to_watch || [],
+        drop_name_blacklist: parseDropNameBlacklist(
+            document.getElementById('drop-name-blacklist')?.value
+        ),
         inventory_filters: getInventoryFilters(),
         mining_benefits: {
             "DIRECT_ENTITLEMENT": document.getElementById('mining-benefit-item')?.checked,
@@ -1689,6 +1745,15 @@ function applyTranslations(t) {
 
         const benefitsHeader = document.getElementById('settings-benefits-header');
         if (benefitsHeader && t.gui.settings.mining_benefits) benefitsHeader.textContent = t.gui.settings.mining_benefits;
+
+        const dropBlacklistHeader = document.getElementById('settings-drop-blacklist-header');
+        if (dropBlacklistHeader) dropBlacklistHeader.textContent = t.gui.settings.drop_name_blacklist;
+
+        const dropBlacklistHelp = document.getElementById('settings-drop-blacklist-help');
+        if (dropBlacklistHelp) dropBlacklistHelp.textContent = t.gui.settings.drop_name_blacklist_help;
+
+        const dropBlacklistInput = document.getElementById('drop-name-blacklist');
+        if (dropBlacklistInput) dropBlacklistInput.placeholder = t.gui.settings.drop_name_blacklist_placeholder;
 
         const gamesHeader = document.getElementById('settings-games-header');
         if (gamesHeader) gamesHeader.textContent = t.gui.settings.games_to_watch;
@@ -1967,6 +2032,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
     document.getElementById('minimum-refresh-interval').addEventListener('change', saveSettings);
+    document.getElementById('drop-name-blacklist').addEventListener('change', saveSettings);
     // Proxy uses a manual "Set Proxy" button instead of auto-save
     document.getElementById('set-proxy-btn').addEventListener('click', () => {
         const proxyInput = document.getElementById('proxy-url');
