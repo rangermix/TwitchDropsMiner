@@ -1246,12 +1246,30 @@ function renderSelectedGames(games) {
         div.className = 'sortable-item';
         div.draggable = true;
         div.dataset.game = game;
+        const priorityInput = makeElement('input', { 
+            type: 'number', 
+            class: 'priority-input', 
+            value: String(index + 1),
+            min: '1',
+            max: String(games.length)
+        });
+
         div.replaceChildren(
             makeElement('span', { class: 'drag-handle' }, '☰'),
-            makeElement('span', { class: 'priority-number' }, String(index + 1)),
+            priorityInput,
             makeElement('span', { class: 'game-name' }, game),
-            makeElement('button', { class: 'remove-btn' }, '✕'),
+            makeElement('button', { class: 'remove-btn', title: 'Remove' }, '✕')
         );
+
+        // Event listener for priority change
+        priorityInput.addEventListener('change', (e) => {
+            const newIndex = parseInt(e.target.value, 10) - 1;
+            if (!isNaN(newIndex)) {
+                changeGamePriority(game, newIndex);
+            } else {
+                e.target.value = String(index + 1); // Reset on invalid
+            }
+        });
 
         // Event listener for the delete button
         const removeBtn = div.querySelector('.remove-btn');
@@ -1374,6 +1392,24 @@ function toggleGameWatch(gameName, checked) {
     renderGamesToWatch();
     renderChannels();
     saveSettings();
+}
+
+function changeGamePriority(gameName, newIndex) {
+    const games = state.settings.games_to_watch || [];
+    const currentIndex = games.indexOf(gameName);
+    
+    if (currentIndex > -1) {
+        games.splice(currentIndex, 1);
+        
+        // Ensure newIndex is within bounds
+        newIndex = Math.max(0, Math.min(newIndex, games.length));
+        games.splice(newIndex, 0, gameName);
+        
+        state.settings.games_to_watch = games;
+        renderGamesToWatch();
+        renderChannels();
+        saveSettings();
+    }
 }
 
 function removeGameFromWatch(gameName) {

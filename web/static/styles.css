@@ -1351,6 +1351,35 @@ header h1 {
     font-weight: bold;
 }
 
+.settings-section input.priority-input[type="number"] {
+    width: 32px;
+    height: 32px;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    margin: 0 10px;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.settings-section input.priority-input[type="number"]:focus {
+    outline: 2px solid white;
+}
+
+/* Hide spin buttons */
+.settings-section input.priority-input[type="number"]::-webkit-outer-spin-button,
+.settings-section input.priority-input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.settings-section input.priority-input[type="number"] {
+    -moz-appearance: textfield;
+}
+
 .game-name {
     flex: 1;
     font-weight: 500;
@@ -1372,6 +1401,8 @@ header h1 {
 .remove-btn:hover {
     opacity: 1;
 }
+
+
 
 /* Checkbox list for available games */
 .checkbox-list {
