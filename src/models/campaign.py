@@ -190,8 +190,10 @@ class DropsCampaign:
 
     @property
     def first_drop(self) -> TimedDrop | None:
+        # ignore_link=True keeps Campaign Progress in sync with Games-to-Watch mining,
+        # where NOT LINKED campaigns are still progressed.
         drops: list[TimedDrop] = sorted(
-            (drop for drop in self.watch_drops if drop.can_earn()),
+            (drop for drop in self.watch_drops if drop.can_earn(ignore_link=True)),
             key=lambda d: d.remaining_minutes,
         )
         return drops[0] if drops else None

@@ -336,7 +336,7 @@ class Twitch:
                 # Handle manual mode: check if manual game still has drops
                 if self.is_manual_mode():
                     manual_has_drops = any(
-                        campaign.can_earn_within(next_hour)
+                        campaign.can_earn_within(next_hour, ignore_link=True)
                         and campaign.game == self._manual_target_game
                         for campaign in self.inventory
                     )
