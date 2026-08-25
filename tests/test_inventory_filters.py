@@ -25,12 +25,22 @@ def test_inventory_filter_defaults_hide_finished_without_restricting_link_state(
 
     assert filters["show_finished"] is False
     assert filters["show_only_not_linked"] is False
+    assert filters["show_active"] is True
+    assert filters["show_games_to_watch_only"] is False
     assert "show_not_linked" not in filters
 
     html = INDEX_HTML.read_text(encoding="utf-8")
     input_tag = re.search(r'<input\b[^>]*\bid="filter-not-linked"[^>]*>', html)
     assert input_tag is not None
     assert re.search(r"\bchecked\b", input_tag.group(0)) is None
+
+    active_tag = re.search(r'<input\b[^>]*\bid="filter-active"[^>]*>', html)
+    assert active_tag is not None
+    assert re.search(r"\bchecked\b", active_tag.group(0)) is not None
+
+    priority_tag = re.search(r'<input\b[^>]*\bid="filter-games-to-watch-only"[^>]*>', html)
+    assert priority_tag is not None
+    assert re.search(r"\bchecked\b", priority_tag.group(0)) is None
 
 
 def test_legacy_not_linked_setting_migrates_to_neutral_restriction():
@@ -125,6 +135,8 @@ def test_campaign_filter_behavior_matrix():
         "show_upcoming": False,
         "show_expired": False,
         "show_finished": False,
+        "show_games_to_watch_only": False,
+        "games_to_watch": [],
         "game_name_search": [],
         "show_benefit_item": True,
         "show_benefit_badge": True,
@@ -201,6 +213,29 @@ def test_campaign_filter_behavior_matrix():
         case(
             expected=True,
             campaign_changes={"claimed_drops": 2, "mining_finished": False},
+        ),
+        case(
+            expected=False,
+            filter_changes={
+                "show_games_to_watch_only": True,
+                "games_to_watch": ["Sea of Thieves"],
+            },
+        ),
+        case(
+            expected=True,
+            campaign_changes={"game_name": "Sea of Thieves"},
+            filter_changes={
+                "show_games_to_watch_only": True,
+                "games_to_watch": ["Sea of Thieves"],
+            },
+        ),
+        case(
+            expected=True,
+            campaign_changes={"game_name": "sea of thieves"},
+            filter_changes={
+                "show_games_to_watch_only": True,
+                "games_to_watch": ["Sea of Thieves"],
+            },
         ),
     ]
 

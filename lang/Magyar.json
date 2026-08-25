@@ -93,6 +93,8 @@
             "offline": "OFFLINE ❌",
             "no_channels": "Még nincs követett csatorna...",
             "no_channels_for_games": "Nincs csatorna a kiválasztott játékokhoz...",
+            "no_live_channels": "No live drop channels",
+            "toggle_game": "Click to show/hide channels",
             "channel_count": "csatorna",
             "channel_count_plural": "csatornák",
             "viewers": "néző"
@@ -207,6 +209,7 @@
                 "upcoming": "Hamarosan",
                 "expired": "Lejárt",
                 "finished": "Befejezett",
+                "games_to_watch_only": "Csak Games to Watch",
                 "item": "Tárgy",
                 "badge": "Jelvény",
                 "emote": "Emotikon",

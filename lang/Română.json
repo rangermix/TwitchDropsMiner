@@ -93,6 +93,8 @@
             "offline": "OFFLINE ❌",
             "no_channels": "Niciun canal urmărit încă...",
             "no_channels_for_games": "Nu s-au găsit canale pentru jocurile selectate...",
+            "no_live_channels": "No live drop channels",
+            "toggle_game": "Click to show/hide channels",
             "channel_count": "canal",
             "channel_count_plural": "canale",
             "viewers": "spectatori"
@@ -121,6 +123,7 @@
                 "upcoming": "Viitor",
                 "expired": "Expirat",
                 "finished": "Terminat",
+                "games_to_watch_only": "Doar Games to Watch",
                 "item": "Obiect",
                 "badge": "Insignă",
                 "emote": "Emoticon",

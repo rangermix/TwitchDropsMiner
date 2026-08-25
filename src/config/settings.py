@@ -18,6 +18,7 @@ class InventoryFilters(TypedDict):
     show_benefit_other: bool
     show_expired: bool
     show_finished: bool
+    show_games_to_watch_only: bool
     show_only_not_linked: bool
     show_upcoming: bool
 
@@ -30,13 +31,14 @@ default_settings = {
     "language": DEFAULT_LANG,
     "inventory_filters": {
         "game_name_search": [],
-        "show_active": False,
+        "show_active": True,
         "show_benefit_badge": True,
         "show_benefit_emote": True,
         "show_benefit_item": True,
         "show_benefit_other": True,
         "show_expired": False,
         "show_finished": False,
+        "show_games_to_watch_only": False,
         "show_only_not_linked": False,
         "show_upcoming": True,
     },

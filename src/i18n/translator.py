@@ -107,6 +107,8 @@ class GUIChannels(TypedDict):
     offline: str
     no_channels: str
     no_channels_for_games: str
+    no_live_channels: str
+    toggle_game: str
     channel_count: str
     channel_count_plural: str
     viewers: str
@@ -139,6 +141,7 @@ class GUIInvFilters(TypedDict):
     upcoming: str
     expired: str
     finished: str
+    games_to_watch_only: str
     item: str
     badge: str
     emote: str

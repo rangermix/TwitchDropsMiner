@@ -230,7 +230,7 @@ class MessageHandlerService:
                         break
                     await asyncio.sleep(2)
 
-            if campaign.can_earn(watching_channel):
+            if campaign.can_earn(watching_channel, ignore_link=True):
                 self._twitch.restart_watching()
             else:
                 self._twitch.request_inventory_refresh()
@@ -248,7 +248,9 @@ class MessageHandlerService:
 
         logger.log(CALL, f"Drop update from websocket: {drop_text}")
 
-        if drop is not None and drop.can_earn(self._twitch.watching_channel.get_with_default(None)):
+        if drop is not None and drop.can_earn(
+            self._twitch.watching_channel.get_with_default(None), ignore_link=True
+        ):
             # the received payload is for the drop we expected
             drop.update_minutes(message["data"]["current_progress_min"])
 

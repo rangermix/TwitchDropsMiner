@@ -93,6 +93,8 @@
             "offline": "OFFLINE ❌",
             "no_channels": "Belum ada channel yang dilacak...",
             "no_channels_for_games": "Tidak ada channel ditemukan untuk game yang dipilih...",
+            "no_live_channels": "No live drop channels",
+            "toggle_game": "Click to show/hide channels",
             "channel_count": "channel",
             "channel_count_plural": "channel",
             "viewers": "penonton"
@@ -121,6 +123,7 @@
                 "upcoming": "Mendatang",
                 "expired": "Kadaluarsa",
                 "finished": "Selesai",
+                "games_to_watch_only": "Hanya Games to Watch",
                 "item": "Item",
                 "badge": "Lencana",
                 "emote": "Emote",

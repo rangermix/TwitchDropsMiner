@@ -93,6 +93,8 @@
             "offline": "OFFLINE ❌",
             "no_channels": "Zatím nejsou sledovány žádné kanály...",
             "no_channels_for_games": "Pro vybrané hry nebyly nalezeny žádné kanály...",
+            "no_live_channels": "No live drop channels",
+            "toggle_game": "Click to show/hide channels",
             "channel_count": "kanál",
             "channel_count_plural": "kanály",
             "viewers": "diváci"
@@ -121,6 +123,7 @@
                 "upcoming": "Nadcházející",
                 "expired": "Vypršelo",
                 "finished": "Dokončeno",
+                "games_to_watch_only": "Pouze Games to Watch",
                 "item": "Předmět",
                 "badge": "Odznak",
                 "emote": "Emotikon",

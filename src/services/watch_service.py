@@ -78,7 +78,12 @@ class WatchService:
         if channel.game is None or channel.game not in self._twitch.wanted_games:
             return False
 
-        return any(campaign.can_earn(channel) for campaign in self._twitch.inventory)
+        # Priority-list games are mined even when Twitch reports NOT LINKED.
+        return any(
+            campaign.can_earn(channel, ignore_link=True)
+            for campaign in self._twitch.inventory
+            if campaign.game == channel.game
+        )
 
     def should_switch(self, channel: Channel) -> bool:
         """
@@ -223,7 +228,7 @@ class WatchService:
 
                 if drop_data is not None:
                     gql_drop: TimedDrop | None = self._twitch._drops.get(drop_data["dropID"])
-                    if gql_drop is not None and gql_drop.can_earn(channel):
+                    if gql_drop is not None and gql_drop.can_earn(channel, ignore_link=True):
                         gql_drop.update_minutes(drop_data["currentMinutesWatched"])
                         drop_text: str = (
                             f"{gql_drop.name} ({gql_drop.campaign.game}, "

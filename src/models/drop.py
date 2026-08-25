@@ -133,9 +133,15 @@ class BaseDrop:
             and self.starts_at < stamp
         )
 
-    def can_earn(self, channel: Channel | None = None, ignore_channel_status: bool = False) -> bool:
+    def can_earn(
+        self,
+        channel: Channel | None = None,
+        ignore_channel_status: bool = False,
+        *,
+        ignore_link: bool = False,
+    ) -> bool:
         return self._base_can_earn() and self.campaign._base_can_earn(
-            channel, ignore_channel_status
+            channel, ignore_channel_status, ignore_link=ignore_link
         )
 
     @property

@@ -93,6 +93,8 @@
             "offline": "OFFLINE ❌",
             "no_channels": "Henüz takip edilen kanal yok...",
             "no_channels_for_games": "Seçili oyunlar için kanal bulunamadı...",
+            "no_live_channels": "No live drop channels",
+            "toggle_game": "Click to show/hide channels",
             "channel_count": "kanal",
             "channel_count_plural": "kanal",
             "viewers": "izleyici"
@@ -121,6 +123,7 @@
                 "upcoming": "Yaklaşan",
                 "expired": "Süresi Dolmuş",
                 "finished": "Tamamlanmış",
+                "games_to_watch_only": "Yalnizca Games to Watch",
                 "item": "Eşya",
                 "badge": "Rozet",
                 "emote": "İfade",

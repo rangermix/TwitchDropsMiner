@@ -93,6 +93,8 @@
             "offline": "オフライン ❌",
             "no_channels": "まだチャンネルが追跡されていません...",
             "no_channels_for_games": "選択したゲームのチャンネルが見つかりません...",
+            "no_live_channels": "No live drop channels",
+            "toggle_game": "Click to show/hide channels",
             "channel_count": "チャンネル",
             "channel_count_plural": "チャンネル",
             "viewers": "視聴者"
@@ -121,6 +123,7 @@
                 "upcoming": "近日開催",
                 "expired": "期限切れ",
                 "finished": "完了",
+                "games_to_watch_only": "Games to Watchのみ",
                 "item": "アイテム",
                 "badge": "バッジ",
                 "emote": "エモート",

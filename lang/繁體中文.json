@@ -93,6 +93,8 @@
             "offline": "離線 ❌",
             "no_channels": "尚未追蹤任何頻道...",
             "no_channels_for_games": "找不到所選遊戲的頻道...",
+            "no_live_channels": "No live drop channels",
+            "toggle_game": "Click to show/hide channels",
             "channel_count": "頻道",
             "channel_count_plural": "頻道",
             "viewers": "觀眾"
@@ -121,6 +123,7 @@
                 "upcoming": "即將開始",
                 "expired": "已過期",
                 "finished": "已完成",
+                "games_to_watch_only": "僅 Games to Watch",
                 "item": "物品",
                 "badge": "徽章",
                 "emote": "表情",

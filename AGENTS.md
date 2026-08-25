@@ -152,8 +152,10 @@ lang/                # Translation JSON files (20 languages)
 
 **src/config/settings.py** - Application settings:
 
-- Games to watch list (auto-populated from available campaigns if empty)
+- Games to watch list (empty means mine nothing; order is mining priority)
+- Games on the Games to Watch list are mined even when Twitch reports NOT LINKED
 - Games can also be added manually from the web settings search box
+- Available Games is populated from discovered campaigns and returned with settings
 - Connection quality multiplier
 - Language selection
 - Proxy support (including verification)
@@ -162,12 +164,15 @@ lang/                # Translation JSON files (20 languages)
 - Drop-name ignore list (`drop_name_blacklist`), empty by default. Entries are literal,
   case-insensitive substrings entered one per line; whitespace and blanks are removed and
   duplicates are casefolded while preserving the first spelling/order.
-- Inventory filters (Status, Benefit Type, Game Search); Active/Upcoming/Expired use
-  OR semantics, Not Linked narrows the result, and Finished opts claimed campaigns in.
-  Zero-minute subscription rewards are omitted from Inventory and Wanted Drops Queue;
-  individually expired and non-mineable rewards are omitted from the queue without hiding
-  upcoming or sequential rewards; successful claims refresh the queue immediately; the
-  actively watched channel remains visible while game settings are changing
+- Inventory filters (Status, Benefit Type, Game Search, Games to Watch only);
+  Active/Upcoming/Expired use OR semantics, Not Linked narrows the result, and Finished
+  opts claimed campaigns in. EXPIRED campaigns are fetched for history. Zero-minute
+  subscription rewards are omitted from Inventory and Wanted Drops Queue; individually
+  expired and non-mineable rewards are omitted from the queue without hiding upcoming or
+  sequential rewards; successful claims refresh the queue immediately; channel groups can
+  be collapsed by game header; priority games without live channels still appear in the
+  Channels panel; the actively watched channel remains visible while game settings are
+  changing
 - Consecutive identical no-active-campaign console prompts are collapsed until another
   console message appears
 
@@ -357,9 +362,11 @@ source env/bin/activate && python -m pytest tests/
 The suite covers settings and proxy behavior, inventory-filter behavior, API filtering,
 GraphQL watch events, batched channel discovery, full-locale translation schema and
 placeholder consistency, frontend DOM safety, case-insensitive channel filtering,
-watch-drop count and expiry semantics, immediate claim refresh behavior, consecutive
-no-campaign console collapsing, and contributor README automation. Frontend behavior tests
-share their JavaScript extraction helper and use Node.js;
+Games-to-Watch priority mining (including NOT LINKED override), Available Games
+population, channel group collapse placeholders, watch-drop count and expiry semantics,
+immediate claim refresh behavior, consecutive no-campaign console collapsing, and
+contributor README automation. Frontend behavior tests share their JavaScript extraction
+helper and use Node.js;
 the validation workflow provisions Node 24 before running pytest. It also runs the release
 script contract tests under `.github/scripts/test/`. Ignore-list coverage includes
 normalization and settings persistence, dependency pruning, the combined expiry/ignore
