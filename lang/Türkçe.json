@@ -157,7 +157,12 @@
             "clear_all_cache": "Tüm Önbelleği Temizle",
             "clear_all_cache_help": "Yerel kampanya, kanal ve türetilmiş madenci durumunu temizler; oturum açma bilgilerini ve ayarları korur, ardından Twitch'ten yeniden yükler.",
             "mining_benefits": "Madencilik Avantajları",
-            "mining_benefits_help": "Hangi tür dropları toplamak istediğinizi seçin."
+            "mining_benefits_help": "Hangi tür dropları toplamak istediğinizi seçin.",
+            "multiple_games_found": "Aramanız için birden fazla oyun bulundu. Lütfen daha belirgin olun.",
+            "manual_game_warning": "Uyarı: \"{game}\" şu anda aktif değil. Eğer bu geçerli bir Twitch oyunuysa, isminin Twitch'in büyük/küçük harf kullanımına tam olarak uyduğundan emin olun, aksi takdirde madencilik çalışmayacaktır.",
+            "deselect_all_warning": "İzleme listenizdeki tüm oyunları kaldırmak istediğinize emin misiniz?",
+            "confirm_btn": "Onayla",
+            "cancel_btn": "İptal"
         },
         "help": {
             "about": "Twitch Drops Miner Hakkında",

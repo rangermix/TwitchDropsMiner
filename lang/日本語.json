@@ -157,7 +157,12 @@
             "clear_all_cache": "すべてのキャッシュを消去",
             "clear_all_cache_help": "ローカルのキャンペーン、チャンネル、およびマイナーの派生状態を消去します。ログイン情報と設定は保持し、その後 Twitch から再読み込みします。",
             "mining_benefits": "マイニング特典",
-            "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。"
+            "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。",
+            "multiple_games_found": "検索結果に複数のゲームが見つかりました。もう少し具体的に入力してください。",
+            "manual_game_warning": "警告: 「{game}」は現在アクティブではありません。これが有効なTwitchのゲームである場合は、Twitchの大文字と小文字に完全に一致していることを確認してください。そうでない場合、マイニングは機能しません。",
+            "deselect_all_warning": "監視リストからすべてのゲームを削除してもよろしいですか？",
+            "confirm_btn": "確認",
+            "cancel_btn": "キャンセル"
         },
         "help": {
             "about": "Twitch Drops Minerについて",

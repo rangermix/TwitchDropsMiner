@@ -157,7 +157,12 @@
             "clear_all_cache": "Svuota tutta la cache",
             "clear_all_cache_help": "Cancella lo stato locale di campagne, canali e i dati derivati del miner; mantiene l’accesso e le impostazioni, quindi ricarica i dati da Twitch.",
             "mining_benefits": "Vantaggi Minatori",
-            "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare."
+            "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare.",
+            "multiple_games_found": "Più giochi trovati per la tua ricerca. Per favore, sii più specifico.",
+            "manual_game_warning": "Attenzione: \"{game}\" non è attualmente attivo. Se questo è un gioco Twitch valido, assicurati che il nome corrisponda esattamente alle maiuscole/minuscole di Twitch, altrimenti il mining non funzionerà.",
+            "deselect_all_warning": "Sei sicuro di voler rimuovere tutti i giochi dalla tua lista di osservazione?",
+            "confirm_btn": "Conferma",
+            "cancel_btn": "Annulla"
         },
         "help": {
             "about": "Informazioni su Twitch Drops Miner",

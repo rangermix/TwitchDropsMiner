@@ -157,7 +157,12 @@
             "connection_quality": "Calidad de conexión:",
             "minimum_refresh": "Intervalo mínimo de actualización (minutos):",
             "mining_benefits": "Beneficios de Minería",
-            "mining_benefits_help": "Selecciona qué tipos de drops deseas minar."
+            "mining_benefits_help": "Selecciona qué tipos de drops deseas minar.",
+            "multiple_games_found": "Se encontraron múltiples juegos para tu búsqueda. Por favor, sé más específico.",
+            "manual_game_warning": "Advertencia: \"{game}\" no está activo actualmente. Si es un juego válido de Twitch, asegúrate de que el nombre coincida exactamente con las mayúsculas/minúsculas de Twitch, de lo contrario la minería no funcionará.",
+            "deselect_all_warning": "¿Estás seguro de que deseas eliminar todos los juegos de tu lista de seguimiento?",
+            "confirm_btn": "Confirmar",
+            "cancel_btn": "Cancelar"
         },
         "help": {
             "about": "Acerca de Twitch Drops Miner",

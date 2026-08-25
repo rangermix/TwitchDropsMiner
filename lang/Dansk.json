@@ -157,7 +157,12 @@
             "clear_all_cache": "Ryd hele cachen",
             "clear_all_cache_help": "Rydder lokal kampagne-, kanal- og afledt minerstatus; bevarer login og indstillinger og genindlæser derefter data fra Twitch.",
             "mining_benefits": "Mining Fordele",
-            "mining_benefits_help": "Vælg hvilke typer drops du vil mine."
+            "mining_benefits_help": "Vælg hvilke typer drops du vil mine.",
+            "multiple_games_found": "Flere spil fundet for din søgning. Vær venligst mere specifik.",
+            "manual_game_warning": "Advarsel: \"{game}\" er ikke aktiv i øjeblikket. Hvis dette er et gyldigt Twitch-spil, skal du sørge for, at navnet matcher Twitchs store/små bogstaver nøjagtigt, ellers vil mining ikke fungere.",
+            "deselect_all_warning": "Er du sikker på, at du vil fjerne alle spil fra din overvågningsliste?",
+            "confirm_btn": "Bekræft",
+            "cancel_btn": "Annuller"
         },
         "help": {
             "about": "Om Twitch Drops Miner",

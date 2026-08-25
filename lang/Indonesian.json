@@ -157,7 +157,12 @@
             "clear_all_cache": "Hapus Semua Cache",
             "clear_all_cache_help": "Menghapus status kampanye, channel, dan data turunan miner lokal; mempertahankan login dan pengaturan, lalu memuat ulang data dari Twitch.",
             "mining_benefits": "Manfaat Penambangan",
-            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang."
+            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang.",
+            "multiple_games_found": "Beberapa game ditemukan untuk pencarian Anda. Harap lebih spesifik.",
+            "manual_game_warning": "Peringatan: \"{game}\" saat ini tidak aktif. Jika ini adalah game Twitch yang valid, pastikan namanya persis sama dengan huruf besar/kecil Twitch, jika tidak, penambangan tidak akan berfungsi.",
+            "deselect_all_warning": "Apakah Anda yakin ingin menghapus semua game dari daftar pantauan Anda?",
+            "confirm_btn": "Konfirmasi",
+            "cancel_btn": "Batal"
         },
         "help": {
             "about": "Tentang Twitch Drops Miner",

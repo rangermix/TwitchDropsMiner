@@ -125,7 +125,12 @@
             "all_games_selected": "Minden játék ki van jelölve, vagy nincs elérhető játék.",
             "actions": "Műveletek",
             "connection_quality": "Kapcsolat minősége:",
-            "minimum_refresh": "Minimális frissítési intervallum (perc):"
+            "minimum_refresh": "Minimális frissítési intervallum (perc):",
+            "multiple_games_found": "Több játék is található a kereséshez. Kérjük, legyen pontosabb.",
+            "manual_game_warning": "Figyelmeztetés: \"{game}\" jelenleg nem aktív. Ha ez egy érvényes Twitch játék, győződjön meg róla, hogy a név pontosan megegyezik a Twitch kis- és nagybetűivel, különben a bányászat nem fog működni.",
+            "deselect_all_warning": "Biztosan el akarja távolítani az összes játékot a figyelőlistájáról?",
+            "confirm_btn": "Megerősítés",
+            "cancel_btn": "Mégse"
         },
         "help": {
             "about": "A Twitch Drops Miner-ről",
