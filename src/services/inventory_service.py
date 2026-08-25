@@ -148,11 +148,13 @@ class InventoryService:
         # fetch general available campaigns data (campaigns)
         response = await self._twitch.gql_request(GQL_OPERATIONS["Campaigns"])
         available_list: list[JsonType] = response["data"]["currentUser"]["dropCampaigns"] or []
-        applicable_statuses = ("ACTIVE", "UPCOMING")
+        # Include EXPIRED so Inventory can show claimed/history campaigns
+        # (e.g. add Elder Scrolls Online back to Games to Watch).
+        applicable_statuses = ("ACTIVE", "UPCOMING", "EXPIRED")
         available_campaigns: dict[str, JsonType] = {
             c["id"]: c
             for c in available_list
-            if c["status"] in applicable_statuses  # that are currently not expired
+            if c["status"] in applicable_statuses
         }
 
         # fetch detailed data for each campaign, in chunks
@@ -266,7 +268,7 @@ class InventoryService:
 
         campaigns: list[DropsCampaign] = []
         for campaign in self._twitch.inventory:
-            if campaign.can_earn(watching_channel):
+            if campaign.can_earn(watching_channel, ignore_link=True):
                 campaigns.append(campaign)
 
         if campaigns:

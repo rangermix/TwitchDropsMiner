@@ -93,6 +93,8 @@
             "offline": "OFFLINE ❌",
             "no_channels": "Ingen kanaler sporet endnu...",
             "no_channels_for_games": "Ingen kanaler fundet for valgte spil...",
+            "no_live_channels": "No live drop channels",
+            "toggle_game": "Click to show/hide channels",
             "channel_count": "kanal",
             "channel_count_plural": "kanaler",
             "viewers": "seere"
@@ -121,6 +123,7 @@
                 "upcoming": "Kommende",
                 "expired": "Udløbet",
                 "finished": "Afsluttet",
+                "games_to_watch_only": "Kun Games to Watch",
                 "item": "Genstand",
                 "badge": "Badge",
                 "emote": "Emote",

@@ -336,7 +336,7 @@ class Twitch:
                 # Handle manual mode: check if manual game still has drops
                 if self.is_manual_mode():
                     manual_has_drops = any(
-                        campaign.can_earn_within(next_hour)
+                        campaign.can_earn_within(next_hour, ignore_link=True)
                         and campaign.game == self._manual_target_game
                         for campaign in self.inventory
                     )
@@ -386,11 +386,29 @@ class Twitch:
                 if self.wanted_games:
                     self.change_state(State.CHANNELS_FETCH)
                 else:
-                    # with no games available, we switch to IDLE after cleanup
-                    self.print(
-                        _.t["status"]["no_campaign"],
-                        collapse_key="status.no_campaign",
+                    # Backend channels are gone; clear stale GUI cards to avoid
+                    # "Channel not found" clicks on leftover priority-list rows.
+                    self.gui.channels.clear()
+                    self.gui.clear_channel_selection()
+                    skip_reasons = self._stream_selector.explain_skipped_games(
+                        self.settings, self.inventory
                     )
+                    if self.settings.games_to_watch and skip_reasons:
+                        reason_text = "; ".join(skip_reasons)
+                        self.print(
+                            f"{_.t['status']['no_campaign']} ({reason_text})",
+                            collapse_key="status.no_campaign",
+                        )
+                        logger.warning(
+                            "No wanted games from games_to_watch=%s: %s",
+                            self.settings.games_to_watch,
+                            reason_text,
+                        )
+                    else:
+                        self.print(
+                            _.t["status"]["no_campaign"],
+                            collapse_key="status.no_campaign",
+                        )
                     self.change_state(State.IDLE)
             elif self._state is State.CHANNELS_FETCH:
                 self.gui.status.update(_.t["gui"]["status"]["gathering"])
@@ -404,7 +422,9 @@ class Twitch:
                 acl_channels: set[Channel] = set()
                 next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
                 for campaign in self.inventory:
-                    if campaign.game in self.wanted_games and campaign.can_earn_within(next_hour):
+                    if campaign.game in self.wanted_games and campaign.can_earn_within(
+                        next_hour, ignore_link=True
+                    ):
                         if campaign.allowed_channels:
                             acl_channels.update(campaign.allowed_channels)
                         else:

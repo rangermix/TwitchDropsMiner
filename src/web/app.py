@@ -145,7 +145,9 @@ async def select_channel(request: ChannelSelectRequest):
         raise HTTPException(status_code=400, detail="Channel is not playing any game")
 
     # Warn if channel has no drops (shouldn't happen if GUI is filtering correctly)
-    if not any(campaign.can_earn(channel) for campaign in twitch_client.inventory):
+    if not any(
+        campaign.can_earn(channel, ignore_link=True) for campaign in twitch_client.inventory
+    ):
         logger.warning(f"User selected channel {channel.name} but it has no available drops")
 
     gui_manager.select_channel(request.channel_id)

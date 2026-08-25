@@ -93,6 +93,8 @@
             "offline": "OFFLINE ❌",
             "no_channels": "Nog geen kanalen gevolgd...",
             "no_channels_for_games": "Geen kanalen gevonden voor geselecteerde games...",
+            "no_live_channels": "No live drop channels",
+            "toggle_game": "Click to show/hide channels",
             "channel_count": "kanaal",
             "channel_count_plural": "kanalen",
             "viewers": "kijkers"
@@ -121,6 +123,7 @@
                 "upcoming": "Aankomend",
                 "expired": "Verlopen",
                 "finished": "Voltooid",
+                "games_to_watch_only": "Alleen Games to Watch",
                 "item": "Item",
                 "badge": "Badge",
                 "emote": "Emote",

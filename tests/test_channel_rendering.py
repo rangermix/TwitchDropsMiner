@@ -66,3 +66,5 @@ process.stdout.write(JSON.stringify(results));
     render_source = extract_javascript_function(app_source, "renderChannels")
     assert "new Set(gamesToWatch.map(g => g.toLowerCase()))" in render_source
     assert "channelMatchesGameFilter(channel, gamesToWatchSet)" in render_source
+    assert "collapsedChannelGames" in render_source
+    assert "No live drop channels" in render_source or "no_live_channels" in render_source

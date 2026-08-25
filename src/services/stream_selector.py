@@ -11,7 +11,7 @@ class StreamSelector:
     ) -> list[dict]:
         """
         Get the hierarchical tree of wanted items (Games -> Campaigns -> Drops -> Benefits).
-        Ignoring 'can earn within' time constraint.
+        Used for Wanted Drops Queue display; applies mining_benefits filtering.
         """
         wanted_games = []
         games_to_watch = settings.games_to_watch
@@ -32,7 +32,7 @@ class StreamSelector:
                 if game_obj is None:
                     game_obj = campaign.game
 
-                if not campaign.can_earn_within(next_hour):
+                if not campaign.can_earn_within(next_hour, ignore_link=True):
                     continue
 
                 wanted_drops = []
@@ -81,4 +81,55 @@ class StreamSelector:
         ]
 
     def get_wanted_games(self, settings: Settings, campaigns: list[DropsCampaign]) -> list[Game]:
-        return [game["game_obj"] for game in self._get_wanted_game_tree(settings, campaigns)]
+        """
+        Build mining eligibility list in games_to_watch order (DevilXD-aligned).
+
+        A game is wanted if any inventory campaign for that name can progress
+        within the next hour. Games on the priority list are mined even when
+        Twitch reports the campaign as NOT LINKED. Benefit filters do not block
+        mining eligibility.
+        """
+        next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
+        wanted_games: list[Game] = []
+        seen: set[str] = set()
+
+        for game_name in settings.games_to_watch:
+            game_name_lower = game_name.lower()
+            if game_name_lower in seen:
+                continue
+
+            for campaign in campaigns:
+                if campaign.game.name.lower() != game_name_lower:
+                    continue
+                if not campaign.can_earn_within(next_hour, ignore_link=True):
+                    continue
+                wanted_games.append(campaign.game)
+                seen.add(game_name_lower)
+                break
+
+        return wanted_games
+
+    def explain_skipped_games(
+        self, settings: Settings, campaigns: list[DropsCampaign]
+    ) -> list[str]:
+        """
+        Short reasons why games_to_watch entries are not in wanted_games.
+        Used for status/logging when the miner goes idle.
+        """
+        next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
+        wanted_names = {game.name.lower() for game in self.get_wanted_games(settings, campaigns)}
+        reasons: list[str] = []
+
+        for game_name in settings.games_to_watch:
+            if game_name.lower() in wanted_names:
+                continue
+
+            matching = [c for c in campaigns if c.game.name.lower() == game_name.lower()]
+            if not matching:
+                reasons.append(f"{game_name}: no campaign in inventory")
+            elif not any(c.can_earn_within(next_hour, ignore_link=True) for c in matching):
+                reasons.append(f"{game_name}: no earnable drops within 1h")
+            else:
+                reasons.append(f"{game_name}: skipped")
+
+        return reasons

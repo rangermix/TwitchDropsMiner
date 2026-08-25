@@ -121,6 +121,7 @@ socket.on('initial_state', (data) => {
         data.campaigns.forEach(camp => {
             state.campaigns[camp.id] = camp;
         });
+        rebuildAvailableGamesFromCampaigns();
         renderInventory();
     }
 
@@ -218,7 +219,9 @@ socket.on('inventory_batch_update', (data) => {
     data.campaigns.forEach(camp => {
         state.campaigns[camp.id] = camp;
     });
+    rebuildAvailableGamesFromCampaigns();
     renderInventory();
+    renderChannels();
 });
 
 socket.on('drop_update', (data) => {
@@ -245,10 +248,6 @@ socket.on('login_clear', (data) => {
 
 socket.on('settings_updated', (data) => {
     updateSettingsUI(data);
-});
-
-socket.on('games_available', (data) => {
-    state.availableGames = data.games;
 });
 
 socket.on('theme_change', (data) => {
@@ -351,75 +350,88 @@ function channelMatchesGameFilter(channel, gamesToWatchSet) {
         Boolean(channel.game && gamesToWatchSet.has(channel.game.toLowerCase()));
 }
 
+/** Collapsed game groups in the Channels panel (keyed by lowercase game name). */
+const collapsedChannelGames = new Set();
+
 function renderChannels() {
     const container = document.getElementById('channels-list');
     container.innerHTML = '';
 
     const t = state.translations;
     const channels = Object.values(state.channels);
-    if (channels.length === 0) {
-        const emptyMsg = t.gui?.channels?.no_channels || 'No channels tracked yet...';
-        container.replaceChildren(
-            makeElement('p', { class: 'empty-message' }, emptyMsg),
-        );
-        return;
-    }
-
-    // Get the games to watch list from settings
     const gamesToWatch = state.settings.games_to_watch || [];
     const gamesToWatchSet = new Set(gamesToWatch.map(g => g.toLowerCase()));
 
-    // The active channel remains visible while a settings update changes the
-    // game filter; all other channels must match the configured watch list.
     const filteredChannels = channels.filter(
         channel => channelMatchesGameFilter(channel, gamesToWatchSet)
     );
 
-    if (filteredChannels.length === 0) {
-        const emptyMsg = t.gui?.channels?.no_channels_for_games || 'No channels found for selected games...';
+    // Group live/tracked channels by game
+    const gameGroups = {};
+    filteredChannels.forEach(channel => {
+        const gameName = channel.game || 'No Game';
+        const gameKey = gameName.toLowerCase();
+        const gameIcon = channel.game_icon;
+
+        if (!gameGroups[gameKey]) {
+            gameGroups[gameKey] = {
+                name: gameName,
+                icon: gameIcon,
+                channels: [],
+                fromPriority: gamesToWatchSet.has(gameKey),
+            };
+        }
+        gameGroups[gameKey].channels.push(channel);
+        if (gameIcon && !gameGroups[gameKey].icon) {
+            gameGroups[gameKey].icon = gameIcon;
+        }
+    });
+
+    // Ensure every Games-to-Watch entry appears, even with zero live channels
+    gamesToWatch.forEach(gameName => {
+        const gameKey = gameName.toLowerCase();
+        if (!gameGroups[gameKey]) {
+            const campaign = Object.values(state.campaigns).find(
+                c => (c.game_name || '').toLowerCase() === gameKey
+            );
+            gameGroups[gameKey] = {
+                name: gameName,
+                icon: campaign?.game_box_art_url || null,
+                channels: [],
+                fromPriority: true,
+            };
+        }
+    });
+
+    const groupEntries = Object.entries(gameGroups);
+    if (groupEntries.length === 0) {
+        const emptyMsg = channels.length === 0
+            ? (t.gui?.channels?.no_channels || 'No channels tracked yet...')
+            : (t.gui?.channels?.no_channels_for_games || 'No channels found for selected games...');
         container.replaceChildren(
             makeElement('p', { class: 'empty-message' }, emptyMsg),
         );
         return;
     }
 
-    // Group channels by game
-    const gameGroups = {};
-    filteredChannels.forEach(channel => {
-        const gameName = channel.game || 'No Game';
-        const gameId = channel.game_id || 'no-game';
-        const gameIcon = channel.game_icon;
-
-        if (!gameGroups[gameId]) {
-            gameGroups[gameId] = {
-                name: gameName,
-                icon: gameIcon,
-                channels: []
-            };
-        }
-        gameGroups[gameId].channels.push(channel);
-    });
-
-    // Sort games: prioritize games with watching channels, then by total viewers
-    const sortedGames = Object.entries(gameGroups).sort(([idA, groupA], [idB, groupB]) => {
+    // Sort: watching game first, then games_to_watch order, then by viewers
+    const priorityIndex = new Map(gamesToWatch.map((name, i) => [name.toLowerCase(), i]));
+    const sortedGames = groupEntries.sort(([keyA, groupA], [keyB, groupB]) => {
         const hasWatchingA = groupA.channels.some(ch => ch.watching);
         const hasWatchingB = groupB.channels.some(ch => ch.watching);
-
         if (hasWatchingA !== hasWatchingB) return hasWatchingB ? 1 : -1;
 
-        // Sum total viewers for each game
+        const priA = priorityIndex.has(keyA) ? priorityIndex.get(keyA) : Number.MAX_SAFE_INTEGER;
+        const priB = priorityIndex.has(keyB) ? priorityIndex.get(keyB) : Number.MAX_SAFE_INTEGER;
+        if (priA !== priB) return priA - priB;
+
         const totalViewersA = groupA.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
         const totalViewersB = groupB.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
-
         return totalViewersB - totalViewersA;
     });
 
-    // Render each game group
-    sortedGames.forEach(([gameId, group]) => {
-        // Create game header
-        const gameHeader = document.createElement('div');
-        gameHeader.className = 'game-group-header';
-
+    sortedGames.forEach(([gameKey, group]) => {
+        const isCollapsed = collapsedChannelGames.has(gameKey);
         const channelCount = group.channels.length;
         const totalViewers = group.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
 
@@ -427,25 +439,74 @@ function renderChannels() {
             ? (t.gui?.channels?.channel_count || 'channel')
             : (t.gui?.channels?.channel_count_plural || 'channels');
         const viewersText = t.gui?.channels?.viewers || 'viewers';
+        const statsText = channelCount === 0
+            ? (t.gui?.channels?.no_live_channels || 'No live drop channels')
+            : `${channelCount} ${channelText} • ${totalViewers.toLocaleString()} ${viewersText}`;
 
+        const gameHeader = document.createElement('div');
+        gameHeader.className = 'game-group-header' + (isCollapsed ? ' collapsed' : '');
+        gameHeader.dataset.gameKey = gameKey;
+        gameHeader.title = t.gui?.channels?.toggle_game || 'Click to show/hide channels';
+        gameHeader.setAttribute('role', 'button');
+        gameHeader.tabIndex = 0;
+
+        gameHeader.appendChild(
+            makeElement('span', { class: 'game-group-toggle' }, isCollapsed ? '▸' : '▾')
+        );
         if (group.icon) {
-            gameHeader.appendChild(makeImageElement(group.icon.replace('{width}', '40').replace('{height}', '53'), group.name, 'game-icon'));
+            gameHeader.appendChild(
+                makeImageElement(
+                    group.icon.replace('{width}', '40').replace('{height}', '53'),
+                    group.name,
+                    'game-icon'
+                )
+            );
         }
         gameHeader.appendChild(makeElement('div', { class: 'game-group-info' }, null, el => {
             el.appendChild(makeElement('div', { class: 'game-group-name' }, group.name));
-            el.appendChild(makeElement('div', { class: 'game-group-stats' }, `${channelCount} ${channelText} • ${totalViewers.toLocaleString()} ${viewersText}`));
+            el.appendChild(makeElement('div', { class: 'game-group-stats' }, statsText));
         }));
+
+        const toggleGroup = () => {
+            if (collapsedChannelGames.has(gameKey)) collapsedChannelGames.delete(gameKey);
+            else collapsedChannelGames.add(gameKey);
+            renderChannels();
+        };
+        gameHeader.addEventListener('click', toggleGroup);
+        gameHeader.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleGroup();
+            }
+        });
 
         container.appendChild(gameHeader);
 
-        // Sort channels within game: watching first, then online, then by viewers
+        if (isCollapsed) {
+            return;
+        }
+
+        const channelsWrap = document.createElement('div');
+        channelsWrap.className = 'game-group-channels';
+
+        if (channelCount === 0) {
+            channelsWrap.appendChild(
+                makeElement(
+                    'p',
+                    { class: 'empty-message game-group-empty' },
+                    t.gui?.channels?.no_live_channels || 'No live drop channels for this game right now.'
+                )
+            );
+            container.appendChild(channelsWrap);
+            return;
+        }
+
         group.channels.sort((a, b) => {
             if (a.watching !== b.watching) return b.watching ? 1 : -1;
             if (a.online !== b.online) return b.online ? 1 : -1;
             return (b.viewers || 0) - (a.viewers || 0);
         });
 
-        // Render channels in this game
         group.channels.forEach(channel => {
             const div = document.createElement('div');
             div.className = 'channel-item';
@@ -472,8 +533,9 @@ function renderChannels() {
             div.replaceChildren(nameDiv, infoDiv);
 
             div.onclick = () => selectChannel(channel.id);
-            container.appendChild(div);
+            channelsWrap.appendChild(div);
         });
+        container.appendChild(channelsWrap);
     });
 }
 
@@ -558,6 +620,9 @@ function clearDropProgress() {
 
 function addCampaign(campaignData) {
     state.campaigns[campaignData.id] = campaignData;
+    if (campaignData.game_name) {
+        syncAvailableGames([campaignData.game_name]);
+    }
     renderInventory();
 }
 
@@ -594,6 +659,7 @@ function getInventoryFilters() {
         show_upcoming: document.getElementById('filter-upcoming')?.checked || false,
         show_expired: document.getElementById('filter-expired')?.checked || false,
         show_finished: document.getElementById('filter-finished')?.checked || false,
+        show_games_to_watch_only: document.getElementById('filter-games-to-watch-only')?.checked || false,
         game_name_search: [...selectedInventoryGames],  // Array of selected game names
         // Benefit type filters (default to true if checkbox doesn't exist)
         show_benefit_item: document.getElementById('filter-benefit-item')?.checked !== false,
@@ -613,7 +679,8 @@ function campaignMatchesFilters(campaign, filters) {
     // Finished campaigns are excluded unless the user explicitly includes them.
     if (!filters.show_finished && isFinished) return false;
 
-    // Link state narrows the status result instead of joining its OR group.
+    // Link state narrows the status result instead of joining its OR group
+    // (author contract from PR #79: Not Linked is AND on top of status filters).
     if (filters.show_only_not_linked && campaign.linked) return false;
 
     // Active, upcoming, and expired remain OR-based status filters.
@@ -624,6 +691,15 @@ function campaignMatchesFilters(campaign, filters) {
             (filters.show_upcoming && campaign.upcoming) ||
             (filters.show_expired && campaign.expired);
         if (!statusMatch) return false;
+    }
+
+    // Optional: only campaigns whose game is in the Games to Watch priority list
+    if (filters.show_games_to_watch_only) {
+        const priorityGames = (filters.games_to_watch || []).map(name => String(name).toLowerCase());
+        const gameName = (campaign.game_name || '').toLowerCase();
+        if (!priorityGames.includes(gameName)) {
+            return false;
+        }
     }
 
     // Check game name filter (AND logic with status filters, OR logic among selected games)
@@ -678,6 +754,9 @@ function clearInventoryFilters() {
     document.getElementById('filter-upcoming').checked = false;
     document.getElementById('filter-expired').checked = false;
     document.getElementById('filter-finished').checked = false;
+    if (document.getElementById('filter-games-to-watch-only')) {
+        document.getElementById('filter-games-to-watch-only').checked = false;
+    }
     document.getElementById('inventory-game-search').value = '';
 
     // Reset benefit type filters to checked (show all)
@@ -889,8 +968,11 @@ function renderInventory() {
     const t = state.translations;
     const allCampaigns = Object.values(state.campaigns);
 
-    // Apply filters
-    const filters = getInventoryFilters();
+    // Apply filters (games_to_watch is live settings, not persisted inside inventory_filters)
+    const filters = {
+        ...getInventoryFilters(),
+        games_to_watch: state.settings.games_to_watch || [],
+    };
     const campaigns = allCampaigns.filter(campaign => campaignMatchesFilters(campaign, filters));
 
     if (allCampaigns.length === 0) {
@@ -950,33 +1032,48 @@ function renderInventory() {
                 class: `drop-item${drop.is_claimed ? ' claimed' : ''}${drop.can_claim ? ' active' : ''}${policyClass}`,
                 ...(policyReason ? { title: policyReason } : {}),
             });
-            dropItem.appendChild(
-                makeElement('div', { class: 'drop-item-header' }, '', el =>
-                    el.appendChild(makeElement('div', { class: 'drop-item-info' }, '', el2 =>
-                        el2.appendChild(makeElement('div', {}, '', el3 =>
-                            el3.appendChild(makeElement('strong', {}, drop.name))
-                        ))
-                    ))
-                )
-            );
+
             const benefitsList = makeElement('div', { class: 'benefits-list' });
             if (drop.benefits && drop.benefits.length > 0) {
                 drop.benefits.forEach(benefit => {
                     benefitsList.appendChild(
                         makeElement('div', { class: 'benefit-item' }, '', el => {
-                            el.appendChild(makeImageElement(benefit.image_url, benefit.name, 'benefit-icon'));
+                            if (benefit.image_url) {
+                                el.appendChild(makeImageElement(benefit.image_url, benefit.name, 'benefit-icon'));
+                            }
                             el.appendChild(makeElement('div', { class: 'benefit-info' }, '', el2 => {
-                                el2.appendChild(makeElement('span', { class: 'benefit-name' }, benefit.name));
-                                el2.appendChild(makeElement('span', { class: 'benefit-type' }, `(${benefit.type})`));
+                                el2.appendChild(makeElement('span', { class: 'benefit-name' }, benefit.name || drop.name));
                             }));
                         })
                     );
                 });
+            } else {
+                benefitsList.appendChild(
+                    makeElement('div', { class: 'benefit-item' }, '', el => {
+                        el.appendChild(makeElement('div', { class: 'benefit-info' }, '', el2 => {
+                            el2.appendChild(makeElement('span', { class: 'benefit-name' }, drop.name));
+                        }));
+                    })
+                );
             }
             dropItem.appendChild(benefitsList);
-            dropItem.appendChild(makeElement('div', {}, `${drop.current_minutes} / ${drop.required_minutes} minutes (${Math.round(drop.progress * 100)}%)`));
+
+            const pct = Math.round((drop.progress || 0) * 100);
+            dropItem.appendChild(makeElement('div', { class: 'drop-progress' }, '', el => {
+                el.appendChild(makeElement('div', { class: 'drop-progress-track' }, '', track => {
+                    track.appendChild(makeElement('div', {
+                        class: 'drop-progress-fill',
+                        style: `width: ${pct}%`,
+                    }));
+                }));
+                el.appendChild(makeElement(
+                    'div',
+                    { class: 'drop-progress-text' },
+                    `${drop.current_minutes} / ${drop.required_minutes} min · ${pct}%`
+                ));
+            }));
             if (drop.is_claimed) {
-                dropItem.appendChild(makeElement('div', {}, `✓ ${claimedText}`));
+                dropItem.appendChild(makeElement('div', { class: 'drop-claimed-label' }, `✓ ${claimedText}`));
             } else if (policyStatus) {
                 dropItem.appendChild(makeElement('div', { class: 'drop-policy-status' }, policyStatus));
             }
@@ -988,21 +1085,24 @@ function renderInventory() {
             el.appendChild(makeElement('span', { class: 'external-link-icon' }, '🔗'))
         );
 
-        // Linked/not linked badge
+        // Linked/not linked badge (in-flow, not overlapping the title)
         const linkStatusBadge = campaign.linked
             ? makeElement('span', { class: 'campaign-badge linked', title: 'Account is linked' }, 'LINKED')
             : makeElement('span', { class: 'campaign-badge not-linked', title: 'Click to link your account' }, 'NOT LINKED', el => {
                 el.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
             });
 
-        // Link account button
         const campaignGameDiv = makeElement('div', { class: 'campaign-game' }, '', el => {
             if (campaign.game_box_art_url) {
                 const iconUrl = campaign.game_box_art_url.replace('{width}', '52').replace('{height}', '70');
                 el.appendChild(makeImageElement(iconUrl, campaign.game_name, 'game-icon'));
             }
-            el.appendChild(makeElement('span', { class: 'campaign-game-name' }, campaign.game_name));
-            el.appendChild(linkStatusBadge);
+            el.appendChild(makeElement('div', { class: 'campaign-game-text' }, '', textEl => {
+                textEl.appendChild(makeElement('div', { class: 'campaign-game-title-row' }, '', row => {
+                    row.appendChild(makeElement('span', { class: 'campaign-game-name' }, campaign.game_name));
+                    row.appendChild(linkStatusBadge);
+                }));
+            }));
         });
 
         const campaignHeader = makeElement('div', { class: 'campaign-header' }, '', el => {
@@ -1127,7 +1227,9 @@ function updateSettingsUI(settings) {
 
     // Update available games if provided in settings
     if (settings.games_available) {
-        availableGames = new Set(settings.games_available);
+        syncAvailableGames(settings.games_available);
+    } else {
+        rebuildAvailableGamesFromCampaigns();
     }
 
     // Restore inventory filters from settings
@@ -1137,6 +1239,10 @@ function updateSettingsUI(settings) {
         document.getElementById('filter-upcoming').checked = settings.inventory_filters.show_upcoming || false;
         document.getElementById('filter-expired').checked = settings.inventory_filters.show_expired || false;
         document.getElementById('filter-finished').checked = settings.inventory_filters.show_finished || false;
+        if (document.getElementById('filter-games-to-watch-only')) {
+            document.getElementById('filter-games-to-watch-only').checked =
+                settings.inventory_filters.show_games_to_watch_only || false;
+        }
 
         // Restore selected games array
         selectedInventoryGames = Array.isArray(settings.inventory_filters.game_name_search)
@@ -1207,13 +1313,29 @@ function updateManualModeUI(manualModeInfo) {
 let availableGames = new Set(); // All games from campaigns
 let draggedElement = null;
 
-socket.on('games_available', (data) => {
-    availableGames = new Set(data.games || []);
+function syncAvailableGames(gameNames) {
+    const next = new Set(availableGames);
+    (gameNames || []).forEach(name => {
+        if (name) next.add(name);
+    });
+    availableGames = next;
     renderGamesToWatch();
+}
+
+function rebuildAvailableGamesFromCampaigns() {
+    const fromCampaigns = Object.values(state.campaigns)
+        .map(c => c.game_name)
+        .filter(Boolean);
+    syncAvailableGames(fromCampaigns);
+}
+
+socket.on('games_available', (data) => {
+    syncAvailableGames(data.games || []);
 });
 
 function renderGamesToWatch() {
     const selectedGames = state.settings.games_to_watch || [];
+    const selectedLower = new Set(selectedGames.map(g => g.toLowerCase()));
     const filterText = document.getElementById('games-filter')?.value.toLowerCase() || '';
 
     // Render selected games (sortable)
@@ -1221,9 +1343,9 @@ function renderGamesToWatch() {
 
     // Render available games (checkboxes for unselected games)
     const unselectedGames = Array.from(availableGames)
-        .filter(game => !selectedGames.includes(game))
+        .filter(game => !selectedLower.has(game.toLowerCase()))
         .filter(game => game.toLowerCase().includes(filterText))
-        .sort();
+        .sort((a, b) => a.localeCompare(b));
 
     renderAvailableGames(unselectedGames, filterText);
 }
@@ -1351,8 +1473,9 @@ function handleDragEnd(e) {
     // Re-render to update priority numbers
     renderSelectedGames(newOrder);
 
-    // Re-render channels list to apply updated filter
+    // Re-render channels/inventory to apply updated Games to Watch filters
     renderChannels();
+    renderInventory();
 
     // Save settings
     saveSettings();
@@ -1373,6 +1496,7 @@ function toggleGameWatch(gameName, checked) {
     state.settings.games_to_watch = games;
     renderGamesToWatch();
     renderChannels();
+    renderInventory();
     saveSettings();
 }
 
@@ -1384,6 +1508,7 @@ function removeGameFromWatch(gameName) {
         state.settings.games_to_watch = games;
         renderGamesToWatch();
         renderChannels();
+        renderInventory();
         saveSettings();
     }
 }
@@ -1392,6 +1517,7 @@ function selectAllGames() {
     state.settings.games_to_watch = Array.from(availableGames).sort();
     renderGamesToWatch();
     renderChannels();
+    renderInventory();
     saveSettings();
 }
 
@@ -1399,6 +1525,7 @@ function deselectAllGames() {
     state.settings.games_to_watch = [];
     renderGamesToWatch();
     renderChannels();
+    renderInventory();
     saveSettings();
 }
 
@@ -1430,6 +1557,7 @@ function addGameFromSearch() {
     searchInput.value = '';
     renderGamesToWatch();
     renderChannels();
+    renderInventory();
     saveSettings();
 }
 
@@ -1457,9 +1585,14 @@ async function selectChannel(channelId) {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Failed to select channel:', errorData.detail || 'Unknown error');
-            addConsoleLine(`Error selecting channel: ${errorData.detail || 'Unknown error'}`);
+            const errorData = await response.json().catch(() => ({}));
+            const detail = errorData.detail || 'Unknown error';
+            console.error('Failed to select channel:', detail);
+            addConsoleLine(`Error selecting channel: ${detail}`);
+            // Stale GUI card after cleanup/rebuild — drop it so it can't be clicked again
+            if (response.status === 404) {
+                removeChannel(channelId);
+            }
         }
     } catch (error) {
         console.error('Failed to select channel:', error);
@@ -1934,6 +2067,7 @@ function applyTranslations(t) {
         updateLabel('filter-upcoming', f.upcoming);
         updateLabel('filter-expired', f.expired);
         updateLabel('filter-finished', f.finished);
+        updateLabel('filter-games-to-watch-only', f.games_to_watch_only || 'Games to Watch only');
         updateLabel('filter-benefit-item', f.item);
         updateLabel('filter-benefit-badge', f.badge);
         updateLabel('filter-benefit-emote', f.emote);
@@ -2084,6 +2218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filter-upcoming').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-expired').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-finished').addEventListener('change', onInventoryFilterChange);
+    document.getElementById('filter-games-to-watch-only')?.addEventListener('change', onInventoryFilterChange);
     // Benefit type filters
     document.getElementById('filter-benefit-item').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-benefit-badge').addEventListener('change', onInventoryFilterChange);

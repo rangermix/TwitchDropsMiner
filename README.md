@@ -70,20 +70,27 @@ Then open <http://localhost:8080>.
 
 1. Log in with your Twitch account through the OAuth device flow.
 2. Wait for the miner to discover available campaigns.
-3. Choose the games you want to prioritize. You can also search for a game, select
-   **Add Game**, and then select **Reload**.
+3. Choose the games you want to prioritize in **Games to Watch**. Order matters
+   (top = highest priority). You can also search for a game, select **Add Game**, and
+   then select **Reload**. Games on this list are mined even when Twitch reports the
+   campaign as **NOT LINKED**.
 4. Leave the miner running while it selects eligible channels and tracks drop progress.
 
 Inventory filters combine **Active**, **Upcoming**, and **Expired** as alternatives.
 **Not Linked** narrows that status result, while fully claimed campaigns stay hidden
-until **Finished** is selected. Zero-minute subscription rewards are omitted from the
-Inventory and Wanted Drops Queue because they cannot be earned by watching. Individually
-expired and non-mineable rewards are also omitted from the queue, while upcoming and
-sequential rewards remain visible; successful claims refresh the queue immediately. The
-channel list matches game names case-insensitively and keeps the actively watched channel
-visible while game settings are changing. Campaign totals and claim messages count only
-rewards that can be earned by watching. Consecutive identical no-active-campaign console
-prompts are collapsed until another console message appears.
+until **Finished** is selected. Optional **Games to Watch only** limits Inventory to
+your priority list. Inventory also loads **EXPIRED** campaigns so you can discover
+historical games to add back to the priority list. Zero-minute subscription rewards are
+omitted from the Inventory and Wanted Drops Queue because they cannot be earned by
+watching. Individually expired and non-mineable rewards are also omitted from the queue,
+while upcoming and sequential rewards remain visible; successful claims refresh the queue
+immediately. The channel list matches game names case-insensitively, keeps every Games to
+Watch entry visible (including games with no live drop channels), supports collapsing
+channel groups by game header, and keeps the actively watched channel visible while game
+settings are changing. Campaign totals and claim messages count only rewards that can be
+earned by watching. Consecutive identical no-active-campaign console prompts are collapsed
+until another console message appears. Settings exposes the full **Available Games** list
+from discovered campaigns (including ones already selected elsewhere).
 
 **Ignored Drop Keywords** in Settings is empty by default. Enter one literal substring per
 line; surrounding whitespace and blank lines are removed, and duplicates are collapsed

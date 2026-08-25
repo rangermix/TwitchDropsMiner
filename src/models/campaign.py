@@ -190,8 +190,10 @@ class DropsCampaign:
 
     @property
     def first_drop(self) -> TimedDrop | None:
+        # ignore_link=True keeps Campaign Progress in sync with Games-to-Watch mining,
+        # where NOT LINKED campaigns are still progressed.
         drops: list[TimedDrop] = sorted(
-            (drop for drop in self.watch_drops if drop.can_earn()),
+            (drop for drop in self.watch_drops if drop.can_earn(ignore_link=True)),
             key=lambda d: d.remaining_minutes,
         )
         return drops[0] if drops else None
@@ -203,10 +205,14 @@ class DropsCampaign:
             first_drop.display()
 
     def _base_can_earn(
-        self, channel: Channel | None = None, ignore_channel_status: bool = False
+        self,
+        channel: Channel | None = None,
+        ignore_channel_status: bool = False,
+        *,
+        ignore_link: bool = False,
     ) -> bool:
         return (
-            self.eligible  # account is eligible
+            (ignore_link or self.eligible)  # linked, or priority-list override
             and self.active  # campaign is active (and valid)
             and (
                 channel is None
@@ -242,17 +248,24 @@ class DropsCampaign:
             )
         )
 
-    def can_earn(self, channel: Channel | None = None, ignore_channel_status: bool = False) -> bool:
+    def can_earn(
+        self,
+        channel: Channel | None = None,
+        ignore_channel_status: bool = False,
+        *,
+        ignore_link: bool = False,
+    ) -> bool:
         # True if any of the containing drops can be earned
-        return self._base_can_earn(channel, ignore_channel_status) and any(
-            drop._base_can_earn() for drop in self.drops
-        )
+        return self._base_can_earn(
+            channel, ignore_channel_status, ignore_link=ignore_link
+        ) and any(drop._base_can_earn() for drop in self.drops)
 
-    def can_earn_within(self, stamp: datetime) -> bool:
+    def can_earn_within(self, stamp: datetime, *, ignore_link: bool = False) -> bool:
         # Same as can_earn, but doesn't check the channel
-        # and uses a future timestamp to see if we can earn this campaign later
+        # and uses a future timestamp to see if we can earn this campaign later.
+        # ignore_link=True: mine Games-to-Watch entries even when Twitch reports NOT LINKED.
         return (
-            self.eligible
+            (ignore_link or self.eligible)
             and self._valid
             and self.ends_at > datetime.now(timezone.utc)
             and self.starts_at < stamp

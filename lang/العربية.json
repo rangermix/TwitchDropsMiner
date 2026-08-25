@@ -93,6 +93,8 @@
             "offline": "❌ غير نشط",
             "no_channels": "لم يتم تتبع أي قنوات بعد...",
             "no_channels_for_games": "لم يتم العثور على قنوات للألعاب المحددة...",
+            "no_live_channels": "No live drop channels",
+            "toggle_game": "Click to show/hide channels",
             "channel_count": "قناة",
             "channel_count_plural": "قنوات",
             "viewers": "مشاهدين"
@@ -121,6 +123,7 @@
                 "upcoming": "قادم",
                 "expired": "منتهي",
                 "finished": "مكتمل",
+                "games_to_watch_only": "Games to Watch فقط",
                 "item": "عنصر",
                 "badge": "شارة",
                 "emote": "رمز تعبيري",

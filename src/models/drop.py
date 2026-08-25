@@ -133,9 +133,15 @@ class BaseDrop:
             and self.starts_at < stamp
         )
 
-    def can_earn(self, channel: Channel | None = None, ignore_channel_status: bool = False) -> bool:
+    def can_earn(
+        self,
+        channel: Channel | None = None,
+        ignore_channel_status: bool = False,
+        *,
+        ignore_link: bool = False,
+    ) -> bool:
         return self._base_can_earn() and self.campaign._base_can_earn(
-            channel, ignore_channel_status
+            channel, ignore_channel_status, ignore_link=ignore_link
         )
 
     @property
@@ -320,7 +326,9 @@ class TimedDrop(BaseDrop):
         self._twitch.gui.inv.update_drop(self)
 
     def _update_real_minutes(self, delta: int) -> None:
-        if delta == 0 or self.real_current_minutes + delta < 0 or not self.can_earn():
+        if delta == 0 or self.real_current_minutes + delta < 0 or not self.can_earn(
+            ignore_link=True
+        ):
             return
         if self.real_current_minutes + delta < self.required_minutes:
             self.real_current_minutes += delta
@@ -330,7 +338,7 @@ class TimedDrop(BaseDrop):
         self._on_state_changed()
 
     def _bump_minutes(self, channel: Channel | None) -> bool:
-        if self.can_earn(channel):
+        if self.can_earn(channel, ignore_link=True):
             self.extra_current_minutes += 1
             self._on_state_changed()
             if self.extra_current_minutes >= MAX_EXTRA_MINUTES:

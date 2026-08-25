@@ -93,6 +93,8 @@
             "offline": "OFFLINE ❌",
             "no_channels": "Nie śledzono jeszcze żadnych kanałów...",
             "no_channels_for_games": "Nie znaleziono kanałów dla wybranych gier...",
+            "no_live_channels": "No live drop channels",
+            "toggle_game": "Click to show/hide channels",
             "channel_count": "kanał",
             "channel_count_plural": "kanały",
             "viewers": "widzowie"
@@ -121,6 +123,7 @@
                 "upcoming": "Nadchodzące",
                 "expired": "Wygasłe",
                 "finished": "Zakończone",
+                "games_to_watch_only": "Tylko Games to Watch",
                 "item": "Przedmiot",
                 "badge": "Odznaka",
                 "emote": "Emotka",

@@ -63,6 +63,9 @@ class ChannelListManager:
     def clear(self):
         """Clear all channels from the display list."""
         self._channels.clear()
+        self._watching_id = None
+        if self._gui_manager is not None:
+            self._gui_manager.clear_channel_selection()
         asyncio.create_task(self._broadcaster.emit("channels_clear", {}))
 
     def set_watching(self, channel: Channel):
@@ -133,6 +136,14 @@ class ChannelListManager:
 
         # Atomically replace all channels
         self._channels = new_channels
+
+        # Drop pending selection if the channel was removed in this rebuild
+        if self._gui_manager is not None:
+            selected_id = getattr(self._gui_manager, "_selected_channel_id", None)
+            if selected_id is not None and selected_id not in new_channels:
+                self._gui_manager.clear_channel_selection()
+        if self._watching_id is not None and self._watching_id not in new_channels:
+            self._watching_id = None
 
         # Emit batch update event
         asyncio.create_task(
