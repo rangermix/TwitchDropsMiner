@@ -12,6 +12,87 @@ const state = {
     translations: {}  // Store current translations
 };
 
+// ==================== UI Utilities ====================
+
+function showToast(message, type = 'info') {
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    
+    toastContainer.appendChild(toast);
+    
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+    });
+
+    // Remove after 5 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+function showConfirmModal(message, onConfirm) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal-box';
+    
+    const text = document.createElement('div');
+    text.className = 'modal-text';
+    text.textContent = message;
+    
+    const btnContainer = document.createElement('div');
+    btnContainer.className = 'modal-buttons';
+    
+    const t = state.translations;
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'secondary-btn';
+    cancelBtn.textContent = t.gui?.settings?.cancel_btn || 'Cancel';
+    
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'primary-btn';
+    confirmBtn.textContent = t.gui?.settings?.confirm_btn || 'Confirm';
+    
+    btnContainer.appendChild(cancelBtn);
+    btnContainer.appendChild(confirmBtn);
+    
+    modal.appendChild(text);
+    modal.appendChild(btnContainer);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    // Animate in
+    requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+        modal.style.transform = 'scale(1)';
+    });
+    
+    const close = () => {
+        overlay.style.opacity = '0';
+        modal.style.transform = 'scale(0.95)';
+        setTimeout(() => document.body.removeChild(overlay), 200);
+    };
+    
+    cancelBtn.onclick = close;
+    confirmBtn.onclick = () => {
+        onConfirm();
+        close();
+    };
+}
+
 // ==================== Version Checking ====================
 
 async function fetchAndDisplayVersion() {
@@ -1389,48 +1470,100 @@ function removeGameFromWatch(gameName) {
 }
 
 function selectAllGames() {
-    state.settings.games_to_watch = Array.from(availableGames).sort();
+    const existing = state.settings.games_to_watch || [];
+    const newGames = Array.from(availableGames)
+        .filter(game => !existing.some(e => e.toLowerCase() === game.toLowerCase()))
+        .sort();
+    
+    state.settings.games_to_watch = [...existing, ...newGames];
     renderGamesToWatch();
     renderChannels();
     saveSettings();
 }
 
 function deselectAllGames() {
-    state.settings.games_to_watch = [];
-    renderGamesToWatch();
-    renderChannels();
-    saveSettings();
+    if (!state.settings.games_to_watch || state.settings.games_to_watch.length === 0) {
+        return;
+    }
+    
+    const t = state.translations;
+    const msg = t.gui?.settings?.deselect_all_warning || 'Are you sure you want to remove all games from your watch list?';
+    
+    showConfirmModal(msg, () => {
+        state.settings.games_to_watch = [];
+        renderGamesToWatch();
+        renderChannels();
+        saveSettings();
+    });
 }
 
 function addGameFromSearch() {
     const searchInput = document.getElementById('games-filter');
-    const gameName = searchInput.value.trim();
+    const searchLower = searchInput.value.trim().toLowerCase();
 
-    if (!gameName) {
+    if (!searchLower) {
+        return;
+    }
+
+    let gameToAdd = searchInput.value.trim();
+    let isManualAdd = true;
+    
+    // Find matching games from availableGames
+    const matches = Array.from(availableGames).filter(g => g.toLowerCase().includes(searchLower));
+    
+    // 1. Check for exact case-insensitive match
+    const exactMatch = matches.find(g => g.toLowerCase() === searchLower);
+    
+    if (exactMatch) {
+        gameToAdd = exactMatch;
+        isManualAdd = false;
+    } else if (matches.length === 1) {
+        // 2. Check for a single partial match
+        gameToAdd = matches[0];
+        isManualAdd = false;
+    } else if (matches.length > 1) {
+        // Multiple matches found and no exact match. Don't add to avoid ambiguity.
+        const t = state.translations;
+        const msg = t.gui?.settings?.multiple_games_found || 'Multiple games found for your search. Please be more specific.';
+        showToast(msg, 'warning');
         return;
     }
 
     const games = state.settings.games_to_watch || [];
     
-    // Check if already selected
-    if (games.includes(gameName)) {
+    // Check if already selected (case-insensitive)
+    if (games.some(g => g.toLowerCase() === gameToAdd.toLowerCase())) {
         searchInput.value = ''; // Clear input if already added
         renderGamesToWatch(); // Just re-render to clear any filtering state if needed
         return;
     }
 
-    // Add to selected games
-    games.push(gameName);
-    state.settings.games_to_watch = games;
+    const finishAdding = (gameName) => {
+        // Add to selected games
+        games.push(gameName);
+        
+        // Deduplicate array using Set
+        state.settings.games_to_watch = [...new Set(games)];
 
-    // Add to available games set so it shows up in lists
-    availableGames.add(gameName);
+        // Add to available games set so it shows up in lists
+        availableGames.add(gameName);
 
-    // Clear search and update UI
-    searchInput.value = '';
-    renderGamesToWatch();
-    renderChannels();
-    saveSettings();
+        // Clear search and update UI
+        searchInput.value = '';
+        renderGamesToWatch();
+        renderChannels();
+        saveSettings();
+    };
+
+    // Warn if adding manually
+    if (isManualAdd) {
+        const t = state.translations;
+        let msg = t.gui?.settings?.manual_game_warning || 'Warning: "{game}" is not currently active. If this is a valid Twitch game, make sure the name exactly matches Twitch\'s casing, otherwise mining will not work.';
+        msg = msg.replace('{game}', gameToAdd);
+        showConfirmModal(msg, () => finishAdding(gameToAdd));
+    } else {
+        finishAdding(gameToAdd);
+    }
 }
 
 function flashTitle() {
@@ -2077,6 +2210,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('deselect-all-btn').addEventListener('click', deselectAllGames);
     document.getElementById('add-game-btn').addEventListener('click', addGameFromSearch);
     document.getElementById('games-filter').addEventListener('input', renderGamesToWatch);
+    document.getElementById('games-filter').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addGameFromSearch();
+        }
+    });
 
     // Inventory filters
     document.getElementById('filter-active').addEventListener('change', onInventoryFilterChange);

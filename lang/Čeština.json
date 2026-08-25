@@ -157,7 +157,12 @@
             "clear_all_cache": "Vymazat veškerou mezipaměť",
             "clear_all_cache_help": "Vymaže místní stav kampaní, kanálů a odvozený stav mineru; zachová přihlášení a nastavení a poté znovu načte data z Twitche.",
             "mining_benefits": "Výhody Těžby",
-            "mining_benefits_help": "Vyberte typy dropů, které chcete těžit."
+            "mining_benefits_help": "Vyberte typy dropů, které chcete těžit.",
+            "multiple_games_found": "Pro vaše hledání bylo nalezeno více her. Buďte prosím konkrétnější.",
+            "manual_game_warning": "Varování: \"{game}\" momentálně není aktivní. Pokud se jedná o platnou hru na Twitchi, ujistěte se, že se název přesně shoduje s velikostí písmen na Twitchi, jinak těžba nebude fungovat.",
+            "deselect_all_warning": "Opravdu chcete odebrat všechny hry ze svého seznamu sledovaných?",
+            "confirm_btn": "Potvrdit",
+            "cancel_btn": "Zrušit"
         },
         "help": {
             "about": "O Twitch Drops Miner",

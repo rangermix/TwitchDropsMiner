@@ -157,7 +157,12 @@
             "clear_all_cache": "Volledige cache wissen",
             "clear_all_cache_help": "Wist de lokale campagne-, kanaal- en afgeleide minerstatus; behoudt je aanmelding en instellingen en laadt daarna opnieuw vanaf Twitch.",
             "mining_benefits": "Mining Voordelen",
-            "mining_benefits_help": "Selecteer welke soorten drops je wilt minen."
+            "mining_benefits_help": "Selecteer welke soorten drops je wilt minen.",
+            "multiple_games_found": "Meerdere spellen gevonden voor je zoekopdracht. Wees alsjeblieft specifieker.",
+            "manual_game_warning": "Waarschuwing: \"{game}\" is momenteel niet actief. Als dit een geldig Twitch-spel is, zorg er dan voor dat de naam exact overeenkomt met het hoofdlettergebruik van Twitch, anders werkt het minen niet.",
+            "deselect_all_warning": "Weet je zeker dat je alle spellen uit je volglijst wilt verwijderen?",
+            "confirm_btn": "Bevestigen",
+            "cancel_btn": "Annuleren"
         },
         "help": {
             "about": "Over Twitch Drops Miner",

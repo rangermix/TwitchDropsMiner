@@ -157,7 +157,12 @@
             "clear_all_cache": "清除所有快取",
             "clear_all_cache_help": "清除本機活動、頻道和挖礦器衍生狀態；保留登入資訊和設定，然後從 Twitch 重新載入。",
             "mining_benefits": "挖掘獎勵",
-            "mining_benefits_help": "選擇您想要獲取的掉落類型。"
+            "mining_benefits_help": "選擇您想要獲取的掉落類型。",
+            "multiple_games_found": "您的搜尋找到了多個遊戲。請更具體一些。",
+            "manual_game_warning": "警告：「{game}」目前未啟用。如果這是一個有效的Twitch遊戲，請確保名稱與Twitch的大小寫完全相符，否則挖礦將無法運作。",
+            "deselect_all_warning": "您確定要從觀看清單中移除所有遊戲嗎？",
+            "confirm_btn": "確認",
+            "cancel_btn": "取消"
         },
         "help": {
             "about": "關於 Twitch Drops Miner",

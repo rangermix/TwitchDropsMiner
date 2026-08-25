@@ -157,7 +157,12 @@
             "clear_all_cache": "Șterge tot cache-ul",
             "clear_all_cache_help": "Șterge starea locală a campaniilor, canalelor și datele derivate ale minerului; păstrează autentificarea și setările, apoi reîncarcă datele de pe Twitch.",
             "mining_benefits": "Beneficii Minerit",
-            "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați."
+            "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați.",
+            "multiple_games_found": "Au fost găsite mai multe jocuri pentru căutarea dvs. Vă rugăm să fiți mai specific.",
+            "manual_game_warning": "Avertisment: \"{game}\" nu este activ în prezent. Dacă acesta este un joc valid pe Twitch, asigurați-vă că numele se potrivește exact cu literele mari/mici de pe Twitch, altfel minarea nu va funcționa.",
+            "deselect_all_warning": "Sunteți sigur că doriți să eliminați toate jocurile din lista dvs. de urmărire?",
+            "confirm_btn": "Confirmă",
+            "cancel_btn": "Anulează"
         },
         "help": {
             "about": "Despre Twitch Drops Miner",

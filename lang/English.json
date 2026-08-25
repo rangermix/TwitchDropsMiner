@@ -125,7 +125,12 @@
             "all_games_selected": "All games are selected or no games available.",
             "actions": "Actions",
             "connection_quality": "Connection Quality:",
-            "minimum_refresh": "Minimum Refresh Interval (minutes):"
+            "minimum_refresh": "Minimum Refresh Interval (minutes):",
+            "multiple_games_found": "Multiple games found for your search. Please be more specific.",
+            "manual_game_warning": "Warning: \"{game}\" is not currently active. If this is a valid Twitch game, make sure the name exactly matches Twitch's casing, otherwise mining will not work.",
+            "deselect_all_warning": "Are you sure you want to remove all games from your watch list?",
+            "confirm_btn": "Confirm",
+            "cancel_btn": "Cancel"
         },
         "help": {
             "about": "About Twitch Drops Miner",
