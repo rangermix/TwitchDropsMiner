@@ -195,6 +195,23 @@ class TestMiningHoursSettings(unittest.IsolatedAsyncioTestCase):
 
         callback.assert_not_called()
 
+    async def test_settings_manager_logs_mining_hours_cleanly(self):
+        mock_broadcaster = AsyncMock()
+        mock_settings = SimpleNamespace(**copy.deepcopy(default_settings))
+        mock_settings.save = MagicMock()
+        console = MagicMock()
+        manager = SettingsManager(mock_broadcaster, mock_settings, console)
+
+        manager.update_settings(
+            {"mining_hours": {"mode": "range", "start": "11:01", "end": "22:00"}}
+        )
+        console.print.assert_called_with("Setting changed: mining_hours = 11:01-22:00")
+
+        manager.update_settings(
+            {"mining_hours": {"mode": "always", "start": "11:01", "end": "22:00"}}
+        )
+        console.print.assert_called_with("Setting changed: mining_hours = always")
+
 
 if __name__ == "__main__":
     unittest.main()
