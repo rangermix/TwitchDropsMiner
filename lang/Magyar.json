@@ -50,7 +50,8 @@
             "main": "Kezdőlap",
             "inventory": "Készlet",
             "settings": "Beállítások",
-            "help": "Súgó"
+            "help": "Súgó",
+            "history": "Előzmények"
         },
         "login": {
             "name": "Bejelentkezési űrlap",

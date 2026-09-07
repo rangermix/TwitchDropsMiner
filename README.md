@@ -24,6 +24,8 @@ dashboard. It sends Twitch watch events without downloading the stream itself.
 - **Drop-name ignore rules** — excludes unwanted reward names and dependent branches
 - **Persistent sessions** — saves OAuth login state between runs
 - **Web dashboard** — manages campaigns, channels, inventory, settings, and login status
+- **Drop history** — records every claimed drop locally (date, game, campaign, rewards)
+  with a filterable **History** tab, aggregated stats, and one-click **Export CSV**
 - **Headless deployment** — runs locally, remotely, or in Docker without a desktop GUI
 - **Safe rendering** — builds dynamic translated content with DOM APIs instead of raw HTML
 
@@ -98,6 +100,12 @@ In **Settings**, **Clear All Cache** calls `POST /api/cache/clear` to discard lo
 campaign, channel, and other derived miner state while preserving your OAuth login and
 settings, then reloads the data from Twitch. This is a recovery and diagnostic action;
 it cannot correct inaccurate campaign metadata returned by Twitch.
+
+The **History** tab logs every successfully claimed drop to `data/drop_history.json`.
+Filter the table by game name or "claimed on or after" date, view per-game and per-month
+stats, or download the current view as a CSV file (UTF-8 BOM so Excel opens it cleanly).
+The **Clear** button deletes all locally recorded history; this does not affect your
+Twitch account or already-claimed rewards.
 
 > [!NOTE]
 > Your Twitch account must be linked to the relevant game accounts. Review your
@@ -198,6 +206,7 @@ match before publishing tags and Docker images. Docker validation and release jo
 the same pinned, Node-24-native Buildx and image-build action releases.
 The suite also covers ignored-keyword normalization, dependency branches, the combined
 expiry/ignore Wanted Queue guard, watch selection, API persistence, translated placeholder
-parity, and frontend rendering. Any `web/static/app.js` or `web/static/styles.css` change
+parity, frontend rendering, and the claimed-drop history store with CSV export and API
+endpoints. Any `web/static/app.js` or `web/static/styles.css` change
 must go through the release workflow so the application version and browser asset cache key
 are bumped before deployment.

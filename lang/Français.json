@@ -50,7 +50,8 @@
             "main": "Principal",
             "inventory": "Inventaire",
             "settings": "Paramètres",
-            "help": "Aide"
+            "help": "Aide",
+            "history": "Historique"
         },
         "login": {
             "name": "Formulaire de connexion",

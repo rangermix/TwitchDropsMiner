@@ -60,6 +60,7 @@ src/
 │   └── managers/    # Individual UI managers (status, console, channels, campaigns, inventory, login, settings, cache, broadcaster)
 ├── services/        # Business logic services (channel, inventory, watch, maintenance, message_handlers)
 ├── core/            # Core client (Twitch client)
+├── drop_history.py  # Claimed drop history store (JSON persistence + CSV/JSON export)
 ├── exceptions.py    # Custom exceptions
 ├── version.py       # Version string
 └── __main__.py      # Entry point
@@ -131,7 +132,7 @@ lang/                # Translation JSON files (20 languages)
 
 **src/web/app.py** - FastAPI application:
 
-- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/login`, `/api/oauth/confirm`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`
+- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/login`, `/api/oauth/confirm`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`, `/api/history`, `/api/history/export.csv`, `/api/history/stats`
 - Socket.IO server for real-time bi-directional communication
 - Serves static web frontend from `web/` directory
 - Integrates with WebGUIManager via `set_managers()`
@@ -289,6 +290,8 @@ login_text = _.t["login"]["status"]["logged_in"]  # Returns "Logged in"
 - **src/config/client_info.py** - Twitch client info (Client-Id, User-Agent)
 - **src/config/settings.py** - Application settings with JSON persistence
 - **src/exceptions.py** - Custom exceptions (MinerException, ExitRequest, RequestException, RequestInvalid, WebsocketClosed, LoginException, CaptchaRequired, GQLException)
+- **src/drop_history.py** - Claimed-drop history store (`DropHistory`) with atomic JSON
+  persistence, filtering, stats, and CSV export; recorded on every successful drop claim
 - **src/utils/** - Helper utilities (string_utils, json_utils, async_helpers, rate_limiter, backoff)
 - **src/i18n/** - Internationalization package with TypedDict schema and Translator class
   - **translator.py** - Translator class with typed translation schema (Translation TypedDict)
@@ -358,7 +361,8 @@ The suite covers settings and proxy behavior, inventory-filter behavior, API fil
 GraphQL watch events, batched channel discovery, full-locale translation schema and
 placeholder consistency, frontend DOM safety, case-insensitive channel filtering,
 watch-drop count and expiry semantics, immediate claim refresh behavior, consecutive
-no-campaign console collapsing, and contributor README automation. Frontend behavior tests
+no-campaign console collapsing, contributor README automation, and the claimed-drop
+history store with CSV export and API endpoints. Frontend behavior tests
 share their JavaScript extraction helper and use Node.js;
 the validation workflow provisions Node 24 before running pytest. It also runs the release
 script contract tests under `.github/scripts/test/`. Ignore-list coverage includes
@@ -410,15 +414,15 @@ The application uses a web-based interface accessible via browser:
 
 **src/web/app.py** - FastAPI application:
 
-- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/login`, `/api/oauth/confirm`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`
+- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/login`, `/api/oauth/confirm`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`, `/api/history`, `/api/history/export.csv`, `/api/history/stats`
 - Socket.IO server for real-time bi-directional communication
 - Serves static web frontend from `web/` directory
 - Integrates with WebGUIManager via `set_managers()`
 
 **web/** - Frontend assets:
 
-- `index.html` - Single-page application layout with tabs
-- `static/app.js` - Socket.IO client, real-time UI updates, API calls, Inventory Filtering logic
+- `index.html` - Single-page application layout with tabs (Main, Inventory, History, Settings, Help)
+- `static/app.js` - Socket.IO client, real-time UI updates, API calls, Inventory Filtering and Drop History logic
 - `static/styles.css` - Responsive design with dark mode support
 
 ### Communication Protocol

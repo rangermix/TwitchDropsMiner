@@ -50,7 +50,8 @@
             "main": "Utama",
             "inventory": "Inventaris",
             "settings": "Parameter",
-            "help": "Bantuan"
+            "help": "Bantuan",
+            "history": "Riwayat"
         },
         "login": {
             "name": "Formulir masuk",

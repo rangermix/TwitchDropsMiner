@@ -50,7 +50,8 @@
             "main": "Hlavní",
             "inventory": "Inventář",
             "settings": "Nastavení",
-            "help": "Nápověda"
+            "help": "Nápověda",
+            "history": "Historie"
         },
         "login": {
             "name": "Přihlášení k službě Twitch",

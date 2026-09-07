@@ -43,6 +43,7 @@
         <nav class="tabs">
             <button class="tab-button active" data-tab="main">Main</button>
             <button class="tab-button" data-tab="inventory">Inventory</button>
+            <button class="tab-button" data-tab="history">History</button>
             <button class="tab-button" data-tab="settings">Settings</button>
             <button class="tab-button" data-tab="help">Help</button>
         </nav>
@@ -319,6 +320,143 @@
                         Repository</a>
                 </div>
             </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history-tab" class="tab-content">
+            <div class="history-toolbar" style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 16px;
+                background: var(--bg-secondary, #1e1e2e);
+                border-bottom: 1px solid var(--border-color, #333);
+                flex-wrap: wrap;
+            ">
+                <span style="font-weight:600; font-size:1rem;">🏆 Drop History</span>
+
+                <input
+                    id="history-filter-game"
+                    type="text"
+                    placeholder="Filter by game…"
+                    style="
+                        padding: 5px 10px;
+                        border-radius: 6px;
+                        border: 1px solid var(--border-color, #444);
+                        background: var(--bg-input, #2a2a3e);
+                        color: var(--text-primary, #cdd6f4);
+                        width: 200px;
+                    "
+                />
+
+                <input
+                    id="history-filter-since"
+                    type="date"
+                    style="
+                        padding: 5px 10px;
+                        border-radius: 6px;
+                        border: 1px solid var(--border-color, #444);
+                        background: var(--bg-input, #2a2a3e);
+                        color: var(--text-primary, #cdd6f4);
+                    "
+                />
+
+                <button id="history-btn-filter" style="
+                    padding: 5px 14px;
+                    border-radius: 6px;
+                    background: var(--accent, #7287fd);
+                    color: #fff;
+                    border: none;
+                    cursor: pointer;
+                    font-weight: 600;
+                ">Apply</button>
+
+                <div style="flex:1"></div>
+
+                <button id="history-btn-export" style="
+                    padding: 5px 14px;
+                    border-radius: 6px;
+                    background: var(--success, #40a02b);
+                    color: #fff;
+                    border: none;
+                    cursor: pointer;
+                    font-weight: 600;
+                ">⬇ Export CSV</button>
+
+                <button id="history-btn-stats" style="
+                    padding: 5px 14px;
+                    border-radius: 6px;
+                    background: var(--bg-button, #313244);
+                    color: var(--text-primary, #cdd6f4);
+                    border: 1px solid var(--border-color, #444);
+                    cursor: pointer;
+                ">📊 Stats</button>
+
+                <button id="history-btn-clear" style="
+                    padding: 5px 14px;
+                    border-radius: 6px;
+                    background: var(--danger, #e64553);
+                    color: #fff;
+                    border: none;
+                    cursor: pointer;
+                ">🗑 Clear</button>
+            </div>
+
+            <div id="history-stats-panel" style="
+                display: none;
+                padding: 16px;
+                background: var(--bg-secondary, #1e1e2e);
+                border-bottom: 1px solid var(--border-color, #333);
+                gap: 16px;
+            ">
+                <div style="display:flex; gap:32px; flex-wrap:wrap; align-items:flex-start;">
+                    <div>
+                        <div style="font-size:2rem; font-weight:700; color:var(--accent,#7287fd)" id="stats-total">–</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted,#888)">Total drops claimed</div>
+                    </div>
+                    <div id="stats-by-game" style="flex:1; min-width:200px;"></div>
+                    <div id="stats-by-month" style="flex:1; min-width:200px;"></div>
+                </div>
+            </div>
+
+            <div style="padding: 8px 16px; font-size:0.85rem; color: var(--text-muted,#888)">
+                <span id="history-count">Loading…</span>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table id="history-table" style="
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 0.9rem;
+                ">
+                    <thead>
+                        <tr style="
+                            background: var(--bg-secondary, #1e1e2e);
+                            text-align: left;
+                            font-size: 0.8rem;
+                            color: var(--text-muted, #888);
+                            text-transform: uppercase;
+                            letter-spacing: 0.05em;
+                        ">
+                            <th style="padding: 8px 12px;">Date &amp; Time</th>
+                            <th style="padding: 8px 12px;">Game</th>
+                            <th style="padding: 8px 12px;">Campaign</th>
+                            <th style="padding: 8px 12px;">Drop</th>
+                            <th style="padding: 8px 12px;">Rewards</th>
+                            <th style="padding: 8px 12px; text-align:right;">Minutes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tbody">
+                        <tr>
+                            <td colspan="6" style="padding:24px; text-align:center; color:var(--text-muted,#888)">
+                                Loading history…
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display:flex; justify-content:center; gap:8px; padding:16px;" id="history-pagination"></div>
         </div>
         <!-- Footer -->
         <footer class="footer">

@@ -18,6 +18,8 @@ from src.config import (
     State,
     WebsocketTopic,
 )
+from src.config.paths import DATA_DIR
+from src.drop_history import DropHistory
 from src.exceptions import (
     ExitRequest,
     RequestException,
@@ -92,6 +94,8 @@ class Twitch:
         self._inventory_service: InventoryService = InventoryService(self)
         self._watch_service: WatchService = WatchService(self)
         self._stream_selector: StreamSelector = StreamSelector()
+        # Drop history
+        self.drop_history: DropHistory = DropHistory(DATA_DIR)
 
     def _ensure_api_clients(self) -> None:
         """Ensure API clients are initialized (called after GUI is set)."""

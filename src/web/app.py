@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import socketio
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -329,6 +330,71 @@ async def clear_all_cache():
     if not twitch_client.request_inventory_refresh(clear_cache=True):
         raise HTTPException(status_code=409, detail="Twitch client is shutting down")
     return {"success": True}
+
+
+@app.get("/api/history")
+async def get_history(game: str | None = None, since: str | None = None, limit: int | None = None):
+    """Get claimed drop history with optional filters."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    since_dt = _parse_history_since(since)
+    limit = min(limit, 5000) if limit else None
+    entries = twitch_client.drop_history.get_entries(
+        game=game or None, since=since_dt, limit=limit
+    )
+    return {"total": twitch_client.drop_history.total_count, "entries": entries}
+
+
+@app.get("/api/history/export.csv")
+async def export_history_csv(game: str | None = None, since: str | None = None):
+    """Export claimed drop history as CSV (UTF-8 BOM for Excel)."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    since_dt = _parse_history_since(since)
+    csv_content = twitch_client.drop_history.to_csv(game=game or None, since=since_dt)
+    filename = "drop_history.csv" if not game else f"drop_history_{game}.csv"
+    return PlainTextResponse(
+        content="\ufeff" + csv_content,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.get("/api/history/stats")
+async def get_history_stats():
+    """Get aggregated drop history statistics."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    return {
+        "total_drops": twitch_client.drop_history.total_count,
+        "by_game": twitch_client.drop_history.stats_by_game(),
+        "by_month": twitch_client.drop_history.stats_by_month(),
+    }
+
+
+@app.delete("/api/history")
+async def clear_history():
+    """Delete all claimed drop history."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    twitch_client.drop_history.clear()
+    return {"success": True}
+
+
+def _parse_history_since(since: str | None) -> datetime | None:
+    """Parse the 'since' query parameter (ISO date/date-time) into a UTC datetime."""
+    if not since:
+        return None
+    try:
+        # Accept both a bare date (YYYY-MM-DD) and a full ISO timestamp
+        normalized = since if "T" in since else since + "T00:00:00"
+        return datetime.fromisoformat(normalized).replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return None
 
 
 @app.post("/api/close")

@@ -50,7 +50,8 @@
             "main": "主要",
             "inventory": "庫存",
             "settings": "設置",
-            "help": "幫助"
+            "help": "幫助",
+            "history": "歷史"
         },
         "login": {
             "name": "登入 Twitch",

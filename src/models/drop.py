@@ -342,6 +342,7 @@ class TimedDrop(BaseDrop):
         if result:
             self.real_current_minutes = self.required_minutes
             self.extra_current_minutes = 0
+            self._twitch.drop_history.record(self, self.campaign)
         self._on_state_changed()
         return result
 

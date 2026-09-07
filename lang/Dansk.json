@@ -50,7 +50,8 @@
             "main": "Hoved",
             "inventory": "Beholdning",
             "settings": "Indstillinger",
-            "help": "Hjælp"
+            "help": "Hjælp",
+            "history": "Historik"
         },
         "login": {
             "name": "Login formular",

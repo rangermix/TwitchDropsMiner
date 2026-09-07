@@ -50,7 +50,8 @@
             "main": "Główna",
             "inventory": "Ekwipunek",
             "settings": "Ustawienia",
-            "help": "Pomoc"
+            "help": "Pomoc",
+            "history": "Historia"
         },
         "login": {
             "name": "Logowanie",

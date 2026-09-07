@@ -50,7 +50,8 @@
             "main": "Main",
             "inventory": "Inventory",
             "settings": "Settings",
-            "help": "Help"
+            "help": "Help",
+            "history": "History"
         },
         "login": {
             "name": "Login Form",

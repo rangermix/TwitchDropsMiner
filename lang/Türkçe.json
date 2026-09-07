@@ -50,7 +50,8 @@
             "main": "Ana",
             "inventory": "Envanter",
             "settings": "Ayarlar",
-            "help": "Yardım"
+            "help": "Yardım",
+            "history": "Geçmiş"
         },
         "login": {
             "name": "Giriş Yap",

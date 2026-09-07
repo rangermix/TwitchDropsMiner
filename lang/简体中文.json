@@ -50,7 +50,8 @@
             "main": "主面板",
             "inventory": "掉宝库存",
             "settings": "设置",
-            "help": "帮助"
+            "help": "帮助",
+            "history": "历史"
         },
         "login": {
             "name": "登录Twitch账号",
