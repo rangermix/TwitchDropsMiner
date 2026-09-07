@@ -157,7 +157,25 @@
             "connection_quality": "Calidad de conexión:",
             "minimum_refresh": "Intervalo mínimo de actualización (minutos):",
             "mining_benefits": "Beneficios de Minería",
-            "mining_benefits_help": "Selecciona qué tipos de drops deseas minar."
+            "mining_benefits_help": "Selecciona qué tipos de drops deseas minar.",
+            "discord": {
+                "name": "Notificaciones de Discord",
+                "description": "Recibe notificaciones en Discord cuando reclames drops.",
+                "webhook_url": "URL de Webhook de Discord",
+                "webhook_url_hint": "Pega la URL completa del Webhook (incluye tu token secreto).",
+                "setup_steps": [
+                    "Abre tu servidor de Discord y ve a los ajustes del canal (icono de engranaje junto al nombre del canal)",
+                    "Ve a Integraciones → Webhooks",
+                    "Haz clic en Nuevo Webhook, ponle un nombre y elige el canal de texto (consulta <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Introducción a los Webhooks</a>)",
+                    "Haz clic en Copiar URL de Webhook - se parece a: https://discord.com/api/webhooks/ID/TOKEN",
+                    "Pega la URL en el campo URL de Webhook de Discord en Ajustes y haz clic en Guardar ajustes",
+                    "Haz clic en Probar conexión para verificar y recibir una notificación de prueba"
+                ],
+                "success": "✓ ¡Conexión con Discord exitosa! Recibirás notificaciones de drops.",
+                "saved": "✓ ¡Ajustes guardados con éxito!",
+                "error": "No se pudo conectar con Discord. Comprueba tu URL de Webhook.",
+                "missing_credentials": "Introduce una URL de Webhook de Discord. Consulta las instrucciones en la pestaña Ayuda."
+            }
         },
         "help": {
             "about": "Acerca de Twitch Drops Miner",

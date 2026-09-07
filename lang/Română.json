@@ -157,7 +157,25 @@
             "clear_all_cache": "Șterge tot cache-ul",
             "clear_all_cache_help": "Șterge starea locală a campaniilor, canalelor și datele derivate ale minerului; păstrează autentificarea și setările, apoi reîncarcă datele de pe Twitch.",
             "mining_benefits": "Beneficii Minerit",
-            "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați."
+            "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați.",
+            "discord": {
+                "name": "Notificări Discord",
+                "description": "Primește notificări pe Discord când revendici drop-uri.",
+                "webhook_url": "URL Webhook Discord",
+                "webhook_url_hint": "Lipește URL-ul complet al webhook-ului (include tokenul tău secret).",
+                "setup_steps": [
+                    "Deschide serverul tău Discord și mergi la setările canalului (pictograma roată dințată de lângă numele canalului)",
+                    "Mergi la Integrări → Webhooks",
+                    "Apasă Webhook nou, dă-i un nume și alege canalul text (vezi <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Introducere în webhooks</a>)",
+                    "Apasă Copiază URL-ul webhook-ului - arată cam așa: https://discord.com/api/webhooks/ID/TOKEN",
+                    "Lipește URL-ul în câmpul URL Webhook Discord din Setări și apasă Salvează setările",
+                    "Apasă Testează conexiunea pentru a verifica și a primi o notificare de test"
+                ],
+                "success": "✓ Conexiune Discord reușită! Vei primi notificări despre drop-uri.",
+                "saved": "✓ Setări salvate cu succes!",
+                "error": "Conectarea la Discord a eșuat. Verifică URL-ul webhook-ului.",
+                "missing_credentials": "Introdu un URL Webhook Discord. Vezi instrucțiunile în fila Ajutor."
+            }
         },
         "help": {
             "about": "Despre Twitch Drops Miner",

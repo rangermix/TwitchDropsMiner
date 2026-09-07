@@ -157,7 +157,25 @@
             "clear_all_cache": "Ryd hele cachen",
             "clear_all_cache_help": "Rydder lokal kampagne-, kanal- og afledt minerstatus; bevarer login og indstillinger og genindlæser derefter data fra Twitch.",
             "mining_benefits": "Mining Fordele",
-            "mining_benefits_help": "Vælg hvilke typer drops du vil mine."
+            "mining_benefits_help": "Vælg hvilke typer drops du vil mine.",
+            "discord": {
+                "name": "Discord-underretninger",
+                "description": "Få besked på Discord, når du gør krav på drops.",
+                "webhook_url": "Discord-webhook-URL",
+                "webhook_url_hint": "Indsæt den fulde webhook-URL (den indeholder din hemmelige token).",
+                "setup_steps": [
+                    "Åbn din Discord-server, og gå til kanalindstillingerne (tandhjulsikonet ud for kanalnavnet)",
+                    "Gå til Integrationer → Webhooks",
+                    "Klik på Ny webhook, giv den et navn, og vælg tekstkanalen (se <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Introduktion til webhooks</a>)",
+                    "Klik på Kopiér webhook-URL - den ser sådan ud: https://discord.com/api/webhooks/ID/TOKEN",
+                    "Indsæt URL'en i feltet Discord-webhook-URL under Indstillinger, og klik på Gem indstillinger",
+                    "Klik på Test forbindelse for at bekræfte og modtage en testbesked"
+                ],
+                "success": "✓ Discord-forbindelsen lykkedes! Du modtager drop-beskeder.",
+                "saved": "✓ Indstillinger gemt!",
+                "error": "Kunne ikke oprette forbindelse til Discord. Tjek din webhook-URL.",
+                "missing_credentials": "Angiv en Discord-webhook-URL. Se instruktionerne under fanen Hjælp."
+            }
         },
         "help": {
             "about": "Om Twitch Drops Miner",

@@ -157,7 +157,25 @@
             "clear_all_cache": "Volledige cache wissen",
             "clear_all_cache_help": "Wist de lokale campagne-, kanaal- en afgeleide minerstatus; behoudt je aanmelding en instellingen en laadt daarna opnieuw vanaf Twitch.",
             "mining_benefits": "Mining Voordelen",
-            "mining_benefits_help": "Selecteer welke soorten drops je wilt minen."
+            "mining_benefits_help": "Selecteer welke soorten drops je wilt minen.",
+            "discord": {
+                "name": "Discord-meldingen",
+                "description": "Ontvang meldingen op Discord wanneer je drops opent.",
+                "webhook_url": "Discord-webhook-URL",
+                "webhook_url_hint": "Plak de volledige webhook-URL (bevat je geheime token).",
+                "setup_steps": [
+                    "Open je Discord-server en ga naar de kanaalinstellingen (tandwiel-pictogram naast de kanaalnaam)",
+                    "Ga naar Integraties → Webhooks",
+                    "Klik op Nieuwe webhook, geef deze een naam en kies het tekstkanaal (zie <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Intro tot webhooks</a>)",
+                    "Klik op Webhook-URL kopiëren - het ziet er zo uit: https://discord.com/api/webhooks/ID/TOKEN",
+                    "Plak de URL in het veld Discord-webhook-URL in Instellingen en klik op Instellingen opslaan",
+                    "Klik op Verbinding testen om te controleren en een testmelding te ontvangen"
+                ],
+                "success": "✓ Discord-verbinding succesvol! Je ontvangt drop-meldingen.",
+                "saved": "✓ Instellingen succesvol opgeslagen!",
+                "error": "Kan geen verbinding met Discord maken. Controleer je webhook-URL.",
+                "missing_credentials": "Voer een Discord-webhook-URL in. Zie de instructies op het tabblad Help."
+            }
         },
         "help": {
             "about": "Over Twitch Drops Miner",

@@ -125,7 +125,25 @@
             "all_games_selected": "All games are selected or no games available.",
             "actions": "Actions",
             "connection_quality": "Connection Quality:",
-            "minimum_refresh": "Minimum Refresh Interval (minutes):"
+            "minimum_refresh": "Minimum Refresh Interval (minutes):",
+            "discord": {
+                "name": "Discord Notifications",
+                "description": "Receive notifications on Discord when you claim drops.",
+                "webhook_url": "Discord Webhook URL",
+                "webhook_url_hint": "Paste the full Webhook URL (it embeds your secret token).",
+                "setup_steps": [
+                    "Open your Discord server and go to the channel Settings (gear icon next to the channel name)",
+                    "Go to Integrations → Webhooks",
+                    "Click New Webhook, give it a name, and pick the text channel to post to (see <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Intro to Webhooks</a>)",
+                    "Click Copy Webhook URL - it looks like: https://discord.com/api/webhooks/ID/TOKEN",
+                    "Paste the URL into the Discord Webhook URL field in Settings and click Save Settings",
+                    "Click Test Connection to verify and receive a test notification"
+                ],
+                "success": "✓ Discord connection successful! You will receive drop notifications.",
+                "saved": "✓ Settings saved successfully!",
+                "error": "Failed to connect to Discord. Please check your Webhook URL.",
+                "missing_credentials": "Please enter a Discord Webhook URL. See setup instructions in the Help tab."
+            }
         },
         "help": {
             "about": "About Twitch Drops Miner",

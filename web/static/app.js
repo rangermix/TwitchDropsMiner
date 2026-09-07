@@ -1111,6 +1111,16 @@ function updateSettingsUI(settings) {
         proxyIndicator.title = proxyUrl ? `Proxy active: ${proxyUrl}` : 'Proxy disabled';
     }
 
+    // Populate Discord field if present in settings (the server never echoes
+    // the stored webhook URL; it returns a mask placeholder instead).
+    const discordWebhookInput = document.getElementById('discord-webhook-url');
+    if (discordWebhookInput) {
+        discordWebhookInput.value = '';
+        if (settings.discord_configured) {
+            discordWebhookInput.placeholder = '••••••••';
+        }
+    }
+
     // Update language dropdown if we have the current language
     if (settings.language) {
         const languageSelect = document.getElementById('language');
@@ -1557,6 +1567,95 @@ async function verifyProxy() {
     }
 }
 
+async function testDiscordConnection() {
+    const webhookInput = document.getElementById('discord-webhook-url');
+    const resultDiv = document.getElementById('discord-test-result');
+
+    if (!resultDiv) return;
+
+    const webhookUrl = webhookInput ? webhookInput.value.trim() : '';
+
+    // Reset display
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'verify-result loading';
+    resultDiv.textContent = 'Testing Discord connection...';
+
+    if (!webhookUrl) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = 'Please enter a Discord Webhook URL. See setup instructions in the Help tab.';
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/settings/test-discord', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ discord_webhook_url: webhookUrl })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            resultDiv.className = 'verify-result success';
+            resultDiv.textContent = `✓ ${data.message || 'Discord connection successful!'}`;
+            // Save settings if test was successful
+            saveDiscordSettings(webhookUrl);
+        } else {
+            resultDiv.className = 'verify-result error';
+            resultDiv.textContent = `✗ ${data.message || 'Discord connection failed.'}`;
+        }
+    } catch (error) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = `Error: ${error.message}`;
+    }
+}
+
+async function saveDiscordSettings(webhookUrl) {
+    const settings = {
+        discord_webhook_url: webhookUrl
+    };
+
+    try {
+        await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+        console.log('Discord settings saved');
+    } catch (error) {
+        console.error('Failed to save Discord settings:', error);
+    }
+}
+
+async function handleSaveDiscordClick() {
+    const webhookInput = document.getElementById('discord-webhook-url');
+    const resultDiv = document.getElementById('discord-test-result');
+
+    if (!resultDiv) return;
+
+    const webhookUrl = webhookInput ? webhookInput.value.trim() : '';
+
+    // Reset display
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'verify-result loading';
+    resultDiv.textContent = 'Saving settings...';
+
+    if (!webhookUrl) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = 'Please enter a Discord Webhook URL. See setup instructions in the Help tab.';
+        return;
+    }
+
+    try {
+        await saveDiscordSettings(webhookUrl);
+        resultDiv.className = 'verify-result success';
+        resultDiv.textContent = '✓ Settings saved successfully!';
+    } catch (error) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = `Error: ${error.message}`;
+    }
+}
+
 function parseDropNameBlacklist(value) {
     return String(value || '')
         .split(/\r?\n/)
@@ -1783,6 +1882,31 @@ function applyTranslations(t) {
             refreshLabel.appendChild(input);
         }
 
+        // Update Discord Notifications section
+        const discordTrans = (t.settings && t.settings.discord) || (t.gui && t.gui.settings && t.gui.settings.discord) || null;
+        if (discordTrans) {
+            const discordSection = settingsTab.querySelector('.settings-section:has(#discord-webhook-url)');
+            if (discordSection) {
+                const heading = discordSection.querySelector('h2');
+                if (heading) heading.textContent = discordTrans.name || heading.textContent;
+
+                const description = discordSection.querySelector('.help-text');
+                if (description) description.textContent = discordTrans.description || description.textContent;
+
+                const webhookLabel = document.getElementById('settings-discord-webhook-url-label');
+                if (webhookLabel) webhookLabel.textContent = discordTrans.webhook_url || webhookLabel.textContent;
+
+                const webhookHint = document.getElementById('settings-discord-webhook-url-hint');
+                if (webhookHint) webhookHint.textContent = discordTrans.webhook_url_hint || webhookHint.textContent;
+
+                const saveDiscordBtn = document.getElementById('save-discord-btn');
+                if (saveDiscordBtn) saveDiscordBtn.textContent = discordTrans.save_settings || saveDiscordBtn.textContent;
+
+                const testDiscordBtn = document.getElementById('test-discord-btn');
+                if (testDiscordBtn) testDiscordBtn.textContent = discordTrans.test_connection || testDiscordBtn.textContent;
+            }
+        }
+
         const benefitsHelp = document.getElementById('settings-benefits-help');
         if (benefitsHelp && t.gui.settings.mining_benefits_help) benefitsHelp.textContent = t.gui.settings.mining_benefits_help;
 
@@ -1868,6 +1992,14 @@ function applyTranslations(t) {
                 makeHelpList('ul', featuresItems),
                 makeElement('h3', { id: 'help-notes-header' }, t.gui.help.important_notes || 'Important Notes'),
                 makeHelpList('ul', notesItems),
+                ...(function () {
+                    const dc = discordHelpSetup(t);
+                    return dc
+                        ? [makeElement('h3', { id: 'help-discord-header' }, dc.title),
+                           makeElement('p', {}, dc.description),
+                           makeHelpList('ol', dc.steps)]
+                        : [];
+                })(),
                 makeElement('div', { class: 'help-links' }, '', el =>
                     el.appendChild(makeElement('a', { href: 'https://github.com/rangermix/TwitchDropsMiner', target: '_blank', rel: 'noopener noreferrer' }, t.gui.help.github_repo || 'GitHub Repository'))
                 ),
@@ -2068,6 +2200,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
+    document.getElementById('test-discord-btn').addEventListener('click', testDiscordConnection);
+    document.getElementById('save-discord-btn').addEventListener('click', handleSaveDiscordClick);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
     document.getElementById('clear-cache-btn').addEventListener('click', clearAllCache);
 
@@ -2204,7 +2338,27 @@ function renderWantedItems(tree) {
 
 // ==================== DOM Utilities ====================
 
-const TRUSTED_HELP_LINKS = new Set(['https://www.twitch.tv/drops/campaigns']);
+const TRUSTED_HELP_LINKS = new Set([
+    'https://www.twitch.tv/drops/campaigns',
+    'https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks'
+]);
+
+function discordHelpSetup(t) {
+    const dc = (t.settings && t.settings.discord) || (t.gui && t.gui.settings && t.gui.settings.discord) || null;
+    if (!dc) return null;
+    return {
+        title: dc.name || 'Discord Notifications',
+        description: dc.description || 'Receive instant notifications on Discord when you claim drops. Setup instructions:',
+        steps: dc.setup_steps || [
+            'Open your Discord server and go to the channel Settings (gear icon next to the channel name)',
+            'Go to Integrations → Webhooks',
+            'Click New Webhook, give it a name, and pick the text channel to post to',
+            'Click Copy Webhook URL - it looks like: https://discord.com/api/webhooks/ID/TOKEN',
+            'Paste the URL into the Discord Webhook URL field in Settings and click Save Settings',
+            'Click Test Connection to verify and receive a test notification'
+        ]
+    };
+}
 
 /**
  * @param {string} tag
@@ -2242,7 +2396,7 @@ function makeHelpList(tag, items) {
 
 function appendTrustedHelpContent(parent, text) {
     const source = String(text);
-    const linkPattern = /<a\b[^>]*\bhref=(["'])(https:\/\/www\.twitch\.tv\/drops\/campaigns)\1[^>]*>(.*?)<\/a>/gi;
+    const linkPattern = /<a\b[^>]*\bhref=(["'])(https:\/\/www\.twitch\.tv\/drops\/campaigns|https:\/\/support\.discord\.com\/hc\/en(?:-us)?\/articles\/228383668-Intro-to-Webhooks)\1[^>]*>(.*?)<\/a>/gi;
     let lastIndex = 0;
     let match;
     let matched = false;

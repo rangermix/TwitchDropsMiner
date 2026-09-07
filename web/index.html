@@ -211,6 +211,21 @@
                 </section>
 
                 <section class="settings-section">
+                    <h2 id="settings-discord-header">Discord Notifications</h2>
+                    <p id="settings-discord-help" class="help-text">Configure drop claim notifications on Discord.</p>
+                    <label>
+                        <span id="settings-discord-webhook-url-label">Discord Webhook URL:</span>
+                        <input type="password" id="discord-webhook-url" placeholder="https://discord.com/api/webhooks/ID/TOKEN">
+                        <small id="settings-discord-webhook-url-hint">Paste the full Webhook URL (it embeds your secret token).</small>
+                    </label>
+                    <div class="button-group">
+                        <button id="save-discord-btn" class="secondary-btn" title="Save Discord settings">Save Settings</button>
+                        <button id="test-discord-btn" class="secondary-btn" title="Test Discord connection">Test Connection</button>
+                    </div>
+                    <div id="discord-test-result" class="verify-result" style="display: none;"></div>
+                </section>
+
+                <section class="settings-section">
                     <h2 id="settings-benefits-header">Mining Benefits</h2>
                     <p id="settings-benefits-help" class="help-text">Select which types of drops you want to
                         mine.</p>

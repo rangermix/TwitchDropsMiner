@@ -175,8 +175,23 @@ class GUISettingsGeneral(TypedDict):
     dark_mode: str
 
 
+class GUIDiscordSettings(TypedDict):
+    name: str
+    description: str
+    webhook_url: str
+    webhook_url_hint: str
+    save_settings: str
+    test_connection: str
+    setup_steps: list[str]
+    success: str
+    saved: str
+    error: str
+    missing_credentials: str
+
+
 class GUISettings(TypedDict):
     general: GUISettingsGeneral
+    discord: GUIDiscordSettings
     mining_benefits: str
     mining_benefits_help: str
     reload: str

@@ -157,7 +157,25 @@
             "clear_all_cache": "すべてのキャッシュを消去",
             "clear_all_cache_help": "ローカルのキャンペーン、チャンネル、およびマイナーの派生状態を消去します。ログイン情報と設定は保持し、その後 Twitch から再読み込みします。",
             "mining_benefits": "マイニング特典",
-            "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。"
+            "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。",
+            "discord": {
+                "name": "Discord通知",
+                "description": "ドロップを受け取るとDiscordに通知が届きます。",
+                "webhook_url": "Discord Webhook URL",
+                "webhook_url_hint": "完全なWebhook URLを貼り付けてください（秘密のトークンを含みます）。",
+                "setup_steps": [
+                    "Discordサーバーを開き、チャンネル名の横の歯車アイコンからチャンネル設定へ進む",
+                    "「連携サービス」→「Webhooks」へ進む",
+                    "「新規Webhook」をクリックして名前を付け、テキストチャンネルを選択（<a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Webhook入門</a>）",
+                    "「Webhook URLをコピー」をクリック。例: https://discord.com/api/webhooks/ID/TOKEN",
+                    "設定のDiscord Webhook URL欄にURLを貼り付け、「設定を保存」をクリック",
+                    "「接続をテスト」をクリックして確認し、テスト通知を受け取る"
+                ],
+                "success": "✓ Discord接続に成功しました。ドロップ通知が届きます。",
+                "saved": "✓ 設定が正常に保存されました！",
+                "error": "Discordに接続できませんでした。Webhook URLを確認してください。",
+                "missing_credentials": "Discord Webhook URLを入力してください。設定方法は「ヘルプ」タブをご覧ください。"
+            }
         },
         "help": {
             "about": "Twitch Drops Minerについて",

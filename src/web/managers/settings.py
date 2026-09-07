@@ -16,6 +16,11 @@ from src.utils import DropIgnorePolicy, merge_json
 
 logger = logging.getLogger("TwitchDrops")
 
+# Value returned to web clients in place of the stored Discord webhook URL.
+# The webhook URL embeds the secret webhook token, so never echo the stored
+# value through the unauthenticated web API/socket.
+DISCORD_WEBHOOK_MASK = "••••••••"
+
 
 if TYPE_CHECKING:
     from src.config.settings import Settings
@@ -56,6 +61,11 @@ class SettingsManager:
             Dictionary containing all user-configurable settings
         """
         settings = vars(self._settings).copy()
+        # Never expose the real Discord webhook URL to web clients. The URL
+        # stays server-side; clients only see a configured flag and a mask.
+        configured_url = bool(settings.get("discord_webhook_url"))
+        settings["discord_configured"] = configured_url
+        settings["discord_webhook_url"] = DISCORD_WEBHOOK_MASK if configured_url else ""
         # TODO(remove in 1.3.x): Retain this POST-only echo long enough for stale
         # pre-versioned frontends to age out; it never survives a page reload.
         if legacy_show_not_linked is not None:
@@ -118,6 +128,10 @@ class SettingsManager:
             "minimum_refresh_interval_minutes",
             settings_data.get("minimum_refresh_interval_minutes"),
         )
+        if "discord_webhook_url" in settings_data:
+            new_url = str(settings_data.get("discord_webhook_url") or "").strip()
+            if new_url and new_url != DISCORD_WEBHOOK_MASK:
+                self.check_and_update_setting("discord_webhook_url", new_url)
         inventory_filters = settings_data.get("inventory_filters")
         legacy_show_not_linked = None
         if inventory_filters is not None:
@@ -163,7 +177,8 @@ class SettingsManager:
         if new_value is None or getattr(self._settings, key, None) == new_value:
             return False
         setattr(self._settings, key, new_value)
-        self._log_change(f"Setting changed: {key} = {new_value}")
+        log_value = DISCORD_WEBHOOK_MASK if key == "discord_webhook_url" else new_value
+        self._log_change(f"Setting changed: {key} = {log_value}")
         action(new_value)
         return should_trigger_update
 

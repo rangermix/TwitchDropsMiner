@@ -157,7 +157,25 @@
             "clear_all_cache": "Limpar todo o cache",
             "clear_all_cache_help": "Limpa o estado local de campanhas, canais e dados derivados do minerador; mantém o login e as configurações e depois recarrega os dados da Twitch.",
             "mining_benefits": "Benefícios de Mineração",
-            "mining_benefits_help": "Selecione quais tipos de drops você deseja minerar."
+            "mining_benefits_help": "Selecione quais tipos de drops você deseja minerar.",
+            "discord": {
+                "name": "Notificações do Discord",
+                "description": "Receba notificações no Discord quando reclamar drops.",
+                "webhook_url": "URL do Webhook do Discord",
+                "webhook_url_hint": "Cole a URL completa do webhook (ela contém seu token secreto).",
+                "setup_steps": [
+                    "Abra o seu servidor do Discord e vá às configurações do canal (ícone de engrenagem ao lado do nome do canal)",
+                    "Vá para Integrações → Webhooks",
+                    "Clique em Novo webhook, dê um nome e escolha o canal de texto (veja <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Introdução aos webhooks</a>)",
+                    "Clique em Copiar URL do webhook - fica assim: https://discord.com/api/webhooks/ID/TOKEN",
+                    "Cole a URL no campo URL do Webhook do Discord nas Configurações e clique em Salvar configurações",
+                    "Clique em Testar conexão para verificar e receber uma notificação de teste"
+                ],
+                "success": "✓ Conexão com o Discord bem-sucedida! Você receberá notificações de drops.",
+                "saved": "✓ Configurações salvas com sucesso!",
+                "error": "Falha ao conectar ao Discord. Verifique sua URL de webhook.",
+                "missing_credentials": "Insira uma URL de Webhook do Discord. Consulte as instruções na guia Ajuda."
+            }
         },
         "help": {
             "about": "Sobre o Twitch Drops Miner",

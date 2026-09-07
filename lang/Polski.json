@@ -157,7 +157,25 @@
             "clear_all_cache": "Wyczyść całą pamięć podręczną",
             "clear_all_cache_help": "Usuwa lokalny stan kampanii, kanałów i pochodne dane minera; zachowuje logowanie i ustawienia, a następnie ponownie pobiera dane z Twitcha.",
             "mining_benefits": "Korzyści z Minowania",
-            "mining_benefits_help": "Wybierz rodzaje dropów, które chcesz zdobywać."
+            "mining_benefits_help": "Wybierz rodzaje dropów, które chcesz zdobywać.",
+            "discord": {
+                "name": "Powiadomienia Discord",
+                "description": "Otrzymuj powiadomienia na Discordzie, gdy odbierzesz dropy.",
+                "webhook_url": "Adres URL webhooka Discord",
+                "webhook_url_hint": "Wklej pełny adres URL webhooka (zawiera Twój tajny token).",
+                "setup_steps": [
+                    "Otwórz swój serwer Discord i wejdź w ustawienia kanału (ikona zębatki obok nazwy kanału)",
+                    "Przejdź do zakładki Integracje → Webhooki",
+                    "Kliknij Nowy webhook, nadaj mu nazwę i wybierz kanał tekstowy (zobacz <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Wprowadzenie do webhooków</a>)",
+                    "Kliknij Kopiuj adres URL webhooka - wygląda tak: https://discord.com/api/webhooks/ID/TOKEN",
+                    "Wklej adres URL w pole Adres URL webhooka Discord w ustawieniach i kliknij Zapisz ustawienia",
+                    "Kliknij Testuj połączenie, aby zweryfikować i otrzymać testowe powiadomienie"
+                ],
+                "success": "✓ Połączenie z Discordem pomyślne! Będziesz otrzymywać powiadomienia o dropach.",
+                "saved": "✓ Ustawienia zapisane pomyślnie!",
+                "error": "Nie udało się połączyć z Discordem. Sprawdź swój adres URL webhooka.",
+                "missing_credentials": "Podaj adres URL webhooka Discord. Instrukcje znajdziesz w zakładce Pomoc."
+            }
         },
         "help": {
             "about": "O Twitch Drops Miner",

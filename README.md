@@ -22,6 +22,7 @@ dashboard. It sends Twitch watch events without downloading the stream itself.
 - **Automatic campaign discovery** — detects active and upcoming drop campaigns
 - **Smart channel selection** — prioritizes eligible channels, preferred games, and viewers
 - **Drop-name ignore rules** — excludes unwanted reward names and dependent branches
+- **Notification integrations** — claim drop updates to a Discord channel via webhook
 - **Persistent sessions** — saves OAuth login state between runs
 - **Web dashboard** — manages campaigns, channels, inventory, settings, and login status
 - **Headless deployment** — runs locally, remotely, or in Docker without a desktop GUI
@@ -98,6 +99,13 @@ In **Settings**, **Clear All Cache** calls `POST /api/cache/clear` to discard lo
 campaign, channel, and other derived miner state while preserving your OAuth login and
 settings, then reloads the data from Twitch. This is a recovery and diagnostic action;
 it cannot correct inaccurate campaign metadata returned by Twitch.
+
+In **Settings**, **Discord Notifications** posts an embed to a channel webhook whenever a
+drop is claimed. Paste the full webhook URL
+(`https://discord.com/api/webhooks/ID/TOKEN`) — it is created under the channel's
+**Integrations → Webhooks** — and use **Test Connection** to verify. The URL embeds your
+secret token, so the web interface and console only ever display a masked placeholder,
+never the stored value.
 
 > [!NOTE]
 > Your Twitch account must be linked to the relevant game accounts. Review your
