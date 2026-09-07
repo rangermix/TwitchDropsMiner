@@ -36,7 +36,6 @@
         "status": {
             "name": "Durum",
             "idle": "Boşta",
-            "ready": "Hazır",
             "exiting": "Çıkış...",
             "terminated": "Sonlandırıldı",
             "cleanup": "Kanalları temizle..",
@@ -44,7 +43,8 @@
             "switching": "Kanal değiştiriliyor...",
             "fetching_inventory": "Envanter getiriliyor...",
             "fetching_campaigns": "Kampanyalar getiriliyor...",
-            "adding_campaigns": "Kampanyaları envantere ekle... {counter}"
+            "adding_campaigns": "Kampanyaları envantere ekle... {counter}",
+            "ready": "Hazır"
         },
         "tabs": {
             "main": "Ana",
@@ -138,8 +138,6 @@
             "games_to_watch": "İzlenecek Oyunlar",
             "games_help": "İzlenecek oyunları seçin. Sıralama önemlidir - önceliği yeniden sıralamak için sürükleyin (üst = en yüksek öncelik).",
             "search_games": "Oyun ara...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Tümünü seç",
             "deselect_all": "Tümünü kaldır",
             "selected_games": "Seçilen oyunlar (yeniden sıralamak için sürükleyin)",
@@ -150,7 +148,33 @@
             "actions": "İşlemler",
             "connection_quality": "Bağlantı kalitesi:",
             "minimum_refresh": "Minimum yenileme aralığı (dakika):",
+            "telegram": {
+                "name": "Telegram Bildirimleri",
+                "description": "Drop talep ettiğinizde Telegram'da bildirim alın.",
+                "bot_token": "Telegram Bot Token",
+                "chat_id": "Telegram Sohbet Kimliği",
+                "save_settings": "Ayarları Kaydet",
+                "test_connection": "Bağlantıyı Test Et",
+                "how_to_setup": "Nasıl Kurulur",
+                "setup_steps": [
+                    "Telegram'da <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> sayfasına gidin",
+                    "/newbot komutu ile yeni bir bot oluşturun",
+                    "Aldığınız bot token'ını kaydedin",
+                    "Yeni bot'unuzu arayarak /start'a tıklayarak başlatın (veya herhangi bir mesaj gönderin)",
+                    "Tarayıcıda bu URL'yi açarak Chat Kimliğini alın (TOKEN'i değiştirin): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Yanıtınızda kullanıcı kimliğinizi bulun - \"from\": {\"id\": YOUR_ID} içindeki sayıdır",
+                    "Token ve Sohbet Kimliğini girin ve Bağlantıyı Test Et'e tıklayın"
+                ],
+                "saved": "✓ Ayarlar başarıyla kaydedildi!",
+                "success": "✓ Telegram bağlantısı başarılı! Drop talep ettiğinizde bildirim alacaksınız.",
+                "error": "Telegram'a bağlanılamadı. Bot token'ınızı ve sohbet kimliğinizi kontrol edin.",
+                "missing_credentials": "Lütfen bot token'ını ve sohbet kimliğini doldurun. Yardım sekmesindeki kurulum talimatlarını görün.",
+                "get_from_botfather": "@BotFather'dan Al",
+                "your_user_id": "Telegram sayısal kullanıcı kimliğiniz"
+            },
             "reload_campaigns": "Kampanyaları Yeniden Yükle",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "drop_name_blacklist": "Yoksayılan Drop Anahtar Kelimeleri",
             "drop_name_blacklist_help": "Her satıra bir anahtar kelime girin. Eşleştirme, büyük/küçük harfe duyarsız gerçek bir alt dize arar. Eşleşen droplar ve bunlara bağlı dallar yoksayılır; yalnızca ön koşul olan dallar atlanırken ortak ön koşulların madenciliği yapılabilir.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",

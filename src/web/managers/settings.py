@@ -16,6 +16,10 @@ from src.utils import DropIgnorePolicy, merge_json
 
 logger = logging.getLogger("TwitchDrops")
 
+# Value returned to web clients in place of the stored Telegram bot token.
+# Never echo the real credential through the unauthenticated web API/socket.
+TELEGRAM_TOKEN_MASK = "••••••••"
+
 
 if TYPE_CHECKING:
     from src.config.settings import Settings
@@ -56,6 +60,12 @@ class SettingsManager:
             Dictionary containing all user-configurable settings
         """
         settings = vars(self._settings).copy()
+        settings["games_available"] = self._available_games
+        # Never expose the real Telegram bot token to web clients. The token
+        # stays server-side; clients only see a configured flag and a mask.
+        configured_token = bool(settings.get("telegram_bot_token"))
+        settings["telegram_configured"] = configured_token
+        settings["telegram_bot_token"] = TELEGRAM_TOKEN_MASK if configured_token else ""
         # TODO(remove in 1.3.x): Retain this POST-only echo long enough for stale
         # pre-versioned frontends to age out; it never survives a page reload.
         if legacy_show_not_linked is not None:
@@ -118,6 +128,16 @@ class SettingsManager:
             "minimum_refresh_interval_minutes",
             settings_data.get("minimum_refresh_interval_minutes"),
         )
+        if "telegram_bot_token" in settings_data:
+            new_token = str(settings_data.get("telegram_bot_token") or "").strip()
+            if new_token and new_token != TELEGRAM_TOKEN_MASK:
+                self.check_and_update_setting(
+                    "telegram_bot_token", new_token
+                )
+        if "telegram_chat_id" in settings_data:
+            self.check_and_update_setting(
+                "telegram_chat_id", settings_data.get("telegram_chat_id") or ""
+            )
         inventory_filters = settings_data.get("inventory_filters")
         legacy_show_not_linked = None
         if inventory_filters is not None:
@@ -163,7 +183,8 @@ class SettingsManager:
         if new_value is None or getattr(self._settings, key, None) == new_value:
             return False
         setattr(self._settings, key, new_value)
-        self._log_change(f"Setting changed: {key} = {new_value}")
+        log_value = TELEGRAM_TOKEN_MASK if key == "telegram_bot_token" else new_value
+        self._log_change(f"Setting changed: {key} = {log_value}")
         action(new_value)
         return should_trigger_update
 

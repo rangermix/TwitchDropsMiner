@@ -11,7 +11,6 @@
         "no_campaign": "Žádné dropy k dispozici, čekání na další dostupné dropy..."
     },
     "login": {
-        "error_code": "Kód chyby přihlášení: {error_code}",
         "unexpected_content": "Chyba při přesměrování. Nepoužíváte VPN?",
         "incorrect_login_pass": "Nesprávné přihlašení.",
         "incorrect_email_code": "Nesprávný E-Mail kód.",
@@ -24,7 +23,8 @@
             "logging_in": "Přihlašování...",
             "required": "Potřebujete se nejdříve přihlásit",
             "waiting_auth": "Čekání na ověření..."
-        }
+        },
+        "error_code": "Kód chyby přihlášení: {error_code}"
     },
     "error": {
         "captcha": "Vaše připojení bylo zamítnuto službou Twitch, zkuste to znovu za 12 hodin.",
@@ -36,7 +36,6 @@
         "status": {
             "name": "Status",
             "idle": "Dokončeno načítání",
-            "ready": "Připraveno",
             "exiting": "Ukončování...",
             "terminated": "Aplikace ukončena",
             "cleanup": "Čištění...",
@@ -44,7 +43,8 @@
             "switching": "Přepínám mezi kanály...",
             "fetching_inventory": "Načítání inventáře...",
             "fetching_campaigns": "Načítání dropů...",
-            "adding_campaigns": "Přidávám dropy... {counter}"
+            "adding_campaigns": "Přidávám dropy... {counter}",
+            "ready": "Připraveno"
         },
         "tabs": {
             "main": "Hlavní",
@@ -138,8 +138,6 @@
             "games_to_watch": "Hry ke sledování",
             "games_help": "Vyberte hry ke sledování. Záleží na pořadí - přetáhněte pro změnu priority (nahoře = nejvyšší priorita).",
             "search_games": "Hledat hry...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Vybrat vše",
             "deselect_all": "Zrušit výběr",
             "selected_games": "Vybrané hry (přetáhněte pro změnu pořadí)",
@@ -150,7 +148,33 @@
             "actions": "Akce",
             "connection_quality": "Kvalita připojení:",
             "minimum_refresh": "Minimální interval obnovení (minuty):",
+            "telegram": {
+                "name": "Upozornění na Telegram",
+                "description": "Dostávejte upozornění na Telegram, když si nárokujete drops.",
+                "bot_token": "Token Telegram bota",
+                "chat_id": "ID chatu Telegram",
+                "save_settings": "Uložit nastavení",
+                "test_connection": "Testovat připojení",
+                "how_to_setup": "Jak nastavit",
+                "setup_steps": [
+                    "Přejděte na <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> na Telegram",
+                    "Vytvořte nového bota příkazem /newbot",
+                    "Uložte si token bota, který obdržíte",
+                    "Spusťte nového bota vyhledáním a kliknutím na /start (nebo pošlete jakoukoli zprávu)",
+                    "Získejte své ID chatu otevřením této URL v prohlížeči (nahraďte TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Najděte své ID uživatele v odpovědi - je to číslo v \"from\": {\"id\": YOUR_ID}",
+                    "Zadejte token a ID chatu a klikněte na Testovat připojení"
+                ],
+                "success": "✓ Připojení k Telegram úspěšné! Budete dostávat upozornění, když si nárokujete drops.",
+                "saved": "✓ Nastavení úspěšně uloženo!",
+                "error": "Připojení k Telegram se nezdařilo. Zkontrolujte token bota a ID chatu.",
+                "missing_credentials": "Vyplňte token bota i ID chatu. Viz pokyny k nastavení v záložce Nápověda.",
+                "get_from_botfather": "Získejte od @BotFather",
+                "your_user_id": "Vaše číselné ID uživatele Telegram"
+            },
             "reload_campaigns": "Znovu načíst kampaně",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "drop_name_blacklist": "Ignorovaná klíčová slova v názvech odměn",
             "drop_name_blacklist_help": "Zadejte jedno klíčové slovo na řádek. Hledá se jako doslovný podřetězec bez rozlišení velikosti písmen. Odpovídající odměny a jejich závislé větve budou ignorovány; větve sloužící pouze jako předpoklad budou přeskočeny, zatímco sdílené předpoklady zůstanou získatelné.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",

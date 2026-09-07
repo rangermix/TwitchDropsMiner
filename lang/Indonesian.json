@@ -36,7 +36,6 @@
         "status": {
             "name": "Status",
             "idle": "Tidak aktif",
-            "ready": "Siap",
             "exiting": "Keluar...",
             "terminated": "Diakhiri",
             "cleanup": "Membersihkan saluran...",
@@ -44,7 +43,8 @@
             "switching": "Koleksi saluran yang sedang berlangsung...",
             "fetching_inventory": "Mmengambil inventaris...",
             "fetching_campaigns": "Mengambil kampanye...",
-            "adding_campaigns": "Menambahkan daftar kampanye ke inventaris... {counter}"
+            "adding_campaigns": "Menambahkan daftar kampanye ke inventaris... {counter}",
+            "ready": "Siap"
         },
         "tabs": {
             "main": "Utama",
@@ -138,8 +138,6 @@
             "games_to_watch": "Game untuk Ditonton",
             "games_help": "Pilih game untuk ditonton. Urutan penting - seret untuk mengatur ulang prioritas (atas = prioritas tertinggi).",
             "search_games": "Cari game...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Pilih Semua",
             "deselect_all": "Batalkan Semua",
             "selected_games": "Game yang Dipilih (seret untuk mengatur ulang)",
@@ -150,7 +148,33 @@
             "actions": "Tindakan",
             "connection_quality": "Kualitas Koneksi:",
             "minimum_refresh": "Interval Refresh Minimum (menit):",
+            "telegram": {
+                "name": "Notifikasi Telegram",
+                "description": "Terima notifikasi di Telegram ketika Anda mengklaim drop.",
+                "bot_token": "Token Bot Telegram",
+                "chat_id": "ID Chat Telegram",
+                "save_settings": "Simpan Pengaturan",
+                "test_connection": "Uji Koneksi",
+                "how_to_setup": "Cara Menyiapkan",
+                "setup_steps": [
+                    "Pergi ke <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> di Telegram",
+                    "Buat bot baru dengan perintah /newbot",
+                    "Simpan token bot yang Anda terima",
+                    "Mulai bot baru Anda dengan mencarinya dan mengklik /start (atau kirim pesan apa pun)",
+                    "Dapatkan ID Chat Anda dengan membuka URL ini di browser (ganti TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Temukan ID pengguna Anda dalam respons - itu adalah angka di \"from\": {\"id\": YOUR_ID}",
+                    "Masukkan token dan ID Chat, lalu klik Uji Koneksi"
+                ],
+                "success": "✓ Koneksi Telegram berhasil! Anda akan menerima notifikasi saat mengklaim drop.",
+                "saved": "✓ Pengaturan berhasil disimpan!",
+                "error": "Gagal terhubung ke Telegram. Periksa token bot dan ID chat Anda.",
+                "missing_credentials": "Silakan isi token bot dan ID chat. Lihat petunjuk pengaturan di tab Bantuan.",
+                "get_from_botfather": "Dapatkan dari @BotFather",
+                "your_user_id": "ID pengguna numerik Telegram Anda"
+            },
             "reload_campaigns": "Muat Ulang Kampanye",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "drop_name_blacklist": "Kata Kunci Nama Drop yang Diabaikan",
             "drop_name_blacklist_help": "Masukkan satu kata kunci per baris. Pencocokan mencari substring literal tanpa membedakan huruf besar dan kecil. Drop yang cocok dan cabang yang bergantung padanya diabaikan; cabang yang hanya menjadi prasyarat dilewati, sementara prasyarat bersama tetap dapat ditambang.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",

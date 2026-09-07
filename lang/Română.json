@@ -36,7 +36,6 @@
         "status": {
             "name": "Statut",
             "idle": "Inactiv",
-            "ready": "Gata",
             "exiting": "Ieșire...",
             "terminated": "Terminat",
             "cleanup": "Curățarea canalelor...",
@@ -44,7 +43,8 @@
             "switching": "Colectarea canalelor în curs...",
             "fetching_inventory": "Se precuperează inventarul...",
             "fetching_campaigns": "Se recuperează campaniile...",
-            "adding_campaigns": "S-a adăugat lista de campanii la inventar... {counter}"
+            "adding_campaigns": "S-a adăugat lista de campanii la inventar... {counter}",
+            "ready": "Gata"
         },
         "tabs": {
             "main": "Principal",
@@ -138,8 +138,6 @@
             "games_to_watch": "Jocuri de urmărit",
             "games_help": "Selectați jocurile de urmărit. Ordinea contează - trageți pentru a reordona prioritatea (sus = prioritate maximă).",
             "search_games": "Căutați jocuri...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Selectați tot",
             "deselect_all": "Deselectați tot",
             "selected_games": "Jocuri selectate (trageți pentru a reordona)",
@@ -150,7 +148,33 @@
             "actions": "Acțiuni",
             "connection_quality": "Calitatea conexiunii:",
             "minimum_refresh": "Interval minim de reîmprospătare (minute):",
+            "telegram": {
+                "name": "Notificări Telegram",
+                "description": "Primiți notificări pe Telegram atunci când revendicați drops.",
+                "bot_token": "Token Bot Telegram",
+                "chat_id": "ID Chat Telegram",
+                "save_settings": "Salvați setările",
+                "test_connection": "Testare Conexiune",
+                "how_to_setup": "Cum se configurează",
+                "setup_steps": [
+                    "Accesați <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> pe Telegram",
+                    "Creați un bot nou cu comanda /newbot",
+                    "Salvați tokenul botului pe care îl primiți",
+                    "Porniți noul bot căutând-o și dând clic pe /start (sau trimiteți orice mesaj)",
+                    "Obțineți ID-ul dvs. de chat deschizând acest URL în browser (înlocuiți TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Găsiți ID-ul utilizatorului în răspuns - acesta este numărul din \"from\": {\"id\": YOUR_ID}",
+                    "Introduceți tokenul și ID-ul de chat și faceți clic pe Testare Conexiune"
+                ],
+                "saved": "✓ Setări salvate cu succes!",
+                "success": "✓ Conexiune Telegram reușită! Veți primi notificări când revendicați drops.",
+                "error": "Conexiune la Telegram eșuată. Verificați tokenul botului și ID-ul chat.",
+                "missing_credentials": "Completați tokenul botului și ID-ul chat. Consultați instrucțiunile de configurare în fila Ajutor.",
+                "get_from_botfather": "Obțineți de la @BotFather",
+                "your_user_id": "ID-ul utilizatorului numeric Telegram"
+            },
             "reload_campaigns": "Reîncarcă campaniile",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "drop_name_blacklist": "Cuvinte-cheie pentru dropuri ignorate",
             "drop_name_blacklist_help": "Introduceți un cuvânt-cheie pe fiecare linie. Potrivirea caută un subșir literal fără a diferenția majusculele de minuscule. Dropurile potrivite și ramurile dependente sunt ignorate; ramurile care servesc doar drept condiții prealabile sunt omise, iar condițiile prealabile comune pot fi minate în continuare.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",

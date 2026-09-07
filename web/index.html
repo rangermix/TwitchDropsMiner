@@ -211,6 +211,23 @@
                 </section>
 
                 <section class="settings-section">
+                    <h2 id="settings-telegram-header">Telegram Notifications</h2>
+                    <p id="settings-telegram-help" class="help-text">Configure drop claim notifications on Telegram.</p>
+                    <label>
+                        <span id="settings-telegram-bot-token-label">Telegram Bot Token:</span>
+                        <input type="password" id="telegram-bot-token" placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz">
+                        <small><span id="settings-telegram-get-from-botfather">Get from</span> <a href="https://t.me/BotFather" target="_blank">@BotFather</a></small>
+                    </label>
+                    <label>
+                        <span id="settings-telegram-chat-id-label">Telegram Chat ID:</span>
+                        <input type="text" id="telegram-chat-id" placeholder="Your numeric ID or @username">
+                        <small id="settings-telegram-your-user-id">Your Telegram user ID (usually starts with a number)</small>
+                    </label>
+                    <div class="button-group">
+                        <button id="save-telegram-btn" class="secondary-btn" title="Save Telegram settings">Save Settings</button>
+                        <button id="test-telegram-btn" class="secondary-btn" title="Test Telegram connection">Test Connection</button>
+                    </div>
+                    <div id="telegram-test-result" class="verify-result" style="display: none;"></div>
                     <h2 id="settings-benefits-header">Mining Benefits</h2>
                     <p id="settings-benefits-help" class="help-text">Select which types of drops you want to
                         mine.</p>
@@ -313,6 +330,18 @@
                     <li>Keep your cookies.jar file secure</li>
                     <li>Requires linked game accounts for drops</li>
                 </ul>
+
+                <h3>Telegram Notifications</h3>
+                <p>Receive instant notifications on Telegram when you claim drops. Setup instructions:</p>
+                <ol>
+                    <li>Go to <a href="https://t.me/BotFather" target="_blank">@BotFather</a> on Telegram</li>
+                    <li>Create a new bot with /newbot command</li>
+                    <li>Save the bot token you receive</li>
+                    <li>Start your new bot by searching for it and clicking /start (or send any message)</li>
+                    <li>Get your Chat ID by opening this URL in browser (replace TOKEN): <code>https://api.telegram.org/botTOKEN/getUpdates</code></li>
+                    <li>Find your user ID in the response - it's the number in "from": {"id": YOUR_ID}</li>
+                    <li>Enter the token and Chat ID in Settings and click Test Connection</li>
+                </ol>
 
                 <div class="help-links">
                     <a href="https://github.com/rangermix/TwitchDropsMiner" target="_blank">GitHub

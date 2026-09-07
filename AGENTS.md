@@ -170,6 +170,10 @@ lang/                # Translation JSON files (20 languages)
   actively watched channel remains visible while game settings are changing
 - Consecutive identical no-active-campaign console prompts are collapsed until another
   console message appears
+- Telegram drop notifications use a bot token stored server-side. The web API/socket
+  never echoes the stored token: `get_settings()` returns only a `telegram_configured`
+  flag and a masked placeholder, console logs mask the value, and a submitted value equal
+  to the mask (or empty) leaves the stored credential untouched.
 
 Drop-name ignore policy is dependency-aware: a matching unclaimed drop and its dependent
 branches are ignored dynamically. Prerequisite-only branches with no mineable reward are

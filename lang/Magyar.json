@@ -125,7 +125,31 @@
             "all_games_selected": "Minden játék ki van jelölve, vagy nincs elérhető játék.",
             "actions": "Műveletek",
             "connection_quality": "Kapcsolat minősége:",
-            "minimum_refresh": "Minimális frissítési intervallum (perc):"
+            "minimum_refresh": "Minimális frissítési intervallum (perc):",
+            "telegram": {
+                "name": "Telegram-értesítések",
+                "description": "Értesítést kaphat Telegramon, amikor dropokat gyűjt.",
+                "bot_token": "Telegram bot token",
+                "chat_id": "Telegram Chat-ID",
+                "save_settings": "Beállítások mentése",
+                "test_connection": "Kapcsolat tesztelése",
+                "how_to_setup": "Beállítási útmutató",
+                "setup_steps": [
+                    "Lépjen a <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> menübe a Telegramon",
+                    "Hozzon létre egy új botot a /newbot paranccsal",
+                    "Mentse el a kapott bot tokent",
+                    "Indítsa el az új botot úgy, hogy megkeresi és megnyomja a /start gombot (vagy küldjön egy üzenetet)",
+                    "Szerezze meg a Chat-ID-t a böngészőben megnyitott URL-lel (cserélje ki a TOKEN-t): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Keresse meg a felhasználóazonosítóját a válaszban - ez a szám a \"from\": {\"id\": YOUR_ID}-ban",
+                    "Adja meg a tokent és a Chat-ID-t, majd kattintson a Kapcsolat tesztelése gombra"
+                ],
+                "saved": "✓ Beállítások sikeresen mentve!",
+                "success": "✓ Telegram-kapcsolat létrejött! Értesítést kap, amikor dropokat gyűjt.",
+                "error": "Nem sikerült csatlakozni a Telegramhoz. Ellenőrizze a bot tokent és a Chat-ID-t.",
+                "missing_credentials": "Adja meg mind a bot tokent, mind a Chat-ID-t. A beállítási útmutató a Súgó fülön található.",
+                "get_from_botfather": "Szerzés a @BotFather-től",
+                "your_user_id": "Az Ön numerikus Telegram felhasználóazonosítója"
+            }
         },
         "help": {
             "about": "A Twitch Drops Miner-ről",

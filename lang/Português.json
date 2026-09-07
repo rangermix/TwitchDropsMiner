@@ -36,7 +36,6 @@
         "status": {
             "name": "Status",
             "idle": "Em espera",
-            "ready": "Pronto",
             "exiting": "Saindo",
             "terminated": "Finalizado",
             "cleanup": "Limpando os Canais...",
@@ -44,7 +43,8 @@
             "switching": "Mudando o canal...",
             "fetching_inventory": "Coletando inventário...",
             "fetching_campaigns": "Coletando campanhas...",
-            "adding_campaigns": "Adicionando as campanhas para o sistema... {counter}"
+            "adding_campaigns": "Adicionando as campanhas para o sistema... {counter}",
+            "ready": "Pronto"
         },
         "tabs": {
             "main": "Principal",
@@ -138,8 +138,6 @@
             "games_to_watch": "Jogos para assistir",
             "games_help": "Selecione os jogos para assistir. A ordem importa - arraste para reordenar a prioridade (topo = maior prioridade).",
             "search_games": "Procurar jogos...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Selecionar tudo",
             "deselect_all": "Desmarcar tudo",
             "selected_games": "Jogos selecionados (arraste para reordenar)",
@@ -150,7 +148,33 @@
             "actions": "Ações",
             "connection_quality": "Qualidade da conexão:",
             "minimum_refresh": "Intervalo mínimo de atualização (minutos):",
+            "telegram": {
+                "name": "Notificações do Telegram",
+                "description": "Receba notificações no Telegram quando reivindicar drops.",
+                "bot_token": "Token do Bot Telegram",
+                "chat_id": "ID do Chat Telegram",
+                "save_settings": "Salvar configurações",
+                "test_connection": "Testar Conexão",
+                "how_to_setup": "Como Configurar",
+                "setup_steps": [
+                    "Vá para <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> no Telegram",
+                    "Crie um novo bot com o comando /newbot",
+                    "Salve o token do bot que você receber",
+                    "Inicie seu novo bot procurando-o e clicando em /start (ou envie qualquer mensagem)",
+                    "Obtenha seu ID de Chat abrindo esta URL no navegador (substitua TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Encontre seu ID de usuário na resposta - é o número em \"from\": {\"id\": YOUR_ID}",
+                    "Digite o token e ID de Chat e clique em Testar Conexão"
+                ],
+                "saved": "✓ Configurações salvas com sucesso!",
+                "success": "✓ Conexão Telegram bem-sucedida! Você receberá notificações ao reivindicar drops.",
+                "error": "Falha ao conectar ao Telegram. Verifique seu token de bot e ID de chat.",
+                "missing_credentials": "Preencha o token do bot e o ID do chat. Consulte as instruções de configuração na guia Ajuda.",
+                "get_from_botfather": "Obter de @BotFather",
+                "your_user_id": "Seu ID de usuário numérico do Telegram"
+            },
             "reload_campaigns": "Recarregar Campanhas",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "drop_name_blacklist": "Palavras-chave de drops ignorados",
             "drop_name_blacklist_help": "Digite uma palavra-chave por linha. A correspondência procura uma substring literal sem diferenciar maiúsculas de minúsculas. Os drops correspondentes e seus ramos dependentes são ignorados; ramos usados apenas como pré-requisitos não são minerados, enquanto pré-requisitos compartilhados continuam mineráveis.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",

@@ -208,8 +208,12 @@ class MessageHandlerService:
 
             drop.update_claim(message["data"]["drop_instance_id"])
             campaign = drop.campaign
-            await drop.claim()
+            claim_result = await drop.claim()
             drop.display()
+
+            # Only notify on a successful claim (GQL errors/rejections return False)
+            if claim_result:
+                await self._send_telegram_notification(drop)
 
             # About 4-20s after claiming the drop, next drop can be started
             # by re-sending the watch payload. We can test for it by fetching the current drop
@@ -251,6 +255,28 @@ class MessageHandlerService:
         if drop is not None and drop.can_earn(self._twitch.watching_channel.get_with_default(None)):
             # the received payload is for the drop we expected
             drop.update_minutes(message["data"]["current_progress_min"])
+
+    async def _send_telegram_notification(self, drop: TimedDrop) -> None:
+        """
+        Send Telegram notification when drop is claimed.
+
+        Args:
+            drop: The TimedDrop that was claimed
+        """
+        try:
+            # Only send if Telegram is configured
+            bot_token = self._twitch.settings.telegram_bot_token
+            chat_id = self._twitch.settings.telegram_chat_id
+
+            if not bot_token or not chat_id:
+                return
+
+            from src.services.telegram_service import TelegramNotifier
+
+            notifier = TelegramNotifier(bot_token, chat_id)
+            await notifier.notify_drop_claimed(drop)
+        except Exception as e:
+            logger.debug(f"Failed to send Telegram notification: {e}")
 
     @task_wrapper
     async def process_notifications(self, user_id: int, message: JsonType) -> None:

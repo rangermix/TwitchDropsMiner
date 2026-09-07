@@ -36,7 +36,6 @@
         "status": {
             "name": "Status",
             "idle": "Ledig",
-            "ready": "Klar",
             "exiting": "Afslutter...",
             "terminated": "Afsluttet",
             "cleanup": "Oprydning af kanaler...",
@@ -44,7 +43,8 @@
             "switching": "Skifter kanal...",
             "fetching_inventory": "Henter beholdning...",
             "fetching_campaigns": "Henter kampagner...",
-            "adding_campaigns": "Tilføjer kampagner til beholdning... {counter}"
+            "adding_campaigns": "Tilføjer kampagner til beholdning... {counter}",
+            "ready": "Klar"
         },
         "tabs": {
             "main": "Hoved",
@@ -138,8 +138,6 @@
             "games_to_watch": "Spil at se",
             "games_help": "Vælg spil at se. Rækkefølgen er vigtig - træk for at ændre prioritet (top = højeste prioritet).",
             "search_games": "Søg spil...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Vælg alle",
             "deselect_all": "Fravælg alle",
             "selected_games": "Valgte spil (træk for at ændre rækkefølge)",
@@ -150,7 +148,33 @@
             "actions": "Handlinger",
             "connection_quality": "Forbindelseskvalitet:",
             "minimum_refresh": "Minimum opdateringsinterval (minutter):",
+            "telegram": {
+                "name": "Telegram-meddelelser",
+                "description": "Modtag meddelelser på Telegram, når du samler drops.",
+                "bot_token": "Telegram Bot Token",
+                "chat_id": "Telegram Chat-ID",
+                "save_settings": "Gem indstillinger",
+                "test_connection": "Test forbindelse",
+                "how_to_setup": "Sådan opsætter du",
+                "setup_steps": [
+                    "Gå til <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> på Telegram",
+                    "Opret en ny bot med kommandoen /newbot",
+                    "Gem den bot-token, du modtager",
+                    "Start din nye bot ved at søge efter den og klikke på /start (eller send en besked)",
+                    "Få dit Chat-ID ved at åbne denne URL i browseren (erstat TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Find dit bruger-ID i svaret - det er nummeret i \"from\": {\"id\": YOUR_ID}",
+                    "Indtast token og Chat-ID og klik på Test forbindelse"
+                ],
+                "saved": "✓ Indstillinger gemt korrekt!",
+                "success": "✓ Telegram-forbindelse etableret! Du modtager meddelelser, når du samler drops.",
+                "error": "Kunne ikke oprette forbindelse til Telegram. Kontroller din bot-token og chat-ID.",
+                "missing_credentials": "Udfyld både bot-token og chat-ID. Se setupinstruktioner under fanen Hjælp.",
+                "get_from_botfather": "Hent fra @BotFather",
+                "your_user_id": "Dit numeriske Telegram bruger-ID"
+            },
             "reload_campaigns": "Genindlæs kampagner",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "drop_name_blacklist": "Ignorerede nøgleord i dropnavne",
             "drop_name_blacklist_help": "Angiv ét nøgleord pr. linje. Der søges efter en bogstavelig delstreng uden forskel på store og små bogstaver. Matchende drops og deres afhængige grene ignoreres; grene, der kun er forudsætninger, springes over, mens delte forudsætninger stadig kan optjenes.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",

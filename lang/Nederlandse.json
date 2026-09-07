@@ -36,7 +36,6 @@
         "status": {
             "name": "Status",
             "idle": "Inactief",
-            "ready": "Klaar",
             "exiting": "Beëindigd...",
             "terminated": "Geannuleerd",
             "cleanup": "Kanalen opruimen..",
@@ -44,7 +43,8 @@
             "switching": "Het kanaal wijzigen...",
             "fetching_inventory": "Ophalen van inventaris...",
             "fetching_campaigns": "Ophalen van de campagne...",
-            "adding_campaigns": "De campagnelijst toevoegen aan de inventaris... {counter}"
+            "adding_campaigns": "De campagnelijst toevoegen aan de inventaris... {counter}",
+            "ready": "Klaar"
         },
         "tabs": {
             "main": "Hoofd",
@@ -138,8 +138,6 @@
             "games_to_watch": "Games om te kijken",
             "games_help": "Selecteer games om te kijken. Volgorde is belangrijk - sleep om prioriteit te wijzigen (bovenaan = hoogste prioriteit).",
             "search_games": "Zoek games...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Alles selecteren",
             "deselect_all": "Alles deselecteren",
             "selected_games": "Geselecteerde games (sleep om te herschikken)",
@@ -150,7 +148,33 @@
             "actions": "Acties",
             "connection_quality": "Verbindingskwaliteit:",
             "minimum_refresh": "Minimaal verversingsinterval (minuten):",
+            "telegram": {
+                "name": "Telegram-meldingen",
+                "description": "Ontvang meldingen op Telegram wanneer u drops claims.",
+                "bot_token": "Telegram Bot Token",
+                "chat_id": "Telegram Chat-ID",
+                "save_settings": "Instellingen opslaan",
+                "test_connection": "Verbinding testen",
+                "how_to_setup": "Hoe in te stellen",
+                "setup_steps": [
+                    "Ga naar <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> op Telegram",
+                    "Maak een nieuwe bot met de opdracht /newbot",
+                    "Sla het bottoken op dat u ontvangt",
+                    "Start uw nieuwe bot door ernaar te zoeken en op /start te klikken (of stuur een bericht)",
+                    "Haal uw Chat-ID op door deze URL in de browser te openen (vervang TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
+                    "Zoek uw gebruikers-ID in het antwoord - dit is het getal in \"from\": {\"id\": YOUR_ID}",
+                    "Voer het token en Chat-ID in en klik op Verbinding testen"
+                ],
+                "success": "✓ Telegram-verbinding succesvol! U ontvangt meldingen wanneer u drops claims.",
+                "saved": "✓ Instellingen succesvol opgeslagen!",
+                "error": "Kan geen verbinding maken met Telegram. Controleer uw bottoken en chat-ID.",
+                "missing_credentials": "Vul zowel bot-token als chat-ID in. Zie setupinstructies in het Help-tabblad.",
+                "get_from_botfather": "Haal op van @BotFather",
+                "your_user_id": "Uw numerieke Telegram gebruikers-ID"
+            },
             "reload_campaigns": "Herlaad Campagnes",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "drop_name_blacklist": "Genegeerde trefwoorden in dropnamen",
             "drop_name_blacklist_help": "Voer één trefwoord per regel in. Er wordt hoofdletterongevoelig gezocht naar een letterlijke tekenreeks. Overeenkomende drops en hun afhankelijke takken worden genegeerd; takken die alleen als voorwaarde dienen worden overgeslagen, terwijl gedeelde voorwaarden te verdienen blijven.",
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
