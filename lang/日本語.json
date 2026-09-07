@@ -50,7 +50,8 @@
             "main": "メイン",
             "inventory": "インベントリ",
             "settings": "設定",
-            "help": "ヘルプ"
+            "help": "ヘルプ",
+            "history": "履歴"
         },
         "login": {
             "name": "ログインフォーム",

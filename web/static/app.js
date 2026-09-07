@@ -1651,12 +1651,14 @@ function applyTranslations(t) {
     const tabButtons = {
         'main': document.querySelector('[data-tab="main"]'),
         'inventory': document.querySelector('[data-tab="inventory"]'),
+        'history': document.querySelector('[data-tab="history"]'),
         'settings': document.querySelector('[data-tab="settings"]'),
         'help': document.querySelector('[data-tab="help"]')
     };
 
     if (tabButtons.main && t.gui?.tabs) tabButtons.main.textContent = t.gui.tabs.main;
     if (tabButtons.inventory && t.gui?.tabs) tabButtons.inventory.textContent = t.gui.tabs.inventory;
+    if (tabButtons.history && t.gui?.tabs) tabButtons.history.textContent = t.gui.tabs.history;
     if (tabButtons.settings && t.gui?.tabs) tabButtons.settings.textContent = t.gui.tabs.settings;
     if (tabButtons.help && t.gui?.tabs) tabButtons.help.textContent = t.gui.tabs.help;
 
@@ -2016,6 +2018,11 @@ function switchTab(tabName) {
     // Show selected tab
     document.getElementById(`${tabName}-tab`).classList.add('active');
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+    // Lazy-load history data each time the History tab is opened
+    if (tabName === 'history') {
+        loadHistory();
+    }
 }
 
 // ==================== Event Listeners ====================
@@ -2070,6 +2077,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
     document.getElementById('clear-cache-btn').addEventListener('click', clearAllCache);
+
+    // History tab
+    document.getElementById('history-btn-filter')?.addEventListener('click', () => {
+        historyCurrentPage = 0;
+        loadHistory();
+    });
+    document.getElementById('history-btn-export')?.addEventListener('click', exportHistoryCSV);
+    document.getElementById('history-btn-stats')?.addEventListener('click', toggleHistoryStats);
+    document.getElementById('history-btn-clear')?.addEventListener('click', clearHistory);
+    document.getElementById('history-filter-game')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            historyCurrentPage = 0;
+            loadHistory();
+        }
+    });
 
 
     // Games to watch management
@@ -2200,6 +2222,299 @@ function renderWantedItems(tree) {
         groupEl.appendChild(campaignListEl);
         container.appendChild(groupEl);
     });
+}
+
+// ==================== Drop History ====================
+
+const HISTORY_PAGE_SIZE = 50;
+let historyAllEntries = [];
+let historyCurrentPage = 0;
+let historyStatsVisible = false;
+
+async function loadHistory() {
+    const game = document.getElementById('history-filter-game')?.value.trim() || '';
+    const since = document.getElementById('history-filter-since')?.value || '';
+
+    const params = new URLSearchParams();
+    if (game) params.set('game', game);
+    if (since) params.set('since', since);
+    params.set('limit', '5000');
+
+    try {
+        const res = await fetch(`/api/history?${params.toString()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        historyAllEntries = data.entries || [];
+        updateHistoryCount(data.total, historyAllEntries.length);
+        renderHistoryPage(historyCurrentPage);
+        renderHistoryPagination();
+    } catch (err) {
+        setHistoryTbodyMessage(`Error loading history: ${err.message}`);
+    }
+}
+
+function renderHistoryPage(page) {
+    const tbody = document.getElementById('history-tbody');
+    if (!tbody) return;
+
+    const start = page * HISTORY_PAGE_SIZE;
+    const slice = historyAllEntries.slice(start, start + HISTORY_PAGE_SIZE);
+
+    if (slice.length === 0) {
+        setHistoryTbodyMessage('No drops recorded yet.');
+        return;
+    }
+
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+    slice.forEach((entry, idx) => {
+        const tr = document.createElement('tr');
+        tr.style.cssText =
+            'border-bottom: 1px solid var(--border-color, #333);' +
+            (idx % 2 === 0
+                ? 'background: var(--bg-row-even, transparent);'
+                : 'background: var(--bg-row-odd, rgba(255,255,255,0.02));');
+
+        const claimedAt = new Date(entry.claimed_at);
+        const dateStr = isNaN(claimedAt) ? entry.claimed_at : claimedAt.toLocaleString();
+
+        appendHistoryCell(tr, dateStr, 'white-space:nowrap');
+        appendHistoryCell(tr, entry.game, 'font-weight:600');
+        appendHistoryCell(tr, entry.campaign);
+        appendHistoryCell(tr, entry.drop_name);
+        appendHistoryCell(
+            tr,
+            Array.isArray(entry.benefits) ? entry.benefits.join(', ') : entry.benefits,
+            'color:var(--text-muted,#888); font-size:0.85em'
+        );
+        appendHistoryCell(tr, String(entry.required_minutes), 'text-align:right');
+
+        tbody.appendChild(tr);
+    });
+}
+
+function appendHistoryCell(tr, text, extraStyle) {
+    const td = document.createElement('td');
+    td.style.cssText = 'padding: 8px 12px;' + (extraStyle || '');
+    td.textContent = text;
+    tr.appendChild(td);
+}
+
+function setHistoryTbodyMessage(msg) {
+    const tbody = document.getElementById('history-tbody');
+    if (!tbody) return;
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 6;
+    td.style.cssText = 'padding:24px; text-align:center; color:var(--text-muted,#888)';
+    td.textContent = msg;
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+}
+
+function updateHistoryCount(total, returned) {
+    const el = document.getElementById('history-count');
+    if (!el) return;
+    el.textContent = returned < total
+        ? `Showing ${returned} of ${total} drops (filtered)`
+        : `${total} drop${total !== 1 ? 's' : ''} total`;
+}
+
+function renderHistoryPagination() {
+    const container = document.getElementById('history-pagination');
+    if (!container) return;
+    while (container.firstChild) container.removeChild(container.firstChild);
+
+    const totalPages = Math.ceil(historyAllEntries.length / HISTORY_PAGE_SIZE);
+    if (totalPages <= 1) return;
+
+    if (historyCurrentPage > 0) {
+        container.appendChild(makeHistoryPageBtn('← Prev', () => {
+            historyCurrentPage--;
+            renderHistoryPage(historyCurrentPage);
+            renderHistoryPagination();
+            scrollHistoryToTable();
+        }));
+    }
+
+    historyPageRange(historyCurrentPage, totalPages).forEach((p) => {
+        if (p === '…') {
+            const span = document.createElement('span');
+            span.textContent = '…';
+            span.style.padding = '5px 8px';
+            container.appendChild(span);
+        } else {
+            const btn = makeHistoryPageBtn(String(p + 1), () => {
+                historyCurrentPage = p;
+                renderHistoryPage(historyCurrentPage);
+                renderHistoryPagination();
+                scrollHistoryToTable();
+            });
+            if (p === historyCurrentPage) {
+                btn.style.background = 'var(--accent,#7287fd)';
+                btn.style.color = '#fff';
+            }
+            container.appendChild(btn);
+        }
+    });
+
+    if (historyCurrentPage < totalPages - 1) {
+        container.appendChild(makeHistoryPageBtn('Next →', () => {
+            historyCurrentPage++;
+            renderHistoryPage(historyCurrentPage);
+            renderHistoryPagination();
+            scrollHistoryToTable();
+        }));
+    }
+}
+
+function makeHistoryPageBtn(label, onClick) {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    btn.style.cssText =
+        'padding:5px 12px; border-radius:6px; border:1px solid var(--border-color,#444);' +
+        'background:var(--bg-button,#313244); color:var(--text-primary,#cdd6f4); cursor:pointer;';
+    btn.addEventListener('click', onClick);
+    return btn;
+}
+
+function historyPageRange(current, total) {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i);
+
+    const pages = [];
+    if (current <= 3) {
+        pages.push(0, 1, 2, 3, 4, '…', total - 1);
+    } else if (current >= total - 4) {
+        pages.push(0, '…', total - 5, total - 4, total - 3, total - 2, total - 1);
+    } else {
+        pages.push(0, '…', current - 1, current, current + 1, '…', total - 1);
+    }
+    return pages;
+}
+
+function scrollHistoryToTable() {
+    document.getElementById('history-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function exportHistoryCSV() {
+    const game = document.getElementById('history-filter-game')?.value.trim() || '';
+    const since = document.getElementById('history-filter-since')?.value || '';
+
+    const params = new URLSearchParams();
+    if (game) params.set('game', game);
+    if (since) params.set('since', since);
+
+    const url = `/api/history/export.csv?${params.toString()}`;
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = game ? `drop_history_${game}.csv` : 'drop_history.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+async function toggleHistoryStats() {
+    const panel = document.getElementById('history-stats-panel');
+    if (!panel) return;
+
+    historyStatsVisible = !historyStatsVisible;
+    panel.style.display = historyStatsVisible ? 'block' : 'none';
+
+    if (!historyStatsVisible) return;
+
+    try {
+        const res = await fetch('/api/history/stats');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        renderHistoryStats(data);
+    } catch (err) {
+        console.error('Failed to load stats:', err);
+    }
+}
+
+function renderHistoryStats(data) {
+    const totalEl = document.getElementById('stats-total');
+    if (totalEl) totalEl.textContent = data.total_drops;
+
+    const gameEl = document.getElementById('stats-by-game');
+    if (gameEl) {
+        while (gameEl.firstChild) gameEl.removeChild(gameEl.firstChild);
+
+        const label = makeElement('div', {
+            style: 'font-size:0.75rem; color:var(--text-muted,#888); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;'
+        }, 'By game');
+        gameEl.appendChild(label);
+
+        Object.entries(data.by_game || {}).slice(0, 10).forEach(([game, count]) => {
+            const row = makeElement('div', {
+                style: 'display:flex; justify-content:space-between; gap:16px; padding:2px 0;'
+            });
+            row.appendChild(makeElement('span', {}, game));
+            row.appendChild(makeElement('span', {
+                style: 'font-weight:700; color:var(--accent,#7287fd)'
+            }, count));
+            gameEl.appendChild(row);
+        });
+    }
+
+    const monthEl = document.getElementById('stats-by-month');
+    if (monthEl) {
+        while (monthEl.firstChild) monthEl.removeChild(monthEl.firstChild);
+
+        const label = makeElement('div', {
+            style: 'font-size:0.75rem; color:var(--text-muted,#888); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;'
+        }, 'By month');
+        monthEl.appendChild(label);
+
+        Object.entries(data.by_month || {}).reverse().slice(0, 6).forEach(([month, count]) => {
+            const row = makeElement('div', {
+                style: 'display:flex; justify-content:space-between; gap:16px; padding:2px 0;'
+            });
+            row.appendChild(makeElement('span', {}, month));
+            row.appendChild(makeElement('span', {
+                style: 'font-weight:700; color:var(--accent,#7287fd)'
+            }, count));
+            monthEl.appendChild(row);
+        });
+    }
+}
+
+async function clearHistory() {
+    const confirmed = window.confirm(
+        'Are you sure you want to delete the entire drop history? This cannot be undone.'
+    );
+    if (!confirmed) return;
+
+    try {
+        const res = await fetch('/api/history', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ confirm: true }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        historyAllEntries = [];
+        historyCurrentPage = 0;
+        updateHistoryCount(0, 0);
+        setHistoryTbodyMessage('History cleared.');
+        renderHistoryPagination();
+
+        if (historyStatsVisible) {
+            const totalEl = document.getElementById('stats-total');
+            if (totalEl) totalEl.textContent = '0';
+
+            ['stats-by-game', 'stats-by-month'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) while (el.firstChild) el.removeChild(el.firstChild);
+            });
+        }
+    } catch (err) {
+        alert(`Failed to clear history: ${err.message}`);
+    }
 }
 
 // ==================== DOM Utilities ====================

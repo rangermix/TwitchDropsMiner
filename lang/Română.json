@@ -50,7 +50,8 @@
             "main": "Principal",
             "inventory": "Inventar",
             "settings": "Setări",
-            "help": "Ajutor"
+            "help": "Ajutor",
+            "history": "Istoric"
         },
         "login": {
             "name": "Formular de conectare",

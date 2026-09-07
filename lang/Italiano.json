@@ -50,7 +50,8 @@
             "main": "Principale",
             "inventory": "Inventario",
             "settings": "Impostazioni",
-            "help": "Aiuto"
+            "help": "Aiuto",
+            "history": "Cronologia"
         },
         "login": {
             "name": "Dettagli Login",
