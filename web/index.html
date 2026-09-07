@@ -235,6 +235,32 @@
                 </section>
 
                 <section class="settings-section">
+                    <h2 id="settings-hours-header">Mining Hours</h2>
+                    <p id="settings-hours-help" class="help-text">Choose when the bot may mine drops. Outside
+                        the selected window the miner idles and resumes automatically.</p>
+                    <div class="benefits-filter filter-checkboxes">
+                        <label class="filter-checkbox">
+                            <input type="radio" name="mining-hours-mode" id="mining-hours-always" checked />
+                            <span id="settings-hours-always-label">All day (24/7)</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="radio" name="mining-hours-mode" id="mining-hours-range" />
+                            <span id="settings-hours-range-label">Custom time range</span>
+                        </label>
+                    </div>
+                    <div id="mining-hours-range-inputs">
+                        <label>
+                            <span id="settings-hours-start-label">Start:</span>
+                            <input type="time" id="mining-hours-start" value="08:00">
+                        </label>
+                        <label>
+                            <span id="settings-hours-end-label">End:</span>
+                            <input type="time" id="mining-hours-end" value="22:00">
+                        </label>
+                    </div>
+                </section>
+
+                <section class="settings-section">
                     <h2 id="settings-drop-blacklist-header">Ignored Drop Keywords</h2>
                     <p id="settings-drop-blacklist-help" class="help-text">Enter one keyword per line. Matching
                         drops and their dependent branches will not be mined.</p>

@@ -36,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Bezczynność",
+            "outside_hours": "Poza godzinami zbierania",
             "ready": "Gotowy",
             "exiting": "Zamykanie...",
             "terminated": "Zatrzymano",
@@ -157,6 +158,12 @@
             "clear_all_cache": "Wyczyść całą pamięć podręczną",
             "clear_all_cache_help": "Usuwa lokalny stan kampanii, kanałów i pochodne dane minera; zachowuje logowanie i ustawienia, a następnie ponownie pobiera dane z Twitcha.",
             "mining_benefits": "Korzyści z Minowania",
+            "mining_hours": "Godziny zbierania",
+            "mining_hours_help": "Wybierz, kiedy bot może zbierać dropy. Poza wybranym zakresem godzin miner pozostaje bezczynny i wznawia działanie automatycznie.",
+            "mining_hours_always": "Cała doba (24/7)",
+            "mining_hours_range": "Własny zakres godzin",
+            "mining_hours_start": "Początek",
+            "mining_hours_end": "Koniec",
             "mining_benefits_help": "Wybierz rodzaje dropów, które chcesz zdobywać."
         },
         "help": {

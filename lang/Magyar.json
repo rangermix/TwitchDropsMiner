@@ -36,6 +36,7 @@
         "status": {
             "name": "Állapot",
             "idle": "Tétlen",
+            "outside_hours": "A bányászati időn kívül",
             "ready": "Kész",
             "exiting": "Kilépés...",
             "terminated": "Leállítva",
@@ -103,6 +104,12 @@
                 "dark_mode": "Sötét mód"
             },
             "mining_benefits": "Bányászati előnyök",
+            "mining_hours": "Bányászati idő",
+            "mining_hours_help": "Válaszd ki, mikor gyűjthet a bot dropokat. A kiválasztott időablakon kívül a bányász tétlen, majd automatikusan folytatja.",
+            "mining_hours_always": "Egész nap (24/7)",
+            "mining_hours_range": "Egyéni időtartomány",
+            "mining_hours_start": "Kezdés",
+            "mining_hours_end": "Vége",
             "mining_benefits_help": "Válassza ki, mely típusú jutalmakat szeretné bányászni.",
             "reload": "Kampányok újratöltése",
             "reload_campaigns": "Kampányok újratöltése",

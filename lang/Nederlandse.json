@@ -36,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Inactief",
+            "outside_hours": "Buiten de mining-uren",
             "ready": "Klaar",
             "exiting": "Beëindigd...",
             "terminated": "Geannuleerd",
@@ -157,6 +158,12 @@
             "clear_all_cache": "Volledige cache wissen",
             "clear_all_cache_help": "Wist de lokale campagne-, kanaal- en afgeleide minerstatus; behoudt je aanmelding en instellingen en laadt daarna opnieuw vanaf Twitch.",
             "mining_benefits": "Mining Voordelen",
+            "mining_hours": "Mining-uren",
+            "mining_hours_help": "Kies wanneer de bot drops mag minen. Buiten het gekozen venster rust de miner uit en hervat hij automatisch.",
+            "mining_hours_always": "De hele dag (24/7)",
+            "mining_hours_range": "Aangepast tijdsbereik",
+            "mining_hours_start": "Start",
+            "mining_hours_end": "Einde",
             "mining_benefits_help": "Selecteer welke soorten drops je wilt minen."
         },
         "help": {

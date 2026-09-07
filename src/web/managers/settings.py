@@ -132,6 +132,9 @@ class SettingsManager:
         should_trigger_update |= self.check_and_update_setting(
             "mining_benefits", settings_data.get("mining_benefits"), True
         )
+        should_trigger_update |= self.check_and_update_setting(
+            "mining_hours", settings_data.get("mining_hours"), True
+        )
 
         self._settings.save()
         response_settings = self.get_settings(legacy_show_not_linked)

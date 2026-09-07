@@ -54,6 +54,7 @@ class GUIStatus(TypedDict):
     fetching_inventory: str
     fetching_campaigns: str
     adding_campaigns: str
+    outside_hours: str
 
 
 class GUITabs(TypedDict):
@@ -201,6 +202,12 @@ class GUISettings(TypedDict):
     actions: str
     connection_quality: str
     minimum_refresh: str
+    mining_hours: str
+    mining_hours_help: str
+    mining_hours_always: str
+    mining_hours_range: str
+    mining_hours_start: str
+    mining_hours_end: str
 
 
 class GUIHelp(TypedDict):

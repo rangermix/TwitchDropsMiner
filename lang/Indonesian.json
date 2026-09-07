@@ -36,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Tidak aktif",
+            "outside_hours": "Di luar jam penambangan",
             "ready": "Siap",
             "exiting": "Keluar...",
             "terminated": "Diakhiri",
@@ -157,6 +158,12 @@
             "clear_all_cache": "Hapus Semua Cache",
             "clear_all_cache_help": "Menghapus status kampanye, channel, dan data turunan miner lokal; mempertahankan login dan pengaturan, lalu memuat ulang data dari Twitch.",
             "mining_benefits": "Manfaat Penambangan",
+            "mining_hours": "Jam Penambangan",
+            "mining_hours_help": "Pilih kapan bot boleh menambang drop. Di luar rentang waktu yang dipilih, penambang akan berhenti dan melanjutkan secara otomatis.",
+            "mining_hours_always": "Sepanjang hari (24/7)",
+            "mining_hours_range": "Rentang waktu khusus",
+            "mining_hours_start": "Mulai",
+            "mining_hours_end": "Selesai",
             "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang."
         },
         "help": {

@@ -36,6 +36,7 @@
         "status": {
             "name": "Stato",
             "idle": "Inattivo",
+            "outside_hours": "Fuori dall'orario di mining",
             "ready": "Pronto",
             "exiting": "Uscendo...",
             "terminated": "Terminato",
@@ -157,6 +158,12 @@
             "clear_all_cache": "Svuota tutta la cache",
             "clear_all_cache_help": "Cancella lo stato locale di campagne, canali e i dati derivati del miner; mantiene l’accesso e le impostazioni, quindi ricarica i dati da Twitch.",
             "mining_benefits": "Vantaggi Minatori",
+            "mining_hours": "Orario di mining",
+            "mining_hours_help": "Scegli quando il bot può minare i drop. Fuori dalla finestra selezionata il miner resta inattivo e riprende automaticamente.",
+            "mining_hours_always": "Tutto il giorno (24/7)",
+            "mining_hours_range": "Intervallo di tempo personalizzato",
+            "mining_hours_start": "Inizio",
+            "mining_hours_end": "Fine",
             "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare."
         },
         "help": {

@@ -36,6 +36,7 @@
         "status": {
             "name": "État",
             "idle": "Inactif",
+            "outside_hours": "Hors des heures de minage",
             "ready": "Prêt",
             "exiting": "Sortie...",
             "terminated": "Terminé",
@@ -157,6 +158,12 @@
             "connection_quality": "Qualité de connexion :",
             "minimum_refresh": "Intervalle minimum de rafraîchissement (minutes) :",
             "mining_benefits": "Avantages du Minage",
+            "mining_hours": "Heures de minage",
+            "mining_hours_help": "Choisissez quand le bot peut miner les drops. En dehors de la plage choisie, le mineur reste inactif et reprend automatiquement.",
+            "mining_hours_always": "Toute la journée (24/7)",
+            "mining_hours_range": "Plage horaire personnalisée",
+            "mining_hours_start": "Début",
+            "mining_hours_end": "Fin",
             "mining_benefits_help": "Sélectionnez les types de drops que vous souhaitez miner."
         },
         "help": {

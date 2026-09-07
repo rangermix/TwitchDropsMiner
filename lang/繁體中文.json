@@ -36,6 +36,7 @@
         "status": {
             "name": "狀態",
             "idle": "已完成獲取",
+            "outside_hours": "非開採時段",
             "ready": "就緒",
             "exiting": "正在退出…",
             "terminated": "已終止運行",
@@ -157,6 +158,12 @@
             "clear_all_cache": "清除所有快取",
             "clear_all_cache_help": "清除本機活動、頻道和挖礦器衍生狀態；保留登入資訊和設定，然後從 Twitch 重新載入。",
             "mining_benefits": "挖掘獎勵",
+            "mining_hours": "開採時段",
+            "mining_hours_help": "選擇機器人可以撿取掉落的時段。在所選時段之外，礦工將保持閒置並自動恢復。",
+            "mining_hours_always": "全天（24/7）",
+            "mining_hours_range": "自訂時間區間",
+            "mining_hours_start": "開始",
+            "mining_hours_end": "結束",
             "mining_benefits_help": "選擇您想要獲取的掉落類型。"
         },
         "help": {

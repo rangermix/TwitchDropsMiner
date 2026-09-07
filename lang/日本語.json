@@ -36,6 +36,7 @@
         "status": {
             "name": "ステータス",
             "idle": "アイドル",
+            "outside_hours": "マイニング時間外",
             "ready": "準備完了",
             "exiting": "終了しています...",
             "terminated": "終了",
@@ -157,6 +158,12 @@
             "clear_all_cache": "すべてのキャッシュを消去",
             "clear_all_cache_help": "ローカルのキャンペーン、チャンネル、およびマイナーの派生状態を消去します。ログイン情報と設定は保持し、その後 Twitch から再読み込みします。",
             "mining_benefits": "マイニング特典",
+            "mining_hours": "マイニング時間",
+            "mining_hours_help": "ボットがドロップを集める時間を選択します。設定した時間外はマイナーが待機し、自動的に再開します。",
+            "mining_hours_always": "終日（24/7）",
+            "mining_hours_range": "時間帯を指定",
+            "mining_hours_start": "開始",
+            "mining_hours_end": "終了",
             "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。"
         },
         "help": {

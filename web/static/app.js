@@ -1093,6 +1093,14 @@ function updateSettingsUI(settings) {
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
 
+    const miningHours = settings.mining_hours || { mode: 'always', start: '08:00', end: '22:00' };
+    const rangeMode = miningHours.mode === 'range';
+    document.getElementById('mining-hours-always').checked = !rangeMode;
+    document.getElementById('mining-hours-range').checked = rangeMode;
+    document.getElementById('mining-hours-start').value = miningHours.start || '08:00';
+    document.getElementById('mining-hours-end').value = miningHours.end || '22:00';
+    toggleMiningHoursRange(rangeMode);
+
     const dropBlacklist = document.getElementById('drop-name-blacklist');
     if (dropBlacklist) {
         dropBlacklist.value = Array.isArray(settings.drop_name_blacklist)
@@ -1564,6 +1572,11 @@ function parseDropNameBlacklist(value) {
         .filter(Boolean);
 }
 
+function toggleMiningHoursRange(enabled) {
+    const container = document.getElementById('mining-hours-range-inputs');
+    if (container) container.style.display = enabled ? '' : 'none';
+}
+
 async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
@@ -1582,6 +1595,11 @@ async function saveSettings() {
             "BADGE": document.getElementById('mining-benefit-badge')?.checked,
             "EMOTE": document.getElementById('mining-benefit-emote')?.checked,
             "UNKNOWN": document.getElementById('mining-benefit-unknown')?.checked
+        },
+        mining_hours: {
+            mode: document.getElementById('mining-hours-range').checked ? 'range' : 'always',
+            start: document.getElementById('mining-hours-start').value || '08:00',
+            end: document.getElementById('mining-hours-end').value || '22:00'
         }
     };
 
@@ -1785,6 +1803,24 @@ function applyTranslations(t) {
 
         const benefitsHelp = document.getElementById('settings-benefits-help');
         if (benefitsHelp && t.gui.settings.mining_benefits_help) benefitsHelp.textContent = t.gui.settings.mining_benefits_help;
+
+        const hoursHeader = document.getElementById('settings-hours-header');
+        if (hoursHeader && t.gui.settings.mining_hours) hoursHeader.textContent = t.gui.settings.mining_hours;
+
+        const hoursHelp = document.getElementById('settings-hours-help');
+        if (hoursHelp && t.gui.settings.mining_hours_help) hoursHelp.textContent = t.gui.settings.mining_hours_help;
+
+        const hoursAlwaysLabel = document.getElementById('settings-hours-always-label');
+        if (hoursAlwaysLabel && t.gui.settings.mining_hours_always) hoursAlwaysLabel.textContent = t.gui.settings.mining_hours_always;
+
+        const hoursRangeLabel = document.getElementById('settings-hours-range-label');
+        if (hoursRangeLabel && t.gui.settings.mining_hours_range) hoursRangeLabel.textContent = t.gui.settings.mining_hours_range;
+
+        const hoursStartLabel = document.getElementById('settings-hours-start-label');
+        if (hoursStartLabel && t.gui.settings.mining_hours_start) hoursStartLabel.textContent = t.gui.settings.mining_hours_start + ' ';
+
+        const hoursEndLabel = document.getElementById('settings-hours-end-label');
+        if (hoursEndLabel && t.gui.settings.mining_hours_end) hoursEndLabel.textContent = t.gui.settings.mining_hours_end + ' ';
 
         const gamesHelp = document.getElementById('settings-games-help');
         if (gamesHelp) gamesHelp.textContent = t.gui.settings.games_help;
@@ -2055,6 +2091,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
     document.getElementById('minimum-refresh-interval').addEventListener('change', saveSettings);
+    document.getElementById('mining-hours-always').addEventListener('change', () => {
+        toggleMiningHoursRange(false);
+        saveSettings();
+    });
+    document.getElementById('mining-hours-range').addEventListener('change', () => {
+        toggleMiningHoursRange(true);
+        saveSettings();
+    });
+    document.getElementById('mining-hours-start').addEventListener('change', saveSettings);
+    document.getElementById('mining-hours-end').addEventListener('change', saveSettings);
     document.getElementById('drop-name-blacklist').addEventListener('change', saveSettings);
     // Proxy uses a manual "Set Proxy" button instead of auto-save
     document.getElementById('set-proxy-btn').addEventListener('click', () => {

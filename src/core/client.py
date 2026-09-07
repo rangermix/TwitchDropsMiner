@@ -33,6 +33,7 @@ from src.services.stream_selector import StreamSelector
 from src.services.watch_service import WatchService
 from src.utils import (
     AwaitableValue,
+    window_status,
 )
 from src.websocket import WebsocketPool
 
@@ -85,6 +86,8 @@ class Twitch:
         self.websocket = WebsocketPool(self)
         # Maintenance task
         self._mnt_task: asyncio.Task[None] | None = None
+        # Mining-hours schedule task
+        self._schedule_task: asyncio.Task[None] | None = None
         # Services
         self._maintenance_service: MaintenanceService = MaintenanceService(self)
         self._channel_service: ChannelService = ChannelService(self)
@@ -129,6 +132,9 @@ class Twitch:
         if self._mnt_task is not None:
             self._mnt_task.cancel()
             self._mnt_task = None
+        if self._schedule_task is not None:
+            self._schedule_task.cancel()
+            self._schedule_task = None
         # stop websocket and close HTTP session
         await self.websocket.stop(clear_topics=True)
         if self._http_client is not None:
@@ -199,6 +205,38 @@ class Twitch:
         """Return a callable that changes state when invoked (deferred call for GUI usage)."""
         return partial(self.change_state, state)
 
+    def is_mining_time(self) -> bool:
+        """Return whether the configured mining window includes the current local time."""
+        hours = self.settings.mining_hours
+        if not isinstance(hours, dict) or hours.get("mode") != "range":
+            return True
+        in_window, _ = window_status(
+            hours.get("start", ""), hours.get("end", ""), datetime.now()
+        )
+        return in_window
+
+    async def _mining_schedule_loop(self) -> None:
+        """Wake the state machine when the mining window reopens.
+
+        Idling outside the window is enforced by the state machine loop itself;
+        this task only sleeps until a window boundary and requests a fresh
+        inventory cycle (and therefore watching) once the window opens again.
+        """
+        while self._state is not State.EXIT:
+            hours = self.settings.mining_hours
+            mode = hours.get("mode") if isinstance(hours, dict) else "always"
+            if mode != "range":
+                await asyncio.sleep(60)
+                continue
+            _, seconds_until_boundary = window_status(
+                hours.get("start", ""), hours.get("end", ""), datetime.now()
+            )
+            await asyncio.sleep(max(seconds_until_boundary, 1))
+            # request_inventory_refresh is a no-op during shutdown, so no
+            # explicit EXIT guard is required before waking the state machine.
+            if self.is_mining_time():
+                self.request_inventory_refresh()
+
     def close(self) -> None:
         """
         Called when the application is requested to close by the user,
@@ -261,14 +299,29 @@ class Twitch:
                 ),
             ]
         )
+        # Mining-hours schedule task wakes the idle state machine when the
+        # configured window reopens (replaced on each run entry)
+        if self._schedule_task is not None:
+            self._schedule_task.cancel()
+        self._schedule_task = asyncio.create_task(self._mining_schedule_loop())
         full_cleanup: bool = False
         channels: Final[OrderedDict[int, Channel]] = self.channels
         self.request_inventory_refresh()
         while True:
             self._activate_pending_inventory_refresh()
             self._activate_pending_games_update()
+            if self._state is not State.EXIT and not self.is_mining_time():
+                # Outside the configured mining window: keep the miner idle and
+                # drop any queued refresh so no fetching/watching happens.
+                self._inventory_refresh_pending = False
+                if self._state is not State.IDLE:
+                    self.stop_watching()
+                    self.change_state(State.IDLE)
             if self._state is State.IDLE:
-                self.gui.status.update(_.t["gui"]["status"]["idle"])
+                if self.is_mining_time():
+                    self.gui.status.update(_.t["gui"]["status"]["idle"])
+                else:
+                    self.gui.status.update(_.t["gui"]["status"]["outside_hours"])
                 self.stop_watching()
                 # clear the flag and wait until it's set again
                 self._state_change.clear()
