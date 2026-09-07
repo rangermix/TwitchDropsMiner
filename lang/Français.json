@@ -157,7 +157,25 @@
             "connection_quality": "Qualité de connexion :",
             "minimum_refresh": "Intervalle minimum de rafraîchissement (minutes) :",
             "mining_benefits": "Avantages du Minage",
-            "mining_benefits_help": "Sélectionnez les types de drops que vous souhaitez miner."
+            "mining_benefits_help": "Sélectionnez les types de drops que vous souhaitez miner.",
+            "discord": {
+                "name": "Notifications Discord",
+                "description": "Recevez des notifications sur Discord lorsque vous réclamez des drops.",
+                "webhook_url": "URL du webhook Discord",
+                "webhook_url_hint": "Collez l'URL complète du webhook (elle contient votre jeton secret).",
+                "setup_steps": [
+                    "Ouvrez votre serveur Discord et accédez aux paramètres du salon (icône d'engrenage à côté du nom du salon)",
+                    "Allez dans Intégrations → Webhooks",
+                    "Cliquez sur Nouveau webhook, donnez-lui un nom et choisissez le salon textuel (voir <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Introduction aux webhooks</a>)",
+                    "Cliquez sur Copier l'URL du webhook - elle ressemble à : https://discord.com/api/webhooks/ID/TOKEN",
+                    "Collez l'URL dans le champ URL du webhook Discord dans Paramètres, puis cliquez sur Enregistrer les paramètres",
+                    "Cliquez sur Tester la connexion pour vérifier et recevoir une notification de test"
+                ],
+                "success": "✓ Connexion Discord réussie ! Vous recevrez les notifications de drops.",
+                "saved": "✓ Paramètres enregistrés avec succès !",
+                "error": "Échec de la connexion à Discord. Vérifiez l'URL de votre webhook.",
+                "missing_credentials": "Saisissez une URL de webhook Discord. Consultez les instructions dans l'onglet Aide."
+            }
         },
         "help": {
             "about": "À propos de Twitch Drops Miner",

@@ -157,7 +157,25 @@
             "connection_quality": "Verbindungsqualität:",
             "minimum_refresh": "Minimales Aktualisierungsintervall (Minuten):",
             "mining_benefits": "Mining-Vorteile",
-            "mining_benefits_help": "Wählen Sie, welche Arten von Drops Sie minen möchten."
+            "mining_benefits_help": "Wählen Sie, welche Arten von Drops Sie minen möchten.",
+            "discord": {
+                "name": "Discord-Benachrichtigungen",
+                "description": "Erhalte Benachrichtigungen auf Discord, wenn du Drops einlöst.",
+                "webhook_url": "Discord-Webhook-URL",
+                "webhook_url_hint": "Füge die vollständige Webhook-URL ein (sie enthält dein geheimes Token).",
+                "setup_steps": [
+                    "Öffne deinen Discord-Server und gehe zu den Kanal-Einstellungen (Zahnrad-Symbol neben dem Kanalnamen)",
+                    "Gehe zu Integrationen → Webhooks",
+                    "Klicke auf Neuer Webhook, gib einen Namen ein und wähle den Textkanal aus (siehe <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Einführung in Webhooks</a>)",
+                    "Klicke auf Webhook-URL kopieren - sie sieht so aus: https://discord.com/api/webhooks/ID/TOKEN",
+                    "Füge die URL in das Feld Discord-Webhook-URL in den Einstellungen ein und klicke auf Einstellungen speichern",
+                    "Klicke auf Verbindung testen, um zu prüfen und eine Testbenachrichtigung zu erhalten"
+                ],
+                "success": "✓ Discord-Verbindung erfolgreich! Du erhältst Drop-Benachrichtigungen.",
+                "saved": "✓ Einstellungen erfolgreich gespeichert!",
+                "error": "Verbindung zu Discord fehlgeschlagen. Bitte überprüfe deine Webhook-URL.",
+                "missing_credentials": "Bitte gib eine Discord-Webhook-URL ein. Anleitungen findest du im Help-Tab."
+            }
         },
         "help": {
             "about": "Über Twitch Drops Miner",

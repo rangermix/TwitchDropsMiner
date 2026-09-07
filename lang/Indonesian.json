@@ -157,7 +157,25 @@
             "clear_all_cache": "Hapus Semua Cache",
             "clear_all_cache_help": "Menghapus status kampanye, channel, dan data turunan miner lokal; mempertahankan login dan pengaturan, lalu memuat ulang data dari Twitch.",
             "mining_benefits": "Manfaat Penambangan",
-            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang."
+            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang.",
+            "discord": {
+                "name": "Notifikasi Discord",
+                "description": "Terima notifikasi di Discord saat kamu mengklaim drop.",
+                "webhook_url": "URL Webhook Discord",
+                "webhook_url_hint": "Tempel URL webhook lengkap (berisi token rahasia kamu).",
+                "setup_steps": [
+                    "Buka server Discord-mu dan masuk ke pengaturan saluran (ikon roda gigi di samping nama saluran)",
+                    "Masuk ke Integrasi → Webhooks",
+                    "Klik Webhook baru, beri nama, dan pilih saluran teks (lihat <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Pengenalan webhook</a>)",
+                    "Klik Salin URL webhook - bentuknya seperti: https://discord.com/api/webhooks/ID/TOKEN",
+                    "Tempel URL ke kolom URL Webhook Discord di Pengaturan lalu klik Simpan pengaturan",
+                    "Klik Uji koneksi untuk memverifikasi dan menerima notifikasi uji"
+                ],
+                "success": "✓ Koneksi Discord berhasil! Kamu akan menerima notifikasi drop.",
+                "saved": "✓ Pengaturan berhasil disimpan!",
+                "error": "Gagal terhubung ke Discord. Periksa URL webhook-mu.",
+                "missing_credentials": "Masukkan URL Webhook Discord. Lihat petunjuk di tab Bantuan."
+            }
         },
         "help": {
             "about": "Tentang Twitch Drops Miner",

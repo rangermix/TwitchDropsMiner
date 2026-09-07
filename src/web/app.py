@@ -77,6 +77,7 @@ class SettingsUpdate(BaseModel):
     proxy: str | None = None
     connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
+    discord_webhook_url: str | None = None
     inventory_filters: dict | None = None
     inventory_list_view: bool | None = None
     mining_benefits: dict[str, bool] | None = None
@@ -84,6 +85,10 @@ class SettingsUpdate(BaseModel):
 
 class ProxyVerifyRequest(BaseModel):
     proxy: str
+
+
+class DiscordTestRequest(BaseModel):
+    discord_webhook_url: str
 
 
 # ==================== REST API Endpoints ====================
@@ -247,6 +252,52 @@ async def verify_proxy(request: ProxyVerifyRequest):
                 }
     except Exception as e:
         return {"success": False, "message": f"Connection failed: {str(e)}"}
+
+
+@app.post("/api/settings/test-discord")
+async def test_discord(request: DiscordTestRequest):
+    """Test Discord webhook connection"""
+    # Ensure project root is on sys.path so `src` package can be imported
+    import sys
+    from pathlib import Path
+
+    project_root = Path(__file__).parent.parent.parent
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+
+    from src.services.discord_service import DiscordNotifier
+    from src.web.managers.settings import DISCORD_WEBHOOK_MASK
+
+    # Never trust a masked/empty URL from the client: fall back to the stored
+    # webhook so tests work without echoing the secret back.
+    webhook_url = (request.discord_webhook_url or "").strip()
+    if gui_manager is not None:
+        stored_settings = getattr(gui_manager.settings, "_settings", None)
+        if not webhook_url or webhook_url == DISCORD_WEBHOOK_MASK:
+            webhook_url = str(getattr(stored_settings, "discord_webhook_url", "") or "").strip()
+
+    if not webhook_url:
+        return {"success": False, "message": "Discord Webhook URL is required"}
+
+    try:
+        notifier = DiscordNotifier(webhook_url)
+        result = await notifier.test_connection()
+
+        if result:
+            return {
+                "success": True,
+                "message": "✓ Discord connection successful! You will receive drop notifications."
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Failed to connect to Discord. Please check your Webhook URL."
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Discord error: {str(e)}"
+        }
 
 
 @app.get("/api/version")

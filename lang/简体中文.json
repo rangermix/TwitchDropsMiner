@@ -157,7 +157,25 @@
             "clear_all_cache": "清除所有缓存",
             "clear_all_cache_help": "清除本地活动、频道和挖矿器派生状态；保留登录信息和设置，然后从 Twitch 重新加载。",
             "mining_benefits": "挖掘奖励",
-            "mining_benefits_help": "选择您想要获取的掉落类型。"
+            "mining_benefits_help": "选择您想要获取的掉落类型。",
+            "discord": {
+                "name": "Discord 通知",
+                "description": "领取掉落物时在 Discord 上接收通知。",
+                "webhook_url": "Discord Webhook 地址",
+                "webhook_url_hint": "粘贴完整的 Webhook 地址（其中包含你的密钥 Token）。",
+                "setup_steps": [
+                    "打开你的 Discord 服务器，进入频道名称旁的齿轮图标打开的频道设置",
+                    "进入「集成」→「Webhooks」",
+                    "点击「新建 Webhook」、命名并选择文本频道（参见 <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Webhook 入门</a>）",
+                    "点击「复制 Webhook 地址」——格式类似：https://discord.com/api/webhooks/ID/TOKEN",
+                    "将地址粘贴到设置中的 Discord Webhook 地址输入框，点击「保存设置」",
+                    "点击「测试连接」验证，并接收一条测试通知"
+                ],
+                "success": "✓ Discord 连接成功！你将收到掉落物通知。",
+                "saved": "✓ 设置保存成功！",
+                "error": "无法连接到 Discord。请检查你的 Webhook 地址。",
+                "missing_credentials": "请输入 Discord Webhook 地址。操作说明见「帮助」标签页。"
+            }
         },
         "help": {
             "about": "关于 Twitch 掉宝矿工",

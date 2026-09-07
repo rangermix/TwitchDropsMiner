@@ -25,6 +25,7 @@ class InventoryFilters(TypedDict):
 default_settings = {
     "connection_quality": 1,
     "dark_mode": False,
+    "discord_webhook_url": "",
     "drop_name_blacklist": [],
     "games_to_watch": [],
     "language": DEFAULT_LANG,
@@ -56,6 +57,7 @@ default_settings = {
 class Settings:
     connection_quality: int
     dark_mode: bool
+    discord_webhook_url: str
     drop_name_blacklist: list[str]
     games_to_watch: list[str]
     language: str
