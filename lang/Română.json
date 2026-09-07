@@ -24,10 +24,7 @@
             "logging_in": "Se conectează...",
             "required": "Este necesară conectarea",
             "waiting_auth": "Se așteaptă autentificarea..."
-        },
-        "oauth_prompt": "Introduceți acest cod la:",
-        "oauth_activate": "Activează Twitch",
-        "oauth_confirm": "Am introdus codul"
+        }
     },
     "error": {
         "captcha": "Conexiunea a fost respinsă de CAPTCHA. Vă rugăm să încercați din nou în aprox. 12 ore.",
@@ -46,7 +43,8 @@
             "switching": "Colectarea canalelor în curs...",
             "fetching_inventory": "Se precuperează inventarul...",
             "fetching_campaigns": "Se recuperează campaniile...",
-            "adding_campaigns": "S-a adăugat lista de campanii la inventar... {counter}"
+            "adding_campaigns": "S-a adăugat lista de campanii la inventar... {counter}",
+            "ready": "Gata"
         },
         "tabs": {
             "main": "Principal",
@@ -104,12 +102,32 @@
                 "active": "Activ ✔",
                 "upcoming": "În viitor ⏳",
                 "expired": "Expirat ❌",
-                "claimed": "Revendicat ✔"
+                "claimed": "Revendicat ✔",
+                "ignored": "Ignorat",
+                "skipped": "Omis"
             },
             "starts": "Începe : {time}",
             "ends": "Se termină : {time}",
             "no_campaigns": "Nicio campanie încărcată încă...",
-            "claimed_drops": "revendicat"
+            "claimed_drops": "revendicat",
+            "ignored_drops": "{count} ignorate",
+            "skipped_drops": "{count} omise",
+            "ignored_keyword_reason": "Ignorat din cauza cuvântului-cheie: {keyword}",
+            "ignored_precondition_reason": "Ignorat deoarece depinde de {drop}",
+            "skipped_branch_reason": "Omis deoarece nicio recompensă ce poate fi minată nu depinde de acest drop.",
+            "filters": {
+                "active": "Activ",
+                "not_linked": "Neconectat",
+                "upcoming": "Viitor",
+                "expired": "Expirat",
+                "finished": "Terminat",
+                "item": "Obiect",
+                "badge": "Insignă",
+                "emote": "Emoticon",
+                "other": "Altele",
+                "clear": "Șterge filtre",
+                "search_placeholder": "Caută jocuri..."
+            }
         },
         "settings": {
             "general": {
@@ -144,7 +162,7 @@
                     "Salvați tokenul botului pe care îl primiți",
                     "Porniți noul bot căutând-o și dând clic pe /start (sau trimiteți orice mesaj)",
                     "Obțineți ID-ul dvs. de chat deschizând acest URL în browser (înlocuiți TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
-                    "Găsiți ID-ul utilizatorului în răspuns - acesta este numărul din \"from\": {\"id\": ID_DVS}",
+                    "Găsiți ID-ul utilizatorului în răspuns - acesta este numărul din \"from\": {\"id\": YOUR_ID}",
                     "Introduceți tokenul și ID-ul de chat și faceți clic pe Testare Conexiune"
                 ],
                 "saved": "✓ Setări salvate cu succes!",
@@ -154,7 +172,16 @@
                 "get_from_botfather": "Obțineți de la @BotFather",
                 "your_user_id": "ID-ul utilizatorului numeric Telegram"
             },
-            "reload_campaigns": "Reîncarcă campaniile"
+            "reload_campaigns": "Reîncarcă campaniile",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
+            "drop_name_blacklist": "Cuvinte-cheie pentru dropuri ignorate",
+            "drop_name_blacklist_help": "Introduceți un cuvânt-cheie pe fiecare linie. Potrivirea caută un subșir literal fără a diferenția majusculele de minuscule. Dropurile potrivite și ramurile dependente sunt ignorate; ramurile care servesc doar drept condiții prealabile sunt omise, iar condițiile prealabile comune pot fi minate în continuare.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Șterge tot cache-ul",
+            "clear_all_cache_help": "Șterge starea locală a campaniilor, canalelor și datele derivate ale minerului; păstrează autentificarea și setările, apoi reîncarcă datele de pe Twitch.",
+            "mining_benefits": "Beneficii Minerit",
+            "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați."
         },
         "help": {
             "about": "Despre Twitch Drops Miner",
@@ -191,6 +218,26 @@
             "manual_mode": "MANUAL",
             "connected": "Conectat",
             "disconnected": "Deconectat"
+        },
+        "footer": {
+            "version": "Versiune:",
+            "loading": "Se încarcă...",
+            "update_available": "Actualizare disponibilă:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Mod manual activ - vizionare joc specific"
+            },
+            "auto": {
+                "title": "Mod automat - urmărire prioritate jocuri"
+            },
+            "proxy": {
+                "title": "Conexiune proxy activă"
+            }
+        },
+        "wanted": {
+            "name": "Coadă Drops Dorite",
+            "none": "Niciun drop dorit în coadă..."
         }
     }
 }

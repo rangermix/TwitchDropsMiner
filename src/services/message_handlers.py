@@ -208,11 +208,12 @@ class MessageHandlerService:
 
             drop.update_claim(message["data"]["drop_instance_id"])
             campaign = drop.campaign
-            await drop.claim()
+            claim_result = await drop.claim()
             drop.display()
 
-            # Send Telegram notification if configured
-            await self._send_telegram_notification(drop)
+            # Only notify on a successful claim (GQL errors/rejections return False)
+            if claim_result:
+                await self._send_telegram_notification(drop)
 
             # About 4-20s after claiming the drop, next drop can be started
             # by re-sending the watch payload. We can test for it by fetching the current drop
@@ -236,7 +237,7 @@ class MessageHandlerService:
             if campaign.can_earn(watching_channel):
                 self._twitch.restart_watching()
             else:
-                self._twitch.change_state(State.INVENTORY_FETCH)
+                self._twitch.request_inventory_refresh()
             return
 
         assert msg_type == "drop-progress"
@@ -291,7 +292,7 @@ class MessageHandlerService:
         if message["type"] == "create-notification":
             data: JsonType = message["data"]["notification"]
             if data["type"] == "user_drop_reward_reminder_notification":
-                self._twitch.change_state(State.INVENTORY_FETCH)
+                self._twitch.request_inventory_refresh()
                 await self._twitch.gql_request(
                     GQL_OPERATIONS["NotificationsDelete"].with_variables(
                         {"input": {"id": data["id"]}}

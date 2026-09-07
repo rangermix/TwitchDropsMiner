@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import asyncio
 import logging
 import signal
@@ -16,7 +15,7 @@ import truststore
 if __name__ == "__main__":
     truststore.inject_into_ssl()
 
-    from src.config import FILE_FORMATTER, LOGGING_LEVELS
+    from src.config import FILE_FORMATTER
     from src.config.settings import Settings
     from src.core.client import Twitch
     from src.exceptions import CaptchaRequired
@@ -45,58 +44,9 @@ if __name__ == "__main__":
 
     warnings.simplefilter("default", ResourceWarning)
 
-    class ParsedArgs(argparse.Namespace):
-        _verbose: int
-        _debug_ws: bool
-        _debug_gql: bool
-        log: bool
-        dump: bool
-
-        # TODO: replace int with union of literal values once typeshed updates
-        @property
-        def logging_level(self) -> int:
-            return LOGGING_LEVELS[min(self._verbose, 4)]
-
-        @property
-        def debug_ws(self) -> int:
-            """
-            If the debug flag is True, return DEBUG.
-            If the main logging level is DEBUG, return INFO to avoid seeing raw messages.
-            Otherwise, return NOTSET to inherit the global logging level.
-            """
-            if self._debug_ws:
-                return logging.DEBUG
-            elif self._verbose >= 4:
-                return logging.INFO
-            return logging.NOTSET
-
-        @property
-        def debug_gql(self) -> int:
-            if self._debug_gql:
-                return logging.DEBUG
-            elif self._verbose >= 4:
-                return logging.INFO
-            return logging.NOTSET
-
-    # handle input parameters
-    logger.debug("Parsing command line arguments")
-    parser = argparse.ArgumentParser(
-        description="A program that allows you to mine timed drops on Twitch.",
-    )
-    parser.add_argument("--version", action="version", version=f"v{__version__}")
-    parser.add_argument("-v", dest="_verbose", action="count", default=0)
-    parser.add_argument("--dump", action="store_true")
-    # undocumented debug args
-    parser.add_argument("--debug-ws", dest="_debug_ws", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument(
-        "--debug-gql", dest="_debug_gql", action="store_true", help=argparse.SUPPRESS
-    )
-    logger.debug("Parsing arguments into ParsedArgs namespace")
-    args = parser.parse_args(namespace=ParsedArgs())
-    # load settings
     logger.debug("Loading settings")
     try:
-        settings = Settings(args)
+        settings = Settings()
     except Exception:
         logger.exception("Error while loading settings")
         print(f"Settings error: {traceback.format_exc()}", file=sys.stderr)
@@ -114,7 +64,9 @@ if __name__ == "__main__":
         logger.info(f"Platform: {sys.platform}")
         logger.info(f"Proxy: {settings.proxy}")
         logger.info(f"Language: {settings.language}")
-        logger.info(f"Minimum refresh interval: {settings.minimum_refresh_interval_minutes} minutes")
+        logger.info(
+            f"Minimum refresh interval: {settings.minimum_refresh_interval_minutes} minutes"
+        )
 
         exit_status = 0
         client = Twitch(settings)
@@ -197,7 +149,7 @@ if __name__ == "__main__":
             logger.info("Normal shutdown - proceeding")
         # save the application state
         logger.info("Saving application state")
-        client.save(force=True)
+        settings.save()
         logger.info("Application state saved")
         logger.info(f"=== Exiting with status code: {exit_status} ===")
         sys.exit(exit_status)

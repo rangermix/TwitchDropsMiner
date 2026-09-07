@@ -1,3 +1,132 @@
+# Release Notes - v1.2.6
+
+This patch release makes inventory filtering more predictable and keeps version metadata synchronized across source and packaged installations.
+
+### 🐛 Inventory Filter Fixes
+- **Finished Campaigns**: Fully claimed campaigns now stay hidden until the **Finished** filter is selected.
+- **Not Linked Filtering**: **Not Linked** now narrows the selected campaign statuses instead of broadening them, so combinations such as **Active + Not Linked** behave as expected.
+- **Live Completion Updates**: Campaigns disappear as soon as their final drop is claimed instead of waiting for an inventory reload.
+- **Settings Compatibility**: Existing saved filter settings migrate safely without unexpectedly restricting the inventory.
+
+### ⚙️ Release Reliability
+- **Consistent Versions**: Release automation now updates and validates `src/version.py`, `pyproject.toml`, and `uv.lock` together before publishing a tag or Docker image.
+- **Expanded Validation**: Release-script contracts and frontend filter behavior now run in continuous integration.
+
+### 🔗 Issues and Pull Requests
+- Resolved [#51](https://github.com/rangermix/TwitchDropsMiner/issues/51) and [#52](https://github.com/rangermix/TwitchDropsMiner/issues/52) in [#79](https://github.com/rangermix/TwitchDropsMiner/pull/79).
+- PR #79 supersedes the earlier, closed [#60](https://github.com/rangermix/TwitchDropsMiner/pull/60).
+- Release-version consistency and rollback safety were fixed in [#80](https://github.com/rangermix/TwitchDropsMiner/pull/80).
+
+### 🙌 Contributors
+- [@rangermix](https://github.com/rangermix) — implementation, migration, tests, and release maintenance.
+- [@SimpliAj](https://github.com/SimpliAj) — original Inventory-filter proposal in PR #60.
+
+# Release Notes - v1.2.5
+
+This update brings a major boost to drop progress reliability, a fresh look for your inventory, and significant improvements to the mobile experience. We’ve also streamlined our development pipeline to ensure faster and more stable future updates.
+
+### 🎨 Web Dashboard Improvements
+- **Inventory List View**: You can now choose between the classic masonry grid or a new horizontal row layout for your campaigns. Head over to the **Settings** tab to toggle the "Inventory List View" and see your campaign info and drops organized side-by-side.
+- **Mobile Responsiveness**: We’ve overhauled the layout for phones and small tablets. The dashboard now gracefully stacks headers, tab bars, and panels, ensuring you can manage your drops on the go without any annoying horizontal scrolling.
+
+### 🛠️ Core Functionality
+- **Restored Drop Progress**: We’ve updated how watch events are sent to Twitch. By switching to a direct Spade POST method, we’ve bypassed the broken GraphQL mutation, ensuring your watch time is correctly counted toward those drops again!
+- **Streamlined Data Handling**: Removed stale Spade payload caching in the `Stream` module to keep data fresh and prevent potential tracking issues.
+
+### 🐛 Bug Fixes
+- **Settings Persistence**: Fixed an issue where the "Inventory List View" checkbox would reset itself due to API model validation; your preferences will now save correctly.
+- **UI Scaling**: Fixed overlapping text and squeezed elements on small screens, specifically in the OAuth and campaign card sections.
+
+### 📚 Maintenance & Credits
+- **Contributor Automation**: Added new testing and automation tools to speed up our development process and ensure higher code quality.
+- **Special Thanks**: A shoutout to **Fengqing Liu** for their contributions to this release!
+
+# Release Notes - v1.2.4
+
+This update ensures compatibility with the latest Twitch systems and modernizes our environment requirements for a smoother experience. We’ve updated essential game directory hashes and bumped our Python requirements to keep the miner running at peak performance.
+
+### 🔄 System Updates
+- **Game Directory Hash**: We’ve updated the internal hash for the Game Directory to ensure the miner stays synced with the latest Twitch data, preventing potential connection issues.
+
+### ⚙️ Infrastructure
+- **Python Version Requirement**: To take advantage of the latest performance improvements and security patches, we have updated the minimum Python requirement from 3.10 to 3.12. Please make sure to update your local environment to continue using the miner!
+
+### 📚 Documentation
+- **README Updates**: The README file has been refreshed to reflect the new Python 3.12+ requirement, making it easier for new users to get started with the correct setup.
+
+# Release Notes - v1.2.3
+
+This update introduces a highly requested custom game management feature and addresses critical stability issues to ensure your drops keep rolling in smoothly. We've also bolstered the application's security and refined our internal processing logic for a more reliable experience.
+
+### 🎮 Game Management
+- **Add Custom Games**: You can now manually add your favorite games to the "Games to Watch" list directly from the Settings tab! Use the new search input to find and link any game you want to farm.
+- **UI Polish**: We’ve cleaned up the alignment of the games filter search bar to make your settings page look sharper and easier to navigate.
+
+### 🐛 Bug Fixes
+- **Twitch Watch Events**: We’ve updated the GQL integration to ensure watch events are tracked correctly, preventing drops from getting stuck.
+- **Security Hardening**: Replaced `innerHTML` with safe DOM APIs throughout the frontend to protect the app against XSS vulnerabilities.
+- **Rendering Fixes**: Addressed regressions in the UI to ensure everything displays exactly as it should after our security updates.
+
+### ⚙️ Performance & Internal Improvements
+- **Optimized Agent Logic**: Simplified our AI agent instructions and updated the Gemini model to provide more efficient and accurate performance.
+- **Maintenance**: Cleaned up project configuration files to keep our repository tidy and efficient.
+
+# Release Notes - v1.2.2
+
+This release brings significant enhancements to the core efficiency of the Twitch Drops Miner! We focused on unifying and smartening up the logic that selects games and tracks drops, ensuring your mining time is spent more effectively.
+
+### 🎮 Mining Efficiency & Automation
+
+We've overhauled the core systems responsible for identifying and tracking drops, making the Miner much more reliable and intelligent.
+
+-   **Unified Drop Logic**: The processes for selecting the next game to watch and tracking the expected drop progress have been merged into a single, cohesive system. This means the Miner is now smarter and more consistent about identifying active campaigns, reducing unnecessary stream switching and ensuring maximum drop uptime.
+
+### 📚 Under the Hood Improvements
+
+These changes are focused on stability and future development, but they ensure your application runs smoothly.
+
+-   **Refactored Settings Manager**: The internal framework for managing your configurations and settings has been completely refactored. This update significantly improves the stability and reliability of your saved preferences and prepares the Miner for more advanced customization options in upcoming releases.
+-   **Code Maintenance**: General code cleanup and formatting were performed to improve overall code quality and maintainability.
+
+# Release Notes - v1.2.1
+
+We've released v1.2.1 focused entirely on making your drop mining more reliable and robust. This crucial stability update ensures the Miner continues to track drops consistently, even when Twitch makes minor, behind-the-scenes adjustments to its tracking URLs.
+
+### 🐛 Bug Fixes
+
+-   **Enhanced Drop Tracking Stability**: We've relaxed the internal logic (regex) used to identify official Twitch drop tracking URLs.
+    *   **Why you'll like it**: This means the Miner is now much more resilient to minor changes on Twitch's platform. If Twitch slightly alters how their drop URLs look, your mining won't break, ensuring consistent and reliable drop accumulation.
+
+### 📚 Under the Hood Improvements
+
+-   **Internal Configuration Cleanup**: Removed unnecessary internal developer configurations and identifiers. This keeps the application code tidy and focused on core drop mining functionality.
+
+# Release Notes - v1.2.0
+
+This release brings a major overhaul to the dashboard, making drop management much cleaner and more intuitive. We've also introduced automated update checks and powerful new filtering options to help you prioritize your farming efforts!
+
+### 🌍 Dashboard Overhaul & Drop Prioritization
+
+We completely redesigned the core dashboard elements to make managing your wanted drops faster and more visually appealing.
+
+-   **Wanted Drops Queue Redesign**: The 'Wanted Drops Queue' now features a beautiful, responsive card-based masonry layout. Organizing your priority drops is easier and looks fantastic!
+-   **New Benefit Filters**: Stop mining clutter! You can now easily filter your drop lists based on the specific type of reward you want (e.g., Item, Badge, Currency, etc.) directly in the settings.
+-   **Game Grouping**: Drops in the Wanted Queue are now automatically grouped by their associated game, giving you a clearer, organized overview of what you are currently mining for.
+-   **Smarter Inventory Cards**: Inventory cards now support variable heights, resulting in a cleaner dashboard layout and better use of screen space.
+
+### ⚙️ Utility & Infrastructure
+
+We added crucial quality-of-life features to keep you informed and provide more flexibility.
+
+-   **Automated Update Checker**: The app now features a persistent footer displaying the current version. It automatically checks GitHub for the latest release and alerts you instantly with a visible indicator and link if an update is available. No more manual checking!
+-   **Proxy Support**: Added initial support and verification logic for using proxies, enhancing flexibility for advanced users who require customized network setups.
+
+### 📚 Maintenance & General Improvements
+
+-   **Translation Updates**: We have updated and improved several translations across the application for better localization and accuracy.
+-   **Repository Links**: Updated internal and external links to the correct repository owner.
+-   **UI Polish**: Minor alignment and styling fixes, including updating the favicon to use a transparent background.
+
 # Release Notes - v1.1.6
 
 We've released a small but important update focusing on quality of life and core application stability. This version ensures better synchronization reliability and adds a helpful visual indicator for easier navigation.

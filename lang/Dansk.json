@@ -43,7 +43,8 @@
             "switching": "Skifter kanal...",
             "fetching_inventory": "Henter beholdning...",
             "fetching_campaigns": "Henter kampagner...",
-            "adding_campaigns": "Tilføjer kampagner til beholdning... {counter}"
+            "adding_campaigns": "Tilføjer kampagner til beholdning... {counter}",
+            "ready": "Klar"
         },
         "tabs": {
             "main": "Hoved",
@@ -101,12 +102,32 @@
                 "active": "Aktiv ✔",
                 "upcoming": "Kommende ⏳",
                 "expired": "Udløbet ❌",
-                "claimed": "Hentet ✔"
+                "claimed": "Hentet ✔",
+                "ignored": "Ignoreret",
+                "skipped": "Sprunget over"
             },
             "starts": "Starter: {time}",
             "ends": "Slutter: {time}",
             "no_campaigns": "Ingen kampagner indlæst endnu...",
-            "claimed_drops": "hentet"
+            "claimed_drops": "hentet",
+            "ignored_drops": "{count} ignoreret",
+            "skipped_drops": "{count} sprunget over",
+            "ignored_keyword_reason": "Ignoreret på grund af nøgleordet: {keyword}",
+            "ignored_precondition_reason": "Ignoreret, fordi dette drop afhænger af {drop}",
+            "skipped_branch_reason": "Sprunget over, fordi ingen drop, der kan optjenes, afhænger af dette drop.",
+            "filters": {
+                "active": "Aktiv",
+                "not_linked": "Ikke forbundet",
+                "upcoming": "Kommende",
+                "expired": "Udløbet",
+                "finished": "Afsluttet",
+                "item": "Genstand",
+                "badge": "Badge",
+                "emote": "Emote",
+                "other": "Andet",
+                "clear": "Ryd filtre",
+                "search_placeholder": "Søg efter spil..."
+            }
         },
         "settings": {
             "general": {
@@ -141,7 +162,7 @@
                     "Gem den bot-token, du modtager",
                     "Start din nye bot ved at søge efter den og klikke på /start (eller send en besked)",
                     "Få dit Chat-ID ved at åbne denne URL i browseren (erstat TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
-                    "Find dit bruger-ID i svaret - det er nummeret i \"from\": {\"id\": DIT_ID}",
+                    "Find dit bruger-ID i svaret - det er nummeret i \"from\": {\"id\": YOUR_ID}",
                     "Indtast token og Chat-ID og klik på Test forbindelse"
                 ],
                 "saved": "✓ Indstillinger gemt korrekt!",
@@ -151,7 +172,16 @@
                 "get_from_botfather": "Hent fra @BotFather",
                 "your_user_id": "Dit numeriske Telegram bruger-ID"
             },
-            "reload_campaigns": "Genindlæs kampagner"
+            "reload_campaigns": "Genindlæs kampagner",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
+            "drop_name_blacklist": "Ignorerede nøgleord i dropnavne",
+            "drop_name_blacklist_help": "Angiv ét nøgleord pr. linje. Der søges efter en bogstavelig delstreng uden forskel på store og små bogstaver. Matchende drops og deres afhængige grene ignoreres; grene, der kun er forudsætninger, springes over, mens delte forudsætninger stadig kan optjenes.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Ryd hele cachen",
+            "clear_all_cache_help": "Rydder lokal kampagne-, kanal- og afledt minerstatus; bevarer login og indstillinger og genindlæser derefter data fra Twitch.",
+            "mining_benefits": "Mining Fordele",
+            "mining_benefits_help": "Vælg hvilke typer drops du vil mine."
         },
         "help": {
             "about": "Om Twitch Drops Miner",
@@ -188,6 +218,26 @@
             "manual_mode": "MANUEL",
             "connected": "Tilsluttet",
             "disconnected": "Afbrudt"
+        },
+        "footer": {
+            "version": "Version:",
+            "loading": "Indlæser...",
+            "update_available": "Opdatering tilgængelig:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Manuel tilstand aktiv - ser specifikt spil"
+            },
+            "auto": {
+                "title": "Automatisk tilstand - følger spilprioritet"
+            },
+            "proxy": {
+                "title": "Proxy-forbindelse aktiv"
+            }
+        },
+        "wanted": {
+            "name": "Ønskede Drops Kø",
+            "none": "Ingen ønskede drops i køen..."
         }
     }
 }

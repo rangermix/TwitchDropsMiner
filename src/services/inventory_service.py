@@ -51,6 +51,37 @@ class InventoryService:
         """
         self._twitch = twitch
 
+    def _clear_inventory_state(self) -> None:
+        """Clear derived campaign and drop state before replacing inventory."""
+        self._twitch._drops.clear()
+        self._twitch._campaigns.clear()
+        self._twitch.gui.inv.clear()
+        self._twitch.inventory.clear()
+        self._twitch._mnt_triggers.clear()
+
+    def clear_cached_state(self) -> None:
+        """Clear local derived miner state while preserving credentials and settings."""
+        logger.info("Clearing local derived campaign and channel state")
+
+        self._twitch.stop_watching()
+        self._twitch.restart_watching()
+
+        tracked_channels = list(self._twitch.channels.values())
+        self._twitch._remove_channel_topics(tracked_channels)
+        self._twitch.channels.clear()
+        self._twitch.gui.channels.clear()
+        self._twitch.gui.clear_channel_selection()
+
+        self._twitch.clear_manual_mode("Local cache cleared")
+        self._twitch.wanted_games.clear()
+        self._clear_inventory_state()
+        self._twitch.gui.set_games(set())
+        self._twitch.gui.broadcast_wanted_items()
+
+        if self._twitch._mnt_task is not None and not self._twitch._mnt_task.done():
+            self._twitch._mnt_task.cancel()
+        self._twitch._mnt_task = None
+
     async def fetch_campaigns(
         self, campaigns_chunk: list[tuple[str, JsonType]]
     ) -> dict[str, JsonType]:
@@ -156,10 +187,7 @@ class InventoryService:
         campaigns.sort(key=lambda c: c.upcoming and c.starts_at or c.ends_at)
         campaigns.sort(key=lambda c: c.eligible, reverse=True)
 
-        self._twitch._drops.clear()
-        self._twitch.gui.inv.clear()
-        self._twitch.inventory.clear()
-        self._twitch._mnt_triggers.clear()
+        self._clear_inventory_state()
         switch_triggers: set[datetime] = set()
         next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
 

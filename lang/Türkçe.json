@@ -24,10 +24,7 @@
             "logging_in": "Kayıt Ol...",
             "required": "Kaydolmak gerekiyor",
             "waiting_auth": "Kimlik doğrulama bekleniyor..."
-        },
-        "oauth_prompt": "Bu kodu şuraya girin:",
-        "oauth_activate": "Twitch'i Etkinleştir",
-        "oauth_confirm": "Kodu girdim"
+        }
     },
     "error": {
         "captcha": "Giriş girişimi CAPTCHA tarafından reddedildi.\nLütfen en az 12 saat içinde tekrar deneyin.",
@@ -46,7 +43,8 @@
             "switching": "Kanal değiştiriliyor...",
             "fetching_inventory": "Envanter getiriliyor...",
             "fetching_campaigns": "Kampanyalar getiriliyor...",
-            "adding_campaigns": "Kampanyaları envantere ekle... {counter}"
+            "adding_campaigns": "Kampanyaları envantere ekle... {counter}",
+            "ready": "Hazır"
         },
         "tabs": {
             "main": "Ana",
@@ -104,12 +102,32 @@
                 "active": "Aktif ✔",
                 "upcoming": "Gelecek ⏳",
                 "expired": "Süresi dolmuş ❌",
-                "claimed": "Alındı ​​✔"
+                "claimed": "Alındı ​​✔",
+                "ignored": "Yoksayıldı",
+                "skipped": "Atlandı"
             },
             "starts": "Başladı: {time}",
             "ends": "Bitiş: {time}",
             "no_campaigns": "Henüz yüklenen kampanya yok...",
-            "claimed_drops": "talep edildi"
+            "claimed_drops": "talep edildi",
+            "ignored_drops": "{count} yoksayıldı",
+            "skipped_drops": "{count} atlandı",
+            "ignored_keyword_reason": "Anahtar kelime nedeniyle yoksayıldı: {keyword}",
+            "ignored_precondition_reason": "{drop} drop'una bağlı olduğu için yoksayıldı",
+            "skipped_branch_reason": "Madenciliği yapılabilir hiçbir ödül bu drop'a bağlı olmadığı için atlandı.",
+            "filters": {
+                "active": "Aktif",
+                "not_linked": "Bağlı Değil",
+                "upcoming": "Yaklaşan",
+                "expired": "Süresi Dolmuş",
+                "finished": "Tamamlanmış",
+                "item": "Eşya",
+                "badge": "Rozet",
+                "emote": "İfade",
+                "other": "Diğer",
+                "clear": "Filtreleri Temizle",
+                "search_placeholder": "Oyun ara..."
+            }
         },
         "settings": {
             "general": {
@@ -144,7 +162,7 @@
                     "Aldığınız bot token'ını kaydedin",
                     "Yeni bot'unuzu arayarak /start'a tıklayarak başlatın (veya herhangi bir mesaj gönderin)",
                     "Tarayıcıda bu URL'yi açarak Chat Kimliğini alın (TOKEN'i değiştirin): https://api.telegram.org/botTOKEN/getUpdates",
-                    "Yanıtınızda kullanıcı kimliğinizi bulun - \"from\": {\"id\": KİMLİĞİNİZ} içindeki sayıdır",
+                    "Yanıtınızda kullanıcı kimliğinizi bulun - \"from\": {\"id\": YOUR_ID} içindeki sayıdır",
                     "Token ve Sohbet Kimliğini girin ve Bağlantıyı Test Et'e tıklayın"
                 ],
                 "saved": "✓ Ayarlar başarıyla kaydedildi!",
@@ -154,7 +172,16 @@
                 "get_from_botfather": "@BotFather'dan Al",
                 "your_user_id": "Telegram sayısal kullanıcı kimliğiniz"
             },
-            "reload_campaigns": "Kampanyaları Yeniden Yükle"
+            "reload_campaigns": "Kampanyaları Yeniden Yükle",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
+            "drop_name_blacklist": "Yoksayılan Drop Anahtar Kelimeleri",
+            "drop_name_blacklist_help": "Her satıra bir anahtar kelime girin. Eşleştirme, büyük/küçük harfe duyarsız gerçek bir alt dize arar. Eşleşen droplar ve bunlara bağlı dallar yoksayılır; yalnızca ön koşul olan dallar atlanırken ortak ön koşulların madenciliği yapılabilir.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Tüm Önbelleği Temizle",
+            "clear_all_cache_help": "Yerel kampanya, kanal ve türetilmiş madenci durumunu temizler; oturum açma bilgilerini ve ayarları korur, ardından Twitch'ten yeniden yükler.",
+            "mining_benefits": "Madencilik Avantajları",
+            "mining_benefits_help": "Hangi tür dropları toplamak istediğinizi seçin."
         },
         "help": {
             "about": "Twitch Drops Miner Hakkında",
@@ -191,6 +218,26 @@
             "manual_mode": "MANUEL",
             "connected": "Bağlandı",
             "disconnected": "Bağlantı kesildi"
+        },
+        "footer": {
+            "version": "Sürüm:",
+            "loading": "Yükleniyor...",
+            "update_available": "Güncelleme Mevcut:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Manuel mod aktif - belirli oyun izleniyor"
+            },
+            "auto": {
+                "title": "Otomatik mod - oyun önceliği takip ediliyor"
+            },
+            "proxy": {
+                "title": "Proxy bağlantısı aktif"
+            }
+        },
+        "wanted": {
+            "name": "İstenen Drop Kuyruğu",
+            "none": "Kuyrukta istenen drop yok..."
         }
     }
 }

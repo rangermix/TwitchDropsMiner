@@ -29,6 +29,7 @@ from src.services.channel_service import ChannelService
 from src.services.inventory_service import InventoryService
 from src.services.maintenance import MaintenanceService
 from src.services.message_handlers import MessageHandlerService
+from src.services.stream_selector import StreamSelector
 from src.services.watch_service import WatchService
 from src.utils import (
     AwaitableValue,
@@ -37,7 +38,7 @@ from src.websocket import WebsocketPool
 
 
 if TYPE_CHECKING:
-    from src.config import ClientInfo, GQLOperation, JsonType
+    from src.config import ClientInfo, GQLRequest, JsonType
     from src.config.settings import Settings
     from src.models.channel import Stream
     from src.models.drop import TimedDrop
@@ -55,6 +56,10 @@ class Twitch:
         # State management
         self._state: State = State.IDLE
         self._state_change = asyncio.Event()
+        self._games_update_pending = False
+        self._inventory_loaded = False
+        self._inventory_refresh_pending = False
+        self._clear_cache_pending = False
         self.wanted_games: list[Game] = []
         self.inventory: list[DropsCampaign] = []
         self._drops: dict[str, TimedDrop] = {}
@@ -86,6 +91,7 @@ class Twitch:
         self._message_handler_service: MessageHandlerService = MessageHandlerService(self)
         self._inventory_service: InventoryService = InventoryService(self)
         self._watch_service: WatchService = WatchService(self)
+        self._stream_selector: StreamSelector = StreamSelector()
 
     def _ensure_api_clients(self) -> None:
         """Ensure API clients are initialized (called after GUI is set)."""
@@ -148,7 +154,48 @@ class Twitch:
             self._state = state
         self._state_change.set()
 
-    def state_change(self, state: State) -> abc.Callable[[], None]:
+    def request_games_update(self) -> bool:
+        """Queue a mining-policy recalculation without racing the active state step."""
+        if self._state is State.EXIT:
+            return False
+        self._games_update_pending = True
+        self._state_change.set()
+        return True
+
+    def _activate_pending_games_update(self) -> None:
+        """Prioritize a queued settings recalculation before the next wait."""
+        if (
+            self._games_update_pending
+            and self._inventory_loaded
+            and self._state not in (State.INVENTORY_FETCH, State.EXIT)
+        ):
+            self._state = State.GAMES_UPDATE
+            self._state_change.set()
+
+    def request_inventory_refresh(self, *, clear_cache: bool = False) -> bool:
+        """Queue an inventory refresh without racing the active state-machine step.
+
+        Args:
+            clear_cache: Clear local derived miner state before fetching fresh data.
+
+        Returns:
+            ``True`` when the request was accepted, or ``False`` during shutdown.
+        """
+        if self._state is State.EXIT:
+            return False
+
+        self._inventory_refresh_pending = True
+        self._clear_cache_pending = self._clear_cache_pending or clear_cache
+        self._state_change.set()
+        return True
+
+    def _activate_pending_inventory_refresh(self) -> None:
+        """Prioritize a queued refresh over the next normal state transition."""
+        if self._inventory_refresh_pending and self._state is not State.EXIT:
+            self._state = State.INVENTORY_FETCH
+            self._state_change.set()
+
+    def get_change_state_callable(self, state: State) -> abc.Callable[[], None]:
         """Return a callable that changes state when invoked (deferred call for GUI usage)."""
         return partial(self.change_state, state)
 
@@ -159,14 +206,9 @@ class Twitch:
         """
         self.change_state(State.EXIT)
 
-    def print(self, message: str) -> None:
+    def print(self, message: str, *, collapse_key: str | None = None) -> None:
         """Print a message in the GUI."""
-        self.gui.print(message)
-
-    def save(self, *, force: bool = False) -> None:
-        """Save the application state (settings and GUI state)."""
-        self.gui.save(force=force)
-        self.settings.save(force=force)
+        self.gui.print(message, collapse_key=collapse_key)
 
     def _remove_channel_topics(self, channels: abc.Iterable[Channel]) -> None:
         """Remove websocket topics for a list of channels."""
@@ -221,27 +263,33 @@ class Twitch:
         )
         full_cleanup: bool = False
         channels: Final[OrderedDict[int, Channel]] = self.channels
-        self.change_state(State.INVENTORY_FETCH)
+        self.request_inventory_refresh()
         while True:
+            self._activate_pending_inventory_refresh()
+            self._activate_pending_games_update()
             if self._state is State.IDLE:
-                if self.settings.dump:
-                    self.close()
-                    continue
                 self.gui.status.update(_.t["gui"]["status"]["idle"])
                 self.stop_watching()
                 # clear the flag and wait until it's set again
                 self._state_change.clear()
             elif self._state is State.INVENTORY_FETCH:
+                self._inventory_refresh_pending = False
+                clear_cached_state = self._clear_cache_pending
+                self._clear_cache_pending = False
+                if clear_cached_state:
+                    self._inventory_service.clear_cached_state()
                 # ensure the websocket is running
                 await self.websocket.start()
                 await self.fetch_inventory()
+                self._inventory_loaded = True
                 self.gui.set_games({campaign.game for campaign in self.inventory})
                 # Broadcast unwanted items (based on settings)
                 self.gui.broadcast_wanted_items()
                 # Save state on every inventory fetch
-                self.save()
                 self.change_state(State.GAMES_UPDATE)
             elif self._state is State.GAMES_UPDATE:
+                refresh_policy_ui = self._games_update_pending
+                self._games_update_pending = False
                 # claim drops from expired and active campaigns
                 logger.info("Checking for claimable drops")
                 logger.debug("Campaigns in inventory: %s", self.inventory)
@@ -263,48 +311,14 @@ class Twitch:
 
                 # Log detailed game -> campaigns -> channels mapping
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.info("=== Active Campaigns Mapping ===")
-                    from collections import defaultdict
+                    self._output_campaign_mapping(next_hour)
 
-                    game_campaign_map: dict[str, list[tuple[DropsCampaign, list[str]]]] = (
-                        defaultdict(list)
-                    )
-                    for campaign in self.inventory:
-                        if campaign.eligible and not campaign.finished:
-                            logger.info(
-                                "eligible Campaign: %s - %s", campaign.name, campaign.game.name
-                            )
-                        if campaign.can_earn_within(next_hour):
-                            channel_names = []
-                            if campaign.allowed_channels:
-                                channel_names = [ch.name for ch in campaign.allowed_channels]
-                            else:
-                                channel_names = ["<directory>"]
-                            game_campaign_map[campaign.game.name].append((campaign, channel_names))
-                    for game_name in sorted(game_campaign_map.keys()):
-                        logger.debug(f"Game: {game_name}")
-                        for campaign, channel_list in game_campaign_map[game_name]:
-                            status_info = f"{'ACTIVE' if campaign.active else 'UPCOMING'}"
-                            ends_info = campaign.ends_at.astimezone().strftime("%Y-%m-%d %H:%M")
-                            channel_info = (
-                                f"{len(channel_list)} channels"
-                                if channel_list[0] != "<directory>"
-                                else "directory"
-                            )
-                            logger.debug(
-                                f"  └─ Campaign: {campaign.name} [{status_info}] (ends: {ends_info})"
-                            )
-                            logger.debug(f"     Channels: {channel_info}")
-                            if channel_list[0] != "<directory>" and len(channel_list) <= 10:
-                                logger.debug(f"     └─ {', '.join(channel_list)}")
-                            elif channel_list[0] != "<directory>":
-                                logger.debug(
-                                    f"     └─ {', '.join(channel_list[:10])} ... (+{len(channel_list) - 10} more)"
-                                )
-                    logger.info("=== End Campaigns Mapping ===")
-
+                logger.info("Building wanted games list")
                 # Build wanted_games list preserving the order from games_to_watch
-                self.wanted_games = self._filter_wanted_campaigns(next_hour)
+                self.wanted_games = self._stream_selector.get_wanted_games(
+                    self.settings, self.inventory
+                )
+                logger.info("Wanted games list built")
 
                 if self.wanted_games:
                     logger.info(
@@ -335,6 +349,10 @@ class Twitch:
                         logger.info(
                             f"Manual mode: prioritizing game {self._manual_target_game.name}"
                         )
+
+                if refresh_policy_ui:
+                    self.gui.inv.refresh_campaigns(self.inventory)
+                    self.gui.broadcast_wanted_items()
 
                 full_cleanup = True
                 self.restart_watching()
@@ -369,7 +387,10 @@ class Twitch:
                     self.change_state(State.CHANNELS_FETCH)
                 else:
                     # with no games available, we switch to IDLE after cleanup
-                    self.print(_.t["status"]["no_campaign"])
+                    self.print(
+                        _.t["status"]["no_campaign"],
+                        collapse_key="status.no_campaign",
+                    )
                     self.change_state(State.IDLE)
             elif self._state is State.CHANNELS_FETCH:
                 self.gui.status.update(_.t["gui"]["status"]["gathering"])
@@ -470,9 +491,6 @@ class Twitch:
                     watching_channel,
                 )
             elif self._state is State.CHANNEL_SWITCH:
-                if self.settings.dump:
-                    self.close()
-                    continue
                 self.gui.status.update(_.t["gui"]["status"]["switching"])
 
                 # Determine the best channel to watch
@@ -545,6 +563,11 @@ class Twitch:
                 self.gui.status.update(_.t["gui"]["status"]["exiting"])
                 # we've been requested to exit the application
                 break
+            # A request can arrive while a state performs asynchronous work or
+            # after that state clears the event. Re-apply it before waiting so
+            # the request cannot be overwritten by the state's normal transition.
+            self._activate_pending_inventory_refresh()
+            self._activate_pending_games_update()
             await self._state_change.wait()
 
     def can_watch(self, channel: Channel) -> bool:
@@ -589,6 +612,24 @@ class Twitch:
         # Broadcast manual mode change to GUI
         self.gui.broadcast_manual_mode_change(self.get_manual_mode_info())
 
+    def clear_manual_mode(self, reason: str = "") -> bool:
+        """Clear manual targeting without changing the state machine.
+
+        Returns whether any manual target was present.
+        """
+        if self._manual_target_channel is None and self._manual_target_game is None:
+            return False
+
+        game_name = self._manual_target_game.name if self._manual_target_game else "Unknown"
+        logger.info(
+            f"Clearing manual mode for game: {game_name}. Reason: {reason or 'User requested'}"
+        )
+
+        self._manual_target_channel = None
+        self._manual_target_game = None
+        self.gui.broadcast_manual_mode_change(self.get_manual_mode_info())
+        return True
+
     def exit_manual_mode(self, reason: str = "") -> None:
         """
         Exit manual mode and return to automatic channel selection.
@@ -596,19 +637,8 @@ class Twitch:
         Args:
             reason: Optional reason for exiting manual mode (for logging)
         """
-        if not self.is_manual_mode():
+        if not self.clear_manual_mode(reason):
             return
-
-        game_name = self._manual_target_game.name if self._manual_target_game else "Unknown"
-        logger.info(
-            f"Exiting manual mode for game: {game_name}. Reason: {reason or 'User requested'}"
-        )
-
-        self._manual_target_channel = None
-        self._manual_target_game = None
-
-        # Broadcast manual mode change to GUI
-        self.gui.broadcast_manual_mode_change(self.get_manual_mode_info())
 
         # Trigger channel switch to select new channel automatically
         self.change_state(State.CHANNEL_SWITCH)
@@ -641,9 +671,7 @@ class Twitch:
         await self._auth_state.validate()
         return self._auth_state
 
-    async def gql_request(
-        self, ops: GQLOperation | list[GQLOperation]
-    ) -> JsonType | list[JsonType]:
+    async def gql_request(self, ops: GQLRequest | list[GQLRequest]) -> JsonType | list[JsonType]:
         """
         Execute GraphQL request(s).
 
@@ -698,5 +726,40 @@ class Twitch:
                     and campaign.has_wanted_unclaimed_benefits(mining_benefits)
                 ):
                     wanted_games.append(game)
-                    break 
+                    break
         return wanted_games
+
+    def _output_campaign_mapping(self, next_hour: datetime) -> None:
+        logger.info("=== Active Campaigns Mapping ===")
+        from collections import defaultdict
+
+        game_campaign_map: dict[str, list[tuple[DropsCampaign, list[str]]]] = defaultdict(list)
+        for campaign in self.inventory:
+            if campaign.eligible and not campaign.mining_finished:
+                logger.info("eligible Campaign: %s - %s", campaign.name, campaign.game.name)
+            if campaign.can_earn_within(next_hour):
+                channel_names = []
+                if campaign.allowed_channels:
+                    channel_names = [ch.name for ch in campaign.allowed_channels]
+                else:
+                    channel_names = ["<directory>"]
+                game_campaign_map[campaign.game.name].append((campaign, channel_names))
+        for game_name in sorted(game_campaign_map.keys()):
+            logger.debug(f"Game: {game_name}")
+            for campaign, channel_list in game_campaign_map[game_name]:
+                status_info = f"{'ACTIVE' if campaign.active else 'UPCOMING'}"
+                ends_info = campaign.ends_at.astimezone().strftime("%Y-%m-%d %H:%M")
+                channel_info = (
+                    f"{len(channel_list)} channels"
+                    if channel_list[0] != "<directory>"
+                    else "directory"
+                )
+                logger.debug(f"  └─ Campaign: {campaign.name} [{status_info}] (ends: {ends_info})")
+                logger.debug(f"     Channels: {channel_info}")
+                if channel_list[0] != "<directory>" and len(channel_list) <= 10:
+                    logger.debug(f"     └─ {', '.join(channel_list)}")
+                elif channel_list[0] != "<directory>":
+                    logger.debug(
+                        f"     └─ {', '.join(channel_list[:10])} ... (+{len(channel_list) - 10} more)"
+                    )
+        logger.info("=== End Campaigns Mapping ===")

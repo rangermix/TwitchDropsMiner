@@ -10,9 +10,11 @@
 # This script:
 #   1. Updates src/version.py with the new version
 #   2. Updates pyproject.toml with the new version
-#   3. Commits and pushes changes to current branch
-#   4. Creates a new release branch
-#   5. Creates and pushes a version tag
+#   3. Regenerates uv.lock with the new project version
+#   4. Validates all version sources match
+#   5. Commits and pushes changes to current branch
+#   6. Creates a new release branch
+#   7. Creates and pushes a version tag
 #
 # Expected to be called from GitHub Actions after version validation
 
@@ -42,9 +44,17 @@ echo "__version__ = \"$VERSION\"" > src/version.py
 echo "Updating pyproject.toml..."
 sed -i "s/^version = \"[^\"]*\"\(.*\)/version = \"$VERSION\"\1/" pyproject.toml
 
+# Regenerate the lockfile so its editable project metadata matches the release.
+echo "Updating uv.lock..."
+uv lock
+
+# Fail before committing, branching, or tagging if any version source drifted.
+echo "Validating version sources..."
+"$(dirname "$0")/extract_version.sh"
+
 # Commit changes
 echo "Committing version changes..."
-git add src/version.py pyproject.toml
+git add src/version.py pyproject.toml uv.lock
 git commit -m "chore: bump version to $VERSION"
 git push origin "$CURRENT_BRANCH"
 

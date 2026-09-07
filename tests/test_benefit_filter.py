@@ -1,8 +1,10 @@
 import unittest
-from datetime import datetime, timezone
-from src.models.benefit import Benefit, BenefitType
-from src.models.drop import TimedDrop
+from unittest.mock import MagicMock
+
+from src.models.benefit import Benefit
 from src.models.campaign import DropsCampaign
+from src.models.drop import TimedDrop
+
 
 class TestBenefitFilter(unittest.TestCase):
     def setUp(self):
@@ -12,7 +14,7 @@ class TestBenefitFilter(unittest.TestCase):
                 "id": "b1",
                 "name": "Test Badge",
                 "distributionType": "BADGE",
-                "imageAssetURL": "url"
+                "imageAssetURL": "url",
             }
         }
         self.benefit_item_data = {
@@ -20,10 +22,10 @@ class TestBenefitFilter(unittest.TestCase):
                 "id": "b2",
                 "name": "Test Item",
                 "distributionType": "DIRECT_ENTITLEMENT",
-                "imageAssetURL": "url"
+                "imageAssetURL": "url",
             }
         }
-        
+
         # Initialize Benefits
         self.badge = Benefit(self.benefit_badge_data)
         self.item = Benefit(self.benefit_item_data)
@@ -32,7 +34,7 @@ class TestBenefitFilter(unittest.TestCase):
         allowed = {"BADGE": True, "DIRECT_ENTITLEMENT": False}
         self.assertTrue(self.badge.is_wanted(allowed))
         self.assertFalse(self.item.is_wanted(allowed))
-        
+
         allowed_all = {"BADGE": True, "DIRECT_ENTITLEMENT": True}
         self.assertTrue(self.badge.is_wanted(allowed_all))
         self.assertTrue(self.item.is_wanted(allowed_all))
@@ -40,16 +42,17 @@ class TestBenefitFilter(unittest.TestCase):
     def test_drop_has_wanted_unclaimed_benefits(self):
         # Mock TimedDrop
         # functionality relies on self.benefits and self.is_claimed
-        
+
         # 1. Unclaimed Drop with only Badge
         drop1 = unittest.mock.MagicMock(spec=TimedDrop)
         drop1.is_claimed = False
         drop1.benefits = [self.badge]
         drop1.has_wanted_unclaimed_benefits = TimedDrop.has_wanted_unclaimed_benefits.__get__(drop1)
-        
+        drop1.get_wanted_unclaimed_benefits = TimedDrop.get_wanted_unclaimed_benefits.__get__(drop1)
+
         allowed = {"BADGE": True, "DIRECT_ENTITLEMENT": False}
         self.assertTrue(drop1.has_wanted_unclaimed_benefits(allowed))
-        
+
         allowed_none = {"BADGE": False, "DIRECT_ENTITLEMENT": False}
         self.assertFalse(drop1.has_wanted_unclaimed_benefits(allowed_none))
 
@@ -58,7 +61,8 @@ class TestBenefitFilter(unittest.TestCase):
         drop2.is_claimed = True
         drop2.benefits = [self.badge]
         drop2.has_wanted_unclaimed_benefits = TimedDrop.has_wanted_unclaimed_benefits.__get__(drop2)
-        
+        drop2.get_wanted_unclaimed_benefits = TimedDrop.get_wanted_unclaimed_benefits.__get__(drop2)
+
         self.assertFalse(drop2.has_wanted_unclaimed_benefits(allowed))
 
         # 3. Drops with mixed benefits
@@ -66,7 +70,8 @@ class TestBenefitFilter(unittest.TestCase):
         drop3.is_claimed = False
         drop3.benefits = [self.badge, self.item]
         drop3.has_wanted_unclaimed_benefits = TimedDrop.has_wanted_unclaimed_benefits.__get__(drop3)
-        
+        drop3.get_wanted_unclaimed_benefits = TimedDrop.get_wanted_unclaimed_benefits.__get__(drop3)
+
         # Only want Item (which it has)
         allowed_item = {"BADGE": False, "DIRECT_ENTITLEMENT": True}
         self.assertTrue(drop3.has_wanted_unclaimed_benefits(allowed_item))
@@ -74,24 +79,50 @@ class TestBenefitFilter(unittest.TestCase):
     def test_campaign_has_wanted_unclaimed_benefits(self):
         # Mock DropsCampaign
         campaign = unittest.mock.MagicMock(spec=DropsCampaign)
-        
+
         drop1 = unittest.mock.MagicMock(spec=TimedDrop)
         drop1.has_wanted_unclaimed_benefits.return_value = False
-        
+
         drop2 = unittest.mock.MagicMock(spec=TimedDrop)
         drop2.has_wanted_unclaimed_benefits.return_value = True
-        
+
         campaign.drops = [drop1, drop2]
         # Bind method
-        campaign.has_wanted_unclaimed_benefits = DropsCampaign.has_wanted_unclaimed_benefits.__get__(campaign)
-        
-        allowed = {"BADGE": True} 
+        campaign.has_wanted_unclaimed_benefits = (
+            DropsCampaign.has_wanted_unclaimed_benefits.__get__(campaign)
+        )
+
+        allowed = {"BADGE": True}
         # Since drop2 returns True, campaign should return True
         self.assertTrue(campaign.has_wanted_unclaimed_benefits(allowed))
-        
+
         # Case where all drops return False
         drop2.has_wanted_unclaimed_benefits.return_value = False
         self.assertFalse(campaign.has_wanted_unclaimed_benefits(allowed))
 
-if __name__ == '__main__':
+    def test_campaign_preserves_account_link_status(self):
+        campaign_data = {
+            "id": "campaign-1",
+            "name": "Test Campaign",
+            "game": {
+                "id": "1",
+                "name": "Test Game",
+                "displayName": "Test Game",
+                "boxArtURL": "https://example.test/game-{width}x{height}.jpg",
+            },
+            "self": {"isAccountConnected": False},
+            "accountLinkURL": "https://example.test/link",
+            "startAt": "2026-01-01T00:00:00Z",
+            "endAt": "2026-01-02T00:00:00Z",
+            "status": "ACTIVE",
+            "allow": {"channels": [], "isEnabled": True},
+            "timeBasedDrops": [],
+        }
+
+        campaign = DropsCampaign(MagicMock(), campaign_data, {})
+
+        self.assertFalse(campaign.linked)
+
+
+if __name__ == "__main__":
     unittest.main()

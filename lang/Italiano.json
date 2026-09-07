@@ -24,10 +24,7 @@
             "logging_in": "Loggando...",
             "required": "Login richiesto",
             "waiting_auth": "In attesa di autenticazione..."
-        },
-        "oauth_prompt": "Inserisci questo codice su:",
-        "oauth_activate": "Attiva Twitch",
-        "oauth_confirm": "Ho inserito il codice"
+        }
     },
     "error": {
         "captcha": "Il tuo tentativo di login è stato negato da CAPTCHA.\nRiprova tra 12+ ore.",
@@ -46,7 +43,8 @@
             "switching": "Cambiando canale...",
             "fetching_inventory": "Recupero dell'inventario...",
             "fetching_campaigns": "Recupero delle campagne...",
-            "adding_campaigns": "Aggiunta delle campagne all'inventario... {counter}"
+            "adding_campaigns": "Aggiunta delle campagne all'inventario... {counter}",
+            "ready": "Pronto"
         },
         "tabs": {
             "main": "Principale",
@@ -104,12 +102,32 @@
                 "active": "Attivo ✔",
                 "upcoming": "In arrivo ⏳",
                 "expired": "Scaduto ❌",
-                "claimed": "Riscattato ✔"
+                "claimed": "Riscattato ✔",
+                "ignored": "Ignorato",
+                "skipped": "Saltato"
             },
             "starts": "Inizia: {time}",
             "ends": "Finisce: {time}",
             "no_campaigns": "Nessuna campagna caricata ancora...",
-            "claimed_drops": "reclamato"
+            "claimed_drops": "reclamato",
+            "ignored_drops": "{count} ignorati",
+            "skipped_drops": "{count} saltati",
+            "ignored_keyword_reason": "Ignorato per la parola chiave: {keyword}",
+            "ignored_precondition_reason": "Ignorato perché dipende da {drop}",
+            "skipped_branch_reason": "Saltato perché nessuna ricompensa ottenibile dipende da questo drop.",
+            "filters": {
+                "active": "Attivo",
+                "not_linked": "Non Collegato",
+                "upcoming": "In Arrivo",
+                "expired": "Scaduto",
+                "finished": "Finito",
+                "item": "Oggetto",
+                "badge": "Badge",
+                "emote": "Emote",
+                "other": "Altro",
+                "clear": "Pulisci Filtri",
+                "search_placeholder": "Cerca giochi..."
+            }
         },
         "settings": {
             "general": {
@@ -144,7 +162,7 @@
                     "Salva il token del bot che ricevi",
                     "Avvia il tuo nuovo bot cercandolo e facendo clic su /start (o invia un messaggio qualsiasi)",
                     "Ottieni il tuo ID Chat aprendo questo URL nel browser (sostituisci TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
-                    "Trova il tuo ID utente nella risposta - è il numero in \"from\": {\"id\": TUO_ID}",
+                    "Trova il tuo ID utente nella risposta - è il numero in \"from\": {\"id\": YOUR_ID}",
                     "Inserisci il token e l'ID Chat e fai clic su Prova Connessione"
                 ],
                 "success": "✓ Connessione Telegram riuscita! Riceverai notifiche quando reclami drop.",
@@ -154,7 +172,16 @@
                 "get_from_botfather": "Ottieni da @BotFather",
                 "your_user_id": "Il tuo ID utente numerico di Telegram"
             },
-            "reload_campaigns": "Ricarica campagne"
+            "reload_campaigns": "Ricarica campagne",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
+            "drop_name_blacklist": "Parole chiave dei drop ignorati",
+            "drop_name_blacklist_help": "Inserisci una parola chiave per riga. La corrispondenza cerca una sottostringa letterale senza distinguere maiuscole e minuscole. I drop corrispondenti e i relativi rami dipendenti vengono ignorati; i rami che servono solo da prerequisito vengono saltati, mentre i prerequisiti condivisi restano ottenibili.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Svuota tutta la cache",
+            "clear_all_cache_help": "Cancella lo stato locale di campagne, canali e i dati derivati del miner; mantiene l’accesso e le impostazioni, quindi ricarica i dati da Twitch.",
+            "mining_benefits": "Vantaggi Minatori",
+            "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare."
         },
         "help": {
             "about": "Informazioni su Twitch Drops Miner",
@@ -191,6 +218,26 @@
             "manual_mode": "MANUALE",
             "connected": "Connesso",
             "disconnected": "Disconnesso"
+        },
+        "footer": {
+            "version": "Versione:",
+            "loading": "Caricamento...",
+            "update_available": "Aggiornamento disponibile:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Modalità manuale attiva - guardando gioco specifico"
+            },
+            "auto": {
+                "title": "Modalità automatica - seguendo priorità giochi"
+            },
+            "proxy": {
+                "title": "Connessione proxy attiva"
+            }
+        },
+        "wanted": {
+            "name": "Coda Drops Desiderati",
+            "none": "Nessun drop desiderato in coda..."
         }
     }
 }

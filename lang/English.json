@@ -97,28 +97,25 @@
             "channel_count_plural": "channels",
             "viewers": "viewers"
         },
-        "inventory": {
-            "no_campaigns": "No campaigns loaded yet...",
-            "status": {
-                "active": "Active ✔",
-                "upcoming": "Upcoming ⏳",
-                "expired": "Expired ❌",
-                "claimed": "Claimed ✔"
-            },
-            "starts": "Starts: {time}",
-            "ends": "Ends: {time}",
-            "claimed_drops": "claimed"
-        },
         "settings": {
             "general": {
-                "name": "General Settings",
+                "name": "General",
                 "dark_mode": "Dark Mode"
             },
-            "reload": "Reload",
+            "mining_benefits": "Mining Benefits",
+            "mining_benefits_help": "Select which types of drops you want to mine.",
+            "reload": "Reload Campaigns",
             "reload_campaigns": "Reload Campaigns",
+            "drop_name_blacklist": "Ignored Drop Keywords",
+            "drop_name_blacklist_help": "Enter one keyword per line. Matching is a case-insensitive literal substring. Matching drops and their dependent branches are ignored; prerequisite-only branches are skipped while shared prerequisites remain mineable.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Clear All Cache",
+            "clear_all_cache_help": "Clears local campaign, channel, and derived miner state; keeps your login and settings, then reloads from Twitch.",
             "games_to_watch": "Games to Watch",
             "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
             "search_games": "Search games...",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
             "select_all": "Select All",
             "deselect_all": "Deselect All",
             "selected_games": "Selected Games (drag to reorder)",
@@ -189,6 +186,58 @@
             "manual_mode": "MANUAL",
             "connected": "Connected",
             "disconnected": "Disconnected"
+        },
+        "footer": {
+            "version": "Version:",
+            "loading": "Loading...",
+            "update_available": "Update Available:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Manual mode active - watching specific game"
+            },
+            "auto": {
+                "title": "Automatic mode - following game priority"
+            },
+            "proxy": {
+                "title": "Proxy connection active"
+            }
+        },
+        "wanted": {
+            "name": "Wanted Drops Queue",
+            "none": "No wanted drops queued..."
+        },
+        "inventory": {
+            "no_campaigns": "No campaigns loaded yet...",
+            "status": {
+                "active": "Active ✔",
+                "upcoming": "Upcoming ⏳",
+                "expired": "Expired ❌",
+                "claimed": "Claimed ✔",
+                "ignored": "Ignored",
+                "skipped": "Skipped"
+            },
+            "starts": "Starts: {time}",
+            "ends": "Ends: {time}",
+            "claimed_drops": "claimed",
+            "ignored_drops": "{count} ignored",
+            "skipped_drops": "{count} skipped",
+            "ignored_keyword_reason": "Ignored by keyword: {keyword}",
+            "ignored_precondition_reason": "Ignored because it depends on {drop}",
+            "skipped_branch_reason": "Skipped because no mineable reward depends on this drop.",
+            "filters": {
+                "active": "Active",
+                "not_linked": "Not Linked",
+                "upcoming": "Upcoming",
+                "expired": "Expired",
+                "finished": "Finished",
+                "item": "Item",
+                "badge": "Badge",
+                "emote": "Emote",
+                "other": "Other",
+                "clear": "Clear Filters",
+                "search_placeholder": "Type to search games..."
+            }
         }
     }
 }

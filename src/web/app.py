@@ -8,9 +8,11 @@ from typing import TYPE_CHECKING
 import socketio
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+
+from src.version import __version__
 
 
 if TYPE_CHECKING:
@@ -23,7 +25,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("TwitchDrops")
 
 # Create FastAPI app
-app = FastAPI(title="Twitch Drops Miner Web", version="1.0.0")
+app = FastAPI(title="Twitch Drops Miner Web", version=__version__)
 
 # Add CORS middleware
 app.add_middleware(
@@ -69,6 +71,7 @@ class ChannelSelectRequest(BaseModel):
 
 class SettingsUpdate(BaseModel):
     games_to_watch: list[str] | None = None
+    drop_name_blacklist: list[str] | None = None
     dark_mode: bool | None = None
     language: str | None = None
     proxy: str | None = None
@@ -77,6 +80,7 @@ class SettingsUpdate(BaseModel):
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None
     inventory_filters: dict | None = None
+    inventory_list_view: bool | None = None
     mining_benefits: dict[str, bool] | None = None
 
 
@@ -102,7 +106,8 @@ async def serve_index():
         f"Looking for web files: __file__={__file__}, web_dir={web_dir}, index_file={index_file}, exists={index_file.exists()}"
     )
     if index_file.exists():
-        return FileResponse(index_file)
+        content = index_file.read_text(encoding="utf-8").replace("__APP_VERSION__", __version__)
+        return HTMLResponse(content=content, headers={"Cache-Control": "no-cache"})
     return HTMLResponse(
         content=f"<h1>Twitch Drops Miner</h1><p>Web interface files not found. Please check installation.</p><p>Debug: Looking for {index_file}</p>",
         status_code=500,
@@ -211,16 +216,17 @@ async def update_settings(settings: SettingsUpdate):
     if not gui_manager:
         raise HTTPException(status_code=503, detail="GUI not initialized")
 
-    settings_dict = settings.dict(exclude_unset=True)
-    gui_manager.settings.update_settings(settings_dict)
-    return {"success": True, "settings": gui_manager.settings.get_settings()}
+    settings_dict = settings.model_dump(exclude_unset=True)
+    updated_settings = gui_manager.settings.update_settings(settings_dict)
+    return {"success": True, "settings": updated_settings}
 
 
 @app.post("/api/settings/verify-proxy")
 async def verify_proxy(request: ProxyVerifyRequest):
     """Verify proxy connectivity"""
-    import aiohttp
     import time
+
+    import aiohttp
 
     proxy_url = request.proxy.strip()
     if not proxy_url:
@@ -229,23 +235,23 @@ async def verify_proxy(request: ProxyVerifyRequest):
     try:
         start_time = time.time()
         # Test connection to Twitch
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                "https://www.twitch.tv", proxy=proxy_url, timeout=10
-            ) as response:
-                # Just checking if we can connect and get a response
-                if response.status < 500:
-                    latency = round((time.time() - start_time) * 1000)
-                    return {
-                        "success": True,
-                        "message": f"Connected! ({latency}ms)",
-                        "latency": latency,
-                    }
-                else:
-                    return {
-                        "success": False,
-                        "message": f"Proxy reachable but returned {response.status}",
-                    }
+        async with (
+            aiohttp.ClientSession() as session,
+            session.get("https://www.twitch.tv", proxy=proxy_url, timeout=10) as response,
+        ):
+            # Just checking if we can connect and get a response
+            if response.status < 500:
+                latency = round((time.time() - start_time) * 1000)
+                return {
+                    "success": True,
+                    "message": f"Connected! ({latency}ms)",
+                    "latency": latency,
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": f"Proxy reachable but returned {response.status}",
+                }
     except Exception as e:
         return {"success": False, "message": f"Connection failed: {str(e)}"}
 
@@ -261,20 +267,19 @@ async def test_telegram(request: TelegramTestRequest):
     if str(project_root) not in sys.path:
         sys.path.insert(0, str(project_root))
 
-    try:
-        from src.services.telegram_service import TelegramNotifier
-    except Exception:
-        # Fallback: load module directly from file to avoid import/package issues
-        from importlib.util import spec_from_file_location, module_from_spec
+    from src.services.telegram_service import TelegramNotifier
+    from src.web.managers.settings import TELEGRAM_TOKEN_MASK
 
-        svc_path = project_root / "src" / "services" / "telegram_service.py"
-        spec = spec_from_file_location("tdm.telegram_service", str(svc_path))
-        mod = module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        TelegramNotifier = getattr(mod, "TelegramNotifier")
-
-    bot_token = request.telegram_bot_token.strip()
-    chat_id = request.telegram_chat_id.strip()
+    # Never trust a masked/empty token from the client: fall back to the
+    # stored credential so tests work without echoing the secret back.
+    bot_token = (request.telegram_bot_token or "").strip()
+    chat_id = (request.telegram_chat_id or "").strip()
+    if gui_manager is not None:
+        stored_settings = getattr(gui_manager.settings, "_settings", None)
+        if not bot_token or bot_token == TELEGRAM_TOKEN_MASK:
+            bot_token = str(getattr(stored_settings, "telegram_bot_token", "") or "").strip()
+        if not chat_id:
+            chat_id = str(getattr(stored_settings, "telegram_chat_id", "") or "").strip()
 
     if not bot_token or not chat_id:
         return {"success": False, "message": "Bot token and chat ID are required"}
@@ -301,8 +306,9 @@ async def test_telegram(request: TelegramTestRequest):
 @app.get("/api/version")
 async def get_version():
     """Get current application version and check for updates"""
-    from src.version import __version__
     import aiohttp
+
+    from src.version import __version__
 
     current_version = __version__
     latest_version = None
@@ -311,19 +317,20 @@ async def get_version():
 
     try:
         # Check GitHub API for latest release
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest",
-                timeout=5
-            ) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    latest_version = data.get('tag_name', '').lstrip('v')
-                    download_url = data.get('html_url')
+        async with (
+            aiohttp.ClientSession() as session,
+            session.get(
+                "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest", timeout=5
+            ) as response,
+        ):
+            if response.status == 200:
+                data = await response.json()
+                latest_version = data.get("tag_name", "").lstrip("v")
+                download_url = data.get("html_url")
 
-                    # Compare versions (simple string comparison works for semantic versioning)
-                    if latest_version and latest_version > current_version:
-                        update_available = True
+                # Compare versions (simple string comparison works for semantic versioning)
+                if latest_version and latest_version > current_version:
+                    update_available = True
     except Exception as e:
         logger.warning(f"Failed to check for updates: {str(e)}")
 
@@ -331,7 +338,7 @@ async def get_version():
         "current_version": current_version,
         "latest_version": latest_version,
         "update_available": update_available,
-        "download_url": download_url or "https://github.com/rangermix/TwitchDropsMiner/releases"
+        "download_url": download_url or "https://github.com/rangermix/TwitchDropsMiner/releases",
     }
 
 
@@ -358,13 +365,23 @@ async def confirm_oauth():
 
 @app.post("/api/reload")
 async def trigger_reload():
-    """Trigger application reload"""
+    """Fetch fresh campaign and inventory data."""
     if not twitch_client:
         raise HTTPException(status_code=503, detail="Twitch client not initialized")
 
-    from src.config import State
+    if not twitch_client.request_inventory_refresh():
+        raise HTTPException(status_code=409, detail="Twitch client is shutting down")
+    return {"success": True}
 
-    twitch_client.change_state(State.INVENTORY_FETCH)
+
+@app.post("/api/cache/clear")
+async def clear_all_cache():
+    """Clear local derived miner state and fetch fresh Twitch data."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    if not twitch_client.request_inventory_refresh(clear_cache=True):
+        raise HTTPException(status_code=409, detail="Twitch client is shutting down")
     return {"success": True}
 
 
@@ -412,7 +429,7 @@ async def connect(sid, environ):
                 "login": gui_manager.login.get_status(),
                 "manual_mode": twitch_client.get_manual_mode_info(),
                 "current_drop": gui_manager.progress.get_current_drop(),
-                "wanted_items": gui_manager.get_wanted_tree(),
+                "wanted_items": gui_manager.get_wanted_game_tree(),
             },
             room=sid,
         )
@@ -435,20 +452,14 @@ async def request_login(sid):
 async def request_reload(sid):
     """Client requested application reload"""
     if twitch_client:
-        from src.config import State
-
-        twitch_client.change_state(State.INVENTORY_FETCH)
+        twitch_client.request_inventory_refresh()
 
 
 @sio.event
 async def get_wanted_items(sid):
     """Client requested wanted items list"""
     if gui_manager:
-        await sio.emit(
-            "wanted_items_update",
-            gui_manager.get_wanted_tree(),
-            to=sid
-        )
+        await sio.emit("wanted_items_update", gui_manager.get_wanted_game_tree(), to=sid)
 
 
 # Mount static files (CSS, JS, images)

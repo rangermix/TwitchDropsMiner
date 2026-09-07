@@ -24,10 +24,7 @@
             "logging_in": "Logowanie...",
             "required": "Wymagane zalogowanie",
             "waiting_auth": "Oczekiwanie na uwierzytelnienie..."
-        },
-        "oauth_prompt": "Wprowadź ten kod na:",
-        "oauth_activate": "Aktywuj Twitch",
-        "oauth_confirm": "Wprowadziłem kod"
+        }
     },
     "error": {
         "captcha": "Próba logowania została odrzucona przez CAPTCHA.\nProszę spróbować ponownie za co najmniej 12 godzin.",
@@ -46,7 +43,8 @@
             "switching": "Zmiana kanałów...",
             "fetching_inventory": "Odświeżanie ekwipunku...",
             "fetching_campaigns": "Odświeżanie kampanii...",
-            "adding_campaigns": "Dodawanie kampanii do ekwipunku... {counter}"
+            "adding_campaigns": "Dodawanie kampanii do ekwipunku... {counter}",
+            "ready": "Gotowy"
         },
         "tabs": {
             "main": "Główna",
@@ -104,19 +102,38 @@
                 "active": "Aktywna ✔",
                 "upcoming": "Nadchodząca ⏳",
                 "expired": "Wygasła ❌",
-                "claimed": "Odebrano ✔"
+                "claimed": "Odebrano ✔",
+                "ignored": "Ignorowane",
+                "skipped": "Pominięte"
             },
             "starts": "Rozpoczęcie: {time}",
             "ends": "Koniec: {time}",
             "no_campaigns": "Nie załadowano jeszcze żadnych kampanii...",
-            "claimed_drops": "odebrano"
+            "claimed_drops": "odebrano",
+            "ignored_drops": "{count} ignorowanych",
+            "skipped_drops": "{count} pominiętych",
+            "ignored_keyword_reason": "Zignorowano z powodu słowa kluczowego: {keyword}",
+            "ignored_precondition_reason": "Zignorowano, ponieważ zależy od {drop}",
+            "skipped_branch_reason": "Pominięto, ponieważ od tego dropu nie zależy żadna możliwa do zdobycia nagroda.",
+            "filters": {
+                "active": "Aktywne",
+                "not_linked": "Niepołączone",
+                "upcoming": "Nadchodzące",
+                "expired": "Wygasłe",
+                "finished": "Zakończone",
+                "item": "Przedmiot",
+                "badge": "Odznaka",
+                "emote": "Emotka",
+                "other": "Inne",
+                "clear": "Wyczyść filtry",
+                "search_placeholder": "Szukaj gier..."
+            }
         },
         "settings": {
             "general": {
                 "name": "Ogólne",
                 "dark_mode": "Tryb ciemny"
             },
-            "exclude": "Wykluczone",
             "reload": "Przeładuj",
             "games_to_watch": "Gry do oglądania",
             "games_help": "Wybierz gry do oglądania. Kolejność ma znaczenie - przeciągnij, aby zmienić priorytet (góra = najwyższy priorytet).",
@@ -135,7 +152,9 @@
                 "name": "Powiadomienia Telegram",
                 "description": "Otrzymuj powiadomienia na Telegram, gdy zostanie odebrany drop.",
                 "bot_token": "Token Bota Telegram",
-                "chat_id": "Chat ID Telegram",                "save_settings": "Zapisz ustawienia",                "test_connection": "Testuj połączenie",
+                "chat_id": "Chat ID Telegram",
+                "save_settings": "Zapisz ustawienia",
+                "test_connection": "Testuj połączenie",
                 "how_to_setup": "Jak skonfigurować",
                 "setup_steps": [
                     "Przejdź do <a href=\"https://t.me/BotFather\" target=\"_blank\">@BotFather</a> na Telegrama",
@@ -143,7 +162,7 @@
                     "Zapisz token bota, który otrzymasz",
                     "Uruchom nowego bota, szukając go i klikając /start (lub wyślij dowolną wiadomość)",
                     "Pobierz swój Chat ID, otwierając ten adres URL w przeglądarce (zamień TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
-                    "Znajdź swój ID użytkownika w odpowiedzi - to liczba w \"from\": {\"id\": TWOJE_ID}",
+                    "Znajdź swój ID użytkownika w odpowiedzi - to liczba w \"from\": {\"id\": YOUR_ID}",
                     "Wpisz token i Chat ID poniżej i kliknij Testuj połączenie"
                 ],
                 "success": "✓ Połączenie Telegram pomyślne! Będziesz otrzymywać powiadomienia o odbieranych dropach.",
@@ -153,7 +172,16 @@
                 "get_from_botfather": "Pobierz od @BotFather",
                 "your_user_id": "Twój numeryczny ID użytkownika Telegram"
             },
-            "reload_campaigns": "Przeładuj kampanie"
+            "reload_campaigns": "Przeładuj kampanie",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
+            "drop_name_blacklist": "Ignorowane słowa kluczowe nazw dropów",
+            "drop_name_blacklist_help": "Wpisz jedno słowo kluczowe w każdym wierszu. Dopasowanie wyszukuje dosłowny podciąg bez rozróżniania wielkości liter. Pasujące dropy i zależne od nich gałęzie są ignorowane; gałęzie będące tylko warunkami wstępnymi są pomijane, a wspólne warunki wstępne nadal można zdobywać.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Wyczyść całą pamięć podręczną",
+            "clear_all_cache_help": "Usuwa lokalny stan kampanii, kanałów i pochodne dane minera; zachowuje logowanie i ustawienia, a następnie ponownie pobiera dane z Twitcha.",
+            "mining_benefits": "Korzyści z Minowania",
+            "mining_benefits_help": "Wybierz rodzaje dropów, które chcesz zdobywać."
         },
         "help": {
             "about": "O Twitch Drops Miner",
@@ -190,6 +218,26 @@
             "manual_mode": "RĘCZNY",
             "connected": "Połączono",
             "disconnected": "Rozłączono"
+        },
+        "footer": {
+            "version": "Wersja:",
+            "loading": "Ładowanie...",
+            "update_available": "Aktualizacja dostępna:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Tryb ręczny aktywny - oglądanie konkretnej gry"
+            },
+            "auto": {
+                "title": "Tryb automatyczny - według priorytetu gier"
+            },
+            "proxy": {
+                "title": "Połączenie proxy aktywne"
+            }
+        },
+        "wanted": {
+            "name": "Kolejka Pożądanych Dropów",
+            "none": "Brak pożądanych dropów w kolejce..."
         }
     }
 }

@@ -112,11 +112,48 @@ class GUIChannels(TypedDict):
     viewers: str
 
 
+class GUIFooter(TypedDict):
+    version: str
+    loading: str
+    update_available: str
+
+
+class GUIBadgeItem(TypedDict):
+    title: str
+
+
+class GUIBadges(TypedDict):
+    manual: GUIBadgeItem
+    auto: GUIBadgeItem
+    proxy: GUIBadgeItem
+
+
+class GUIWanted(TypedDict):
+    name: str
+    none: str
+
+
+class GUIInvFilters(TypedDict):
+    active: str
+    not_linked: str
+    upcoming: str
+    expired: str
+    finished: str
+    item: str
+    badge: str
+    emote: str
+    other: str
+    clear: str
+    search_placeholder: str
+
+
 class GUIInvStatus(TypedDict):
     active: str
     expired: str
     upcoming: str
     claimed: str
+    ignored: str
+    skipped: str
 
 
 class GUIInventory(TypedDict):
@@ -125,6 +162,12 @@ class GUIInventory(TypedDict):
     starts: str
     ends: str
     claimed_drops: str
+    ignored_drops: str
+    skipped_drops: str
+    ignored_keyword_reason: str
+    ignored_precondition_reason: str
+    skipped_branch_reason: str
+    filters: GUIInvFilters
 
 
 class GUISettingsGeneral(TypedDict):
@@ -132,13 +175,40 @@ class GUISettingsGeneral(TypedDict):
     dark_mode: str
 
 
+class GUITelegramSettings(TypedDict):
+    name: str
+    description: str
+    bot_token: str
+    chat_id: str
+    save_settings: str
+    test_connection: str
+    how_to_setup: str
+    setup_steps: list[str]
+    success: str
+    saved: str
+    error: str
+    missing_credentials: str
+    get_from_botfather: str
+    your_user_id: str
+
+
 class GUISettings(TypedDict):
     general: GUISettingsGeneral
+    telegram: GUITelegramSettings
+    mining_benefits: str
+    mining_benefits_help: str
     reload: str
     reload_campaigns: str
+    drop_name_blacklist: str
+    drop_name_blacklist_help: str
+    drop_name_blacklist_placeholder: str
+    clear_all_cache: str
+    clear_all_cache_help: str
     games_to_watch: str
     games_help: str
     search_games: str
+    add_game: str
+    add_game_hint: str
     select_all: str
     deselect_all: str
     selected_games: str
@@ -185,6 +255,9 @@ class GUIMessages(TypedDict):
     settings: GUISettings
     help: GUIHelp
     header: GUIHeader
+    footer: GUIFooter
+    badges: GUIBadges
+    wanted: GUIWanted
 
 
 class Translation(TypedDict):

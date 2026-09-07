@@ -28,6 +28,16 @@ async function fetchAndDisplayVersion() {
                 versionText += ' (latest)';
             }
             versionElement.textContent = versionText;
+
+            // Translate footer version text
+            const footerVersionText = document.getElementById('footer-version-text');
+            if (footerVersionText && state.translations.gui?.footer) {
+                const versionLabel = state.translations.gui.footer.version || 'Version:';
+                // Preserve the span inside
+                const span = footerVersionText.querySelector('span');
+                footerVersionText.textContent = versionLabel + ' ';
+                footerVersionText.appendChild(span);
+            }
         }
 
         // Display update notification if available
@@ -41,6 +51,17 @@ async function fetchAndDisplayVersion() {
                 updateLink.href = data.download_url;
                 updateIndicator.style.display = 'inline-block';
 
+                // Translate update message
+                if (state.translations.gui?.footer) {
+                    const updateLabel = state.translations.gui.footer.update_available || 'Update Available:';
+                    const linkText = document.createTextNode(` ⚠ ${updateLabel} `);
+                    // Clear existing text nodes but keep the span
+                    const span = updateLink.querySelector('span'); // latest-version span
+                    updateLink.textContent = '';
+                    updateLink.appendChild(linkText);
+                    updateLink.appendChild(span);
+                }
+
                 // Log to console
                 console.log(`Update available: ${data.latest_version} (current: ${data.current_version})`);
             }
@@ -49,7 +70,8 @@ async function fetchAndDisplayVersion() {
         console.warn('Could not fetch version information:', error);
         // Set placeholder text if fetch fails
         const versionElement = document.getElementById('current-version');
-        if (versionElement && versionElement.textContent === 'Loading...') {
+        const loadingText = state.translations.gui?.footer?.loading || 'Loading...';
+        if (versionElement && versionElement.textContent === loadingText) {
             versionElement.textContent = 'Unknown';
         }
     }
@@ -200,7 +222,7 @@ socket.on('inventory_batch_update', (data) => {
 });
 
 socket.on('drop_update', (data) => {
-    updateDrop(data.campaign_id, data.drop);
+    updateDrop(data.campaign_id, data.drop, data.campaign, data.drops);
 });
 
 socket.on('login_required', () => {
@@ -323,6 +345,12 @@ function clearWatchingChannel() {
     renderChannels();
 }
 
+function channelMatchesGameFilter(channel, gamesToWatchSet) {
+    return channel.watching ||
+        gamesToWatchSet.size === 0 ||
+        Boolean(channel.game && gamesToWatchSet.has(channel.game.toLowerCase()));
+}
+
 function renderChannels() {
     const container = document.getElementById('channels-list');
     container.innerHTML = '';
@@ -331,25 +359,27 @@ function renderChannels() {
     const channels = Object.values(state.channels);
     if (channels.length === 0) {
         const emptyMsg = t.gui?.channels?.no_channels || 'No channels tracked yet...';
-        container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
+        container.replaceChildren(
+            makeElement('p', { class: 'empty-message' }, emptyMsg),
+        );
         return;
     }
 
     // Get the games to watch list from settings
     const gamesToWatch = state.settings.games_to_watch || [];
-    const gamesToWatchSet = new Set(gamesToWatch);
+    const gamesToWatchSet = new Set(gamesToWatch.map(g => g.toLowerCase()));
 
-    // Filter channels to only include those playing games in the watch list
-    const filteredChannels = channels.filter(channel => {
-        const gameName = channel.game;
-        // Include channels if: they have a game AND it's in the watch list
-        // OR if the watch list is empty (show all)
-        return gamesToWatch.length === 0 || (gameName && gamesToWatchSet.has(gameName));
-    });
+    // The active channel remains visible while a settings update changes the
+    // game filter; all other channels must match the configured watch list.
+    const filteredChannels = channels.filter(
+        channel => channelMatchesGameFilter(channel, gamesToWatchSet)
+    );
 
     if (filteredChannels.length === 0) {
         const emptyMsg = t.gui?.channels?.no_channels_for_games || 'No channels found for selected games...';
-        container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
+        container.replaceChildren(
+            makeElement('p', { class: 'empty-message' }, emptyMsg),
+        );
         return;
     }
 
@@ -390,13 +420,6 @@ function renderChannels() {
         const gameHeader = document.createElement('div');
         gameHeader.className = 'game-group-header';
 
-        let iconHtml = '';
-        if (group.icon) {
-            // Resize the box art to 40x53 (Twitch's standard small size)
-            const iconUrl = group.icon.replace('{width}', '40').replace('{height}', '53');
-            iconHtml = `<img src="${iconUrl}" alt="${group.name}" class="game-icon" onerror="this.style.display='none'">`;
-        }
-
         const channelCount = group.channels.length;
         const totalViewers = group.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
 
@@ -405,13 +428,13 @@ function renderChannels() {
             : (t.gui?.channels?.channel_count_plural || 'channels');
         const viewersText = t.gui?.channels?.viewers || 'viewers';
 
-        gameHeader.innerHTML = `
-            ${iconHtml}
-            <div class="game-group-info">
-                <div class="game-group-name">${group.name}</div>
-                <div class="game-group-stats">${channelCount} ${channelText} • ${totalViewers.toLocaleString()} ${viewersText}</div>
-            </div>
-        `;
+        if (group.icon) {
+            gameHeader.appendChild(makeImageElement(group.icon.replace('{width}', '40').replace('{height}', '53'), group.name, 'game-icon'));
+        }
+        gameHeader.appendChild(makeElement('div', { class: 'game-group-info' }, null, el => {
+            el.appendChild(makeElement('div', { class: 'game-group-name' }, group.name));
+            el.appendChild(makeElement('div', { class: 'game-group-stats' }, `${channelCount} ${channelText} • ${totalViewers.toLocaleString()} ${viewersText}`));
+        }));
 
         container.appendChild(gameHeader);
 
@@ -430,17 +453,23 @@ function renderChannels() {
             if (channel.online) div.classList.add('online');
             else div.classList.add('offline');
 
-            let badges = '';
-            if (channel.drops_enabled) badges += '<span class="channel-badge drops">DROPS</span>';
-            if (channel.acl_based) badges += '<span class="channel-badge acl">ACL</span>';
-
-            div.innerHTML = `
-                <div class="channel-name">${channel.name} ${badges}</div>
-                <div class="channel-info">
-                    ${channel.viewers !== null ? channel.viewers.toLocaleString() + ' viewers' : 'Offline'}
-                    ${channel.watching ? ' • <strong>WATCHING</strong>' : ''}
-                </div>
-            `;
+            const nameDiv = makeElement('div', { class: 'channel-name' }, channel.name, el => {
+                if (channel.drops_enabled) {
+                    el.appendChild(document.createTextNode(' '));
+                    el.appendChild(makeElement('span', { class: 'channel-badge drops' }, 'DROPS'));
+                }
+                if (channel.acl_based) {
+                    el.appendChild(document.createTextNode(' '));
+                    el.appendChild(makeElement('span', { class: 'channel-badge acl' }, 'ACL'));
+                }
+            });
+            const infoDiv = makeElement('div', { class: 'channel-info' }, channel.viewers !== null ? channel.viewers.toLocaleString() + ' viewers' : 'Offline', el => {
+                if (channel.watching) {
+                    el.appendChild(document.createTextNode(' • '));
+                    el.appendChild(makeElement('strong', {}, 'WATCHING'));
+                }
+            });
+            div.replaceChildren(nameDiv, infoDiv);
 
             div.onclick = () => selectChannel(channel.id);
             container.appendChild(div);
@@ -467,7 +496,10 @@ function updateDropProgress(data) {
     const dropGameEl = document.getElementById('drop-game');
     if (data.campaign_id) {
         const campaignUrl = `https://www.twitch.tv/drops/campaigns?dropID=${data.campaign_id}`;
-        dropGameEl.innerHTML = `<a href="${campaignUrl}" target="_blank" rel="noopener noreferrer" class="drop-campaign-link">${data.campaign_name}</a> (${data.game_name})`;
+        dropGameEl.replaceChildren(
+            makeElement('a', { href: campaignUrl, target: '_blank', rel: 'noopener noreferrer', class: 'drop-campaign-link' }, data.campaign_name),
+            document.createTextNode(` (${data.game_name})`),
+        );
     } else {
         dropGameEl.textContent = `${data.campaign_name} (${data.game_name})`;
     }
@@ -534,9 +566,16 @@ function clearInventory() {
     renderInventory();
 }
 
-function updateDrop(campaignId, dropData) {
-    if (state.campaigns[campaignId]) {
-        const drops = state.campaigns[campaignId].drops;
+function updateDrop(campaignId, dropData, campaignData = {}, dropsData = null) {
+    const campaign = state.campaigns[campaignId];
+    if (campaign) {
+        Object.assign(campaign, campaignData);
+        if (Array.isArray(dropsData)) {
+            campaign.drops = dropsData;
+            renderInventory();
+            return;
+        }
+        const drops = campaign.drops;
         const index = drops.findIndex(d => d.id === dropData.id);
         if (index !== -1) {
             drops[index] = dropData;
@@ -551,7 +590,7 @@ function getInventoryFilters() {
     // Get filter state from UI checkboxes and selected games array
     return {
         show_active: document.getElementById('filter-active')?.checked || false,
-        show_not_linked: document.getElementById('filter-not-linked')?.checked || false,
+        show_only_not_linked: document.getElementById('filter-not-linked')?.checked || false,
         show_upcoming: document.getElementById('filter-upcoming')?.checked || false,
         show_expired: document.getElementById('filter-expired')?.checked || false,
         show_finished: document.getElementById('filter-finished')?.checked || false,
@@ -566,35 +605,25 @@ function getInventoryFilters() {
 
 
 function campaignMatchesFilters(campaign, filters) {
-    // Calculate "finished" status: all drops claimed
-    const isFinished = campaign.total_drops > 0 && campaign.claimed_drops === campaign.total_drops;
+    const isFinished = campaign.mining_finished ??
+        (campaign.total_drops > 0 && campaign.claimed_drops === campaign.total_drops);
 
-    // Check if any filter is enabled
     const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
-    const anyFilterEnabled = filters.show_active || filters.show_not_linked ||
-        filters.show_upcoming || filters.show_expired ||
-        filters.show_finished || hasGameFilter;
 
-    // If no filters enabled, show all campaigns
-    if (!anyFilterEnabled) {
-        return true;
-    }
+    // Finished campaigns are excluded unless the user explicitly includes them.
+    if (!filters.show_finished && isFinished) return false;
 
-    // Check status filters (OR logic - campaign matches if ANY checked filter applies)
-    let statusMatch = false;
+    // Link state narrows the status result instead of joining its OR group.
+    if (filters.show_only_not_linked && campaign.linked) return false;
 
-    if (filters.show_active && campaign.active) statusMatch = true;
-    if (filters.show_not_linked && !campaign.linked) statusMatch = true;
-    if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
-    if (filters.show_expired && campaign.expired) statusMatch = true;
-    if (filters.show_finished && isFinished) statusMatch = true;
+    // Active, upcoming, and expired remain OR-based status filters.
+    const hasStatusFilters = filters.show_active || filters.show_upcoming || filters.show_expired;
 
-    // If status filters are enabled but campaign doesn't match any, filter it out
-    const hasStatusFilters = filters.show_active || filters.show_not_linked ||
-        filters.show_upcoming || filters.show_expired ||
-        filters.show_finished;
-    if (hasStatusFilters && !statusMatch) {
-        return false;
+    if (hasStatusFilters) {
+        const statusMatch = (filters.show_active && campaign.active) ||
+            (filters.show_upcoming && campaign.upcoming) ||
+            (filters.show_expired && campaign.expired);
+        if (!statusMatch) return false;
     }
 
     // Check game name filter (AND logic with status filters, OR logic among selected games)
@@ -699,7 +728,7 @@ function renderGameDropdown(searchTerm = '') {
     dropdown.innerHTML = '';
 
     if (filteredGames.length === 0) {
-        dropdown.innerHTML = '<div class="dropdown-item no-results">No games found</div>';
+        dropdown.replaceChildren(makeElement('div', { class: 'dropdown-item no-results' }, 'No games found'));
         gameDropdownFocusedIndex = -1;
         return;
     }
@@ -776,7 +805,7 @@ function updateGameTagsDisplay() {
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'game-tag-remove';
-        removeBtn.innerHTML = '×';
+        removeBtn.textContent = '×';
         removeBtn.setAttribute('aria-label', `Remove ${gameName}`);
         removeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -849,6 +878,10 @@ function handleGameSearchKeydown(event) {
     }
 }
 
+function applyInventoryViewMode(listView) {
+    document.getElementById('inventory-grid').classList.toggle('list-view', listView);
+}
+
 function renderInventory() {
     const container = document.getElementById('inventory-grid');
     container.innerHTML = '';
@@ -862,12 +895,12 @@ function renderInventory() {
 
     if (allCampaigns.length === 0) {
         const emptyMsg = t.gui?.inventory?.no_campaigns || 'No campaigns loaded yet...';
-        container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
+        container.replaceChildren(makeElement('p', { class: 'empty-message' }, emptyMsg));
         return;
     }
 
     if (campaigns.length === 0) {
-        container.innerHTML = `<p class="empty-message">No campaigns match the current filters.</p>`;
+        container.replaceChildren(makeElement('p', { class: 'empty-message' }, 'No campaigns match the current filters.'));
         return;
     }
 
@@ -889,94 +922,130 @@ function renderInventory() {
         }
 
         const claimedText = t.gui?.inventory?.status?.claimed || 'Claimed';
-        const dropsHtml = campaign.drops.map(drop => {
-            // Generate HTML for each benefit as its own line
-            let benefitsHtml = '';
-            if (drop.benefits && drop.benefits.length > 0) {
-                benefitsHtml = drop.benefits.map(benefit =>
-                    `<div class="benefit-item">
-                        <img src="${benefit.image_url}" alt="${benefit.name}" class="benefit-icon" onerror="this.style.display='none'">
-                        <div class="benefit-info">
-                            <span class="benefit-name">${benefit.name}</span>
-                            <span class="benefit-type">(${benefit.type})</span>
-                        </div>
-                    </div>`
-                ).join('');
+        const ignoredText = t.gui?.inventory?.status?.ignored || 'Ignored';
+        const skippedText = t.gui?.inventory?.status?.skipped || 'Skipped';
+        const claimedCountText = t.gui?.inventory?.claimed_drops || 'claimed';
+
+        // Build drops elements
+        const dropsEl = makeElement('div', { class: 'campaign-drops' });
+        campaign.drops.forEach(drop => {
+            const policyClass = drop.is_ignored ? ' ignored' : (drop.is_skipped ? ' skipped' : '');
+            let policyStatus = '';
+            let policyReason = '';
+            if (drop.is_ignored) {
+                policyStatus = `⊘ ${ignoredText}`;
+                if (drop.ignored_reason === 'keyword') {
+                    const template = t.gui?.inventory?.ignored_keyword_reason || 'Ignored by keyword: {keyword}';
+                    policyReason = template.replace('{keyword}', drop.ignored_keyword || '');
+                } else if (drop.ignored_reason === 'precondition') {
+                    const template = t.gui?.inventory?.ignored_precondition_reason || 'Ignored because it depends on {drop}';
+                    policyReason = template.replace('{drop}', drop.ignored_precondition || '');
+                }
+            } else if (drop.is_skipped) {
+                policyStatus = `⊘ ${skippedText}`;
+                policyReason = t.gui?.inventory?.skipped_branch_reason || 'Skipped because no mineable reward depends on this drop.';
             }
 
-            return `
-                <div class="drop-item ${drop.is_claimed ? 'claimed' : ''} ${drop.can_claim ? 'active' : ''}">
-                    <div class="drop-item-header">
-                        <div class="drop-item-info">
-                            <div><strong>${drop.name}</strong></div>
-                        </div>
-                    </div>
-                    <div class="benefits-list">
-                        ${benefitsHtml}
-                    </div>
-                    <div>${drop.current_minutes} / ${drop.required_minutes} minutes (${Math.round(drop.progress * 100)}%)</div>
-                    ${drop.is_claimed ? `<div>✓ ${claimedText}</div>` : ''}
-                </div>
-            `;
-        }).join('');
+            const dropItem = makeElement('div', {
+                class: `drop-item${drop.is_claimed ? ' claimed' : ''}${drop.can_claim ? ' active' : ''}${policyClass}`,
+                ...(policyReason ? { title: policyReason } : {}),
+            });
+            dropItem.appendChild(
+                makeElement('div', { class: 'drop-item-header' }, '', el =>
+                    el.appendChild(makeElement('div', { class: 'drop-item-info' }, '', el2 =>
+                        el2.appendChild(makeElement('div', {}, '', el3 =>
+                            el3.appendChild(makeElement('strong', {}, drop.name))
+                        ))
+                    ))
+                )
+            );
+            const benefitsList = makeElement('div', { class: 'benefits-list' });
+            if (drop.benefits && drop.benefits.length > 0) {
+                drop.benefits.forEach(benefit => {
+                    benefitsList.appendChild(
+                        makeElement('div', { class: 'benefit-item' }, '', el => {
+                            el.appendChild(makeImageElement(benefit.image_url, benefit.name, 'benefit-icon'));
+                            el.appendChild(makeElement('div', { class: 'benefit-info' }, '', el2 => {
+                                el2.appendChild(makeElement('span', { class: 'benefit-name' }, benefit.name));
+                                el2.appendChild(makeElement('span', { class: 'benefit-type' }, `(${benefit.type})`));
+                            }));
+                        })
+                    );
+                });
+            }
+            dropItem.appendChild(benefitsList);
+            dropItem.appendChild(makeElement('div', {}, `${drop.current_minutes} / ${drop.required_minutes} minutes (${Math.round(drop.progress * 100)}%)`));
+            if (drop.is_claimed) {
+                dropItem.appendChild(makeElement('div', {}, `✓ ${claimedText}`));
+            } else if (policyStatus) {
+                dropItem.appendChild(makeElement('div', { class: 'drop-policy-status' }, policyStatus));
+            }
+            dropsEl.appendChild(dropItem);
+        });
 
-        const campaignNameHtml = `<a href="${campaign.campaign_url}" target="_blank" rel="noopener noreferrer" class="campaign-name-link">${campaign.name} <span class="external-link-icon">🔗</span></a>`
+        // Campaign name link
+        const campaignNameLink = makeElement('a', { href: campaign.campaign_url, target: '_blank', rel: 'noopener noreferrer', class: 'campaign-name-link' }, campaign.name, el =>
+            el.appendChild(makeElement('span', { class: 'external-link-icon' }, '🔗'))
+        );
 
-        // Add LINKED or NOT LINKED badge
-        const linkStatusBadgeHtml = campaign.linked
-            ? `<span class="campaign-badge linked" title="Account is linked">LINKED</span>`
-            : `<span class="campaign-badge not-linked" onclick="window.open('${campaign.link_url}', '_blank')" title="Click to link your account">NOT LINKED</span>`;
+        // Linked/not linked badge
+        const linkStatusBadge = campaign.linked
+            ? makeElement('span', { class: 'campaign-badge linked', title: 'Account is linked' }, 'LINKED')
+            : makeElement('span', { class: 'campaign-badge not-linked', title: 'Click to link your account' }, 'NOT LINKED', el => {
+                el.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
+            });
 
-        const linkAccountButtonHtml = !campaign.linked && campaign.link_url
-            ? `<button class="link-account-btn" onclick="window.open('${campaign.link_url}', '_blank')">Link Account</button>`
-            : '';
+        // Link account button
+        const campaignGameDiv = makeElement('div', { class: 'campaign-game' }, '', el => {
+            if (campaign.game_box_art_url) {
+                const iconUrl = campaign.game_box_art_url.replace('{width}', '52').replace('{height}', '70');
+                el.appendChild(makeImageElement(iconUrl, campaign.game_name, 'game-icon'));
+            }
+            el.appendChild(makeElement('span', { class: 'campaign-game-name' }, campaign.game_name));
+            el.appendChild(linkStatusBadge);
+        });
 
-        // Add game icon if available
-        let gameIconHtml = '';
-        if (campaign.game_box_art_url) {
-            const iconUrl = campaign.game_box_art_url.replace('{width}', '52').replace('{height}', '70');
-            gameIconHtml = `<img src="${iconUrl}" alt="${campaign.game_name}" class="game-icon" onerror="this.style.display='none'">`;
-        }
+        const campaignHeader = makeElement('div', { class: 'campaign-header' }, '', el => {
+            el.appendChild(campaignGameDiv);
+            el.appendChild(campaignNameLink);
+            if (!campaign.linked && campaign.link_url) {
+                el.appendChild(makeElement('button', { class: 'link-account-btn' }, 'Link Account', btn => {
+                    btn.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
+                }));
+            }
+        });
 
-        // Format campaign timing based on status
-        let timingHtml = '';
+        const campaignStatus = makeElement('div', { class: 'campaign-status' }, '', el => {
+            el.appendChild(makeElement('span', {}, statusText));
+            let countText = `${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}`;
+            if (campaign.ignored_drops > 0) {
+                const ignoredCount = t.gui?.inventory?.ignored_drops || '{count} ignored';
+                countText += ` · ${ignoredCount.replace('{count}', campaign.ignored_drops)}`;
+            }
+            if (campaign.skipped_drops > 0) {
+                const skippedCount = t.gui?.inventory?.skipped_drops || '{count} skipped';
+                countText += ` · ${skippedCount.replace('{count}', campaign.skipped_drops)}`;
+            }
+            el.appendChild(makeElement('span', {}, countText));
+        });
+
+        const campaignInfo = makeElement('div', { class: 'campaign-info' });
+        campaignInfo.appendChild(campaignHeader);
+        campaignInfo.appendChild(campaignStatus);
+
+        // Campaign timing
         if (campaign.active && campaign.ends_at) {
-            const endDate = new Date(campaign.ends_at);
-            const formattedDate = endDate.toLocaleString();
             const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
-            timingHtml = `<div class="campaign-timing">${endsLabel.replace('{time}', formattedDate)}</div>`;
+            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
         } else if (campaign.upcoming && campaign.starts_at) {
-            const startDate = new Date(campaign.starts_at);
-            const formattedDate = startDate.toLocaleString();
             const startsLabel = t.gui?.inventory?.starts || 'Starts: {time}';
-            timingHtml = `<div class="campaign-timing">${startsLabel.replace('{time}', formattedDate)}</div>`;
+            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, startsLabel.replace('{time}', new Date(campaign.starts_at).toLocaleString())));
         } else if (campaign.expired && campaign.ends_at) {
-            const endDate = new Date(campaign.ends_at);
-            const formattedDate = endDate.toLocaleString();
             const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
-            timingHtml = `<div class="campaign-timing">${endsLabel.replace('{time}', formattedDate)}</div>`;
+            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
         }
 
-        const claimedCountText = t.gui?.inventory?.claimed_drops || 'claimed';
-        card.innerHTML = `
-            <div class="campaign-header">
-                <div class="campaign-game">
-                    ${gameIconHtml}
-                    <span class="campaign-game-name">${campaign.game_name}</span>
-                    ${linkStatusBadgeHtml}
-                </div>
-                ${campaignNameHtml}
-                ${linkAccountButtonHtml}
-            </div>
-            <div class="campaign-status">
-                <span>${statusText}</span>
-                <span>${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}</span>
-            </div>
-            ${timingHtml}
-            <div class="campaign-drops">
-                ${dropsHtml}
-            </div>
-        `;
+        card.replaceChildren(campaignInfo, dropsEl);
 
         container.appendChild(card);
     });
@@ -1019,8 +1088,17 @@ function updateLoginStatus(data) {
 function updateSettingsUI(settings) {
     state.settings = settings;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
+    document.getElementById('inventory-list-view').checked = settings.inventory_list_view || false;
+    applyInventoryViewMode(settings.inventory_list_view || false);
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
+
+    const dropBlacklist = document.getElementById('drop-name-blacklist');
+    if (dropBlacklist) {
+        dropBlacklist.value = Array.isArray(settings.drop_name_blacklist)
+            ? settings.drop_name_blacklist.join('\n')
+            : '';
+    }
 
     // Update proxy settings and indicator
     const proxyUrl = settings.proxy || '';
@@ -1033,10 +1111,16 @@ function updateSettingsUI(settings) {
         proxyIndicator.title = proxyUrl ? `Proxy active: ${proxyUrl}` : 'Proxy disabled';
     }
 
-    // Populate Telegram fields if present in settings
+    // Populate Telegram fields if present in settings (the server never
+    // echoes the stored bot token; it returns a mask placeholder instead).
     const botTokenInput = document.getElementById('telegram-bot-token');
     const chatIdInput = document.getElementById('telegram-chat-id');
-    if (botTokenInput) botTokenInput.value = settings.telegram_bot_token || '';
+    if (botTokenInput) {
+        botTokenInput.value = '';
+        if (settings.telegram_configured) {
+            botTokenInput.placeholder = '••••••••';
+        }
+    }
     if (chatIdInput) chatIdInput.value = settings.telegram_chat_id || '';
 
     // Update language dropdown if we have the current language
@@ -1061,7 +1145,7 @@ function updateSettingsUI(settings) {
     // Restore inventory filters from settings
     if (settings.inventory_filters) {
         document.getElementById('filter-active').checked = settings.inventory_filters.show_active || false;
-        document.getElementById('filter-not-linked').checked = settings.inventory_filters.show_not_linked || false;
+        document.getElementById('filter-not-linked').checked = settings.inventory_filters.show_only_not_linked || false;
         document.getElementById('filter-upcoming').checked = settings.inventory_filters.show_upcoming || false;
         document.getElementById('filter-expired').checked = settings.inventory_filters.show_expired || false;
         document.getElementById('filter-finished').checked = settings.inventory_filters.show_finished || false;
@@ -1165,7 +1249,7 @@ function renderSelectedGames(games) {
 
     if (games.length === 0) {
         const emptyMsg = t.gui?.settings?.no_games_selected || 'No games selected. Check games below to add them.';
-        container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
+        container.replaceChildren(makeElement('p', { class: 'empty-message' }, emptyMsg));
         return;
     }
 
@@ -1174,12 +1258,12 @@ function renderSelectedGames(games) {
         div.className = 'sortable-item';
         div.draggable = true;
         div.dataset.game = game;
-        div.innerHTML = `
-            <span class="drag-handle">☰</span>
-            <span class="priority-number">${index + 1}</span>
-            <span class="game-name">${game}</span>
-            <button class="remove-btn">✕</button>
-        `;
+        div.replaceChildren(
+            makeElement('span', { class: 'drag-handle' }, '☰'),
+            makeElement('span', { class: 'priority-number' }, String(index + 1)),
+            makeElement('span', { class: 'game-name' }, game),
+            makeElement('button', { class: 'remove-btn' }, '✕'),
+        );
 
         // Event listener for the delete button
         const removeBtn = div.querySelector('.remove-btn');
@@ -1205,10 +1289,11 @@ function renderAvailableGames(games, filterText) {
     if (games.length === 0) {
         if (filterText) {
             const emptyMsg = t.gui?.settings?.no_games_match || 'No games match your search.';
-            container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
+            const addHint = t.gui?.settings?.add_game_hint || ' Click "Add Game" to add it manually.';
+            container.replaceChildren(makeElement('p', { class: 'empty-message' }, `${emptyMsg}${addHint}`));
         } else {
             const emptyMsg = t.gui?.settings?.all_games_selected || 'All games are selected or no games available.';
-            container.innerHTML = `<p class="empty-message">${emptyMsg}</p>`;
+            container.replaceChildren(makeElement('p', { class: 'empty-message' }, emptyMsg));
         }
         return;
     }
@@ -1216,10 +1301,10 @@ function renderAvailableGames(games, filterText) {
     games.forEach(game => {
         const label = document.createElement('label');
         label.className = 'game-checkbox';
-        label.innerHTML = `
-            <input type="checkbox" value="${game}">
-            <span>${game}</span>
-        `;
+        label.replaceChildren(
+            makeElement('input', { type: 'checkbox', value: game }),
+            makeElement('span', {}, game),
+        );
 
         const checkbox = label.querySelector('input[type="checkbox"]');
         checkbox.addEventListener('change', (e) => toggleGameWatch(game, e.target.checked));
@@ -1324,6 +1409,37 @@ function selectAllGames() {
 
 function deselectAllGames() {
     state.settings.games_to_watch = [];
+    renderGamesToWatch();
+    renderChannels();
+    saveSettings();
+}
+
+function addGameFromSearch() {
+    const searchInput = document.getElementById('games-filter');
+    const gameName = searchInput.value.trim();
+
+    if (!gameName) {
+        return;
+    }
+
+    const games = state.settings.games_to_watch || [];
+
+    // Check if already selected
+    if (games.includes(gameName)) {
+        searchInput.value = ''; // Clear input if already added
+        renderGamesToWatch(); // Just re-render to clear any filtering state if needed
+        return;
+    }
+
+    // Add to selected games
+    games.push(gameName);
+    state.settings.games_to_watch = games;
+
+    // Add to available games set so it shows up in lists
+    availableGames.add(gameName);
+
+    // Clear search and update UI
+    searchInput.value = '';
     renderGamesToWatch();
     renderChannels();
     saveSettings();
@@ -1547,15 +1663,25 @@ async function handleSaveTelegramClick() {
     }
 }
 
+function parseDropNameBlacklist(value) {
+    return String(value || '')
+        .split(/\r?\n/)
+        .map(keyword => keyword.trim())
+        .filter(Boolean);
+}
 
 async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
+        inventory_list_view: document.getElementById('inventory-list-view').checked,
         language: document.getElementById('language').value,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
         proxy: state.settings.proxy || '',
         games_to_watch: state.settings.games_to_watch || [],
+        drop_name_blacklist: parseDropNameBlacklist(
+            document.getElementById('drop-name-blacklist')?.value
+        ),
         inventory_filters: getInventoryFilters(),
         mining_benefits: {
             "DIRECT_ENTITLEMENT": document.getElementById('mining-benefit-item')?.checked,
@@ -1607,7 +1733,7 @@ async function fetchAndPopulateLanguages() {
         console.error('Failed to fetch languages:', error);
         const languageSelect = document.getElementById('language');
         if (languageSelect) {
-            languageSelect.innerHTML = '<option value="">Failed to load languages</option>';
+            languageSelect.replaceChildren(makeElement('option', { value: '' }, 'Failed to load languages'));
         }
         addConsoleLine('Error: Unable to fetch available languages. Please check your connection or try again later.');
     }
@@ -1682,7 +1808,8 @@ function applyTranslations(t) {
 
     // Update Progress section
     if (mainTab && t.gui?.progress) {
-        const progressHeader = mainTab.querySelector('.progress-panel h2');
+        // ID: progress-header
+        const progressHeader = document.getElementById('progress-header');
         if (progressHeader) progressHeader.textContent = t.gui.progress.name;
 
         const noDropMsg = document.getElementById('no-drop-message');
@@ -1694,13 +1821,15 @@ function applyTranslations(t) {
 
     // Update Console section
     if (mainTab && t.gui) {
-        const consoleHeader = mainTab.querySelector('.console-panel h2');
+        // ID: console-header
+        const consoleHeader = document.getElementById('console-header');
         if (consoleHeader) consoleHeader.textContent = t.gui.output;
     }
 
     // Update Channels section
     if (mainTab && t.gui?.channels) {
-        const channelsHeader = mainTab.querySelector('.channels-panel h2');
+        // ID: channels-header
+        const channelsHeader = document.getElementById('channels-header');
         if (channelsHeader) channelsHeader.textContent = t.gui.channels.name;
         // Channel list will re-render with translated empty messages
         renderChannels();
@@ -1716,16 +1845,27 @@ function applyTranslations(t) {
     // Update Settings tab
     const settingsTab = document.getElementById('settings-tab');
     if (settingsTab && t.gui?.settings) {
-        const headers = settingsTab.querySelectorAll('h2');
-        if (headers[0]) headers[0].textContent = t.gui.settings.general.name;
-        // headers[1] is the Telegram section header in DOM order
-        if (headers[1]) {
-            const telegramName = (t.settings && t.settings.telegram && t.settings.telegram.name) || (t.gui && t.gui.settings && t.gui.settings.telegram && t.gui.settings.telegram.name) || null;
-            headers[1].textContent = telegramName || headers[1].textContent;
-        }
-        // games to watch is the next header
-        if (headers[2]) headers[2].textContent = t.gui.settings.games_to_watch;
-        if (headers[3]) headers[3].textContent = t.gui.settings.actions;
+        // Use IDs for robust selection
+        const generalHeader = document.getElementById('settings-general-header');
+        if (generalHeader) generalHeader.textContent = t.gui.settings.general.name;
+
+        const benefitsHeader = document.getElementById('settings-benefits-header');
+        if (benefitsHeader && t.gui.settings.mining_benefits) benefitsHeader.textContent = t.gui.settings.mining_benefits;
+
+        const dropBlacklistHeader = document.getElementById('settings-drop-blacklist-header');
+        if (dropBlacklistHeader) dropBlacklistHeader.textContent = t.gui.settings.drop_name_blacklist;
+
+        const dropBlacklistHelp = document.getElementById('settings-drop-blacklist-help');
+        if (dropBlacklistHelp) dropBlacklistHelp.textContent = t.gui.settings.drop_name_blacklist_help;
+
+        const dropBlacklistInput = document.getElementById('drop-name-blacklist');
+        if (dropBlacklistInput) dropBlacklistInput.placeholder = t.gui.settings.drop_name_blacklist_placeholder;
+
+        const gamesHeader = document.getElementById('settings-games-header');
+        if (gamesHeader) gamesHeader.textContent = t.gui.settings.games_to_watch;
+
+        const actionsHeader = document.getElementById('settings-actions-header');
+        if (actionsHeader) actionsHeader.textContent = t.gui.settings.actions;
 
         const darkModeLabel = settingsTab.querySelector('label:has(#dark-mode)');
         if (darkModeLabel) {
@@ -1749,8 +1889,11 @@ function applyTranslations(t) {
             refreshLabel.appendChild(input);
         }
 
-        const helpText = settingsTab.querySelector('.help-text');
-        if (helpText) helpText.textContent = t.gui.settings.games_help;
+        const benefitsHelp = document.getElementById('settings-benefits-help');
+        if (benefitsHelp && t.gui.settings.mining_benefits_help) benefitsHelp.textContent = t.gui.settings.mining_benefits_help;
+
+        const gamesHelp = document.getElementById('settings-games-help');
+        if (gamesHelp) gamesHelp.textContent = t.gui.settings.games_help;
 
         const searchInput = document.getElementById('games-filter');
         if (searchInput) searchInput.placeholder = t.gui.settings.search_games;
@@ -1761,6 +1904,9 @@ function applyTranslations(t) {
         const deselectAllBtn = document.getElementById('deselect-all-btn');
         if (deselectAllBtn) deselectAllBtn.textContent = t.gui.settings.deselect_all;
 
+        const addGameBtn = document.getElementById('add-game-btn');
+        if (addGameBtn && t.gui.settings.add_game) addGameBtn.textContent = t.gui.settings.add_game;
+
         const selectedGamesHeader = settingsTab.querySelector('.selected-games h3');
         if (selectedGamesHeader) selectedGamesHeader.textContent = t.gui.settings.selected_games;
 
@@ -1770,7 +1916,7 @@ function applyTranslations(t) {
         const reloadBtn = document.getElementById('reload-btn');
         if (reloadBtn) reloadBtn.textContent = t.gui.settings.reload_campaigns;
 
-        // Update Telegram Notifications section (use either t.settings.telegram or t.gui.settings.telegram)
+// Update Telegram Notifications section (use either t.settings.telegram or t.gui.settings.telegram)
         const tgTrans = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
         if (tgTrans) {
             const telegramSection = settingsTab.querySelector('.settings-section:has(#telegram-bot-token)');
@@ -1781,17 +1927,17 @@ function applyTranslations(t) {
                 const description = telegramSection.querySelector('.help-text');
                 if (description) description.textContent = tgTrans.description || description.textContent;
 
-                const labels = telegramSection.querySelectorAll('label');
-                if (labels[0]) {
-                    const span = labels[0].querySelector('span');
-                    if (span) span.textContent = (tgTrans.bot_token ? tgTrans.bot_token + ':' : span.textContent);
-                }
-                if (labels[1]) {
-                    const span = labels[1].querySelector('span');
-                    if (span) span.textContent = (tgTrans.chat_id ? tgTrans.chat_id + ':' : span.textContent);
-                    const small = labels[1].querySelector('small');
-                    if (small) small.textContent = tgTrans.your_user_id || small.textContent;
-                }
+                const botTokenLabel = document.getElementById('settings-telegram-bot-token-label');
+                if (botTokenLabel) botTokenLabel.textContent = tgTrans.bot_token || botTokenLabel.textContent;
+
+                const chatIdLabel = document.getElementById('settings-telegram-chat-id-label');
+                if (chatIdLabel) chatIdLabel.textContent = tgTrans.chat_id || chatIdLabel.textContent;
+
+                const yourUserId = document.getElementById('settings-telegram-your-user-id');
+                if (yourUserId) yourUserId.textContent = tgTrans.your_user_id || yourUserId.textContent;
+
+                const fromBotFather = document.getElementById('settings-telegram-get-from-botfather');
+                if (fromBotFather) fromBotFather.textContent = tgTrans.get_from_botfather || fromBotFather.textContent;
 
                 const saveTelegramBtn = document.getElementById('save-telegram-btn');
                 if (saveTelegramBtn) saveTelegramBtn.textContent = tgTrans.save_settings || saveTelegramBtn.textContent;
@@ -1801,6 +1947,12 @@ function applyTranslations(t) {
             }
         }
 
+        const clearCacheBtn = document.getElementById('clear-cache-btn');
+        if (clearCacheBtn) clearCacheBtn.textContent = t.gui.settings.clear_all_cache;
+
+        const clearCacheHelp = document.getElementById('clear-cache-help');
+        if (clearCacheHelp) clearCacheHelp.textContent = t.gui.settings.clear_all_cache_help;
+
         // Re-render games to watch with translated empty messages
         renderGamesToWatch();
     }
@@ -1808,73 +1960,142 @@ function applyTranslations(t) {
     // Update Help tab
     const helpTab = document.getElementById('help-tab');
     if (helpTab && t.gui?.help) {
+        // Robust ID selection for Help tab headers
+        const aboutHeader = document.getElementById('help-about-header');
+        if (aboutHeader) aboutHeader.textContent = t.gui.help.about || 'About Twitch Drops Miner';
+
+        const howtoHeader = document.getElementById('help-howto-header');
+        if (howtoHeader) howtoHeader.textContent = t.gui.help.how_to_use || 'How to Use';
+
+        const featuresHeader = document.getElementById('help-features-header');
+        if (featuresHeader) featuresHeader.textContent = t.gui.help.features || 'Features';
+
+        const notesHeader = document.getElementById('help-notes-header');
+        if (notesHeader) notesHeader.textContent = t.gui.help.important_notes || 'Important Notes';
+
+        // Update list items and links (keeping innerHTML approach for lists as they are dynamic content blocks)
         const helpContent = helpTab.querySelector('.help-content');
         if (helpContent) {
-            // Rebuild help content dynamically
-            helpContent.innerHTML = `
-                <h2>${t.gui.help.about || 'About Twitch Drops Miner'}</h2>
-                <p>${t.gui.help.about_text || 'This application automatically mines timed Twitch drops without downloading stream data.'}</p>
+            const howToItems = t.gui.help.how_to_use_items || [
+                'Login using your Twitch account (OAuth device code flow)',
+                'Link your accounts at <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a>',
+                'The miner will automatically discover campaigns and start mining',
+                'Configure priority games in Settings to focus on what you want',
+                'Monitor progress in the Main and Inventory tabs'
+            ];
+            const featuresItems = t.gui.help.features_items || [
+                'Stream-less drop mining - saves bandwidth',
+                'Game priority and exclusion lists',
+                'Tracks up to 199 channels simultaneously',
+                'Automatic channel switching',
+                'Real-time progress tracking'
+            ];
+            const notesItems = t.gui.help.important_notes_items || [
+                'Do not watch streams on the same account while mining',
+                'Keep your cookies.jar file secure',
+                'Requires linked game accounts for drops'
+            ];
 
-                <h3>${t.gui.help.how_to_use || 'How to Use'}</h3>
-                <ol>
-                    ${(t.gui.help.how_to_use_items || [
-                    'Login using your Twitch account (OAuth device code flow)',
-                    'Link your accounts at <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a>',
-                    'The miner will automatically discover campaigns and start mining',
-                    'Configure priority games in Settings to focus on what you want',
-                    'Monitor progress in the Main and Inventory tabs'
-                ]).map(item => `<li>${item}</li>`).join('')}
-                </ol>
-
-                <h3>${t.gui.help.features || 'Features'}</h3>
-                <ul>
-                    ${(t.gui.help.features_items || [
-                    'Stream-less drop mining - saves bandwidth',
-                    'Game priority and exclusion lists',
-                    'Tracks up to 199 channels simultaneously',
-                    'Automatic channel switching',
-                    'Real-time progress tracking'
-                ]).map(item => `<li>${item}</li>`).join('')}
-                </ul>
-
-                <h3>${t.gui.help.important_notes || 'Important Notes'}</h3>
-                <ul>
-                    ${(t.gui.help.important_notes_items || [
-                    'Do not watch streams on the same account while mining',
-                    'Keep your cookies.jar file secure',
-                    'Requires linked game accounts for drops'
-                ]).map(item => `<li>${item}</li>`).join('')}
-                </ul>
-
-                <!-- Telegram setup (translated) -->
-                ${(() => {
-                    const tg = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
-                    const title = tg && tg.name ? tg.name : (t.gui && t.gui.settings && t.gui.settings.telegram && t.gui.settings.telegram.name) || 'Telegram Notifications';
-                    const desc = tg && tg.description ? tg.description : (t.gui && t.gui.settings && t.gui.settings.telegram && t.gui.settings.telegram.description) || 'Receive instant notifications on Telegram when you claim drops. Setup instructions:';
-                    const steps = (tg && tg.setup_steps) || (t.gui && t.gui.settings && t.gui.settings.telegram && t.gui.settings.telegram.setup_steps) || [
-                        'Go to @BotFather on Telegram',
-                        'Create a new bot with /newbot command',
-                        'Save the bot token you receive',
-                        'Start your new bot by searching for it and clicking /start (or send any message)',
-                        'Get your Chat ID by opening this URL in browser (replace TOKEN): https://api.telegram.org/botTOKEN/getUpdates',
-                        'Find your user ID in the response - it is the number in "from": {"id": YOUR_ID}',
-                        'Enter the token and Chat ID in Settings and click Test Connection'
-                    ];
-
-                    return `
-                        <h3>${title}</h3>
-                        <p>${desc}</p>
-                        <ol>
-                            ${steps.map(s => `<li>${s}</li>`).join('')}
-                        </ol>
-                    `;
-                })()}
-
-                <div class="help-links">
-                    <a href="https://github.com/rangermix/TwitchDropsMiner" target="_blank">${t.gui.help.github_repo || 'GitHub Repository'}</a>
-                </div>
-            `;
+helpContent.replaceChildren(
+                makeElement('h2', { id: 'help-about-header' }, t.gui.help.about || 'About Twitch Drops Miner'),
+                makeElement('p', {}, t.gui.help.about_text || 'This application automatically mines timed Twitch drops without downloading stream data.'),
+                makeElement('h3', { id: 'help-howto-header' }, t.gui.help.how_to_use || 'How to Use'),
+                makeHelpList('ol', howToItems),
+                makeElement('h3', { id: 'help-features-header' }, t.gui.help.features || 'Features'),
+                makeHelpList('ul', featuresItems),
+                makeElement('h3', { id: 'help-notes-header' }, t.gui.help.important_notes || 'Important Notes'),
+                makeHelpList('ul', notesItems),
+                ...(function () {
+                    const tg = tgHelpSetup();
+                    return tg
+                        ? [makeElement('h3', { id: 'help-telegram-header' }, tg.title),
+                           makeElement('p', {}, tg.description),
+                           makeHelpList('ol', tg.steps)]
+                        : [];
+                })(),
+                makeElement('div', { class: 'help-links' }, '', el =>
+                    el.appendChild(makeElement('a', { href: 'https://github.com/rangermix/TwitchDropsMiner', target: '_blank', rel: 'noopener noreferrer' }, t.gui.help.github_repo || 'GitHub Repository'))
+                ),
+            );
         }
+    }
+
+    // Update Footer
+    if (t.gui?.footer) {
+        const loadingText = t.gui.footer.loading || 'Loading...';
+        const currentVersionEl = document.getElementById('current-version');
+        // Only update if it's the specific "Loading..." text to avoid overwriting the fetched version
+        if (currentVersionEl && currentVersionEl.textContent === 'Loading...') {
+            currentVersionEl.textContent = loadingText;
+        }
+
+        const footerVersionText = document.getElementById('footer-version-text');
+        if (footerVersionText) {
+            const versionLabel = t.gui.footer.version || 'Version:';
+            const span = document.getElementById('current-version'); // Need to re-fetch or preserve
+            footerVersionText.textContent = versionLabel + ' ';
+            // Re-finding the span because textContent wiped it from parent
+            if (span) footerVersionText.appendChild(span);
+        }
+    }
+
+    // Update Badges tooltips
+    if (t.gui?.badges) {
+        const manualBadge = document.getElementById('manual-mode-badge');
+        if (manualBadge && t.gui.badges.manual) manualBadge.title = t.gui.badges.manual.title;
+
+        const autoBadge = document.getElementById('auto-mode-badge');
+        if (autoBadge && t.gui.badges.auto) autoBadge.title = t.gui.badges.auto.title;
+
+        const proxyBadge = document.getElementById('proxy-indicator');
+        if (proxyBadge && t.gui.badges.proxy) proxyBadge.title = t.gui.badges.proxy.title; // Note: append logic in updateSettingsUI overrides this
+    }
+
+    // Update Wanted Drops Panel
+    if (mainTab && t.gui?.wanted) {
+        // ID: wanted-header
+        const wantedHeader = document.getElementById('wanted-header');
+        if (wantedHeader) wantedHeader.textContent = t.gui.wanted.name;
+        // Re-render wanted items to update empty message
+        // Since we don't store wanted items in state globally (only receives them), we rely on updateWantedItems triggering render
+    }
+
+    // Update Inventory Filters (re-using existing inventoryTab variable if available, or just querying)
+    // Note: inventoryTab was declared above in "Update Inventory Status" section
+    // But since that might be in a different block or not, let's be safe and just query element directly without const redeclaration if it conflicts.
+    // However, looking at the code, the previous declaration was likely in the same function scope.
+    // Simplest fix: use the existing element or re-query without 'const' if needed, but best to just use the one we have.
+    // Actually, looking at the view_file, there was 'const inventoryTab' around line 1639.
+    // So I should just reuse that variable or use a different name.
+
+    if (inventoryTab && t.gui?.inventory?.filters) {
+        const f = t.gui.inventory.filters;
+        const updateLabel = (id, text) => {
+            const el = document.getElementById(id)?.parentElement.querySelector('span');
+            if (el) el.textContent = text;
+        };
+        updateLabel('filter-active', f.active);
+        updateLabel('filter-not-linked', f.not_linked);
+        updateLabel('filter-upcoming', f.upcoming);
+        updateLabel('filter-expired', f.expired);
+        updateLabel('filter-finished', f.finished);
+        updateLabel('filter-benefit-item', f.item);
+        updateLabel('filter-benefit-badge', f.badge);
+        updateLabel('filter-benefit-emote', f.emote);
+        updateLabel('filter-benefit-other', f.other);
+
+        const clearBtn = document.getElementById('clear-filters-btn');
+        if (clearBtn) clearBtn.textContent = f.clear;
+
+        const searchInput = document.getElementById('games-filter');
+        if (searchInput) searchInput.placeholder = f.search_placeholder;
+
+        // Update Mining Benefit Labels in Settings (re-using inventory filter keys)
+        // IDs: mining-benefit-item, mining-benefit-badge, mining-benefit-emote, mining-benefit-unknown
+        updateLabel('mining-benefit-item', f.item);
+        updateLabel('mining-benefit-badge', f.badge);
+        updateLabel('mining-benefit-emote', f.emote);
+        updateLabel('mining-benefit-unknown', f.other);
     }
 
     // Update header elements
@@ -1899,13 +2120,30 @@ function applyTranslations(t) {
     }
 }
 
-async function reloadCampaigns() {
+async function requestCampaignRefresh(endpoint, button, actionName) {
+    if (button) button.disabled = true;
+
     try {
-        await fetch('/api/reload', { method: 'POST' });
+        const response = await fetch(endpoint, { method: 'POST' });
+        if (!response.ok) {
+            throw new Error(`${actionName} failed with HTTP ${response.status}`);
+        }
         // Status will update via Socket.IO when backend starts operation
     } catch (error) {
-        console.error('Failed to reload:', error);
+        console.error(`Failed to ${actionName}:`, error);
+    } finally {
+        if (button) button.disabled = false;
     }
+}
+
+async function reloadCampaigns() {
+    const button = document.getElementById('reload-btn');
+    await requestCampaignRefresh('/api/reload', button, 'reload campaigns');
+}
+
+async function clearAllCache() {
+    const button = document.getElementById('clear-cache-btn');
+    await requestCampaignRefresh('/api/cache/clear', button, 'clear cache');
 }
 
 
@@ -1953,9 +2191,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Then save settings
         saveSettings();
     });
+
+    document.getElementById('inventory-list-view').addEventListener('change', (e) => {
+        // Apply the view mode immediately for instant feedback
+        applyInventoryViewMode(e.target.checked);
+        saveSettings();
+    });
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
     document.getElementById('minimum-refresh-interval').addEventListener('change', saveSettings);
+    document.getElementById('drop-name-blacklist').addEventListener('change', saveSettings);
     // Proxy uses a manual "Set Proxy" button instead of auto-save
     document.getElementById('set-proxy-btn').addEventListener('click', () => {
         const proxyInput = document.getElementById('proxy-url');
@@ -1971,11 +2216,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('test-telegram-btn').addEventListener('click', testTelegramConnection);
     document.getElementById('save-telegram-btn').addEventListener('click', handleSaveTelegramClick);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
+    document.getElementById('clear-cache-btn').addEventListener('click', clearAllCache);
 
 
     // Games to watch management
     document.getElementById('select-all-btn').addEventListener('click', selectAllGames);
     document.getElementById('deselect-all-btn').addEventListener('click', deselectAllGames);
+    document.getElementById('add-game-btn').addEventListener('click', addGameFromSearch);
     document.getElementById('games-filter').addEventListener('input', renderGamesToWatch);
 
     // Inventory filters
@@ -2044,7 +2291,8 @@ function renderWantedItems(tree) {
     container.innerHTML = '';
 
     if (!tree || tree.length === 0) {
-        container.innerHTML = '<p class="empty-message-small">No wanted drops queued...</p>';
+        const emptyMsg = state.translations.gui?.wanted?.none || 'No wanted drops queued...';
+        container.replaceChildren(makeElement('p', { class: 'empty-message-small' }, emptyMsg));
         return;
     }
 
@@ -2052,57 +2300,44 @@ function renderWantedItems(tree) {
         const groupEl = document.createElement('div');
         groupEl.className = 'wanted-game-group';
 
-        const headerEl = document.createElement('div');
-        headerEl.className = 'wanted-game-header';
-
         // Game Icon
         let iconUrl = gameGroup.game_icon;
         if (iconUrl) {
-            iconUrl = iconUrl.replace('{width}', '40').replace('{height}', '53'); // 3:4 aspect ratio approx
+            iconUrl = iconUrl.replace('{width}', '40').replace('{height}', '53');
         }
 
-        const iconHtml = iconUrl
-            ? `<img src="${iconUrl}" alt="${gameGroup.game_name}" class="wanted-game-icon" onerror="this.style.display='none'">`
-            : '';
+        const headerChildren = [makeElement('span', { class: 'wanted-game-index' }, `#${index + 1}`)];
+        if (iconUrl) {
+            headerChildren.push(makeImageElement(iconUrl, gameGroup.game_name, 'wanted-game-icon'));
+        }
+        headerChildren.push(makeElement('span', { class: 'wanted-game-title' }, gameGroup.game_name));
 
-        headerEl.innerHTML = `
-            <span class="wanted-game-index">#${index + 1}</span>
-            ${iconHtml}
-            <span class="wanted-game-title">${gameGroup.game_name}</span>
-        `;
+        const headerEl = makeElement('div', { class: 'wanted-game-header' }, '', el => {
+            headerChildren.forEach(child => el.appendChild(child));
+        });
         groupEl.appendChild(headerEl);
 
         const campaignListEl = document.createElement('div');
         campaignListEl.className = 'wanted-campaign-list';
 
         gameGroup.campaigns.forEach(campaign => {
-            const cardEl = document.createElement('div');
-            cardEl.className = 'wanted-card';
-
-            cardEl.innerHTML = `
-                <div class="wanted-card-header">
-                     <a href="${campaign.url}" target="_blank" rel="noopener noreferrer" class="wanted-card-campaign-link" title="${campaign.name}">
-                        ${campaign.name}
-                    </a>
-                </div>
-                <div class="wanted-card-body">
-                    <div id="wanted-drops-${campaign.id}"></div>
-                </div>
-            `;
-
-            const dropContainer = cardEl.querySelector(`#wanted-drops-${campaign.id}`);
+            const dropContainer = makeElement('div', {});
+            const cardEl = makeElement('div', { class: 'wanted-card' }, '', el => {
+                el.appendChild(makeElement('div', { class: 'wanted-card-header' }, '', h =>
+                    h.appendChild(makeElement('a', { href: campaign.url, target: '_blank', rel: 'noopener noreferrer', class: 'wanted-card-campaign-link', title: campaign.name }, campaign.name))
+                ));
+                el.appendChild(makeElement('div', { class: 'wanted-card-body' }, '', b =>
+                    b.appendChild(dropContainer)
+                ));
+            });
 
             campaign.drops.forEach(drop => {
-                const dropEl = document.createElement('div');
-                dropEl.className = 'wanted-drop-item';
-
-                let html = `<span class="wanted-drop-name">${drop.name}</span>`;
-
-                drop.benefits.forEach(benefit => {
-                    html += `<span class="wanted-benefit-pill">${benefit}</span>`;
+                const dropEl = makeElement('div', { class: 'wanted-drop-item' }, '', el => {
+                    el.appendChild(makeElement('span', { class: 'wanted-drop-name' }, drop.name));
+                    drop.benefits.forEach(benefit => {
+                        el.appendChild(makeElement('span', { class: 'wanted-benefit-pill' }, benefit));
+                    });
                 });
-
-                dropEl.innerHTML = html;
                 dropContainer.appendChild(dropEl);
             });
 
@@ -2112,4 +2347,91 @@ function renderWantedItems(tree) {
         groupEl.appendChild(campaignListEl);
         container.appendChild(groupEl);
     });
+}
+
+// ==================== DOM Utilities ====================
+
+const TRUSTED_HELP_LINKS = new Set(['https://www.twitch.tv/drops/campaigns', 'https://t.me/BotFather']);
+
+function tgHelpSetup() {
+    const tg = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
+    if (!tg) return null;
+    return {
+        title: tg.name || 'Telegram Notifications',
+        description: tg.description || 'Receive instant notifications on Telegram when you claim drops. Setup instructions:',
+        steps: tg.setup_steps || [
+            'Go to @BotFather on Telegram',
+            'Create a new bot with /newbot command',
+            'Save the bot token you receive',
+            'Start your new bot by searching for it and clicking /start (or send any message)',
+            'Get your Chat ID by opening this URL in browser (replace TOKEN): https://api.telegram.org/botTOKEN/getUpdates',
+            'Find your user ID in the response - it is the number in "from": {"id": YOUR_ID}',
+            'Enter the token and Chat ID in Settings and click Test Connection'
+        ]
+    };
+}
+
+/**
+ * @param {string} tag
+ * @param {Record<string, string|number|boolean>} attrs
+ * @param {string|number|null} text
+ * @param {(el: HTMLElement) => void|null} callback
+ */
+function makeElement(tag, attrs = {}, text = null, callback = null) {
+    const el = document.createElement(tag);
+    Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, String(value)));
+    if (text !== null && text !== undefined) {
+        el.textContent = String(text);
+    }
+    if (callback) {
+        callback(el);
+    }
+    return el;
+}
+
+function makeImageElement(src, alt, className) {
+    const image = makeElement('img', { src, alt, class: className });
+    image.onerror = () => {
+        image.style.display = 'none';
+    };
+    return image;
+}
+
+function makeHelpList(tag, items) {
+    return makeElement(tag, {}, null, list => {
+        items.forEach(item => {
+            list.appendChild(makeElement('li', {}, null, li => appendTrustedHelpContent(li, item)));
+        });
+    });
+}
+
+function appendTrustedHelpContent(parent, text) {
+    const source = String(text);
+    const linkPattern = /<a\b[^>]*\bhref=(["'])(https:\/\/www\.twitch\.tv\/drops\/campaigns|https:\/\/t\.me\/BotFather)\1[^>]*>(.*?)<\/a>/gi;
+    let lastIndex = 0;
+    let match;
+    let matched = false;
+
+    while ((match = linkPattern.exec(source)) !== null) {
+        matched = true;
+        if (match.index > lastIndex) {
+            parent.appendChild(document.createTextNode(source.slice(lastIndex, match.index)));
+        }
+        const href = match[2];
+        if (TRUSTED_HELP_LINKS.has(href)) {
+            parent.appendChild(makeElement('a', { href, target: '_blank', rel: 'noopener noreferrer' }, match[3]));
+        } else {
+            parent.appendChild(document.createTextNode(match[0]));
+        }
+        lastIndex = linkPattern.lastIndex;
+    }
+
+    if (!matched) {
+        parent.textContent = source;
+        return;
+    }
+
+    if (lastIndex < source.length) {
+        parent.appendChild(document.createTextNode(source.slice(lastIndex)));
+    }
 }

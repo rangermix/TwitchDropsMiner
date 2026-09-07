@@ -24,10 +24,7 @@
             "logging_in": "ログイン中...",
             "required": "ログインが必要です",
             "waiting_auth": "認証を待っています..."
-        },
-        "oauth_prompt": "このコードを次の場所に入力してください:",
-        "oauth_activate": "Twitchをアクティベート",
-        "oauth_confirm": "コードを入力しました"
+        }
     },
     "error": {
         "captcha": "ログイン試行がCAPTCHAによって拒否されました。\n12時間以上後に再試行してください。",
@@ -46,7 +43,8 @@
             "switching": "チャンネルを切り替え中...",
             "fetching_inventory": "インベントリを取得中...",
             "fetching_campaigns": "キャンペーンを取得中...",
-            "adding_campaigns": "キャンペーンをインベントリに追加中... {counter}"
+            "adding_campaigns": "キャンペーンをインベントリに追加中... {counter}",
+            "ready": "準備完了"
         },
         "tabs": {
             "main": "メイン",
@@ -104,12 +102,32 @@
                 "active": "アクティブ ✔",
                 "upcoming": "予定 ⏳",
                 "expired": "期限切れ ❌",
-                "claimed": "受け取り済み ✔"
+                "claimed": "受け取り済み ✔",
+                "ignored": "無視",
+                "skipped": "スキップ"
             },
             "starts": "開始：{time}",
             "ends": "終了：{time}",
             "no_campaigns": "まだキャンペーンが読み込まれていません...",
-            "claimed_drops": "受け取り済み"
+            "claimed_drops": "受け取り済み",
+            "ignored_drops": "{count}件を無視",
+            "skipped_drops": "{count}件をスキップ",
+            "ignored_keyword_reason": "キーワードにより無視: {keyword}",
+            "ignored_precondition_reason": "{drop} に依存するため無視",
+            "skipped_branch_reason": "マイニング可能な報酬がこのドロップに依存していないためスキップ。",
+            "filters": {
+                "active": "アクティブ",
+                "not_linked": "未連携",
+                "upcoming": "近日開催",
+                "expired": "期限切れ",
+                "finished": "完了",
+                "item": "アイテム",
+                "badge": "バッジ",
+                "emote": "エモート",
+                "other": "その他",
+                "clear": "フィルター解除",
+                "search_placeholder": "ゲームを検索..."
+            }
         },
         "settings": {
             "general": {
@@ -144,7 +162,7 @@
                     "受け取ったボットトークンを保存",
                     "新しいボットを検索して/startをクリックして開始（またはメッセージを送信）",
                     "ブラウザでこのURLを開いてチャットIDを取得（TOKENを置き換え）: https://api.telegram.org/botTOKEN/getUpdates",
-                    "レスポンスでユーザーIDを見つける - \"from\": {\"id\": あなたのID}の数字です",
+                    "レスポンスでユーザーIDを見つける - \"from\": {\"id\": YOUR_ID}の数字です",
                     "トークンとチャットIDを入力して、接続をテストをクリック"
                 ],
                 "success": "✓ Telegram接続成功！ドロップを獲得したときに通知を受け取ります。",
@@ -154,7 +172,16 @@
                 "get_from_botfather": "@BotFatherから取得",
                 "your_user_id": "あなたのTelegram数値ユーザーID"
             },
-            "reload_campaigns": "キャンペーンを再読み込み"
+            "reload_campaigns": "キャンペーンを再読み込み",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
+            "drop_name_blacklist": "無視するドロップ名のキーワード",
+            "drop_name_blacklist_help": "1行に1つキーワードを入力してください。大文字と小文字を区別せず、文字列をそのまま部分一致で検索します。一致するドロップとその依存ブランチは無視され、前提条件のみのブランチはスキップされます。共通の前提条件は引き続きマイニングできます。",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "すべてのキャッシュを消去",
+            "clear_all_cache_help": "ローカルのキャンペーン、チャンネル、およびマイナーの派生状態を消去します。ログイン情報と設定は保持し、その後 Twitch から再読み込みします。",
+            "mining_benefits": "マイニング特典",
+            "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。"
         },
         "help": {
             "about": "Twitch Drops Minerについて",
@@ -191,6 +218,26 @@
             "manual_mode": "手動",
             "connected": "接続済み",
             "disconnected": "切断"
+        },
+        "footer": {
+            "version": "バージョン:",
+            "loading": "読み込み中...",
+            "update_available": "更新利用可能:"
+        },
+        "badges": {
+            "manual": {
+                "title": "手動モード - 特定のゲームを視聴中"
+            },
+            "auto": {
+                "title": "自動モード - ゲーム優先度に従う"
+            },
+            "proxy": {
+                "title": "プロキシ接続中"
+            }
+        },
+        "wanted": {
+            "name": "欲しいDropsキュー",
+            "none": "キューに欲しいDropsはありません..."
         }
     }
 }

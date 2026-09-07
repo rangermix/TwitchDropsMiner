@@ -24,9 +24,7 @@
             "required": "Potřebujete se nejdříve přihlásit",
             "waiting_auth": "Čekání na ověření..."
         },
-        "oauth_prompt": "Zadejte tento kód na:",
-        "oauth_activate": "Aktivovat Twitch",
-        "oauth_confirm": "Zadal jsem kód"
+        "error_code": "Kód chyby přihlášení: {error_code}"
     },
     "error": {
         "captcha": "Vaše připojení bylo zamítnuto službou Twitch, zkuste to znovu za 12 hodin.",
@@ -45,7 +43,8 @@
             "switching": "Přepínám mezi kanály...",
             "fetching_inventory": "Načítání inventáře...",
             "fetching_campaigns": "Načítání dropů...",
-            "adding_campaigns": "Přidávám dropy... {counter}"
+            "adding_campaigns": "Přidávám dropy... {counter}",
+            "ready": "Připraveno"
         },
         "tabs": {
             "main": "Hlavní",
@@ -103,19 +102,38 @@
                 "active": "ŽIVĚ ✔",
                 "upcoming": "Nadcházející ⏳",
                 "expired": "Ukončeno ❌",
-                "claimed": "Vyzvednuto ✔"
+                "claimed": "Vyzvednuto ✔",
+                "ignored": "Ignorováno",
+                "skipped": "Přeskočeno"
             },
             "starts": "Začíná: {time}",
             "ends": "Začíná: {time}",
             "no_campaigns": "Zatím nejsou načteny žádné kampaně...",
-            "claimed_drops": "získáno"
+            "claimed_drops": "získáno",
+            "ignored_drops": "{count} ignorováno",
+            "skipped_drops": "{count} přeskočeno",
+            "ignored_keyword_reason": "Ignorováno kvůli klíčovému slovu: {keyword}",
+            "ignored_precondition_reason": "Ignorováno, protože závisí na odměně {drop}",
+            "skipped_branch_reason": "Přeskočeno, protože na této odměně nezávisí žádná získatelná odměna.",
+            "filters": {
+                "active": "Aktivní",
+                "not_linked": "Nepřipojeno",
+                "upcoming": "Nadcházející",
+                "expired": "Vypršelo",
+                "finished": "Dokončeno",
+                "item": "Předmět",
+                "badge": "Odznak",
+                "emote": "Emotikon",
+                "other": "Jiné",
+                "clear": "Vymazat filtry",
+                "search_placeholder": "Hledat hry..."
+            }
         },
         "settings": {
             "general": {
                 "name": "Obecné",
                 "dark_mode": "Tmavý režim"
             },
-            "exclude": "Vynechat",
             "reload": "Obnovit",
             "games_to_watch": "Hry ke sledování",
             "games_help": "Vyberte hry ke sledování. Záleží na pořadí - přetáhněte pro změnu priority (nahoře = nejvyšší priorita).",
@@ -144,7 +162,7 @@
                     "Uložte si token bota, který obdržíte",
                     "Spusťte nového bota vyhledáním a kliknutím na /start (nebo pošlete jakoukoli zprávu)",
                     "Získejte své ID chatu otevřením této URL v prohlížeči (nahraďte TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
-                    "Najděte své ID uživatele v odpovědi - je to číslo v \"from\": {\"id\": VAŠE_ID}",
+                    "Najděte své ID uživatele v odpovědi - je to číslo v \"from\": {\"id\": YOUR_ID}",
                     "Zadejte token a ID chatu a klikněte na Testovat připojení"
                 ],
                 "success": "✓ Připojení k Telegram úspěšné! Budete dostávat upozornění, když si nárokujete drops.",
@@ -154,7 +172,16 @@
                 "get_from_botfather": "Získejte od @BotFather",
                 "your_user_id": "Vaše číselné ID uživatele Telegram"
             },
-            "reload_campaigns": "Znovu načíst kampaně"
+            "reload_campaigns": "Znovu načíst kampaně",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
+            "drop_name_blacklist": "Ignorovaná klíčová slova v názvech odměn",
+            "drop_name_blacklist_help": "Zadejte jedno klíčové slovo na řádek. Hledá se jako doslovný podřetězec bez rozlišení velikosti písmen. Odpovídající odměny a jejich závislé větve budou ignorovány; větve sloužící pouze jako předpoklad budou přeskočeny, zatímco sdílené předpoklady zůstanou získatelné.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Vymazat veškerou mezipaměť",
+            "clear_all_cache_help": "Vymaže místní stav kampaní, kanálů a odvozený stav mineru; zachová přihlášení a nastavení a poté znovu načte data z Twitche.",
+            "mining_benefits": "Výhody Těžby",
+            "mining_benefits_help": "Vyberte typy dropů, které chcete těžit."
         },
         "help": {
             "about": "O Twitch Drops Miner",
@@ -191,6 +218,26 @@
             "manual_mode": "MANUÁLNÍ",
             "connected": "Připojeno",
             "disconnected": "Odpojeno"
+        },
+        "footer": {
+            "version": "Verze:",
+            "loading": "Načítání...",
+            "update_available": "Dostupná aktualizace:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Manuální režim aktivní - sledování konkrétní hry"
+            },
+            "auto": {
+                "title": "Automatický režim - podle priority her"
+            },
+            "proxy": {
+                "title": "Proxy připojení aktivní"
+            }
+        },
+        "wanted": {
+            "name": "Fronta chtěných Dropů",
+            "none": "Žádné chtěné dropy ve frontě..."
         }
     }
 }

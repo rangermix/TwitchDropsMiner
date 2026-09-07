@@ -7,6 +7,7 @@ set -e
 
 VERSION=""
 GEMINI_API_KEY=""
+GEMINI_MODEL="gemini-3.1-flash-lite-preview"
 DRY_RUN="true"
 
 while getopts 'v:k:p' flag; do
@@ -14,7 +15,7 @@ while getopts 'v:k:p' flag; do
     v) VERSION="$OPTARG" ;;
     k) GEMINI_API_KEY="$OPTARG" ;;
     p) DRY_RUN="false" ;;
-    *) 
+    *)
        echo "❌ Error: Unknown option -${flag}"
        echo "Usage: $0 -v <version> -k <gemini_api_key> [-p]"
        echo "  -p: production mode (default is dry run)"
@@ -128,7 +129,7 @@ $COMMITS"
 # Call Gemini API
 echo "Calling Gemini API..."
 RESPONSE=$(curl -s -X POST \
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=$GEMINI_API_KEY" \
+  "https://generativelanguage.googleapis.com/v1beta/models/$GEMINI_MODEL:generateContent?key=$GEMINI_API_KEY" \
   -H "Content-Type: application/json" \
   -d "{
     \"contents\": [{

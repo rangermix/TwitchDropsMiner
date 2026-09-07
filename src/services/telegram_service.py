@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import logging
 from typing import TYPE_CHECKING
 
@@ -49,13 +50,13 @@ class TelegramNotifier:
 
         try:
             campaign = drop.campaign
-            benefits_text = ", ".join(b.name for b in drop.benefits) or "Unknown"
+            benefits_text = ", ".join(html.escape(b.name) for b in drop.benefits) or "Unknown"
 
             message = (
                 f"🎮 <b>Drop Claimed!</b>\n"
-                f"<b>Campaign:</b> {campaign.name}\n"
-                f"<b>Game:</b> {campaign.game.name}\n"
-                f"<b>Drop:</b> {drop.name}\n"
+                f"<b>Campaign:</b> {html.escape(campaign.name)}\n"
+                f"<b>Game:</b> {html.escape(campaign.game.name)}\n"
+                f"<b>Drop:</b> {html.escape(drop.name)}\n"
                 f"<b>Reward:</b> {benefits_text}"
             )
 
@@ -79,13 +80,13 @@ class TelegramNotifier:
 
         try:
             campaign = drop.campaign
-            benefits_text = ", ".join(b.name for b in drop.benefits) or "Unknown"
+            benefits_text = ", ".join(html.escape(b.name) for b in drop.benefits) or "Unknown"
 
             message = (
                 f"⏱️ <b>Drop Ready to Claim!</b>\n"
-                f"<b>Campaign:</b> {campaign.name}\n"
-                f"<b>Game:</b> {campaign.game.name}\n"
-                f"<b>Drop:</b> {drop.name}\n"
+                f"<b>Campaign:</b> {html.escape(campaign.name)}\n"
+                f"<b>Game:</b> {html.escape(campaign.game.name)}\n"
+                f"<b>Drop:</b> {html.escape(drop.name)}\n"
                 f"<b>Reward:</b> {benefits_text}\n"
                 f"✅ <i>All required time reached - ready to claim!</i>"
             )

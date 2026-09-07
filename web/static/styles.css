@@ -679,7 +679,7 @@ header h1 {
     background: none;
 }
 
-/* Inventory Grid */
+/* Inventory - card view (default) */
 .inventory-grid {
     column-width: 350px;
     column-gap: 20px;
@@ -691,9 +691,34 @@ header h1 {
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    position: relative;
     break-inside: avoid;
     margin-bottom: 20px;
+}
+
+.campaign-info {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Inventory - list view (each campaign as a horizontal row) */
+.inventory-grid.list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.inventory-grid.list-view .campaign-card {
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 0;
+}
+
+.inventory-grid.list-view .campaign-info {
+    flex: 0 0 320px;
+    min-width: 0;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
 }
 
 .campaign-header {
@@ -814,6 +839,15 @@ header h1 {
 
 .campaign-drops {
     padding: 15px;
+}
+
+.inventory-grid.list-view .campaign-drops {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+    align-content: start;
 }
 
 
@@ -954,6 +988,10 @@ header h1 {
     border-left: 3px solid var(--border-color);
 }
 
+.inventory-grid.list-view .drop-item {
+    margin-bottom: 0;
+}
+
 .drop-item.claimed {
     border-left-color: var(--success-color);
     opacity: 0.7;
@@ -961,6 +999,27 @@ header h1 {
 
 .drop-item.active {
     border-left-color: var(--accent-color);
+}
+
+.drop-item.ignored,
+.drop-item.skipped {
+    opacity: 0.55;
+    filter: grayscale(0.55);
+}
+
+.drop-item.ignored {
+    border-left-color: var(--error-color);
+}
+
+.drop-item.skipped {
+    border-left-color: var(--text-secondary);
+}
+
+.drop-policy-status {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-style: italic;
+    margin-top: 6px;
 }
 
 .drop-item-header {
@@ -1058,6 +1117,18 @@ header h1 {
     background: var(--bg-secondary);
     color: var(--text-primary);
     margin-left: 10px;
+}
+
+.settings-section textarea {
+    width: 100%;
+    min-height: 110px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font: inherit;
+    resize: vertical;
 }
 
 .list-manager {
@@ -1180,7 +1251,7 @@ header h1 {
     margin-bottom: 20px;
 }
 
-.games-filter input {
+.games-filter input[type="text"] {
     width: 100%;
     padding: 10px;
     border: 1px solid var(--border-color);
@@ -1189,6 +1260,7 @@ header h1 {
     color: var(--text-primary);
     font-size: 14px;
     margin-bottom: 10px;
+    margin-left: 0;
 }
 
 .filter-actions {
@@ -1492,8 +1564,126 @@ header h1 {
         grid-row: auto;
     }
 
-    .inventory-grid {
+    .inventory-grid.list-view .campaign-card {
+        flex-direction: column;
+    }
+
+    .inventory-grid.list-view .campaign-info {
+        flex: none;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    /* "Selected Games" / "Available Games" were still forced side-by-side here,
+       squeezing both panels to ~180px and wrapping their headings mid-word. */
+    .games-container {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    header {
+        padding: 15px;
+    }
+
+    .header-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    header h1 {
+        font-size: 1.4em;
+    }
+
+    .header-controls {
+        width: 100%;
+    }
+
+    .status-bar {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 8px 12px;
+    }
+
+    .tab-button {
+        padding: 10px 6px;
+        font-size: 14px;
+    }
+
+    .panel,
+    .settings-section,
+    .inventory-filters {
+        padding: 15px;
+    }
+
+    .filter-controls {
+        gap: 10px;
+    }
+
+    .filter-search {
+        flex-wrap: wrap;
+    }
+
+    .inventory-grid {
+        column-width: 280px;
+        column-gap: 12px;
+    }
+
+    .help-content {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.2em;
+    }
+
+    .language-selector {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .status-bar {
+        font-size: 12px;
+    }
+
+    .mode-badge {
+        margin-left: 0;
+    }
+
+    .oauth-code {
+        font-size: 22px;
+        letter-spacing: 2px;
+        padding: 15px;
+    }
+
+    .tabs {
+        flex-wrap: wrap;
+    }
+
+    .tab-button {
+        flex: 1 1 40%;
+    }
+
+    /* column-width switches to single-column below this anyway since no card
+       fits two 280px columns at this viewport, but drop the min width so a
+       narrower phone doesn't get a horizontal scrollbar from the column box. */
+    .inventory-grid {
+        column-width: auto;
+    }
+
+    .filter-separator {
+        display: none;
+    }
+
+    #clear-filters-btn {
+        width: 100%;
     }
 }
 

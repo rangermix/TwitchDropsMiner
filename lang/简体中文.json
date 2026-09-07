@@ -43,7 +43,8 @@
             "switching": "切换直播频道中...",
             "fetching_inventory": "获取库存中...",
             "fetching_campaigns": "获取掉宝活动...",
-            "adding_campaigns": "将掉宝活动列表添加至库存... {counter}"
+            "adding_campaigns": "将掉宝活动列表添加至库存... {counter}",
+            "ready": "就绪"
         },
         "tabs": {
             "main": "主面板",
@@ -101,12 +102,32 @@
                 "active": "已上线 ✔",
                 "upcoming": "即将上线 ⏳",
                 "expired": "已结束 ❌",
-                "claimed": "已领取 ✔"
+                "claimed": "已领取 ✔",
+                "ignored": "已忽略",
+                "skipped": "已跳过"
             },
             "starts": "开始时间: {time}",
             "ends": "结束时间: {time}",
             "no_campaigns": "尚未加载任何活动...",
-            "claimed_drops": "已领取"
+            "claimed_drops": "已领取",
+            "ignored_drops": "已忽略 {count} 个",
+            "skipped_drops": "已跳过 {count} 个",
+            "ignored_keyword_reason": "因关键词而忽略：{keyword}",
+            "ignored_precondition_reason": "因依赖 {drop} 而忽略",
+            "skipped_branch_reason": "已跳过，因为没有可挖取的奖励依赖此掉落。",
+            "filters": {
+                "active": "活动中",
+                "not_linked": "未关联",
+                "upcoming": "即将开始",
+                "expired": "已过期",
+                "finished": "已完成",
+                "item": "物品",
+                "badge": "徽章",
+                "emote": "表情",
+                "other": "其他",
+                "clear": "清除过滤器",
+                "search_placeholder": "搜索游戏..."
+            }
         },
         "settings": {
             "general": {
@@ -141,7 +162,7 @@
                     "保存您收到的机器人令牌",
                     "通过搜索并单击 /start 启动您的新机器人（或发送任何消息）",
                     "通过在浏览器中打开此URL来获取您的聊天ID（替换TOKEN）: https://api.telegram.org/botTOKEN/getUpdates",
-                    "在响应中找到您的用户ID - 它是\"from\": {\"id\": 您的ID}中的数字",
+                    "在响应中找到您的用户ID - 它是\"from\": {\"id\": YOUR_ID}中的数字",
                     "输入令牌和聊天ID，然后点击测试连接"
                 ],
                 "success": "✓ 电报连接成功！在您获得掉宝时您将收到通知。",
@@ -151,7 +172,16 @@
                 "get_from_botfather": "从 @BotFather 获取",
                 "your_user_id": "您的电报数字用户ID"
             },
-            "reload_campaigns": "重新加载活动"
+            "reload_campaigns": "重新加载活动",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
+            "drop_name_blacklist": "忽略的掉落名称关键词",
+            "drop_name_blacklist_help": "每行输入一个关键词。匹配时不区分大小写，并按字面子串搜索。匹配的掉落及其依赖分支将被忽略；仅作为前置条件的分支将被跳过，而共享的前置条件仍可挖取。",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "清除所有缓存",
+            "clear_all_cache_help": "清除本地活动、频道和挖矿器派生状态；保留登录信息和设置，然后从 Twitch 重新加载。",
+            "mining_benefits": "挖掘奖励",
+            "mining_benefits_help": "选择您想要获取的掉落类型。"
         },
         "help": {
             "about": "关于 Twitch 掉宝矿工",
@@ -188,6 +218,26 @@
             "manual_mode": "MANUAL",
             "connected": "已连接",
             "disconnected": "已断开"
+        },
+        "footer": {
+            "version": "版本:",
+            "loading": "加载中...",
+            "update_available": "可用更新:"
+        },
+        "badges": {
+            "manual": {
+                "title": "手动模式已激活 - 正在观看特定游戏"
+            },
+            "auto": {
+                "title": "自动模式 - 遵循游戏优先级"
+            },
+            "proxy": {
+                "title": "代理连接已激活"
+            }
+        },
+        "wanted": {
+            "name": "期望掉落队列",
+            "none": "队列中没有期望的掉落..."
         }
     }
 }

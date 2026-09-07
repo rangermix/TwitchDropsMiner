@@ -5,7 +5,6 @@ import json
 import logging
 import re
 from base64 import b64encode
-from functools import cached_property
 from typing import TYPE_CHECKING, Any, SupportsInt, cast
 
 import aiohttp
@@ -15,7 +14,7 @@ from src.config.constants import CALL, ONLINE_DELAY, GQLOperation, JsonType, URL
 from src.config.operations import GQL_OPERATIONS
 from src.exceptions import MinerException, RequestException
 from src.models.game import Game
-from src.utils.json_utils import json_minify
+from src.utils.json_utils import isonow, json_minify
 
 
 if TYPE_CHECKING:
@@ -44,7 +43,7 @@ class Stream:
         self.title: str = title
         self._stream_url: URLType | None = None
 
-    @cached_property
+    @property
     def _spade_payload(self) -> JsonType:
         payload = [
             {
@@ -53,13 +52,18 @@ class Stream:
                     "broadcast_id": str(self.broadcast_id),
                     "channel_id": str(self.channel.id),
                     "channel": self.channel._login,
+                    "client_time": isonow(),
+                    "game": self.game.name if self.game is not None else "",
+                    "game_id": str(self.game.id) if self.game is not None else "",
                     "hidden": False,
+                    "is_live": True,
                     "live": True,
                     "location": "channel",
                     "logged_in": True,
+                    "minutes_logged": 1,
                     "muted": False,
                     "player": "site",
-                    "user_id": self.channel._twitch._auth_state.user_id,
+                    "user_id": int(self.channel._twitch._auth_state.user_id),
                 },
             }
         ]
@@ -297,9 +301,7 @@ class Channel:
         For mobile view, spade_url is available immediately from the page, skipping step #2.
         """
         SETTINGS_PATTERN: str = r'src="(https://[\w.]+/config/settings\.[0-9a-f]{32}\.js)"'
-        SPADE_PATTERN: str = (
-            r'"beacon_?url": ?"(https://video-edge-[.\w\-/]+\.ts(?:\?allow_stream=true)?)"'
-        )
+        SPADE_PATTERN: str = r'"beacon_?url": ?"(https://[^"]+)"'
         async with self._twitch.request("GET", self.url) as response1:
             streamer_html: str = await response1.text(encoding="utf8")
         match = re.search(SPADE_PATTERN, streamer_html, re.I)
@@ -421,7 +423,7 @@ class Channel:
             self.display()
 
     # NOTE: This is currently unused.
-    async def _send_watch(self) -> bool:
+    async def _send_watch_playlist(self) -> bool:
         """
         This performs a HEAD request on the stream's current playlist,
         to simulate watching the stream.
@@ -476,12 +478,12 @@ class Channel:
     async def send_watch(self) -> bool:
         if self._stream is None:
             return False
-        if self._spade_url is None:
-            self._spade_url = await self.get_spade_url()
         try:
+            if self._spade_url is None:
+                self._spade_url = await self.get_spade_url()
             async with self._twitch.request(
                 "POST", self._spade_url, data=self._stream._spade_payload
             ) as response:
                 return response.status == 204
-        except RequestException:
+        except (MinerException, RequestException):
             return False

@@ -26,3 +26,6 @@ data/
 *.iml
 *.log
 *.egg-info/
+.coverage
+
+artifacts/

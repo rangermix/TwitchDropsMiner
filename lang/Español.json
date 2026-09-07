@@ -43,7 +43,8 @@
             "switching": "Cambiando de canal...",
             "fetching_inventory": "Obteniendo inventario...",
             "fetching_campaigns": "Obteniendo campañas...",
-            "adding_campaigns": "Agregando lista de campañas al inventario... {counter}"
+            "adding_campaigns": "Agregando lista de campañas al inventario... {counter}",
+            "ready": "Listo"
         },
         "tabs": {
             "main": "Principal",
@@ -101,12 +102,32 @@
                 "active": "Activo ✔",
                 "upcoming": "Próximamente ⏳",
                 "expired": "Expirado ❌",
-                "claimed": "Reclamado ✔"
+                "claimed": "Reclamado ✔",
+                "ignored": "Ignorado",
+                "skipped": "Omitido"
             },
             "starts": "Comienza: {time}",
             "ends": "Termina: {time}",
             "no_campaigns": "Aún no se han cargado campañas...",
-            "claimed_drops": "reclamado"
+            "claimed_drops": "reclamado",
+            "ignored_drops": "{count} ignorados",
+            "skipped_drops": "{count} omitidos",
+            "ignored_keyword_reason": "Ignorado por la palabra clave: {keyword}",
+            "ignored_precondition_reason": "Ignorado porque depende de {drop}",
+            "skipped_branch_reason": "Omitido porque ninguna recompensa obtenible depende de este drop.",
+            "filters": {
+                "active": "Activo",
+                "not_linked": "No Vinculado",
+                "upcoming": "Próximo",
+                "expired": "Caducado",
+                "finished": "Terminado",
+                "item": "Objeto",
+                "badge": "Insignia",
+                "emote": "Emote",
+                "other": "Otro",
+                "clear": "Limpiar Filtros",
+                "search_placeholder": "Buscar juegos..."
+            }
         },
         "settings": {
             "general": {
@@ -142,7 +163,7 @@
                     "Guarda el token del bot que recibas",
                     "Inicia tu nuevo bot buscándolo y haciendo clic en /start (o envía cualquier mensaje)",
                     "Obtén tu ID de Chat abriendo esta URL en el navegador (reemplaza TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
-                    "Encuentra tu ID de usuario en la respuesta - es el número en \"from\": {\"id\": TU_ID}",
+                    "Encuentra tu ID de usuario en la respuesta - es el número en \"from\": {\"id\": YOUR_ID}",
                     "Ingresa el token e ID de Chat y haz clic en Probar conexión"
                 ],
                 "saved": "✓ ¡Configuración guardada exitosamente!",
@@ -151,7 +172,16 @@
                 "missing_credentials": "Por favor, completa tanto el token del bot como el ID de chat. Consulta las instrucciones de configuración en la pestaña Ayuda.",
                 "get_from_botfather": "Obtener de @BotFather",
                 "your_user_id": "Tu ID de usuario numérico de Telegram"
-            }
+            },
+            "drop_name_blacklist": "Palabras clave de drops ignorados",
+            "drop_name_blacklist_help": "Introduce una palabra clave por línea. La coincidencia busca una subcadena literal sin distinguir mayúsculas de minúsculas. Se ignoran los drops coincidentes y sus ramas dependientes; se omiten las ramas que solo son requisitos previos, mientras que los requisitos compartidos siguen siendo obtenibles.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Borrar toda la caché",
+            "clear_all_cache_help": "Borra el estado local de campañas, canales y los datos derivados del minero; conserva el inicio de sesión y la configuración, y luego vuelve a cargar los datos desde Twitch.",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
+            "mining_benefits": "Beneficios de Minería",
+            "mining_benefits_help": "Selecciona qué tipos de drops deseas minar."
         },
         "help": {
             "about": "Acerca de Twitch Drops Miner",
@@ -188,6 +218,26 @@
             "manual_mode": "MANUAL",
             "connected": "Conectado",
             "disconnected": "Desconectado"
+        },
+        "footer": {
+            "version": "Versión:",
+            "loading": "Cargando...",
+            "update_available": "Actualización disponible:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Modo manual activo - viendo juego específico"
+            },
+            "auto": {
+                "title": "Modo automático - siguiendo prioridad de juegos"
+            },
+            "proxy": {
+                "title": "Conexión proxy activa"
+            }
+        },
+        "wanted": {
+            "name": "Cola de Drops Deseados",
+            "none": "No hay drops deseados en cola..."
         }
     }
 }

@@ -24,15 +24,12 @@
             "logging_in": "Koneksi dalam proses...",
             "required": "Diperlukan sambungan",
             "waiting_auth": "Menunggu autentikasi..."
-        },
-        "oauth_prompt": "Masukkan kode ini di:",
-        "oauth_activate": "Aktifkan Twitch",
-        "oauth_confirm": "Saya telah memasukkan kode"
+        }
     },
     "error": {
         "captcha": "Sambungan ditolak oleh CAPTCHA. Silakan coba lagi dalam waktu sekitar 12 jam.",
         "site_down": "Twitch tidak tersedia. Silakan coba lagi dalam {seconds} detik....",
-        "no_connection": "Tidak dapat tersambung ke Twitch. Silakan coba lagi dalam {detik} detik...."
+        "no_connection": "Tidak dapat tersambung ke Twitch. Silakan coba lagi dalam {seconds} detik...."
     },
     "gui": {
         "output": "Keluaran",
@@ -46,7 +43,8 @@
             "switching": "Koleksi saluran yang sedang berlangsung...",
             "fetching_inventory": "Mmengambil inventaris...",
             "fetching_campaigns": "Mengambil kampanye...",
-            "adding_campaigns": "Menambahkan daftar kampanye ke inventaris... {counter}"
+            "adding_campaigns": "Menambahkan daftar kampanye ke inventaris... {counter}",
+            "ready": "Siap"
         },
         "tabs": {
             "main": "Utama",
@@ -104,12 +102,32 @@
                 "active": "Aktif ✔",
                 "upcoming": "Segera hadir ⏳",
                 "expired": "Kedaluarsa ❌",
-                "claimed": "Diklaim ✔"
+                "claimed": "Diklaim ✔",
+                "ignored": "Diabaikan",
+                "skipped": "Dilewati"
             },
             "starts": "Mulai : {time}",
             "ends": "Akhir : {time}",
             "no_campaigns": "Belum ada kampanye yang dimuat...",
-            "claimed_drops": "diklaim"
+            "claimed_drops": "diklaim",
+            "ignored_drops": "{count} diabaikan",
+            "skipped_drops": "{count} dilewati",
+            "ignored_keyword_reason": "Diabaikan karena kata kunci: {keyword}",
+            "ignored_precondition_reason": "Diabaikan karena bergantung pada {drop}",
+            "skipped_branch_reason": "Dilewati karena tidak ada hadiah yang dapat ditambang yang bergantung pada drop ini.",
+            "filters": {
+                "active": "Aktif",
+                "not_linked": "Tidak Terhubung",
+                "upcoming": "Mendatang",
+                "expired": "Kadaluarsa",
+                "finished": "Selesai",
+                "item": "Item",
+                "badge": "Lencana",
+                "emote": "Emote",
+                "other": "Lainnya",
+                "clear": "Hapus Filter",
+                "search_placeholder": "Cari game..."
+            }
         },
         "settings": {
             "general": {
@@ -144,7 +162,7 @@
                     "Simpan token bot yang Anda terima",
                     "Mulai bot baru Anda dengan mencarinya dan mengklik /start (atau kirim pesan apa pun)",
                     "Dapatkan ID Chat Anda dengan membuka URL ini di browser (ganti TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
-                    "Temukan ID pengguna Anda dalam respons - itu adalah angka di \"from\": {\"id\": ID_ANDA}",
+                    "Temukan ID pengguna Anda dalam respons - itu adalah angka di \"from\": {\"id\": YOUR_ID}",
                     "Masukkan token dan ID Chat, lalu klik Uji Koneksi"
                 ],
                 "success": "✓ Koneksi Telegram berhasil! Anda akan menerima notifikasi saat mengklaim drop.",
@@ -154,7 +172,16 @@
                 "get_from_botfather": "Dapatkan dari @BotFather",
                 "your_user_id": "ID pengguna numerik Telegram Anda"
             },
-            "reload_campaigns": "Muat Ulang Kampanye"
+            "reload_campaigns": "Muat Ulang Kampanye",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
+            "drop_name_blacklist": "Kata Kunci Nama Drop yang Diabaikan",
+            "drop_name_blacklist_help": "Masukkan satu kata kunci per baris. Pencocokan mencari substring literal tanpa membedakan huruf besar dan kecil. Drop yang cocok dan cabang yang bergantung padanya diabaikan; cabang yang hanya menjadi prasyarat dilewati, sementara prasyarat bersama tetap dapat ditambang.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "Hapus Semua Cache",
+            "clear_all_cache_help": "Menghapus status kampanye, channel, dan data turunan miner lokal; mempertahankan login dan pengaturan, lalu memuat ulang data dari Twitch.",
+            "mining_benefits": "Manfaat Penambangan",
+            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang."
         },
         "help": {
             "about": "Tentang Twitch Drops Miner",
@@ -191,6 +218,26 @@
             "manual_mode": "MANUAL",
             "connected": "Terhubung",
             "disconnected": "Terputus"
+        },
+        "footer": {
+            "version": "Versi:",
+            "loading": "Memuat...",
+            "update_available": "Pembaruan Tersedia:"
+        },
+        "badges": {
+            "manual": {
+                "title": "Mode manual aktif - menonton game tertentu"
+            },
+            "auto": {
+                "title": "Mode otomatis - mengikuti prioritas game"
+            },
+            "proxy": {
+                "title": "Koneksi proxy aktif"
+            }
+        },
+        "wanted": {
+            "name": "Antrean Drops yang Diinginkan",
+            "none": "Tidak ada drops yang diinginkan dalam antrean..."
         }
     }
 }

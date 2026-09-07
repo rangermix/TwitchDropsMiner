@@ -24,10 +24,7 @@
             "logging_in": "...تسجيل الدخول",
             "required": "تسجيل الدخول مطلوب",
             "waiting_auth": "في انتظار المصادقة..."
-        },
-        "oauth_prompt": "أدخل هذا الرمز في:",
-        "oauth_activate": "تفعيل Twitch",
-        "oauth_confirm": "لقد أدخلت الرمز"
+        }
     },
     "error": {
         "captcha": ".يرجى المحاولة مجدداَ بعد مرور 12 ساعة \n .CAPTCHA تم رفض محاولة تسجيل الدخول الخاصة بك من قبل",
@@ -46,7 +43,8 @@
             "switching": "...تبديل القناة",
             "fetching_inventory": "...جلب محتويات الحقيبة",
             "fetching_campaigns": "...جلب الحملات",
-            "adding_campaigns": "{counter} ...إضافة الحملات إلى الحقيبة"
+            "adding_campaigns": "{counter} ...إضافة الحملات إلى الحقيبة",
+            "ready": "جاهز"
         },
         "tabs": {
             "main": "الرئيسية",
@@ -104,12 +102,32 @@
                 "active": "✔ نشط",
                 "upcoming": "⏳ قادم",
                 "expired": "❌ منتهي",
-                "claimed": "✔ تم الحصول عليه"
+                "claimed": "✔ تم الحصول عليه",
+                "ignored": "تم التجاهل",
+                "skipped": "تم التخطي"
             },
             "starts": "{time} :يبدأ",
             "ends": "{time} :ينتهي",
             "no_campaigns": "لم يتم تحميل أي حملات بعد...",
-            "claimed_drops": "تم المطالبة"
+            "claimed_drops": "تم المطالبة",
+            "ignored_drops": "تم تجاهل {count}",
+            "skipped_drops": "تم تخطي {count}",
+            "ignored_keyword_reason": "تم التجاهل بسبب الكلمة المفتاحية: {keyword}",
+            "ignored_precondition_reason": "تم التجاهل لأنه يعتمد على {drop}",
+            "skipped_branch_reason": "تم التخطي لأنه لا تعتمد أي مكافأة قابلة للتعدين على هذا الدروب.",
+            "filters": {
+                "active": "نشط",
+                "not_linked": "غير مرتبط",
+                "upcoming": "قادم",
+                "expired": "منتهي",
+                "finished": "مكتمل",
+                "item": "عنصر",
+                "badge": "شارة",
+                "emote": "رمز تعبيري",
+                "other": "آخر",
+                "clear": "مسح المرشحات",
+                "search_placeholder": "البحث عن الألعاب..."
+            }
         },
         "settings": {
             "general": {
@@ -144,7 +162,7 @@
                     "احفظ رمز البوت الذي تتلقاه",
                     "ابدأ بوتك الجديد بالبحث عنه والنقر فوق /start (أو أرسل أي رسالة)",
                     "احصل على معرف الدردشة الخاص بك بفتح هذا الرابط في المتصفح (استبدل TOKEN): https://api.telegram.org/botTOKEN/getUpdates",
-                    "ابحث عن معرف المستخدم الخاص بك في الردّ - إنه الرقم في \"from\": {\"id\": معرفك}",
+                    "ابحث عن معرف المستخدم الخاص بك في الردّ - إنه الرقم في \"from\": {\"id\": YOUR_ID}",
                     "أدخل الرمز ومعرف الدردشة وانقر فوق اختبار الاتصال"
                 ],
                 "success": "✓ اتصال تيليجرام ناجح! ستتلقى إشعارات عند الحصول على الغنائم.",
@@ -154,7 +172,16 @@
                 "get_from_botfather": "احصل عليه من @BotFather",
                 "your_user_id": "معرف المستخدم الرقمي في تيليجرام"
             },
-            "reload_campaigns": "إعادة تحميل الحملات"
+            "reload_campaigns": "إعادة تحميل الحملات",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
+            "drop_name_blacklist": "الكلمات المفتاحية لأسماء الدروب المتجاهلة",
+            "drop_name_blacklist_help": "أدخل كلمة مفتاحية واحدة في كل سطر. يبحث التطابق عن مقطع نصي حرفي دون حساسية لحالة الأحرف. يتم تجاهل الدروبات المطابقة وفروعها التابعة؛ ويتم تخطي الفروع التي تعمل فقط كمتطلبات مسبقة، بينما تظل المتطلبات المسبقة المشتركة قابلة للتعدين.",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "مسح ذاكرة التخزين المؤقت بالكامل",
+            "clear_all_cache_help": "يمسح الحالة المحلية للحملات والقنوات والبيانات المشتقة للمعدّن؛ مع الاحتفاظ بتسجيل الدخول والإعدادات، ثم يعيد تحميل البيانات من Twitch.",
+            "mining_benefits": "فوائد التعدين",
+            "mining_benefits_help": "اختر أنواع الجوائز التي تريد تعدينها."
         },
         "help": {
             "about": "حول Twitch Drops Miner",
@@ -191,6 +218,26 @@
             "manual_mode": "يدوي",
             "connected": "متصل",
             "disconnected": "غير متصل"
+        },
+        "footer": {
+            "version": "النسخة:",
+            "loading": "جاري التحميل...",
+            "update_available": "تحديث متوفر:"
+        },
+        "badges": {
+            "manual": {
+                "title": "الوضع اليدوي نشط - مشاهدة لعبة محددة"
+            },
+            "auto": {
+                "title": "الوضع التلقائي - اتباع أولوية الألعاب"
+            },
+            "proxy": {
+                "title": "اتصال البروكسي نشط"
+            }
+        },
+        "wanted": {
+            "name": "قائمة انتظار Drops المطلوبة",
+            "none": "لا توجد drops مطلوبة في قائمة الانتظار..."
         }
     }
 }

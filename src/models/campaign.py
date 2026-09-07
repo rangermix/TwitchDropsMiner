@@ -8,10 +8,11 @@ from typing import TYPE_CHECKING
 
 from dateutil.parser import isoparse
 
-from src.config.constants import State, URLType
+from src.config.constants import State
 from src.models.channel import Channel
-from src.models.drop import TimedDrop, remove_dimensions
+from src.models.drop import TimedDrop
 from src.models.game import Game
+from src.utils import DropIgnoreEvaluation, DropIgnorePolicy, DropIgnoreReason
 
 
 if TYPE_CHECKING:
@@ -48,6 +49,10 @@ class DropsCampaign:
             drop_data["id"]: TimedDrop(self, drop_data, claimed_benefits)
             for drop_data in data["timeBasedDrops"]
         }
+        self._drop_ignore_cache_key: (
+            tuple[tuple[str, ...], tuple[tuple[str, bool], ...]] | None
+        ) = None
+        self._drop_ignore_cache: DropIgnoreEvaluation | None = None
 
     def __repr__(self) -> str:
         return f"Campaign({self.game!s}, {self.name}, {self.claimed_drops}/{self.total_drops})"
@@ -55,6 +60,45 @@ class DropsCampaign:
     @property
     def drops(self) -> abc.Iterable[TimedDrop]:
         return self.timed_drops.values()
+
+    @cached_property
+    def watch_drops(self) -> tuple[TimedDrop, ...]:
+        """Return drops that can be earned by watching a stream."""
+        return tuple(drop for drop in self.drops if drop.is_watch_drop)
+
+    def _drop_ignore_evaluation(self) -> DropIgnoreEvaluation:
+        """Return a policy result cached against keywords and claim state."""
+        keywords = tuple(
+            DropIgnorePolicy.normalize_keywords(
+                getattr(self._twitch.settings, "drop_name_blacklist", [])
+            )
+        )
+        claimed_state = tuple((drop.id, drop.is_claimed) for drop in self.drops)
+        cache_key = (keywords, claimed_state)
+        if cache_key != self._drop_ignore_cache_key or self._drop_ignore_cache is None:
+            policy = DropIgnorePolicy(keywords)
+            self._drop_ignore_cache = policy.evaluate(tuple(self.drops))
+            self._drop_ignore_cache_key = cache_key
+        return self._drop_ignore_cache
+
+    @property
+    def mineable_drop_ids(self) -> frozenset[str]:
+        """Return unclaimed drops that still contribute to a mineable reward branch."""
+        return self._drop_ignore_evaluation().mineable_ids
+
+    @property
+    def mineable_watch_drops(self) -> tuple[TimedDrop, ...]:
+        """Return watch drops that the miner still needs for useful branches."""
+        mineable_ids = self.mineable_drop_ids
+        return tuple(drop for drop in self.watch_drops if drop.id in mineable_ids)
+
+    def get_drop_ignore_reason(self, drop_id: str) -> DropIgnoreReason | None:
+        """Return the ignore reason for a drop, if one applies."""
+        return self._drop_ignore_evaluation().reasons.get(drop_id)
+
+    def is_drop_mineable(self, drop_id: str) -> bool:
+        """Return whether an unclaimed drop is part of a useful reward branch."""
+        return drop_id in self.mineable_drop_ids
 
     @property
     def time_triggers(self) -> set[datetime]:
@@ -79,7 +123,7 @@ class DropsCampaign:
 
     @property
     def total_drops(self) -> int:
-        return len(self.timed_drops)
+        return len(self.watch_drops)
 
     @property
     def eligible(self) -> bool:
@@ -93,36 +137,61 @@ class DropsCampaign:
 
     @property
     def finished(self) -> bool:
-        return all(d.is_claimed or d.required_minutes <= 0 for d in self.drops)
+        return all(drop.is_claimed for drop in self.watch_drops)
+
+    @property
+    def mining_finished(self) -> bool:
+        """Return whether the miner has no nonignored reward branch left to pursue."""
+        return not self.mineable_drop_ids
 
     @property
     def claimed_drops(self) -> int:
-        return sum(d.is_claimed for d in self.drops)
+        return sum(drop.is_claimed for drop in self.watch_drops)
 
     @property
     def remaining_drops(self) -> int:
-        return sum(not d.is_claimed for d in self.drops)
+        return sum(not drop.is_claimed for drop in self.watch_drops)
+
+    @property
+    def ignored_drops(self) -> int:
+        """Return unclaimed watch drops ignored directly or by dependency."""
+        return sum(drop.is_ignored for drop in self.watch_drops)
+
+    @property
+    def skipped_drops(self) -> int:
+        """Return unclaimed prerequisite drops no longer needed by a reward branch."""
+        return sum(
+            not drop.is_claimed and not drop.is_ignored and not drop.is_mineable
+            for drop in self.watch_drops
+        )
 
     @property
     def required_minutes(self) -> int:
-        return max(d.total_required_minutes for d in self.drops)
+        return max((drop.total_required_minutes for drop in self.mineable_watch_drops), default=0)
 
     @property
     def remaining_minutes(self) -> int:
-        return max(d.total_remaining_minutes for d in self.drops)
+        return max(
+            (drop.total_remaining_minutes for drop in self.mineable_watch_drops),
+            default=0,
+        )
 
     @property
     def progress(self) -> float:
-        return sum(d.progress for d in self.drops) / self.total_drops
+        watch_drops = self.watch_drops
+        return sum(drop.progress for drop in watch_drops) / len(watch_drops) if watch_drops else 0.0
 
     @property
     def availability(self) -> float:
-        return min(d.availability for d in self.drops)
+        return min(
+            (drop.availability for drop in self.mineable_watch_drops),
+            default=float("inf"),
+        )
 
     @property
     def first_drop(self) -> TimedDrop | None:
         drops: list[TimedDrop] = sorted(
-            (drop for drop in self.drops if drop.can_earn()),
+            (drop for drop in self.watch_drops if drop.can_earn()),
             key=lambda d: d.remaining_minutes,
         )
         return drops[0] if drops else None
@@ -159,10 +228,17 @@ class DropsCampaign:
         return self.timed_drops.get(drop_id)
 
     def preconditions_chain(self) -> set[str]:
-        """Return all drop IDs that are preconditions for unclaimed drops."""
+        """Return prerequisite IDs that still participate in mineable branches."""
+        mineable_ids = self.mineable_drop_ids
         return set(
             chain.from_iterable(
-                drop.precondition_drops for drop in self.drops if not drop.is_claimed
+                (
+                    prerequisite_id
+                    for prerequisite_id in drop.precondition_drops
+                    if prerequisite_id in mineable_ids
+                )
+                for drop in self.drops
+                if drop.id in mineable_ids
             )
         )
 
@@ -201,6 +277,4 @@ class DropsCampaign:
             first_drop.display()
 
     def has_wanted_unclaimed_benefits(self, allowed_benefits: dict[str, bool]) -> bool:
-        return any(
-            drop.has_wanted_unclaimed_benefits(allowed_benefits) for drop in self.drops
-        )
+        return any(drop.has_wanted_unclaimed_benefits(allowed_benefits) for drop in self.drops)

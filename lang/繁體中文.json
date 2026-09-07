@@ -24,10 +24,7 @@
             "logging_in": "正在登入…",
             "required": "需要登入",
             "waiting_auth": "正在等待身份驗證..."
-        },
-        "oauth_prompt": "請在此處輸入此代碼：",
-        "oauth_activate": "啟用 Twitch",
-        "oauth_confirm": "我已輸入代碼"
+        }
     },
     "error": {
         "captcha": "您的登入被 CAPTCHA 拒絕，請於12小時後重試。",
@@ -46,7 +43,8 @@
             "switching": "正在切換實況頻道…",
             "fetching_inventory": "正在獲取庫存…",
             "fetching_campaigns": "正在獲取掉寶活動…",
-            "adding_campaigns": "將掉寶活動列表新增至庫存… {counter}"
+            "adding_campaigns": "將掉寶活動列表新增至庫存… {counter}",
+            "ready": "就緒"
         },
         "tabs": {
             "main": "主要",
@@ -104,12 +102,32 @@
                 "active": "已上線 ✔",
                 "upcoming": "即將開始 ⏳",
                 "expired": "已結束 ❌",
-                "claimed": "已領取 ✔"
+                "claimed": "已領取 ✔",
+                "ignored": "已忽略",
+                "skipped": "已跳過"
             },
             "starts": "開始時間：{time}",
             "ends": "結束時間：{time}",
             "no_campaigns": "尚未載入任何活動...",
-            "claimed_drops": "已領取"
+            "claimed_drops": "已領取",
+            "ignored_drops": "已忽略 {count} 個",
+            "skipped_drops": "已跳過 {count} 個",
+            "ignored_keyword_reason": "因關鍵字而忽略：{keyword}",
+            "ignored_precondition_reason": "因依賴 {drop} 而忽略",
+            "skipped_branch_reason": "已跳過，因為沒有可挖掘的獎勵依賴此掉落。",
+            "filters": {
+                "active": "活動中",
+                "not_linked": "未連結",
+                "upcoming": "即將開始",
+                "expired": "已過期",
+                "finished": "已完成",
+                "item": "物品",
+                "badge": "徽章",
+                "emote": "表情",
+                "other": "其他",
+                "clear": "清除過濾器",
+                "search_placeholder": "搜尋遊戲..."
+            }
         },
         "settings": {
             "general": {
@@ -144,7 +162,7 @@
                     "儲存您收到的機器人令牌",
                     "透過搜尋並點擊 /start 啟動您的新機器人（或傳送任何訊息）",
                     "透過在瀏覽器中開啟此URL來取得您的聊天ID（取代TOKEN）: https://api.telegram.org/botTOKEN/getUpdates",
-                    "在回應中找到您的使用者ID - 它是\"from\": {\"id\": 您的ID}中的數字",
+                    "在回應中找到您的使用者ID - 它是\"from\": {\"id\": YOUR_ID}中的數字",
                     "輸入令牌和聊天ID，然後點擊測試連線"
                 ],
                 "saved": "✓ 設定已成功儲存！",
@@ -154,7 +172,16 @@
                 "get_from_botfather": "從 @BotFather 取得",
                 "your_user_id": "您的電報數字使用者ID"
             },
-            "reload_campaigns": "重新載入活動"
+            "reload_campaigns": "重新載入活動",
+            "add_game": "Add Game",
+            "add_game_hint": " Click \"Add Game\" to add it manually.",
+            "drop_name_blacklist": "忽略的掉落名稱關鍵字",
+            "drop_name_blacklist_help": "每行輸入一個關鍵字。比對時不區分大小寫，並以字面子字串搜尋。符合的掉落及其依賴分支將被忽略；僅作為前置條件的分支將被跳過，而共用的前置條件仍可挖掘。",
+            "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
+            "clear_all_cache": "清除所有快取",
+            "clear_all_cache_help": "清除本機活動、頻道和挖礦器衍生狀態；保留登入資訊和設定，然後從 Twitch 重新載入。",
+            "mining_benefits": "挖掘獎勵",
+            "mining_benefits_help": "選擇您想要獲取的掉落類型。"
         },
         "help": {
             "about": "關於 Twitch Drops Miner",
@@ -191,6 +218,26 @@
             "manual_mode": "手動",
             "connected": "已連接",
             "disconnected": "已中斷連接"
+        },
+        "footer": {
+            "version": "版本:",
+            "loading": "載入中...",
+            "update_available": "可用更新:"
+        },
+        "badges": {
+            "manual": {
+                "title": "手動模式已啟用 - 正在觀看特定遊戲"
+            },
+            "auto": {
+                "title": "自動模式 - 遵循遊戲優先級"
+            },
+            "proxy": {
+                "title": "代理連接已啟用"
+            }
+        },
+        "wanted": {
+            "name": "期望掉落隊列",
+            "none": "隊列中沒有期望的掉落..."
         }
     }
 }
