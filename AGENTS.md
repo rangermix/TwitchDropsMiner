@@ -94,6 +94,8 @@ lang/                # Translation JSON files (20 languages)
 - Delegates to service layer for business logic
 - Drop progress monitoring via periodic "watch" payloads
 - Manages WebsocketPool and maintenance tasks
+- Enforces the mining-hours window: a schedule task idles the state machine outside the
+  configured window and wakes it (via `request_inventory_refresh`) when it reopens
 
 **src/services/** - Business logic layer (fully implemented):
 
@@ -170,6 +172,11 @@ lang/                # Translation JSON files (20 languages)
   actively watched channel remains visible while game settings are changing
 - Consecutive identical no-active-campaign console prompts are collapsed until another
   console message appears
+- Mining-hours window (`mining_hours`): `always` mode mines 24/7 (default); `range` mode
+  limits mining to a local-time window (`start`/`end` as `HH:MM`, overnight ranges wrap
+  midnight). Outside the window the miner idles ("Outside mining hours" status), stops
+  watching, and drops queued refreshes; a schedule task wakes the state machine to resume
+  automatically when the window reopens. Zero-length ranges are treated as always active.
 
 Drop-name ignore policy is dependency-aware: a matching unclaimed drop and its dependent
 branches are ignored dynamically. Prerequisite-only branches with no mineable reward are
@@ -358,7 +365,8 @@ The suite covers settings and proxy behavior, inventory-filter behavior, API fil
 GraphQL watch events, batched channel discovery, full-locale translation schema and
 placeholder consistency, frontend DOM safety, case-insensitive channel filtering,
 watch-drop count and expiry semantics, immediate claim refresh behavior, consecutive
-no-campaign console collapsing, and contributor README automation. Frontend behavior tests
+no-campaign console collapsing, mining-hours window evaluation (same-day, overnight and
+zero-length ranges), idle/resume scheduling, and contributor README automation. Frontend behavior tests
 share their JavaScript extraction helper and use Node.js;
 the validation workflow provisions Node 24 before running pytest. It also runs the release
 script contract tests under `.github/scripts/test/`. Ignore-list coverage includes

@@ -80,6 +80,7 @@ class SettingsUpdate(BaseModel):
     inventory_filters: dict | None = None
     inventory_list_view: bool | None = None
     mining_benefits: dict[str, bool] | None = None
+    mining_hours: dict | None = None
 
 
 class ProxyVerifyRequest(BaseModel):

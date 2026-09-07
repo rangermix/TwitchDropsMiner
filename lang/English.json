@@ -36,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Idle",
+            "outside_hours": "Outside mining hours",
             "ready": "Ready",
             "exiting": "Exiting...",
             "terminated": "Terminated",
@@ -103,6 +104,12 @@
                 "dark_mode": "Dark Mode"
             },
             "mining_benefits": "Mining Benefits",
+            "mining_hours": "Mining Hours",
+            "mining_hours_help": "Choose when the bot may mine drops. Outside the selected window the miner idles and resumes automatically.",
+            "mining_hours_always": "All day (24/7)",
+            "mining_hours_range": "Custom time range",
+            "mining_hours_start": "Start",
+            "mining_hours_end": "End",
             "mining_benefits_help": "Select which types of drops you want to mine.",
             "reload": "Reload Campaigns",
             "reload_campaigns": "Reload Campaigns",

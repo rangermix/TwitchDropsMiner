@@ -48,6 +48,11 @@ default_settings = {
         "EMOTE": True,
         "UNKNOWN": True,
     },
+    "mining_hours": {
+        "mode": "always",
+        "start": "08:00",
+        "end": "22:00",
+    },
     "proxy": "",
 }
 
@@ -63,6 +68,7 @@ class Settings:
     inventory_list_view: bool
     minimum_refresh_interval_minutes: int
     mining_benefits: dict[str, bool]
+    mining_hours: dict[str, str]
     proxy: str
 
     def __init__(self):

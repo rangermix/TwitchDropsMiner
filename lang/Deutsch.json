@@ -36,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Im Leerlauf",
+            "outside_hours": "Außerhalb der Mining-Zeit",
             "ready": "Bereit",
             "exiting": "Beenden...",
             "terminated": "Abgebrochen",
@@ -157,6 +158,12 @@
             "connection_quality": "Verbindungsqualität:",
             "minimum_refresh": "Minimales Aktualisierungsintervall (Minuten):",
             "mining_benefits": "Mining-Vorteile",
+            "mining_hours": "Mining-Zeiten",
+            "mining_hours_help": "Lege fest, wann der Bot Drops minen darf. Außerhalb des gewählten Zeitfensters ruht der Miner und setzt automatisch fort.",
+            "mining_hours_always": "Den ganzen Tag (24/7)",
+            "mining_hours_range": "Benutzerdefinierter Zeitraum",
+            "mining_hours_start": "Start",
+            "mining_hours_end": "Ende",
             "mining_benefits_help": "Wählen Sie, welche Arten von Drops Sie minen möchten."
         },
         "help": {

@@ -22,6 +22,8 @@ dashboard. It sends Twitch watch events without downloading the stream itself.
 - **Automatic campaign discovery** — detects active and upcoming drop campaigns
 - **Smart channel selection** — prioritizes eligible channels, preferred games, and viewers
 - **Drop-name ignore rules** — excludes unwanted reward names and dependent branches
+- **Mining-hours window** — restricts drop mining to a configurable local-time range
+  (or all day), idling automatically outside it and resuming when it reopens
 - **Persistent sessions** — saves OAuth login state between runs
 - **Web dashboard** — manages campaigns, channels, inventory, settings, and login status
 - **Headless deployment** — runs locally, remotely, or in Docker without a desktop GUI

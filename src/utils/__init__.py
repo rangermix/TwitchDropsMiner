@@ -34,6 +34,9 @@ from .json_utils import (
 # Rate limiting
 from .rate_limiter import RateLimiter
 
+# Schedule helpers
+from .schedule import parse_minutes, window_status
+
 # String utilities
 from .string_utils import (
     CHARS_ASCII,
@@ -68,6 +71,9 @@ __all__ = [
     "AwaitableValue",
     # Rate limiting
     "RateLimiter",
+    # Schedule helpers
+    "parse_minutes",
+    "window_status",
     # Backoff
     "ExponentialBackoff",
     # Drop ignore policy

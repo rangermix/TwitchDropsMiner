@@ -17,6 +17,13 @@ from src.utils import DropIgnorePolicy, merge_json
 logger = logging.getLogger("TwitchDrops")
 
 
+def _format_mining_hours(value: Any) -> str:
+    """Return a console-friendly summary that hides times outside range mode."""
+    if isinstance(value, dict) and value.get("mode") == "range":
+        return f"{value.get('start')}-{value.get('end')}"
+    return "always"
+
+
 if TYPE_CHECKING:
     from src.config.settings import Settings
     from src.web.managers.broadcaster import WebSocketBroadcaster
@@ -132,6 +139,12 @@ class SettingsManager:
         should_trigger_update |= self.check_and_update_setting(
             "mining_benefits", settings_data.get("mining_benefits"), True
         )
+        should_trigger_update |= self.check_and_update_setting(
+            "mining_hours",
+            settings_data.get("mining_hours"),
+            True,
+            log_formatter=_format_mining_hours,
+        )
 
         self._settings.save()
         response_settings = self.get_settings(legacy_show_not_linked)
@@ -159,11 +172,13 @@ class SettingsManager:
         new_value: Any,
         should_trigger_update: bool = False,
         action: Callable[[Any], None] = lambda x: None,
+        log_formatter: Callable[[Any], str] | None = None,
     ):
         if new_value is None or getattr(self._settings, key, None) == new_value:
             return False
         setattr(self._settings, key, new_value)
-        self._log_change(f"Setting changed: {key} = {new_value}")
+        display_value = log_formatter(new_value) if log_formatter else new_value
+        self._log_change(f"Setting changed: {key} = {display_value}")
         action(new_value)
         return should_trigger_update
 

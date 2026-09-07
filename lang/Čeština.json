@@ -36,6 +36,7 @@
         "status": {
             "name": "Status",
             "idle": "Dokončeno načítání",
+            "outside_hours": "Mimo dobu těžby",
             "ready": "Připraveno",
             "exiting": "Ukončování...",
             "terminated": "Aplikace ukončena",
@@ -157,6 +158,12 @@
             "clear_all_cache": "Vymazat veškerou mezipaměť",
             "clear_all_cache_help": "Vymaže místní stav kampaní, kanálů a odvozený stav mineru; zachová přihlášení a nastavení a poté znovu načte data z Twitche.",
             "mining_benefits": "Výhody Těžby",
+            "mining_hours": "Doba těžby",
+            "mining_hours_help": "Vyberte, kdy může bot těžit dropy. Mimo vybrané okno je horník nečinný a automaticky pokračuje.",
+            "mining_hours_always": "Celý den (24/7)",
+            "mining_hours_range": "Vlastní časový rozsah",
+            "mining_hours_start": "Začátek",
+            "mining_hours_end": "Konec",
             "mining_benefits_help": "Vyberte typy dropů, které chcete těžit."
         },
         "help": {

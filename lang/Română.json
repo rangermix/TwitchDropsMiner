@@ -36,6 +36,7 @@
         "status": {
             "name": "Statut",
             "idle": "Inactiv",
+            "outside_hours": "În afara orelor de minerit",
             "ready": "Gata",
             "exiting": "Ieșire...",
             "terminated": "Terminat",
@@ -157,6 +158,12 @@
             "clear_all_cache": "Șterge tot cache-ul",
             "clear_all_cache_help": "Șterge starea locală a campaniilor, canalelor și datele derivate ale minerului; păstrează autentificarea și setările, apoi reîncarcă datele de pe Twitch.",
             "mining_benefits": "Beneficii Minerit",
+            "mining_hours": "Ore de minerit",
+            "mining_hours_help": "Alege când botul poate mina dropuri. În afara intervalului selectat, minerul rămâne inactiv și reia automat.",
+            "mining_hours_always": "Toată ziua (24/7)",
+            "mining_hours_range": "Interval de timp personalizat",
+            "mining_hours_start": "Început",
+            "mining_hours_end": "Sfârșit",
             "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați."
         },
         "help": {
