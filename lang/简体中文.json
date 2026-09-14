@@ -170,7 +170,9 @@
                 "error": "无法连接到电报。请检查您的机器人令牌和聊天ID。",
                 "missing_credentials": "请同时填写机器人令牌和聊天ID。请在帮助标签中查看设置说明。",
                 "get_from_botfather": "从 @BotFather 获取",
-                "your_user_id": "您的电报数字用户ID"
+                "your_user_id": "您的电报数字用户ID",
+                "save_error": "无法保存 Telegram 设置，请重试。",
+                "credentials_help": "将令牌留空以保留已保存的令牌。若要停用通知，请清空聊天 ID 并保存。"
             },
             "reload_campaigns": "重新加载活动",
             "add_game": "Add Game",

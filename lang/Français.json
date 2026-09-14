@@ -171,7 +171,9 @@
                 "error": "Échec de la connexion à Telegram. Veuillez vérifier votre jeton de bot et votre ID de chat.",
                 "missing_credentials": "Veuillez remplir le jeton du bot et l'ID du chat. Consultez les instructions de configuration dans l'onglet Aide.",
                 "get_from_botfather": "Obtenir de @BotFather",
-                "your_user_id": "Votre ID utilisateur numérique Telegram"
+                "your_user_id": "Votre ID utilisateur numérique Telegram",
+                "save_error": "Impossible d’enregistrer les paramètres Telegram. Réessayez.",
+                "credentials_help": "Laissez le jeton vide pour conserver celui enregistré. Pour désactiver les notifications, effacez l’identifiant du chat et enregistrez."
             },
             "drop_name_blacklist": "Mots-clés de drops ignorés",
             "drop_name_blacklist_help": "Saisissez un mot-clé par ligne. La recherche porte sur une sous-chaîne littérale sans tenir compte de la casse. Les drops correspondants et leurs branches dépendantes sont ignorés ; les branches servant uniquement de prérequis sont passées, tandis que les prérequis partagés restent obtenables.",

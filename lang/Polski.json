@@ -170,7 +170,9 @@
                 "error": "Nie udało się połączyć z Telegramem. Sprawdź token bota i Chat ID.",
                 "missing_credentials": "Wypełnij zarówno token bota, jak i Chat ID. Instrukcje konfiguracji znajdują się w zakładce Pomoc.",
                 "get_from_botfather": "Pobierz od @BotFather",
-                "your_user_id": "Twój numeryczny ID użytkownika Telegram"
+                "your_user_id": "Twój numeryczny ID użytkownika Telegram",
+                "save_error": "Nie udało się zapisać ustawień Telegrama. Spróbuj ponownie.",
+                "credentials_help": "Pozostaw token pusty, aby zachować zapisany token. Aby wyłączyć powiadomienia, usuń identyfikator czatu i zapisz ustawienia."
             },
             "reload_campaigns": "Przeładuj kampanie",
             "add_game": "Add Game",

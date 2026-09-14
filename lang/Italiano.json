@@ -170,7 +170,9 @@
                 "error": "Impossibile connettersi a Telegram. Controlla il token del bot e l'ID della chat.",
                 "missing_credentials": "Compila sia il token del bot che l'ID della chat. Consulta le istruzioni di configurazione nella scheda Aiuto.",
                 "get_from_botfather": "Ottieni da @BotFather",
-                "your_user_id": "Il tuo ID utente numerico di Telegram"
+                "your_user_id": "Il tuo ID utente numerico di Telegram",
+                "save_error": "Impossibile salvare le impostazioni di Telegram. Riprova.",
+                "credentials_help": "Lascia vuoto il token per conservare quello salvato. Per disattivare le notifiche, cancella l’ID della chat e salva."
             },
             "reload_campaigns": "Ricarica campagne",
             "add_game": "Add Game",

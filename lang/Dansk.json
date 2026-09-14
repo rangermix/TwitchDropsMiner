@@ -170,7 +170,9 @@
                 "error": "Kunne ikke oprette forbindelse til Telegram. Kontroller din bot-token og chat-ID.",
                 "missing_credentials": "Udfyld både bot-token og chat-ID. Se setupinstruktioner under fanen Hjælp.",
                 "get_from_botfather": "Hent fra @BotFather",
-                "your_user_id": "Dit numeriske Telegram bruger-ID"
+                "your_user_id": "Dit numeriske Telegram bruger-ID",
+                "save_error": "Telegram-indstillingerne kunne ikke gemmes. Prøv igen.",
+                "credentials_help": "Lad tokenfeltet være tomt for at beholde den gemte token. Ryd Chat-ID, og gem for at deaktivere meddelelser."
             },
             "reload_campaigns": "Genindlæs kampagner",
             "add_game": "Add Game",

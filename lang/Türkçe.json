@@ -170,7 +170,9 @@
                 "error": "Telegram'a bağlanılamadı. Bot token'ınızı ve sohbet kimliğinizi kontrol edin.",
                 "missing_credentials": "Lütfen bot token'ını ve sohbet kimliğini doldurun. Yardım sekmesindeki kurulum talimatlarını görün.",
                 "get_from_botfather": "@BotFather'dan Al",
-                "your_user_id": "Telegram sayısal kullanıcı kimliğiniz"
+                "your_user_id": "Telegram sayısal kullanıcı kimliğiniz",
+                "save_error": "Telegram ayarları kaydedilemedi. Lütfen tekrar deneyin.",
+                "credentials_help": "Kayıtlı tokeni korumak için token alanını boş bırakın. Bildirimleri kapatmak için Sohbet Kimliğini silip kaydedin."
             },
             "reload_campaigns": "Kampanyaları Yeniden Yükle",
             "add_game": "Add Game",

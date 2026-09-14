@@ -170,7 +170,9 @@
                 "error": "Conexiune la Telegram eșuată. Verificați tokenul botului și ID-ul chat.",
                 "missing_credentials": "Completați tokenul botului și ID-ul chat. Consultați instrucțiunile de configurare în fila Ajutor.",
                 "get_from_botfather": "Obțineți de la @BotFather",
-                "your_user_id": "ID-ul utilizatorului numeric Telegram"
+                "your_user_id": "ID-ul utilizatorului numeric Telegram",
+                "save_error": "Setările Telegram nu au putut fi salvate. Încearcă din nou.",
+                "credentials_help": "Lasă tokenul necompletat pentru a păstra tokenul salvat. Pentru a dezactiva notificările, șterge ID-ul chatului și salvează."
             },
             "reload_campaigns": "Reîncarcă campaniile",
             "add_game": "Add Game",

@@ -170,7 +170,9 @@
                 "error": "Gagal terhubung ke Telegram. Periksa token bot dan ID chat Anda.",
                 "missing_credentials": "Silakan isi token bot dan ID chat. Lihat petunjuk pengaturan di tab Bantuan.",
                 "get_from_botfather": "Dapatkan dari @BotFather",
-                "your_user_id": "ID pengguna numerik Telegram Anda"
+                "your_user_id": "ID pengguna numerik Telegram Anda",
+                "save_error": "Gagal menyimpan pengaturan Telegram. Silakan coba lagi.",
+                "credentials_help": "Kosongkan token untuk mempertahankan token tersimpan. Untuk menonaktifkan notifikasi, hapus ID Chat lalu simpan."
             },
             "reload_campaigns": "Muat Ulang Kampanye",
             "add_game": "Add Game",

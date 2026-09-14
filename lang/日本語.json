@@ -170,7 +170,9 @@
                 "error": "Telegramへの接続に失敗しました。ボットトークンとチャットIDを確認してください。",
                 "missing_credentials": "ボットトークンとチャットIDの両方を入力してください。ヘルプタブのセットアップ手順を参照してください。",
                 "get_from_botfather": "@BotFatherから取得",
-                "your_user_id": "あなたのTelegram数値ユーザーID"
+                "your_user_id": "あなたのTelegram数値ユーザーID",
+                "save_error": "Telegramの設定を保存できませんでした。もう一度お試しください。",
+                "credentials_help": "保存済みのトークンを使う場合は、トークン欄を空白にしてください。通知を無効にするには、チャットIDを消去して保存してください。"
             },
             "reload_campaigns": "キャンペーンを再読み込み",
             "add_game": "Add Game",

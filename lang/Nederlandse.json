@@ -170,7 +170,9 @@
                 "error": "Kan geen verbinding maken met Telegram. Controleer uw bottoken en chat-ID.",
                 "missing_credentials": "Vul zowel bot-token als chat-ID in. Zie setupinstructies in het Help-tabblad.",
                 "get_from_botfather": "Haal op van @BotFather",
-                "your_user_id": "Uw numerieke Telegram gebruikers-ID"
+                "your_user_id": "Uw numerieke Telegram gebruikers-ID",
+                "save_error": "Telegram-instellingen konden niet worden opgeslagen. Probeer het opnieuw.",
+                "credentials_help": "Laat het token leeg om het opgeslagen token te behouden. Wis de chat-ID en sla op om meldingen uit te schakelen."
             },
             "reload_campaigns": "Herlaad Campagnes",
             "add_game": "Add Game",

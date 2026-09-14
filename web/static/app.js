@@ -1578,15 +1578,16 @@ async function testTelegramConnection() {
 
     const botToken = botTokenInput ? botTokenInput.value.trim() : '';
     const chatId = chatIdInput ? chatIdInput.value.trim() : '';
+    const tg = state.translations.gui?.settings?.telegram || {};
 
     // Reset display
     resultDiv.style.display = 'block';
     resultDiv.className = 'verify-result loading';
-    resultDiv.textContent = 'Testing Telegram connection...';
+    resultDiv.textContent = `${tg.test_connection || 'Test Connection'}…`;
 
-    if (!botToken || !chatId) {
+    if ((!botToken && !state.settings.telegram_configured) || !chatId) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = 'Please fill in both Bot Token and Chat ID. See setup instructions in the Help tab.';
+        resultDiv.textContent = tg.missing_credentials || 'Please enter a bot token and chat ID.';
         return;
     }
 
@@ -1597,20 +1598,23 @@ async function testTelegramConnection() {
             body: JSON.stringify({ telegram_bot_token: botToken, telegram_chat_id: chatId })
         });
 
+        if (!response.ok) {
+            throw new Error(`${tg.error || 'Telegram connection failed.'} (HTTP ${response.status})`);
+        }
         const data = await response.json();
 
         if (data.success) {
+            // A successful test does not guarantee that settings were saved.
+            await saveTelegramSettings(botToken, chatId);
             resultDiv.className = 'verify-result success';
-            resultDiv.textContent = `✓ ${data.message || 'Telegram connection successful!'}`;
-            // Save settings if test was successful
-            saveTelegramSettings(botToken, chatId);
+            resultDiv.textContent = tg.success || '✓ Telegram connection successful!';
         } else {
             resultDiv.className = 'verify-result error';
-            resultDiv.textContent = `✗ ${data.message || 'Telegram connection failed.'}`;
+            resultDiv.textContent = tg.error || 'Telegram connection failed.';
         }
     } catch (error) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = `Error: ${error.message}`;
+        resultDiv.textContent = error.message || tg.error || 'Telegram connection failed.';
     }
 }
 
@@ -1620,16 +1624,28 @@ async function saveTelegramSettings(botToken, chatId) {
         telegram_chat_id: chatId
     };
 
+    const tg = state.translations.gui?.settings?.telegram || {};
+    const failureMessage = tg.save_error || 'Failed to save Telegram settings.';
+    let response;
+    let data;
     try {
-        await fetch('/api/settings', {
+        response = await fetch('/api/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(settings)
         });
-        console.log('Telegram settings saved');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        data = await response.json();
+        if (!data.success || !data.settings) {
+            throw new Error(failureMessage);
+        }
     } catch (error) {
-        console.error('Failed to save Telegram settings:', error);
+        const status = response && !response.ok ? ` (HTTP ${response.status})` : '';
+        throw new Error(`${failureMessage}${status}`);
     }
+    updateSettingsUI(data.settings);
 }
 
 async function handleSaveTelegramClick() {
@@ -1641,25 +1657,27 @@ async function handleSaveTelegramClick() {
 
     const botToken = botTokenInput ? botTokenInput.value.trim() : '';
     const chatId = chatIdInput ? chatIdInput.value.trim() : '';
+    const tg = state.translations.gui?.settings?.telegram || {};
 
     // Reset display
     resultDiv.style.display = 'block';
     resultDiv.className = 'verify-result loading';
-    resultDiv.textContent = 'Saving settings...';
+    resultDiv.textContent = `${tg.save_settings || 'Save Settings'}…`;
 
-    if (!botToken || !chatId) {
+    // A blank token keeps the stored credential. Clearing the chat ID disables alerts.
+    if (!state.settings.telegram_configured && (!botToken || !chatId)) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = 'Please fill in both Bot Token and Chat ID. See setup instructions in the Help tab.';
+        resultDiv.textContent = tg.missing_credentials || 'Please enter a bot token and chat ID.';
         return;
     }
 
     try {
         await saveTelegramSettings(botToken, chatId);
         resultDiv.className = 'verify-result success';
-        resultDiv.textContent = '✓ Settings saved successfully!';
+        resultDiv.textContent = tg.saved || '✓ Settings saved successfully!';
     } catch (error) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = `Error: ${error.message}`;
+        resultDiv.textContent = error.message || tg.save_error || 'Failed to save Telegram settings.';
     }
 }
 
@@ -1916,7 +1934,7 @@ function applyTranslations(t) {
         const reloadBtn = document.getElementById('reload-btn');
         if (reloadBtn) reloadBtn.textContent = t.gui.settings.reload_campaigns;
 
-// Update Telegram Notifications section (use either t.settings.telegram or t.gui.settings.telegram)
+        // Update Telegram Notifications section.
         const tgTrans = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
         if (tgTrans) {
             const telegramSection = settingsTab.querySelector('.settings-section:has(#telegram-bot-token)');
@@ -1944,6 +1962,9 @@ function applyTranslations(t) {
 
                 const testTelegramBtn = document.getElementById('test-telegram-btn');
                 if (testTelegramBtn) testTelegramBtn.textContent = tgTrans.test_connection || testTelegramBtn.textContent;
+
+                const credentialsHelp = document.getElementById('settings-telegram-credentials-help');
+                if (credentialsHelp) credentialsHelp.textContent = tgTrans.credentials_help || credentialsHelp.textContent;
             }
         }
 
@@ -1973,7 +1994,7 @@ function applyTranslations(t) {
         const notesHeader = document.getElementById('help-notes-header');
         if (notesHeader) notesHeader.textContent = t.gui.help.important_notes || 'Important Notes';
 
-        // Update list items and links (keeping innerHTML approach for lists as they are dynamic content blocks)
+        // Build translated lists and allowlisted links with DOM nodes.
         const helpContent = helpTab.querySelector('.help-content');
         if (helpContent) {
             const howToItems = t.gui.help.how_to_use_items || [
@@ -1996,7 +2017,7 @@ function applyTranslations(t) {
                 'Requires linked game accounts for drops'
             ];
 
-helpContent.replaceChildren(
+            helpContent.replaceChildren(
                 makeElement('h2', { id: 'help-about-header' }, t.gui.help.about || 'About Twitch Drops Miner'),
                 makeElement('p', {}, t.gui.help.about_text || 'This application automatically mines timed Twitch drops without downloading stream data.'),
                 makeElement('h3', { id: 'help-howto-header' }, t.gui.help.how_to_use || 'How to Use'),
@@ -2006,7 +2027,7 @@ helpContent.replaceChildren(
                 makeElement('h3', { id: 'help-notes-header' }, t.gui.help.important_notes || 'Important Notes'),
                 makeHelpList('ul', notesItems),
                 ...(function () {
-                    const tg = tgHelpSetup();
+                    const tg = tgHelpSetup(t);
                     return tg
                         ? [makeElement('h3', { id: 'help-telegram-header' }, tg.title),
                            makeElement('p', {}, tg.description),
@@ -2353,7 +2374,7 @@ function renderWantedItems(tree) {
 
 const TRUSTED_HELP_LINKS = new Set(['https://www.twitch.tv/drops/campaigns', 'https://t.me/BotFather']);
 
-function tgHelpSetup() {
+function tgHelpSetup(t) {
     const tg = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
     if (!tg) return null;
     return {

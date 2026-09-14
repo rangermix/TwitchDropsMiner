@@ -170,7 +170,9 @@
                 "error": "無法連線到電報。請檢查您的機器人令牌和聊天ID。",
                 "missing_credentials": "請同時填寫機器人令牌和聊天ID。請在「說明」標籤中查看設定說明。",
                 "get_from_botfather": "從 @BotFather 取得",
-                "your_user_id": "您的電報數字使用者ID"
+                "your_user_id": "您的電報數字使用者ID",
+                "save_error": "無法儲存 Telegram 設定，請重試。",
+                "credentials_help": "將權杖留空以保留已儲存的權杖。若要停用通知，請清空聊天 ID 並儲存。"
             },
             "reload_campaigns": "重新載入活動",
             "add_game": "Add Game",

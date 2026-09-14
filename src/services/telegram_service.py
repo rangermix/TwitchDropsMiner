@@ -11,7 +11,7 @@ import aiohttp
 
 
 if TYPE_CHECKING:
-    from src.models.drop import TimedDrop
+    from src.models.drop import BaseDrop, TimedDrop
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -35,12 +35,12 @@ class TelegramNotifier:
         self.chat_id = chat_id
         self.enabled = bool(bot_token and chat_id)
 
-    async def notify_drop_claimed(self, drop: TimedDrop) -> bool:
+    async def notify_drop_claimed(self, drop: BaseDrop) -> bool:
         """
         Send notification when a drop is claimed.
 
         Args:
-            drop: The TimedDrop that was claimed
+            drop: The drop that was claimed
 
         Returns:
             True if notification was sent successfully, False otherwise

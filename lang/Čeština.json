@@ -170,7 +170,9 @@
                 "error": "Připojení k Telegram se nezdařilo. Zkontrolujte token bota a ID chatu.",
                 "missing_credentials": "Vyplňte token bota i ID chatu. Viz pokyny k nastavení v záložce Nápověda.",
                 "get_from_botfather": "Získejte od @BotFather",
-                "your_user_id": "Vaše číselné ID uživatele Telegram"
+                "your_user_id": "Vaše číselné ID uživatele Telegram",
+                "save_error": "Nastavení Telegramu se nepodařilo uložit. Zkuste to znovu.",
+                "credentials_help": "Pole tokenu ponechte prázdné, chcete-li zachovat uložený token. Chcete-li vypnout oznámení, vymažte ID chatu a uložte nastavení."
             },
             "reload_campaigns": "Znovu načíst kampaně",
             "add_game": "Add Game",

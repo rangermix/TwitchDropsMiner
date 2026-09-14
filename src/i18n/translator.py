@@ -187,6 +187,8 @@ class GUITelegramSettings(TypedDict):
     success: str
     saved: str
     error: str
+    save_error: str
+    credentials_help: str
     missing_credentials: str
     get_from_botfather: str
     your_user_id: str

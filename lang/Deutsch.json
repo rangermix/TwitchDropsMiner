@@ -171,7 +171,9 @@
                 "error": "Verbindung zu Telegram fehlgeschlagen. Bitte überprüfen Sie Bot-Token und Chat-ID.",
                 "missing_credentials": "Füllen Sie sowohl Bot-Token als auch Chat-ID aus. Siehe Setupanleitung im Hilfereiter.",
                 "get_from_botfather": "Von @BotFather",
-                "your_user_id": "Ihre numerische Telegram-Benutzer-ID"
+                "your_user_id": "Ihre numerische Telegram-Benutzer-ID",
+                "save_error": "Telegram-Einstellungen konnten nicht gespeichert werden. Bitte erneut versuchen.",
+                "credentials_help": "Lassen Sie das Token leer, um das gespeicherte Token beizubehalten. Um Benachrichtigungen zu deaktivieren, leeren Sie die Chat-ID und speichern Sie."
             },
             "drop_name_blacklist": "Ignorierte Schlüsselwörter in Drop-Namen",
             "drop_name_blacklist_help": "Geben Sie ein Schlüsselwort pro Zeile ein. Der Abgleich sucht ohne Beachtung der Groß-/Kleinschreibung nach einer wörtlichen Teilzeichenfolge. Passende Drops und ihre abhängigen Zweige werden ignoriert; reine Voraussetzungzweige werden übersprungen, während gemeinsame Voraussetzungen weiterhin erspielt werden können.",

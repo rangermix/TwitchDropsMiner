@@ -4,19 +4,22 @@ Covers the review findings:
 - the Telegram bot token is never echoed through the web API/socket
   (only a configured flag and a masked placeholder are returned),
 - updates accept a replacement token without echoing the stored value,
-- the "Drop Claimed!" Telegram notification is gated on a successful claim,
+- direct and websocket claims notify once on the successful claim transition,
+- Telegram failures do not change successful Twitch claim results,
 - dynamic campaign/game/drop/reward names are HTML-escaped in messages.
 """
 
 import asyncio
 import unittest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.config.settings import Settings
+from src.models.drop import BaseDrop
 from src.services.message_handlers import MessageHandlerService
 from src.services.telegram_service import TelegramNotifier
 from src.web.managers.console import ConsoleOutputManager
 from src.web.managers.settings import TELEGRAM_TOKEN_MASK, SettingsManager
+from tests.test_watch_drop_filtering import _campaign, _drop
 
 
 class TestSettingsTokenMasking(unittest.IsolatedAsyncioTestCase):
@@ -82,59 +85,135 @@ class TestSettingsTokenMasking(unittest.IsolatedAsyncioTestCase):
 
 class TestNotificationGatedOnClaim(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self.mock_twitch = MagicMock()
-        self.mock_twitch.settings = MagicMock()
-        self.mock_twitch.settings.telegram_bot_token = "123456:ABC"
-        self.mock_twitch.settings.telegram_chat_id = "42"
-        self.mock_twitch.gql_request = AsyncMock(
-            return_value={"data": {"currentUser": {"dropCurrentSession": None}}}
+        self.drop_data = _drop("drop-1", "Watch", 30)
+        self.campaign = _campaign("telegram", [self.drop_data])
+        self.drop = self.campaign.timed_drops["drop-1"]
+        self.drop.update_claim("inst-1")
+        self.twitch = self.campaign._twitch
+        self.twitch.settings.telegram_bot_token = "123456:ABC"
+        self.twitch.settings.telegram_chat_id = "42"
+        self.twitch.gql_request = AsyncMock(
+            return_value={"data": {"claimDropRewards": {"status": "ELIGIBLE_FOR_ALL"}}}
         )
+        self.twitch.gui.broadcast_wanted_items_now = AsyncMock()
+        self.twitch.watching_channel.get_with_default.return_value = None
+        self.twitch._drops = {self.drop.id: self.drop}
+        self.service = MessageHandlerService(self.twitch)
+        self.sent = self.enterContext(
+            patch.object(TelegramNotifier, "_send_message", new=AsyncMock(return_value=True))
+        )
+        self.enterContext(patch("src.services.message_handlers.asyncio.sleep", new=AsyncMock()))
 
-        self.service = MessageHandlerService(self.mock_twitch)
-
-        self.drop = MagicMock()
-        self.drop.id = "drop-1"
-        self.drop.campaign = MagicMock()
-        self.drop.claim = AsyncMock(return_value=True)
-
-        self.channel = MagicMock()
-        self.channel.id = 100
-        self.mock_twitch.channels.get.return_value = self.channel
-        self.mock_twitch.watching_channel.get_with_default.return_value = self.channel
-        self.mock_twitch._drops.get.return_value = self.drop
-
-        self.drop.update = MagicMock()
-
-    def _claim_message(self, failed: bool = False):
-        self.drop.claim.return_value = not failed
+    def _claim_message(self):
         return {
             "type": "drop-claim",
             "data": {"drop_id": "drop-1", "drop_instance_id": "inst-1"},
         }
 
-    async def test_telegram_notification_sent_on_successful_claim(self):
-        with (
-            unittest.mock.patch(
-                "src.services.message_handlers.asyncio.sleep", new=AsyncMock()
-            ),
-            unittest.mock.patch.object(
-                self.service, "_send_telegram_notification", new=AsyncMock()
-            ) as notify,
-        ):
-            await self.service.process_drops(1, self._claim_message(failed=False))
-            notify.assert_awaited_once_with(self.drop)
+    async def test_direct_inventory_claim_sends_notification(self):
+        self.assertTrue(await self.drop.claim())
+        self.assertTrue(self.drop.is_claimed)
+        self.sent.assert_awaited_once()
+        self.assertIn("Campaign telegram", self.sent.await_args.args[0])
+        self.assertIn("Reward Watch", self.sent.await_args.args[0])
+        self.twitch.gui.broadcast_wanted_items_now.assert_awaited_once_with()
 
-    async def test_telegram_notification_skipped_on_failed_claim(self):
-        with (
-            unittest.mock.patch(
-                "src.services.message_handlers.asyncio.sleep", new=AsyncMock()
-            ),
-            unittest.mock.patch.object(
-                self.service, "_send_telegram_notification", new=AsyncMock()
-            ) as notify,
-        ):
-            await self.service.process_drops(1, self._claim_message(failed=True))
-            notify.assert_not_awaited()
+    async def test_base_drop_claim_also_sends_notification(self):
+        drop = BaseDrop(self.campaign, self.drop_data, {})
+        drop.update_claim("inst-1")
+        self.assertTrue(await drop.claim())
+        self.sent.assert_awaited_once()
+
+    async def test_websocket_claim_sends_one_notification(self):
+        await self.service.process_drops(1, self._claim_message())
+        self.assertTrue(self.drop.is_claimed)
+        self.sent.assert_awaited_once()
+
+    async def test_repeated_websocket_claim_does_not_notify_twice(self):
+        await self.service.process_drops(1, self._claim_message())
+        await self.service.process_drops(1, self._claim_message())
+        self.sent.assert_awaited_once()
+        self.twitch.gql_request.assert_awaited_once()
+
+    async def test_inventory_claim_followed_by_websocket_notifies_once(self):
+        self.assertTrue(await self.drop.claim())
+        await self.service.process_drops(1, self._claim_message())
+        self.sent.assert_awaited_once()
+
+    async def test_failed_claim_does_not_send_notification(self):
+        self.twitch.gql_request.return_value = {"data": {"claimDropRewards": None}}
+        await self.service.process_drops(1, self._claim_message())
+        self.assertFalse(self.drop.is_claimed)
+        self.sent.assert_not_awaited()
+
+    async def test_unconfigured_claim_does_not_send_notification(self):
+        self.twitch.settings.telegram_bot_token = ""
+        self.assertTrue(await self.drop.claim())
+        self.sent.assert_not_awaited()
+
+    async def test_notification_rejection_preserves_successful_claim(self):
+        self.sent.return_value = False
+        self.assertTrue(await self.drop.claim())
+        self.assertTrue(self.drop.is_claimed)
+        self.assertEqual(self.drop.current_minutes, self.drop.required_minutes)
+        self.sent.assert_awaited_once()
+
+    async def test_notification_exception_preserves_successful_claim(self):
+        with patch.object(
+            TelegramNotifier, "notify_drop_claimed", new=AsyncMock(side_effect=RuntimeError("failed"))
+        ) as notify:
+            self.assertTrue(await self.drop.claim())
+        self.assertTrue(self.drop.is_claimed)
+        self.assertEqual(self.drop.current_minutes, self.drop.required_minutes)
+        notify.assert_awaited_once_with(self.drop)
+
+
+class TestTelegramTransport(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.client_session = self.enterContext(
+            patch("src.services.telegram_service.aiohttp.ClientSession")
+        )
+        self.session = self.client_session.return_value
+        self.session.__aenter__.return_value = self.session
+        self.response = self.session.post.return_value.__aenter__.return_value
+        self.response.status = 200
+        self.response.text = AsyncMock(return_value='{"ok": false, "description": "Forbidden"}')
+        self.notifier = TelegramNotifier("123456:ABC", "42")
+
+    async def test_connection_sends_expected_request(self):
+        self.assertTrue(await self.notifier.test_connection())
+        self.session.post.assert_called_once()
+        args, kwargs = self.session.post.call_args
+        self.assertEqual(args, ("https://api.telegram.org/bot123456:ABC/sendMessage",))
+        self.assertEqual(kwargs["json"]["chat_id"], "42")
+        self.assertEqual(kwargs["json"]["parse_mode"], "HTML")
+        self.assertIn("test successful", kwargs["json"]["text"])
+        self.assertEqual(kwargs["timeout"].total, 10)
+        self.session.__aexit__.assert_awaited_once()
+
+    async def test_api_rejection_returns_false(self):
+        self.response.status = 403
+        self.assertFalse(await self.notifier.test_connection())
+        self.response.text.assert_awaited_once()
+        self.session.__aexit__.assert_awaited_once()
+
+    async def test_timeout_returns_false_and_closes_session(self):
+        self.session.post.return_value.__aenter__.side_effect = asyncio.TimeoutError()
+        self.assertFalse(await self.notifier.test_connection())
+        self.session.__aexit__.assert_awaited_once()
+
+    async def test_transport_failure_returns_false(self):
+        self.session.post.return_value.__aenter__.side_effect = OSError("connection reset")
+        self.assertFalse(await self.notifier.test_connection())
+        self.session.__aexit__.assert_awaited_once()
+
+    async def test_missing_credentials_never_open_a_session(self):
+        for token, chat_id in (("", "42"), ("123456:ABC", "")):
+            with self.subTest(token=token, chat_id=chat_id):
+                notifier = TelegramNotifier(token, chat_id)
+                self.assertFalse(await notifier.test_connection())
+                self.assertFalse(await notifier.notify_drop_claimed(MagicMock()))
+        self.client_session.assert_not_called()
 
 
 class TestTelegramMessageEscaping(unittest.IsolatedAsyncioTestCase):

@@ -171,7 +171,9 @@
                 "error": "Error al conectar con Telegram. Verifica tu token de bot e ID de chat.",
                 "missing_credentials": "Por favor, completa tanto el token del bot como el ID de chat. Consulta las instrucciones de configuración en la pestaña Ayuda.",
                 "get_from_botfather": "Obtener de @BotFather",
-                "your_user_id": "Tu ID de usuario numérico de Telegram"
+                "your_user_id": "Tu ID de usuario numérico de Telegram",
+                "save_error": "No se pudo guardar la configuración de Telegram. Inténtalo de nuevo.",
+                "credentials_help": "Deja el token en blanco para conservar el guardado. Para desactivar las notificaciones, borra el ID del chat y guarda."
             },
             "drop_name_blacklist": "Palabras clave de drops ignorados",
             "drop_name_blacklist_help": "Introduce una palabra clave por línea. La coincidencia busca una subcadena literal sin distinguir mayúsculas de minúsculas. Se ignoran los drops coincidentes y sus ramas dependientes; se omiten las ramas que solo son requisitos previos, mientras que los requisitos compartidos siguen siendo obtenibles.",
