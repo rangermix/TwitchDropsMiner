@@ -32,6 +32,32 @@
         "no_connection": "Twitch'e bağlanılamıyor. {seconds} saniye içinde tekrar deneniyor..."
     },
     "gui": {
+        "auth": {
+            "title": "Panel parolası",
+            "help": "Paneli tek bir parolayla koruyun. Parolayı değiştirmek diğer oturumları kapatır. Korumayı devre dışı bırakmak parolayı siler.",
+            "login_title": "Panelin kilidini aç",
+            "password": "Parola",
+            "remember": "Beni 30 gün hatırla",
+            "login": "Giriş yap",
+            "logout": "Çıkış yap",
+            "current_password": "Mevcut parola",
+            "new_password": "Yeni parola (en az 8 karakter)",
+            "confirm_password": "Yeni parolayı doğrula",
+            "enable": "Parola korumasını etkinleştir",
+            "change": "Parolayı değiştir",
+            "disable": "Korumayı devre dışı bırak ve parolayı sil",
+            "enabled": "Parola koruması etkin.",
+            "disabled": "Parola koruması devre dışı.",
+            "invalid_password": "Yanlış parola.",
+            "password_length": "8 ile 1024 karakter kullanın.",
+            "password_mismatch": "Parolalar eşleşmiyor.",
+            "rate_limited": "Çok fazla deneme. Bir dakika bekleyip tekrar deneyin.",
+            "auth_changed": "Kimlik doğrulama ayarları değişti. Sayfayı yenileyin.",
+            "authentication_required": "Lütfen tekrar giriş yapın.",
+            "forbidden": "İstek engellendi. Uygulamayı doğrudan açıp tekrar deneyin.",
+            "invalid_request": "Geçersiz istek.",
+            "request_failed": "İstek başarısız oldu. Tekrar deneyin."
+        },
         "output": "Protokoll",
         "status": {
             "name": "Durum",

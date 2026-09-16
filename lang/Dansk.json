@@ -32,6 +32,32 @@
         "no_connection": "Kan ikke oprette forbindelse til Twitch, prøver igen om {seconds} sekunder..."
     },
     "gui": {
+        "auth": {
+            "title": "Adgangskode til kontrolpanel",
+            "help": "Beskyt kontrolpanelet med én adgangskode. Ændring logger andre sessioner ud. Deaktivering sletter adgangskoden.",
+            "login_title": "Lås kontrolpanelet op",
+            "password": "Adgangskode",
+            "remember": "Husk mig i 30 dage",
+            "login": "Log ind",
+            "logout": "Log ud",
+            "current_password": "Nuværende adgangskode",
+            "new_password": "Ny adgangskode (mindst 8 tegn)",
+            "confirm_password": "Bekræft ny adgangskode",
+            "enable": "Aktivér adgangskodebeskyttelse",
+            "change": "Skift adgangskode",
+            "disable": "Deaktivér beskyttelse og slet adgangskode",
+            "enabled": "Adgangskodebeskyttelse er aktiveret.",
+            "disabled": "Adgangskodebeskyttelse er deaktiveret.",
+            "invalid_password": "Forkert adgangskode.",
+            "password_length": "Brug 8 til 1024 tegn.",
+            "password_mismatch": "Adgangskoderne er ikke ens.",
+            "rate_limited": "For mange forsøg. Vent et minut, og prøv igen.",
+            "auth_changed": "Loginindstillingerne er ændret. Genindlæs siden.",
+            "authentication_required": "Log ind igen.",
+            "forbidden": "Anmodning blokeret. Åbn appen direkte, og prøv igen.",
+            "invalid_request": "Ugyldig anmodning.",
+            "request_failed": "Anmodningen mislykkedes. Prøv igen."
+        },
         "output": "Resultat",
         "status": {
             "name": "Status",

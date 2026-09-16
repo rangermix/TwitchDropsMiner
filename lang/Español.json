@@ -32,6 +32,32 @@
         "no_connection": "No se ha podido conectar a Twitch. \nIntente de nuevo en {seconds} segundos..."
     },
     "gui": {
+        "auth": {
+            "title": "Contraseña del panel",
+            "help": "Protege el panel con una contraseña. Cambiarla cierra las demás sesiones. Desactivar la protección borra la contraseña.",
+            "login_title": "Desbloquear el panel",
+            "password": "Contraseña",
+            "remember": "Recordarme durante 30 días",
+            "login": "Iniciar sesión",
+            "logout": "Cerrar sesión",
+            "current_password": "Contraseña actual",
+            "new_password": "Nueva contraseña (mínimo 8 caracteres)",
+            "confirm_password": "Confirmar nueva contraseña",
+            "enable": "Activar protección con contraseña",
+            "change": "Cambiar contraseña",
+            "disable": "Desactivar protección y borrar contraseña",
+            "enabled": "La protección con contraseña está activada.",
+            "disabled": "La protección con contraseña está desactivada.",
+            "invalid_password": "Contraseña incorrecta.",
+            "password_length": "Usa entre 8 y 1024 caracteres.",
+            "password_mismatch": "Las contraseñas no coinciden.",
+            "rate_limited": "Demasiados intentos. Espera un minuto y vuelve a intentarlo.",
+            "auth_changed": "La configuración de acceso ha cambiado. Recarga la página.",
+            "authentication_required": "Vuelve a iniciar sesión.",
+            "forbidden": "Solicitud bloqueada. Abre esta aplicación directamente e inténtalo de nuevo.",
+            "invalid_request": "Solicitud no válida.",
+            "request_failed": "La solicitud falló. Inténtalo de nuevo."
+        },
         "output": "Registros",
         "status": {
             "name": "Estado",

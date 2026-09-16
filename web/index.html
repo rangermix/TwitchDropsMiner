@@ -7,6 +7,8 @@
     <title>Twitch Drops Miner</title>
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <link rel="stylesheet" href="/static/styles.css?v=__APP_VERSION__">
+    <link rel="stylesheet" href="/static/auth.css?v=__APP_VERSION__">
+    <script src="/static/auth.js?v=__APP_VERSION__"></script>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 
@@ -16,6 +18,8 @@
             <div class="header-top">
                 <h1>🎮 Twitch Drops Miner</h1>
                 <div class="header-controls">
+                    <button id="web-auth-logout" type="button" data-auth-text="logout" hidden>Log out</button>
+                    <span id="web-auth-logout-result" role="status" aria-live="polite"></span>
                     <label for="language" class="language-selector">
                         <span>Language:</span>
                         <select id="language">
@@ -181,6 +185,24 @@
         <!-- Settings Tab -->
         <div id="settings-tab" class="tab-content">
             <div class="settings-container">
+                <section class="settings-section">
+                    <h2 data-auth-text="title">Dashboard password</h2>
+                    <p id="web-auth-state"></p>
+                    <p class="help-text" data-auth-text="help">Protect this dashboard with one password. Changing it signs out other sessions. Disabling protection clears the password.</p>
+                    <form id="web-auth-settings" class="auth-form">
+                        <div id="web-auth-current-row" hidden>
+                            <label for="web-auth-current" data-auth-text="current_password">Current password</label>
+                            <input id="web-auth-current" type="password" autocomplete="current-password" maxlength="1024">
+                        </div>
+                        <label for="web-auth-new" data-auth-text="new_password">New password (at least 8 characters)</label>
+                        <input id="web-auth-new" type="password" autocomplete="new-password" minlength="8" maxlength="1024" required>
+                        <label for="web-auth-confirm" data-auth-text="confirm_password">Confirm new password</label>
+                        <input id="web-auth-confirm" type="password" autocomplete="new-password" minlength="8" maxlength="1024" required>
+                        <button id="web-auth-save" type="submit" data-auth-text="enable" disabled>Enable password protection</button>
+                        <button id="web-auth-disable" class="auth-secondary" type="button" data-auth-text="disable" hidden>Disable protection and clear password</button>
+                        <p id="web-auth-result" role="status" aria-live="polite"></p>
+                    </form>
+                </section>
                 <section class="settings-section">
                     <h2 id="settings-general-header">General</h2>
                     <label>

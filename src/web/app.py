@@ -9,12 +9,15 @@ from urllib.parse import quote
 
 import socketio
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from src.config.paths import DATA_DIR
 from src.version import __version__
+from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
 
 
 if TYPE_CHECKING:
@@ -29,22 +32,19 @@ logger = logging.getLogger("TwitchDrops")
 # Create FastAPI app
 app = FastAPI(title="Twitch Drops Miner Web", version=__version__)
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+web_auth = WebAuth(DATA_DIR / "web_auth.json")
+sio = AuthSocketServer(web_auth)
+app.include_router(AuthAPI(web_auth, sio).router)
+app.add_middleware(AuthMiddleware, auth=web_auth)
+# The outer guard covers Engine.IO polling and WebSocket upgrades too.
+socket_app = AuthMiddleware(socketio.ASGIApp(sio, app), web_auth)
 
-# Create Socket.IO server
-sio = socketio.AsyncServer(
-    async_mode="asgi", cors_allowed_origins="*", logger=False, engineio_logger=False
-)
 
-# Wrap with ASGI app
-socket_app = socketio.ASGIApp(sio, app)
+@app.exception_handler(RequestValidationError)
+async def validation_error(request, exc):
+    if request.url.path.startswith("/api/auth/"):
+        return JSONResponse({"detail": "invalid_request"}, status_code=422)
+    return await request_validation_exception_handler(request, exc)
 
 # Global references (set by main.py)
 gui_manager: WebGUIManager | None = None
@@ -488,6 +488,8 @@ async def exit_manual_mode():
 @sio.event
 async def connect(sid, environ):
     """Client connected"""
+    if not sio.register(sid, environ["asgi.scope"]):
+        return False
     logger.info(f"Web client connected: {sid}")
 
     # Send initial state to new client
@@ -512,12 +514,15 @@ async def connect(sid, environ):
 @sio.event
 async def disconnect(sid):
     """Client disconnected"""
+    sio.forget(sid)
     logger.info(f"Web client disconnected: {sid}")
 
 
 @sio.event
 async def request_login(sid):
     """Client requested login form submission"""
+    if not await sio.authorize(sid):
+        return
     logger.info(f"Login request from client: {sid}")
     # The actual login data comes via REST API
 
@@ -525,6 +530,8 @@ async def request_login(sid):
 @sio.event
 async def request_reload(sid):
     """Client requested application reload"""
+    if not await sio.authorize(sid):
+        return
     if twitch_client:
         twitch_client.request_inventory_refresh()
 
@@ -532,6 +539,8 @@ async def request_reload(sid):
 @sio.event
 async def get_wanted_items(sid):
     """Client requested wanted items list"""
+    if not await sio.authorize(sid):
+        return
     if gui_manager:
         await sio.emit("wanted_items_update", gui_manager.get_wanted_game_tree(), to=sid)
 

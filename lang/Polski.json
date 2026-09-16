@@ -32,6 +32,32 @@
         "no_connection": "Nie można połączyć się z Twitchem. Spróbuj ponownie za {seconds} s...."
     },
     "gui": {
+        "auth": {
+            "title": "Hasło panelu",
+            "help": "Chroń panel jednym hasłem. Zmiana wylogowuje inne sesje. Wyłączenie ochrony usuwa hasło.",
+            "login_title": "Odblokuj panel",
+            "password": "Hasło",
+            "remember": "Zapamiętaj mnie na 30 dni",
+            "login": "Zaloguj się",
+            "logout": "Wyloguj się",
+            "current_password": "Obecne hasło",
+            "new_password": "Nowe hasło (co najmniej 8 znaków)",
+            "confirm_password": "Potwierdź nowe hasło",
+            "enable": "Włącz ochronę hasłem",
+            "change": "Zmień hasło",
+            "disable": "Wyłącz ochronę i usuń hasło",
+            "enabled": "Ochrona hasłem jest włączona.",
+            "disabled": "Ochrona hasłem jest wyłączona.",
+            "invalid_password": "Nieprawidłowe hasło.",
+            "password_length": "Użyj od 8 do 1024 znaków.",
+            "password_mismatch": "Hasła nie są zgodne.",
+            "rate_limited": "Zbyt wiele prób. Poczekaj minutę i spróbuj ponownie.",
+            "auth_changed": "Ustawienia logowania uległy zmianie. Odśwież stronę.",
+            "authentication_required": "Zaloguj się ponownie.",
+            "forbidden": "Żądanie zablokowane. Otwórz aplikację bezpośrednio i spróbuj ponownie.",
+            "invalid_request": "Nieprawidłowe żądanie.",
+            "request_failed": "Żądanie nie powiodło się. Spróbuj ponownie."
+        },
         "output": "Dziennik zdarzeń",
         "status": {
             "name": "Status",

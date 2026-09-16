@@ -24,6 +24,7 @@ dashboard. It sends Twitch watch events without downloading the stream itself.
 - **Drop-name ignore rules** — excludes unwanted reward names and dependent branches
 - **Persistent sessions** — saves OAuth login state between runs
 - **Web dashboard** — manages campaigns, channels, inventory, settings, and login status
+- **Optional dashboard password** — protects the web UI, API, and live connections with one password
 - **Drop history** — records every claimed drop locally (date, game, campaign, rewards)
   with a filterable **History** tab, aggregated stats, and one-click **Export CSV**
 - **Telegram notifications** — sends an alert when a drop is claimed, including claims found during startup and inventory refresh
@@ -106,6 +107,49 @@ In **Settings**, **Clear All Cache** calls `POST /api/cache/clear` to discard lo
 campaign, channel, and other derived miner state while preserving your OAuth login and
 settings, then reloads the data from Twitch. This is a recovery and diagnostic action;
 it cannot correct inaccurate campaign metadata returned by Twitch.
+
+### Dashboard password
+
+Password protection is **off by default**. In **Settings → Dashboard password**, enter
+and confirm a password (8–1024 characters), then select **Enable password protection**.
+This password is separate from your Twitch account; no username is needed. Enabling it
+immediately locks out other browsers. Mining continues while the dashboard is locked.
+
+If the login page shows a temporary request error, you can still enter your password
+and select **Log in** to retry without reloading the page.
+
+- Login uses an HttpOnly, SameSite=Strict **session cookie** by default. Select
+  **Remember me for 30 days** for a persistent cookie with a fixed 30-day expiry.
+  Sessions survive miner restarts, and all sessions have a maximum server lifetime of
+  30 days. Browser session-restore features may preserve session cookies; use **Log out**
+  to explicitly revoke a session on shared devices.
+- **Change password** requires the current password and signs out all other sessions.
+  The browser making the change receives a new session cookie.
+- **Disable protection and clear password** also requires the current password. It
+  deletes the stored password hash and all sessions, making the dashboard public again.
+- Passwords are salted and hashed with scrypt; only digests of random session tokens
+  are stored. Login and password-setting attempts are rate limited (5 per minute per
+  client IP, 30 per minute overall). Auth credentials never enter normal settings or logs.
+- The UI, application API, and Socket.IO are protected. `/healthz` stays public and
+  returns only a health flag for Docker checks. Login resources and auth status are public.
+  API writes require `X-TDM-Request: 1`; browser clients send it automatically. Cross-origin
+  writes and Socket.IO connections are rejected.
+
+**Remote access:** use HTTPS through a reverse proxy to encrypt passwords and cookies.
+Cookies receive the Secure flag over HTTPS. Preserve the original Host header and configure
+Uvicorn to trust forwarded protocol/IP headers **only from your proxy** (for example via
+`FORWARDED_ALLOW_IPS`). A proxy that hides client IPs shares the per-IP login limit.
+Configure protection on a trusted network before making the dashboard publicly reachable.
+Run one miner process per data directory.
+
+**Forgotten password:** stop the miner, restrict network access to its port, delete only
+`data/web_auth.json` (Docker: `/app/data/web_auth.json` in the mounted data directory),
+then restart and set a new password in Settings before restoring remote access. This
+resets dashboard authentication without deleting Twitch cookies or other settings.
+Keep the data directory private. A malformed auth file stops startup rather than silently
+turning off protection. **Clear All Cache** preserves dashboard authentication.
+
+### Drop history
 
 The **History** tab logs every successfully claimed drop to `data/drop_history.json`.
 Filter the table by game name or "claimed on or after" date, view per-game and per-month
@@ -221,6 +265,10 @@ This project is a modern fork of
 </details>
 
 ## Development disclosure
+
+Repository instructions for all coding agents live in [AGENTS.md](./AGENTS.md).
+`CLAUDE.md` and `GEMINI.md` are relative symlinks to that file; edit `AGENTS.md` to
+update the shared guidance.
 
 This fork is maintained with AI-assisted development tools. Changes are validated through
 automated tests and code-quality checks, but users should still review updates before

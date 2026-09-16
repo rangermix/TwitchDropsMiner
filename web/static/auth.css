@@ -1,0 +1,15 @@
+.auth-page { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--bg-secondary); }
+.auth-card { width: 100%; max-width: 440px; background: var(--bg-panel); padding: 32px; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 8px 32px #0000000d; }
+.auth-card h1 { color: var(--accent-color); font-size: 23px; margin-bottom: 20px; }
+.auth-card h2 { font-size: 19px; margin-bottom: 20px; }
+.auth-form { display: flex; flex-direction: column; gap: 12px; max-width: 480px; }
+.auth-form input[type="password"] { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); font: inherit; }
+.auth-form label.auth-remember { display: flex; align-items: center; gap: 8px; }
+.auth-form button, #web-auth-logout { padding: 10px 16px; border-radius: 6px; border: 0; background: var(--accent-color); color: white; cursor: pointer; font: inherit; }
+.auth-form button:disabled { opacity: .6; cursor: wait; }
+.auth-form .auth-secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); }
+.auth-form [hidden], #web-auth-logout[hidden] { display: none; }
+.auth-form [role="status"] { min-height: 1.6em; color: var(--error-color); }
+#web-auth-logout-result { color: var(--error-color); }
+.auth-form input:focus-visible, .auth-form button:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+@media (max-width: 600px) { .auth-card { padding: 24px; } .header-top, .header-controls { flex-wrap: wrap; gap: 12px; } }

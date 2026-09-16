@@ -253,6 +253,33 @@ class GUIHeader(TypedDict):
     disconnected: str
 
 
+class GUIAuth(TypedDict):
+    title: str
+    help: str
+    login_title: str
+    password: str
+    remember: str
+    login: str
+    logout: str
+    current_password: str
+    new_password: str
+    confirm_password: str
+    enable: str
+    change: str
+    disable: str
+    enabled: str
+    disabled: str
+    invalid_password: str
+    password_length: str
+    password_mismatch: str
+    rate_limited: str
+    auth_changed: str
+    authentication_required: str
+    forbidden: str
+    invalid_request: str
+    request_failed: str
+
+
 class GUIHistory(TypedDict):
     title: str
     filter_game: str
@@ -284,6 +311,7 @@ class GUIHistory(TypedDict):
 
 
 class GUIMessages(TypedDict):
+    auth: GUIAuth
     history: GUIHistory
     output: str
     status: GUIStatus

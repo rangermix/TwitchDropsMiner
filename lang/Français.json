@@ -32,6 +32,32 @@
         "no_connection": "Impossible de se connecter à Twitch. Veuillez réessayer dans {seconds} secondes..."
     },
     "gui": {
+        "auth": {
+            "title": "Mot de passe du tableau de bord",
+            "help": "Protégez le tableau de bord avec un mot de passe. Le modifier déconnecte les autres sessions. Désactiver la protection efface le mot de passe.",
+            "login_title": "Déverrouiller le tableau de bord",
+            "password": "Mot de passe",
+            "remember": "Rester connecté pendant 30 jours",
+            "login": "Se connecter",
+            "logout": "Se déconnecter",
+            "current_password": "Mot de passe actuel",
+            "new_password": "Nouveau mot de passe (8 caractères minimum)",
+            "confirm_password": "Confirmer le nouveau mot de passe",
+            "enable": "Activer la protection par mot de passe",
+            "change": "Modifier le mot de passe",
+            "disable": "Désactiver la protection et effacer le mot de passe",
+            "enabled": "La protection par mot de passe est activée.",
+            "disabled": "La protection par mot de passe est désactivée.",
+            "invalid_password": "Mot de passe incorrect.",
+            "password_length": "Utilisez entre 8 et 1024 caractères.",
+            "password_mismatch": "Les mots de passe ne correspondent pas.",
+            "rate_limited": "Trop de tentatives. Attendez une minute et réessayez.",
+            "auth_changed": "Les paramètres de connexion ont changé. Rechargez la page.",
+            "authentication_required": "Veuillez vous reconnecter.",
+            "forbidden": "Requête bloquée. Ouvrez directement cette application et réessayez.",
+            "invalid_request": "Requête invalide.",
+            "request_failed": "Échec de la requête. Réessayez."
+        },
         "output": "Sortie",
         "status": {
             "name": "État",

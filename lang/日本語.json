@@ -32,6 +32,32 @@
         "no_connection": "Twitchに接続できません。{seconds}秒後に再試行します..."
     },
     "gui": {
+        "auth": {
+            "title": "ダッシュボードのパスワード",
+            "help": "1つのパスワードで保護します。変更すると他のセッションはログアウトします。保護を無効にするとパスワードは削除されます。",
+            "login_title": "ダッシュボードのロック解除",
+            "password": "パスワード",
+            "remember": "30日間ログイン状態を保持",
+            "login": "ログイン",
+            "logout": "ログアウト",
+            "current_password": "現在のパスワード",
+            "new_password": "新しいパスワード（8文字以上）",
+            "confirm_password": "新しいパスワードの確認",
+            "enable": "パスワード保護を有効にする",
+            "change": "パスワードを変更",
+            "disable": "保護を無効にしてパスワードを削除",
+            "enabled": "パスワード保護は有効です。",
+            "disabled": "パスワード保護は無効です。",
+            "invalid_password": "パスワードが違います。",
+            "password_length": "8〜1024文字で入力してください。",
+            "password_mismatch": "パスワードが一致しません。",
+            "rate_limited": "試行回数が多すぎます。1分後に再試行してください。",
+            "auth_changed": "認証設定が変更されました。ページを再読み込みしてください。",
+            "authentication_required": "再度ログインしてください。",
+            "forbidden": "リクエストがブロックされました。アプリを直接開いて再試行してください。",
+            "invalid_request": "無効なリクエストです。",
+            "request_failed": "リクエストに失敗しました。再試行してください。"
+        },
         "output": "出力",
         "status": {
             "name": "ステータス",

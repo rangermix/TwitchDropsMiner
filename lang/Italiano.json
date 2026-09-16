@@ -32,6 +32,32 @@
         "no_connection": "Impossibile connettersi a Twitch, riprovo tra {seconds} secondi..."
     },
     "gui": {
+        "auth": {
+            "title": "Password della dashboard",
+            "help": "Proteggi la dashboard con una password. Modificarla disconnette le altre sessioni. Disattivare la protezione elimina la password.",
+            "login_title": "Sblocca la dashboard",
+            "password": "Password",
+            "remember": "Ricordami per 30 giorni",
+            "login": "Accedi",
+            "logout": "Esci",
+            "current_password": "Password attuale",
+            "new_password": "Nuova password (almeno 8 caratteri)",
+            "confirm_password": "Conferma nuova password",
+            "enable": "Attiva protezione con password",
+            "change": "Cambia password",
+            "disable": "Disattiva protezione ed elimina password",
+            "enabled": "La protezione con password è attiva.",
+            "disabled": "La protezione con password è disattivata.",
+            "invalid_password": "Password errata.",
+            "password_length": "Usa da 8 a 1024 caratteri.",
+            "password_mismatch": "Le password non coincidono.",
+            "rate_limited": "Troppi tentativi. Attendi un minuto e riprova.",
+            "auth_changed": "Le impostazioni di accesso sono cambiate. Ricarica la pagina.",
+            "authentication_required": "Accedi di nuovo.",
+            "forbidden": "Richiesta bloccata. Apri direttamente questa app e riprova.",
+            "invalid_request": "Richiesta non valida.",
+            "request_failed": "Richiesta non riuscita. Riprova."
+        },
         "output": "Output",
         "status": {
             "name": "Stato",
