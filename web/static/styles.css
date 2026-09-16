@@ -17,6 +17,8 @@
     --warning-color: #ffa726;
     --error-color: #f44336;
     --progress-bg: #e0e0e0;
+    --secondary-bg: #f0f0f0;
+    --hover-bg: #efeff4;
 }
 
 body.dark-mode {
@@ -26,6 +28,8 @@ body.dark-mode {
     --text-primary: #e0e0e0;
     --text-secondary: #a0a0a0;
     --border-color: #444444;
+    --secondary-bg: #2b2b2f;
+    --hover-bg: #34343a;
 }
 
 body {
@@ -167,6 +171,12 @@ header h1 {
 
 .secondary-btn:hover {
     background-color: var(--hover-bg);
+}
+
+.button-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
 }
 
 .verify-result {

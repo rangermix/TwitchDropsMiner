@@ -175,8 +175,28 @@ class GUISettingsGeneral(TypedDict):
     dark_mode: str
 
 
+class GUITelegramSettings(TypedDict):
+    name: str
+    description: str
+    bot_token: str
+    chat_id: str
+    save_settings: str
+    test_connection: str
+    how_to_setup: str
+    setup_steps: list[str]
+    success: str
+    saved: str
+    error: str
+    save_error: str
+    credentials_help: str
+    missing_credentials: str
+    get_from_botfather: str
+    your_user_id: str
+
+
 class GUISettings(TypedDict):
     general: GUISettingsGeneral
+    telegram: GUITelegramSettings
     mining_benefits: str
     mining_benefits_help: str
     reload: str
@@ -194,6 +214,8 @@ class GUISettings(TypedDict):
     select_all: str
     deselect_all: str
     selected_games: str
+    game_priority: str
+    remove_game: str
     available_games: str
     no_games_selected: str
     no_games_match: str
