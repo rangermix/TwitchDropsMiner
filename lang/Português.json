@@ -183,7 +183,9 @@
             "clear_all_cache": "Limpar todo o cache",
             "clear_all_cache_help": "Limpa o estado local de campanhas, canais e dados derivados do minerador; mantém o login e as configurações e depois recarrega os dados da Twitch.",
             "mining_benefits": "Benefícios de Mineração",
-            "mining_benefits_help": "Selecione quais tipos de drops você deseja minerar."
+            "mining_benefits_help": "Selecione quais tipos de drops você deseja minerar.",
+            "game_priority": "Prioridade de {game}",
+            "remove_game": "Remover {game}"
         },
         "help": {
             "about": "Sobre o Twitch Drops Miner",

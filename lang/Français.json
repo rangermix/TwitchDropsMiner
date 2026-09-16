@@ -183,7 +183,9 @@
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",
             "mining_benefits": "Avantages du Minage",
-            "mining_benefits_help": "Sélectionnez les types de drops que vous souhaitez miner."
+            "mining_benefits_help": "Sélectionnez les types de drops que vous souhaitez miner.",
+            "game_priority": "Priorité de {game}",
+            "remove_game": "Retirer {game}"
         },
         "help": {
             "about": "À propos de Twitch Drops Miner",

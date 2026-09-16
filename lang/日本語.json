@@ -183,7 +183,9 @@
             "clear_all_cache": "すべてのキャッシュを消去",
             "clear_all_cache_help": "ローカルのキャンペーン、チャンネル、およびマイナーの派生状態を消去します。ログイン情報と設定は保持し、その後 Twitch から再読み込みします。",
             "mining_benefits": "マイニング特典",
-            "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。"
+            "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。",
+            "game_priority": "{game} の優先順位",
+            "remove_game": "{game} を削除"
         },
         "help": {
             "about": "Twitch Drops Minerについて",

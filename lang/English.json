@@ -151,7 +151,9 @@
                 "your_user_id": "Your Telegram user ID (numeric)",
                 "save_error": "Failed to save Telegram settings. Please try again.",
                 "credentials_help": "Leave the token blank to keep the saved token. To disable notifications, clear the Chat ID and save."
-            }
+            },
+            "game_priority": "Priority for {game}",
+            "remove_game": "Remove {game}"
         },
         "help": {
             "about": "About Twitch Drops Miner",

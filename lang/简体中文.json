@@ -183,7 +183,9 @@
             "clear_all_cache": "清除所有缓存",
             "clear_all_cache_help": "清除本地活动、频道和挖矿器派生状态；保留登录信息和设置，然后从 Twitch 重新加载。",
             "mining_benefits": "挖掘奖励",
-            "mining_benefits_help": "选择您想要获取的掉落类型。"
+            "mining_benefits_help": "选择您想要获取的掉落类型。",
+            "game_priority": "{game} 的优先级",
+            "remove_game": "移除 {game}"
         },
         "help": {
             "about": "关于 Twitch 掉宝矿工",

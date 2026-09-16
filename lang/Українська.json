@@ -183,7 +183,9 @@
             "clear_all_cache": "Очистити весь кеш",
             "clear_all_cache_help": "Видаляє локальний стан кампаній, каналів і похідні дані майнера; зберігає вхід і налаштування, а потім повторно завантажує дані з Twitch.",
             "mining_benefits": "Переваги майнінгу",
-            "mining_benefits_help": "Виберіть типи drops, які ви хочете майнити."
+            "mining_benefits_help": "Виберіть типи drops, які ви хочете майнити.",
+            "game_priority": "Пріоритет для {game}",
+            "remove_game": "Видалити {game}"
         },
         "help": {
             "about": "Про Twitch Drops Miner",

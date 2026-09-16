@@ -183,7 +183,9 @@
             "clear_all_cache": "Ryd hele cachen",
             "clear_all_cache_help": "Rydder lokal kampagne-, kanal- og afledt minerstatus; bevarer login og indstillinger og genindlæser derefter data fra Twitch.",
             "mining_benefits": "Mining Fordele",
-            "mining_benefits_help": "Vælg hvilke typer drops du vil mine."
+            "mining_benefits_help": "Vælg hvilke typer drops du vil mine.",
+            "game_priority": "Prioritet for {game}",
+            "remove_game": "Fjern {game}"
         },
         "help": {
             "about": "Om Twitch Drops Miner",

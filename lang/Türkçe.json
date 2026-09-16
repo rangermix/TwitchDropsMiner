@@ -183,7 +183,9 @@
             "clear_all_cache": "Tüm Önbelleği Temizle",
             "clear_all_cache_help": "Yerel kampanya, kanal ve türetilmiş madenci durumunu temizler; oturum açma bilgilerini ve ayarları korur, ardından Twitch'ten yeniden yükler.",
             "mining_benefits": "Madencilik Avantajları",
-            "mining_benefits_help": "Hangi tür dropları toplamak istediğinizi seçin."
+            "mining_benefits_help": "Hangi tür dropları toplamak istediğinizi seçin.",
+            "game_priority": "{game} için öncelik",
+            "remove_game": "{game} oyununu kaldır"
         },
         "help": {
             "about": "Twitch Drops Miner Hakkında",

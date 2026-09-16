@@ -151,7 +151,9 @@
                 "your_user_id": "Az Ön numerikus Telegram felhasználóazonosítója",
                 "save_error": "A Telegram-beállítások mentése sikertelen. Próbáld újra.",
                 "credentials_help": "Hagyd üresen a token mezőt a mentett token megtartásához. Az értesítések kikapcsolásához töröld a csevegésazonosítót, majd mentsd a beállításokat."
-            }
+            },
+            "game_priority": "{game} prioritása",
+            "remove_game": "{game} eltávolítása"
         },
         "help": {
             "about": "A Twitch Drops Miner-ről",

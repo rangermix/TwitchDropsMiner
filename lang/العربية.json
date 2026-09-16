@@ -183,7 +183,9 @@
             "clear_all_cache": "مسح ذاكرة التخزين المؤقت بالكامل",
             "clear_all_cache_help": "يمسح الحالة المحلية للحملات والقنوات والبيانات المشتقة للمعدّن؛ مع الاحتفاظ بتسجيل الدخول والإعدادات، ثم يعيد تحميل البيانات من Twitch.",
             "mining_benefits": "فوائد التعدين",
-            "mining_benefits_help": "اختر أنواع الجوائز التي تريد تعدينها."
+            "mining_benefits_help": "اختر أنواع الجوائز التي تريد تعدينها.",
+            "game_priority": "أولوية {game}",
+            "remove_game": "إزالة {game}"
         },
         "help": {
             "about": "حول Twitch Drops Miner",

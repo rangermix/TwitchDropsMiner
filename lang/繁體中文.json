@@ -183,7 +183,9 @@
             "clear_all_cache": "清除所有快取",
             "clear_all_cache_help": "清除本機活動、頻道和挖礦器衍生狀態；保留登入資訊和設定，然後從 Twitch 重新載入。",
             "mining_benefits": "挖掘獎勵",
-            "mining_benefits_help": "選擇您想要獲取的掉落類型。"
+            "mining_benefits_help": "選擇您想要獲取的掉落類型。",
+            "game_priority": "{game} 的優先順序",
+            "remove_game": "移除 {game}"
         },
         "help": {
             "about": "關於 Twitch Drops Miner",

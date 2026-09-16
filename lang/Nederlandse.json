@@ -183,7 +183,9 @@
             "clear_all_cache": "Volledige cache wissen",
             "clear_all_cache_help": "Wist de lokale campagne-, kanaal- en afgeleide minerstatus; behoudt je aanmelding en instellingen en laadt daarna opnieuw vanaf Twitch.",
             "mining_benefits": "Mining Voordelen",
-            "mining_benefits_help": "Selecteer welke soorten drops je wilt minen."
+            "mining_benefits_help": "Selecteer welke soorten drops je wilt minen.",
+            "game_priority": "Prioriteit voor {game}",
+            "remove_game": "{game} verwijderen"
         },
         "help": {
             "about": "Over Twitch Drops Miner",

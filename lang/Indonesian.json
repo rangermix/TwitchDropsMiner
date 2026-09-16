@@ -183,7 +183,9 @@
             "clear_all_cache": "Hapus Semua Cache",
             "clear_all_cache_help": "Menghapus status kampanye, channel, dan data turunan miner lokal; mempertahankan login dan pengaturan, lalu memuat ulang data dari Twitch.",
             "mining_benefits": "Manfaat Penambangan",
-            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang."
+            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang.",
+            "game_priority": "Prioritas untuk {game}",
+            "remove_game": "Hapus {game}"
         },
         "help": {
             "about": "Tentang Twitch Drops Miner",

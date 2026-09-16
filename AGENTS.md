@@ -1,4 +1,4 @@
-# AGENTS.md
+# Agent Instructions
 
 
 ## AGENTS.md Specific Instructions
@@ -154,6 +154,10 @@ lang/                # Translation JSON files (20 languages)
 
 - Games to watch list (auto-populated from available campaigns if empty)
 - Games can also be added manually from the web settings search box
+- Games to Watch supports drag ordering and editable integer priority numbers. Clamp valid
+  ranks to the list bounds; reject blank/fractional values without changing settings.
+  Keep priority and remove-control labels translated and accessible. Regression tests in
+  `tests/test_game_priority.py` cover order, bounds, invalid inputs, and persistence calls.
 - Connection quality multiplier
 - Language selection
 - Proxy support (including verification)

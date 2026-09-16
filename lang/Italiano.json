@@ -183,7 +183,9 @@
             "clear_all_cache": "Svuota tutta la cache",
             "clear_all_cache_help": "Cancella lo stato locale di campagne, canali e i dati derivati del miner; mantiene l’accesso e le impostazioni, quindi ricarica i dati da Twitch.",
             "mining_benefits": "Vantaggi Minatori",
-            "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare."
+            "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare.",
+            "game_priority": "Priorità di {game}",
+            "remove_game": "Rimuovi {game}"
         },
         "help": {
             "about": "Informazioni su Twitch Drops Miner",
