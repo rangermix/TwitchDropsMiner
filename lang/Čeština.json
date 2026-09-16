@@ -50,7 +50,8 @@
             "main": "Hlavní",
             "inventory": "Inventář",
             "settings": "Nastavení",
-            "help": "Nápověda"
+            "help": "Nápověda",
+            "history": "Historie"
         },
         "login": {
             "name": "Přihlášení k službě Twitch",
@@ -247,6 +248,35 @@
         "wanted": {
             "name": "Fronta chtěných Dropů",
             "none": "Žádné chtěné dropy ve frontě..."
+        },
+        "history": {
+            "title": "Historie dropů",
+            "filter_game": "Filtrovat podle hry…",
+            "since": "Vyzvednuto od (UTC)",
+            "apply": "Použít",
+            "export": "Exportovat CSV",
+            "stats": "Statistiky",
+            "clear": "Vymazat",
+            "total": "Celkem vyzvednutých dropů",
+            "claimed_at": "Datum a čas",
+            "game": "Hra",
+            "campaign": "Kampaň",
+            "drop": "Drop",
+            "rewards": "Odměny",
+            "minutes": "Minuty",
+            "loading": "Načítání historie…",
+            "empty": "Žádné dropy neodpovídají filtrům.",
+            "count": "Celkem dropů: {total}",
+            "filtered_count": "Zobrazeno {shown} z {total} zaznamenaných dropů",
+            "load_error": "Chyba při načítání historie: {error}",
+            "previous": "Předchozí",
+            "next": "Další",
+            "by_game": "Podle hry",
+            "by_month": "Podle měsíce",
+            "clear_confirm": "Smazat celou místní historii dropů? Tuto akci nelze vrátit zpět.",
+            "cleared": "Historie vymazána.",
+            "clear_error": "Historii nelze vymazat: {error}",
+            "stats_error": "Statistiky nelze načíst: {error}"
         }
     }
 }

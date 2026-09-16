@@ -50,7 +50,8 @@
             "main": "Main",
             "inventory": "Inventory",
             "settings": "Settings",
-            "help": "Help"
+            "help": "Help",
+            "history": "History"
         },
         "login": {
             "name": "Login Form",
@@ -247,6 +248,35 @@
                 "clear": "Clear Filters",
                 "search_placeholder": "Type to search games..."
             }
+        },
+        "history": {
+            "title": "Drop History",
+            "filter_game": "Filter by game…",
+            "since": "Claimed on or after (UTC)",
+            "apply": "Apply",
+            "export": "Export CSV",
+            "stats": "Stats",
+            "clear": "Clear",
+            "total": "Total drops claimed",
+            "claimed_at": "Date & Time",
+            "game": "Game",
+            "campaign": "Campaign",
+            "drop": "Drop",
+            "rewards": "Rewards",
+            "minutes": "Minutes",
+            "loading": "Loading history…",
+            "empty": "No drops match these filters.",
+            "count": "Total drops: {total}",
+            "filtered_count": "Showing {shown} of {total} recorded drops",
+            "load_error": "Error loading history: {error}",
+            "previous": "Previous",
+            "next": "Next",
+            "by_game": "By game",
+            "by_month": "By month",
+            "clear_confirm": "Delete all locally recorded drop history? This cannot be undone.",
+            "cleared": "History cleared.",
+            "clear_error": "Failed to clear history: {error}",
+            "stats_error": "Failed to load statistics: {error}"
         }
     }
 }

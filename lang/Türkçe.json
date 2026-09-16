@@ -50,7 +50,8 @@
             "main": "Ana",
             "inventory": "Envanter",
             "settings": "Ayarlar",
-            "help": "Yardım"
+            "help": "Yardım",
+            "history": "Geçmiş"
         },
         "login": {
             "name": "Giriş Yap",
@@ -247,6 +248,35 @@
         "wanted": {
             "name": "İstenen Drop Kuyruğu",
             "none": "Kuyrukta istenen drop yok..."
+        },
+        "history": {
+            "title": "Drop Geçmişi",
+            "filter_game": "Oyuna göre filtrele…",
+            "since": "Bu tarihte veya sonrasında alındı (UTC)",
+            "apply": "Uygula",
+            "export": "CSV dışa aktar",
+            "stats": "İstatistikler",
+            "clear": "Temizle",
+            "total": "Alınan toplam drop",
+            "claimed_at": "Tarih ve saat",
+            "game": "Oyun",
+            "campaign": "Kampanya",
+            "drop": "Drop",
+            "rewards": "Ödüller",
+            "minutes": "Dakika",
+            "loading": "Geçmiş yükleniyor…",
+            "empty": "Bu filtrelere uyan drop yok.",
+            "count": "Toplam drop: {total}",
+            "filtered_count": "Kayıtlı {total} droptan {shown} tanesi gösteriliyor",
+            "load_error": "Geçmiş yüklenemedi: {error}",
+            "previous": "Önceki",
+            "next": "Sonraki",
+            "by_game": "Oyuna göre",
+            "by_month": "Aya göre",
+            "clear_confirm": "Yerel olarak kaydedilmiş tüm drop geçmişi silinsin mi? Bu işlem geri alınamaz.",
+            "cleared": "Geçmiş temizlendi.",
+            "clear_error": "Geçmiş temizlenemedi: {error}",
+            "stats_error": "İstatistikler yüklenemedi: {error}"
         }
     }
 }

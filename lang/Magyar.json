@@ -50,7 +50,8 @@
             "main": "Kezdőlap",
             "inventory": "Készlet",
             "settings": "Beállítások",
-            "help": "Súgó"
+            "help": "Súgó",
+            "history": "Előzmények"
         },
         "login": {
             "name": "Bejelentkezési űrlap",
@@ -247,6 +248,35 @@
                 "clear": "Szűrők törlése",
                 "search_placeholder": "Írjon a játékok kereséséhez..."
             }
+        },
+        "history": {
+            "title": "Dropelőzmények",
+            "filter_game": "Szűrés játék szerint…",
+            "since": "Igényelve ekkor vagy később (UTC)",
+            "apply": "Alkalmaz",
+            "export": "CSV exportálása",
+            "stats": "Statisztika",
+            "clear": "Törlés",
+            "total": "Összes igényelt drop",
+            "claimed_at": "Dátum és idő",
+            "game": "Játék",
+            "campaign": "Kampány",
+            "drop": "Drop",
+            "rewards": "Jutalmak",
+            "minutes": "Perc",
+            "loading": "Előzmények betöltése…",
+            "empty": "Nincs a szűrőknek megfelelő drop.",
+            "count": "Összes drop: {total}",
+            "filtered_count": "{shown} megjelenítve {total} rögzített dropból",
+            "load_error": "Az előzmények betöltése sikertelen: {error}",
+            "previous": "Előző",
+            "next": "Következő",
+            "by_game": "Játék szerint",
+            "by_month": "Hónap szerint",
+            "clear_confirm": "Törlöd az összes helyben rögzített dropelőzményt? Ez nem vonható vissza.",
+            "cleared": "Előzmények törölve.",
+            "clear_error": "Az előzmények törlése sikertelen: {error}",
+            "stats_error": "A statisztika betöltése sikertelen: {error}"
         }
     }
 }

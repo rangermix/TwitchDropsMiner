@@ -50,7 +50,8 @@
             "main": "Principal",
             "inventory": "Inventario",
             "settings": "Configurações",
-            "help": "Ajuda"
+            "help": "Ajuda",
+            "history": "Histórico"
         },
         "login": {
             "name": "Tela de login",
@@ -247,6 +248,35 @@
         "wanted": {
             "name": "Fila de Drops Desejados",
             "none": "Nenhum drop desejado na fila..."
+        },
+        "history": {
+            "title": "Histórico de drops",
+            "filter_game": "Filtrar por jogo…",
+            "since": "Resgatado a partir de (UTC)",
+            "apply": "Aplicar",
+            "export": "Exportar CSV",
+            "stats": "Estatísticas",
+            "clear": "Limpar",
+            "total": "Total de drops resgatados",
+            "claimed_at": "Data e hora",
+            "game": "Jogo",
+            "campaign": "Campanha",
+            "drop": "Drop",
+            "rewards": "Recompensas",
+            "minutes": "Minutos",
+            "loading": "Carregando histórico…",
+            "empty": "Nenhum drop corresponde a estes filtros.",
+            "count": "Total de drops: {total}",
+            "filtered_count": "Exibindo {shown} de {total} drops registrados",
+            "load_error": "Erro ao carregar histórico: {error}",
+            "previous": "Anterior",
+            "next": "Próximo",
+            "by_game": "Por jogo",
+            "by_month": "Por mês",
+            "clear_confirm": "Excluir todo o histórico local de drops? Esta ação não pode ser desfeita.",
+            "cleared": "Histórico limpo.",
+            "clear_error": "Falha ao limpar histórico: {error}",
+            "stats_error": "Falha ao carregar estatísticas: {error}"
         }
     }
 }

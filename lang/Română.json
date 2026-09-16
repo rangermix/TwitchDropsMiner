@@ -50,7 +50,8 @@
             "main": "Principal",
             "inventory": "Inventar",
             "settings": "Setări",
-            "help": "Ajutor"
+            "help": "Ajutor",
+            "history": "Istoric"
         },
         "login": {
             "name": "Formular de conectare",
@@ -247,6 +248,35 @@
         "wanted": {
             "name": "Coadă Drops Dorite",
             "none": "Niciun drop dorit în coadă..."
+        },
+        "history": {
+            "title": "Istoricul dropurilor",
+            "filter_game": "Filtrează după joc…",
+            "since": "Revendicat începând cu (UTC)",
+            "apply": "Aplică",
+            "export": "Exportă CSV",
+            "stats": "Statistici",
+            "clear": "Șterge",
+            "total": "Total dropuri revendicate",
+            "claimed_at": "Data și ora",
+            "game": "Joc",
+            "campaign": "Campanie",
+            "drop": "Drop",
+            "rewards": "Recompense",
+            "minutes": "Minute",
+            "loading": "Se încarcă istoricul…",
+            "empty": "Niciun drop nu corespunde filtrelor.",
+            "count": "Total dropuri: {total}",
+            "filtered_count": "Se afișează {shown} din {total} dropuri înregistrate",
+            "load_error": "Eroare la încărcarea istoricului: {error}",
+            "previous": "Anterior",
+            "next": "Următor",
+            "by_game": "După joc",
+            "by_month": "După lună",
+            "clear_confirm": "Ștergi întregul istoric local al dropurilor? Acțiunea nu poate fi anulată.",
+            "cleared": "Istoric șters.",
+            "clear_error": "Istoricul nu a putut fi șters: {error}",
+            "stats_error": "Statisticile nu au putut fi încărcate: {error}"
         }
     }
 }
