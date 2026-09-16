@@ -175,8 +175,28 @@ class GUISettingsGeneral(TypedDict):
     dark_mode: str
 
 
+class GUITelegramSettings(TypedDict):
+    name: str
+    description: str
+    bot_token: str
+    chat_id: str
+    save_settings: str
+    test_connection: str
+    how_to_setup: str
+    setup_steps: list[str]
+    success: str
+    saved: str
+    error: str
+    save_error: str
+    credentials_help: str
+    missing_credentials: str
+    get_from_botfather: str
+    your_user_id: str
+
+
 class GUISettings(TypedDict):
     general: GUISettingsGeneral
+    telegram: GUITelegramSettings
     mining_benefits: str
     mining_benefits_help: str
     reload: str

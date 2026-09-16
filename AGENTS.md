@@ -1,4 +1,4 @@
-# AGENTS.md
+# Agent Instructions
 
 
 ## AGENTS.md Specific Instructions
@@ -153,7 +153,10 @@ lang/                # Translation JSON files (20 languages)
 **src/config/settings.py** - Application settings:
 
 - Games to watch list (auto-populated from available campaigns if empty)
-- Games can also be added manually from the web settings search box
+- Games can also be added manually from the web settings search box. Exact and
+  unique partial matches resolve to available game names; ambiguous matches do not
+  add a game. Confirmations support keyboard focus and Escape. Select All preserves
+  priority order and manual entries, and manual confirmation uses current settings.
 - Connection quality multiplier
 - Language selection
 - Proxy support (including verification)
@@ -170,6 +173,20 @@ lang/                # Translation JSON files (20 languages)
   actively watched channel remains visible while game settings are changing
 - Consecutive identical no-active-campaign console prompts are collapsed until another
   console message appears
+- Telegram drop notifications use a bot token stored server-side. The web API/socket
+  never echoes the stored token: `get_settings()` returns only a `telegram_configured`
+  flag and a masked placeholder, console logs mask the value, and a submitted value equal
+  to the mask (or empty) leaves the stored credential untouched.
+- Telegram alerts originate in the shared `BaseDrop.claim()` successful unclaimed-to-claimed
+  transition, covering websocket, startup, and inventory-refresh claims without duplicate
+  alerts for repeated events. Telegram failures must not change a successful Twitch claim.
+- The Telegram form reuses the saved token when its input is blank. Clearing the chat ID
+  and saving disables alerts. Test Connection waits for settings persistence before showing
+  success; HTTP, network, and application save failures must remain visible as errors.
+- `tests/test_telegram_frontend.py`, `tests/test_telegram_api.py`, and
+  `tests/test_telegram_integration.py` cover translated Help rendering, stored credentials,
+  failed saves, disabling, all shared claim paths, and transport failures without sending
+  real Telegram messages. Keep Telegram UI result strings in every locale.
 
 Drop-name ignore policy is dependency-aware: a matching unclaimed drop and its dependent
 branches are ignored dynamically. Prerequisite-only branches with no mineable reward are

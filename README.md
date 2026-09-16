@@ -24,6 +24,7 @@ dashboard. It sends Twitch watch events without downloading the stream itself.
 - **Drop-name ignore rules** — excludes unwanted reward names and dependent branches
 - **Persistent sessions** — saves OAuth login state between runs
 - **Web dashboard** — manages campaigns, channels, inventory, settings, and login status
+- **Telegram notifications** — sends an alert when a drop is claimed, including claims found during startup and inventory refresh
 - **Headless deployment** — runs locally, remotely, or in Docker without a desktop GUI
 - **Safe rendering** — builds dynamic translated content with DOM APIs instead of raw HTML
 
@@ -99,6 +100,22 @@ campaign, channel, and other derived miner state while preserving your OAuth log
 settings, then reloads the data from Twitch. This is a recovery and diagnostic action;
 it cannot correct inaccurate campaign metadata returned by Twitch.
 
+### Telegram notifications
+
+In **Settings → Telegram Notifications**, enter a bot token from
+[@BotFather](https://t.me/BotFather) and your chat ID. Start a conversation with your bot
+before selecting **Test Connection**. The Help tab contains the setup steps. A successful
+test sends a test message and saves the credentials; **Save Settings** saves without sending
+a message. A failed test or save displays an error.
+
+The bot token is stored on the server and is never returned to the browser. Leave the token
+field blank to reuse it when testing or changing the chat ID. To disable notifications,
+clear the chat ID and save. Enter a new chat ID to enable notifications again.
+
+Notifications cover new successful claims from both live events and inventory checks.
+Repeated events for an already claimed drop do not send another alert. Telegram delivery
+failures do not undo a Twitch claim, and failed notifications are not retried.
+
 > [!NOTE]
 > Your Twitch account must be linked to the relevant game accounts. Review your
 > [Twitch Drops campaigns](https://www.twitch.tv/drops/campaigns) before mining.
@@ -129,7 +146,7 @@ Contributors are credited automatically when their pull requests are merged into
 | [@Sean-Destefano](https://github.com/Sean-Destefano) | [#49](https://github.com/rangermix/TwitchDropsMiner/pull/49) |
 | [@SimpliAj](https://github.com/SimpliAj) | [#72](https://github.com/rangermix/TwitchDropsMiner/pull/72) |
 | [@Stein-N](https://github.com/Stein-N) | [#71](https://github.com/rangermix/TwitchDropsMiner/pull/71) |
-| [@vurmil](https://github.com/vurmil) | [#12](https://github.com/rangermix/TwitchDropsMiner/pull/12) · [#17](https://github.com/rangermix/TwitchDropsMiner/pull/17) |
+| [@vurmil](https://github.com/vurmil) | [#12](https://github.com/rangermix/TwitchDropsMiner/pull/12) · [#17](https://github.com/rangermix/TwitchDropsMiner/pull/17) · [#18](https://github.com/rangermix/TwitchDropsMiner/pull/18) |
 <!-- contributors:end -->
 
 ## Support
@@ -201,3 +218,18 @@ expiry/ignore Wanted Queue guard, watch selection, API persistence, translated p
 parity, and frontend rendering. Any `web/static/app.js` or `web/static/styles.css` change
 must go through the release workflow so the application version and browser asset cache key
 are bumped before deployment.
+
+Telegram regression coverage includes Help translation rendering, saved-token reuse,
+disabling notifications, failed saves, claim deduplication, and mocked Telegram transport
+errors. From the activated environment, run:
+
+```bash
+python -m pytest tests/test_telegram_frontend.py tests/test_telegram_api.py tests/test_telegram_integration.py
+```
+
+No real Telegram messages are sent by these tests.
+
+Games to Watch supports Enter to add an exact or unique partial match. Ambiguous
+searches ask for a more specific name. Manual names and Deselect All require a
+confirmation; Escape cancels and keyboard focus stays in the dialog. Select All
+retains the existing priority order and manual entries, adding missing games only.
