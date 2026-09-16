@@ -55,11 +55,12 @@ class WatchService:
         Determines if the given channel qualifies as a watching candidate.
 
         A channel can be watched if:
-        - There are wanted games configured
         - The channel is online
-        - Drops are enabled on the channel
-        - The channel is streaming a wanted game
-        - At least one campaign can be progressed on this channel
+        - A campaign for a wanted game can be progressed on this channel
+        - Drops are enabled, unless the campaign uses a special category
+
+        Campaign eligibility enforces the game match, with a cross-category
+        exception for participating channels in special-category campaigns.
 
         Args:
             channel: The channel to evaluate
@@ -67,18 +68,18 @@ class WatchService:
         Returns:
             True if the channel can be watched, False otherwise
         """
-        if not self._twitch.wanted_games:
+        wanted_games = self._twitch.wanted_games
+        if not wanted_games or not channel.online:
             return False
 
-        # exit early if stream is offline or drops aren't enabled
-        if not channel.online or not channel.drops_enabled:
-            return False
-
-        # check if we can progress any campaign for the played game
-        if channel.game is None or channel.game not in self._twitch.wanted_games:
-            return False
-
-        return any(campaign.can_earn(channel) for campaign in self._twitch.inventory)
+        return any(
+            # Respect the user's selection using the campaign's category.
+            campaign.game in wanted_games
+            and campaign.can_earn(channel)
+            # Special campaigns may progress without the channel's drops flag.
+            and (campaign.game.is_special() or channel.drops_enabled)
+            for campaign in self._twitch.inventory
+        )
 
     def should_switch(self, channel: Channel) -> bool:
         """
@@ -86,6 +87,7 @@ class WatchService:
 
         A channel should be switched to if:
         - We're not currently watching anything
+        - The currently watched channel can no longer progress a wanted campaign
         - The channel's game has higher priority than the watching channel's game
         - The channel has the same game priority but is ACL-based and watching isn't
 
@@ -96,7 +98,7 @@ class WatchService:
             True if we should switch to this channel, False otherwise
         """
         watching_channel = self._twitch.watching_channel.get_with_default(None)
-        if watching_channel is None:
+        if watching_channel is None or not self.can_watch(watching_channel):
             return True
 
         channel_order = self._twitch._channel_service.get_priority(channel)

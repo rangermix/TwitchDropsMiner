@@ -83,6 +83,14 @@ game directly. Priority 1 is highest; out-of-range numbers are clamped to the li
 Blank or fractional values leave the order unchanged. Priority controls and remove buttons
 use translated labels for screen readers.
 
+**Special Events** and **IRL** campaigns can be mined on their listed participating
+channels even when those channels stream another category or lack a drops-enabled flag.
+Include the campaign's category in **Games to Watch**. Channels must be live and eligible;
+campaigns without an enabled participating-channel list still require a matching category.
+Channels streaming categories outside Games to Watch retain the lowest automatic priority.
+When the watched channel goes offline or becomes ineligible, another eligible participant
+can replace it even at that same fallback priority.
+
 Inventory filters combine **Active**, **Upcoming**, and **Expired** as alternatives.
 **Not Linked** narrows that status result, while fully claimed campaigns stay hidden
 until **Finished** is selected. Zero-minute subscription rewards are omitted from the
