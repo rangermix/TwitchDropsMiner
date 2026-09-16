@@ -3,8 +3,8 @@ from __future__ import annotations
 import importlib
 from datetime import datetime, timezone
 from types import SimpleNamespace
-from urllib.parse import quote
 from unittest.mock import patch
+from urllib.parse import quote
 
 import pytest
 
