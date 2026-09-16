@@ -117,6 +117,7 @@ class TestNotificationGatedOnClaim(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Campaign telegram", self.sent.await_args.args[0])
         self.assertIn("Reward Watch", self.sent.await_args.args[0])
         self.twitch.gui.broadcast_wanted_items_now.assert_awaited_once_with()
+        self.twitch.drop_history.record.assert_called_once_with(self.drop, self.campaign)
 
     async def test_base_drop_claim_also_sends_notification(self):
         drop = BaseDrop(self.campaign, self.drop_data, {})
@@ -134,6 +135,7 @@ class TestNotificationGatedOnClaim(unittest.IsolatedAsyncioTestCase):
         await self.service.process_drops(1, self._claim_message())
         self.sent.assert_awaited_once()
         self.twitch.gql_request.assert_awaited_once()
+        self.twitch.drop_history.record.assert_called_once_with(self.drop, self.campaign)
 
     async def test_inventory_claim_followed_by_websocket_notifies_once(self):
         self.assertTrue(await self.drop.claim())
@@ -145,6 +147,12 @@ class TestNotificationGatedOnClaim(unittest.IsolatedAsyncioTestCase):
         await self.service.process_drops(1, self._claim_message())
         self.assertFalse(self.drop.is_claimed)
         self.sent.assert_not_awaited()
+        self.twitch.drop_history.record.assert_not_called()
+
+    async def test_already_claimed_drop_is_not_added_to_history_again(self):
+        self.drop.is_claimed = True
+        self.assertTrue(await self.drop.claim())
+        self.twitch.drop_history.record.assert_not_called()
 
     async def test_unconfigured_claim_does_not_send_notification(self):
         self.twitch.settings.telegram_bot_token = ""

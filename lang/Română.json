@@ -184,7 +184,14 @@
             "clear_all_cache": "Șterge tot cache-ul",
             "clear_all_cache_help": "Șterge starea locală a campaniilor, canalelor și datele derivate ale minerului; păstrează autentificarea și setările, apoi reîncarcă datele de pe Twitch.",
             "mining_benefits": "Beneficii Minerit",
-            "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați."
+            "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați.",
+            "multiple_games_found": "Au fost găsite mai multe jocuri pentru căutarea dvs. Vă rugăm să fiți mai specific.",
+            "manual_game_warning": "„{game}” nu se află în lista campaniilor disponibile. Îl adaugi totuși la jocurile de urmărit?",
+            "deselect_all_warning": "Sunteți sigur că doriți să eliminați toate jocurile din lista dvs. de urmărire?",
+            "confirm_btn": "Confirmă",
+            "cancel_btn": "Anulează",
+            "game_priority": "Prioritate pentru {game}",
+            "remove_game": "Elimină {game}"
         },
         "help": {
             "about": "Despre Twitch Drops Miner",
@@ -241,6 +248,35 @@
         "wanted": {
             "name": "Coadă Drops Dorite",
             "none": "Niciun drop dorit în coadă..."
+        },
+        "history": {
+            "title": "Istoricul dropurilor",
+            "filter_game": "Filtrează după joc…",
+            "since": "Revendicat începând cu (UTC)",
+            "apply": "Aplică",
+            "export": "Exportă CSV",
+            "stats": "Statistici",
+            "clear": "Șterge",
+            "total": "Total dropuri revendicate",
+            "claimed_at": "Data și ora",
+            "game": "Joc",
+            "campaign": "Campanie",
+            "drop": "Drop",
+            "rewards": "Recompense",
+            "minutes": "Minute",
+            "loading": "Se încarcă istoricul…",
+            "empty": "Niciun drop nu corespunde filtrelor.",
+            "count": "Total dropuri: {total}",
+            "filtered_count": "Se afișează {shown} din {total} dropuri înregistrate",
+            "load_error": "Eroare la încărcarea istoricului: {error}",
+            "previous": "Anterior",
+            "next": "Următor",
+            "by_game": "După joc",
+            "by_month": "După lună",
+            "clear_confirm": "Ștergi întregul istoric local al dropurilor? Acțiunea nu poate fi anulată.",
+            "cleared": "Istoric șters.",
+            "clear_error": "Istoricul nu a putut fi șters: {error}",
+            "stats_error": "Statisticile nu au putut fi încărcate: {error}"
         }
     }
 }

@@ -1,4 +1,4 @@
-# AGENTS.md
+# Agent Instructions
 
 
 ## AGENTS.md Specific Instructions
@@ -154,7 +154,14 @@ lang/                # Translation JSON files (20 languages)
 **src/config/settings.py** - Application settings:
 
 - Games to watch list (auto-populated from available campaigns if empty)
-- Games can also be added manually from the web settings search box
+- Games can also be added manually from the web settings search box. Exact and
+  unique partial matches resolve to available game names; ambiguous matches do not
+  add a game. Confirmations support keyboard focus and Escape. Select All preserves
+  priority order and manual entries, and manual confirmation uses current settings.
+- Games to Watch supports drag ordering and editable integer priority numbers. Clamp valid
+  ranks to the list bounds; reject blank/fractional values without changing settings.
+  Keep priority and remove-control labels translated and accessible. Regression tests in
+  `tests/test_game_priority.py` cover order, bounds, invalid inputs, and persistence calls.
 - Connection quality multiplier
 - Language selection
 - Proxy support (including verification)
@@ -503,3 +510,12 @@ The application uses a web-based interface accessible via browser:
 - Channel points mining
 - Mining for unlinked campaigns
 - Desktop GUI
+
+### Claimed Drop History
+
+`DropHistory` records successful claims locally in `data/drop_history.json`, deduplicated
+by drop ID. The History tab provides game/date filters, pagination, statistics, CSV export,
+and confirmed local deletion. Date-only filters mean midnight UTC; aware timestamps
+preserve their instant. CSV attachment names use UTF-8 percent encoding with an ASCII
+fallback. History text is defined in `gui.history` for every locale and rendered as text.
+Tests cover persistence, filtering, Unicode exports, offsets, and translated UI behavior.

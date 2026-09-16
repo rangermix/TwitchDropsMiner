@@ -184,7 +184,14 @@
             "clear_all_cache": "清除所有快取",
             "clear_all_cache_help": "清除本機活動、頻道和挖礦器衍生狀態；保留登入資訊和設定，然後從 Twitch 重新載入。",
             "mining_benefits": "挖掘獎勵",
-            "mining_benefits_help": "選擇您想要獲取的掉落類型。"
+            "mining_benefits_help": "選擇您想要獲取的掉落類型。",
+            "multiple_games_found": "您的搜尋找到了多個遊戲。請更具體一些。",
+            "manual_game_warning": "可用活動清單中沒有「{game}」。仍要將其加入觀看遊戲清單嗎？",
+            "deselect_all_warning": "您確定要從觀看清單中移除所有遊戲嗎？",
+            "confirm_btn": "確認",
+            "cancel_btn": "取消",
+            "game_priority": "{game} 的優先順序",
+            "remove_game": "移除 {game}"
         },
         "help": {
             "about": "關於 Twitch Drops Miner",
@@ -241,6 +248,35 @@
         "wanted": {
             "name": "期望掉落隊列",
             "none": "隊列中沒有期望的掉落..."
+        },
+        "history": {
+            "title": "掉寶歷史",
+            "filter_game": "依遊戲篩選…",
+            "since": "領取日期不早於（UTC）",
+            "apply": "套用",
+            "export": "匯出 CSV",
+            "stats": "統計",
+            "clear": "清空",
+            "total": "已領取掉寶總數",
+            "claimed_at": "日期與時間",
+            "game": "遊戲",
+            "campaign": "活動",
+            "drop": "掉寶",
+            "rewards": "獎勵",
+            "minutes": "分鐘",
+            "loading": "正在載入歷史…",
+            "empty": "沒有符合篩選條件的掉寶。",
+            "count": "掉寶總數：{total}",
+            "filtered_count": "顯示 {total} 筆記錄中的 {shown} 筆",
+            "load_error": "載入歷史失敗：{error}",
+            "previous": "上一頁",
+            "next": "下一頁",
+            "by_game": "依遊戲",
+            "by_month": "依月份",
+            "clear_confirm": "要刪除所有本機掉寶歷史嗎？此操作無法復原。",
+            "cleared": "歷史已清空。",
+            "clear_error": "清空歷史失敗：{error}",
+            "stats_error": "載入統計失敗：{error}"
         }
     }
 }

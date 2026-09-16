@@ -363,12 +363,13 @@
                 border-bottom: 1px solid var(--border-color, #333);
                 flex-wrap: wrap;
             ">
-                <span style="font-weight:600; font-size:1rem;">🏆 Drop History</span>
+                <span data-history-key="title" style="font-weight:600; font-size:1rem;">Drop History</span>
 
                 <input
                     id="history-filter-game"
                     type="text"
                     placeholder="Filter by game…"
+                    data-history-placeholder="filter_game"
                     style="
                         padding: 5px 10px;
                         border-radius: 6px;
@@ -379,6 +380,7 @@
                     "
                 />
 
+                <label for="history-filter-since" data-history-key="since">Claimed on or after (UTC)</label>
                 <input
                     id="history-filter-since"
                     type="date"
@@ -391,7 +393,7 @@
                     "
                 />
 
-                <button id="history-btn-filter" style="
+                <button id="history-btn-filter" data-history-key="apply" style="
                     padding: 5px 14px;
                     border-radius: 6px;
                     background: var(--accent, #7287fd);
@@ -403,7 +405,7 @@
 
                 <div style="flex:1"></div>
 
-                <button id="history-btn-export" style="
+                <button id="history-btn-export" data-history-key="export" style="
                     padding: 5px 14px;
                     border-radius: 6px;
                     background: var(--success, #40a02b);
@@ -413,7 +415,7 @@
                     font-weight: 600;
                 ">⬇ Export CSV</button>
 
-                <button id="history-btn-stats" style="
+                <button id="history-btn-stats" data-history-key="stats" style="
                     padding: 5px 14px;
                     border-radius: 6px;
                     background: var(--bg-button, #313244);
@@ -422,7 +424,7 @@
                     cursor: pointer;
                 ">📊 Stats</button>
 
-                <button id="history-btn-clear" style="
+                <button id="history-btn-clear" data-history-key="clear" style="
                     padding: 5px 14px;
                     border-radius: 6px;
                     background: var(--danger, #e64553);
@@ -432,6 +434,7 @@
                 ">🗑 Clear</button>
             </div>
 
+            <div id="history-stats-error" role="status"></div>
             <div id="history-stats-panel" style="
                 display: none;
                 padding: 16px;
@@ -442,7 +445,7 @@
                 <div style="display:flex; gap:32px; flex-wrap:wrap; align-items:flex-start;">
                     <div>
                         <div style="font-size:2rem; font-weight:700; color:var(--accent,#7287fd)" id="stats-total">–</div>
-                        <div style="font-size:0.8rem; color:var(--text-muted,#888)">Total drops claimed</div>
+                        <div data-history-key="total" style="font-size:0.8rem; color:var(--text-muted,#888)">Total drops claimed</div>
                     </div>
                     <div id="stats-by-game" style="flex:1; min-width:200px;"></div>
                     <div id="stats-by-month" style="flex:1; min-width:200px;"></div>
@@ -450,7 +453,7 @@
             </div>
 
             <div style="padding: 8px 16px; font-size:0.85rem; color: var(--text-muted,#888)">
-                <span id="history-count">Loading…</span>
+                <span id="history-count"></span>
             </div>
 
             <div style="overflow-x: auto;">
@@ -468,12 +471,12 @@
                             text-transform: uppercase;
                             letter-spacing: 0.05em;
                         ">
-                            <th style="padding: 8px 12px;">Date &amp; Time</th>
-                            <th style="padding: 8px 12px;">Game</th>
-                            <th style="padding: 8px 12px;">Campaign</th>
-                            <th style="padding: 8px 12px;">Drop</th>
-                            <th style="padding: 8px 12px;">Rewards</th>
-                            <th style="padding: 8px 12px; text-align:right;">Minutes</th>
+                            <th data-history-key="claimed_at" style="padding: 8px 12px;">Date &amp; Time</th>
+                            <th data-history-key="game" style="padding: 8px 12px;">Game</th>
+                            <th data-history-key="campaign" style="padding: 8px 12px;">Campaign</th>
+                            <th data-history-key="drop" style="padding: 8px 12px;">Drop</th>
+                            <th data-history-key="rewards" style="padding: 8px 12px;">Rewards</th>
+                            <th data-history-key="minutes" style="padding: 8px 12px; text-align:right;">Minutes</th>
                         </tr>
                     </thead>
                     <tbody id="history-tbody">

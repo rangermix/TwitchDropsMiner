@@ -184,7 +184,14 @@
             "clear_all_cache": "Ryd hele cachen",
             "clear_all_cache_help": "Rydder lokal kampagne-, kanal- og afledt minerstatus; bevarer login og indstillinger og genindlæser derefter data fra Twitch.",
             "mining_benefits": "Mining Fordele",
-            "mining_benefits_help": "Vælg hvilke typer drops du vil mine."
+            "mining_benefits_help": "Vælg hvilke typer drops du vil mine.",
+            "multiple_games_found": "Flere spil fundet for din søgning. Vær venligst mere specifik.",
+            "manual_game_warning": "\"{game}\" findes ikke på listen over tilgængelige kampagner. Vil du alligevel føje det til spil, der skal ses?",
+            "deselect_all_warning": "Er du sikker på, at du vil fjerne alle spil fra din overvågningsliste?",
+            "confirm_btn": "Bekræft",
+            "cancel_btn": "Annuller",
+            "game_priority": "Prioritet for {game}",
+            "remove_game": "Fjern {game}"
         },
         "help": {
             "about": "Om Twitch Drops Miner",
@@ -241,6 +248,35 @@
         "wanted": {
             "name": "Ønskede Drops Kø",
             "none": "Ingen ønskede drops i køen..."
+        },
+        "history": {
+            "title": "Drop-historik",
+            "filter_game": "Filtrer efter spil…",
+            "since": "Hentet på eller efter (UTC)",
+            "apply": "Anvend",
+            "export": "Eksportér CSV",
+            "stats": "Statistik",
+            "clear": "Ryd",
+            "total": "Drops hentet i alt",
+            "claimed_at": "Dato og tid",
+            "game": "Spil",
+            "campaign": "Kampagne",
+            "drop": "Drop",
+            "rewards": "Belønninger",
+            "minutes": "Minutter",
+            "loading": "Indlæser historik…",
+            "empty": "Ingen drops matcher filtrene.",
+            "count": "Drops i alt: {total}",
+            "filtered_count": "Viser {shown} af {total} registrerede drops",
+            "load_error": "Fejl ved indlæsning af historik: {error}",
+            "previous": "Forrige",
+            "next": "Næste",
+            "by_game": "Efter spil",
+            "by_month": "Efter måned",
+            "clear_confirm": "Slet al lokalt gemt drop-historik? Dette kan ikke fortrydes.",
+            "cleared": "Historik ryddet.",
+            "clear_error": "Kunne ikke rydde historik: {error}",
+            "stats_error": "Kunne ikke indlæse statistik: {error}"
         }
     }
 }

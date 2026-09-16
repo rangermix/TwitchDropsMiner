@@ -184,7 +184,14 @@
             "clear_all_cache": "Svuota tutta la cache",
             "clear_all_cache_help": "Cancella lo stato locale di campagne, canali e i dati derivati del miner; mantiene l’accesso e le impostazioni, quindi ricarica i dati da Twitch.",
             "mining_benefits": "Vantaggi Minatori",
-            "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare."
+            "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare.",
+            "multiple_games_found": "Più giochi trovati per la tua ricerca. Per favore, sii più specifico.",
+            "manual_game_warning": "\"{game}\" non è nell’elenco delle campagne disponibili. Aggiungerlo comunque ai giochi da guardare?",
+            "deselect_all_warning": "Sei sicuro di voler rimuovere tutti i giochi dalla tua lista di osservazione?",
+            "confirm_btn": "Conferma",
+            "cancel_btn": "Annulla",
+            "game_priority": "Priorità di {game}",
+            "remove_game": "Rimuovi {game}"
         },
         "help": {
             "about": "Informazioni su Twitch Drops Miner",
@@ -241,6 +248,35 @@
         "wanted": {
             "name": "Coda Drops Desiderati",
             "none": "Nessun drop desiderato in coda..."
+        },
+        "history": {
+            "title": "Cronologia dei drop",
+            "filter_game": "Filtra per gioco…",
+            "since": "Riscattato dal (UTC)",
+            "apply": "Applica",
+            "export": "Esporta CSV",
+            "stats": "Statistiche",
+            "clear": "Cancella",
+            "total": "Totale drop riscattati",
+            "claimed_at": "Data e ora",
+            "game": "Gioco",
+            "campaign": "Campagna",
+            "drop": "Drop",
+            "rewards": "Ricompense",
+            "minutes": "Minuti",
+            "loading": "Caricamento cronologia…",
+            "empty": "Nessun drop corrisponde a questi filtri.",
+            "count": "Totale drop: {total}",
+            "filtered_count": "Mostrati {shown} di {total} drop registrati",
+            "load_error": "Errore nel caricamento della cronologia: {error}",
+            "previous": "Precedente",
+            "next": "Successivo",
+            "by_game": "Per gioco",
+            "by_month": "Per mese",
+            "clear_confirm": "Eliminare tutta la cronologia locale dei drop? Questa azione è irreversibile.",
+            "cleared": "Cronologia cancellata.",
+            "clear_error": "Impossibile cancellare la cronologia: {error}",
+            "stats_error": "Impossibile caricare le statistiche: {error}"
         }
     }
 }

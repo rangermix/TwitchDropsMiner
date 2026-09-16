@@ -184,7 +184,14 @@
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",
             "mining_benefits": "Avantages du Minage",
-            "mining_benefits_help": "Sélectionnez les types de drops que vous souhaitez miner."
+            "mining_benefits_help": "Sélectionnez les types de drops que vous souhaitez miner.",
+            "multiple_games_found": "Plusieurs jeux trouvés pour votre recherche. Veuillez être plus précis.",
+            "manual_game_warning": "« {game} » ne figure pas dans la liste des campagnes disponibles. L’ajouter quand même aux jeux à regarder ?",
+            "deselect_all_warning": "Êtes-vous sûr de vouloir retirer tous les jeux de votre liste à surveiller ?",
+            "confirm_btn": "Confirmer",
+            "cancel_btn": "Annuler",
+            "game_priority": "Priorité de {game}",
+            "remove_game": "Retirer {game}"
         },
         "help": {
             "about": "À propos de Twitch Drops Miner",
@@ -241,6 +248,35 @@
         "wanted": {
             "name": "File d'attente Drops souhaités",
             "none": "Aucun drop souhaité en file d'attente..."
+        },
+        "history": {
+            "title": "Historique des drops",
+            "filter_game": "Filtrer par jeu…",
+            "since": "Récupéré à partir du (UTC)",
+            "apply": "Appliquer",
+            "export": "Exporter en CSV",
+            "stats": "Statistiques",
+            "clear": "Effacer",
+            "total": "Total des drops récupérés",
+            "claimed_at": "Date et heure",
+            "game": "Jeu",
+            "campaign": "Campagne",
+            "drop": "Drop",
+            "rewards": "Récompenses",
+            "minutes": "Minutes",
+            "loading": "Chargement de l’historique…",
+            "empty": "Aucun drop ne correspond à ces filtres.",
+            "count": "Total des drops : {total}",
+            "filtered_count": "{shown} drops affichés sur {total} enregistrés",
+            "load_error": "Erreur de chargement de l’historique : {error}",
+            "previous": "Précédent",
+            "next": "Suivant",
+            "by_game": "Par jeu",
+            "by_month": "Par mois",
+            "clear_confirm": "Effacer tout l’historique local des drops ? Cette action est irréversible.",
+            "cleared": "Historique effacé.",
+            "clear_error": "Impossible d’effacer l’historique : {error}",
+            "stats_error": "Impossible de charger les statistiques : {error}"
         }
     }
 }

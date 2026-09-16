@@ -152,7 +152,14 @@
                 "your_user_id": "Az Ön numerikus Telegram felhasználóazonosítója",
                 "save_error": "A Telegram-beállítások mentése sikertelen. Próbáld újra.",
                 "credentials_help": "Hagyd üresen a token mezőt a mentett token megtartásához. Az értesítések kikapcsolásához töröld a csevegésazonosítót, majd mentsd a beállításokat."
-            }
+            },
+            "multiple_games_found": "Több játék is található a kereséshez. Kérjük, legyen pontosabb.",
+            "manual_game_warning": "A(z) „{game}” nem szerepel az elérhető kampányok listáján. Mégis hozzáadod a nézendő játékokhoz?",
+            "deselect_all_warning": "Biztosan el akarja távolítani az összes játékot a figyelőlistájáról?",
+            "confirm_btn": "Megerősítés",
+            "cancel_btn": "Mégse",
+            "game_priority": "{game} prioritása",
+            "remove_game": "{game} eltávolítása"
         },
         "help": {
             "about": "A Twitch Drops Miner-ről",
@@ -241,6 +248,35 @@
                 "clear": "Szűrők törlése",
                 "search_placeholder": "Írjon a játékok kereséséhez..."
             }
+        },
+        "history": {
+            "title": "Dropelőzmények",
+            "filter_game": "Szűrés játék szerint…",
+            "since": "Igényelve ekkor vagy később (UTC)",
+            "apply": "Alkalmaz",
+            "export": "CSV exportálása",
+            "stats": "Statisztika",
+            "clear": "Törlés",
+            "total": "Összes igényelt drop",
+            "claimed_at": "Dátum és idő",
+            "game": "Játék",
+            "campaign": "Kampány",
+            "drop": "Drop",
+            "rewards": "Jutalmak",
+            "minutes": "Perc",
+            "loading": "Előzmények betöltése…",
+            "empty": "Nincs a szűrőknek megfelelő drop.",
+            "count": "Összes drop: {total}",
+            "filtered_count": "{shown} megjelenítve {total} rögzített dropból",
+            "load_error": "Az előzmények betöltése sikertelen: {error}",
+            "previous": "Előző",
+            "next": "Következő",
+            "by_game": "Játék szerint",
+            "by_month": "Hónap szerint",
+            "clear_confirm": "Törlöd az összes helyben rögzített dropelőzményt? Ez nem vonható vissza.",
+            "cleared": "Előzmények törölve.",
+            "clear_error": "Az előzmények törlése sikertelen: {error}",
+            "stats_error": "A statisztika betöltése sikertelen: {error}"
         }
     }
 }

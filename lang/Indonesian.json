@@ -184,7 +184,14 @@
             "clear_all_cache": "Hapus Semua Cache",
             "clear_all_cache_help": "Menghapus status kampanye, channel, dan data turunan miner lokal; mempertahankan login dan pengaturan, lalu memuat ulang data dari Twitch.",
             "mining_benefits": "Manfaat Penambangan",
-            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang."
+            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang.",
+            "multiple_games_found": "Beberapa game ditemukan untuk pencarian Anda. Harap lebih spesifik.",
+            "manual_game_warning": "\"{game}\" tidak ada dalam daftar kampanye yang tersedia. Tetap tambahkan ke game untuk ditonton?",
+            "deselect_all_warning": "Apakah Anda yakin ingin menghapus semua game dari daftar pantauan Anda?",
+            "confirm_btn": "Konfirmasi",
+            "cancel_btn": "Batal",
+            "game_priority": "Prioritas untuk {game}",
+            "remove_game": "Hapus {game}"
         },
         "help": {
             "about": "Tentang Twitch Drops Miner",
@@ -241,6 +248,35 @@
         "wanted": {
             "name": "Antrean Drops yang Diinginkan",
             "none": "Tidak ada drops yang diinginkan dalam antrean..."
+        },
+        "history": {
+            "title": "Riwayat Drop",
+            "filter_game": "Filter berdasarkan game…",
+            "since": "Diklaim pada atau setelah (UTC)",
+            "apply": "Terapkan",
+            "export": "Ekspor CSV",
+            "stats": "Statistik",
+            "clear": "Hapus",
+            "total": "Total drop diklaim",
+            "claimed_at": "Tanggal & Waktu",
+            "game": "Game",
+            "campaign": "Kampanye",
+            "drop": "Drop",
+            "rewards": "Hadiah",
+            "minutes": "Menit",
+            "loading": "Memuat riwayat…",
+            "empty": "Tidak ada drop yang cocok dengan filter ini.",
+            "count": "Total drop: {total}",
+            "filtered_count": "Menampilkan {shown} dari {total} drop tercatat",
+            "load_error": "Gagal memuat riwayat: {error}",
+            "previous": "Sebelumnya",
+            "next": "Berikutnya",
+            "by_game": "Berdasarkan game",
+            "by_month": "Berdasarkan bulan",
+            "clear_confirm": "Hapus semua riwayat drop yang tersimpan secara lokal? Tindakan ini tidak dapat dibatalkan.",
+            "cleared": "Riwayat dihapus.",
+            "clear_error": "Gagal menghapus riwayat: {error}",
+            "stats_error": "Gagal memuat statistik: {error}"
         }
     }
 }

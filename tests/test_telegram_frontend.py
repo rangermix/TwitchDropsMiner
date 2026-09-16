@@ -41,6 +41,7 @@ const assert = require('node:assert/strict');
 const helpContent = { children: [], replaceChildren(...children) { this.children = children; } };
 const version = { textContent: 'Loading...' };
 const language = { textContent: '' };
+function translateHistory() {}
 const document = {
     getElementById(id) {
         if (id === 'help-tab') return { querySelector: () => helpContent };

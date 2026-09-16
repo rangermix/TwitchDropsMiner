@@ -12,6 +12,91 @@ const state = {
     translations: {}  // Store current translations
 };
 
+// ==================== UI Utilities ====================
+
+function showToast(message, type = 'info') {
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    
+    toastContainer.appendChild(toast);
+    
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+    });
+
+    // Remove after 5 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+function showConfirmModal(message, onConfirm) {
+    if (document.querySelector('.modal-overlay')) return;
+    const previousFocus = document.activeElement;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    const modal = document.createElement('div');
+    modal.className = 'modal-box';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'confirmation-message');
+    const text = document.createElement('div');
+    text.id = 'confirmation-message';
+    text.className = 'modal-text';
+    text.textContent = message;
+    const btnContainer = document.createElement('div');
+    btnContainer.className = 'modal-buttons';
+    const t = state.translations;
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'secondary-btn';
+    cancelBtn.textContent = t.gui?.settings?.cancel_btn || 'Cancel';
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'primary-btn';
+    confirmBtn.textContent = t.gui?.settings?.confirm_btn || 'Confirm';
+    btnContainer.appendChild(cancelBtn);
+    btnContainer.appendChild(confirmBtn);
+    modal.appendChild(text);
+    modal.appendChild(btnContainer);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    cancelBtn.focus();
+    requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+        modal.style.transform = 'scale(1)';
+    });
+    let closed = false;
+    const close = (confirmed = false) => {
+        if (closed) return;
+        closed = true;
+        overlay.remove();
+        if (previousFocus?.isConnected) previousFocus.focus();
+        if (confirmed) onConfirm();
+    };
+    cancelBtn.onclick = () => close();
+    confirmBtn.onclick = () => close(true);
+    overlay.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            close();
+        } else if (event.key === 'Tab') {
+            event.preventDefault();
+            (document.activeElement === cancelBtn ? confirmBtn : cancelBtn).focus();
+        }
+    });
+}
+
 // ==================== Version Checking ====================
 
 async function fetchAndDisplayVersion() {
@@ -1258,12 +1343,35 @@ function renderSelectedGames(games) {
         div.className = 'sortable-item';
         div.draggable = true;
         div.dataset.game = game;
+        const priorityInput = makeElement('input', {
+            type: 'number',
+            class: 'priority-input',
+            value: String(index + 1),
+            min: '1',
+            max: String(games.length),
+            'aria-label': (t.gui?.settings?.game_priority || 'Priority for {game}').replace('{game}', game)
+        });
+
         div.replaceChildren(
             makeElement('span', { class: 'drag-handle' }, '☰'),
-            makeElement('span', { class: 'priority-number' }, String(index + 1)),
+            priorityInput,
             makeElement('span', { class: 'game-name' }, game),
-            makeElement('button', { class: 'remove-btn' }, '✕'),
+            makeElement('button', {
+                class: 'remove-btn',
+                title: (t.gui?.settings?.remove_game || 'Remove {game}').replace('{game}', game),
+                'aria-label': (t.gui?.settings?.remove_game || 'Remove {game}').replace('{game}', game)
+            }, '✕')
         );
+
+        // Event listener for priority change
+        priorityInput.addEventListener('change', (e) => {
+            const priority = Number(e.target.value);
+            if (e.target.value.trim() && Number.isInteger(priority)) {
+                changeGamePriority(game, priority - 1);
+            } else {
+                e.target.value = String(index + 1); // Reset on invalid
+            }
+        });
 
         // Event listener for the delete button
         const removeBtn = div.querySelector('.remove-btn');
@@ -1388,6 +1496,25 @@ function toggleGameWatch(gameName, checked) {
     saveSettings();
 }
 
+function changeGamePriority(gameName, newIndex) {
+    if (!Number.isInteger(newIndex)) return;
+    const games = [...(state.settings.games_to_watch || [])];
+    const currentIndex = games.indexOf(gameName);
+
+    if (currentIndex > -1) {
+        games.splice(currentIndex, 1);
+
+        // Ensure newIndex is within bounds
+        newIndex = Math.max(0, Math.min(newIndex, games.length));
+        games.splice(newIndex, 0, gameName);
+
+        state.settings.games_to_watch = games;
+        renderGamesToWatch();
+        renderChannels();
+        saveSettings();
+    }
+}
+
 function removeGameFromWatch(gameName) {
     const games = state.settings.games_to_watch || [];
     const index = games.indexOf(gameName);
@@ -1401,48 +1528,103 @@ function removeGameFromWatch(gameName) {
 }
 
 function selectAllGames() {
-    state.settings.games_to_watch = Array.from(availableGames).sort();
+    const existing = state.settings.games_to_watch || [];
+    const selected = new Set(existing.map(game => game.toLowerCase()));
+    const newGames = Array.from(availableGames).sort().filter(game => {
+        const key = game.toLowerCase();
+        if (selected.has(key)) return false;
+        selected.add(key);
+        return true;
+    });
+    
+    state.settings.games_to_watch = [...existing, ...newGames];
     renderGamesToWatch();
     renderChannels();
     saveSettings();
 }
 
 function deselectAllGames() {
-    state.settings.games_to_watch = [];
-    renderGamesToWatch();
-    renderChannels();
-    saveSettings();
+    if (!state.settings.games_to_watch || state.settings.games_to_watch.length === 0) {
+        return;
+    }
+    
+    const t = state.translations;
+    const msg = t.gui?.settings?.deselect_all_warning || 'Are you sure you want to remove all games from your watch list?';
+    
+    showConfirmModal(msg, () => {
+        state.settings.games_to_watch = [];
+        renderGamesToWatch();
+        renderChannels();
+        saveSettings();
+    });
 }
 
 function addGameFromSearch() {
     const searchInput = document.getElementById('games-filter');
-    const gameName = searchInput.value.trim();
+    const searchLower = searchInput.value.trim().toLowerCase();
 
-    if (!gameName) {
+    if (!searchLower) {
+        return;
+    }
+
+    let gameToAdd = searchInput.value.trim();
+    let isManualAdd = true;
+    
+    // Find matching games from availableGames
+    const matches = Array.from(availableGames).filter(g => g.toLowerCase().includes(searchLower));
+    
+    // 1. Check for exact case-insensitive match
+    const exactMatch = matches.find(g => g.toLowerCase() === searchLower);
+    
+    if (exactMatch) {
+        gameToAdd = exactMatch;
+        isManualAdd = false;
+    } else if (matches.length === 1) {
+        // 2. Check for a single partial match
+        gameToAdd = matches[0];
+        isManualAdd = false;
+    } else if (matches.length > 1) {
+        // Multiple matches found and no exact match. Don't add to avoid ambiguity.
+        const t = state.translations;
+        const msg = t.gui?.settings?.multiple_games_found || 'Multiple games found for your search. Please be more specific.';
+        showToast(msg, 'warning');
         return;
     }
 
     const games = state.settings.games_to_watch || [];
-
-    // Check if already selected
-    if (games.includes(gameName)) {
+    
+    // Check if already selected (case-insensitive)
+    if (games.some(g => g.toLowerCase() === gameToAdd.toLowerCase())) {
         searchInput.value = ''; // Clear input if already added
         renderGamesToWatch(); // Just re-render to clear any filtering state if needed
         return;
     }
 
-    // Add to selected games
-    games.push(gameName);
-    state.settings.games_to_watch = games;
+    const finishAdding = (gameName) => {
+        // Confirmation can outlive a settings update; append to the current list.
+        const current = state.settings.games_to_watch || [];
+        if (current.some(game => game.toLowerCase() === gameName.toLowerCase())) return;
+        state.settings.games_to_watch = [...current, gameName];
 
-    // Add to available games set so it shows up in lists
-    availableGames.add(gameName);
+        // Add to available games set so it shows up in lists
+        availableGames.add(gameName);
 
-    // Clear search and update UI
-    searchInput.value = '';
-    renderGamesToWatch();
-    renderChannels();
-    saveSettings();
+        // Clear search and update UI
+        searchInput.value = '';
+        renderGamesToWatch();
+        renderChannels();
+        saveSettings();
+    };
+
+    // Warn if adding manually
+    if (isManualAdd) {
+        const t = state.translations;
+        let msg = t.gui?.settings?.manual_game_warning || '\"{game}\" is not in the available campaign list. Add it to Games to Watch anyway?';
+        msg = msg.replace('{game}', gameToAdd);
+        showConfirmModal(msg, () => finishAdding(gameToAdd));
+    } else {
+        finishAdding(gameToAdd);
+    }
 }
 
 function flashTitle() {
@@ -1771,6 +1953,7 @@ async function fetchAndApplyTranslations() {
 }
 
 function applyTranslations(t) {
+    translateHistory();
     // Update tab buttons
     const tabButtons = {
         'main': document.querySelector('[data-tab="main"]'),
@@ -2267,6 +2450,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('deselect-all-btn').addEventListener('click', deselectAllGames);
     document.getElementById('add-game-btn').addEventListener('click', addGameFromSearch);
     document.getElementById('games-filter').addEventListener('input', renderGamesToWatch);
+    document.getElementById('games-filter').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addGameFromSearch();
+        }
+    });
 
     // Inventory filters
     document.getElementById('filter-active').addEventListener('change', onInventoryFilterChange);
@@ -2398,8 +2587,37 @@ const HISTORY_PAGE_SIZE = 50;
 let historyAllEntries = [];
 let historyCurrentPage = 0;
 let historyStatsVisible = false;
+let historyTotal = null;
+let historyStatsData = null;
+let historyMessage = {key: 'loading', values: {}};
+let historyRequestId = 0;
+
+function historyText(key, values = {}) {
+    let text = state.translations.gui?.history?.[key] || key;
+    Object.entries(values).forEach(([name, value]) => {
+        text = text.replaceAll('{' + name + '}', String(value));
+    });
+    return text;
+}
+
+function translateHistory() {
+    document.querySelectorAll('[data-history-key]').forEach(element => {
+        element.textContent = historyText(element.dataset.historyKey);
+    });
+    document.querySelectorAll('[data-history-placeholder]').forEach(element => {
+        const label = historyText(element.dataset.historyPlaceholder);
+        element.placeholder = label;
+        element.setAttribute('aria-label', label);
+    });
+    if (historyTotal !== null) updateHistoryCount(historyTotal, historyAllEntries.length);
+    if (historyMessage) setHistoryTbodyMessage(historyMessage.key, historyMessage.values);
+    else renderHistoryPage(historyCurrentPage);
+    renderHistoryPagination();
+    if (historyStatsData) renderHistoryStats(historyStatsData);
+}
 
 async function loadHistory() {
+    const requestId = ++historyRequestId;
     const game = document.getElementById('history-filter-game')?.value.trim() || '';
     const since = document.getElementById('history-filter-since')?.value || '';
 
@@ -2413,12 +2631,21 @@ async function loadHistory() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
+        if (requestId !== historyRequestId) return;
         historyAllEntries = data.entries || [];
+        historyTotal = data.total;
+        historyCurrentPage = Math.min(historyCurrentPage, Math.max(0, Math.ceil(historyAllEntries.length / HISTORY_PAGE_SIZE) - 1));
         updateHistoryCount(data.total, historyAllEntries.length);
         renderHistoryPage(historyCurrentPage);
         renderHistoryPagination();
     } catch (err) {
-        setHistoryTbodyMessage(`Error loading history: ${err.message}`);
+        if (requestId !== historyRequestId) return;
+        historyAllEntries = [];
+        historyTotal = null;
+        const count = document.getElementById('history-count');
+        if (count) count.textContent = '';
+        renderHistoryPagination();
+        setHistoryTbodyMessage('load_error', {error: err.message});
     }
 }
 
@@ -2430,12 +2657,13 @@ function renderHistoryPage(page) {
     const slice = historyAllEntries.slice(start, start + HISTORY_PAGE_SIZE);
 
     if (slice.length === 0) {
-        setHistoryTbodyMessage('No drops recorded yet.');
+        setHistoryTbodyMessage('empty');
         return;
     }
 
     while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
 
+    historyMessage = null;
     slice.forEach((entry, idx) => {
         const tr = document.createElement('tr');
         tr.style.cssText =
@@ -2469,7 +2697,8 @@ function appendHistoryCell(tr, text, extraStyle) {
     tr.appendChild(td);
 }
 
-function setHistoryTbodyMessage(msg) {
+function setHistoryTbodyMessage(key, values = {}) {
+    historyMessage = {key, values};
     const tbody = document.getElementById('history-tbody');
     if (!tbody) return;
     while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
@@ -2478,7 +2707,7 @@ function setHistoryTbodyMessage(msg) {
     const td = document.createElement('td');
     td.colSpan = 6;
     td.style.cssText = 'padding:24px; text-align:center; color:var(--text-muted,#888)';
-    td.textContent = msg;
+    td.textContent = historyText(key, values);
     tr.appendChild(td);
     tbody.appendChild(tr);
 }
@@ -2487,8 +2716,8 @@ function updateHistoryCount(total, returned) {
     const el = document.getElementById('history-count');
     if (!el) return;
     el.textContent = returned < total
-        ? `Showing ${returned} of ${total} drops (filtered)`
-        : `${total} drop${total !== 1 ? 's' : ''} total`;
+        ? historyText('filtered_count', {shown: returned, total})
+        : historyText('count', {total});
 }
 
 function renderHistoryPagination() {
@@ -2500,7 +2729,7 @@ function renderHistoryPagination() {
     if (totalPages <= 1) return;
 
     if (historyCurrentPage > 0) {
-        container.appendChild(makeHistoryPageBtn('← Prev', () => {
+        container.appendChild(makeHistoryPageBtn(historyText('previous'), () => {
             historyCurrentPage--;
             renderHistoryPage(historyCurrentPage);
             renderHistoryPagination();
@@ -2530,7 +2759,7 @@ function renderHistoryPagination() {
     });
 
     if (historyCurrentPage < totalPages - 1) {
-        container.appendChild(makeHistoryPageBtn('Next →', () => {
+        container.appendChild(makeHistoryPageBtn(historyText('next'), () => {
             historyCurrentPage++;
             renderHistoryPage(historyCurrentPage);
             renderHistoryPagination();
@@ -2598,9 +2827,11 @@ async function toggleHistoryStats() {
         const res = await fetch('/api/history/stats');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+        historyStatsData = data;
+        document.getElementById('history-stats-error').textContent = '';
         renderHistoryStats(data);
     } catch (err) {
-        console.error('Failed to load stats:', err);
+        document.getElementById('history-stats-error').textContent = historyText('stats_error', {error: err.message});
     }
 }
 
@@ -2614,7 +2845,7 @@ function renderHistoryStats(data) {
 
         const label = makeElement('div', {
             style: 'font-size:0.75rem; color:var(--text-muted,#888); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;'
-        }, 'By game');
+        }, historyText('by_game'));
         gameEl.appendChild(label);
 
         Object.entries(data.by_game || {}).slice(0, 10).forEach(([game, count]) => {
@@ -2635,7 +2866,7 @@ function renderHistoryStats(data) {
 
         const label = makeElement('div', {
             style: 'font-size:0.75rem; color:var(--text-muted,#888); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;'
-        }, 'By month');
+        }, historyText('by_month'));
         monthEl.appendChild(label);
 
         Object.entries(data.by_month || {}).reverse().slice(0, 6).forEach(([month, count]) => {
@@ -2653,7 +2884,7 @@ function renderHistoryStats(data) {
 
 async function clearHistory() {
     const confirmed = window.confirm(
-        'Are you sure you want to delete the entire drop history? This cannot be undone.'
+        historyText('clear_confirm')
     );
     if (!confirmed) return;
 
@@ -2665,10 +2896,13 @@ async function clearHistory() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
+        historyRequestId++;
         historyAllEntries = [];
+        historyTotal = 0;
+        historyStatsData = {total_drops: 0, by_game: {}, by_month: {}};
         historyCurrentPage = 0;
         updateHistoryCount(0, 0);
-        setHistoryTbodyMessage('History cleared.');
+        setHistoryTbodyMessage('cleared');
         renderHistoryPagination();
 
         if (historyStatsVisible) {
@@ -2681,7 +2915,7 @@ async function clearHistory() {
             });
         }
     } catch (err) {
-        alert(`Failed to clear history: ${err.message}`);
+        alert(historyText('clear_error', {error: err.message}));
     }
 }
 

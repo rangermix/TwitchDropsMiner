@@ -57,6 +57,7 @@ class GUIStatus(TypedDict):
 
 
 class GUITabs(TypedDict):
+    history: str
     main: str
     inventory: str
     settings: str
@@ -213,11 +214,18 @@ class GUISettings(TypedDict):
     add_game_hint: str
     select_all: str
     deselect_all: str
+    deselect_all_warning: str
+    confirm_btn: str
+    cancel_btn: str
     selected_games: str
+    game_priority: str
+    remove_game: str
     available_games: str
     no_games_selected: str
     no_games_match: str
     all_games_selected: str
+    multiple_games_found: str
+    manual_game_warning: str
     actions: str
     connection_quality: str
     minimum_refresh: str
@@ -245,7 +253,38 @@ class GUIHeader(TypedDict):
     disconnected: str
 
 
+class GUIHistory(TypedDict):
+    title: str
+    filter_game: str
+    since: str
+    apply: str
+    export: str
+    stats: str
+    clear: str
+    total: str
+    claimed_at: str
+    game: str
+    campaign: str
+    drop: str
+    rewards: str
+    minutes: str
+    loading: str
+    empty: str
+    count: str
+    filtered_count: str
+    load_error: str
+    previous: str
+    next: str
+    by_game: str
+    by_month: str
+    clear_confirm: str
+    cleared: str
+    clear_error: str
+    stats_error: str
+
+
 class GUIMessages(TypedDict):
+    history: GUIHistory
     output: str
     status: GUIStatus
     tabs: GUITabs
