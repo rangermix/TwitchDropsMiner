@@ -12,6 +12,9 @@ if TYPE_CHECKING:
 class Game:
     """Represents a Twitch game/category."""
 
+    # Special Events and IRL campaigns can span multiple streamed categories.
+    SPECIAL_GAME_IDS: frozenset[int] = frozenset({509663, 509672})
+
     def __init__(self, data: JsonType):
         self.id: int = int(data["id"])
         self.name: str = data.get("displayName") or data["name"]
@@ -46,3 +49,7 @@ class Game:
         # strip and collapse dashes
         slug_text = re.sub(r"-{2,}", "-", slug_text.strip("-"))
         return slug_text
+
+    def is_special(self) -> bool:
+        """Return whether this category supports cross-category campaigns."""
+        return self.id in self.SPECIAL_GAME_IDS

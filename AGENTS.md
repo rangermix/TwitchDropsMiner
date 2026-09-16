@@ -118,6 +118,17 @@ lang/                # Translation JSON files (20 languages)
 
 - `DropsCampaign`: Campaign with game, timeframe, allowed channels
 - Time-based eligibility and progress tracking
+- Special Events (`509663`) and IRL (`509672`) are identified by `Game.is_special()`.
+  Their campaigns can progress across categories only on live channels in a non-empty,
+  enabled ACL. Without an ACL, the streamed category must still match. Explicit
+  `ignore_channel_status=True` checks retain their discovery-only status bypass.
+- `WatchService.can_watch()` requires the campaign's game in `wanted_games`, a live
+  channel, and `campaign.can_earn(channel)`. Special categories bypass the channel's
+  drops-enabled flag; regular campaigns still require it. Account eligibility, campaign
+  and drop timing, prerequisites, claims, and ignore rules remain enforced.
+- Channel priority still uses the streamed category; channels outside `wanted_games`
+  retain `MAX_INT` fallback priority. Preserve special-category eligibility when changing
+  watch selection; do not reintroduce an unconditional campaign/channel game equality gate.
 
 **src/models/drop.py** - Drop types:
 
@@ -423,6 +434,11 @@ Wanted Queue guard, watch selection, truthful ignored/skipped inventory state, t
 placeholder parity, and frontend rendering. Changes to `web/static/app.js` or
 `web/static/styles.css` still require the release workflow to bump the application version
 and asset cache key before deployment.
+
+`tests/test_special_game_watch.py` covers Special Events and IRL across streamed categories,
+missing category/drops flags, offline and nonparticipating channels, disabled or absent ACLs,
+Games to Watch selection, campaign/drop eligibility, active-campaign selection, and fallback
+priority. It uses mocked Twitch state and does not verify live Twitch progress.
 
 ### Continuous Integration
 
