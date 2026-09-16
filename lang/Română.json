@@ -184,6 +184,11 @@
             "clear_all_cache_help": "Șterge starea locală a campaniilor, canalelor și datele derivate ale minerului; păstrează autentificarea și setările, apoi reîncarcă datele de pe Twitch.",
             "mining_benefits": "Beneficii Minerit",
             "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați.",
+            "multiple_games_found": "Au fost găsite mai multe jocuri pentru căutarea dvs. Vă rugăm să fiți mai specific.",
+            "manual_game_warning": "„{game}” nu se află în lista campaniilor disponibile. Îl adaugi totuși la jocurile de urmărit?",
+            "deselect_all_warning": "Sunteți sigur că doriți să eliminați toate jocurile din lista dvs. de urmărire?",
+            "confirm_btn": "Confirmă",
+            "cancel_btn": "Anulează",
             "game_priority": "Prioritate pentru {game}",
             "remove_game": "Elimină {game}"
         },

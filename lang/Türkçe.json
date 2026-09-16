@@ -184,6 +184,11 @@
             "clear_all_cache_help": "Yerel kampanya, kanal ve türetilmiş madenci durumunu temizler; oturum açma bilgilerini ve ayarları korur, ardından Twitch'ten yeniden yükler.",
             "mining_benefits": "Madencilik Avantajları",
             "mining_benefits_help": "Hangi tür dropları toplamak istediğinizi seçin.",
+            "multiple_games_found": "Aramanız için birden fazla oyun bulundu. Lütfen daha belirgin olun.",
+            "manual_game_warning": "\"{game}\" mevcut kampanyalar listesinde yok. Yine de izlenecek oyunlara eklensin mi?",
+            "deselect_all_warning": "İzleme listenizdeki tüm oyunları kaldırmak istediğinize emin misiniz?",
+            "confirm_btn": "Onayla",
+            "cancel_btn": "İptal",
             "game_priority": "{game} için öncelik",
             "remove_game": "{game} oyununu kaldır"
         },

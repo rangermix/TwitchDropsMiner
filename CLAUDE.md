@@ -153,7 +153,10 @@ lang/                # Translation JSON files (20 languages)
 **src/config/settings.py** - Application settings:
 
 - Games to watch list (auto-populated from available campaigns if empty)
-- Games can also be added manually from the web settings search box
+- Games can also be added manually from the web settings search box. Exact and
+  unique partial matches resolve to available game names; ambiguous matches do not
+  add a game. Confirmations support keyboard focus and Escape. Select All preserves
+  priority order and manual entries, and manual confirmation uses current settings.
 - Games to Watch supports drag ordering and editable integer priority numbers. Clamp valid
   ranks to the list bounds; reject blank/fractional values without changing settings.
   Keep priority and remove-control labels translated and accessible. Regression tests in

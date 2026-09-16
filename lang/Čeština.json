@@ -184,6 +184,11 @@
             "clear_all_cache_help": "Vymaže místní stav kampaní, kanálů a odvozený stav mineru; zachová přihlášení a nastavení a poté znovu načte data z Twitche.",
             "mining_benefits": "Výhody Těžby",
             "mining_benefits_help": "Vyberte typy dropů, které chcete těžit.",
+            "multiple_games_found": "Pro vaše hledání bylo nalezeno více her. Buďte prosím konkrétnější.",
+            "manual_game_warning": "„{game}“ není v seznamu dostupných kampaní. Přesto jej přidat mezi hry ke sledování?",
+            "deselect_all_warning": "Opravdu chcete odebrat všechny hry ze svého seznamu sledovaných?",
+            "confirm_btn": "Potvrdit",
+            "cancel_btn": "Zrušit",
             "game_priority": "Priorita hry {game}",
             "remove_game": "Odebrat {game}"
         },

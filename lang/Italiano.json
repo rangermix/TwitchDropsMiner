@@ -184,6 +184,11 @@
             "clear_all_cache_help": "Cancella lo stato locale di campagne, canali e i dati derivati del miner; mantiene l’accesso e le impostazioni, quindi ricarica i dati da Twitch.",
             "mining_benefits": "Vantaggi Minatori",
             "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare.",
+            "multiple_games_found": "Più giochi trovati per la tua ricerca. Per favore, sii più specifico.",
+            "manual_game_warning": "\"{game}\" non è nell’elenco delle campagne disponibili. Aggiungerlo comunque ai giochi da guardare?",
+            "deselect_all_warning": "Sei sicuro di voler rimuovere tutti i giochi dalla tua lista di osservazione?",
+            "confirm_btn": "Conferma",
+            "cancel_btn": "Annulla",
             "game_priority": "Priorità di {game}",
             "remove_game": "Rimuovi {game}"
         },

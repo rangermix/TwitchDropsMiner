@@ -184,6 +184,11 @@
             "clear_all_cache_help": "清除本地活动、频道和挖矿器派生状态；保留登录信息和设置，然后从 Twitch 重新加载。",
             "mining_benefits": "挖掘奖励",
             "mining_benefits_help": "选择您想要获取的掉落类型。",
+            "multiple_games_found": "您的搜索找到了多个游戏。请更具体一些。",
+            "manual_game_warning": "可用活动列表中没有“{game}”。仍要将其添加到观看游戏列表吗？",
+            "deselect_all_warning": "您确定要从观看列表中移除所有游戏吗？",
+            "confirm_btn": "确认",
+            "cancel_btn": "取消",
             "game_priority": "{game} 的优先级",
             "remove_game": "移除 {game}"
         },

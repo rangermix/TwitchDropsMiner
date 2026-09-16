@@ -184,6 +184,11 @@
             "clear_all_cache_help": "Rydder lokal kampagne-, kanal- og afledt minerstatus; bevarer login og indstillinger og genindlæser derefter data fra Twitch.",
             "mining_benefits": "Mining Fordele",
             "mining_benefits_help": "Vælg hvilke typer drops du vil mine.",
+            "multiple_games_found": "Flere spil fundet for din søgning. Vær venligst mere specifik.",
+            "manual_game_warning": "\"{game}\" findes ikke på listen over tilgængelige kampagner. Vil du alligevel føje det til spil, der skal ses?",
+            "deselect_all_warning": "Er du sikker på, at du vil fjerne alle spil fra din overvågningsliste?",
+            "confirm_btn": "Bekræft",
+            "cancel_btn": "Annuller",
             "game_priority": "Prioritet for {game}",
             "remove_game": "Fjern {game}"
         },

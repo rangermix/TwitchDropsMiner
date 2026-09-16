@@ -234,3 +234,8 @@ python -m pytest tests/test_telegram_frontend.py tests/test_telegram_api.py test
 ```
 
 No real Telegram messages are sent by these tests.
+
+Games to Watch supports Enter to add an exact or unique partial match. Ambiguous
+searches ask for a more specific name. Manual names and Deselect All require a
+confirmation; Escape cancels and keyboard focus stays in the dialog. Select All
+retains the existing priority order and manual entries, adding missing games only.

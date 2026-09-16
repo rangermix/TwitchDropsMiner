@@ -213,6 +213,9 @@ class GUISettings(TypedDict):
     add_game_hint: str
     select_all: str
     deselect_all: str
+    deselect_all_warning: str
+    confirm_btn: str
+    cancel_btn: str
     selected_games: str
     game_priority: str
     remove_game: str
@@ -220,6 +223,8 @@ class GUISettings(TypedDict):
     no_games_selected: str
     no_games_match: str
     all_games_selected: str
+    multiple_games_found: str
+    manual_game_warning: str
     actions: str
     connection_quality: str
     minimum_refresh: str

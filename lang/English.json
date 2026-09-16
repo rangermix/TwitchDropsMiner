@@ -152,6 +152,11 @@
                 "save_error": "Failed to save Telegram settings. Please try again.",
                 "credentials_help": "Leave the token blank to keep the saved token. To disable notifications, clear the Chat ID and save."
             },
+            "multiple_games_found": "Multiple games found for your search. Please be more specific.",
+            "manual_game_warning": "\"{game}\" is not in the available campaign list. Add it to Games to Watch anyway?",
+            "deselect_all_warning": "Are you sure you want to remove all games from your watch list?",
+            "confirm_btn": "Confirm",
+            "cancel_btn": "Cancel",
             "game_priority": "Priority for {game}",
             "remove_game": "Remove {game}"
         },
