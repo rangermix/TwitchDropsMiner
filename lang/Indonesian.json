@@ -76,7 +76,8 @@
             "main": "Utama",
             "inventory": "Inventaris",
             "settings": "Parameter",
-            "help": "Bantuan"
+            "help": "Bantuan",
+            "history": "Riwayat"
         },
         "login": {
             "name": "Formulir masuk",
@@ -273,6 +274,35 @@
         "wanted": {
             "name": "Antrean Drops yang Diinginkan",
             "none": "Tidak ada drops yang diinginkan dalam antrean..."
+        },
+        "history": {
+            "title": "Riwayat Drop",
+            "filter_game": "Filter berdasarkan game…",
+            "since": "Diklaim pada atau setelah (UTC)",
+            "apply": "Terapkan",
+            "export": "Ekspor CSV",
+            "stats": "Statistik",
+            "clear": "Hapus",
+            "total": "Total drop diklaim",
+            "claimed_at": "Tanggal & Waktu",
+            "game": "Game",
+            "campaign": "Kampanye",
+            "drop": "Drop",
+            "rewards": "Hadiah",
+            "minutes": "Menit",
+            "loading": "Memuat riwayat…",
+            "empty": "Tidak ada drop yang cocok dengan filter ini.",
+            "count": "Total drop: {total}",
+            "filtered_count": "Menampilkan {shown} dari {total} drop tercatat",
+            "load_error": "Gagal memuat riwayat: {error}",
+            "previous": "Sebelumnya",
+            "next": "Berikutnya",
+            "by_game": "Berdasarkan game",
+            "by_month": "Berdasarkan bulan",
+            "clear_confirm": "Hapus semua riwayat drop yang tersimpan secara lokal? Tindakan ini tidak dapat dibatalkan.",
+            "cleared": "Riwayat dihapus.",
+            "clear_error": "Gagal menghapus riwayat: {error}",
+            "stats_error": "Gagal memuat statistik: {error}"
         }
     }
 }

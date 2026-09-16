@@ -76,7 +76,8 @@
             "main": "Hoofd",
             "inventory": "Inventaris",
             "settings": "Instellingen",
-            "help": "Help"
+            "help": "Help",
+            "history": "Geschiedenis"
         },
         "login": {
             "name": "Login",
@@ -273,6 +274,35 @@
         "wanted": {
             "name": "Gewenste Drops Wachtrij",
             "none": "Geen gewenste drops in de wachtrij..."
+        },
+        "history": {
+            "title": "Dropgeschiedenis",
+            "filter_game": "Filter op spel…",
+            "since": "Geclaimd op of na (UTC)",
+            "apply": "Toepassen",
+            "export": "CSV exporteren",
+            "stats": "Statistieken",
+            "clear": "Wissen",
+            "total": "Totaal geclaimde drops",
+            "claimed_at": "Datum en tijd",
+            "game": "Spel",
+            "campaign": "Campagne",
+            "drop": "Drop",
+            "rewards": "Beloningen",
+            "minutes": "Minuten",
+            "loading": "Geschiedenis laden…",
+            "empty": "Geen drops komen overeen met deze filters.",
+            "count": "Totaal drops: {total}",
+            "filtered_count": "{shown} van {total} vastgelegde drops weergegeven",
+            "load_error": "Fout bij laden van geschiedenis: {error}",
+            "previous": "Vorige",
+            "next": "Volgende",
+            "by_game": "Per spel",
+            "by_month": "Per maand",
+            "clear_confirm": "Alle lokaal opgeslagen dropgeschiedenis wissen? Dit kan niet ongedaan worden gemaakt.",
+            "cleared": "Geschiedenis gewist.",
+            "clear_error": "Geschiedenis wissen mislukt: {error}",
+            "stats_error": "Statistieken laden mislukt: {error}"
         }
     }
 }

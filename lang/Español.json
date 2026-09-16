@@ -76,7 +76,8 @@
             "main": "Principal",
             "inventory": "Inventario",
             "settings": "Configuración",
-            "help": "Ayuda"
+            "help": "Ayuda",
+            "history": "Historial"
         },
         "login": {
             "name": "Inicio de sesión",
@@ -273,6 +274,35 @@
         "wanted": {
             "name": "Cola de Drops Deseados",
             "none": "No hay drops deseados en cola..."
+        },
+        "history": {
+            "title": "Historial de drops",
+            "filter_game": "Filtrar por juego…",
+            "since": "Reclamado a partir de (UTC)",
+            "apply": "Aplicar",
+            "export": "Exportar CSV",
+            "stats": "Estadísticas",
+            "clear": "Borrar",
+            "total": "Total de drops reclamados",
+            "claimed_at": "Fecha y hora",
+            "game": "Juego",
+            "campaign": "Campaña",
+            "drop": "Drop",
+            "rewards": "Recompensas",
+            "minutes": "Minutos",
+            "loading": "Cargando historial…",
+            "empty": "Ningún drop coincide con estos filtros.",
+            "count": "Total de drops: {total}",
+            "filtered_count": "Mostrando {shown} de {total} drops registrados",
+            "load_error": "Error al cargar el historial: {error}",
+            "previous": "Anterior",
+            "next": "Siguiente",
+            "by_game": "Por juego",
+            "by_month": "Por mes",
+            "clear_confirm": "¿Borrar todo el historial local de drops? Esta acción no se puede deshacer.",
+            "cleared": "Historial borrado.",
+            "clear_error": "No se pudo borrar el historial: {error}",
+            "stats_error": "No se pudieron cargar las estadísticas: {error}"
         }
     }
 }

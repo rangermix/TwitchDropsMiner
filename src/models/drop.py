@@ -350,10 +350,13 @@ class TimedDrop(BaseDrop):
         return False
 
     async def claim(self) -> bool:
+        was_claimed = self.is_claimed
         result = await super().claim()
         if result:
             self.real_current_minutes = self.required_minutes
             self.extra_current_minutes = 0
+            if not was_claimed:
+                self._twitch.drop_history.record(self, self.campaign)
         self._on_state_changed()
         return result
 

@@ -76,7 +76,8 @@
             "main": "Hauptseite",
             "inventory": "Inventar",
             "settings": "Einstellungen",
-            "help": "Hilfe"
+            "help": "Hilfe",
+            "history": "Verlauf"
         },
         "login": {
             "name": "Login",
@@ -273,6 +274,35 @@
         "wanted": {
             "name": "Wunsch-Drops Warteschlange",
             "none": "Keine Wunsch-Drops in der Warteschlange..."
+        },
+        "history": {
+            "title": "Drop-Verlauf",
+            "filter_game": "Nach Spiel filtern…",
+            "since": "Abgeholt am oder nach (UTC)",
+            "apply": "Anwenden",
+            "export": "CSV exportieren",
+            "stats": "Statistik",
+            "clear": "Leeren",
+            "total": "Insgesamt abgeholte Drops",
+            "claimed_at": "Datum und Uhrzeit",
+            "game": "Spiel",
+            "campaign": "Kampagne",
+            "drop": "Drop",
+            "rewards": "Belohnungen",
+            "minutes": "Minuten",
+            "loading": "Verlauf wird geladen…",
+            "empty": "Keine Drops entsprechen diesen Filtern.",
+            "count": "Drops insgesamt: {total}",
+            "filtered_count": "{shown} von {total} erfassten Drops angezeigt",
+            "load_error": "Fehler beim Laden des Verlaufs: {error}",
+            "previous": "Zurück",
+            "next": "Weiter",
+            "by_game": "Nach Spiel",
+            "by_month": "Nach Monat",
+            "clear_confirm": "Den gesamten lokal gespeicherten Drop-Verlauf löschen? Dies kann nicht rückgängig gemacht werden.",
+            "cleared": "Verlauf geleert.",
+            "clear_error": "Verlauf konnte nicht geleert werden: {error}",
+            "stats_error": "Statistik konnte nicht geladen werden: {error}"
         }
     }
 }

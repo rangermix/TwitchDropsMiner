@@ -76,7 +76,8 @@
             "main": "主面板",
             "inventory": "掉宝库存",
             "settings": "设置",
-            "help": "帮助"
+            "help": "帮助",
+            "history": "历史"
         },
         "login": {
             "name": "登录Twitch账号",
@@ -273,6 +274,35 @@
         "wanted": {
             "name": "期望掉落队列",
             "none": "队列中没有期望的掉落..."
+        },
+        "history": {
+            "title": "掉宝历史",
+            "filter_game": "按游戏筛选…",
+            "since": "领取日期不早于（UTC）",
+            "apply": "应用",
+            "export": "导出 CSV",
+            "stats": "统计",
+            "clear": "清空",
+            "total": "已领取掉宝总数",
+            "claimed_at": "日期和时间",
+            "game": "游戏",
+            "campaign": "活动",
+            "drop": "掉宝",
+            "rewards": "奖励",
+            "minutes": "分钟",
+            "loading": "正在加载历史…",
+            "empty": "没有符合筛选条件的掉宝。",
+            "count": "掉宝总数：{total}",
+            "filtered_count": "显示 {total} 条记录中的 {shown} 条",
+            "load_error": "加载历史失败：{error}",
+            "previous": "上一页",
+            "next": "下一页",
+            "by_game": "按游戏",
+            "by_month": "按月份",
+            "clear_confirm": "要删除所有本地掉宝历史吗？此操作无法撤销。",
+            "cleared": "历史已清空。",
+            "clear_error": "清空历史失败：{error}",
+            "stats_error": "加载统计失败：{error}"
         }
     }
 }

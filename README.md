@@ -25,6 +25,8 @@ dashboard. It sends Twitch watch events without downloading the stream itself.
 - **Persistent sessions** — saves OAuth login state between runs
 - **Web dashboard** — manages campaigns, channels, inventory, settings, and login status
 - **Optional dashboard password** — protects the web UI, API, and live connections with one password
+- **Drop history** — records every claimed drop locally (date, game, campaign, rewards)
+  with a filterable **History** tab, aggregated stats, and one-click **Export CSV**
 - **Telegram notifications** — sends an alert when a drop is claimed, including claims found during startup and inventory refresh
 - **Headless deployment** — runs locally, remotely, or in Docker without a desktop GUI
 - **Safe rendering** — builds dynamic translated content with DOM APIs instead of raw HTML
@@ -144,6 +146,17 @@ resets dashboard authentication without deleting Twitch cookies or other setting
 Keep the data directory private. A malformed auth file stops startup rather than silently
 turning off protection. **Clear All Cache** preserves dashboard authentication.
 
+### Drop history
+
+The **History** tab logs every successfully claimed drop to `data/drop_history.json`.
+Filter the table by game name or "claimed on or after" date, view per-game and per-month
+stats, or download the current view as a CSV file (UTF-8 BOM so Excel opens it cleanly).
+History controls are translated in all supported languages. The date filter starts at
+midnight UTC on the selected date; displayed claim times use your browser’s local timezone.
+CSV downloads support Unicode game names. Existing Twitch claims are not backfilled.
+The **Clear** button deletes all locally recorded history; this does not affect your
+Twitch account or already-claimed rewards.
+
 ### Telegram notifications
 
 In **Settings → Telegram Notifications**, enter a bot token from
@@ -191,7 +204,7 @@ Contributors are credited automatically when their pull requests are merged into
 | [@Sean-Destefano](https://github.com/Sean-Destefano) | [#49](https://github.com/rangermix/TwitchDropsMiner/pull/49) |
 | [@SimpliAj](https://github.com/SimpliAj) | [#72](https://github.com/rangermix/TwitchDropsMiner/pull/72) |
 | [@Stein-N](https://github.com/Stein-N) | [#71](https://github.com/rangermix/TwitchDropsMiner/pull/71) |
-| [@vurmil](https://github.com/vurmil) | [#12](https://github.com/rangermix/TwitchDropsMiner/pull/12) · [#17](https://github.com/rangermix/TwitchDropsMiner/pull/17) · [#18](https://github.com/rangermix/TwitchDropsMiner/pull/18) |
+| [@vurmil](https://github.com/vurmil) | [#12](https://github.com/rangermix/TwitchDropsMiner/pull/12) · [#17](https://github.com/rangermix/TwitchDropsMiner/pull/17) · [#18](https://github.com/rangermix/TwitchDropsMiner/pull/18) · [#100](https://github.com/rangermix/TwitchDropsMiner/pull/100) |
 <!-- contributors:end -->
 
 ## Support
@@ -264,7 +277,8 @@ match before publishing tags and Docker images. Docker validation and release jo
 the same pinned, Node-24-native Buildx and image-build action releases.
 The suite also covers ignored-keyword normalization, dependency branches, the combined
 expiry/ignore Wanted Queue guard, watch selection, API persistence, translated placeholder
-parity, and frontend rendering. Any `web/static/app.js` or `web/static/styles.css` change
+parity, frontend rendering, and the claimed-drop history store with CSV export and API
+endpoints. Any `web/static/app.js` or `web/static/styles.css` change
 must go through the release workflow so the application version and browser asset cache key
 are bumped before deployment.
 

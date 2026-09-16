@@ -57,6 +57,7 @@ class GUIStatus(TypedDict):
 
 
 class GUITabs(TypedDict):
+    history: str
     main: str
     inventory: str
     settings: str
@@ -279,8 +280,39 @@ class GUIAuth(TypedDict):
     request_failed: str
 
 
+class GUIHistory(TypedDict):
+    title: str
+    filter_game: str
+    since: str
+    apply: str
+    export: str
+    stats: str
+    clear: str
+    total: str
+    claimed_at: str
+    game: str
+    campaign: str
+    drop: str
+    rewards: str
+    minutes: str
+    loading: str
+    empty: str
+    count: str
+    filtered_count: str
+    load_error: str
+    previous: str
+    next: str
+    by_game: str
+    by_month: str
+    clear_confirm: str
+    cleared: str
+    clear_error: str
+    stats_error: str
+
+
 class GUIMessages(TypedDict):
     auth: GUIAuth
+    history: GUIHistory
     output: str
     status: GUIStatus
     tabs: GUITabs

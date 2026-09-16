@@ -76,7 +76,8 @@
             "main": "Główna",
             "inventory": "Ekwipunek",
             "settings": "Ustawienia",
-            "help": "Pomoc"
+            "help": "Pomoc",
+            "history": "Historia"
         },
         "login": {
             "name": "Logowanie",
@@ -273,6 +274,35 @@
         "wanted": {
             "name": "Kolejka Pożądanych Dropów",
             "none": "Brak pożądanych dropów w kolejce..."
+        },
+        "history": {
+            "title": "Historia dropów",
+            "filter_game": "Filtruj według gry…",
+            "since": "Odebrane od dnia (UTC)",
+            "apply": "Zastosuj",
+            "export": "Eksportuj CSV",
+            "stats": "Statystyki",
+            "clear": "Wyczyść",
+            "total": "Łącznie odebranych dropów",
+            "claimed_at": "Data i godzina",
+            "game": "Gra",
+            "campaign": "Kampania",
+            "drop": "Drop",
+            "rewards": "Nagrody",
+            "minutes": "Minuty",
+            "loading": "Ładowanie historii…",
+            "empty": "Żadne dropy nie pasują do filtrów.",
+            "count": "Łącznie dropów: {total}",
+            "filtered_count": "Wyświetlanie {shown} z {total} zapisanych dropów",
+            "load_error": "Błąd ładowania historii: {error}",
+            "previous": "Poprzednia",
+            "next": "Następna",
+            "by_game": "Według gry",
+            "by_month": "Według miesiąca",
+            "clear_confirm": "Usunąć całą lokalną historię dropów? Tej operacji nie można cofnąć.",
+            "cleared": "Historia wyczyszczona.",
+            "clear_error": "Nie udało się wyczyścić historii: {error}",
+            "stats_error": "Nie udało się załadować statystyk: {error}"
         }
     }
 }

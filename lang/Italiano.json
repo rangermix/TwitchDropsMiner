@@ -76,7 +76,8 @@
             "main": "Principale",
             "inventory": "Inventario",
             "settings": "Impostazioni",
-            "help": "Aiuto"
+            "help": "Aiuto",
+            "history": "Cronologia"
         },
         "login": {
             "name": "Dettagli Login",
@@ -273,6 +274,35 @@
         "wanted": {
             "name": "Coda Drops Desiderati",
             "none": "Nessun drop desiderato in coda..."
+        },
+        "history": {
+            "title": "Cronologia dei drop",
+            "filter_game": "Filtra per gioco…",
+            "since": "Riscattato dal (UTC)",
+            "apply": "Applica",
+            "export": "Esporta CSV",
+            "stats": "Statistiche",
+            "clear": "Cancella",
+            "total": "Totale drop riscattati",
+            "claimed_at": "Data e ora",
+            "game": "Gioco",
+            "campaign": "Campagna",
+            "drop": "Drop",
+            "rewards": "Ricompense",
+            "minutes": "Minuti",
+            "loading": "Caricamento cronologia…",
+            "empty": "Nessun drop corrisponde a questi filtri.",
+            "count": "Totale drop: {total}",
+            "filtered_count": "Mostrati {shown} di {total} drop registrati",
+            "load_error": "Errore nel caricamento della cronologia: {error}",
+            "previous": "Precedente",
+            "next": "Successivo",
+            "by_game": "Per gioco",
+            "by_month": "Per mese",
+            "clear_confirm": "Eliminare tutta la cronologia locale dei drop? Questa azione è irreversibile.",
+            "cleared": "Cronologia cancellata.",
+            "clear_error": "Impossibile cancellare la cronologia: {error}",
+            "stats_error": "Impossibile caricare le statistiche: {error}"
         }
     }
 }

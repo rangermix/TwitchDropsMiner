@@ -76,7 +76,8 @@
             "main": "Principal",
             "inventory": "Inventaire",
             "settings": "Paramètres",
-            "help": "Aide"
+            "help": "Aide",
+            "history": "Historique"
         },
         "login": {
             "name": "Formulaire de connexion",
@@ -273,6 +274,35 @@
         "wanted": {
             "name": "File d'attente Drops souhaités",
             "none": "Aucun drop souhaité en file d'attente..."
+        },
+        "history": {
+            "title": "Historique des drops",
+            "filter_game": "Filtrer par jeu…",
+            "since": "Récupéré à partir du (UTC)",
+            "apply": "Appliquer",
+            "export": "Exporter en CSV",
+            "stats": "Statistiques",
+            "clear": "Effacer",
+            "total": "Total des drops récupérés",
+            "claimed_at": "Date et heure",
+            "game": "Jeu",
+            "campaign": "Campagne",
+            "drop": "Drop",
+            "rewards": "Récompenses",
+            "minutes": "Minutes",
+            "loading": "Chargement de l’historique…",
+            "empty": "Aucun drop ne correspond à ces filtres.",
+            "count": "Total des drops : {total}",
+            "filtered_count": "{shown} drops affichés sur {total} enregistrés",
+            "load_error": "Erreur de chargement de l’historique : {error}",
+            "previous": "Précédent",
+            "next": "Suivant",
+            "by_game": "Par jeu",
+            "by_month": "Par mois",
+            "clear_confirm": "Effacer tout l’historique local des drops ? Cette action est irréversible.",
+            "cleared": "Historique effacé.",
+            "clear_error": "Impossible d’effacer l’historique : {error}",
+            "stats_error": "Impossible de charger les statistiques : {error}"
         }
     }
 }
