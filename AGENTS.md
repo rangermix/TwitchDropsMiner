@@ -7,6 +7,21 @@ This file is the canonical harness for AI agents working in this repository.
 `CLAUDE.md` and `GEMINI.md` are relative symbolic links to `AGENTS.md` so every agent
 reads the same guidance. Maintain all shared and agent-specific instructions here.
 
+## Mandatory Contribution Workflow
+
+Every coding agent MUST read [CONTRIBUTING.md](./CONTRIBUTING.md) before planning,
+editing, testing, or reviewing changes and MUST follow its applicable requirements.
+It is the repository's contribution policy, not optional background reading.
+
+- Use its PR checklist as completion criteria, including integration with current
+  `main` for PRs, unit and regression testing, and independent adversarial review.
+- Pass this policy to delegated implementation and review agents. For agent-authored
+  work, use a separate adversarial review agent when available, or an independent human.
+- Report actual validation and review results and any missing checks in the handoff
+  or PR. Never claim completion of checks that did not run or approval not received.
+- Do not declare a PR ready to merge while required checks or review are missing or
+  blocking findings remain. Document the gap and keep an incomplete PR in draft.
+
 ## Development Guidelines
 
 1. **Testing**:

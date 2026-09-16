@@ -199,6 +199,14 @@ failures do not undo a Twitch claim, and failed notifications are not retried.
 - Source installations store persistent data in the repository's `data/` directory.
 - Logs can be persisted separately by mounting `./logs:/app/logs`.
 
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for issue reporting, development setup,
+pull requests, required unit and regression checks, and independent adversarial review.
+Coding agents must follow the mandatory workflow in [AGENTS.md](./AGENTS.md), also
+available through the `CLAUDE.md` and `GEMINI.md` symlinks. The pull request template
+records validation and review evidence.
+
 ## Contributors
 
 Contributors are credited automatically when their pull requests are merged into `main`.
