@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import importlib
+from datetime import datetime, timezone
 from types import SimpleNamespace
+from urllib.parse import quote
 from unittest.mock import patch
 
 import pytest
@@ -59,9 +61,21 @@ async def test_export_csv_includes_bom_and_filename():
         response = await web_app.export_history_csv(game="Valorant")
 
     assert response.headers["content-type"] == "text/csv; charset=utf-8"
-    assert 'filename="drop_history_Valorant.csv"' in response.headers["content-disposition"]
+    assert "filename*=UTF-8''drop_history_Valorant.csv" in response.headers["content-disposition"]
     assert response.body.startswith("\ufeff".encode("utf-8"))
     assert "Valorant" in response.body.decode("utf-8")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("game", ["原神", 'A "game"\r\nInjected: value', "Baldur's Gate 3"])
+async def test_export_csv_encodes_untrusted_unicode_filename(game):
+    with patch.object(web_app, "twitch_client", _fake_client()):
+        response = await web_app.export_history_csv(game=game)
+    disposition = response.headers["content-disposition"]
+    assert 'filename="drop_history.csv"' in disposition
+    assert "filename*=UTF-8''" + quote(f"drop_history_{game}.csv", safe="") in disposition
+    assert "\r" not in disposition and "\n" not in disposition
+    disposition.encode("ascii")
 
 
 @pytest.mark.asyncio
@@ -87,3 +101,11 @@ def test_parse_history_since_accepts_date_and_datetime():
     assert web_app._parse_history_since("2026-02-03T12:30:00+00:00") is not None
     assert web_app._parse_history_since(None) is None
     assert web_app._parse_history_since("not-a-date") is None
+
+
+@pytest.mark.parametrize("value", [
+    "2026-02-03T12:30:00+10:00", "2026-02-02T21:30:00-05:00",
+    "2026-02-03T02:30:00Z", "2026-02-03 02:30:00", "2026-02-03T02:30:00",
+])
+def test_history_since_preserves_instant_and_normalizes_to_utc(value):
+    assert web_app._parse_history_since(value) == datetime(2026, 2, 3, 2, 30, tzinfo=timezone.utc)

@@ -1111,6 +1111,18 @@ function updateSettingsUI(settings) {
         proxyIndicator.title = proxyUrl ? `Proxy active: ${proxyUrl}` : 'Proxy disabled';
     }
 
+    // Populate Telegram fields if present in settings (the server never
+    // echoes the stored bot token; it returns a mask placeholder instead).
+    const botTokenInput = document.getElementById('telegram-bot-token');
+    const chatIdInput = document.getElementById('telegram-chat-id');
+    if (botTokenInput) {
+        botTokenInput.value = '';
+        if (settings.telegram_configured) {
+            botTokenInput.placeholder = '••••••••';
+        }
+    }
+    if (chatIdInput) chatIdInput.value = settings.telegram_chat_id || '';
+
     // Update language dropdown if we have the current language
     if (settings.language) {
         const languageSelect = document.getElementById('language');
@@ -1411,7 +1423,7 @@ function addGameFromSearch() {
     }
 
     const games = state.settings.games_to_watch || [];
-    
+
     // Check if already selected
     if (games.includes(gameName)) {
         searchInput.value = ''; // Clear input if already added
@@ -1554,6 +1566,118 @@ async function verifyProxy() {
     } catch (error) {
         resultDiv.className = 'verify-result error';
         resultDiv.textContent = `Error: ${error.message}`;
+    }
+}
+
+async function testTelegramConnection() {
+    const botTokenInput = document.getElementById('telegram-bot-token');
+    const chatIdInput = document.getElementById('telegram-chat-id');
+    const resultDiv = document.getElementById('telegram-test-result');
+
+    if (!resultDiv) return;
+
+    const botToken = botTokenInput ? botTokenInput.value.trim() : '';
+    const chatId = chatIdInput ? chatIdInput.value.trim() : '';
+    const tg = state.translations.gui?.settings?.telegram || {};
+
+    // Reset display
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'verify-result loading';
+    resultDiv.textContent = `${tg.test_connection || 'Test Connection'}…`;
+
+    if ((!botToken && !state.settings.telegram_configured) || !chatId) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = tg.missing_credentials || 'Please enter a bot token and chat ID.';
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/settings/test-telegram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegram_bot_token: botToken, telegram_chat_id: chatId })
+        });
+
+        if (!response.ok) {
+            throw new Error(`${tg.error || 'Telegram connection failed.'} (HTTP ${response.status})`);
+        }
+        const data = await response.json();
+
+        if (data.success) {
+            // A successful test does not guarantee that settings were saved.
+            await saveTelegramSettings(botToken, chatId);
+            resultDiv.className = 'verify-result success';
+            resultDiv.textContent = tg.success || '✓ Telegram connection successful!';
+        } else {
+            resultDiv.className = 'verify-result error';
+            resultDiv.textContent = tg.error || 'Telegram connection failed.';
+        }
+    } catch (error) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = error.message || tg.error || 'Telegram connection failed.';
+    }
+}
+
+async function saveTelegramSettings(botToken, chatId) {
+    const settings = {
+        telegram_bot_token: botToken,
+        telegram_chat_id: chatId
+    };
+
+    const tg = state.translations.gui?.settings?.telegram || {};
+    const failureMessage = tg.save_error || 'Failed to save Telegram settings.';
+    let response;
+    let data;
+    try {
+        response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        data = await response.json();
+        if (!data.success || !data.settings) {
+            throw new Error(failureMessage);
+        }
+    } catch (error) {
+        const status = response && !response.ok ? ` (HTTP ${response.status})` : '';
+        throw new Error(`${failureMessage}${status}`);
+    }
+    updateSettingsUI(data.settings);
+}
+
+async function handleSaveTelegramClick() {
+    const botTokenInput = document.getElementById('telegram-bot-token');
+    const chatIdInput = document.getElementById('telegram-chat-id');
+    const resultDiv = document.getElementById('telegram-test-result');
+
+    if (!resultDiv) return;
+
+    const botToken = botTokenInput ? botTokenInput.value.trim() : '';
+    const chatId = chatIdInput ? chatIdInput.value.trim() : '';
+    const tg = state.translations.gui?.settings?.telegram || {};
+
+    // Reset display
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'verify-result loading';
+    resultDiv.textContent = `${tg.save_settings || 'Save Settings'}…`;
+
+    // A blank token keeps the stored credential. Clearing the chat ID disables alerts.
+    if (!state.settings.telegram_configured && (!botToken || !chatId)) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = tg.missing_credentials || 'Please enter a bot token and chat ID.';
+        return;
+    }
+
+    try {
+        await saveTelegramSettings(botToken, chatId);
+        resultDiv.className = 'verify-result success';
+        resultDiv.textContent = tg.saved || '✓ Settings saved successfully!';
+    } catch (error) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = error.message || tg.save_error || 'Failed to save Telegram settings.';
     }
 }
 
@@ -1812,6 +1936,40 @@ function applyTranslations(t) {
         const reloadBtn = document.getElementById('reload-btn');
         if (reloadBtn) reloadBtn.textContent = t.gui.settings.reload_campaigns;
 
+        // Update Telegram Notifications section.
+        const tgTrans = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
+        if (tgTrans) {
+            const telegramSection = settingsTab.querySelector('.settings-section:has(#telegram-bot-token)');
+            if (telegramSection) {
+                const heading = telegramSection.querySelector('h2');
+                if (heading) heading.textContent = tgTrans.name || heading.textContent;
+
+                const description = telegramSection.querySelector('.help-text');
+                if (description) description.textContent = tgTrans.description || description.textContent;
+
+                const botTokenLabel = document.getElementById('settings-telegram-bot-token-label');
+                if (botTokenLabel) botTokenLabel.textContent = tgTrans.bot_token || botTokenLabel.textContent;
+
+                const chatIdLabel = document.getElementById('settings-telegram-chat-id-label');
+                if (chatIdLabel) chatIdLabel.textContent = tgTrans.chat_id || chatIdLabel.textContent;
+
+                const yourUserId = document.getElementById('settings-telegram-your-user-id');
+                if (yourUserId) yourUserId.textContent = tgTrans.your_user_id || yourUserId.textContent;
+
+                const fromBotFather = document.getElementById('settings-telegram-get-from-botfather');
+                if (fromBotFather) fromBotFather.textContent = tgTrans.get_from_botfather || fromBotFather.textContent;
+
+                const saveTelegramBtn = document.getElementById('save-telegram-btn');
+                if (saveTelegramBtn) saveTelegramBtn.textContent = tgTrans.save_settings || saveTelegramBtn.textContent;
+
+                const testTelegramBtn = document.getElementById('test-telegram-btn');
+                if (testTelegramBtn) testTelegramBtn.textContent = tgTrans.test_connection || testTelegramBtn.textContent;
+
+                const credentialsHelp = document.getElementById('settings-telegram-credentials-help');
+                if (credentialsHelp) credentialsHelp.textContent = tgTrans.credentials_help || credentialsHelp.textContent;
+            }
+        }
+
         const clearCacheBtn = document.getElementById('clear-cache-btn');
         if (clearCacheBtn) clearCacheBtn.textContent = t.gui.settings.clear_all_cache;
 
@@ -1838,7 +1996,7 @@ function applyTranslations(t) {
         const notesHeader = document.getElementById('help-notes-header');
         if (notesHeader) notesHeader.textContent = t.gui.help.important_notes || 'Important Notes';
 
-        // Update list items and links (keeping innerHTML approach for lists as they are dynamic content blocks)
+        // Build translated lists and allowlisted links with DOM nodes.
         const helpContent = helpTab.querySelector('.help-content');
         if (helpContent) {
             const howToItems = t.gui.help.how_to_use_items || [
@@ -1870,6 +2028,14 @@ function applyTranslations(t) {
                 makeHelpList('ul', featuresItems),
                 makeElement('h3', { id: 'help-notes-header' }, t.gui.help.important_notes || 'Important Notes'),
                 makeHelpList('ul', notesItems),
+                ...(function () {
+                    const tg = tgHelpSetup(t);
+                    return tg
+                        ? [makeElement('h3', { id: 'help-telegram-header' }, tg.title),
+                           makeElement('p', {}, tg.description),
+                           makeHelpList('ol', tg.steps)]
+                        : [];
+                })(),
                 makeElement('div', { class: 'help-links' }, '', el =>
                     el.appendChild(makeElement('a', { href: 'https://github.com/rangermix/TwitchDropsMiner', target: '_blank', rel: 'noopener noreferrer' }, t.gui.help.github_repo || 'GitHub Repository'))
                 ),
@@ -2075,6 +2241,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
+    document.getElementById('test-telegram-btn').addEventListener('click', testTelegramConnection);
+    document.getElementById('save-telegram-btn').addEventListener('click', handleSaveTelegramClick);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
     document.getElementById('clear-cache-btn').addEventListener('click', clearAllCache);
 
@@ -2519,7 +2687,25 @@ async function clearHistory() {
 
 // ==================== DOM Utilities ====================
 
-const TRUSTED_HELP_LINKS = new Set(['https://www.twitch.tv/drops/campaigns']);
+const TRUSTED_HELP_LINKS = new Set(['https://www.twitch.tv/drops/campaigns', 'https://t.me/BotFather']);
+
+function tgHelpSetup(t) {
+    const tg = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
+    if (!tg) return null;
+    return {
+        title: tg.name || 'Telegram Notifications',
+        description: tg.description || 'Receive instant notifications on Telegram when you claim drops. Setup instructions:',
+        steps: tg.setup_steps || [
+            'Go to @BotFather on Telegram',
+            'Create a new bot with /newbot command',
+            'Save the bot token you receive',
+            'Start your new bot by searching for it and clicking /start (or send any message)',
+            'Get your Chat ID by opening this URL in browser (replace TOKEN): https://api.telegram.org/botTOKEN/getUpdates',
+            'Find your user ID in the response - it is the number in "from": {"id": YOUR_ID}',
+            'Enter the token and Chat ID in Settings and click Test Connection'
+        ]
+    };
+}
 
 /**
  * @param {string} tag
@@ -2557,7 +2743,7 @@ function makeHelpList(tag, items) {
 
 function appendTrustedHelpContent(parent, text) {
     const source = String(text);
-    const linkPattern = /<a\b[^>]*\bhref=(["'])(https:\/\/www\.twitch\.tv\/drops\/campaigns)\1[^>]*>(.*?)<\/a>/gi;
+    const linkPattern = /<a\b[^>]*\bhref=(["'])(https:\/\/www\.twitch\.tv\/drops\/campaigns|https:\/\/t\.me\/BotFather)\1[^>]*>(.*?)<\/a>/gi;
     let lastIndex = 0;
     let match;
     let matched = false;

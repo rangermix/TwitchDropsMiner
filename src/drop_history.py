@@ -134,9 +134,9 @@ class DropHistory:
         if campaign_id:
             result = [e for e in result if e["campaign_id"] == campaign_id]
         if since:
-            # ISO-8601 strings sort lexicographically when zero-padded, which they are
-            since_str = since.isoformat()
-            result = [e for e in result if e["claimed_at"] >= since_str]
+            if since.tzinfo is None:
+                since = since.replace(tzinfo=timezone.utc)
+            result = [e for e in result if datetime.fromisoformat(e["claimed_at"]) >= since]
         if limit is not None:
             result = result[:limit]
 

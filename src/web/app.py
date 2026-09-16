@@ -5,6 +5,7 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
+from urllib.parse import quote
 
 import socketio
 from fastapi import FastAPI, HTTPException
@@ -78,6 +79,8 @@ class SettingsUpdate(BaseModel):
     proxy: str | None = None
     connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
+    telegram_bot_token: str | None = None
+    telegram_chat_id: str | None = None
     inventory_filters: dict | None = None
     inventory_list_view: bool | None = None
     mining_benefits: dict[str, bool] | None = None
@@ -85,6 +88,11 @@ class SettingsUpdate(BaseModel):
 
 class ProxyVerifyRequest(BaseModel):
     proxy: str
+
+
+class TelegramTestRequest(BaseModel):
+    telegram_bot_token: str
+    telegram_chat_id: str
 
 
 # ==================== REST API Endpoints ====================
@@ -250,6 +258,53 @@ async def verify_proxy(request: ProxyVerifyRequest):
         return {"success": False, "message": f"Connection failed: {str(e)}"}
 
 
+@app.post("/api/settings/test-telegram")
+async def test_telegram(request: TelegramTestRequest):
+    """Test Telegram bot connection"""
+    # Ensure project root is on sys.path so `src` package can be imported
+    import sys
+    from pathlib import Path
+
+    project_root = Path(__file__).parent.parent.parent
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+
+    from src.services.telegram_service import TelegramNotifier
+    from src.web.managers.settings import TELEGRAM_TOKEN_MASK
+
+    # Never trust a masked/empty token from the client: fall back to the
+    # stored credential so tests work without echoing the secret back.
+    bot_token = (request.telegram_bot_token or "").strip()
+    chat_id = (request.telegram_chat_id or "").strip()
+    if gui_manager is not None:
+        stored_settings = getattr(gui_manager.settings, "_settings", None)
+        if not bot_token or bot_token == TELEGRAM_TOKEN_MASK:
+            bot_token = str(getattr(stored_settings, "telegram_bot_token", "") or "").strip()
+        if not chat_id:
+            chat_id = str(getattr(stored_settings, "telegram_chat_id", "") or "").strip()
+
+    if not bot_token or not chat_id:
+        return {"success": False, "message": "Bot token and chat ID are required"}
+
+    try:
+        notifier = TelegramNotifier(bot_token, chat_id)
+        result = await notifier.test_connection()
+
+        if result:
+            return {
+                "success": True,
+                "message": "✓ Telegram connection successful! You will receive drop notifications."
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Failed to connect to Telegram. Please check your bot token and chat ID."
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Telegram error: {str(e)}"
+        }
 @app.get("/api/version")
 async def get_version():
     """Get current application version and check for updates"""
@@ -358,7 +413,12 @@ async def export_history_csv(game: str | None = None, since: str | None = None):
     return PlainTextResponse(
         content="\ufeff" + csv_content,
         media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={
+            "Content-Disposition": (
+                'attachment; filename="drop_history.csv"; '
+                f"filename*=UTF-8''{quote(filename, safe='')}"
+            )
+        },
     )
 
 
@@ -391,8 +451,10 @@ def _parse_history_since(since: str | None) -> datetime | None:
         return None
     try:
         # Accept both a bare date (YYYY-MM-DD) and a full ISO timestamp
-        normalized = since if "T" in since else since + "T00:00:00"
-        return datetime.fromisoformat(normalized).replace(tzinfo=timezone.utc)
+        parsed = datetime.fromisoformat(since)
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
     except (ValueError, TypeError):
         return None
 

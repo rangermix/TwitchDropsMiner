@@ -91,6 +91,16 @@ def test_get_entries_filters(tmp_path):
     assert len(history.get_entries(limit=1)) == 1
 
 
+def test_since_filter_compares_instants_instead_of_iso_strings(tmp_path):
+    history = _fresh_history(tmp_path)
+    history.record(_MockDrop(), _MockCampaign())
+    history._entries[0]["claimed_at"] = "2026-02-03T02:30:00+00:00"
+    offset = datetime.fromisoformat("2026-02-03T12:30:00+10:00")
+    assert len(history.get_entries(since=offset)) == 1
+    assert history.get_entries(since=offset + timedelta(microseconds=1)) == []
+    assert len(history.get_entries(since=datetime(2026, 2, 3, 2, 30))) == 1
+
+
 def test_benefits_fallback_when_benefits_attribute_missing(tmp_path):
     history = _fresh_history(tmp_path)
     history.record(_MockBroadcasterDrop(), _MockBroadcasterCampaign())

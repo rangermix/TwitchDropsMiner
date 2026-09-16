@@ -8,3 +8,6 @@ and the claimed-drop history store with CSV export and API endpoints.
 The Settings **Clear All Cache** action uses `POST /api/cache/clear` to discard local
 campaign, channel, and other derived miner state while preserving OAuth login and settings,
 then reloads from Twitch. It is diagnostic recovery, not a Twitch metadata correction.
+Telegram alerts originate in the shared successful claim transition. See AGENTS.md for
+stored-token reuse, disabling via chat ID, truthful save results, and regression tests
+covering frontend, API, claim deduplication, and mocked transport failures.
