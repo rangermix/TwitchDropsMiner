@@ -1,9 +1,11 @@
 # Agent Instructions
 
 
-## AGENTS.md Specific Instructions
+## Repository Instructions
 
-This file provides guidance to AI Agents when working with code in this repository.
+This file is the canonical harness for AI agents working in this repository.
+`CLAUDE.md` and `GEMINI.md` are relative symbolic links to `AGENTS.md` so every agent
+reads the same guidance. Maintain all shared and agent-specific instructions here.
 
 ## Development Guidelines
 
@@ -24,8 +26,8 @@ This file provides guidance to AI Agents when working with code in this reposito
    - Frontend translation rendering must use safe DOM construction. Do not inject translated strings with non-clearing `innerHTML`; allowlist any intentional links and build them as DOM nodes.
 
 5. **Documentation**:
-   - Always update `README.md` and all agent instruction files when making changes.
-   - The contents of all agent instruction files should be identical except for the `Specific Instructions` section. Any agent-specific instructions must be added to that section.
+   - Always update `README.md` and `AGENTS.md` when making changes.
+   - Keep `CLAUDE.md` and `GEMINI.md` as relative symbolic links to `AGENTS.md`; do not replace them with duplicated text. Put any agent-specific instructions in clearly named sections of `AGENTS.md`.
 
 ## Project Overview
 
@@ -153,7 +155,14 @@ lang/                # Translation JSON files (20 languages)
 **src/config/settings.py** - Application settings:
 
 - Games to watch list (auto-populated from available campaigns if empty)
-- Games can also be added manually from the web settings search box
+- Games can also be added manually from the web settings search box. Exact and
+  unique partial matches resolve to available game names; ambiguous matches do not
+  add a game. Confirmations support keyboard focus and Escape. Select All preserves
+  priority order and manual entries, and manual confirmation uses current settings.
+- Games to Watch supports drag ordering and editable integer priority numbers. Clamp valid
+  ranks to the list bounds; reject blank/fractional values without changing settings.
+  Keep priority and remove-control labels translated and accessible. Regression tests in
+  `tests/test_game_priority.py` cover order, bounds, invalid inputs, and persistence calls.
 - Connection quality multiplier
 - Language selection
 - Proxy support (including verification)
@@ -495,7 +504,7 @@ The application uses a web-based interface accessible via browser:
 - Based on `python:3`
 - Installs dependencies from `pyproject.toml`
 - Exposes port 8080
-- Health check on `/api/status`
+- Health check on the public `/healthz` endpoint
 
 **docker-compose.yml:**
 

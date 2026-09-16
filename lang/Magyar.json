@@ -177,7 +177,14 @@
                 "your_user_id": "Az Ön numerikus Telegram felhasználóazonosítója",
                 "save_error": "A Telegram-beállítások mentése sikertelen. Próbáld újra.",
                 "credentials_help": "Hagyd üresen a token mezőt a mentett token megtartásához. Az értesítések kikapcsolásához töröld a csevegésazonosítót, majd mentsd a beállításokat."
-            }
+            },
+            "multiple_games_found": "Több játék is található a kereséshez. Kérjük, legyen pontosabb.",
+            "manual_game_warning": "A(z) „{game}” nem szerepel az elérhető kampányok listáján. Mégis hozzáadod a nézendő játékokhoz?",
+            "deselect_all_warning": "Biztosan el akarja távolítani az összes játékot a figyelőlistájáról?",
+            "confirm_btn": "Megerősítés",
+            "cancel_btn": "Mégse",
+            "game_priority": "{game} prioritása",
+            "remove_game": "{game} eltávolítása"
         },
         "help": {
             "about": "A Twitch Drops Miner-ről",

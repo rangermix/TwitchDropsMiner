@@ -209,7 +209,14 @@
             "clear_all_cache": "Wyczyść całą pamięć podręczną",
             "clear_all_cache_help": "Usuwa lokalny stan kampanii, kanałów i pochodne dane minera; zachowuje logowanie i ustawienia, a następnie ponownie pobiera dane z Twitcha.",
             "mining_benefits": "Korzyści z Minowania",
-            "mining_benefits_help": "Wybierz rodzaje dropów, które chcesz zdobywać."
+            "mining_benefits_help": "Wybierz rodzaje dropów, które chcesz zdobywać.",
+            "multiple_games_found": "Znaleziono kilka gier dla twojego wyszukiwania. Proszę być bardziej precyzywnym.",
+            "manual_game_warning": "„{game}” nie znajduje się na liście dostępnych kampanii. Mimo to dodać do gier do oglądania?",
+            "deselect_all_warning": "Czy na pewno chcesz usunąć wszystkie gry ze swojej listy obserwowanych?",
+            "confirm_btn": "Potwierdź",
+            "cancel_btn": "Anuluj",
+            "game_priority": "Priorytet gry {game}",
+            "remove_game": "Usuń {game}"
         },
         "help": {
             "about": "O Twitch Drops Miner",

@@ -76,6 +76,11 @@ Then open <http://localhost:8080>.
    **Add Game**, and then select **Reload**.
 4. Leave the miner running while it selects eligible channels and tracks drop progress.
 
+In **Games to Watch**, drag games to reorder them or type a priority number to move a
+game directly. Priority 1 is highest; out-of-range numbers are clamped to the list ends.
+Blank or fractional values leave the order unchanged. Priority controls and remove buttons
+use translated labels for screen readers.
+
 Inventory filters combine **Active**, **Upcoming**, and **Expired** as alternatives.
 **Not Linked** narrows that status result, while fully claimed campaigns stay hidden
 until **Finished** is selected. Zero-minute subscription rewards are omitted from the
@@ -180,6 +185,7 @@ Contributors are credited automatically when their pull requests are merged into
 | [@birdhimself](https://github.com/birdhimself) | [#41](https://github.com/rangermix/TwitchDropsMiner/pull/41) |
 | [@capkz](https://github.com/capkz) | [#70](https://github.com/rangermix/TwitchDropsMiner/pull/70) |
 | [@EthanBlazkowicz](https://github.com/EthanBlazkowicz) | [#33](https://github.com/rangermix/TwitchDropsMiner/pull/33) |
+| [@Klages](https://github.com/Klages) | [#94](https://github.com/rangermix/TwitchDropsMiner/pull/94) · [#95](https://github.com/rangermix/TwitchDropsMiner/pull/95) |
 | [@Knight-sys](https://github.com/Knight-sys) | [#3](https://github.com/rangermix/TwitchDropsMiner/pull/3) |
 | [@rangermix](https://github.com/rangermix) | [#1](https://github.com/rangermix/TwitchDropsMiner/pull/1) · [#2](https://github.com/rangermix/TwitchDropsMiner/pull/2) · [#7](https://github.com/rangermix/TwitchDropsMiner/pull/7) · [#8](https://github.com/rangermix/TwitchDropsMiner/pull/8) · [#9](https://github.com/rangermix/TwitchDropsMiner/pull/9) · [#13](https://github.com/rangermix/TwitchDropsMiner/pull/13) · [#20](https://github.com/rangermix/TwitchDropsMiner/pull/20) · [#24](https://github.com/rangermix/TwitchDropsMiner/pull/24) · [#29](https://github.com/rangermix/TwitchDropsMiner/pull/29) · [#32](https://github.com/rangermix/TwitchDropsMiner/pull/32) · [#45](https://github.com/rangermix/TwitchDropsMiner/pull/45) · [#74](https://github.com/rangermix/TwitchDropsMiner/pull/74) · [#79](https://github.com/rangermix/TwitchDropsMiner/pull/79) · [#80](https://github.com/rangermix/TwitchDropsMiner/pull/80) · [#84](https://github.com/rangermix/TwitchDropsMiner/pull/84) · [#86](https://github.com/rangermix/TwitchDropsMiner/pull/86) · [#88](https://github.com/rangermix/TwitchDropsMiner/pull/88) · [#93](https://github.com/rangermix/TwitchDropsMiner/pull/93) · [#89](https://github.com/rangermix/TwitchDropsMiner/pull/89) · [#90](https://github.com/rangermix/TwitchDropsMiner/pull/90) · [#91](https://github.com/rangermix/TwitchDropsMiner/pull/91) · [#92](https://github.com/rangermix/TwitchDropsMiner/pull/92) |
 | [@Sean-Destefano](https://github.com/Sean-Destefano) | [#49](https://github.com/rangermix/TwitchDropsMiner/pull/49) |
@@ -244,6 +250,10 @@ This project is a modern fork of
 
 ## Development disclosure
 
+Repository instructions for all coding agents live in [AGENTS.md](./AGENTS.md).
+`CLAUDE.md` and `GEMINI.md` are relative symlinks to that file; edit `AGENTS.md` to
+update the shared guidance.
+
 This fork is maintained with AI-assisted development tools. Changes are validated through
 automated tests and code-quality checks, but users should still review updates before
 deploying them. The validation suite includes GraphQL watch events and batched channel
@@ -267,3 +277,8 @@ python -m pytest tests/test_telegram_frontend.py tests/test_telegram_api.py test
 ```
 
 No real Telegram messages are sent by these tests.
+
+Games to Watch supports Enter to add an exact or unique partial match. Ambiguous
+searches ask for a more specific name. Manual names and Deselect All require a
+confirmation; Escape cancels and keyboard focus stays in the dialog. Select All
+retains the existing priority order and manual entries, adding missing games only.

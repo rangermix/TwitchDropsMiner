@@ -209,7 +209,14 @@
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",
             "mining_benefits": "Beneficios de Minería",
-            "mining_benefits_help": "Selecciona qué tipos de drops deseas minar."
+            "mining_benefits_help": "Selecciona qué tipos de drops deseas minar.",
+            "multiple_games_found": "Se encontraron múltiples juegos para tu búsqueda. Por favor, sé más específico.",
+            "manual_game_warning": "\"{game}\" no está en la lista de campañas disponibles. ¿Añadirlo de todos modos a los juegos para ver?",
+            "deselect_all_warning": "¿Estás seguro de que deseas eliminar todos los juegos de tu lista de seguimiento?",
+            "confirm_btn": "Confirmar",
+            "cancel_btn": "Cancelar",
+            "game_priority": "Prioridad de {game}",
+            "remove_game": "Eliminar {game}"
         },
         "help": {
             "about": "Acerca de Twitch Drops Miner",
