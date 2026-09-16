@@ -32,6 +32,32 @@
         "no_connection": "Sem conexão com a TWITCH, reconectando em {seconds} segundos..."
     },
     "gui": {
+        "auth": {
+            "title": "Palavra-passe do painel",
+            "help": "Proteja o painel com uma palavra-passe. Alterá-la termina as outras sessões. Desativar a proteção apaga a palavra-passe.",
+            "login_title": "Desbloquear o painel",
+            "password": "Palavra-passe",
+            "remember": "Manter a sessão durante 30 dias",
+            "login": "Entrar",
+            "logout": "Sair",
+            "current_password": "Palavra-passe atual",
+            "new_password": "Nova palavra-passe (mínimo de 8 caracteres)",
+            "confirm_password": "Confirmar nova palavra-passe",
+            "enable": "Ativar proteção por palavra-passe",
+            "change": "Alterar palavra-passe",
+            "disable": "Desativar proteção e apagar palavra-passe",
+            "enabled": "A proteção por palavra-passe está ativa.",
+            "disabled": "A proteção por palavra-passe está desativada.",
+            "invalid_password": "Palavra-passe incorreta.",
+            "password_length": "Utilize entre 8 e 1024 caracteres.",
+            "password_mismatch": "As palavras-passe não coincidem.",
+            "rate_limited": "Demasiadas tentativas. Aguarde um minuto e tente novamente.",
+            "auth_changed": "As definições de acesso mudaram. Recarregue a página.",
+            "authentication_required": "Inicie sessão novamente.",
+            "forbidden": "Pedido bloqueado. Abra esta aplicação diretamente e tente novamente.",
+            "invalid_request": "Pedido inválido.",
+            "request_failed": "O pedido falhou. Tente novamente."
+        },
         "output": "Saída",
         "status": {
             "name": "Status",

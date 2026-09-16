@@ -32,6 +32,32 @@
         "no_connection": "Nu se poate conecta la Twitch. Vă rugăm să încercați din nou în {seconds} secunde..."
     },
     "gui": {
+        "auth": {
+            "title": "Parola panoului",
+            "help": "Protejează panoul cu o singură parolă. Schimbarea deconectează celelalte sesiuni. Dezactivarea protecției șterge parola.",
+            "login_title": "Deblochează panoul",
+            "password": "Parolă",
+            "remember": "Ține-mă conectat 30 de zile",
+            "login": "Conectare",
+            "logout": "Deconectare",
+            "current_password": "Parola actuală",
+            "new_password": "Parolă nouă (minimum 8 caractere)",
+            "confirm_password": "Confirmă parola nouă",
+            "enable": "Activează protecția prin parolă",
+            "change": "Schimbă parola",
+            "disable": "Dezactivează protecția și șterge parola",
+            "enabled": "Protecția prin parolă este activată.",
+            "disabled": "Protecția prin parolă este dezactivată.",
+            "invalid_password": "Parolă incorectă.",
+            "password_length": "Folosește între 8 și 1024 de caractere.",
+            "password_mismatch": "Parolele nu coincid.",
+            "rate_limited": "Prea multe încercări. Așteaptă un minut și încearcă din nou.",
+            "auth_changed": "Setările de autentificare s-au schimbat. Reîncarcă pagina.",
+            "authentication_required": "Conectează-te din nou.",
+            "forbidden": "Cerere blocată. Deschide direct aplicația și încearcă din nou.",
+            "invalid_request": "Cerere nevalidă.",
+            "request_failed": "Cererea a eșuat. Încearcă din nou."
+        },
         "output": "Ieșire",
         "status": {
             "name": "Statut",

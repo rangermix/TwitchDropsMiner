@@ -32,6 +32,32 @@
         "no_connection": "Tidak dapat tersambung ke Twitch. Silakan coba lagi dalam {seconds} detik...."
     },
     "gui": {
+        "auth": {
+            "title": "Kata sandi dasbor",
+            "help": "Lindungi dasbor dengan satu kata sandi. Mengubahnya akan mengeluarkan sesi lain. Menonaktifkan perlindungan menghapus kata sandi.",
+            "login_title": "Buka kunci dasbor",
+            "password": "Kata sandi",
+            "remember": "Ingat saya selama 30 hari",
+            "login": "Masuk",
+            "logout": "Keluar",
+            "current_password": "Kata sandi saat ini",
+            "new_password": "Kata sandi baru (minimal 8 karakter)",
+            "confirm_password": "Konfirmasi kata sandi baru",
+            "enable": "Aktifkan perlindungan kata sandi",
+            "change": "Ubah kata sandi",
+            "disable": "Nonaktifkan perlindungan dan hapus kata sandi",
+            "enabled": "Perlindungan kata sandi aktif.",
+            "disabled": "Perlindungan kata sandi nonaktif.",
+            "invalid_password": "Kata sandi salah.",
+            "password_length": "Gunakan 8 hingga 1024 karakter.",
+            "password_mismatch": "Kata sandi tidak cocok.",
+            "rate_limited": "Terlalu banyak percobaan. Tunggu satu menit dan coba lagi.",
+            "auth_changed": "Pengaturan autentikasi berubah. Muat ulang halaman.",
+            "authentication_required": "Silakan masuk kembali.",
+            "forbidden": "Permintaan diblokir. Buka aplikasi ini secara langsung dan coba lagi.",
+            "invalid_request": "Permintaan tidak valid.",
+            "request_failed": "Permintaan gagal. Coba lagi."
+        },
         "output": "Keluaran",
         "status": {
             "name": "Status",

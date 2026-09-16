@@ -1,4 +1,4 @@
-# AGENTS.md
+# Agent Instructions
 
 
 ## AGENTS.md Specific Instructions
@@ -209,6 +209,33 @@ progress to an ignored drop while the miner intentionally targets another reward
 - Device ID from Twitch's `unique_id` cookie
 - Session ID generated per run
 - Client info defined in `src/config/client_info.py` (presents as Android app with Client-Id and User-Agent spoofing)
+
+### Dashboard authentication
+
+- `src/web/auth.py` owns optional password-only dashboard protection, separate from Twitch
+  OAuth and ordinary settings. It defaults off and stores a salted scrypt hash and SHA-256
+  session-token digests in `data/web_auth.json` using atomic replacement; corrupt state must
+  fail closed. Never expose these credentials in settings, broadcasts, validation errors,
+  logs, or cache operations. Use one miner process per data directory.
+- `AuthMiddleware` guards FastAPI and the outer Socket.IO ASGI app. Only login resources,
+  auth status, and `/healthz` are public when enabled. Unsafe HTTP requests require
+  `X-TDM-Request: 1`; writes and Socket.IO reject foreign origins. Forwarded headers must
+  only be trusted from configured reverse proxies; HTTPS enables Secure cookies.
+- Default cookies are HttpOnly, SameSite=Strict session cookies. Remember me adds a fixed
+  30-day Max-Age; server sessions also expire after 30 days and survive restarts. Logout
+  revokes the current session; password changes require the current password and revoke
+  other sessions. Disabling auth requires the current password and clears all credentials.
+- `AuthSocketServer` rechecks authorization on events and broadcasts, disconnects revoked
+  sessions, and schedules idle connections to close at expiry. Enabling auth must evict
+  already connected anonymous clients before subsequent private broadcasts.
+- `web/static/auth.js` owns login/settings behavior and adds the same-origin write header.
+  Keep all UI strings in `gui.auth` across all locales and render them using textContent.
+  Local auth assets use the release version cache key; bump through the release workflow
+  before deploying changes to existing auth assets, as with app.js and styles.css.
+- `tests/test_web_auth.py` and `tests/test_web_auth_frontend.py` cover access control,
+  credential persistence, cookie lifetimes, CSRF, rate limiting, revocation, and UI errors.
+  Docker checks `/healthz`, not the protected `/api/status`. Recovery is local: stop the
+  miner, restrict access, remove only `data/web_auth.json`, restart and set a new password.
 
 ### Drop Mining Mechanism
 

@@ -32,6 +32,32 @@
         "no_connection": "Nelze se připojit k službe Twitch, zkuste to znovu za {seconds}..."
     },
     "gui": {
+        "auth": {
+            "title": "Heslo ovládacího panelu",
+            "help": "Chraňte panel jedním heslem. Změna odhlásí ostatní relace. Vypnutí ochrany smaže heslo.",
+            "login_title": "Odemknout panel",
+            "password": "Heslo",
+            "remember": "Zapamatovat si mě na 30 dní",
+            "login": "Přihlásit se",
+            "logout": "Odhlásit se",
+            "current_password": "Současné heslo",
+            "new_password": "Nové heslo (alespoň 8 znaků)",
+            "confirm_password": "Potvrdit nové heslo",
+            "enable": "Zapnout ochranu heslem",
+            "change": "Změnit heslo",
+            "disable": "Vypnout ochranu a smazat heslo",
+            "enabled": "Ochrana heslem je zapnutá.",
+            "disabled": "Ochrana heslem je vypnutá.",
+            "invalid_password": "Nesprávné heslo.",
+            "password_length": "Použijte 8 až 1024 znaků.",
+            "password_mismatch": "Hesla se neshodují.",
+            "rate_limited": "Příliš mnoho pokusů. Počkejte minutu a zkuste to znovu.",
+            "auth_changed": "Nastavení přihlášení se změnilo. Načtěte stránku znovu.",
+            "authentication_required": "Přihlaste se znovu.",
+            "forbidden": "Požadavek zablokován. Otevřete aplikaci přímo a zkuste to znovu.",
+            "invalid_request": "Neplatný požadavek.",
+            "request_failed": "Požadavek selhal. Zkuste to znovu."
+        },
         "output": "Výstup",
         "status": {
             "name": "Status",

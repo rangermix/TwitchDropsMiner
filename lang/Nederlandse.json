@@ -32,6 +32,32 @@
         "no_connection": "Kan geen verbinding maken met Twitch. Probeer het over {seconds} seconden opnieuw..."
     },
     "gui": {
+        "auth": {
+            "title": "Dashboardwachtwoord",
+            "help": "Beveilig het dashboard met één wachtwoord. Wijzigen meldt andere sessies af. Uitschakelen wist het wachtwoord.",
+            "login_title": "Dashboard ontgrendelen",
+            "password": "Wachtwoord",
+            "remember": "30 dagen aangemeld blijven",
+            "login": "Aanmelden",
+            "logout": "Afmelden",
+            "current_password": "Huidig wachtwoord",
+            "new_password": "Nieuw wachtwoord (minimaal 8 tekens)",
+            "confirm_password": "Nieuw wachtwoord bevestigen",
+            "enable": "Wachtwoordbeveiliging inschakelen",
+            "change": "Wachtwoord wijzigen",
+            "disable": "Beveiliging uitschakelen en wachtwoord wissen",
+            "enabled": "Wachtwoordbeveiliging is ingeschakeld.",
+            "disabled": "Wachtwoordbeveiliging is uitgeschakeld.",
+            "invalid_password": "Onjuist wachtwoord.",
+            "password_length": "Gebruik 8 tot 1024 tekens.",
+            "password_mismatch": "De wachtwoorden komen niet overeen.",
+            "rate_limited": "Te veel pogingen. Wacht een minuut en probeer opnieuw.",
+            "auth_changed": "De aanmeldinstellingen zijn gewijzigd. Herlaad de pagina.",
+            "authentication_required": "Meld je opnieuw aan.",
+            "forbidden": "Verzoek geblokkeerd. Open deze app rechtstreeks en probeer opnieuw.",
+            "invalid_request": "Ongeldig verzoek.",
+            "request_failed": "Verzoek mislukt. Probeer opnieuw."
+        },
         "output": "Protocol",
         "status": {
             "name": "Status",

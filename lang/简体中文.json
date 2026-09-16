@@ -32,6 +32,32 @@
         "no_connection": "无法连接到Twitch,{seconds} 秒后重试,请确保已经开启VPN添加了代理并查阅教程..."
     },
     "gui": {
+        "auth": {
+            "title": "控制面板密码",
+            "help": "使用一个密码保护控制面板。修改密码会使其他会话退出登录。关闭保护会清除密码。",
+            "login_title": "解锁控制面板",
+            "password": "密码",
+            "remember": "记住我 30 天",
+            "login": "登录",
+            "logout": "退出登录",
+            "current_password": "当前密码",
+            "new_password": "新密码（至少 8 个字符）",
+            "confirm_password": "确认新密码",
+            "enable": "开启密码保护",
+            "change": "修改密码",
+            "disable": "关闭保护并清除密码",
+            "enabled": "密码保护已开启。",
+            "disabled": "密码保护已关闭。",
+            "invalid_password": "密码错误。",
+            "password_length": "请输入 8 到 1024 个字符。",
+            "password_mismatch": "两次输入的密码不一致。",
+            "rate_limited": "尝试次数过多，请等待一分钟后重试。",
+            "auth_changed": "身份验证设置已更改，请刷新页面。",
+            "authentication_required": "请重新登录。",
+            "forbidden": "请求被阻止，请直接打开本应用后重试。",
+            "invalid_request": "请求无效。",
+            "request_failed": "请求失败，请重试。"
+        },
         "output": "输出日志",
         "status": {
             "name": "状态",

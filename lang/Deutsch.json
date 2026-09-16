@@ -32,6 +32,32 @@
         "no_connection": "Keine Verbindung zu Twitch möglich. Erneuter Versuch in {seconds} Sekunden..."
     },
     "gui": {
+        "auth": {
+            "title": "Dashboard-Passwort",
+            "help": "Schütze das Dashboard mit einem Passwort. Eine Änderung meldet andere Sitzungen ab. Beim Deaktivieren wird das Passwort gelöscht.",
+            "login_title": "Dashboard entsperren",
+            "password": "Passwort",
+            "remember": "30 Tage angemeldet bleiben",
+            "login": "Anmelden",
+            "logout": "Abmelden",
+            "current_password": "Aktuelles Passwort",
+            "new_password": "Neues Passwort (mindestens 8 Zeichen)",
+            "confirm_password": "Neues Passwort bestätigen",
+            "enable": "Passwortschutz aktivieren",
+            "change": "Passwort ändern",
+            "disable": "Schutz deaktivieren und Passwort löschen",
+            "enabled": "Passwortschutz ist aktiviert.",
+            "disabled": "Passwortschutz ist deaktiviert.",
+            "invalid_password": "Falsches Passwort.",
+            "password_length": "Verwende 8 bis 1024 Zeichen.",
+            "password_mismatch": "Die Passwörter stimmen nicht überein.",
+            "rate_limited": "Zu viele Versuche. Warte eine Minute und versuche es erneut.",
+            "auth_changed": "Die Anmeldeeinstellungen wurden geändert. Lade die Seite neu.",
+            "authentication_required": "Bitte erneut anmelden.",
+            "forbidden": "Anfrage blockiert. Öffne die App direkt und versuche es erneut.",
+            "invalid_request": "Ungültige Anfrage.",
+            "request_failed": "Anfrage fehlgeschlagen. Versuche es erneut."
+        },
         "output": "Protokoll",
         "status": {
             "name": "Status",

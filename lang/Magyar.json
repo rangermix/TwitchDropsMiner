@@ -32,6 +32,32 @@
         "no_connection": "Nem lehet csatlakozni a Twitch-hez, újrapróbálkozás {seconds} másodperc múlva..."
     },
     "gui": {
+        "auth": {
+            "title": "Vezérlőpult jelszava",
+            "help": "Védd a vezérlőpultot egy jelszóval. A módosítás kijelentkezteti a többi munkamenetet. A védelem kikapcsolása törli a jelszót.",
+            "login_title": "Vezérlőpult feloldása",
+            "password": "Jelszó",
+            "remember": "Bejelentkezés megjegyzése 30 napig",
+            "login": "Bejelentkezés",
+            "logout": "Kijelentkezés",
+            "current_password": "Jelenlegi jelszó",
+            "new_password": "Új jelszó (legalább 8 karakter)",
+            "confirm_password": "Új jelszó megerősítése",
+            "enable": "Jelszavas védelem bekapcsolása",
+            "change": "Jelszó módosítása",
+            "disable": "Védelem kikapcsolása és jelszó törlése",
+            "enabled": "A jelszavas védelem be van kapcsolva.",
+            "disabled": "A jelszavas védelem ki van kapcsolva.",
+            "invalid_password": "Helytelen jelszó.",
+            "password_length": "Használj 8–1024 karaktert.",
+            "password_mismatch": "A jelszavak nem egyeznek.",
+            "rate_limited": "Túl sok próbálkozás. Várj egy percet, majd próbáld újra.",
+            "auth_changed": "A hitelesítési beállítások megváltoztak. Töltsd újra az oldalt.",
+            "authentication_required": "Jelentkezz be újra.",
+            "forbidden": "A kérés blokkolva. Nyisd meg közvetlenül az alkalmazást, majd próbáld újra.",
+            "invalid_request": "Érvénytelen kérés.",
+            "request_failed": "A kérés sikertelen. Próbáld újra."
+        },
         "output": "Kimenet",
         "status": {
             "name": "Állapot",
