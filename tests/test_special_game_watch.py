@@ -252,3 +252,35 @@ def test_special_only_channel_keeps_fallback_priority(twitch):
     assert not watch_service.should_switch(special_channel)
     twitch.watching_channel.get_with_default.side_effect = lambda default: special_channel
     assert watch_service.should_switch(regular_channel)
+
+
+@pytest.mark.parametrize("reason", ["offline", "expired_campaign", "deselected_campaign"])
+def test_live_special_participant_replaces_unwatchable_current_channel(twitch, reason):
+    candidate_campaign = _campaign(twitch, SPECIAL_EVENTS)
+    current_campaign = _campaign(twitch, IRL)
+    candidate = _channel(twitch, TEST_GAME)
+    current = _channel(twitch, OTHER_GAME, id=CHANNEL_ID + 1)
+    current_campaign.allowed_channels = [current]
+    twitch.inventory = [candidate_campaign, current_campaign]
+    twitch.wanted_games = [candidate_campaign.game, current_campaign.game]
+    twitch._channel_service = ChannelService(twitch)
+    twitch.watching_channel.get_with_default.side_effect = lambda default: current
+    watch_service = WatchService(twitch)
+
+    assert watch_service.can_watch(current)
+    assert watch_service.can_watch(candidate)
+    assert twitch._channel_service.get_priority(current) == MAX_INT
+    assert twitch._channel_service.get_priority(candidate) == MAX_INT
+    # Equal-priority participants should not disrupt a healthy current stream.
+    assert not watch_service.should_switch(candidate)
+
+    if reason == "offline":
+        current._stream = None
+    elif reason == "expired_campaign":
+        current_campaign.ends_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+    else:
+        twitch.wanted_games = [candidate_campaign.game]
+
+    assert not watch_service.can_watch(current)
+    assert watch_service.can_watch(candidate)
+    assert watch_service.should_switch(candidate)

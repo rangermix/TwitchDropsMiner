@@ -88,6 +88,8 @@ channels even when those channels stream another category or lack a drops-enable
 Include the campaign's category in **Games to Watch**. Channels must be live and eligible;
 campaigns without an enabled participating-channel list still require a matching category.
 Channels streaming categories outside Games to Watch retain the lowest automatic priority.
+When the watched channel goes offline or becomes ineligible, another eligible participant
+can replace it even at that same fallback priority.
 
 Inventory filters combine **Active**, **Upcoming**, and **Expired** as alternatives.
 **Not Linked** narrows that status result, while fully claimed campaigns stay hidden

@@ -129,6 +129,9 @@ lang/                # Translation JSON files (20 languages)
 - Channel priority still uses the streamed category; channels outside `wanted_games`
   retain `MAX_INT` fallback priority. Preserve special-category eligibility when changing
   watch selection; do not reintroduce an unconditional campaign/channel game equality gate.
+- `WatchService.should_switch()` allows replacement of an unwatchable current channel
+  before comparing priorities. Healthy streams keep the existing priority rules; tied
+  `MAX_INT` participants must still take over after an offline or ineligible stream.
 
 **src/models/drop.py** - Drop types:
 
@@ -438,7 +441,7 @@ and asset cache key before deployment.
 `tests/test_special_game_watch.py` covers Special Events and IRL across streamed categories,
 missing category/drops flags, offline and nonparticipating channels, disabled or absent ACLs,
 Games to Watch selection, campaign/drop eligibility, active-campaign selection, and fallback
-priority. It uses mocked Twitch state and does not verify live Twitch progress.
+priority and failover. It uses mocked Twitch state and does not verify live Twitch progress.
 
 ### Continuous Integration
 

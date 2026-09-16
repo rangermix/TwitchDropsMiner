@@ -87,6 +87,7 @@ class WatchService:
 
         A channel should be switched to if:
         - We're not currently watching anything
+        - The currently watched channel can no longer progress a wanted campaign
         - The channel's game has higher priority than the watching channel's game
         - The channel has the same game priority but is ACL-based and watching isn't
 
@@ -97,7 +98,7 @@ class WatchService:
             True if we should switch to this channel, False otherwise
         """
         watching_channel = self._twitch.watching_channel.get_with_default(None)
-        if watching_channel is None:
+        if watching_channel is None or not self.can_watch(watching_channel):
             return True
 
         channel_order = self._twitch._channel_service.get_priority(channel)
