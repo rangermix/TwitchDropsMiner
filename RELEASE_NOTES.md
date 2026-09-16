@@ -1,3 +1,29 @@
+# Release Notes - v1.3.0
+
+This update brings a massive quality-of-life boost to Twitch Drops Miner, introducing a new drop history tracker, Telegram notifications, and enhanced security features. We've also streamlined the UI to make managing your watch list easier and more reliable than ever.
+
+### 📈 New Features
+- **Drop History & CSV Export**: Never lose track of your loot! A new History tab records every claimed drop, complete with stats and the ability to export your data to CSV for easy spreadsheet viewing.
+- **Telegram Notifications**: Stay updated on the go—you can now receive instant alerts on Telegram whenever a new drop is successfully claimed.
+- **Dashboard Security**: Added an optional password protection layer for your dashboard to keep your settings and mining activity private.
+- **Manual Priority Ordering**: You can now manually reorder your "Games to Watch" list using an editable input field to ensure your favorite campaigns get the attention they deserve.
+
+### 🎮 UI & UX Improvements
+- **Smarter Game Management**: Adding games is now more intuitive with "smart resolution" that corrects casing automatically, plus new confirmation modals to prevent accidental changes.
+- **Selection Safety**: The "Select All" and "Deselect All" actions are now protected, preventing accidental data loss when managing your watch list.
+- **Enhanced Input**: Added support for the Enter key when adding games and improved visual styling for priority numbers.
+
+### 🐛 Bug Fixes
+- **Special Events Support**: Fixed an issue where Special Events and IRL campaigns weren't being mined correctly.
+- **Channel Logic**: Added "dependency-aware" ignore rules and replaced unwatchable fallback channels to ensure the miner stays focused on active, valid streams.
+- **Data Cleanup**: Added a "Clear All Cache" recovery action and fixed a bug where repeated "no-campaign" logs cluttered the console.
+- **Filtering & Inventory**: Resolved multiple issues regarding inventory synchronization and visibility, ensuring your progress is always accurately tracked.
+
+### 📚 Other Improvements
+- **Performance & Stability**: Updated CI workflows to Node 24 and improved internal data handling for the "wanted drop" queue.
+- **Localization**: Updated translation keys across all 20 supported languages to ensure the new features are accessible to our global community.
+- **Documentation**: Updated contribution guidelines and recognized our wonderful contributors for their hard work on these features!
+
 # Release Notes - v1.2.6
 
 This patch release makes inventory filtering more predictable and keeps version metadata synchronized across source and packaged installations.
