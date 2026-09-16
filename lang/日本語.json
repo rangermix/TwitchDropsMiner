@@ -188,7 +188,9 @@
             "manual_game_warning": "「{game}」は利用可能なキャンペーン一覧にありません。それでも視聴するゲームに追加しますか？",
             "deselect_all_warning": "監視リストからすべてのゲームを削除してもよろしいですか？",
             "confirm_btn": "確認",
-            "cancel_btn": "キャンセル"
+            "cancel_btn": "キャンセル",
+            "game_priority": "{game} の優先順位",
+            "remove_game": "{game} を削除"
         },
         "help": {
             "about": "Twitch Drops Minerについて",

@@ -188,7 +188,9 @@
             "manual_game_warning": "„{game}“ není v seznamu dostupných kampaní. Přesto jej přidat mezi hry ke sledování?",
             "deselect_all_warning": "Opravdu chcete odebrat všechny hry ze svého seznamu sledovaných?",
             "confirm_btn": "Potvrdit",
-            "cancel_btn": "Zrušit"
+            "cancel_btn": "Zrušit",
+            "game_priority": "Priorita hry {game}",
+            "remove_game": "Odebrat {game}"
         },
         "help": {
             "about": "O Twitch Drops Miner",

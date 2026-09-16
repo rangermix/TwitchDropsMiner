@@ -188,7 +188,9 @@
             "manual_game_warning": "\"{game}\" staat niet in de lijst met beschikbare campagnes. Toch toevoegen aan de te bekijken spellen?",
             "deselect_all_warning": "Weet je zeker dat je alle spellen uit je volglijst wilt verwijderen?",
             "confirm_btn": "Bevestigen",
-            "cancel_btn": "Annuleren"
+            "cancel_btn": "Annuleren",
+            "game_priority": "Prioriteit voor {game}",
+            "remove_game": "{game} verwijderen"
         },
         "help": {
             "about": "Over Twitch Drops Miner",

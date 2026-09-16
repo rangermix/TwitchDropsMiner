@@ -188,7 +188,9 @@
             "manual_game_warning": "„{game}” nie znajduje się na liście dostępnych kampanii. Mimo to dodać do gier do oglądania?",
             "deselect_all_warning": "Czy na pewno chcesz usunąć wszystkie gry ze swojej listy obserwowanych?",
             "confirm_btn": "Potwierdź",
-            "cancel_btn": "Anuluj"
+            "cancel_btn": "Anuluj",
+            "game_priority": "Priorytet gry {game}",
+            "remove_game": "Usuń {game}"
         },
         "help": {
             "about": "O Twitch Drops Miner",

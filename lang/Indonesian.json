@@ -188,7 +188,9 @@
             "manual_game_warning": "\"{game}\" tidak ada dalam daftar kampanye yang tersedia. Tetap tambahkan ke game untuk ditonton?",
             "deselect_all_warning": "Apakah Anda yakin ingin menghapus semua game dari daftar pantauan Anda?",
             "confirm_btn": "Konfirmasi",
-            "cancel_btn": "Batal"
+            "cancel_btn": "Batal",
+            "game_priority": "Prioritas untuk {game}",
+            "remove_game": "Hapus {game}"
         },
         "help": {
             "about": "Tentang Twitch Drops Miner",

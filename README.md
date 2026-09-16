@@ -75,6 +75,11 @@ Then open <http://localhost:8080>.
    **Add Game**, and then select **Reload**.
 4. Leave the miner running while it selects eligible channels and tracks drop progress.
 
+In **Games to Watch**, drag games to reorder them or type a priority number to move a
+game directly. Priority 1 is highest; out-of-range numbers are clamped to the list ends.
+Blank or fractional values leave the order unchanged. Priority controls and remove buttons
+use translated labels for screen readers.
+
 Inventory filters combine **Active**, **Upcoming**, and **Expired** as alternatives.
 **Not Linked** narrows that status result, while fully claimed campaigns stay hidden
 until **Finished** is selected. Zero-minute subscription rewards are omitted from the

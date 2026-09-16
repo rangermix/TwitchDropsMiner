@@ -188,7 +188,9 @@
             "manual_game_warning": "«{game}» немає в списку доступних кампаній. Усе одно додати до ігор для перегляду?",
             "deselect_all_warning": "Ви впевнені, що хочете видалити всі ігри зі свого списку відстеження?",
             "confirm_btn": "Підтвердити",
-            "cancel_btn": "Скасувати"
+            "cancel_btn": "Скасувати",
+            "game_priority": "Пріоритет для {game}",
+            "remove_game": "Видалити {game}"
         },
         "help": {
             "about": "Про Twitch Drops Miner",

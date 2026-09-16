@@ -188,7 +188,9 @@
             "manual_game_warning": "可用活动列表中没有“{game}”。仍要将其添加到观看游戏列表吗？",
             "deselect_all_warning": "您确定要从观看列表中移除所有游戏吗？",
             "confirm_btn": "确认",
-            "cancel_btn": "取消"
+            "cancel_btn": "取消",
+            "game_priority": "{game} 的优先级",
+            "remove_game": "移除 {game}"
         },
         "help": {
             "about": "关于 Twitch 掉宝矿工",

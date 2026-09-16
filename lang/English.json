@@ -156,7 +156,9 @@
             "manual_game_warning": "\"{game}\" is not in the available campaign list. Add it to Games to Watch anyway?",
             "deselect_all_warning": "Are you sure you want to remove all games from your watch list?",
             "confirm_btn": "Confirm",
-            "cancel_btn": "Cancel"
+            "cancel_btn": "Cancel",
+            "game_priority": "Priority for {game}",
+            "remove_game": "Remove {game}"
         },
         "help": {
             "about": "About Twitch Drops Miner",

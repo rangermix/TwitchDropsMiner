@@ -156,7 +156,9 @@
             "manual_game_warning": "A(z) „{game}” nem szerepel az elérhető kampányok listáján. Mégis hozzáadod a nézendő játékokhoz?",
             "deselect_all_warning": "Biztosan el akarja távolítani az összes játékot a figyelőlistájáról?",
             "confirm_btn": "Megerősítés",
-            "cancel_btn": "Mégse"
+            "cancel_btn": "Mégse",
+            "game_priority": "{game} prioritása",
+            "remove_game": "{game} eltávolítása"
         },
         "help": {
             "about": "A Twitch Drops Miner-ről",

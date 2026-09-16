@@ -188,7 +188,9 @@
             "manual_game_warning": "\"{game}\" غير موجودة في قائمة الحملات المتاحة. هل تريد إضافتها إلى الألعاب المراد مشاهدتها على أي حال؟",
             "deselect_all_warning": "هل أنت متأكد أنك تريد إزالة جميع الألعاب من قائمة المراقبة الخاصة بك؟",
             "confirm_btn": "تأكيد",
-            "cancel_btn": "إلغاء"
+            "cancel_btn": "إلغاء",
+            "game_priority": "أولوية {game}",
+            "remove_game": "إزالة {game}"
         },
         "help": {
             "about": "حول Twitch Drops Miner",

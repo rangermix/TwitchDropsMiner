@@ -157,6 +157,10 @@ lang/                # Translation JSON files (20 languages)
   unique partial matches resolve to available game names; ambiguous matches do not
   add a game. Confirmations support keyboard focus and Escape. Select All preserves
   priority order and manual entries, and manual confirmation uses current settings.
+- Games to Watch supports drag ordering and editable integer priority numbers. Clamp valid
+  ranks to the list bounds; reject blank/fractional values without changing settings.
+  Keep priority and remove-control labels translated and accessible. Regression tests in
+  `tests/test_game_priority.py` cover order, bounds, invalid inputs, and persistence calls.
 - Connection quality multiplier
 - Language selection
 - Proxy support (including verification)

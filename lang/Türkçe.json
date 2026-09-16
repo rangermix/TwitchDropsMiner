@@ -188,7 +188,9 @@
             "manual_game_warning": "\"{game}\" mevcut kampanyalar listesinde yok. Yine de izlenecek oyunlara eklensin mi?",
             "deselect_all_warning": "İzleme listenizdeki tüm oyunları kaldırmak istediğinize emin misiniz?",
             "confirm_btn": "Onayla",
-            "cancel_btn": "İptal"
+            "cancel_btn": "İptal",
+            "game_priority": "{game} için öncelik",
+            "remove_game": "{game} oyununu kaldır"
         },
         "help": {
             "about": "Twitch Drops Miner Hakkında",

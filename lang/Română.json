@@ -188,7 +188,9 @@
             "manual_game_warning": "„{game}” nu se află în lista campaniilor disponibile. Îl adaugi totuși la jocurile de urmărit?",
             "deselect_all_warning": "Sunteți sigur că doriți să eliminați toate jocurile din lista dvs. de urmărire?",
             "confirm_btn": "Confirmă",
-            "cancel_btn": "Anulează"
+            "cancel_btn": "Anulează",
+            "game_priority": "Prioritate pentru {game}",
+            "remove_game": "Elimină {game}"
         },
         "help": {
             "about": "Despre Twitch Drops Miner",

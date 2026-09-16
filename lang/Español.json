@@ -188,7 +188,9 @@
             "manual_game_warning": "\"{game}\" no está en la lista de campañas disponibles. ¿Añadirlo de todos modos a los juegos para ver?",
             "deselect_all_warning": "¿Estás seguro de que deseas eliminar todos los juegos de tu lista de seguimiento?",
             "confirm_btn": "Confirmar",
-            "cancel_btn": "Cancelar"
+            "cancel_btn": "Cancelar",
+            "game_priority": "Prioridad de {game}",
+            "remove_game": "Eliminar {game}"
         },
         "help": {
             "about": "Acerca de Twitch Drops Miner",

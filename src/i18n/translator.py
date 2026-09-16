@@ -217,6 +217,8 @@ class GUISettings(TypedDict):
     confirm_btn: str
     cancel_btn: str
     selected_games: str
+    game_priority: str
+    remove_game: str
     available_games: str
     no_games_selected: str
     no_games_match: str
