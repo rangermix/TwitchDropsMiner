@@ -115,6 +115,9 @@ and confirm a password (8–1024 characters), then select **Enable password prot
 This password is separate from your Twitch account; no username is needed. Enabling it
 immediately locks out other browsers. Mining continues while the dashboard is locked.
 
+If the login page shows a temporary request error, you can still enter your password
+and select **Log in** to retry without reloading the page.
+
 - Login uses an HttpOnly, SameSite=Strict **session cookie** by default. Select
   **Remember me for 30 days** for a persistent cookie with a fixed 30-day expiry.
   Sessions survive miner restarts, and all sessions have a maximum server lifetime of

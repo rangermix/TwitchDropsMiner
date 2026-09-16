@@ -102,6 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const refresh = reconnect => dashboardAuth.refresh(reconnect).catch(() => {
         const result = document.getElementById('web-auth-result');
         if (result) result.textContent = dashboardAuth.translations.request_failed || 'Request failed. Try again.';
+        if (login && !dashboardAuth.busy) {
+            login.querySelectorAll('button').forEach(button => { button.disabled = false; });
+        }
     });
     refresh(false);
     if (typeof socket !== 'undefined') {

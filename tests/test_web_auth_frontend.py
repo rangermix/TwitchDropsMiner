@@ -112,6 +112,59 @@ def test_network_error_and_double_submit():
     """)
 
 
+@pytest.mark.parametrize("response", [
+    "async () => {throw new Error('network failure');}",
+    "async () => ({ok: false, status: 503})",
+    "async () => ({ok: true, status: 200, json: async () => {throw new SyntaxError('invalid JSON');}})",
+], ids=["network", "http-503", "invalid-json"])
+def test_initial_status_failure_allows_login_without_reloading(response):
+    run("responder = " + response + ";" + r"""
+        dashboardAuth.translations = {};
+        const submit = elements.get('submit');
+        submit.disabled = true;
+        let submitLogin;
+        element('web-auth-login', {
+            querySelectorAll: () => [submit],
+            addEventListener: (event, handler) => {if (event === 'submit') submitLogin = handler;}
+        });
+        const password = element('web-auth-password', {value: 'test password', password: true});
+        element('web-auth-remember', {checked: false});
+        events.get('DOMContentLoaded')();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(requests[0].input, '/api/auth/status');
+        assert.equal(elements.get('web-auth-result').textContent, 'Request failed. Try again.');
+        assert.equal(submit.disabled, false);
+        assert.deepEqual(redirects, []);
+
+        responder = async () => ({ok: true, status: 200, json: async () => ({success: true})});
+        let prevented = false;
+        submitLogin({preventDefault: () => {prevented = true;}});
+        assert.equal(prevented, true);
+        assert.equal(submit.disabled, true);
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(requests.length, 2);
+        assert.equal(requests[1].input, '/api/auth/login');
+        assert.deepEqual(JSON.parse(requests[1].options.body), {password: 'test password', remember: false});
+        assert.equal(requests[1].options.headers.get('X-TDM-Request'), '1');
+        assert.equal(password.value, '');
+        assert.equal(elements.get('web-auth-result').textContent, '');
+        assert.deepEqual(redirects, ['/']);
+    """)
+
+
+def test_initial_status_failure_keeps_settings_disabled():
+    run(r"""
+        responder = async () => {throw new Error('network failure');};
+        element('web-auth-settings');
+        elements.get('submit').disabled = true;
+        events.get('DOMContentLoaded')();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(elements.get('submit').disabled, true);
+        assert.equal(elements.get('web-auth-result').textContent, dashboardAuth.translations.request_failed);
+        assert.deepEqual(redirects, []);
+    """)
+
+
 def test_logout_error_is_visible_outside_settings():
     run(r"""
         const result = element('web-auth-logout-result');

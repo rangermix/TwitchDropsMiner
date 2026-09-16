@@ -239,6 +239,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   sessions, and schedules idle connections to close at expiry. Enabling auth must evict
   already connected anonymous clients before subsequent private broadcasts.
 - `web/static/auth.js` owns login/settings behavior and adds the same-origin write header.
+  A failed initial auth-status request must leave login available for retry without a
+  reload; settings controls stay disabled until auth state is known.
   Keep all UI strings in `gui.auth` across all locales and render them using textContent.
   Local auth assets use the release version cache key; bump through the release workflow
   before deploying changes to existing auth assets, as with app.js and styles.css.
