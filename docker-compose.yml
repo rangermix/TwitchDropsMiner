@@ -12,4 +12,5 @@ services:
     environment:
       # Set timezone (optional, defaults to UTC)
       - TZ=Australia/Sydney
+      - FORWARDED_ALLOW_IPS=*
     restart: unless-stopped
