@@ -247,7 +247,15 @@ progress to an ignored drop while the miner intentionally targets another reward
 - Access tokens stored in `cookies.jar` in DATA_DIR
 - Device ID from Twitch's `unique_id` cookie
 - Session ID generated per run
-- Client info defined in `src/config/client_info.py` (presents as Android app with Client-Id and User-Agent spoofing)
+- Client info defined in `src/config/client_info.py`; `Twitch` defaults to `ClientType.SMARTBOX`
+  for OAuth, HTTP, and GraphQL. Twitch rejects the former Android app device-code client.
+- Keep `Channel.url` on `ClientType.WEB.CLIENT_URL`: the Smart TV app shell lacks the
+  beacon/settings fields required by `get_spade_url()` and would prevent watch events.
+- Existing Android sessions may require one new device authorization. Tests in
+  `tests/test_twitch_auth.py` cover fresh login, token polling, expired tokens, old-cookie
+  migration, consistent client IDs, and restart persistence using temporary cookie jars.
+  `tests/test_spade_discovery.py` covers both beacon-discovery formats through actual
+  `send_watch()` calls with mocked responses; these tests do not prove live drop progress.
 
 ### Dashboard authentication
 

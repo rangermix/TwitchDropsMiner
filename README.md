@@ -78,6 +78,12 @@ Then open <http://localhost:8080>.
    **Add Game**, and then select **Reload**.
 4. Leave the miner running while it selects eligible channels and tracks drop progress.
 
+Twitch login uses the Smart TV device authorization flow. This fixes the
+`KeyError: 'device_code'` startup failure caused by Twitch rejecting the Android app
+client. After upgrading from 1.3.0 or earlier, you may need to authorize the miner
+once more at `twitch.tv/activate`; the new session is saved for later runs. Channel
+pages still use the public Twitch website to discover the watch-event endpoint.
+
 In **Games to Watch**, drag games to reorder them or type a priority number to move a
 game directly. Priority 1 is highest; out-of-range numbers are clamped to the list ends.
 Blank or fractional values leave the order unchanged. Priority controls and remove buttons
