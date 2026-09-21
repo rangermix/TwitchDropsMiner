@@ -1,3 +1,17 @@
+# Release Notes - v1.3.1
+
+Fixes the `KeyError: 'device_code'` crash during fresh Twitch login by using the
+Smart TV device authorization client. Existing users may need to authorize the
+miner once again at `twitch.tv/activate`; subsequent runs reuse the saved session.
+
+Channel pages continue to use the public Twitch website so the client change does
+not break watch-event endpoint discovery. Regression tests cover login, cookie
+migration and restoration, and beacon discovery through watch-event submission.
+
+Resolves [#109](https://github.com/rangermix/TwitchDropsMiner/issues/109) through
+[#110](https://github.com/rangermix/TwitchDropsMiner/pull/110), with thanks to
+[@3lb0z0](https://github.com/3lb0z0) for the client fix.
+
 # Release Notes - v1.3.0
 
 This update brings a massive quality-of-life boost to Twitch Drops Miner, introducing a new drop history tracker, Telegram notifications, and enhanced security features. We've also streamlined the UI to make managing your watch list easier and more reliable than ever.
