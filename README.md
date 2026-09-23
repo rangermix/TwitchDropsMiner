@@ -150,9 +150,26 @@ and select **Log in** to retry without reloading the page.
   writes and Socket.IO connections are rejected.
 
 **Remote access:** use HTTPS through a reverse proxy to encrypt passwords and cookies.
-Cookies receive the Secure flag over HTTPS. Preserve the original Host header and configure
-Uvicorn to trust forwarded protocol/IP headers **only from your proxy** (for example via
-`FORWARDED_ALLOW_IPS`). A proxy that hides client IPs shares the per-IP login limit.
+Set the miner's `PUBLIC_BASE_URL` environment variable to the exact address you open in
+your browser, for example `PUBLIC_BASE_URL=https://drops.example.com`. The included
+Compose file has a commented example; uncomment it, replace the hostname, and recreate
+the container with `docker compose up -d --build` after updating the source.
+
+The setting accepts one absolute `http://` or `https://` root URL with an optional port
+and trailing slash. Credentials, subpaths, query strings, fragments, wildcard hosts, and
+multiple URLs are rejected at startup. It controls the allowed origin for API writes and
+Socket.IO connections, and HTTPS public URLs give session cookies the Secure flag even
+when the proxy connects to the miner over HTTP or rewrites Host. Continue opening the
+dashboard at that configured URL; browser writes/connections from another address are
+rejected. It does not provide TLS or add support for hosting under a subpath.
+
+Leaving `PUBLIC_BASE_URL` unset or empty keeps request-derived origin and cookie behavior.
+For that setup, preserve the original Host header and configure Uvicorn to trust forwarded
+protocol/IP headers **only from your proxy**, for example with `FORWARDED_ALLOW_IPS` set to
+its exact IP or dedicated proxy subnet. Do not use `*` as a default. `PUBLIC_BASE_URL` does
+not trust forwarded headers or restore client IPs: a proxy that hides them shares the
+per-IP login limit unless client-IP forwarding is separately configured with trusted peers.
+Keep `X-TDM-Request: 1` on API writes; Socket.IO does not require that marker.
 Configure protection on a trusted network before making the dashboard publicly reachable.
 Run one miner process per data directory.
 

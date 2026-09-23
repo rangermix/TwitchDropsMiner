@@ -266,8 +266,17 @@ progress to an ignored drop while the miner intentionally targets another reward
   logs, or cache operations. Use one miner process per data directory.
 - `AuthMiddleware` guards FastAPI and the outer Socket.IO ASGI app. Only login resources,
   auth status, and `/healthz` are public when enabled. Unsafe HTTP requests require
-  `X-TDM-Request: 1`; writes and Socket.IO reject foreign origins. Forwarded headers must
-  only be trusted from configured reverse proxies; HTTPS enables Secure cookies.
+  `X-TDM-Request: 1`; writes and Socket.IO reject foreign origins. `DashboardOrigin` in
+  `src/web/origin.py` owns the optional `PUBLIC_BASE_URL` startup configuration: one
+  absolute HTTP(S) root URL supplies the allowed browser origin and cookie scheme even
+  behind an HTTP backend or rewritten Host. Normalize host/scheme/default ports; reject
+  credentials, paths, queries, fragments, wildcard/list origins, and malformed values
+  without echoing them. Unset/empty preserves request-derived behavior. This configuration
+  must not change ASGI scheme/client or trust forwarded headers; client-IP forwarding
+  still requires explicit trusted proxies. HTTPS public URLs enable Secure cookies on
+  set and delete. Preserve CSRF, Fetch Metadata, session/revocation, and rate-limit checks.
+  `tests/test_web_public_url.py` covers both Socket.IO transports, production environment
+  wiring, cookie lifecycles, hostile origins, and separate proxy-IP trust.
 - Default cookies are HttpOnly, SameSite=Strict session cookies. Remember me adds a fixed
   30-day Max-Age; server sessions also expire after 30 days and survive restarts. Logout
   revokes the current session; password changes require the current password and revoke
