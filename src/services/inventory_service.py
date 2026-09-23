@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any
 
@@ -19,6 +20,7 @@ from src.config import GQL_OPERATIONS
 from src.exceptions import ExitRequest
 from src.i18n import _
 from src.models import DropsCampaign
+from src.services.catalog import PublicCatalog
 from src.utils import chunk
 
 
@@ -50,6 +52,8 @@ class InventoryService:
             twitch: The Twitch client instance
         """
         self._twitch = twitch
+        catalog_url = os.environ.get("TDM_CATALOG_URL", "")
+        self._catalog = PublicCatalog(catalog_url) if catalog_url else None
 
     def _clear_inventory_state(self) -> None:
         """Clear derived campaign and drop state before replacing inventory."""
@@ -111,10 +115,24 @@ class InventoryService:
             response_list_raw if isinstance(response_list_raw, list) else [response_list_raw]
         )
 
-        fetched_data: dict[str, JsonType] = {
-            (campaign_data := response_json["data"]["user"]["dropCampaign"])["id"]: campaign_data
-            for response_json in response_list
-        }
+        fetched_data: dict[str, JsonType] = {}
+        for response_json in response_list:
+            data = response_json.get("data")
+            user = data.get("user") if isinstance(data, dict) else None
+            campaign_data = user.get("dropCampaign") if isinstance(user, dict) else None
+            if campaign_data is not None:
+                fetched_data[campaign_data["id"]] = campaign_data
+
+        if self._catalog is not None and len(fetched_data) < len(campaign_ids):
+            missing_ids = campaign_ids.keys() - fetched_data.keys()
+            catalog_campaigns = await self._catalog.campaigns()
+            filled_data = {
+                campaign["id"]: campaign
+                for campaign in catalog_campaigns
+                if campaign["id"] in missing_ids
+            }
+            fetched_data.update(filled_data)
+            logger.info("Filled %d campaigns from public catalog", len(filled_data))
 
         return GQLClient.merge_data(campaign_ids, fetched_data)
 
@@ -148,6 +166,9 @@ class InventoryService:
         # fetch general available campaigns data (campaigns)
         response = await self._twitch.gql_request(GQL_OPERATIONS["Campaigns"])
         available_list: list[JsonType] = response["data"]["currentUser"]["dropCampaigns"] or []
+        if not available_list and self._catalog is not None:
+            available_list = await self._catalog.campaigns()
+            logger.info("Twitch returned no campaigns; using public catalog (%d)", len(available_list))
         applicable_statuses = ("ACTIVE", "UPCOMING")
         available_campaigns: dict[str, JsonType] = {
             c["id"]: c
