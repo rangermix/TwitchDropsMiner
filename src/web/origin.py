@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import re
+from ipaddress import IPv4Address
 from urllib.parse import urlsplit
 
+from pydantic import AnyHttpUrl
 from starlette.requests import HTTPConnection
-from yarl import URL
 
 
 class DashboardOrigin:
@@ -20,7 +21,8 @@ class DashboardOrigin:
             if any(char.isspace() or ord(char) < 32 or char in "\\%?#" for char in value):
                 raise ValueError
             parts = urlsplit(value)
-            url = URL(value)
+            # Use browser-compatible serialization, including mapped IPv6 and IDNA.
+            url = AnyHttpUrl(value)
             if (
                 parts.scheme not in ("http", "https")
                 or not parts.netloc
@@ -28,14 +30,18 @@ class DashboardOrigin:
                 or parts.username is not None
                 or parts.password is not None
                 or not re.fullmatch(r"(?:\[[0-9a-fA-F:.]+\]|[^:\[\]]+)(?::[0-9]+)?", parts.netloc)
-                or not url.raw_host
+                or not url.host
                 or parts.netloc.endswith(":")
                 or url.port is None
                 or not 1 <= url.port <= 65535
-                or (":" not in url.raw_host and not re.fullmatch(r"[a-z0-9_.-]+", url.raw_host))
+                or (":" not in url.host and not re.fullmatch(r"[a-z0-9_.-]+", url.host))
             ):
                 raise ValueError
-            return str(url.origin())
+            host = parts.hostname or ""
+            if ":" not in host and re.fullmatch(r"[0-9]+|0x[0-9a-f]*", host.removesuffix(".").rsplit(".", 1)[-1]):
+                # Require dotted decimal instead of legacy short/octal/hex IPv4 forms.
+                IPv4Address(host.removesuffix("."))
+            return str(url).removesuffix("/")
         except (ValueError, UnicodeError):
             # The supplied URL could contain accidentally pasted credentials.
             raise ValueError(

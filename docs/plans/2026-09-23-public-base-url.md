@@ -40,6 +40,12 @@ This does not add subpath hosting, TLS termination, or multiple public origins.
 
 ## Proof boundary
 
+Independent review identified browser/yarl differences for mapped IPv6 and legacy IPv4
+forms. Added failing regressions, normalized IPv6 and trailing-dot IPv4 to browser
+serialization, and rejected ambiguous legacy IPv4 forms. Use the existing Pydantic
+URL parser for browser-compatible serialization and Unicode hostname validation,
+preventing legacy fallback from silently stripping invalid joiners. Recheck the final commit.
+
 Tests and browser checks use local temporary state and simulated Twitch login data.
 They establish dashboard connectivity/authentication behavior, not live Twitch mining
 or deployment on the reporter's server. The public URL does not restore client IPs;

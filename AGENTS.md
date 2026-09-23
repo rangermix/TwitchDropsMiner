@@ -269,7 +269,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   `X-TDM-Request: 1`; writes and Socket.IO reject foreign origins. `DashboardOrigin` in
   `src/web/origin.py` owns the optional `PUBLIC_BASE_URL` startup configuration: one
   absolute HTTP(S) root URL supplies the allowed browser origin and cookie scheme even
-  behind an HTTP backend or rewritten Host. Normalize host/scheme/default ports; reject
+  behind an HTTP backend or rewritten Host. Normalize host/scheme/default ports and IP
+  serialization to browser origins; reject ambiguous short/octal/hex IPv4 forms and
   credentials, paths, queries, fragments, wildcard/list origins, and malformed values
   without echoing them. Unset/empty preserves request-derived behavior. This configuration
   must not change ASGI scheme/client or trust forwarded headers; client-IP forwarding

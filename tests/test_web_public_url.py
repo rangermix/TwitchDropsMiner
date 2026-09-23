@@ -55,7 +55,10 @@ def public_client(tmp_path, monkeypatch):
     ("http://localhost:80/", "http://localhost"),
     ("https://drops.example.com:8443/", "https://drops.example.com:8443"),
     ("http://192.168.1.2:8080", "http://192.168.1.2:8080"),
+    ("http://192.168.1.2.:8080/", "http://192.168.1.2:8080"),
     ("https://[2001:db8::1]:8443/", "https://[2001:db8::1]:8443"),
+    ("https://[2001:0DB8:0:0:0:0:0:1]/", "https://[2001:db8::1]"),
+    ("https://[::ffff:192.0.2.1]/", "https://[::ffff:c000:201]"),
     ("https://münich.example/", "https://xn--mnich-kva.example"),
 ])
 def test_public_origin_normalization(value, expected):
@@ -78,6 +81,9 @@ def test_public_origin_normalization(value, expected):
     " https://drops.example.com", "https://drops.example.com\n", "https://drop\ts.example.com",
     "https://drops.example.com\x00", "https://drops.example.com\\evil", "https://drops%2eexample.com",
     "https://drops.example.com/%2e",
+    "http://127.1", "http://0177.0.0.1", "http://0x7f.0.0.1", "http://2130706433",
+    "http://1.2.3.256", "http://example.123", "http://0x7f000001", "http://1.2.3.0x",
+    "https://a\u200cb.example", "https://a\u200db.example",
 ])
 def test_invalid_public_url_fails_closed_without_echoing_value(value, tmp_path):
     with pytest.raises(ValueError, match="^PUBLIC_BASE_URL must be") as error:
@@ -195,6 +201,18 @@ def test_unset_public_url_still_requires_trusted_proxy_for_https_origin(public_c
         assert client.get(POLLING, headers={"X-Forwarded-Proto": "https"}).status_code == 403
     with public_client(url="", base_url="http://drops.example.com", trusted_hosts="172.19.0.9") as client:
         assert client.get(POLLING, headers={"X-Forwarded-Proto": "https"}).status_code == 200
+
+
+@pytest.mark.parametrize("public,serialized", [
+    ("https://[::ffff:192.0.2.1]", "https://[::ffff:c000:201]"),
+    ("http://192.0.2.1.", "http://192.0.2.1"),
+])
+def test_browser_serialized_ip_origins_can_connect_and_write(public_client, public, serialized):
+    with public_client(url=public, origin=serialized) as client:
+        assert client.get(POLLING).status_code == 200
+        with client.websocket_connect(WEBSOCKET, headers={"Upgrade": "websocket"}) as connection:
+            assert connection.receive_text().startswith("0")
+        assert client.post("/api/auth/settings", json=SETUP).status_code == 200
 
 
 def test_invalid_environment_stops_application_construction(tmp_path):

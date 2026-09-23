@@ -157,8 +157,10 @@ the container with `docker compose up -d --build` after updating the source.
 
 The setting accepts one absolute `http://` or `https://` root URL with an optional port
 and trailing slash. Credentials, subpaths, query strings, fragments, wildcard hosts, and
-multiple URLs are rejected at startup. It controls the allowed origin for API writes and
-Socket.IO connections, and HTTPS public URLs give session cookies the Secure flag even
+multiple URLs are rejected at startup. Use a hostname, dotted-decimal IPv4 address, or
+bracketed IPv6 address; legacy short/octal/hexadecimal IPv4 forms are rejected. The setting
+controls the allowed origin for API writes and Socket.IO connections. HTTPS public URLs
+give session cookies the Secure flag even
 when the proxy connects to the miner over HTTP or rewrites Host. Continue opening the
 dashboard at that configured URL; browser writes/connections from another address are
 rejected. It does not provide TLS or add support for hosting under a subpath.
