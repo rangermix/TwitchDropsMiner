@@ -1,3 +1,19 @@
+# Release Notes - v1.3.2
+
+Fixes dashboard connections behind HTTPS reverse proxies with the optional
+`PUBLIC_BASE_URL=https://drops.example.com` environment setting. API writes and both
+Socket.IO transports validate against that public origin, and HTTPS public URLs set
+Secure session cookies even when the backend connection is HTTP or Host is rewritten.
+
+The README and Compose example document configuration and unchanged behavior when the
+setting is absent. Existing CSRF and session checks remain enforced. This setting does
+not enable forwarded-header trust or change client-IP rate limiting; trusting a proxy
+for client IPs remains a separate, explicitly scoped configuration.
+
+Addresses [#106](https://github.com/rangermix/TwitchDropsMiner/issues/106). The missing
+Twitch login prompt in that report followed a rejected live dashboard connection;
+Socket.IO does not require the `X-TDM-Request` header used for ordinary API writes.
+
 # Release Notes - v1.3.1
 
 Fixes the `KeyError: 'device_code'` crash during fresh Twitch login by using the
