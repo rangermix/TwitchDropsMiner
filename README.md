@@ -31,6 +31,8 @@ dashboard. It sends Twitch watch events without downloading the stream itself.
 - **Headless deployment** — runs locally, remotely, or in Docker without a desktop GUI
 - **Safe rendering** — builds dynamic translated content with DOM APIs instead of raw HTML
 
+**Campaign catalog fallback:** If Twitch returns no campaign catalog, set `TDM_CATALOG_URL` to read campaign metadata from a public mirror instead. Watch progress still comes from Twitch. This opt-in feature is off when the variable is unset and adds a third-party dependency.
+
 ## Quick start
 
 ### Docker (recommended)

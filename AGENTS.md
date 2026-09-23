@@ -309,6 +309,8 @@ Persisted operations are defined in `src/config/operations.py` as `GQL_OPERATION
 - **AvailableDrops** - Check which campaigns a channel qualifies for (badge validation)
 - **NotificationsDelete** - Delete Twitch notifications
 
+On some hosting IPs, Twitch's integrity check can gate `ViewerDropsDashboard` and `DropCampaignDetails`, returning `dropCampaigns: null` and `dropCampaign: null`, respectively. When `TDM_CATALOG_URL` is set, `src/services/catalog.py` (`PublicCatalog`) supplies campaign metadata as a fallback; watch progress still comes from Twitch. The mirror omits the per-account `self` edge and `allow.channels` when no participating-channel list exists. `catalog.py` normalises both fields at the boundary.
+
 ### Channel Selection Priority
 
 1. Selected channel (if user clicked one)
@@ -379,6 +381,7 @@ login_text = _.t["login"]["status"]["logged_in"]  # Returns "Logged in"
 - **src/config/client_info.py** - Twitch client info (Client-Id, User-Agent)
 - **src/config/settings.py** - Application settings with JSON persistence
 - **src/exceptions.py** - Custom exceptions (MinerException, ExitRequest, RequestException, RequestInvalid, WebsocketClosed, LoginException, CaptchaRequired, GQLException)
+- **src/services/catalog.py** - Public campaign-catalog mirror fallback and boundary shape normalization
 - **src/drop_history.py** - Claimed-drop history store (`DropHistory`) with atomic JSON
   persistence, filtering, stats, and CSV export; recorded on every successful drop claim
 - **src/utils/** - Helper utilities (string_utils, json_utils, async_helpers, rate_limiter, backoff)

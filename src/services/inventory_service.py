@@ -186,6 +186,12 @@ class InventoryService:
         try:
             for coro in asyncio.as_completed(fetch_campaigns_tasks):
                 chunk_campaigns_data = await coro
+                # Twitch's own in-progress entry is authoritative, and a fallback
+                # catalog can describe that same campaign with a different shape
+                # (e.g. allow.channels null vs []). merge_data raises on any such
+                # type clash, so keep Twitch's entry and drop the duplicate.
+                for campaign_id in inventory_data.keys() & chunk_campaigns_data.keys():
+                    del chunk_campaigns_data[campaign_id]
                 # merge the inventory and campaigns datas together
                 inventory_data = GQLClient.merge_data(inventory_data, chunk_campaigns_data)
         except Exception:

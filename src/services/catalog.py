@@ -62,11 +62,13 @@ class PublicCatalog:
                     reward.setdefault("self", {"isAccountConnected": True})
                     # The mirror omits `channels` on campaigns that have no
                     # participating-channel list; the campaign model indexes it
-                    # directly, so normalise the field here.
+                    # directly, so normalise the field here. Twitch itself sends
+                    # null (not an empty list) for that case, and the two shapes
+                    # collide in GQLClient.merge_data, so match Twitch.
                     allow = reward.get("allow")
                     if not isinstance(allow, dict):
                         allow = {}
-                    allow.setdefault("channels", [])
+                    allow.setdefault("channels", None)
                     allow.setdefault("isEnabled", True)
                     reward["allow"] = allow
                     campaigns.append(reward)
