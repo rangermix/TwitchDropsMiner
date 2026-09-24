@@ -312,6 +312,21 @@ progress to an ignored drop while the miner intentionally targets another reward
   renewal, imported-session mining, or another network. See
   `docs/notes/2026-09-24-browser-session-portability.md`. Preserve the WEB client identity
   and keep existing Android credentials separate in any future import implementation.
+- Follow-up fresh-login probes also failed in Camoufox 152.0.4 beta.28, Chrome 153 with
+  Puppeteer-Stealth 2.11.2, and Browserless 2.56.7 Chrome with `launch.stealth=true`.
+  Browserless used AMD64 emulation; the others used ARM64 containers. All reported
+  `navigator.webdriver` false and no authenticated cookie. Do not present generic
+  stealth support as verified Twitch compatibility or infer a single detection cause.
+- A fresh authenticated `gql.twitch.tv/integrity` response advertised about 3600 seconds
+  of validity; an in-memory comparison matched its token to the `Client-Integrity` header
+  on a successful authenticated request returning 126 campaigns. This measures one
+  working issued context, not expiry enforcement or a universal
+  lifetime; anonymous/login-page context can differ. Cookie expiry and OAuth
+  `expires_in: 0` do not establish the lifetime of an exported working bundle. Any future
+  import needs renewal/reconnect handling. Twitch login GET returns `X-Frame-Options:
+  SAMEORIGIN`; TDM cannot read Twitch credentials through an iframe or ordinary popup.
+  Use an explicit local-helper/extension design for export, and keep raw credentials,
+  network bodies, and account identifiers out of reports. Import remains unimplemented.
 - Browser login UI text is in `gui.login.browser_prompt`, `browser_desktop_prompt`, and
   `browser_open` in every locale,
   with HTTP(S)-only viewer links and safe DOM text. Reconnecting dashboards receive the

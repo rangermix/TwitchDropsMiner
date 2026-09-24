@@ -109,13 +109,27 @@ login remains unresolved. Restarting both the dedicated Chrome instance and the 
 restored login and resumed watching without another sign-in. See
 [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118) for current results.
 
+Further fresh-login tests in Docker also failed with the same unsupported-browser message:
+Camoufox 152.0.4 beta.28 (`docker-stealthy-auto-browse`), Chrome 153 with Puppeteer-Stealth,
+and Browserless 2.56.7 Chrome 153 with its built-in `stealth` launch option. Browserless
+ran under AMD64 emulation; the other two used ARM64 containers. All three reported
+`navigator.webdriver` false and produced no authenticated cookie. These results cover
+the tested configurations on one home network, not every browser or fingerprint setup.
+
 A separate session-transfer experiment copied Twitch cookies from the working desktop
 profile into Docker Chrome. Identity and inventory succeeded, but campaign access still
 failed Twitch's integrity check. Reusing the desktop browser's complete matching request
 context instead returned inventory and 126 campaigns through both Docker Chrome and a
 plain Python HTTP client inside Docker. This is evidence for a possible local-login/import
 option, not an implemented feature: context renewal, operation on another network, and
-mining through an imported session remain unverified. See the
+mining through an imported session remain unverified. A fresh authenticated GraphQL
+integrity response advertised about **one hour** of validity; the login cookie's much
+longer lifetime does not extend that context. The issued token matched a successful
+authenticated request returning 126 campaigns. An export needs renewal, with actual
+expiry enforcement and unattended renewal still untested. Twitch's login page returns
+`X-Frame-Options: SAMEORIGIN`, and browser origin isolation prevents a TDM page from
+reading Twitch cookies or storage. Automatic export would need a local helper or an
+explicitly permitted browser extension, rather than a login iframe. See the
 [session portability investigation](docs/notes/2026-09-24-browser-session-portability.md).
 The current browser integration still requires its browser to remain running.
 
