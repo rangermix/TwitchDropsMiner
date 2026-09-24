@@ -14,6 +14,13 @@ Twitch Drops Miner is a low-bandwidth, headless application that discovers eligi
 campaigns, selects an appropriate live channel, and tracks drop progress from a web
 dashboard. It sends Twitch watch events without downloading the stream itself.
 
+> [!IMPORTANT]
+> **This is a hobby project for personal use on your own hardware and home network.**
+> Support is limited to that setup. VPS, cloud, and other third-party hosting environments,
+> as well as services operated for other users, are outside the project's support scope.
+> Maintenance and support are provided on a best-effort basis; continued compatibility
+> with Twitch is not guaranteed.
+
 ![Twitch Drops Miner web dashboard showing campaign progress, output, and channels](./screenshot.png)
 
 ## Features
@@ -28,7 +35,7 @@ dashboard. It sends Twitch watch events without downloading the stream itself.
 - **Drop history** — records every claimed drop locally (date, game, campaign, rewards)
   with a filterable **History** tab, aggregated stats, and one-click **Export CSV**
 - **Telegram notifications** — sends an alert when a drop is claimed, including claims found during startup and inventory refresh
-- **Headless deployment** — runs locally, remotely, or in Docker without a desktop GUI
+- **Headless deployment** — runs on your own home hardware, including Docker, without a desktop GUI
 - **Safe rendering** — builds dynamic translated content with DOM APIs instead of raw HTML
 
 ## Quick start
@@ -149,7 +156,7 @@ and select **Log in** to retry without reloading the page.
   API writes require `X-TDM-Request: 1`; browser clients send it automatically. Cross-origin
   writes and Socket.IO connections are rejected.
 
-**Remote access:** use HTTPS through a reverse proxy to encrypt passwords and cookies.
+**Remote access to your home-hosted instance:** use HTTPS through a reverse proxy to encrypt passwords and cookies.
 Set the miner's `PUBLIC_BASE_URL` environment variable to the exact address you open in
 your browser, for example `PUBLIC_BASE_URL=https://drops.example.com`. The included
 Compose file has a commented example; uncomment it, replace the hostname, and recreate
