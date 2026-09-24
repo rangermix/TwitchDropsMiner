@@ -1978,6 +1978,7 @@ async function fetchAndApplyTranslations() {
 }
 
 function applyTranslations(t) {
+    globalThis.sessionImportPanel?.render();
     translateHistory();
     // Update tab buttons
     const tabButtons = {

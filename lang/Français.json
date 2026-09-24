@@ -306,6 +306,18 @@
             "cleared": "Historique effacé.",
             "clear_error": "Impossible d’effacer l’historique : {error}",
             "stats_error": "Impossible de charger les statistiques : {error}"
+        },
+        "session_import": {
+            "title": "Importer une session du navigateur",
+            "prompt": "Exportez une session avec l’assistant local du navigateur, puis envoyez le fichier JSON ici.",
+            "file": "Fichier de session",
+            "button": "Importer la session",
+            "auth_required": "Activez la protection du tableau de bord par mot de passe dans les paramètres avant l’importation.",
+            "checking": "Vérification de la session…",
+            "ready": "Session vérifiée. Valide jusqu’au {expiry}.",
+            "waiting": "En attente d’une nouvelle session du navigateur.",
+            "expired": "Session expirée. Importez une nouvelle session pour continuer.",
+            "error": "Échec de l’importation ({code})."
         }
     }
 }

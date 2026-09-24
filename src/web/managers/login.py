@@ -39,6 +39,7 @@ class LoginFormManager:
         self._user_id: int | None = None
         self._browser_url: str | None = None
         self._browser_desktop = False
+        self._import_pending = False
         self._oauth_pending: dict[str, str] | None = (
             None  # Store OAuth code for late-connecting clients
         )
@@ -119,9 +120,22 @@ class LoginFormManager:
         """
         result: dict[str, Any] = {"status": self._status, "user_id": self._user_id}
         result["browser_url"] = self._browser_url
+        if self._import_pending:
+            result["import_pending"] = True
         if self._browser_desktop:
             result["browser_desktop"] = True
         # Include OAuth code if pending
         if self._oauth_pending:
             result["oauth_pending"] = self._oauth_pending
         return result
+
+    async def import_pending(self, pending: bool) -> None:
+        """Keep only a waiting flag in dashboard broadcasts, never the bundle."""
+        if self._import_pending == pending:
+            return
+        self._import_pending = pending
+        if pending:
+            self._oauth_pending = None
+            self._status = _.t["login"]["status"]["required"]
+            self._user_id = None
+        await self._broadcaster.emit("login_status", self.get_status())

@@ -347,20 +347,7 @@ fetch(url, {method: body === null ? 'GET' : 'POST', headers,
                 raise browser_error("IDENTITY") from None
             self._token = token
             results = await self.gql([GQL_OPERATIONS["Inventory"], GQL_OPERATIONS["Campaigns"]])
-            try:
-                inventory = results[0]["data"]["currentUser"]["inventory"]
-                campaigns = results[1]["data"]["currentUser"]["dropCampaigns"]
-                if (
-                    any(item.get("errors") for item in results)
-                    or not isinstance(inventory, dict)
-                    or not isinstance(inventory.get("gameEventDrops"), list)
-                    or "dropCampaignsInProgress" not in inventory
-                    or not isinstance(inventory.get("dropCampaignsInProgress"), (list, type(None)))
-                    or not isinstance(campaigns, list)
-                ):
-                    raise ValueError
-            except (IndexError, KeyError, TypeError, ValueError):
-                raise browser_error("CATALOG") from None
+            self.campaign_count(results)
             user_agent = await self._command(
                 "POST",
                 self._path("/execute/sync"),
@@ -378,6 +365,27 @@ fetch(url, {method: body === null ? 'GET' : 'POST', headers,
             raise
         finally:
             await login.browser_pending(None)
+
+    @staticmethod
+    def campaign_count(results: Any) -> int:
+        """Validate both catalog operations without inferring account eligibility."""
+        try:
+            if not isinstance(results, list) or len(results) != 2:
+                raise ValueError
+            inventory = results[0]["data"]["currentUser"]["inventory"]
+            campaigns = results[1]["data"]["currentUser"]["dropCampaigns"]
+            if (
+                any(item.get("errors") for item in results)
+                or not isinstance(inventory, dict)
+                or not isinstance(inventory.get("gameEventDrops"), list)
+                or "dropCampaignsInProgress" not in inventory
+                or not isinstance(inventory.get("dropCampaignsInProgress"), (list, type(None)))
+                or not isinstance(campaigns, list)
+            ):
+                raise ValueError
+            return len(campaigns)
+        except (IndexError, KeyError, TypeError, ValueError, AttributeError):
+            raise browser_error("CATALOG") from None
 
     async def _wait_for_token(self) -> str:
         previous_token = ""

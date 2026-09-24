@@ -306,6 +306,18 @@
             "cleared": "Historia wyczyszczona.",
             "clear_error": "Nie udało się wyczyścić historii: {error}",
             "stats_error": "Nie udało się załadować statystyk: {error}"
+        },
+        "session_import": {
+            "title": "Importuj sesję przeglądarki",
+            "prompt": "Wyeksportuj sesję lokalnym narzędziem przeglądarki, a następnie prześlij tutaj plik JSON.",
+            "file": "Plik sesji",
+            "button": "Importuj sesję",
+            "auth_required": "Przed importem włącz ochronę panelu hasłem w Ustawieniach.",
+            "checking": "Sprawdzanie sesji…",
+            "ready": "Sesja zweryfikowana. Ważna do {expiry}.",
+            "waiting": "Oczekiwanie na nową sesję przeglądarki.",
+            "expired": "Sesja wygasła. Zaimportuj nową sesję, aby kontynuować.",
+            "error": "Import nie powiódł się ({code})."
         }
     }
 }

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from collections import OrderedDict, abc, deque
 from datetime import datetime, timedelta, timezone
 from functools import partial
@@ -13,6 +14,8 @@ import aiohttp
 from src.api import GQLClient, HTTPClient
 from src.auth import _AuthState
 from src.auth.browser_session import BrowserConfig, BrowserSession
+from src.auth.imported_session import ImportedSession, SessionTransport
+from src.auth.session_bundle import SessionError
 from src.config import (
     MAX_CHANNELS,
     ClientType,
@@ -71,10 +74,19 @@ class Twitch:
         # Client type and auth
         self._client_type: ClientInfo = ClientType.ANDROID_APP
         browser_config = BrowserConfig.from_env()
-        self._browser = (
+        import_mode = os.environ.get("TDM_SESSION_IMPORT", "")
+        if import_mode not in ("", "0", "1") or (import_mode == "1" and browser_config):
+            raise SessionError("CONFIG")
+        self._browser: BrowserSession | ImportedSession | None = (
             BrowserSession(browser_config, DATA_DIR / "browser-session.json")
             if browser_config else None
         )
+        if import_mode == "1":
+            self._browser = ImportedSession(
+                DATA_DIR / "imported-session.json", transport=SessionTransport(lambda: self.settings.proxy or None),
+                bound_user_id=lambda: getattr(self._auth_state, "user_id", None),
+                on_identity=lambda identity: self._auth_state.accept_imported_identity(identity),
+            )
         self._auth_state: _AuthState = _AuthState(self)
         # GUI (will be set by main.py)
         self.gui: WebGUIManager = None  # type: ignore[assignment]

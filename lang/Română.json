@@ -306,6 +306,18 @@
             "cleared": "Istoric șters.",
             "clear_error": "Istoricul nu a putut fi șters: {error}",
             "stats_error": "Statisticile nu au putut fi încărcate: {error}"
+        },
+        "session_import": {
+            "title": "Importă sesiunea browserului",
+            "prompt": "Exportă o sesiune cu utilitarul local pentru browser, apoi încarcă aici fișierul JSON.",
+            "file": "Fișier de sesiune",
+            "button": "Importă sesiunea",
+            "auth_required": "Activează protecția prin parolă a panoului în Setări înainte de import.",
+            "checking": "Se validează sesiunea…",
+            "ready": "Sesiune verificată. Valabilă până la {expiry}.",
+            "waiting": "Se așteaptă o sesiune nouă a browserului.",
+            "expired": "Sesiunea a expirat. Importă una nouă pentru a continua.",
+            "error": "Importul a eșuat ({code})."
         }
     }
 }

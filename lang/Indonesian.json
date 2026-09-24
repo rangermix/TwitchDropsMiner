@@ -306,6 +306,18 @@
             "cleared": "Riwayat dihapus.",
             "clear_error": "Gagal menghapus riwayat: {error}",
             "stats_error": "Gagal memuat statistik: {error}"
+        },
+        "session_import": {
+            "title": "Impor sesi browser",
+            "prompt": "Ekspor sesi dengan alat bantu browser lokal, lalu unggah berkas JSON di sini.",
+            "file": "Berkas sesi",
+            "button": "Impor sesi",
+            "auth_required": "Aktifkan perlindungan kata sandi dasbor di Pengaturan sebelum mengimpor.",
+            "checking": "Memvalidasi sesi…",
+            "ready": "Sesi terverifikasi. Berlaku hingga {expiry}.",
+            "waiting": "Menunggu sesi browser baru.",
+            "expired": "Sesi kedaluwarsa. Impor sesi baru untuk melanjutkan.",
+            "error": "Impor gagal ({code})."
         }
     }
 }

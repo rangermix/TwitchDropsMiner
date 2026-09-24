@@ -308,8 +308,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   restored identity/inventory in Docker Chrome, but the container's own integrity context
   still failed campaign access. The complete matching desktop request context returned
   inventory and 126 campaigns through Docker Chrome and plain Python HTTP inside Docker.
-  This is a read-only portability result, not an implemented import feature or proof of
-  renewal, imported-session mining, or another network. See
+  This initial read-only portability result did not prove renewal, imported-session
+  mining, or another network. The manual implementation below followed on 25 September. See
   `docs/notes/2026-09-24-browser-session-portability.md`. Preserve the WEB client identity
   and keep existing Android credentials separate in any future import implementation.
 - Follow-up fresh-login probes also failed in Camoufox 152.0.4 beta.28, Chrome 153 with
@@ -326,12 +326,46 @@ progress to an ignored drop while the miner intentionally targets another reward
   import needs renewal/reconnect handling. Twitch login GET returns `X-Frame-Options:
   SAMEORIGIN`; TDM cannot read Twitch credentials through an iframe or ordinary popup.
   Use an explicit local-helper/extension design for export, and keep raw credentials,
-  network bodies, and account identifiers out of reports. Import remains unimplemented.
+  network bodies, and account identifiers out of reports.
 - Browser login UI text is in `gui.login.browser_prompt`, `browser_desktop_prompt`, and
   `browser_open` in every locale,
   with HTTP(S)-only viewer links and safe DOM text. Reconnecting dashboards receive the
   pending viewer URL, never browser cookies or tokens. The viewer's VNC password and
   network protection are separate from dashboard authentication.
+
+### Imported browser sessions (#118)
+
+- `TDM_SESSION_IMPORT=1` selects `ImportedSession` as the optional fallback provider,
+  mutually exclusive with direct browser configuration. Preserve Android priority and
+  `cookies.jar`. Never combine imported web credentials with Android HTTP cookies.
+- `src/auth/session_bundle.py` owns the strict versioned bundle and atomic owner-only
+  JSON storage. Only allowlisted Twitch headers, user agent and observed timestamps are
+  accepted. Reject unknown fields/headers, injection characters, wrong clients and
+  nonfinite or invalid timestamps. Do not log bundles, tokens, browser responses or
+  exception payloads. Surface only stable error codes.
+- `ImportedSession` validates the WEB token identity, expected account, Inventory and
+  Campaigns before saving a complete replacement. Pin the first accepted account, also
+  respecting any already validated miner identity. Reject stale/replayed replacements;
+  preserve the last accepted file on validation/save failure. Revalidate persisted state
+  after restart and wait for fresh context at expiry. Stop must interrupt the wait.
+  OAuth changes refresh auth state and request websocket reconnection; integrity-only
+  renewal must also restore a waiting dashboard's logged-in state.
+- `src/auth/session_helper.py` attaches only to loopback DevTools, creates one temporary
+  tab in a dedicated local profile, correlates the issued token with a successful
+  authenticated campaign request and closes only its tab. The manual `export` command
+  writes a private JSON file. Skip CORS preflight responses when observing integrity.
+- `src/web/session_api.py` provides status and manual import. Import requires enabled
+  dashboard protection and an authenticated dashboard session, plus existing CSRF/origin
+  guards. Bound the actual request body before parsing; never echo failed submissions.
+  `web/static/session-import.js` owns upload/status rendering using textContent and
+  `gui.session_import` in all locales. Clear selected files after submission and preserve
+  visible failures. Both the new asset and app.js use the release version cache key;
+  bump through the normal release workflow before production deployment.
+- On 25 September the actual manual upload UI accepted a native-browser export into a
+  fresh browser-free Docker TDM process. Identity and both catalog operations passed;
+  a subsequent imported-provider query returned 129 campaigns. Automatic renewal and
+  imported-session mining progress are not yet proved. Keep proof boundaries in
+  `docs/notes/2026-09-25-session-import-renewal.md` current as implementation progresses.
 
 ### Dashboard authentication
 

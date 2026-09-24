@@ -120,9 +120,9 @@ A separate session-transfer experiment copied Twitch cookies from the working de
 profile into Docker Chrome. Identity and inventory succeeded, but campaign access still
 failed Twitch's integrity check. Reusing the desktop browser's complete matching request
 context instead returned inventory and 126 campaigns through both Docker Chrome and a
-plain Python HTTP client inside Docker. This is evidence for a possible local-login/import
-option, not an implemented feature: context renewal, operation on another network, and
-mining through an imported session remain unverified. A fresh authenticated GraphQL
+plain Python HTTP client inside Docker. The manual import path below now implements
+that approach; automatic renewal, operation on another network, and Twitch-side mining
+progress through an imported session remain unverified. A fresh authenticated GraphQL
 integrity response advertised about **one hour** of validity; the login cookie's much
 longer lifetime does not extend that context. The issued token matched a successful
 authenticated request returning 126 campaigns. An export needs renewal, with actual
@@ -131,7 +131,57 @@ expiry enforcement and unattended renewal still untested. Twitch's login page re
 reading Twitch cookies or storage. Automatic export would need a local helper or an
 explicitly permitted browser extension, rather than a login iframe. See the
 [session portability investigation](docs/notes/2026-09-24-browser-session-portability.md).
-The current browser integration still requires its browser to remain running.
+The direct browser integration still requires its browser to remain running. Manual
+import can operate without that browser until the imported context expires.
+
+#### Manual local-browser export and import (experimental)
+
+This source-only option lets a home-hosted TDM instance use a session from a working
+local Chrome browser. The TDM server does not need a browser. It is not in a release.
+
+1. Enable `TDM_SESSION_IMPORT=1` on TDM. For Compose, add
+   `- TDM_SESSION_IMPORT=1` under the miner service's `environment` list. Do not configure
+   `TDM_BROWSER_URL`, `TDM_BROWSER_VIEWER_URL`, or `TDM_BROWSER_DEBUGGER_ADDRESS` with this
+   mode. Still-valid Android credentials retain priority and are never overwritten.
+2. Enable dashboard password protection in **Settings**, then log into the dashboard.
+   Import requires authenticated dashboard access, even on an otherwise unprotected
+   instance. Use HTTPS or a local tunnel when accessing the dashboard remotely.
+3. On your local computer, open a dedicated Chrome profile with loopback DevTools and
+   sign into Twitch there. For example, on macOS:
+
+   ```bash
+   open -na "Google Chrome" --args \
+     --user-data-dir="$HOME/.tdm-login-profile" \
+     --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
+     https://www.twitch.tv/drops/campaigns
+   ```
+
+4. From a local source checkout with its Python environment installed, export:
+
+   ```bash
+   source env/bin/activate
+   python -m src.auth.session_helper export \
+     --browser http://127.0.0.1:9222 --output "$HOME/tdm-session.json"
+   ```
+
+5. On TDM's **Main** tab, choose that file under **Import browser session** and click
+   **Import session**. TDM verifies identity, inventory and campaign access before
+   accepting it. The panel shows the accepted expiry. Keep the exported file private;
+   it contains credentials, and must not be posted to issues or committed to Git.
+
+The helper opens and closes its own tab without closing Chrome. It exports only a
+matching Twitch request context whose integrity token has passed a live campaign query,
+not every browser cookie. Export and server state files use owner-only permissions.
+TDM saves accepted state separately in `data/imported-session.json`, revalidates it after
+restart, rejects account changes and stale replacements, and waits for a fresh import
+after expiry. Failed validation preserves the previous accepted context.
+
+**Live manual-path check (25 September 2026):** the actual dashboard accepted an export
+from the dedicated native Chrome profile into a fresh browser-free Docker TDM instance.
+Identity, Inventory and Campaigns passed; a subsequent read-only query through the
+imported provider returned 129 campaigns. Automatic renewal is the next implementation
+step, and this result does not prove Twitch-side mining progress with imported state.
+See the [import and renewal evidence](docs/notes/2026-09-25-session-import-renewal.md).
 
 #### Desktop Chrome attachment (experimental)
 

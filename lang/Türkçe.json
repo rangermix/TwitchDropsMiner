@@ -306,6 +306,18 @@
             "cleared": "Geçmiş temizlendi.",
             "clear_error": "Geçmiş temizlenemedi: {error}",
             "stats_error": "İstatistikler yüklenemedi: {error}"
+        },
+        "session_import": {
+            "title": "Tarayıcı oturumunu içe aktar",
+            "prompt": "Yerel tarayıcı yardımcısıyla bir oturum dışa aktarın, ardından JSON dosyasını buraya yükleyin.",
+            "file": "Oturum dosyası",
+            "button": "Oturumu içe aktar",
+            "auth_required": "İçe aktarmadan önce Ayarlar bölümünde panel parola korumasını etkinleştirin.",
+            "checking": "Oturum doğrulanıyor…",
+            "ready": "Oturum doğrulandı. Geçerlilik sonu: {expiry}.",
+            "waiting": "Yeni bir tarayıcı oturumu bekleniyor.",
+            "expired": "Oturumun süresi doldu. Devam etmek için yeni bir oturum içe aktarın.",
+            "error": "İçe aktarma başarısız ({code})."
         }
     }
 }

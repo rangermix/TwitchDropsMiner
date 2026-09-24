@@ -306,6 +306,18 @@
             "cleared": "Historial borrado.",
             "clear_error": "No se pudo borrar el historial: {error}",
             "stats_error": "No se pudieron cargar las estadísticas: {error}"
+        },
+        "session_import": {
+            "title": "Importar sesión del navegador",
+            "prompt": "Exporta una sesión con el asistente local del navegador y sube aquí el archivo JSON.",
+            "file": "Archivo de sesión",
+            "button": "Importar sesión",
+            "auth_required": "Activa la protección por contraseña del panel en Configuración antes de importar.",
+            "checking": "Validando sesión…",
+            "ready": "Sesión verificada. Válida hasta {expiry}.",
+            "waiting": "Esperando una nueva sesión del navegador.",
+            "expired": "La sesión ha caducado. Importa una nueva sesión para continuar.",
+            "error": "Error al importar ({code})."
         }
     }
 }

@@ -306,6 +306,18 @@
             "cleared": "歷史已清空。",
             "clear_error": "清空歷史失敗：{error}",
             "stats_error": "載入統計失敗：{error}"
+        },
+        "session_import": {
+            "title": "匯入瀏覽器工作階段",
+            "prompt": "使用本機瀏覽器助手匯出工作階段，然後在此上傳 JSON 檔案。",
+            "file": "工作階段檔案",
+            "button": "匯入工作階段",
+            "auth_required": "匯入前，請先在設定中啟用控制面板密碼保護。",
+            "checking": "正在驗證工作階段…",
+            "ready": "工作階段已驗證，有效期限至 {expiry}。",
+            "waiting": "正在等待新的瀏覽器工作階段。",
+            "expired": "工作階段已過期，請匯入新的工作階段以繼續。",
+            "error": "匯入失敗（{code}）。"
         }
     }
 }

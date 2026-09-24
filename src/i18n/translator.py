@@ -64,6 +64,19 @@ class GUITabs(TypedDict):
     help: str
 
 
+class GUISessionImport(TypedDict):
+    title: str
+    prompt: str
+    file: str
+    button: str
+    auth_required: str
+    checking: str
+    ready: str
+    waiting: str
+    expired: str
+    error: str
+
+
 class GUILoginForm(TypedDict):
     browser_prompt: str
     browser_open: str
@@ -320,6 +333,7 @@ class GUIMessages(TypedDict):
     status: GUIStatus
     tabs: GUITabs
     login: GUILoginForm
+    session_import: GUISessionImport
     websocket: GUIWebsocket
     progress: GUIProgress
     channels: GUIChannels

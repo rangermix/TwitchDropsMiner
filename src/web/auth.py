@@ -183,14 +183,15 @@ class AuthMiddleware:
                     headers={"Cache-Control": "no-store"})(scope, receive, send)
             return await self.reject(scope, receive, send, 401, "authentication_required")
         # Bound auth payloads before Pydantic parses them; do not echo submitted secrets.
-        if mutation and path.startswith("/api/auth/"):
+        if mutation and path.startswith(("/api/auth/", "/api/session/")):
+            limit = 65536 if path.startswith("/api/session/") else 16384
             body = b""
             while True:
                 message = await receive()
                 if message["type"] == "http.disconnect":
                     return
                 body += message.get("body", b"")
-                if len(body) > 16384:
+                if len(body) > limit:
                     return await self.reject(scope, receive, send, 413, "invalid_request")
                 if not message.get("more_body"):
                     break

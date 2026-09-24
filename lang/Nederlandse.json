@@ -306,6 +306,18 @@
             "cleared": "Geschiedenis gewist.",
             "clear_error": "Geschiedenis wissen mislukt: {error}",
             "stats_error": "Statistieken laden mislukt: {error}"
+        },
+        "session_import": {
+            "title": "Browsersessie importeren",
+            "prompt": "Exporteer een sessie met het lokale browserhulpprogramma en upload hier het JSON-bestand.",
+            "file": "Sessiebestand",
+            "button": "Sessie importeren",
+            "auth_required": "Schakel vóór het importeren wachtwoordbeveiliging voor het dashboard in bij Instellingen.",
+            "checking": "Sessie valideren…",
+            "ready": "Sessie geverifieerd. Geldig tot {expiry}.",
+            "waiting": "Wachten op een nieuwe browsersessie.",
+            "expired": "Sessie verlopen. Importeer een nieuwe sessie om door te gaan.",
+            "error": "Importeren mislukt ({code})."
         }
     }
 }

@@ -306,6 +306,18 @@
             "cleared": "Cronologia cancellata.",
             "clear_error": "Impossibile cancellare la cronologia: {error}",
             "stats_error": "Impossibile caricare le statistiche: {error}"
+        },
+        "session_import": {
+            "title": "Importa sessione del browser",
+            "prompt": "Esporta una sessione con l’assistente locale del browser, poi carica qui il file JSON.",
+            "file": "File di sessione",
+            "button": "Importa sessione",
+            "auth_required": "Attiva la protezione con password del pannello nelle Impostazioni prima di importare.",
+            "checking": "Verifica della sessione…",
+            "ready": "Sessione verificata. Valida fino a {expiry}.",
+            "waiting": "In attesa di una nuova sessione del browser.",
+            "expired": "Sessione scaduta. Importa una nuova sessione per continuare.",
+            "error": "Importazione non riuscita ({code})."
         }
     }
 }

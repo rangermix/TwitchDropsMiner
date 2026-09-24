@@ -306,6 +306,18 @@
             "cleared": "Histórico limpo.",
             "clear_error": "Falha ao limpar histórico: {error}",
             "stats_error": "Falha ao carregar estatísticas: {error}"
+        },
+        "session_import": {
+            "title": "Importar sessão do navegador",
+            "prompt": "Exporte uma sessão com o assistente local do navegador e envie o arquivo JSON aqui.",
+            "file": "Arquivo de sessão",
+            "button": "Importar sessão",
+            "auth_required": "Ative a proteção por senha do painel nas Configurações antes de importar.",
+            "checking": "Validando sessão…",
+            "ready": "Sessão verificada. Válida até {expiry}.",
+            "waiting": "Aguardando uma nova sessão do navegador.",
+            "expired": "Sessão expirada. Importe uma nova sessão para continuar.",
+            "error": "Falha na importação ({code})."
         }
     }
 }

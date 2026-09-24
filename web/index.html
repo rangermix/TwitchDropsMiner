@@ -63,6 +63,14 @@
                         <p id="browser-login-prompt"></p>
                         <a id="browser-login-link" target="_blank" rel="noopener noreferrer"></a>
                     </div>
+                    <div id="session-import-panel" hidden>
+                        <h3 id="session-import-title"></h3>
+                        <p id="session-import-prompt"></p>
+                        <label id="session-import-file-label" for="session-import-file"></label>
+                        <input type="file" id="session-import-file" accept=".json,application/json" disabled />
+                        <button id="session-import-button" class="action-button primary" disabled></button>
+                        <p id="session-import-status" role="status" aria-live="polite"></p>
+                    </div>
                     <div id="login-form" style="display: none;">
                         <input type="text" id="username" placeholder="Username" />
                         <input type="password" id="password" placeholder="Password" />
@@ -536,6 +544,7 @@
     </div>
 
     <script src="/static/app.js?v=__APP_VERSION__"></script>
+    <script src="/static/session-import.js?v=__APP_VERSION__"></script>
 </body>
 
 </html>

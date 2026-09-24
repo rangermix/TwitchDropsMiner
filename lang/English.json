@@ -306,6 +306,18 @@
             "cleared": "History cleared.",
             "clear_error": "Failed to clear history: {error}",
             "stats_error": "Failed to load statistics: {error}"
+        },
+        "session_import": {
+            "title": "Import browser session",
+            "prompt": "Export a session with the local browser helper, then upload the JSON file here.",
+            "file": "Session file",
+            "button": "Import session",
+            "auth_required": "Enable dashboard password protection in Settings before importing.",
+            "checking": "Validating session…",
+            "ready": "Session verified. Valid until {expiry}.",
+            "waiting": "Waiting for a fresh browser session.",
+            "expired": "Session expired. Import a fresh session to continue.",
+            "error": "Import failed ({code})."
         }
     }
 }

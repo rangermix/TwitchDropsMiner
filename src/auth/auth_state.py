@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, cast
 import aiohttp
 from yarl import URL
 
-from src.auth.browser_session import browser_error
+from src.auth.browser_session import BrowserIdentity, browser_error
+from src.auth.imported_session import ImportedSession
 from src.config import COOKIES_PATH, ClientInfo, ClientType
 from src.exceptions import LoginException
 from src.i18n import _
@@ -70,12 +71,19 @@ class _AuthState:
         self.browser_active = False
 
     async def _browser_login(self, expected_user_id: int | None = None) -> None:
+        if expected_user_id is None:
+            expected_user_id = getattr(self, "user_id", None)
         browser = self._twitch._browser
         assert browser is not None
+        if isinstance(browser, ImportedSession):
+            browser.bind_account(expected_user_id)
         identity = await browser.authenticate(self._twitch.gui.login)
         if expected_user_id is not None and identity.user_id != expected_user_id:
             await browser.close()
             raise browser_error("ACCOUNT_MISMATCH")
+        self._use_browser_identity(identity)
+
+    def _use_browser_identity(self, identity: BrowserIdentity) -> None:
         client_info = ClientInfo(
             ClientType.WEB.CLIENT_URL, ClientType.WEB.CLIENT_ID, identity.user_agent,
         )
@@ -91,6 +99,24 @@ class _AuthState:
         self.browser_active = True
         self._logged_in.set()
         self._twitch.gui.login.update(_.t["login"]["status"]["logged_in"], self.user_id)
+
+    def accept_imported_identity(self, identity: BrowserIdentity) -> None:
+        """Refresh every consumer when an already active imported account renews."""
+        if not self.browser_active:
+            return
+        if getattr(self, "user_id", None) != identity.user_id:
+            raise browser_error("ACCOUNT_MISMATCH")
+        changed_token = getattr(self, "access_token", None) != identity.token
+        if (
+            changed_token or getattr(self, "device_id", None) != identity.device_id
+            or identity.user_agent != self._twitch._client_type.USER_AGENT
+            or self._twitch.gui.login.get_status().get("import_pending")
+            or not self._logged_in.is_set()
+        ):
+            self._use_browser_identity(identity)
+        if changed_token:
+            for websocket in self._twitch.websocket.websockets:
+                websocket.request_reconnect()
 
     async def _oauth_login(self) -> str:
         """
@@ -244,6 +270,12 @@ class _AuthState:
         """
         if not hasattr(self, "session_id"):
             self.session_id = create_nonce(CHARS_HEX_LOWER, 16)
+        if self.browser_active and isinstance(self._twitch._browser, ImportedSession):
+            if self._twitch._browser.status()["state"] != "ready":
+                self._logged_in.clear()
+            identity = await self._twitch._browser.authenticate(self._twitch.gui.login)
+            self.accept_imported_identity(identity)
+            return
         if self.browser_active and not self._hasattrs("access_token", "user_id"):
             await self._browser_login(expected_user_id=getattr(self, "user_id", None))
             return

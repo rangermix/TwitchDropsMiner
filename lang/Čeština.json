@@ -306,6 +306,18 @@
             "cleared": "Historie vymazána.",
             "clear_error": "Historii nelze vymazat: {error}",
             "stats_error": "Statistiky nelze načíst: {error}"
+        },
+        "session_import": {
+            "title": "Importovat relaci prohlížeče",
+            "prompt": "Exportujte relaci pomocí místního nástroje prohlížeče a nahrajte sem soubor JSON.",
+            "file": "Soubor relace",
+            "button": "Importovat relaci",
+            "auth_required": "Před importem zapněte v Nastavení ochranu panelu heslem.",
+            "checking": "Ověřování relace…",
+            "ready": "Relace ověřena. Platná do {expiry}.",
+            "waiting": "Čekání na novou relaci prohlížeče.",
+            "expired": "Relace vypršela. Pro pokračování importujte novou relaci.",
+            "error": "Import selhal ({code})."
         }
     }
 }

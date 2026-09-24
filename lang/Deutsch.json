@@ -306,6 +306,18 @@
             "cleared": "Verlauf geleert.",
             "clear_error": "Verlauf konnte nicht geleert werden: {error}",
             "stats_error": "Statistik konnte nicht geladen werden: {error}"
+        },
+        "session_import": {
+            "title": "Browsersitzung importieren",
+            "prompt": "Exportiere eine Sitzung mit dem lokalen Browser-Hilfsprogramm und lade die JSON-Datei hier hoch.",
+            "file": "Sitzungsdatei",
+            "button": "Sitzung importieren",
+            "auth_required": "Aktiviere vor dem Import den Passwortschutz in den Einstellungen.",
+            "checking": "Sitzung wird geprüft…",
+            "ready": "Sitzung bestätigt. Gültig bis {expiry}.",
+            "waiting": "Warte auf eine neue Browsersitzung.",
+            "expired": "Sitzung abgelaufen. Importiere zum Fortfahren eine neue Sitzung.",
+            "error": "Import fehlgeschlagen ({code})."
         }
     }
 }
