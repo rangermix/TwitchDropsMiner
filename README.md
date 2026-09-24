@@ -239,6 +239,9 @@ Coding agents must follow the mandatory workflow in [AGENTS.md](./AGENTS.md), al
 available through the `CLAUDE.md` and `GEMINI.md` symlinks. The pull request template
 records validation and review evidence.
 
+Dashboard session-expiry tests use a controlled clock and scheduled callbacks to check
+idle socket disconnection without depending on short wall-clock sleeps.
+
 ## Contributors
 
 Contributors are credited automatically when their pull requests are merged into `main`.
