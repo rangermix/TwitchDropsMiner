@@ -304,6 +304,14 @@ progress to an ignored drop while the miner intentionally targets another reward
   This does not repair Docker login or verify other platforms or long-term renewal.
   Do not attribute the Docker rejection solely to ChromeDriver, or advertise the Docker
   experiment as a working login recovery. Track remaining live proof in #118.
+- A separate 24 September session-transfer probe found that desktop Twitch cookies
+  restored identity/inventory in Docker Chrome, but the container's own integrity context
+  still failed campaign access. The complete matching desktop request context returned
+  inventory and 126 campaigns through Docker Chrome and plain Python HTTP inside Docker.
+  This is a read-only portability result, not an implemented import feature or proof of
+  renewal, imported-session mining, or another network. See
+  `docs/notes/2026-09-24-browser-session-portability.md`. Preserve the WEB client identity
+  and keep existing Android credentials separate in any future import implementation.
 - Browser login UI text is in `gui.login.browser_prompt`, `browser_desktop_prompt`, and
   `browser_open` in every locale,
   with HTTP(S)-only viewer links and safe DOM text. Reconnecting dashboards receive the

@@ -109,6 +109,16 @@ login remains unresolved. Restarting both the dedicated Chrome instance and the 
 restored login and resumed watching without another sign-in. See
 [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118) for current results.
 
+A separate session-transfer experiment copied Twitch cookies from the working desktop
+profile into Docker Chrome. Identity and inventory succeeded, but campaign access still
+failed Twitch's integrity check. Reusing the desktop browser's complete matching request
+context instead returned inventory and 126 campaigns through both Docker Chrome and a
+plain Python HTTP client inside Docker. This is evidence for a possible local-login/import
+option, not an implemented feature: context renewal, operation on another network, and
+mining through an imported session remain unverified. See the
+[session portability investigation](docs/notes/2026-09-24-browser-session-portability.md).
+The current browser integration still requires its browser to remain running.
+
 #### Desktop Chrome attachment (experimental)
 
 On a machine with a desktop, TDM can attach to a dedicated, normally launched Chrome
