@@ -33,6 +33,13 @@ Twitch Drops Miner is a low-bandwidth, headless application that discovers eligi
 campaigns, selects an appropriate live channel, and tracks drop progress from a web
 dashboard. It sends Twitch watch events without downloading the stream itself.
 
+> [!IMPORTANT]
+> **This is a hobby project for personal use on your own hardware and home network.**
+> Support is limited to that setup. VPS, cloud, and other third-party hosting environments,
+> as well as services operated for other users, are outside the project's support scope.
+> Maintenance and support are provided on a best-effort basis; continued compatibility
+> with Twitch is not guaranteed.
+
 ![Twitch Drops Miner web dashboard showing campaign progress, output, and channels](./screenshot.png)
 
 ## Features
@@ -47,7 +54,7 @@ dashboard. It sends Twitch watch events without downloading the stream itself.
 - **Drop history** — records every claimed drop locally (date, game, campaign, rewards)
   with a filterable **History** tab, aggregated stats, and one-click **Export CSV**
 - **Telegram notifications** — sends an alert when a drop is claimed, including claims found during startup and inventory refresh
-- **Headless deployment** — runs locally, remotely, or in Docker without a desktop GUI
+- **Headless deployment** — runs on your own home hardware, including Docker, without a desktop GUI
 - **Safe rendering** — builds dynamic translated content with DOM APIs instead of raw HTML
 
 ## Quick start
@@ -235,7 +242,7 @@ and select **Log in** to retry without reloading the page.
   API writes require `X-TDM-Request: 1`; browser clients send it automatically. Cross-origin
   writes and Socket.IO connections are rejected.
 
-**Remote access:** use HTTPS through a reverse proxy to encrypt passwords and cookies.
+**Remote access to your home-hosted instance:** use HTTPS through a reverse proxy to encrypt passwords and cookies.
 Set the miner's `PUBLIC_BASE_URL` environment variable to the exact address you open in
 your browser, for example `PUBLIC_BASE_URL=https://drops.example.com`. The included
 Compose file has a commented example; uncomment it, replace the hostname, and recreate
@@ -331,7 +338,7 @@ Contributors are credited automatically when their pull requests are merged into
 | [@EthanBlazkowicz](https://github.com/EthanBlazkowicz) | [#33](https://github.com/rangermix/TwitchDropsMiner/pull/33) |
 | [@Klages](https://github.com/Klages) | [#94](https://github.com/rangermix/TwitchDropsMiner/pull/94) · [#95](https://github.com/rangermix/TwitchDropsMiner/pull/95) |
 | [@Knight-sys](https://github.com/Knight-sys) | [#3](https://github.com/rangermix/TwitchDropsMiner/pull/3) |
-| [@rangermix](https://github.com/rangermix) | [#1](https://github.com/rangermix/TwitchDropsMiner/pull/1) · [#2](https://github.com/rangermix/TwitchDropsMiner/pull/2) · [#7](https://github.com/rangermix/TwitchDropsMiner/pull/7) · [#8](https://github.com/rangermix/TwitchDropsMiner/pull/8) · [#9](https://github.com/rangermix/TwitchDropsMiner/pull/9) · [#13](https://github.com/rangermix/TwitchDropsMiner/pull/13) · [#20](https://github.com/rangermix/TwitchDropsMiner/pull/20) · [#24](https://github.com/rangermix/TwitchDropsMiner/pull/24) · [#29](https://github.com/rangermix/TwitchDropsMiner/pull/29) · [#32](https://github.com/rangermix/TwitchDropsMiner/pull/32) · [#45](https://github.com/rangermix/TwitchDropsMiner/pull/45) · [#74](https://github.com/rangermix/TwitchDropsMiner/pull/74) · [#79](https://github.com/rangermix/TwitchDropsMiner/pull/79) · [#80](https://github.com/rangermix/TwitchDropsMiner/pull/80) · [#84](https://github.com/rangermix/TwitchDropsMiner/pull/84) · [#86](https://github.com/rangermix/TwitchDropsMiner/pull/86) · [#88](https://github.com/rangermix/TwitchDropsMiner/pull/88) · [#93](https://github.com/rangermix/TwitchDropsMiner/pull/93) · [#89](https://github.com/rangermix/TwitchDropsMiner/pull/89) · [#90](https://github.com/rangermix/TwitchDropsMiner/pull/90) · [#91](https://github.com/rangermix/TwitchDropsMiner/pull/91) · [#92](https://github.com/rangermix/TwitchDropsMiner/pull/92) · [#104](https://github.com/rangermix/TwitchDropsMiner/pull/104) · [#105](https://github.com/rangermix/TwitchDropsMiner/pull/105) · [#116](https://github.com/rangermix/TwitchDropsMiner/pull/116) |
+| [@rangermix](https://github.com/rangermix) | [#1](https://github.com/rangermix/TwitchDropsMiner/pull/1) · [#2](https://github.com/rangermix/TwitchDropsMiner/pull/2) · [#7](https://github.com/rangermix/TwitchDropsMiner/pull/7) · [#8](https://github.com/rangermix/TwitchDropsMiner/pull/8) · [#9](https://github.com/rangermix/TwitchDropsMiner/pull/9) · [#13](https://github.com/rangermix/TwitchDropsMiner/pull/13) · [#20](https://github.com/rangermix/TwitchDropsMiner/pull/20) · [#24](https://github.com/rangermix/TwitchDropsMiner/pull/24) · [#29](https://github.com/rangermix/TwitchDropsMiner/pull/29) · [#32](https://github.com/rangermix/TwitchDropsMiner/pull/32) · [#45](https://github.com/rangermix/TwitchDropsMiner/pull/45) · [#74](https://github.com/rangermix/TwitchDropsMiner/pull/74) · [#79](https://github.com/rangermix/TwitchDropsMiner/pull/79) · [#80](https://github.com/rangermix/TwitchDropsMiner/pull/80) · [#84](https://github.com/rangermix/TwitchDropsMiner/pull/84) · [#86](https://github.com/rangermix/TwitchDropsMiner/pull/86) · [#88](https://github.com/rangermix/TwitchDropsMiner/pull/88) · [#93](https://github.com/rangermix/TwitchDropsMiner/pull/93) · [#89](https://github.com/rangermix/TwitchDropsMiner/pull/89) · [#90](https://github.com/rangermix/TwitchDropsMiner/pull/90) · [#91](https://github.com/rangermix/TwitchDropsMiner/pull/91) · [#92](https://github.com/rangermix/TwitchDropsMiner/pull/92) · [#104](https://github.com/rangermix/TwitchDropsMiner/pull/104) · [#105](https://github.com/rangermix/TwitchDropsMiner/pull/105) · [#116](https://github.com/rangermix/TwitchDropsMiner/pull/116) · [#119](https://github.com/rangermix/TwitchDropsMiner/pull/119) |
 | [@Sean-Destefano](https://github.com/Sean-Destefano) | [#49](https://github.com/rangermix/TwitchDropsMiner/pull/49) |
 | [@SimpliAj](https://github.com/SimpliAj) | [#72](https://github.com/rangermix/TwitchDropsMiner/pull/72) |
 | [@Stein-N](https://github.com/Stein-N) | [#71](https://github.com/rangermix/TwitchDropsMiner/pull/71) |
