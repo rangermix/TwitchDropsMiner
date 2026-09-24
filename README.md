@@ -86,10 +86,17 @@ page. TDM continues only after checking the web token's identity and obtaining b
 inventory and campaign responses. Existing valid Android sessions take priority and do
 not start a browser session.
 
-**Live status:** the initial Debian Chromium 152 container reached Twitch but login was
-rejected with “Your browser is not currently supported.” Official Chrome 153 is being
-tested. Browser control and an anonymous GraphQL request work; authenticated campaign
-access and Twitch-side progress have not been verified. See
+**Live status (24 September 2026):** Twitch rejected login in both Debian Chromium 152
+and official Google Chrome 153 in Docker with “Your browser is not currently supported.”
+The Chrome WebDriver attempt returned HTTP 400 with Twitch error code `5025`. The same
+Chrome version also failed when launched without ChromeDriver in a separate profile,
+with `navigator.webdriver` false. Firefox 156 controlled through WebDriver BiDi in a
+separate Docker profile was also rejected. Removing ChromeDriver or changing browser
+engine therefore did not resolve the rejection. Fresh login in the user's normal desktop
+browser on the same network succeeded, so the Docker/browser environment remains under
+investigation. Browser control and an anonymous GraphQL request work, but authenticated
+campaign access through TDM and Twitch-side progress remain
+unverified. This setup is an experiment, not a working fresh-login recovery procedure. See
 [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118) for current results.
 
 To try the source implementation, create a private, ignored `.env` file in the repository

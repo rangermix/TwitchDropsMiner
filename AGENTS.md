@@ -285,8 +285,14 @@ progress to an ignored drop while the miner intentionally targets another reward
   shutdown close owned sessions and clear pending viewer UI state.
 - Login success requires token validation and non-null inventory and campaign results.
   An anonymous browser request, passing mocks, or a displayed Watching state is not
-  proof of authenticated access or Twitch-side drop progress. As of this implementation,
-  live Chromium login was rejected; official Chrome verification remains in #118.
+  proof of authenticated access or Twitch-side drop progress. On 24 September 2026,
+  Docker login failed in Chromium 152 and official Chrome 153. Chrome also failed when
+  launched without ChromeDriver in a fresh profile with `navigator.webdriver` false;
+  a separate Firefox 156 WebDriver BiDi comparison was also rejected. The user confirmed
+  fresh login works in a normal desktop browser on the same network; controlled desktop
+  browser authentication is a separate, unverified comparison.
+  Do not attribute the rejection solely to ChromeDriver, or advertise this setup as a
+  working login recovery. Track controlled comparisons and remaining live proof in #118.
 - Browser login UI text is in `gui.login.browser_prompt`/`browser_open` in every locale,
   with HTTP(S)-only viewer links and safe DOM text. Reconnecting dashboards receive the
   pending viewer URL, never browser cookies or tokens. The viewer's VNC password and
