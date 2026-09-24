@@ -242,18 +242,27 @@ progress to an ignored drop while the miner intentionally targets another reward
 
 ### Authentication
 
-- Uses OAuth device code flow (user enters code at twitch.tv/activate)
+- The legacy OAuth device code flow uses twitch.tv/activate; fresh Android device
+  authorization is currently unavailable (see #118). Preserve existing valid sessions.
 - Managed by `src/auth/auth_state.py` (`_AuthState` class)
 - Access tokens stored in `cookies.jar` in DATA_DIR
 - Device ID from Twitch's `unique_id` cookie
 - Session ID generated per run
-- Client info defined in `src/config/client_info.py`; `Twitch` defaults to `ClientType.SMARTBOX`
-  for OAuth, HTTP, and GraphQL. Twitch rejects the former Android app device-code client.
+- Client info defined in `src/config/client_info.py`; `Twitch` defaults to `ClientType.ANDROID_APP`
+  for OAuth, HTTP, and GraphQL so existing valid Android credentials are reused. Twitch
+  currently rejects fresh Android device-code authorization. Do not switch the default
+  to Smart TV as a complete fix: Smart TV sessions can have incomplete campaign discovery.
+  Track the browser-controlled interactive-login replacement and live evidence in #118.
+- A validated token for another client must fail with `CLIENT_MISMATCH` without deleting
+  its cookie file or clearing its jar. Non-200 device authorization returns a controlled
+  translated login error (`DEVICE_AUTH_<status>`), not a `KeyError` or raw response body.
 - Keep `Channel.url` on `ClientType.WEB.CLIENT_URL`: the Smart TV app shell lacks the
   beacon/settings fields required by `get_spade_url()` and would prevent watch events.
-- Existing Android sessions may require one new device authorization. Tests in
-  `tests/test_twitch_auth.py` cover fresh login, token polling, expired tokens, old-cookie
-  migration, consistent client IDs, and restart persistence using temporary cookie jars.
+- Existing valid Android sessions must not be forced through fresh authorization. Tests in
+  `tests/test_twitch_auth.py` cover token polling and expired tokens for an explicitly
+  selected legacy Smart TV identity, plus default Android host/domain cookie reuse,
+  mismatch credential preservation, rejected device authorization, consistent client IDs,
+  and restart persistence using temporary jars.
   `tests/test_spade_discovery.py` covers both beacon-discovery formats through actual
   `send_watch()` calls with mocked responses; these tests do not prove live drop progress.
 
@@ -576,7 +585,8 @@ The application uses a web-based interface accessible via browser:
 - **WebSocket for real-time** - Socket.IO chosen for reliability (fallback to polling)
 - **Single-page app** - Simpler than full framework (React/Vue), fast load times
 - **Direct Docker support** - Environment detection, proper path handling
-- **OAuth device code flow** - Works great for web-based deployment
+- **Persistent Twitch sessions** - Preserve valid Android credentials; the fresh-login
+  outage and planned controlled-browser replacement are tracked in #118.
 
 ## Project Scope
 

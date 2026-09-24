@@ -10,6 +10,7 @@ import aiohttp
 from yarl import URL
 
 from src.config import COOKIES_PATH
+from src.exceptions import LoginException
 from src.i18n import _
 from src.utils import CHARS_HEX_LOWER, create_nonce
 
@@ -107,6 +108,12 @@ class _AuthState:
                 async with self._twitch.request(
                     "POST", "https://id.twitch.tv/oauth2/device", headers=headers, data=payload
                 ) as response:
+                    if response.status != 200:
+                        raise LoginException(
+                            _.t["login"]["error_code"].format(
+                                error_code=f"DEVICE_AUTH_{response.status}"
+                            )
+                        )
                     # {
                     #     "device_code": "40 chars [A-Za-z0-9]",
                     #     "expires_in": 1800,
@@ -262,10 +269,13 @@ class _AuthState:
                 # ensure the cookie's client ID matches the currently selected client
                 if validate_response["client_id"] == client_info.CLIENT_ID:
                     break
-                # otherwise, we need to delete the entire cookie file and clear the jar
+                # A client switch cannot convert a token. Preserve the saved
+                # credentials instead of destroying them before a new login fails.
                 logger.info("Cookie client ID mismatch")
-                jar.clear()
-                COOKIES_PATH.unlink(missing_ok=True)
+                self._delattrs("access_token", "user_id")
+                raise LoginException(
+                    _.t["login"]["error_code"].format(error_code="CLIENT_MISMATCH")
+                )
             else:
                 raise RuntimeError("Login verification failure (step #1)")
             self.user_id = int(validate_response["user_id"])

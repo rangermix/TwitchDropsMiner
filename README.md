@@ -2,6 +2,24 @@
 
 > Automatically mine timed Twitch Drops without streaming video or audio.
 
+> **Warning: fresh Twitch login is currently broken.** Preserve existing `data/cookies.jar`
+> files and backups. New login and missing-campaign recovery are tracked in
+> [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118).
+
+Twitch rejects new device-code authorization for the Android app client. This source
+revision restores `ANDROID_APP` as the default so still-valid Android sessions can be
+reused without forced reauthorization. It cannot recover credentials already deleted,
+replaced, or expired. Releases v1.3.1 and v1.3.2 use the Smart TV client, which can log in
+but may show only campaigns already in progress; successful login or a healthy container
+does not establish complete campaign discovery. Clearing data, reinstalling, or changing
+Games to Watch does not repair this upstream restriction. A real browser controlled by
+TDM for interactive login is planned in #118; it is not a released fix yet. The tracking
+issue records implementation, live verification, and release status.
+
+`DEVICE_AUTH_400` means Twitch rejected new device authorization. `CLIENT_MISMATCH`
+means a saved token belongs to another client; it is preserved, but cannot be used as
+an Android token. Neither error is fixed by deleting the data directory.
+
 <p align="center">
   <a href="https://github.com/rangermix/TwitchDropsMiner/stargazers"><img src="https://img.shields.io/github/stars/rangermix/TwitchDropsMiner?style=for-the-badge&color=yellow" alt="GitHub stars"></a>
   <a href="https://github.com/rangermix/TwitchDropsMiner/releases"><img src="https://img.shields.io/github/v/release/rangermix/TwitchDropsMiner?style=for-the-badge&color=brightgreen" alt="Latest release"></a>
@@ -72,17 +90,18 @@ Then open <http://localhost:8080>.
 
 ## Using the web app
 
-1. Log in with your Twitch account through the OAuth device flow.
+1. Existing valid Android sessions are restored automatically. Fresh login is currently
+   affected by the [Twitch login outage](https://github.com/rangermix/TwitchDropsMiner/issues/118).
 2. Wait for the miner to discover available campaigns.
 3. Choose the games you want to prioritize. You can also search for a game, select
    **Add Game**, and then select **Reload**.
 4. Leave the miner running while it selects eligible channels and tracks drop progress.
 
-Twitch login uses the Smart TV device authorization flow. This fixes the
-`KeyError: 'device_code'` startup failure caused by Twitch rejecting the Android app
-client. After upgrading from 1.3.0 or earlier, you may need to authorize the miner
-once more at `twitch.tv/activate`; the new session is saved for later runs. Channel
-pages still use the public Twitch website to discover the watch-event endpoint.
+The Smart TV device-flow workaround in v1.3.1/v1.3.2 did not restore full campaign
+discovery. Do not discard a working Android session to repeat that authorization.
+See [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118) for the current
+login status. Channel pages still use the public Twitch website to discover the
+watch-event endpoint.
 
 In **Games to Watch**, drag games to reorder them or type a priority number to move a
 game directly. Priority 1 is highest; out-of-range numbers are clamped to the list ends.
