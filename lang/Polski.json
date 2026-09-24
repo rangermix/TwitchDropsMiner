@@ -91,7 +91,8 @@
             "oauth_activate": "Twitch Activate",
             "oauth_confirm": "I've entered the code",
             "browser_prompt": "Zaloguj się do Twitcha w sterowanej przeglądarce i ukończ weryfikację. TDM będzie kontynuować automatycznie. Wpisuj hasło tylko na stronie Twitcha.",
-            "browser_open": "Otwórz przeglądarkę logowania do Twitcha"
+            "browser_open": "Otwórz przeglądarkę logowania do Twitcha",
+            "browser_desktop_prompt": "Zaloguj się do Twitcha w osobnym oknie Chrome dla TDM na komputerze z przeglądarką. Dokończ tam weryfikację. TDM będzie kontynuować automatycznie."
         },
         "websocket": {
             "name": "Status Websocketa",

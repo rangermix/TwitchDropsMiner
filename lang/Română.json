@@ -91,7 +91,8 @@
             "oauth_activate": "Twitch Activate",
             "oauth_confirm": "I've entered the code",
             "browser_prompt": "Conectează-te la Twitch în browserul controlat și finalizează verificările. TDM va continua automat. Introdu parola doar pe pagina Twitch.",
-            "browser_open": "Deschide browserul de conectare Twitch"
+            "browser_open": "Deschide browserul de conectare Twitch",
+            "browser_desktop_prompt": "Autentifică-te pe Twitch în fereastra Chrome dedicată TDM, pe calculatorul care rulează browserul. Finalizează verificarea acolo. TDM va continua automat."
         },
         "websocket": {
             "name": "Status Websocket",

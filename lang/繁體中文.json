@@ -91,7 +91,8 @@
             "oauth_activate": "Twitch Activate",
             "oauth_confirm": "I've entered the code",
             "browser_prompt": "請在 TDM 控制的瀏覽器中登入 Twitch 並完成驗證，TDM 將自動繼續。請僅在 Twitch 頁面中輸入密碼。",
-            "browser_open": "開啟 Twitch 登入瀏覽器"
+            "browser_open": "開啟 Twitch 登入瀏覽器",
+            "browser_desktop_prompt": "請在執行瀏覽器的電腦上，透過 TDM 專用 Chrome 視窗登入 Twitch，並在該視窗完成驗證。TDM 將自動繼續。"
         },
         "websocket": {
             "name": "Websocket 狀態",

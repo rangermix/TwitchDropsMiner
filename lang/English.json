@@ -91,7 +91,8 @@
             "oauth_activate": "Twitch Activate",
             "oauth_confirm": "I've entered the code",
             "browser_prompt": "Log in to Twitch in the controlled browser, including any verification. TDM will continue automatically. Enter your password only on Twitch’s page.",
-            "browser_open": "Open Twitch login browser"
+            "browser_open": "Open Twitch login browser",
+            "browser_desktop_prompt": "Sign in to Twitch in the dedicated TDM Chrome window on the browser host. Complete any verification there. TDM will continue automatically."
         },
         "websocket": {
             "name": "Websocket Status",

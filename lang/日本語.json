@@ -91,7 +91,8 @@
             "oauth_activate": "Twitch Activate",
             "oauth_confirm": "I've entered the code",
             "browser_prompt": "TDM が操作するブラウザーで Twitch にログインし、必要な認証を完了してください。TDM は自動的に続行します。パスワードは Twitch のページにのみ入力してください。",
-            "browser_open": "Twitch ログイン用ブラウザーを開く"
+            "browser_open": "Twitch ログイン用ブラウザーを開く",
+            "browser_desktop_prompt": "ブラウザーを実行している端末のTDM専用ChromeウィンドウでTwitchにログインし、必要な認証を完了してください。TDMは自動的に続行します。"
         },
         "websocket": {
             "name": "Websocketステータス",

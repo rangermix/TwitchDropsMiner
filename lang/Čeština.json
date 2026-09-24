@@ -91,7 +91,8 @@
             "oauth_activate": "Twitch Activate",
             "oauth_confirm": "I've entered the code",
             "browser_prompt": "Přihlaste se k Twitchi v ovládaném prohlížeči a dokončete ověření. TDM bude automaticky pokračovat. Heslo zadávejte pouze na stránce Twitch.",
-            "browser_open": "Otevřít prohlížeč pro přihlášení k Twitchi"
+            "browser_open": "Otevřít prohlížeč pro přihlášení k Twitchi",
+            "browser_desktop_prompt": "Přihlaste se na Twitch v samostatném okně Chrome pro TDM na počítači s prohlížečem. Dokončete tam ověření. TDM bude automaticky pokračovat."
         },
         "websocket": {
             "name": "Stav Websocketu",

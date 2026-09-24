@@ -270,14 +270,21 @@ progress to an ignored drop while the miner intentionally targets another reward
 
 - `src/auth/browser_session.py` owns an optional persistent Google Chrome session over
   WebDriver (`TDM_BROWSER_URL`) and a separate user-facing viewer URL
-  (`TDM_BROWSER_VIEWER_URL`). Configure both or neither. The optional
+  (`TDM_BROWSER_VIEWER_URL`). Configure both, or use a driver URL with
+  `TDM_BROWSER_DEBUGGER_ADDRESS` to attach to a dedicated desktop Chrome profile.
+  The debugger address must be an explicit loopback host/port; never attach to the
+  user's everyday profile. With no viewer URL, emit the translated desktop prompt and
+  no link. Saved driver state must match both endpoint and debugger address. The optional
   `docker-compose.browser.yml` uses a private driver, loopback noVNC viewer, required
   VNC password, and a profile volume writable only by the browser user.
 - Valid Android cookies take priority. Browser fallback handles missing, expired, or
   incompatible saved tokens without overwriting `cookies.jar`. Browser mode uses
   anonymous HTTP for metadata and executes authenticated GraphQL in the actual browser;
   never replay a web token under Android headers. Captured request context must match
-  the active token and Twitch's exact GraphQL URL. Reject account switches before any
+  the active token and Twitch's exact GraphQL URL and include nonempty client integrity.
+  Twitch initially sends authenticated requests without integrity; wait for a complete
+  context and never replace it with an incomplete request or combine different contexts.
+  Reject account switches before any
   operation, and never invent account linkage when catalog access fails.
 - The browser profile holds credentials; `browser-session.json` contains only driver
   reconnection state with mode 0600. Driver errors and HTTP debug logs must not include
@@ -288,12 +295,17 @@ progress to an ignored drop while the miner intentionally targets another reward
   proof of authenticated access or Twitch-side drop progress. On 24 September 2026,
   Docker login failed in Chromium 152 and official Chrome 153. Chrome also failed when
   launched without ChromeDriver in a fresh profile with `navigator.webdriver` false;
-  a separate Firefox 156 WebDriver BiDi comparison was also rejected. The user confirmed
-  fresh login works in a normal desktop browser on the same network; controlled desktop
-  browser authentication is a separate, unverified comparison.
-  Do not attribute the rejection solely to ChromeDriver, or advertise this setup as a
-  working login recovery. Track controlled comparisons and remaining live proof in #118.
-- Browser login UI text is in `gui.login.browser_prompt`/`browser_open` in every locale,
+  a separate Firefox 156 WebDriver BiDi comparison was also rejected. Native macOS
+  Chrome 153 accepted fresh login under DevTools control. The actual TDM browser service
+  also validated identity, inventory, and 125 campaigns through attached ChromeDriver
+  after the integrity-context correction. A separate live Twitch inventory query then
+  confirmed the test campaign advancing from 0 to 4 watched minutes while the full miner
+  ran. Restarting the dedicated browser and miner restored login without new credentials.
+  This does not repair Docker login or verify other platforms or long-term renewal.
+  Do not attribute the Docker rejection solely to ChromeDriver, or advertise the Docker
+  experiment as a working login recovery. Track remaining live proof in #118.
+- Browser login UI text is in `gui.login.browser_prompt`, `browser_desktop_prompt`, and
+  `browser_open` in every locale,
   with HTTP(S)-only viewer links and safe DOM text. Reconnecting dashboards receive the
   pending viewer URL, never browser cookies or tokens. The viewer's VNC password and
   network protection are separate from dashboard authentication.

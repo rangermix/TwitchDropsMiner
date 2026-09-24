@@ -91,7 +91,8 @@
             "oauth_activate": "Twitch Activate",
             "oauth_confirm": "I've entered the code",
             "browser_prompt": "Увійдіть у Twitch у керованому браузері та пройдіть перевірки. TDM продовжить роботу автоматично. Вводьте пароль лише на сторінці Twitch.",
-            "browser_open": "Відкрити браузер для входу в Twitch"
+            "browser_open": "Відкрити браузер для входу в Twitch",
+            "browser_desktop_prompt": "Увійдіть у Twitch в окремому вікні Chrome для TDM на комп’ютері з браузером. Завершіть перевірку в цьому вікні. TDM продовжить роботу автоматично."
         },
         "websocket": {
             "name": "Статус Websocket",

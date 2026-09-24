@@ -87,6 +87,74 @@ async def test_only_matching_twitch_request_context_is_kept(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_incomplete_requests_cannot_replace_integrity_context(tmp_path):
+    browser = configured(tmp_path)
+    browser._session_id = "test-session"
+    incomplete = request_log(**{"Client-Integrity": "", "X-Device-Id": "later-device"})
+    browser._command = AsyncMock(return_value=[incomplete])
+    await browser._refresh_headers("test-token")
+    assert browser._headers == {}
+    browser._command.return_value = [request_log(), incomplete]
+    await browser._refresh_headers("test-token")
+    assert browser._headers["client-integrity"] == "secret-integrity"
+    assert browser._headers["x-device-id"] == "device"
+
+
+def test_native_browser_configuration_without_viewer(monkeypatch):
+    monkeypatch.setenv("TDM_BROWSER_URL", "http://127.0.0.1:9515")
+    monkeypatch.delenv("TDM_BROWSER_VIEWER_URL", raising=False)
+    monkeypatch.setenv("TDM_BROWSER_DEBUGGER_ADDRESS", "127.0.0.1:9222")
+    config = BrowserConfig.from_env()
+    assert config.debugger_address == "127.0.0.1:9222"
+    assert config.viewer_url == ""
+    for address in (
+        "example.com:9222",
+        "127.0.0.1",
+        "127.0.0.1:0",
+        "127.0.0.1:9222/path",
+        "user:secret@127.0.0.1:9222",
+    ):
+        monkeypatch.setenv("TDM_BROWSER_DEBUGGER_ADDRESS", address)
+        with pytest.raises(LoginException, match="BROWSER_CONFIG"):
+            BrowserConfig.from_env()
+
+
+@pytest.mark.asyncio
+async def test_native_attach_does_not_launch_another_profile(tmp_path, monkeypatch):
+    monkeypatch.setenv("TDM_BROWSER_URL", "http://127.0.0.1:9515")
+    monkeypatch.delenv("TDM_BROWSER_VIEWER_URL", raising=False)
+    monkeypatch.setenv("TDM_BROWSER_DEBUGGER_ADDRESS", "127.0.0.1:9222")
+    browser = BrowserSession(BrowserConfig.from_env(), tmp_path / "state")
+    browser._command = AsyncMock(return_value={"sessionId": "attached"})
+    await browser.start()
+    options = browser._command.await_args_list[0].args[2]["capabilities"]["alwaysMatch"][
+        "goog:chromeOptions"
+    ]
+    assert options == {"debuggerAddress": "127.0.0.1:9222"}
+    assert json.loads(browser.state_path.read_text())["debugger_address"] == "127.0.0.1:9222"
+
+
+@pytest.mark.asyncio
+async def test_changed_browser_attachment_does_not_reuse_previous_driver(tmp_path, monkeypatch):
+    monkeypatch.setenv("TDM_BROWSER_URL", "http://127.0.0.1:9515")
+    monkeypatch.delenv("TDM_BROWSER_VIEWER_URL", raising=False)
+    monkeypatch.setenv("TDM_BROWSER_DEBUGGER_ADDRESS", "127.0.0.1:9222")
+    browser = BrowserSession(BrowserConfig.from_env(), tmp_path / "state")
+    browser.state_path.write_text(
+        json.dumps(
+            {
+                "session_id": "previous",
+                "endpoint": browser.config.endpoint,
+                "debugger_address": "127.0.0.1:9333",
+            }
+        )
+    )
+    browser._command = AsyncMock(return_value={"sessionId": "attached"})
+    await browser.start()
+    assert browser._command.await_args_list[0].args[1] == "/session"
+
+
+@pytest.mark.asyncio
 async def test_browser_gql_refuses_changed_account_before_sending(tmp_path):
     browser = configured(tmp_path)
     browser._token = "old-account"
@@ -250,6 +318,7 @@ async def test_websocket_sends_credential_without_logging_it(caplog):
 @pytest.mark.parametrize("double_stop", [False, True])
 async def test_cancel_during_creation_deletes_allocated_browser(tmp_path, double_stop):
     from src.exceptions import ExitRequest
+
     browser = configured(tmp_path)
     allocated = asyncio.Event()
     respond = asyncio.Event()

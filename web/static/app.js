@@ -1150,25 +1150,30 @@ function showOAuthCode(url, code) {
     document.getElementById('oauth-code').textContent = code;
 }
 
-function showBrowserLogin(url) {
+function showBrowserLogin(url, desktop = false) {
     const panel = document.getElementById('browser-login');
     const link = document.getElementById('browser-login-link');
     panel.hidden = true;
+    state.browserDesktop = desktop === true;
+    link.hidden = state.browserDesktop;
     link.removeAttribute('href');
-    if (!url) return;
+    if (!url && !state.browserDesktop) return;
     let parsed;
-    try { parsed = new URL(url); } catch { return; }
-    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) return;
+    if (!state.browserDesktop) {
+        try { parsed = new URL(url); } catch { return; }
+        if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) return;
+        link.href = parsed.href;
+    }
     document.getElementById('login-form').style.display = 'none';
     document.getElementById('oauth-code-display').style.display = 'none';
-    document.getElementById('browser-login-prompt').textContent = state.translations.gui?.login?.browser_prompt || '';
+    const promptKey = state.browserDesktop ? 'browser_desktop_prompt' : 'browser_prompt';
+    document.getElementById('browser-login-prompt').textContent = state.translations.gui?.login?.[promptKey] || '';
     link.textContent = state.translations.gui?.login?.browser_open || '';
-    link.href = parsed.href;
     panel.hidden = false;
 }
 
 function updateLoginStatus(data) {
-    showBrowserLogin(data.user_id ? null : data.browser_url);
+    showBrowserLogin(data.user_id ? null : data.browser_url, !data.user_id && data.browser_desktop);
     const statusEl = document.getElementById('login-status');
     const t = state.translations;
     if (data.user_id) {
@@ -2010,7 +2015,8 @@ function applyTranslations(t) {
 
         const loginButton = document.getElementById('login-button');
         if (loginButton) loginButton.textContent = t.gui.login.button;
-        document.getElementById('browser-login-prompt').textContent = t.gui.login.browser_prompt;
+        document.getElementById('browser-login-prompt').textContent = state.browserDesktop
+            ? t.gui.login.browser_desktop_prompt : t.gui.login.browser_prompt;
         document.getElementById('browser-login-link').textContent = t.gui.login.browser_open;
 
         // Update OAuth display text

@@ -91,7 +91,8 @@
             "oauth_activate": "Twitch Activate",
             "oauth_confirm": "I've entered the code",
             "browser_prompt": "Masuk ke Twitch di browser yang dikendalikan dan selesaikan verifikasi. TDM akan melanjutkan secara otomatis. Masukkan kata sandi hanya di halaman Twitch.",
-            "browser_open": "Buka browser login Twitch"
+            "browser_open": "Buka browser login Twitch",
+            "browser_desktop_prompt": "Masuk ke Twitch di jendela Chrome khusus TDM pada komputer yang menjalankan browser. Selesaikan verifikasi di sana. TDM akan melanjutkan secara otomatis."
         },
         "websocket": {
             "name": "Status Websocket",

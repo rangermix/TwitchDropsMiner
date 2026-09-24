@@ -91,7 +91,8 @@
             "oauth_activate": "Activar Twitch",
             "oauth_confirm": "He ingresado el código",
             "browser_prompt": "Inicia sesión en Twitch en el navegador controlado y completa las verificaciones. TDM continuará automáticamente. Introduce tu contraseña solo en la página de Twitch.",
-            "browser_open": "Abrir el navegador de inicio de sesión"
+            "browser_open": "Abrir el navegador de inicio de sesión",
+            "browser_desktop_prompt": "Inicia sesión en Twitch en la ventana de Chrome dedicada a TDM, en el equipo donde se ejecuta el navegador. Completa allí cualquier verificación. TDM continuará automáticamente."
         },
         "websocket": {
             "name": "Estado del Websocket",

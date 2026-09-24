@@ -91,7 +91,8 @@
             "oauth_activate": "Twitch 激活",
             "oauth_confirm": "我已输入代码",
             "browser_prompt": "请在 TDM 控制的浏览器中登录 Twitch 并完成验证，TDM 将自动继续。请仅在 Twitch 页面中输入密码。",
-            "browser_open": "打开 Twitch 登录浏览器"
+            "browser_open": "打开 Twitch 登录浏览器",
+            "browser_desktop_prompt": "请在运行浏览器的电脑上，通过 TDM 专用 Chrome 窗口登录 Twitch，并在该窗口完成验证。TDM 将自动继续。"
         },
         "websocket": {
             "name": "网络协议连接状态",

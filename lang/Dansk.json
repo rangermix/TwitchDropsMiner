@@ -91,7 +91,8 @@
             "oauth_activate": "Twitch Aktiver",
             "oauth_confirm": "Jeg har indtastet koden",
             "browser_prompt": "Log ind på Twitch i den styrede browser, inklusive eventuel bekræftelse. TDM fortsætter automatisk. Indtast kun din adgangskode på Twitch-siden.",
-            "browser_open": "Åbn browseren til Twitch-login"
+            "browser_open": "Åbn browseren til Twitch-login",
+            "browser_desktop_prompt": "Log ind på Twitch i det separate TDM Chrome-vindue på browserens computer. Gennemfør eventuel bekræftelse der. TDM fortsætter automatisk."
         },
         "websocket": {
             "name": "Websocket-status",

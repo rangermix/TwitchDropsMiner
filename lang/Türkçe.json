@@ -91,7 +91,8 @@
             "oauth_activate": "Twitch Activate",
             "oauth_confirm": "I've entered the code",
             "browser_prompt": "Kontrol edilen tarayıcıda Twitch oturumu açın ve doğrulamaları tamamlayın. TDM otomatik olarak devam eder. Şifrenizi yalnızca Twitch sayfasına girin.",
-            "browser_open": "Twitch giriş tarayıcısını aç"
+            "browser_open": "Twitch giriş tarayıcısını aç",
+            "browser_desktop_prompt": "Tarayıcının çalıştığı bilgisayardaki özel TDM Chrome penceresinde Twitch’e giriş yapın. Doğrulamayı orada tamamlayın. TDM otomatik olarak devam edecektir."
         },
         "websocket": {
             "name": "Websocket Durumu",

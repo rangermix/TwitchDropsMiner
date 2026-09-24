@@ -38,6 +38,7 @@ class LoginFormManager:
         self._status = _.t["login"]["status"]["logged_out"]
         self._user_id: int | None = None
         self._browser_url: str | None = None
+        self._browser_desktop = False
         self._oauth_pending: dict[str, str] | None = (
             None  # Store OAuth code for late-connecting clients
         )
@@ -100,11 +101,12 @@ class LoginFormManager:
         self._login_data = LoginData(username, password, token)
         self._login_event.set()
 
-    async def browser_pending(self, viewer_url: str | None) -> None:
+    async def browser_pending(self, viewer_url: str | None, *, desktop: bool = False) -> None:
         """Expose only the configured viewer URL, never browser credentials."""
         self._browser_url = viewer_url
+        self._browser_desktop = desktop
         self._oauth_pending = None
-        if viewer_url:
+        if viewer_url or desktop:
             self._status = _.t["login"]["status"]["required"]
             self._user_id = None
         await self._broadcaster.emit("login_status", self.get_status())
@@ -117,6 +119,8 @@ class LoginFormManager:
         """
         result: dict[str, Any] = {"status": self._status, "user_id": self._user_id}
         result["browser_url"] = self._browser_url
+        if self._browser_desktop:
+            result["browser_desktop"] = True
         # Include OAuth code if pending
         if self._oauth_pending:
             result["oauth_pending"] = self._oauth_pending

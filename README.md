@@ -2,7 +2,7 @@
 
 > Automatically mine timed Twitch Drops without streaming video or audio.
 
-> **Warning: fresh Twitch login is currently broken.** Preserve existing `data/cookies.jar`
+> **Warning: new Twitch device-code login is broken; browser recovery is experimental.** Preserve existing `data/cookies.jar`
 > files and backups. New login and missing-campaign recovery are tracked in
 > [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118).
 
@@ -99,14 +99,63 @@ The Chrome WebDriver attempt returned HTTP 400 with Twitch error code `5025`. Th
 Chrome version also failed when launched without ChromeDriver in a separate profile,
 with `navigator.webdriver` false. Firefox 156 controlled through WebDriver BiDi in a
 separate Docker profile was also rejected. Removing ChromeDriver or changing browser
-engine therefore did not resolve the rejection. Fresh login in the user's normal desktop
-browser on the same network succeeded, so the Docker/browser environment remains under
-investigation. Browser control and an anonymous GraphQL request work, but authenticated
-campaign access through TDM and Twitch-side progress remain
-unverified. This setup is an experiment, not a working fresh-login recovery procedure. See
+engine therefore did not resolve the rejection. A separate native Chrome 153 profile on
+macOS did accept fresh login under DevTools control. TDM's browser service then attached
+through ChromeDriver and validated the account, inventory, and 125 campaigns without
+GraphQL errors after waiting for Twitch's complete request context. With the full miner
+running, a separate live Twitch inventory query confirmed the test campaign advancing
+from 0 to 4 watched minutes. This supports the desktop attachment option below; Docker
+login remains unresolved. Restarting both the dedicated Chrome instance and the miner
+restored login and resumed watching without another sign-in. See
 [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118) for current results.
 
-To try the source implementation, create a private, ignored `.env` file in the repository
+#### Desktop Chrome attachment (experimental)
+
+On a machine with a desktop, TDM can attach to a dedicated, normally launched Chrome
+profile. The browser must remain running on that machine while TDM uses it. This has
+been checked on macOS ARM64; other desktop platforms, long runs, and token renewal remain
+unverified.
+Install a [ChromeDriver matching your Chrome build](https://developer.chrome.com/docs/chromedriver/downloads/version-selection).
+Keep both debugging and driver ports on loopback. Use a dedicated profile, not your
+everyday Chrome profile. Do not expose either control port to other machines.
+
+For example, on macOS, launch the browser from the repository directory:
+
+```bash
+mkdir -p data/native-browser
+chmod 700 data/native-browser
+open -na 'Google Chrome' --args \
+  --user-data-dir="$PWD/data/native-browser" \
+  --remote-debugging-port=9222 --no-first-run \
+  https://www.twitch.tv/drops/campaigns
+```
+
+Run ChromeDriver in another terminal, with its executable on `PATH`:
+
+```bash
+chromedriver --port=9515 --allowed-ips=127.0.0.1 --log-level=OFF
+```
+
+Then run TDM from its activated source environment:
+
+```bash
+source env/bin/activate
+unset TDM_BROWSER_VIEWER_URL
+TDM_BROWSER_URL=http://127.0.0.1:9515 \
+TDM_BROWSER_DEBUGGER_ADDRESS=127.0.0.1:9222 python main.py
+```
+
+Complete login and any verification in the **dedicated TDM Chrome window**. A login in
+another Chrome window does not authenticate this profile. The dashboard shows a desktop
+login prompt without a viewer link. Chrome retains the session in `data/native-browser`;
+TDM keeps Android cookies separate and waits for Twitch's integrity-bearing request
+context before validating campaign access. On restart, launch the same profile and
+ChromeDriver again if they have stopped. Close TDM before closing its browser. A remote
+dashboard does not provide remote control of this desktop window.
+
+#### Docker browser experiment (login currently rejected)
+
+To reproduce the Docker experiment, create a private, ignored `.env` file in the repository
 root containing a unique viewer password (VNC uses only its first eight characters):
 
 ```dotenv
@@ -133,8 +182,9 @@ session on normal shutdown and reuses the profile next time; after an interrupte
 process it can reconnect using `data/browser-session.json`. If the browser itself crashes,
 restart the browser and miner. Do not delete a profile simply because login failed.
 
-For a source-run miner, point `TDM_BROWSER_URL` at a private WebDriver endpoint and set
-`TDM_BROWSER_VIEWER_URL` to the corresponding HTTP(S) viewer URL. Both are required.
+For a source-run miner using a browser with a remote viewer, point `TDM_BROWSER_URL` at
+a private WebDriver endpoint and set `TDM_BROWSER_VIEWER_URL` to its HTTP(S) viewer URL.
+Desktop attachment instead uses the debugger-address configuration above without a viewer.
 The Python service currently supports Chrome's network-event API; Firefox is not yet an
 implemented backend. Browser requests use the browser's own network connection, so TDM's
 HTTP proxy setting does not configure Chrome; configure the browser network separately.

@@ -35,15 +35,33 @@ def browser_error(code: str) -> LoginException:
 class BrowserConfig:
     endpoint: str
     viewer_url: str
+    debugger_address: str | None = None
 
     @classmethod
     def from_env(cls) -> BrowserConfig | None:
         endpoint = os.environ.get("TDM_BROWSER_URL", "").strip().rstrip("/")
         viewer = os.environ.get("TDM_BROWSER_VIEWER_URL", "").strip()
-        if not endpoint and not viewer:
+        debugger = os.environ.get("TDM_BROWSER_DEBUGGER_ADDRESS", "").strip()
+        if not endpoint and not viewer and not debugger:
             return None
         try:
-            for raw in (endpoint, viewer):
+            if not viewer and not debugger:
+                raise ValueError
+            if debugger:
+                address = URL(f"http://{debugger}")
+                if (
+                    address.host not in ("127.0.0.1", "localhost", "::1")
+                    or not address.explicit_port
+                    or address.user is not None
+                    or address.password is not None
+                    or address.raw_path != "/"
+                    or address.query
+                    or address.fragment
+                ):
+                    raise ValueError
+                host = "[::1]" if address.host == "::1" else address.host
+                debugger = f"{host}:{address.port}"
+            for raw in (endpoint, *([viewer] if viewer else [])):
                 url = URL(raw)
                 if (
                     url.scheme not in ("http", "https")
@@ -58,7 +76,7 @@ class BrowserConfig:
                 raise ValueError
         except (ValueError, TypeError):
             raise browser_error("CONFIG") from None
-        return cls(endpoint, viewer)
+        return cls(endpoint, viewer, debugger or None)
 
 
 @dataclass(frozen=True)
@@ -143,7 +161,11 @@ fetch(url, {method: body === null ? 'GET' : 'POST', headers,
         try:
             state = json.loads(self.state_path.read_text())
             sid = state["session_id"]
-            if state["endpoint"] == self.config.endpoint and re.fullmatch(r"[a-zA-Z0-9-]+", sid):
+            if (
+                state["endpoint"] == self.config.endpoint
+                and state.get("debugger_address") == self.config.debugger_address
+                and re.fullmatch(r"[a-zA-Z0-9-]+", sid)
+            ):
                 self._session_id = sid
                 try:
                     await self._command("GET", self._path("/url"))
@@ -160,7 +182,9 @@ fetch(url, {method: body === null ? 'GET' : 'POST', headers,
                     "capabilities": {
                         "alwaysMatch": {
                             "browserName": "chrome",
-                            "goog:chromeOptions": {
+                            "goog:chromeOptions": {"debuggerAddress": self.config.debugger_address}
+                            if self.config.debugger_address
+                            else {
                                 "args": [
                                     "--user-data-dir=/home/seluser/tdm-profile",
                                     "--window-size=1280,900",
@@ -195,7 +219,14 @@ fetch(url, {method: body === null ? 'GET' : 'POST', headers,
         # No token is written here. The private browser volume owns credentials.
         with self.state_path.open("w") as handle:
             os.chmod(self.state_path, 0o600)
-            json.dump({"session_id": sid, "endpoint": self.config.endpoint}, handle)
+            json.dump(
+                {
+                    "session_id": sid,
+                    "endpoint": self.config.endpoint,
+                    "debugger_address": self.config.debugger_address,
+                },
+                handle,
+            )
 
     async def _cookies(self) -> dict[str, str]:
         # The user can navigate the interactive browser elsewhere. Do not accept
@@ -230,6 +261,11 @@ fetch(url, {method: body === null ? 'GET' : 'POST', headers,
                 if headers.get("authorization") != f"OAuth {token}":
                     continue
                 if headers.get("client-id") != ClientType.WEB.CLIENT_ID:
+                    continue
+                integrity = headers.get("client-integrity")
+                if not isinstance(integrity, str) or not integrity.strip():
+                    # Twitch sends early authenticated requests without integrity,
+                    # then retries protected operations with its complete context.
                     continue
                 # Replace as a unit: never combine credentials from different requests.
                 self._headers = {
@@ -291,7 +327,10 @@ fetch(url, {method: body === null ? 'GET' : 'POST', headers,
         """Wait for user login, then prove identity and both inventory endpoints."""
         try:
             await self.start()
-            await login.browser_pending(self.config.viewer_url)
+            if self.config.debugger_address and not self.config.viewer_url:
+                await login.browser_pending(None, desktop=True)
+            else:
+                await login.browser_pending(self.config.viewer_url)
             token = await asyncio.wait_for(self._wait_for_token(), 15 * 60)
             identity = await self._fetch(self.VALIDATE_URL, {"Authorization": f"OAuth {token}"})
             if (

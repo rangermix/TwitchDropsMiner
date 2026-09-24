@@ -31,3 +31,20 @@ Likely files: `src/auth/browser_session.py`, `src/auth/auth_state.py`, `src/core
 ## Completion evidence
 
 Run the contribution baseline and applicable Docker/browser/frontend/locale regressions on the final revision. Obtain independent adversarial review. Preserve #118 as open while fresh-session live proof is missing; mocked tests and a `Watching` message are not sufficient. Do not merge or release implicitly.
+
+## Evidence-driven adjustment: desktop attachment
+
+Docker Chromium 152, Chrome 153 with and without ChromeDriver, and Firefox 156 all failed
+interactive login on the tested host. A separate native macOS Chrome 153 profile accepted
+login under DevTools control. Keep the Docker experiment explicitly unresolved and add
+an optional loopback Chrome debugger address to the existing WebDriver service, so it can
+attach to a dedicated desktop browser without replacing the transport. The dashboard
+needs a translated prompt for the physical desktop window when no viewer URL exists.
+
+Live capture showed Twitch first sending authenticated requests without client integrity,
+then retrying protected operations with integrity. The service must wait for a complete
+matching request context, preserve it against later incomplete requests, and validate
+identity plus both catalog operations. A successful attached-service check returned 125
+campaigns and valid inventory. A subsequent full-miner run selected a linked live campaign;
+a separate Twitch Inventory query confirmed its progress increasing from 0 to 4 minutes.
+Docker login, other desktop platforms, and long-term renewal remain unresolved or unverified.
