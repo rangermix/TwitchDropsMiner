@@ -266,6 +266,32 @@ progress to an ignored drop while the miner intentionally targets another reward
   `tests/test_spade_discovery.py` covers both beacon-discovery formats through actual
   `send_watch()` calls with mocked responses; these tests do not prove live drop progress.
 
+### Experimental Twitch browser login (#118)
+
+- `src/auth/browser_session.py` owns an optional persistent Google Chrome session over
+  WebDriver (`TDM_BROWSER_URL`) and a separate user-facing viewer URL
+  (`TDM_BROWSER_VIEWER_URL`). Configure both or neither. The optional
+  `docker-compose.browser.yml` uses a private driver, loopback noVNC viewer, required
+  VNC password, and a profile volume writable only by the browser user.
+- Valid Android cookies take priority. Browser fallback handles missing, expired, or
+  incompatible saved tokens without overwriting `cookies.jar`. Browser mode uses
+  anonymous HTTP for metadata and executes authenticated GraphQL in the actual browser;
+  never replay a web token under Android headers. Captured request context must match
+  the active token and Twitch's exact GraphQL URL. Reject account switches before any
+  operation, and never invent account linkage when catalog access fails.
+- The browser profile holds credentials; `browser-session.json` contains only driver
+  reconnection state with mode 0600. Driver errors and HTTP debug logs must not include
+  credentials, request headers, payloads, or remote exception text. Cancellation and
+  shutdown close owned sessions and clear pending viewer UI state.
+- Login success requires token validation and non-null inventory and campaign results.
+  An anonymous browser request, passing mocks, or a displayed Watching state is not
+  proof of authenticated access or Twitch-side drop progress. As of this implementation,
+  live Chromium login was rejected; official Chrome verification remains in #118.
+- Browser login UI text is in `gui.login.browser_prompt`/`browser_open` in every locale,
+  with HTTP(S)-only viewer links and safe DOM text. Reconnecting dashboards receive the
+  pending viewer URL, never browser cookies or tokens. The viewer's VNC password and
+  network protection are separate from dashboard authentication.
+
 ### Dashboard authentication
 
 - `src/web/auth.py` owns optional password-only dashboard protection, separate from Twitch

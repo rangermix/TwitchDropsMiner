@@ -89,7 +89,9 @@
             "button": "Bejelentkezés",
             "oauth_prompt": "Adja meg ezt a kódot itt:",
             "oauth_activate": "Twitch Aktiválás",
-            "oauth_confirm": "Megadtam a kódot"
+            "oauth_confirm": "Megadtam a kódot",
+            "browser_prompt": "Jelentkezz be a Twitchre a vezérelt böngészőben, és végezd el az ellenőrzéseket. A TDM automatikusan folytatja. A jelszavadat csak a Twitch oldalán add meg.",
+            "browser_open": "Twitch bejelentkezési böngésző megnyitása"
         },
         "websocket": {
             "name": "Websocket állapot",

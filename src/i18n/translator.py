@@ -65,6 +65,8 @@ class GUITabs(TypedDict):
 
 
 class GUILoginForm(TypedDict):
+    browser_prompt: str
+    browser_open: str
     name: str
     labels: str
     request: str

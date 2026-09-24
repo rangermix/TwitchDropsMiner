@@ -89,7 +89,9 @@
             "button": "Conectare",
             "oauth_prompt": "Enter this code at:",
             "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code"
+            "oauth_confirm": "I've entered the code",
+            "browser_prompt": "Conectează-te la Twitch în browserul controlat și finalizează verificările. TDM va continua automat. Introdu parola doar pe pagina Twitch.",
+            "browser_open": "Deschide browserul de conectare Twitch"
         },
         "websocket": {
             "name": "Status Websocket",

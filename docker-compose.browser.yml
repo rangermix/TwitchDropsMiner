@@ -1,0 +1,35 @@
+# Experimental browser login: see README and tracking issue #118.
+# docker compose -f docker-compose.yml -f docker-compose.browser.yml up -d --build
+services:
+  twitch-drops-miner:
+    # Allow an in-flight driver allocation to return its ID and be cleaned up.
+    stop_grace_period: 90s
+    environment:
+      TDM_BROWSER_URL: http://browser:4444
+      TDM_BROWSER_VIEWER_URL: ${TDM_BROWSER_VIEWER_URL:-http://localhost:7900/vnc.html}
+    depends_on:
+      browser:
+        condition: service_healthy
+
+  browser:
+    build: ./docker/browser
+    shm_size: 2gb
+    environment:
+      SE_VNC_PASSWORD: ${TDM_BROWSER_VNC_PASSWORD:?Set a unique TDM_BROWSER_VNC_PASSWORD}
+      SE_ENABLE_TRACING: "false"
+      SE_NODE_SESSION_TIMEOUT: "3600"
+    # WebDriver (4444) and VNC (5900) are deliberately not published.
+    ports:
+      - "127.0.0.1:7900:7900"
+    volumes:
+      - browser-profile:/home/seluser/tdm-profile
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:4444/status"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 6
+    restart: unless-stopped
+
+volumes:
+  browser-profile:

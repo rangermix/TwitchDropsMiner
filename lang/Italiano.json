@@ -89,7 +89,9 @@
             "button": "Login",
             "oauth_prompt": "Enter this code at:",
             "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code"
+            "oauth_confirm": "I've entered the code",
+            "browser_prompt": "Accedi a Twitch nel browser controllato e completa le verifiche. TDM continuerà automaticamente. Inserisci la password solo nella pagina di Twitch.",
+            "browser_open": "Apri il browser di accesso a Twitch"
         },
         "websocket": {
             "name": "Stato Websocket",

@@ -12,6 +12,7 @@ import aiohttp
 
 from src.api import GQLClient, HTTPClient
 from src.auth import _AuthState
+from src.auth.browser_session import BrowserConfig, BrowserSession
 from src.config import (
     MAX_CHANNELS,
     ClientType,
@@ -69,6 +70,11 @@ class Twitch:
         self._mnt_triggers: deque[datetime] = deque()
         # Client type and auth
         self._client_type: ClientInfo = ClientType.ANDROID_APP
+        browser_config = BrowserConfig.from_env()
+        self._browser = (
+            BrowserSession(browser_config, DATA_DIR / "browser-session.json")
+            if browser_config else None
+        )
         self._auth_state: _AuthState = _AuthState(self)
         # GUI (will be set by main.py)
         self.gui: WebGUIManager = None  # type: ignore[assignment]
@@ -135,6 +141,8 @@ class Twitch:
             self._mnt_task = None
         # stop websocket and close HTTP session
         await self.websocket.stop(clear_topics=True)
+        if self._browser is not None:
+            await self._browser.close()
         if self._http_client is not None:
             await self._http_client.close()
         self._drops.clear()
@@ -209,6 +217,8 @@ class Twitch:
         usually by the console or application window being closed.
         """
         self.change_state(State.EXIT)
+        if self._browser is not None:
+            self._browser.request_stop()
 
     def print(self, message: str, *, collapse_key: str | None = None) -> None:
         """Print a message in the GUI."""

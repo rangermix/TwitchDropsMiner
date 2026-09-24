@@ -1137,18 +1137,38 @@ function renderInventory() {
 }
 
 function showLoginForm() {
+    document.getElementById('browser-login').hidden = true;
     document.getElementById('login-form').style.display = 'block';
     document.getElementById('oauth-code-display').style.display = 'none';
 }
 
 function showOAuthCode(url, code) {
+    document.getElementById('browser-login').hidden = true;
     document.getElementById('login-form').style.display = 'none';
     document.getElementById('oauth-code-display').style.display = 'block';
     document.getElementById('oauth-url').href = url;
     document.getElementById('oauth-code').textContent = code;
 }
 
+function showBrowserLogin(url) {
+    const panel = document.getElementById('browser-login');
+    const link = document.getElementById('browser-login-link');
+    panel.hidden = true;
+    link.removeAttribute('href');
+    if (!url) return;
+    let parsed;
+    try { parsed = new URL(url); } catch { return; }
+    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) return;
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('oauth-code-display').style.display = 'none';
+    document.getElementById('browser-login-prompt').textContent = state.translations.gui?.login?.browser_prompt || '';
+    link.textContent = state.translations.gui?.login?.browser_open || '';
+    link.href = parsed.href;
+    panel.hidden = false;
+}
+
 function updateLoginStatus(data) {
+    showBrowserLogin(data.user_id ? null : data.browser_url);
     const statusEl = document.getElementById('login-status');
     const t = state.translations;
     if (data.user_id) {
@@ -1990,6 +2010,8 @@ function applyTranslations(t) {
 
         const loginButton = document.getElementById('login-button');
         if (loginButton) loginButton.textContent = t.gui.login.button;
+        document.getElementById('browser-login-prompt').textContent = t.gui.login.browser_prompt;
+        document.getElementById('browser-login-link').textContent = t.gui.login.browser_open;
 
         // Update OAuth display text
         const oauthDisplay = document.getElementById('oauth-code-display');

@@ -6,7 +6,7 @@
 
 **Architecture:** Keep the default Android HTTP/GraphQL path for existing sessions. Isolate browser lifecycle, persistent login state, and authenticated requests behind a browser session service. A browser session must be validated against Twitch's actual campaign/inventory operations, not merely accepted because OAuth validation succeeds. Docker must expose a protected interactive browser for user login/2FA and preserve its profile.
 
-**Tech stack:** Python asyncio, existing FastAPI/Socket.IO dashboard, Playwright/Chromium, Docker; compare Firefox or Chromium with Xvfb where evidence requires it.
+**Tech stack:** Python asyncio/aiohttp WebDriver transport, existing FastAPI/Socket.IO dashboard, Selenium Google Chrome container with Xvfb/noVNC, Docker. A separate browser container preserves the Alpine miner and supports ARM64. Firefox is a comparison candidate, not an implemented transport.
 
 ## Checkpoint 1: restore existing sessions and consolidate reports
 

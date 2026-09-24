@@ -89,7 +89,9 @@
             "button": "Kayıt Ol",
             "oauth_prompt": "Enter this code at:",
             "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code"
+            "oauth_confirm": "I've entered the code",
+            "browser_prompt": "Kontrol edilen tarayıcıda Twitch oturumu açın ve doğrulamaları tamamlayın. TDM otomatik olarak devam eder. Şifrenizi yalnızca Twitch sayfasına girin.",
+            "browser_open": "Twitch giriş tarayıcısını aç"
         },
         "websocket": {
             "name": "Websocket Durumu",

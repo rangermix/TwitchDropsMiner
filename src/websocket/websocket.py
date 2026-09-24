@@ -408,4 +408,5 @@ class Websocket:
         if message["type"] != "PING":
             message["nonce"] = create_nonce(CHARS_ASCII, 30)
         await ws.send_json(message, dumps=json_minify)
-        ws_logger.debug(f"Websocket[{self._idx}] sent: {message}")
+        # LISTEN/UNLISTEN contain OAuth credentials; never log their payloads.
+        ws_logger.debug("Websocket[%s] sent: %s", self._idx, message["type"])

@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, cast
 import aiohttp
 from yarl import URL
 
-from src.config import COOKIES_PATH
+from src.auth.browser_session import browser_error
+from src.config import COOKIES_PATH, ClientInfo, ClientType
 from src.exceptions import LoginException
 from src.i18n import _
 from src.utils import CHARS_HEX_LOWER, create_nonce
@@ -44,6 +45,7 @@ class _AuthState:
         self.session_id: str
         self.access_token: str
         self.client_version: str
+        self.browser_active = False
 
     def _hasattrs(self, *attrs: str) -> bool:
         """Check if all specified attributes exist."""
@@ -65,6 +67,30 @@ class _AuthState:
             "client_version",
         )
         self._logged_in.clear()
+        self.browser_active = False
+
+    async def _browser_login(self, expected_user_id: int | None = None) -> None:
+        browser = self._twitch._browser
+        assert browser is not None
+        identity = await browser.authenticate(self._twitch.gui.login)
+        if expected_user_id is not None and identity.user_id != expected_user_id:
+            await browser.close()
+            raise browser_error("ACCOUNT_MISMATCH")
+        client_info = ClientInfo(
+            ClientType.WEB.CLIENT_URL, ClientType.WEB.CLIENT_ID, identity.user_agent,
+        )
+        self._twitch._client_type = client_info
+        self._twitch._ensure_api_clients()
+        assert self._twitch._http_client is not None
+        assert self._twitch._gql_client is not None
+        self._twitch._http_client.enable_browser_mode(client_info)
+        self._twitch._gql_client._client_type = client_info
+        self.access_token = identity.token
+        self.user_id = identity.user_id
+        self.device_id = identity.device_id
+        self.browser_active = True
+        self._logged_in.set()
+        self._twitch.gui.login.update(_.t["login"]["status"]["logged_in"], self.user_id)
 
     async def _oauth_login(self) -> str:
         """
@@ -218,10 +244,16 @@ class _AuthState:
         """
         if not hasattr(self, "session_id"):
             self.session_id = create_nonce(CHARS_HEX_LOWER, 16)
+        if self.browser_active and not self._hasattrs("access_token", "user_id"):
+            await self._browser_login(expected_user_id=getattr(self, "user_id", None))
+            return
         if not self._hasattrs("device_id", "access_token", "user_id"):
             session = await self._twitch.get_session()
             jar = cast(aiohttp.CookieJar, session.cookie_jar)
             client_info: ClientInfo = self._twitch._client_type
+            if self._twitch._browser is not None and "auth-token" not in jar.filter_cookies(client_info.CLIENT_URL):
+                await self._browser_login()
+                return
         if not self._hasattrs("device_id"):
             async with self._twitch.request(
                 "GET", client_info.CLIENT_URL, headers=self.headers()
@@ -256,6 +288,9 @@ class _AuthState:
                         headers={"Authorization": f"OAuth {self.access_token}"},
                     ) as response:
                         if response.status == 401:
+                            if self._twitch._browser is not None:
+                                await self._browser_login()
+                                return
                             # the access token we have is invalid - clear the cookie and reauth
                             logger.info("Restored session is invalid")
                             assert client_info.CLIENT_URL.host is not None
@@ -273,6 +308,9 @@ class _AuthState:
                 # credentials instead of destroying them before a new login fails.
                 logger.info("Cookie client ID mismatch")
                 self._delattrs("access_token", "user_id")
+                if self._twitch._browser is not None:
+                    await self._browser_login(expected_user_id=int(validate_response["user_id"]))
+                    return
                 raise LoginException(
                     _.t["login"]["error_code"].format(error_code="CLIENT_MISMATCH")
                 )

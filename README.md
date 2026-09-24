@@ -13,7 +13,8 @@ replaced, or expired. Releases v1.3.1 and v1.3.2 use the Smart TV client, which 
 but may show only campaigns already in progress; successful login or a healthy container
 does not establish complete campaign discovery. Clearing data, reinstalling, or changing
 Games to Watch does not repair this upstream restriction. A real browser controlled by
-TDM for interactive login is planned in #118; it is not a released fix yet. The tracking
+TDM for interactive login is available experimentally in this branch; it is not a
+verified or released fix yet. The tracking
 issue records implementation, live verification, and release status.
 
 `DEVICE_AUTH_400` means Twitch rejected new device authorization. `CLIENT_MISMATCH`
@@ -75,6 +76,65 @@ From the repository root, build and start the included
 ```bash
 docker compose up -d --build
 ```
+
+### Experimental browser login (#118)
+
+The optional browser setup runs **Google Chrome** in a separate container with a
+virtual display and an interactive viewer. TDM controls its persistent session through
+WebDriver. You enter your Twitch credentials and any verification directly on Twitch's
+page. TDM continues only after checking the web token's identity and obtaining both
+inventory and campaign responses. Existing valid Android sessions take priority and do
+not start a browser session.
+
+**Live status:** the initial Debian Chromium 152 container reached Twitch but login was
+rejected with “Your browser is not currently supported.” Official Chrome 153 is being
+tested. Browser control and an anonymous GraphQL request work; authenticated campaign
+access and Twitch-side progress have not been verified. See
+[#118](https://github.com/rangermix/TwitchDropsMiner/issues/118) for current results.
+
+To try the source implementation, create a private, ignored `.env` file in the repository
+root containing a unique viewer password (VNC uses only its first eight characters):
+
+```dotenv
+TDM_BROWSER_VNC_PASSWORD=replace-with-a-unique-password
+```
+
+```bash
+chmod 600 .env
+docker compose -f docker-compose.yml -f docker-compose.browser.yml up -d --build
+```
+
+Open the TDM dashboard, then **Open Twitch login browser**, or visit
+<http://localhost:7900/vnc.html>. Connect with your viewer password and complete Twitch
+login. The viewer is separate from dashboard authentication and is bound to loopback;
+WebDriver is accessible only on the Compose network. On a remote Docker host, forward
+the viewer with `ssh -L 7900:127.0.0.1:7900 user@docker-host` and use the local URL.
+Do not publish ports 4444 or 5900, or expose the browser viewer directly to the internet.
+A viewer can access your signed-in Twitch account.
+
+The `browser-profile` volume holds sensitive Twitch session data, separately from
+`data/cookies.jar`. Preserve both when restarting or upgrading; `docker compose down -v`
+deletes the browser profile. One miner owns one browser/profile. TDM closes its browser
+session on normal shutdown and reuses the profile next time; after an interrupted miner
+process it can reconnect using `data/browser-session.json`. If the browser itself crashes,
+restart the browser and miner. Do not delete a profile simply because login failed.
+
+For a source-run miner, point `TDM_BROWSER_URL` at a private WebDriver endpoint and set
+`TDM_BROWSER_VIEWER_URL` to the corresponding HTTP(S) viewer URL. Both are required.
+The Python service currently supports Chrome's network-event API; Firefox is not yet an
+implemented backend. Browser requests use the browser's own network connection, so TDM's
+HTTP proxy setting does not configure Chrome; configure the browser network separately.
+
+`BROWSER_DRIVER` means the driver could not start/respond; `BROWSER_REQUEST` means Twitch
+did not return usable JSON over the browser transport; `BROWSER_CATALOG` means login
+could not establish inventory and campaign access. `BROWSER_SESSION_CHANGED` stops
+requests if the interactive browser logs out or switches accounts; restart TDM after
+restoring the intended account. `BROWSER_ACCOUNT_MISMATCH` means the browser account
+differs from the account identified by a still-valid saved token; sign into that account
+in the browser. These errors do not imply that a campaign has ended or
+that an account is linked. Browser login times out after 15 minutes; restart TDM to retry.
+Close/SIGTERM interrupts pending login and closes the owned session. If a browser is
+still being allocated, cleanup can wait up to 65 seconds for the driver to return its ID.
 
 ### From source
 

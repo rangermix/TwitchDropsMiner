@@ -89,7 +89,9 @@
             "button": "Log ind",
             "oauth_prompt": "Indtast denne kode på:",
             "oauth_activate": "Twitch Aktiver",
-            "oauth_confirm": "Jeg har indtastet koden"
+            "oauth_confirm": "Jeg har indtastet koden",
+            "browser_prompt": "Log ind på Twitch i den styrede browser, inklusive eventuel bekræftelse. TDM fortsætter automatisk. Indtast kun din adgangskode på Twitch-siden.",
+            "browser_open": "Åbn browseren til Twitch-login"
         },
         "websocket": {
             "name": "Websocket-status",
