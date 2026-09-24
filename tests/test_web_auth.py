@@ -292,14 +292,42 @@ class TestAuthStorageAndSockets:
 
     @pytest.mark.asyncio
     async def test_socket_deadline_disconnects_without_more_traffic(self, tmp_path, hashed, monkeypatch):
+        now = 1_700_000_000.0
+        expires_at = now + 60
+        # Control only the auth module's wall clock, leaving the event loop clock alone.
+        monkeypatch.setattr("src.web.auth.time", SimpleNamespace(time=lambda: now))
         auth = WebAuth(tmp_path / "auth.json")
-        auth.save(hashed, {auth.digest("token"): time.time() + .01})
+        auth.save(hashed, {auth.digest("token"): expires_at})
         sio = AuthSocketServer(auth)
         disconnect = AsyncMock(side_effect=lambda sid: sio.forget(sid))
         monkeypatch.setattr(sio, "disconnect", disconnect)
-        assert sio.register("idle", {"type": "websocket", "headers": [(b"cookie", b"tdm_session=token")]})
-        await asyncio.sleep(.03)
+        timer = MagicMock(spec=asyncio.TimerHandle)
+        schedule = MagicMock(return_value=timer)
+
+        # Simulate setup taking time; registration must use the remaining lifetime.
+        now += 15
+        with monkeypatch.context() as scheduling:
+            scheduling.setattr(asyncio.get_running_loop(), "call_later", schedule)
+            assert sio.register("idle", {
+                "type": "websocket", "headers": [(b"cookie", b"tdm_session=token")]
+            })
+
+        schedule.assert_called_once()
+        delay, expire = schedule.call_args.args
+        assert delay == 45
+        assert sio.expirations["idle"] is timer
+        disconnect.assert_not_awaited()
+
+        # Fire the real scheduled callback at expiry without waiting on real time.
+        now = expires_at
+        expiry_task = expire()
+        # The event loop ignores timer return values: a bare coroutine never runs.
+        assert isinstance(expiry_task, asyncio.Task)
+        await expiry_task
         disconnect.assert_awaited_once_with("idle")
+        assert "idle" not in sio.tokens
+        assert "idle" not in sio.expirations
+        timer.cancel.assert_called_once_with()
 
     @pytest.mark.asyncio
     async def test_provisional_socket_cannot_receive_private_broadcast(self, tmp_path, monkeypatch):
