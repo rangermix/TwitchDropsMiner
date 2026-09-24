@@ -317,7 +317,12 @@
             "ready": "Oturum doğrulandı. Geçerlilik sonu: {expiry}.",
             "waiting": "Yeni bir tarayıcı oturumu bekleniyor.",
             "expired": "Oturumun süresi doldu. Devam etmek için yeni bir oturum içe aktarın.",
-            "error": "İçe aktarma başarısız ({code})."
+            "error": "İçe aktarma başarısız ({code}).",
+            "pair": "Yenileme bağlantısını indir",
+            "revoke": "Yardımcının bağlantısını kes",
+            "paired": "Yenileme bağlantısı etkin. Yerel tarayıcıyı ve yardımcıyı çalışır durumda tutun.",
+            "unpaired": "Otomatik yenileme kapalı.",
+            "pair_hint": "Yeni indirme önceki bağlantının yerini alır. Bu dosyayı gizli tutun."
         }
     }
 }

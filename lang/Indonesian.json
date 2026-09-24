@@ -317,7 +317,12 @@
             "ready": "Sesi terverifikasi. Berlaku hingga {expiry}.",
             "waiting": "Menunggu sesi browser baru.",
             "expired": "Sesi kedaluwarsa. Impor sesi baru untuk melanjutkan.",
-            "error": "Impor gagal ({code})."
+            "error": "Impor gagal ({code}).",
+            "pair": "Unduh koneksi pembaruan",
+            "revoke": "Putuskan penghubung",
+            "paired": "Koneksi pembaruan aktif. Biarkan peramban lokal dan penghubung tetap berjalan.",
+            "unpaired": "Pembaruan otomatis nonaktif.",
+            "pair_hint": "Unduhan baru menggantikan koneksi sebelumnya. Simpan berkas ini secara privat."
         }
     }
 }

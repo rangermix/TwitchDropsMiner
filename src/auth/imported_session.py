@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import re
+import secrets
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -101,6 +104,7 @@ class ImportedSession:
         self._user_id: int | None = None
         self._expected_user_id: int | None = None
         self._generation = 0
+        self._revision = 0
         self._renewal_digest = ""
         self._lock = asyncio.Lock()
         self._updated = asyncio.Event()
@@ -115,11 +119,13 @@ class ImportedSession:
                     not isinstance(state, dict) or state.get("version") != 1
                     or type(state["user_id"]) is not int or state["user_id"] <= 0
                     or type(state["generation"]) is not int or state["generation"] < 1
-                    or state.get("renewal_digest", "") != ""
+                    or not isinstance(state.get("renewal_digest", ""), str)
+                    or not re.fullmatch(r"(?:[0-9a-f]{64})?", state.get("renewal_digest", ""))
                 ):
                     raise ValueError
                 self._bundle = SessionBundle.from_dict(state["bundle"], now=clock())
                 self._user_id, self._generation = state["user_id"], state["generation"]
+                self._renewal_digest = state.get("renewal_digest", "")
                 self._restore_pending = True
             except (KeyError, TypeError, ValueError, SessionError):
                 raise SessionError("FILE") from None
@@ -148,12 +154,62 @@ class ImportedSession:
             "paired": bool(self._renewal_digest),
         }
 
-    async def install(self, data: Any, *, expected_user_id: int | None = None) -> dict[str, Any]:
-        bundle = SessionBundle.from_dict(data, now=self._clock())
+    def _save(self, bundle: SessionBundle, user_id: int, generation: int, digest: str) -> None:
+        self._file.write({
+            "version": 1, "bundle": bundle.to_dict(), "user_id": user_id,
+            "generation": generation, "renewal_digest": digest,
+        })
+
+    def _check_renewal(self, token: str) -> None:
+        if (not re.fullmatch(r"[A-Za-z0-9_-]{43}", token) or not self._renewal_digest
+                or not secrets.compare_digest(hashlib.sha256(token.encode()).hexdigest(), self._renewal_digest)):
+            raise SessionError("PAIRING")
+
+    async def pair(self, *, authorized: Callable[[], bool] = lambda: True) -> str:
+        async with self._lock:
+            if not authorized():
+                raise SessionError("AUTH")
+            if self._stopping or self.status()["state"] != "ready":
+                raise SessionError("AUTH")
+            assert self._bundle is not None and self._user_id is not None
+            token = secrets.token_urlsafe(32)
+            digest = hashlib.sha256(token.encode()).hexdigest()
+            self._save(self._bundle, self._user_id, self._generation, digest)
+            self._renewal_digest = digest
+            self._revision += 1
+            return token
+
+    async def revoke(self, *, authorized: Callable[[], bool] = lambda: True) -> None:
+        async with self._lock:
+            if not authorized():
+                raise SessionError("AUTH")
+            if self._bundle is not None and self._user_id is not None:
+                self._save(self._bundle, self._user_id, self._generation, "")
+            self._renewal_digest = ""
+            self._revision += 1
+
+    def _check_candidate(self, bundle: SessionBundle) -> None:
         bundle.require_fresh(self._clock())
+        previous = self._bundle
+        if previous is not None and (
+            bundle.captured_at <= previous.captured_at
+            or bundle.expires_at <= previous.expires_at
+            or bundle.headers["client-integrity"] == previous.headers["client-integrity"]
+        ):
+            raise SessionError("REPLAY")
+
+    async def install(
+        self, data: Any, *, expected_user_id: int | None = None,
+        renewal_token: str | None = None, authorized: Callable[[], bool] = lambda: True,
+    ) -> dict[str, Any]:
+        bundle = SessionBundle.from_dict(data, now=self._clock())
         async with self._lock:
             if self._stopping:
                 raise SessionError("STOPPED")
+            if not authorized():
+                raise SessionError("AUTH")
+            if renewal_token is not None:
+                self._check_renewal(renewal_token)
             existing_account = self._bound_account()
             if existing_account is not None:
                 if expected_user_id not in (None, existing_account):
@@ -161,24 +217,27 @@ class ImportedSession:
                 expected_user_id = existing_account
             if self._user_id is not None and expected_user_id not in (None, self._user_id):
                 raise SessionError("ACCOUNT_MISMATCH")
-            previous = self._bundle
-            if previous is not None and (
-                bundle.captured_at <= previous.captured_at
-                or bundle.expires_at <= previous.expires_at
-                or bundle.headers["client-integrity"] == previous.headers["client-integrity"]
-            ):
-                raise SessionError("REPLAY")
-            identity = await self._transport.validate(bundle, self._user_id or expected_user_id)
-            bundle.require_fresh(self._clock())
+            self._check_candidate(bundle)
+            account, revision = self._user_id or expected_user_id, self._revision
+        # Do not hold the state lock while contacting Twitch: revoke/rotate must win.
+        identity = await self._transport.validate(bundle, account)
+        async with self._lock:
+            if self._stopping:
+                raise SessionError("STOPPED")
+            if not authorized():
+                raise SessionError("AUTH")
+            if renewal_token is not None:
+                self._check_renewal(renewal_token)
+            if revision != self._revision:
+                raise SessionError("STALE")
+            self._check_candidate(bundle)
             if self._bound_account() not in (None, identity.user_id):
                 raise SessionError("ACCOUNT_MISMATCH")
             generation = self._generation + 1
-            self._file.write({
-                "version": 1, "bundle": bundle.to_dict(), "user_id": identity.user_id,
-                "generation": generation, "renewal_digest": self._renewal_digest,
-            })
+            self._save(bundle, identity.user_id, generation, self._renewal_digest)
             self._bundle, self._identity = bundle, identity
             self._user_id, self._generation = identity.user_id, generation
+            self._revision += 1
             self._restore_pending = self._rejected = False
             self._on_identity(identity)
             self._updated.set()

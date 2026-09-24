@@ -317,7 +317,12 @@
             "ready": "Munkamenet ellenőrizve. Érvényes eddig: {expiry}.",
             "waiting": "Várakozás új böngészőmunkamenetre.",
             "expired": "A munkamenet lejárt. A folytatáshoz importálj újat.",
-            "error": "Az importálás sikertelen ({code})."
+            "error": "Az importálás sikertelen ({code}).",
+            "pair": "Megújítási kapcsolat letöltése",
+            "revoke": "Segéd leválasztása",
+            "paired": "Megújítási kapcsolat engedélyezve. Hagyd futni a helyi böngészőt és a segédet.",
+            "unpaired": "Az automatikus megújítás ki van kapcsolva.",
+            "pair_hint": "Az új letöltés felváltja az előző kapcsolatot. Tartsd titokban ezt a fájlt."
         }
     }
 }

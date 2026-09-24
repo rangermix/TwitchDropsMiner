@@ -65,6 +65,11 @@ class GUITabs(TypedDict):
 
 
 class GUISessionImport(TypedDict):
+    pair: str
+    revoke: str
+    paired: str
+    unpaired: str
+    pair_hint: str
     title: str
     prompt: str
     file: str

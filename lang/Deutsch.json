@@ -317,7 +317,12 @@
             "ready": "Sitzung bestätigt. Gültig bis {expiry}.",
             "waiting": "Warte auf eine neue Browsersitzung.",
             "expired": "Sitzung abgelaufen. Importiere zum Fortfahren eine neue Sitzung.",
-            "error": "Import fehlgeschlagen ({code})."
+            "error": "Import fehlgeschlagen ({code}).",
+            "pair": "Erneuerungsverbindung herunterladen",
+            "revoke": "Helfer trennen",
+            "paired": "Erneuerungsverbindung aktiviert. Lokalen Browser und Helfer weiterlaufen lassen.",
+            "unpaired": "Automatische Erneuerung ist aus.",
+            "pair_hint": "Ein neuer Download ersetzt die vorherige Verbindung. Diese Datei vertraulich aufbewahren."
         }
     }
 }

@@ -317,7 +317,12 @@
             "ready": "Session bekræftet. Gyldig til {expiry}.",
             "waiting": "Venter på en ny browsersession.",
             "expired": "Sessionen er udløbet. Importér en ny session for at fortsætte.",
-            "error": "Import mislykkedes ({code})."
+            "error": "Import mislykkedes ({code}).",
+            "pair": "Download fornyelsesforbindelse",
+            "revoke": "Afbryd hjælper",
+            "paired": "Fornyelsesforbindelse aktiveret. Hold den lokale browser og hjælperen kørende.",
+            "unpaired": "Automatisk fornyelse er slået fra.",
+            "pair_hint": "En ny download erstatter den tidligere forbindelse. Hold filen privat."
         }
     }
 }

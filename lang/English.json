@@ -317,7 +317,12 @@
             "ready": "Session verified. Valid until {expiry}.",
             "waiting": "Waiting for a fresh browser session.",
             "expired": "Session expired. Import a fresh session to continue.",
-            "error": "Import failed ({code})."
+            "error": "Import failed ({code}).",
+            "pair": "Download renewal connection",
+            "revoke": "Disconnect helper",
+            "paired": "Renewal connection enabled. Keep the local browser and helper running.",
+            "unpaired": "Automatic renewal is off.",
+            "pair_hint": "A new download replaces the previous connection. Keep this file private."
         }
     }
 }

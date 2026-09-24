@@ -317,7 +317,12 @@
             "ready": "Sessie geverifieerd. Geldig tot {expiry}.",
             "waiting": "Wachten op een nieuwe browsersessie.",
             "expired": "Sessie verlopen. Importeer een nieuwe sessie om door te gaan.",
-            "error": "Importeren mislukt ({code})."
+            "error": "Importeren mislukt ({code}).",
+            "pair": "Vernieuwingsverbinding downloaden",
+            "revoke": "Helper ontkoppelen",
+            "paired": "Vernieuwingsverbinding ingeschakeld. Laat de lokale browser en helper draaien.",
+            "unpaired": "Automatische vernieuwing staat uit.",
+            "pair_hint": "Een nieuwe download vervangt de vorige verbinding. Houd dit bestand privé."
         }
     }
 }

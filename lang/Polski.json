@@ -317,7 +317,12 @@
             "ready": "Sesja zweryfikowana. Ważna do {expiry}.",
             "waiting": "Oczekiwanie na nową sesję przeglądarki.",
             "expired": "Sesja wygasła. Zaimportuj nową sesję, aby kontynuować.",
-            "error": "Import nie powiódł się ({code})."
+            "error": "Import nie powiódł się ({code}).",
+            "pair": "Pobierz połączenie odnawiania",
+            "revoke": "Odłącz pomocnika",
+            "paired": "Połączenie odnawiania włączone. Pozostaw lokalną przeglądarkę i pomocnika uruchomionych.",
+            "unpaired": "Automatyczne odnawianie jest wyłączone.",
+            "pair_hint": "Nowe pobranie zastępuje poprzednie połączenie. Zachowaj ten plik w tajemnicy."
         }
     }
 }

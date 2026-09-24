@@ -317,7 +317,12 @@
             "ready": "Session vérifiée. Valide jusqu’au {expiry}.",
             "waiting": "En attente d’une nouvelle session du navigateur.",
             "expired": "Session expirée. Importez une nouvelle session pour continuer.",
-            "error": "Échec de l’importation ({code})."
+            "error": "Échec de l’importation ({code}).",
+            "pair": "Télécharger la connexion de renouvellement",
+            "revoke": "Déconnecter l’assistant",
+            "paired": "Connexion de renouvellement activée. Laissez le navigateur local et l’assistant en cours d’exécution.",
+            "unpaired": "Le renouvellement automatique est désactivé.",
+            "pair_hint": "Un nouveau téléchargement remplace la connexion précédente. Gardez ce fichier privé."
         }
     }
 }

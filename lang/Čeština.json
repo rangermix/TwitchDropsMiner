@@ -317,7 +317,12 @@
             "ready": "Relace ověřena. Platná do {expiry}.",
             "waiting": "Čekání na novou relaci prohlížeče.",
             "expired": "Relace vypršela. Pro pokračování importujte novou relaci.",
-            "error": "Import selhal ({code})."
+            "error": "Import selhal ({code}).",
+            "pair": "Stáhnout připojení pro obnovu",
+            "revoke": "Odpojit pomocníka",
+            "paired": "Připojení pro obnovu zapnuto. Nechte místní prohlížeč a pomocníka spuštěné.",
+            "unpaired": "Automatická obnova je vypnutá.",
+            "pair_hint": "Nové stažení nahradí předchozí připojení. Uchovejte tento soubor v soukromí."
         }
     }
 }

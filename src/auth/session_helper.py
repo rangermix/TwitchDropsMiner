@@ -230,9 +230,16 @@ class BrowserExporter:
 class SessionHelper:
     @staticmethod
     async def run(args: argparse.Namespace) -> None:
-        bundle = await BrowserExporter(args.browser).capture()
-        PrivateSessionFile(Path(args.output)).write(bundle.to_dict())
-        print(json.dumps({"success": True, "expires_at": bundle.expires_at}))
+        if args.command == "renew":
+            from src.auth.session_renewal import RenewalConnection, RenewalLoop, RenewalSender
+
+            connection = RenewalConnection.from_dict(PrivateSessionFile(Path(args.connection)).read())
+            await RenewalLoop(BrowserExporter(args.browser), RenewalSender(connection),
+                              renew_before=args.renew_before).run()
+        else:
+            bundle = await BrowserExporter(args.browser).capture()
+            PrivateSessionFile(Path(args.output)).write(bundle.to_dict())
+            print(json.dumps({"success": True, "expires_at": bundle.expires_at}))
 
     @staticmethod
     def main() -> None:
@@ -241,6 +248,11 @@ class SessionHelper:
         export = commands.add_parser("export")
         export.add_argument("--browser", required=True)
         export.add_argument("--output", required=True)
+        renew = commands.add_parser("renew")
+        renew.add_argument("--browser", required=True)
+        renew.add_argument("--connection", required=True)
+        renew.add_argument("--renew-before", type=int, default=300,
+                           help="Refresh this many seconds before expiry (30–3600; default 300).")
         args = parser.parse_args()
         try:
             asyncio.run(SessionHelper.run(args))

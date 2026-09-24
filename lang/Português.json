@@ -317,7 +317,12 @@
             "ready": "Sessão verificada. Válida até {expiry}.",
             "waiting": "Aguardando uma nova sessão do navegador.",
             "expired": "Sessão expirada. Importe uma nova sessão para continuar.",
-            "error": "Falha na importação ({code})."
+            "error": "Falha na importação ({code}).",
+            "pair": "Baixar conexão de renovação",
+            "revoke": "Desconectar assistente",
+            "paired": "Conexão de renovação ativada. Mantenha o navegador local e o assistente em execução.",
+            "unpaired": "A renovação automática está desativada.",
+            "pair_hint": "Um novo download substitui a conexão anterior. Mantenha este arquivo privado."
         }
     }
 }

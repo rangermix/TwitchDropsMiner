@@ -12,9 +12,9 @@ reused without forced reauthorization. It cannot recover credentials already del
 replaced, or expired. Releases v1.3.1 and v1.3.2 use the Smart TV client, which can log in
 but may show only campaigns already in progress; successful login or a healthy container
 does not establish complete campaign discovery. Clearing data, reinstalling, or changing
-Games to Watch does not repair this upstream restriction. A real browser controlled by
-TDM for interactive login is available experimentally in this branch; it is not a
-verified or released fix yet. The tracking
+Games to Watch does not repair this upstream restriction. Native Chrome login and local-session export/import with automatic renewal have passed
+live checks on one home network. Fresh browser login inside Docker remains rejected.
+These are experimental source features in this branch, not a released fix. The tracking
 issue records implementation, live verification, and release status.
 
 `DEVICE_AUTH_400` means Twitch rejected new device authorization. `CLIENT_MISMATCH`
@@ -121,12 +121,12 @@ profile into Docker Chrome. Identity and inventory succeeded, but campaign acces
 failed Twitch's integrity check. Reusing the desktop browser's complete matching request
 context instead returned inventory and 126 campaigns through both Docker Chrome and a
 plain Python HTTP client inside Docker. The manual import path below now implements
-that approach; automatic renewal, operation on another network, and Twitch-side mining
-progress through an imported session remain unverified. A fresh authenticated GraphQL
+that approach and supports a local automatic renewal helper. Operation on another
+network and Twitch-side mining progress through an imported session remain unverified. A fresh authenticated GraphQL
 integrity response advertised about **one hour** of validity; the login cookie's much
 longer lifetime does not extend that context. The issued token matched a successful
-authenticated request returning 126 campaigns. An export needs renewal, with actual
-expiry enforcement and unattended renewal still untested. Twitch's login page returns
+authenticated request returning 126 campaigns. An export needs renewal; the imported provider enforces its observed expiry, and the
+local helper refreshes it before expiry. Twitch's login page returns
 `X-Frame-Options: SAMEORIGIN`, and browser origin isolation prevents a TDM page from
 reading Twitch cookies or storage. Automatic export would need a local helper or an
 explicitly permitted browser extension, rather than a login iframe. See the
@@ -179,9 +179,52 @@ after expiry. Failed validation preserves the previous accepted context.
 **Live manual-path check (25 September 2026):** the actual dashboard accepted an export
 from the dedicated native Chrome profile into a fresh browser-free Docker TDM instance.
 Identity, Inventory and Campaigns passed; a subsequent read-only query through the
-imported provider returned 129 campaigns. Automatic renewal is the next implementation
-step, and this result does not prove Twitch-side mining progress with imported state.
+imported provider returned 129 campaigns. The renewal helper subsequently delivered three distinct new integrity contexts,
+and authenticated campaign access passed inside Docker. This result does not prove
+Twitch-side mining progress with imported state.
 See the [import and renewal evidence](docs/notes/2026-09-25-session-import-renewal.md).
+
+#### Automatic renewal from the local browser (experimental)
+
+After a successful manual import, click **Download renewal connection** in the login
+panel. Store `tdm-connection.json` privately on the computer running the dedicated Chrome
+profile. Each download replaces the previous helper credential. It allows only session
+renewal for the already accepted Twitch account, and does not grant dashboard access.
+
+Run the helper from this source checkout on that local computer:
+
+```bash
+source env/bin/activate
+chmod 600 "$HOME/Downloads/tdm-connection.json"
+python -m src.auth.session_helper renew \
+  --browser http://127.0.0.1:9222 \
+  --connection "$HOME/Downloads/tdm-connection.json"
+```
+
+The helper captures and sends a fresh verified context immediately, then normally renews
+five minutes before its observed expiry. Keep Chrome and this command running. It retries
+transient browser/network failures with bounded delay. If the context expires or Twitch
+rejects it, TDM waits for a new accepted context. If Twitch signs out the local profile,
+sign in there again; the helper does not collect your password. A wrong-account session,
+revoked credential, or redirect stops the helper with a fixed diagnostic code.
+
+The connection file's destination must use HTTPS, except literal loopback HTTP for a
+local instance or tunnel. For a reverse proxy set `PUBLIC_BASE_URL` to the exact public
+HTTPS origin before downloading. No redirects are followed. Protect connection files as
+credentials. **Disconnect helper** revokes future renewal uploads; the already accepted
+Twitch context remains usable until expiry. Disabling dashboard protection also blocks
+renewal. Enabling it again does not revoke the saved helper credential; disconnect or
+replace the connection if you want to invalidate it. If the helper exited with
+`SESSION_PAIRING` while protection was disabled, restart the command after reenabling.
+
+**Live renewal check (25 September 2026):** the helper loop automatically advanced the
+browser-free Docker provider through three replacements with distinct integrity tokens.
+The destination validated each replacement's identity, inventory and campaigns; an
+independent provider query using the first automatic replacement returned 129 campaigns.
+The test used `--renew-before 3550` to observe successive renewals about 51 seconds apart.
+The normal five-minute lead is covered by controlled-clock tests, not a full hour-long
+live run. Cross-network behavior, browser sign-out recovery, and imported mining progress
+remain unverified. The source feature still requires review/release before deployment.
 
 #### Desktop Chrome attachment (experimental)
 

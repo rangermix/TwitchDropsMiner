@@ -317,7 +317,12 @@
             "ready": "Sesión verificada. Válida hasta {expiry}.",
             "waiting": "Esperando una nueva sesión del navegador.",
             "expired": "La sesión ha caducado. Importa una nueva sesión para continuar.",
-            "error": "Error al importar ({code})."
+            "error": "Error al importar ({code}).",
+            "pair": "Descargar conexión de renovación",
+            "revoke": "Desconectar asistente",
+            "paired": "Conexión de renovación activada. Mantén abiertos el navegador local y el asistente.",
+            "unpaired": "La renovación automática está desactivada.",
+            "pair_hint": "Una nueva descarga reemplaza la conexión anterior. Mantén este archivo privado."
         }
     }
 }

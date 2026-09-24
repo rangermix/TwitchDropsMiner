@@ -361,10 +361,32 @@ progress to an ignored drop while the miner intentionally targets another reward
   `gui.session_import` in all locales. Clear selected files after submission and preserve
   visible failures. Both the new asset and app.js use the release version cache key;
   bump through the normal release workflow before production deployment.
+- `src/auth/session_renewal.py` owns strict connection-file parsing, scoped delivery and
+  scheduling. `session_helper renew` captures immediately and normally refreshes 300
+  seconds before observed expiry; keep the dedicated local Chrome profile running.
+  HTTPS is required except literal loopback HTTP; never follow redirects or send cookies.
+  Retry transient failures with bounded delay while accounting for remaining validity;
+  stop on wrong account, pairing rejection or redirect. Logs contain fixed codes and
+  accepted expiry/generation only. Connection files contain credentials and need private
+  permissions on the user's computer.
+- `/api/session/pair` and `/api/session/revoke` require enabled dashboard auth, including
+  a recheck after waiting for the state lock. Only POST `/api/session/renew` bypasses the
+  dashboard cookie; it keeps origin, write-header and body guards and requires its own
+  account-bound bearer credential. Persist only its SHA-256 digest. Rotation/revocation
+  and newer installs increment a revision; validate Twitch outside the state lock and
+  recheck revision, credential, dashboard authorization, identity and freshness at commit.
+  Revocation leaves the current Twitch context usable until expiry. Disabling dashboard
+  auth blocks renewal but does not erase the pairing; reenabling permits it again unless
+  revoked. A helper that received PAIRING while auth was off has exited and must restart.
+- Never reuse an expired or rejected imported context. Runtime rejection waits for fresh
+  context; retry only absent-data, path-free, known auth/integrity errors and preserve
+  completed batch results so mutations cannot be duplicated. Stop wakes all waiters.
 - On 25 September the actual manual upload UI accepted a native-browser export into a
   fresh browser-free Docker TDM process. Identity and both catalog operations passed;
-  a subsequent imported-provider query returned 129 campaigns. Automatic renewal and
-  imported-session mining progress are not yet proved. Keep proof boundaries in
+  a subsequent imported-provider query returned 129 campaigns. The automatic helper
+  delivered three distinct replacements; the first also passed an independent catalog
+  query returning 129 campaigns. This used an accelerated renewal lead (3550 seconds),
+  not a full default hour-long cycle. Imported-session mining progress is not proved. Keep proof boundaries in
   `docs/notes/2026-09-25-session-import-renewal.md` current as implementation progresses.
 
 ### Dashboard authentication

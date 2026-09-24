@@ -27,13 +27,35 @@ home network. It does not prove another network or imported-session mining progr
 The UI was inspected in the browser; DOM tests cover authentication gating, visible
 failures, upload size bounds, write headers, text safety and clearing the selected file.
 
-## Remaining exit gate
+## Automatic renewal
 
-The user requires automatic renewal in addition to manual login and integrity success.
-Automatic renewal is not yet implemented or verified at this checkpoint. Completion
-requires a running automatic helper loop to obtain and deliver a distinct new integrity
-token and the destination to pass authenticated campaign access with that token. Mocked
-tests, restarting with the same token, or a second manual upload do not meet that gate.
+The running CLI renewal loop captured and delivered three distinct new integrity
+contexts without a second manual export or upload. The provider advanced from generation
+1 to generations 2, 3 and 4. The persisted credential is a hash; the connection file stayed
+private on the local computer. Each replacement passed WEB identity validation and both
+Inventory and Campaigns before the destination committed it.
+
+A separate read-only provider process inside the browser-free Docker instance used
+generation 2 and again validated identity and returned 129 campaigns. Private in-memory
+comparison confirmed a different integrity token and a later expiry than the manual
+bundle. The helper's accepted expiry timestamps increased across all three replacements,
+which also had to pass the provider's distinct-token and replay checks.
+
+For this live observation the helper used `--renew-before 3550`, producing renewals
+about 51 seconds apart. This is an accelerated scheduling test, not proof of a full
+normal-hour cycle. Controlled-clock tests cover the default five-minute lead, transient
+failures, short remaining validity, and revocation. After rebuilding and restarting the
+destination with the final review fixes, the existing saved pairing and session restored.
+Restarting the helper with the default 300-second lead delivered generation 5 without
+new pairing or a manual upload. An independent provider query inside that rebuilt
+container again validated identity and returned 129 campaigns. Its integrity token was
+different from the manual export and its expiry was later. This verifies restart and
+the immediate default-loop renewal, not its next full-length scheduled cycle. Cross-network portability, local browser sign-out
+recovery, long unattended runs and imported mining progress remain unverified.
+
+The user gate is imported login, integrity-dependent access, and a distinct automatically
+renewed token passing that access check. The live observations above satisfy that gate;
+release and broader tracking-issue closure remain separate work.
 
 ## Manual checkpoint validation
 
@@ -49,3 +71,25 @@ results while retrying only definitively rejected batch entries. The reviewer re
 classification and malformed response rows) and approved the manual checkpoint after
 40 independent focused tests passed. A rebuilt container also restored the saved
 manual session and showed verified/logged-in status without another upload.
+
+## Automatic checkpoint validation
+
+The final implementation passed Ruff, Mypy (66 source files), lock consistency, the
+Node 24 full suite (438 tests and two subtests), whitespace checks and a local ARM64
+Docker build. Current `origin/main` is contained in the branch. The release-script tests
+passed at the manual checkpoint; their code and inputs did not change afterward.
+
+Independent automatic-path review identified three additional races/boundaries: dashboard
+authorization changing while pairing waited for the state lock, partial HTTP response
+reads, and sleeping beyond a short remaining validity. Failing regressions reproduced
+all three before fixes. Management rechecks authorization inside the lock, response
+reading continues to EOF with a cumulative bound, and scheduling accounts for remaining
+validity. The independent reviewer approved the corrected automatic checkpoint after
+55 backend tests, one Node 24 UI test and the whitespace check passed. This approval
+covers the checkpoint, not a release.
+
+The actual dashboard rendered accepted expiry and the paired renewal status with the
+connection download and disconnect controls. DOM tests exercised both actions, safe
+credential handling, disabled states and visible failures. Connection creation in the
+live experiment used the authenticated production API; the real browser download action
+was not exercised. No version-release workflow or production deployment was performed.

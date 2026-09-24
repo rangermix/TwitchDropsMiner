@@ -177,7 +177,8 @@ class AuthMiddleware:
         )
         if forbidden:
             return await self.reject(scope, receive, send, 403, "forbidden")
-        if path not in self.PUBLIC and not self.auth.allowed(self.auth.token(scope)):
+        renewal = scope["type"] == "http" and path == "/api/session/renew" and scope.get("method") == "POST"
+        if path not in self.PUBLIC and not renewal and not self.auth.allowed(self.auth.token(scope)):
             if path == "/" and scope["type"] == "http":
                 return await RedirectResponse("/login", status_code=303,
                     headers={"Cache-Control": "no-store"})(scope, receive, send)

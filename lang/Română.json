@@ -317,7 +317,12 @@
             "ready": "Sesiune verificată. Valabilă până la {expiry}.",
             "waiting": "Se așteaptă o sesiune nouă a browserului.",
             "expired": "Sesiunea a expirat. Importă una nouă pentru a continua.",
-            "error": "Importul a eșuat ({code})."
+            "error": "Importul a eșuat ({code}).",
+            "pair": "Descarcă conexiunea de reînnoire",
+            "revoke": "Deconectează asistentul",
+            "paired": "Conexiune de reînnoire activată. Păstrează browserul local și asistentul în funcțiune.",
+            "unpaired": "Reînnoirea automată este dezactivată.",
+            "pair_hint": "O descărcare nouă înlocuiește conexiunea anterioară. Păstrează acest fișier privat."
         }
     }
 }
