@@ -36,6 +36,12 @@ The current scope excludes multiple accounts, channel-points mining, unlinked
 campaign mining, and a desktop GUI. Discuss proposed scope changes before implementing
 them; opening a feature request does not itself approve a change in scope.
 
+This is a hobby project for personal use on your own hardware and home network.
+Support is best-effort and limited to that setup. VPS, cloud, other third-party hosting
+environments, and services operated for other users are outside the support scope.
+Keep bug reports and proposals within this scope; deployment-specific workarounds for
+unsupported hosting environments are not a project maintenance commitment.
+
 ## Raising an issue
 
 Search [existing issues](https://github.com/rangermix/TwitchDropsMiner/issues) and
