@@ -293,6 +293,9 @@ progress to an ignored drop while the miner intentionally targets another reward
   before deploying changes to existing auth assets, as with app.js and styles.css.
 - `tests/test_web_auth.py` and `tests/test_web_auth_frontend.py` cover access control,
   credential persistence, cookie lifetimes, CSRF, rate limiting, revocation, and UI errors.
+  The idle socket-expiry regression controls the auth wall clock and captures the
+  scheduled callback. Preserve its remaining-lifetime, disconnect, and cleanup assertions;
+  do not replace them with millisecond session lifetimes or fixed wall-clock sleeps.
   Docker checks `/healthz`, not the protected `/api/status`. Recovery is local: stop the
   miner, restrict access, remove only `data/web_auth.json`, restart and set a new password.
 
