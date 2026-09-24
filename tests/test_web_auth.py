@@ -320,7 +320,10 @@ class TestAuthStorageAndSockets:
 
         # Fire the real scheduled callback at expiry without waiting on real time.
         now = expires_at
-        await expire()
+        expiry_task = expire()
+        # The event loop ignores timer return values: a bare coroutine never runs.
+        assert isinstance(expiry_task, asyncio.Task)
+        await expiry_task
         disconnect.assert_awaited_once_with("idle")
         assert "idle" not in sio.tokens
         assert "idle" not in sio.expirations
