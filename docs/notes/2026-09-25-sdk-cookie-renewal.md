@@ -145,6 +145,15 @@ browser profile. This proves the packaged helper's real default cycle and accept
 protected operations after the previous integrity context expired. It does not yet
 cross the original SDK cookie's 07:32 UTC expiry.
 
+The same packaged helper completed its next scheduled renewal at 06:51:13 UTC,
+advancing the catalog-only target to generation 5 without a restart or new export.
+The token differed, its expiry advanced to 07:51:11 UTC, the SDK cookie rotated and
+extended its expiry, and the saved seed matched the delivered context. At 06:56:25 UTC,
+17 seconds after generation 4 expired, independent identity/Inventory/Campaigns checks
+still passed with 147 campaigns. There were no remaining browser processes or temporary
+profiles. This adds a second consecutive default-cycle and integrity-expiry check;
+the original SDK-cookie expiry remains a separate pending gate.
+
 Separately, the original prototype delivered generation 9 to the actual miner at
 05:59:31 UTC and scheduled its next renewal for 06:54 UTC. After both that delivery
 and the packaged post-expiry check passed, a packaged Python `--once` run used a copy
@@ -181,6 +190,14 @@ context. The raw ClaimDrop response was not logged. `BaseDrop._claim()` accepts 
 history do not distinguish those statuses or establish which client claimed first.
 Other-device activity remains uncontrolled; exclusive earning and first-claim
 attribution are not asserted.
+
+At 06:36 UTC the actual miner's authenticated dashboard still reported `Logged in`
+and `Watching: Pikabooirl` with generation 10 installed. A subsequent configuration
+check confirmed session import enabled, no direct-browser configuration, and no
+`cookies.jar` or persisted Android authentication. Together with the verified runtime
+source and its authentication/GraphQL routing, this supports use of the imported
+provider by the active loop. The channel API's cached `watching` flags were empty;
+those flags are not used as evidence of current watching or exclusive progress.
 
 The packaged `linux/amd64` image also issued a distinct token and passed independent
 identity/Inventory/Campaigns validation using a copied server replacement seed in a fresh

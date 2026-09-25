@@ -16,8 +16,8 @@ Games to Watch does not repair this upstream restriction. Native Chrome login an
 local-session export/import with a browser-assisted renewal helper have passed live
 checks on one home network. An experimental [server renewal helper](docs/server-renewal.md)
 now uses a one-time SDK cookie export and headless Chromium on the server, allowing the
-local browser to close. Its normal scheduled cycle and protected requests after the old
-integrity token expired have passed in Alpine. The miner accepted its context, which
+local browser to close. Two consecutive scheduled cycles and protected requests after
+each previous integrity token expired have passed in Alpine. The miner accepted its context, which
 also passed independent inventory, campaign, stream-lookup and current-drop checks in
 that container. The original SDK-cookie
 expiry check and [sustained testing](docs/notes/2026-09-25-sdk-cookie-renewal.md) remain in progress. Fresh browser
@@ -189,8 +189,8 @@ For the experimental server-renewal work, add `--server-seed "$HOME/tdm-server-s
 to the export command. This also saves the SDK cookie for `k.twitchcdn.net` alongside
 the matching context in a separate private seed file. Import `tdm-session.json` into
 the dashboard as before, then follow the [server helper setup](docs/server-renewal.md).
-Both files contain credentials. The server helper is experimental; its normal integrity
-renewal cycle has passed, while the original SDK-cookie expiry check remains pending.
+Both files contain credentials. The server helper is experimental; two normal integrity
+renewal cycles have passed, while the original SDK-cookie expiry check remains pending.
 
 **Live manual-path check (25 September 2026):** the actual dashboard accepted an export
 from the dedicated native Chrome profile into a fresh browser-free Docker TDM instance.

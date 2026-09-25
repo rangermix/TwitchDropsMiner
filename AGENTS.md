@@ -347,8 +347,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   `k.twitchcdn.net`, in addition to the OAuth/client context, enables accepted headless
   server-browser issuance. The SDK cookie must remain private. Fresh profiles without
   it failed; copied local storage was unnecessary. Independent Alpine HTTP validated
-  the same account and 149 campaigns. The packaged helper's normal renewal cycle then
-  rotated the SDK cookie and passed account/Inventory/Campaigns after the previous
+  the same account and 149 campaigns. Two consecutive packaged normal renewal cycles
+  rotated the SDK cookie and passed account/Inventory/Campaigns after each previous
   integrity token expired. After the actual miner accepted its context, a separate
   process in that container loaded the accepted state into the production ImportedSession
   class and passed Inventory, Campaigns, GetStreamInfo and CurrentDrop. See
