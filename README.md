@@ -12,8 +12,11 @@ reused without forced reauthorization. It cannot recover credentials already del
 replaced, or expired. Releases v1.3.1 and v1.3.2 use the Smart TV client, which can log in
 but may show only campaigns already in progress; successful login or a healthy container
 does not establish complete campaign discovery. Clearing data, reinstalling, or changing
-Games to Watch does not repair this upstream restriction. Native Chrome login and local-session export/import with automatic renewal have passed
-live checks on one home network. Fresh browser login inside Docker remains rejected.
+Games to Watch does not repair this upstream restriction. Native Chrome login and
+local-session export/import with a browser-assisted renewal helper have passed live
+checks on one home network. Independent server renewal after a one-time export remains
+unresolved; the helper requires the user’s browser to run. Fresh browser login inside
+Docker remains rejected.
 These are experimental source features in this branch, not a released fix. The tracking
 issue records implementation, live verification, and release status.
 
@@ -185,6 +188,14 @@ Twitch-side mining progress with imported state.
 See the [import and renewal evidence](docs/notes/2026-09-25-session-import-renewal.md).
 
 #### Automatic renewal from the local browser (experimental)
+
+**This is browser-assisted renewal, not autonomous server renewal.** It requires the
+user's computer, signed-in browser and helper to remain available. It does not satisfy
+the intended unattended deployment: export once, then turn off the user's computer.
+With the exporting browser stopped, direct Alpine HTTP issuance returned new one-hour
+tokens, but Twitch rejected their campaign queries. Replaying captured browser issuance
+headers, including the browser SDK proof headers, also failed; the same test's imported
+token successfully returned 152 campaigns. See the [server-only renewal investigation](docs/notes/2026-09-25-server-only-renewal.md).
 
 After a successful manual import, click **Download renewal connection** in the login
 panel. Store `tdm-connection.json` privately on the computer running the dedicated Chrome

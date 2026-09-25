@@ -2,9 +2,9 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Implement manual local-browser export and TDM import, then automatically renew the imported context; prove login, authenticated integrity-dependent campaign access, and access using a distinct automatically renewed token.
+**Corrected goal:** One-time local-browser export and TDM import, then renewal entirely on the TDM server with the exporting computer/browser off. Prove login and protected campaign access with both imported and newly issued tokens. The browser-assisted helper implemented below is an intermediate experiment and does not meet this goal.
 
-**Architecture:** A local helper observes a dedicated Chrome profile over loopback DevTools and exports only a matching, successfully used Twitch request context with its observed expiry. An opt-in imported-session provider validates identity and both catalog operations before atomically replacing its private state. The dashboard accepts manual files and creates a revocable, account-bound renewal credential; the helper uses that credential over HTTPS (or loopback HTTP) to refresh the same provider before expiry.
+**Intermediate architecture (implemented, insufficient for the corrected goal):** A local helper observes a dedicated Chrome profile over loopback DevTools and exports only a matching, successfully used Twitch request context with its observed expiry. An opt-in imported-session provider validates identity and both catalog operations before atomically replacing its private state. The dashboard accepts manual files and creates a revocable, account-bound renewal credential; the helper uses that credential over HTTPS (or loopback HTTP) to refresh the same provider before expiry.
 
 **Tech Stack:** Python 3.12, aiohttp, existing FastAPI/Socket.IO dashboard, Chrome DevTools Protocol, pytest and Node DOM tests. No new runtime dependency or third-party browser service.
 
@@ -49,4 +49,4 @@
 1. Integrate current `origin/main` before final review; preserve unrelated work and rerun affected checks after integration.
 2. Run Ruff, Mypy, full pytest including Node tests, `uv lock --check`, release contract tests, `git diff --check`, Docker build and rendered import/renewal UI verification. Cached asset deployment still requires the normal version-release workflow; no release is implied by this task.
 3. Obtain separate adversarial review of the final implementation and live evidence. Fix findings, rerun affected checks, then commit/push completed checkpoints and update #118 without closing unrelated remaining work.
-4. Audit the explicit exit gate against current evidence: imported login validated; imported token passes protected campaign access; a distinct token obtained and delivered by the automatic loop passes the same access check. Leave the goal active if any gate remains unproved.
+4. Audit the corrected exit gate: after one export, stop the source browser/helper; the server must independently obtain and use a distinct fresh token for protected campaign access, including recovery after the imported context expires. Merely receiving a token or importing another browser-generated token does not pass. The current browser-assisted implementation has not met this gate.

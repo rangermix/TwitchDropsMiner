@@ -27,7 +27,7 @@ home network. It does not prove another network or imported-session mining progr
 The UI was inspected in the browser; DOM tests cover authentication gating, visible
 failures, upload size bounds, write headers, text safety and clearing the selected file.
 
-## Automatic renewal
+## Browser-assisted automatic renewal
 
 The running CLI renewal loop captured and delivered three distinct new integrity
 contexts without a second manual export or upload. The provider advanced from generation
@@ -53,9 +53,13 @@ different from the manual export and its expiry was later. This verifies restart
 the immediate default-loop renewal, not its next full-length scheduled cycle. Cross-network portability, local browser sign-out
 recovery, long unattended runs and imported mining progress remain unverified.
 
-The user gate is imported login, integrity-dependent access, and a distinct automatically
-renewed token passing that access check. The live observations above satisfy that gate;
-release and broader tracking-issue closure remain separate work.
+The prior conclusion that the user gate was satisfied was too broad. These tests proved
+browser-assisted replacement while a local signed-in browser remained available. The
+required deployment must renew on the TDM server after one export with the user's
+computer/browser off. That requirement is not met by this implementation. The
+[server-only renewal investigation](2026-09-25-server-only-renewal.md) records follow-up
+failures and the corrected acceptance criteria. Code checkpoint approval did not prove
+this missing system behavior.
 
 ## Manual checkpoint validation
 

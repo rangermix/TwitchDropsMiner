@@ -335,6 +335,13 @@ progress to an ignored drop while the miner intentionally targets another reward
 
 ### Imported browser sessions (#118)
 
+- Required unattended behavior is one-time export followed by server-managed renewal
+  with the exporting computer/browser off. The current local helper does not meet that
+  requirement. Do not equate a distinct token or HTTP 200 from `/integrity` with success:
+  identity and protected Campaigns must pass using that token. On 25 September, Alpine
+  direct issuance and a replay of captured browser issuance headers both returned tokens
+  whose campaign queries failed. The latter test's imported-token baseline returned 152
+  campaigns with the source browser stopped. Server-only renewal remains unresolved.
 - `TDM_SESSION_IMPORT=1` selects `ImportedSession` as the optional fallback provider,
   mutually exclusive with direct browser configuration. Preserve Android priority and
   `cookies.jar`. Never combine imported web credentials with Android HTTP cookies.
