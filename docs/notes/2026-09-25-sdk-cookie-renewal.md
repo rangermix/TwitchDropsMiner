@@ -65,7 +65,7 @@ retrieval. Thus success is not limited to requests inside the browser.
 At 04:09 UTC on 25 September, a separate headless Docker helper imported the SDK cookie
 once and began automatically delivering validated contexts to the Alpine miner. The
 first accepted delivery advanced the provider to generation 7. Its integrity token
-expires at 05:09 UTC. The helper will renew five minutes before expiry and restart its
+expires at 05:09 UTC. The helper renews five minutes before expiry and restarts its
 server browser for each issuance using the same server profile, without another import.
 
 The original SDK cookie expires at 07:32 UTC. The server obtained a different SDK cookie
@@ -81,7 +81,7 @@ Twitch-reported minutes between 04:11 and 04:13 UTC, using the server-generated 
 local extrapolation. No other local test miner was running, and the SDK probes never
 opened a player, but possible account activity on other devices was not controlled;
 these observations alone do not attribute the progress exclusively to this miner.
-Progress across the next renewal and automatic claims are still pending. A changed
+Further progress across renewal is recorded below; automatic claims are still pending. A changed
 claimed-benefit count alone will not establish a miner claim; that needs a matching
 successful ClaimDrop outcome from the miner.
 
@@ -120,8 +120,14 @@ expiry. This is another ongoing test, not completed expiry evidence.
 At 05:04 UTC the original prototype performed its next scheduled renewal with the local
 browser still closed. The miner accepted generation 8, the new token returned 149
 campaigns, and its observed expiry advanced to 06:04 UTC. The response was confirmed
-on the network. This establishes the normal five-minute-lead renewal, while reads past
-the previous 05:09 UTC expiry and the original SDK cookie's 07:32 UTC expiry are pending.
+on the network. This establishes the normal five-minute-lead renewal.
+
+At 05:09:57 UTC, after generation 7's observed expiry, independent Python validation
+using generation 8 still passed identity, Inventory and 149 Campaigns. Twitch reported
+183 watched minutes for the three tracked rewards, up from 124 initially. The first
+unclaimed reward requires 240 minutes, so no new claim is expected yet. These remain
+account-progress observations with the attribution limitation above. The original SDK
+cookie's 07:32 UTC expiry and the packaged helper's normal cycle are still pending.
 
 The packaged `linux/amd64` image also issued a distinct token and passed independent
 identity/Inventory/Campaigns validation using a copied server replacement seed in a fresh
