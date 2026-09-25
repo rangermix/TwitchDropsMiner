@@ -14,6 +14,13 @@ The separate `review_android_checkpoint` agent approved the seed/export code aft
 filesystem-alias, malformed-protocol and test-isolation findings were reproduced and
 fixed. This approval does not cover server renewal or the pending live expiry checks.
 
+**Tasks 2/3 checkpoint, 25 September:** 486 tests and two subtests passed; Ruff,
+Mypy (68 source files), lock validation and local core/helper arm64 and amd64 Docker builds passed.
+The separate review agent approved the implementation after real subprocess regressions
+reproduced and fixed process-group and SIGTERM cleanup failures. Two live fresh-profile
+Python issuances and a protected API delivery passed. Sustained expiry tests remain
+running; see the evidence note for exact boundaries. Task 4 remains in progress.
+
 ## Acceptance criteria
 
 - One initial export supplies both the ordinary import bundle and a private server seed.

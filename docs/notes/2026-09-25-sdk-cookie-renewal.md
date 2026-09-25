@@ -90,9 +90,56 @@ successful ClaimDrop outcome from the miner.
 This candidate needs a server-side browser for SDK execution. The core miner can remain
 on Alpine with its current Python dependencies, using HTTP for ordinary operations.
 The experimental helper runs separately and exits its browser between renewals. A
-production export format, renewal service and failure/recovery integration have not
-been implemented. The existing local-browser helper remains a separate intermediate
-feature and still requires the user's browser.
+Python implementation is now available experimentally in this branch; see the
+[setup instructions](../server-renewal.md). The existing local-browser helper remains
+a separate intermediate feature and still requires the user's browser.
+
+## Python helper implementation checkpoint
+
+The new helper uses the project's existing aiohttp/CDP dependencies and an optional
+Alpine image with Chromium 152.0.7977.82. It starts a private temporary browser, seeds
+only the SDK cookie, correlates the new token with a real uncached issuance response,
+then closes the browser before independent Python identity/Inventory/Campaigns checks.
+Only validated replacement state is saved, using the existing owner-only atomic file
+writer. Scoped delivery and scheduling reuse the existing renewal endpoint and loop.
+
+Two independent `linux/arm64` container runs passed live validation. The first started
+with an expired imported integrity context. The second used only the first server run's
+persisted SDK cookie in another fresh browser profile, before that server context expired.
+This proves restart and seed continuation, not a second expiry crossing. Both produced distinct accepted tokens and
+rotated the SDK cookie with roughly 24 hours remaining. The source profile remained
+closed, with no listener on its former DevTools port. A packaged `--once` run then
+delivered a validated replacement through the production protected SessionAPI, advancing
+an isolated catalog-only target to generation 2. That target runs no mining/watch loop,
+so it does not interfere with the original sustained mining experiment.
+
+At 05:01 UTC the packaged Python helper started its normal unattended loop against that
+target, accepted generation 3, and scheduled renewal five minutes before its 06:01 UTC
+expiry. This is another ongoing test, not completed expiry evidence.
+
+At 05:04 UTC the original prototype performed its next scheduled renewal with the local
+browser still closed. The miner accepted generation 8, the new token returned 149
+campaigns, and its observed expiry advanced to 06:04 UTC. The response was confirmed
+on the network. This establishes the normal five-minute-lead renewal, while reads past
+the previous 05:09 UTC expiry and the original SDK cookie's 07:32 UTC expiry are pending.
+
+The packaged `linux/amd64` image also issued a distinct token and passed independent
+identity/Inventory/Campaigns validation using a copied server replacement seed in a fresh
+profile. That input integrity context was still valid; this is cross-architecture
+issuance proof, not an additional expiry crossing. Its replacement SDK cookie rotated.
+
+The implementation passed 486 tests plus two subtests, Ruff, Mypy for all 68 source
+files and lock validation. A separate adversarial review reproduced and then approved
+fixes for surviving browser descendants and SIGTERM bypassing cleanup. Regression
+tests cover real process groups/signals and repeated cancellation. A live Docker stop
+during browser activity observed five browser processes and one private profile before
+termination; the helper exited with code 143 in 0.26 seconds and left no private profile.
+The documented command uses Docker init and a 20-second stop grace.
+
+Core and optional helper images built successfully for both `linux/arm64` and
+`linux/amd64`. No Python dependency
+or ordinary Dockerfile change was needed. Longer expiry, recovery and mining/claim
+verification remain separate requirements; this checkpoint does not close #118.
 
 Do not publish session exports, SDK cookie values, request headers, browser profiles or
 pairing credentials. The SDK cookie is authentication-sensitive state and must be stored

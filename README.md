@@ -14,10 +14,10 @@ but may show only campaigns already in progress; successful login or a healthy c
 does not establish complete campaign discovery. Clearing data, reinstalling, or changing
 Games to Watch does not repair this upstream restriction. Native Chrome login and
 local-session export/import with a browser-assisted renewal helper have passed live
-checks on one home network. Independent server renewal after a one-time export remains
-unresolved in the implemented feature; the helper requires the user’s browser to run.
-A [server-browser experiment using a one-time SDK cookie export](docs/notes/2026-09-25-sdk-cookie-renewal.md)
-has issued accepted tokens, with sustained renewal testing in progress. Fresh browser
+checks on one home network. An experimental [server renewal helper](docs/server-renewal.md)
+now uses a one-time SDK cookie export and headless Chromium on the server, allowing the
+local browser to close. Its issued tokens passed independent Python validation in Alpine;
+[sustained renewal testing](docs/notes/2026-09-25-sdk-cookie-renewal.md) remains in progress. Fresh browser
 login inside Docker remains rejected.
 These are experimental source features in this branch, not a released fix. The tracking
 issue records implementation, live verification, and release status.
@@ -184,8 +184,9 @@ after expiry. Failed validation preserves the previous accepted context.
 For the experimental server-renewal work, add `--server-seed "$HOME/tdm-server-seed.json"`
 to the export command. This also saves the SDK cookie for `k.twitchcdn.net` alongside
 the matching context in a separate private seed file. Import `tdm-session.json` into
-the dashboard as before; the seed file is intended for the server renewal helper,
-which is still being implemented and tested. Both files contain credentials.
+the dashboard as before, then follow the [server helper setup](docs/server-renewal.md).
+Both files contain credentials. The server helper is experimental and still undergoing
+expiry-crossing verification.
 
 **Live manual-path check (25 September 2026):** the actual dashboard accepted an export
 from the dedicated native Chrome profile into a fresh browser-free Docker TDM instance.
@@ -206,8 +207,9 @@ headers, including the browser SDK proof headers, also failed; the same test's i
 token successfully returned 152 campaigns. See the [server-only renewal investigation](docs/notes/2026-09-25-server-only-renewal.md).
 
 A later [SDK cookie experiment](docs/notes/2026-09-25-sdk-cookie-renewal.md) has enabled
-accepted renewal inside a headless server browser after one export. This candidate is
-under sustained live testing and has not been integrated into the feature below.
+accepted renewal inside a headless server browser after one export. The separate
+[server helper](docs/server-renewal.md) implements that candidate and is under sustained
+live testing. Use it when the local computer must be able to turn off.
 
 After a successful manual import, click **Download renewal connection** in the login
 panel. Store `tdm-connection.json` privately on the computer running the dedicated Chrome

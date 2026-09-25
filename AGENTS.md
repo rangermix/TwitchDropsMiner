@@ -341,14 +341,16 @@ progress to an ignored drop while the miner intentionally targets another reward
   identity and protected Campaigns must pass using that token. On 25 September, Alpine
   direct issuance and a replay of captured browser issuance headers both returned tokens
   whose campaign queries failed. The latter test's imported-token baseline returned 152
-  campaigns with the source browser stopped. Server-only renewal remains unresolved.
+  campaigns with the source browser stopped. Those HTTP-only approaches remain
+  unsuccessful; the server-browser candidate below is undergoing sustained verification.
 - A subsequent experiment found that importing only the `KP_UIDz-ssn` SDK cookie for
   `k.twitchcdn.net`, in addition to the OAuth/client context, enables accepted headless
   server-browser issuance. The SDK cookie must remain private. Fresh profiles without
   it failed; copied local storage was unnecessary. Independent Alpine HTTP validated
   the same account and 149 campaigns. See `docs/notes/2026-09-25-sdk-cookie-renewal.md`:
-  expiry-crossing, mining and long-run checks are still in progress, and this candidate
-  is not yet integrated. Do not present it as a released or completed fix.
+  expiry-crossing, mining and long-run checks are still in progress. The optional
+  `server_renewal` helper implements this candidate; do not present it as a released
+  or completed fix while those checks are pending.
 - `TDM_SESSION_IMPORT=1` selects `ImportedSession` as the optional fallback provider,
   mutually exclusive with direct browser configuration. Preserve Android priority and
   `cookies.jar`. Never combine imported web credentials with Android HTTP cookies.
@@ -375,6 +377,17 @@ progress to an ignored drop while the miner intentionally targets another reward
   seeds, keep credential values out of repr/errors/output, and reject colliding export
   paths before browser access. The server seed may retain an expired integrity context
   for new issuance; the SDK cookie itself must be fresh when used.
+- `src/auth/server_renewal.py` launches its own headless Chromium with a temporary
+  private profile and loopback DevTools. Import only the SDK cookie, load Twitch's SDK
+  at its fixed origin, and correlate a real POST response with the returned token/expiry.
+  Reject cache/service-worker responses, stale tokens and SDK state without an extended
+  expiry. Close the owned target/process/profile on success, failure and cancellation.
+  Validate account, Inventory and Campaigns through `SessionTransport` after Chromium
+  closes, then atomically persist the replacement seed before scoped delivery. Only one
+  helper may own a seed file. The server helper reuses `RenewalLoop`; expired SDK state
+  is terminal and requires a new local login/export. No Python dependencies are added;
+  `Dockerfile.renewal` adds Chromium to an optional Alpine helper image, leaving the core
+  Dockerfile unchanged. Keep setup and proof limits in `docs/server-renewal.md` current.
 - `src/web/session_api.py` provides status and manual import. Import requires enabled
   dashboard protection and an authenticated dashboard session, plus existing CSRF/origin
   guards. Bound the actual request body before parsing; never echo failed submissions.

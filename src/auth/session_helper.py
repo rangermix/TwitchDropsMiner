@@ -9,8 +9,8 @@ import json
 import re
 import tempfile
 import time
-from collections.abc import Callable
-from contextlib import suppress
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import Any
 
@@ -26,8 +26,9 @@ from src.config import ClientType
 class DevToolsConnection:
     """Multiplex bounded protocol replies and the few relevant network events."""
 
-    def __init__(self, socket: aiohttp.ClientWebSocketResponse):
+    def __init__(self, socket: aiohttp.ClientWebSocketResponse, *, extra_events: frozenset[str] = frozenset()):
         self.socket = socket
+        self.extra_events = extra_events
         self._sequence = 0
         self._pending: dict[int, asyncio.Future] = {}
         self.events: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue(maxsize=256)
@@ -40,7 +41,10 @@ class DevToolsConnection:
                 if message.type != aiohttp.WSMsgType.TEXT:
                     break
                 data = message.json()
-                future = self._pending.get(data.get("id"))
+                if not isinstance(data, dict):
+                    break
+                sequence = data.get("id")
+                future = self._pending.get(sequence) if isinstance(sequence, int) else None
                 if future is not None and not future.done():
                     if "error" in data:
                         future.set_exception(SessionError("BROWSER_PROTOCOL"))
@@ -48,9 +52,16 @@ class DevToolsConnection:
                         future.set_result(data.get("result", {}))
                     continue
                 method, params = data.get("method"), data.get("params", {})
+                if not isinstance(params, dict):
+                    break
                 request_id = params.get("requestId")
-                if method == "Network.requestWillBeSent":
-                    relevant = params.get("request", {}).get("url") == BrowserSession.GQL_URL
+                if method in self.extra_events:
+                    if self.events.full():
+                        break
+                    self.events.put_nowait(data)
+                    continue
+                elif method == "Network.requestWillBeSent":
+                    relevant = params.get("request", {}).get("url") in (BrowserSession.GQL_URL, "https://gql.twitch.tv/integrity")
                 elif method == "Network.responseReceived":
                     relevant = params.get("type") != "Preflight" and params.get("response", {}).get("url") in (
                         BrowserSession.GQL_URL, "https://gql.twitch.tv/integrity",
@@ -60,6 +71,8 @@ class DevToolsConnection:
                 else:
                     continue
                 if relevant:
+                    if not isinstance(request_id, str):
+                        break
                     if method == "Network.loadingFinished":
                         self._requests.discard(request_id)
                     else:
@@ -77,14 +90,14 @@ class DevToolsConnection:
                 self.events.get_nowait()
             self.events.put_nowait(None)
 
-    async def command(self, method: str, params: dict[str, Any] | None = None) -> Any:
+    async def command(self, method: str, params: dict[str, Any] | None = None, *, timeout: float = 30) -> Any:
         self._sequence += 1
         sequence = self._sequence
         future = asyncio.get_running_loop().create_future()
         self._pending[sequence] = future
         try:
             await self.socket.send_json({"id": sequence, "method": method, "params": params or {}})
-            return await asyncio.wait_for(future, 30)
+            return await asyncio.wait_for(future, timeout)
         finally:
             self._pending.pop(sequence, None)
 
@@ -189,7 +202,9 @@ class BrowserExporter:
         assert cookie is not None
         return ServerSeed(bundle, cookie)
 
-    async def _capture(self, *, include_sdk_cookie: bool) -> tuple[SessionBundle, SDKCookie | None]:
+    @asynccontextmanager
+    async def target(self, *, extra_events: frozenset[str] = frozenset()) -> AsyncIterator[DevToolsConnection]:
+        """Create, connect and close only the target owned by this operation."""
         target_id = None
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as http:
             try:
@@ -207,41 +222,52 @@ class BrowserExporter:
                     or endpoint.password is not None or endpoint.query or endpoint.fragment
                 ):
                     raise SessionError("BROWSER_PROTOCOL")
-                async with http.ws_connect(endpoint, max_msg_size=16 * 1024 * 1024) as socket:
-                    protocol = DevToolsConnection(socket)
+                async with http.ws_connect(
+                    endpoint, max_msg_size=16 * 1024 * 1024,
+                    timeout=aiohttp.ClientWSTimeout(ws_close=2),
+                ) as socket:
+                    protocol = DevToolsConnection(socket, extra_events=extra_events)
                     try:
-                        # Runtime requires Python 3.12; Mypy still targets legacy 3.10.
-                        async with asyncio.timeout(self.timeout):  # type: ignore[attr-defined]
-                            await protocol.command("Network.enable")
-                            result = await protocol.command("Runtime.evaluate", {"expression": "navigator.userAgent", "returnByValue": True})
-                            user_agent = result["result"]["value"]
-                            await protocol.command("Page.navigate", {"url": BrowserSession.PAGE})
-                            observation = CaptureObservation(self.clock)
-                            while True:
-                                event = await protocol.events.get()
-                                if event is None:
-                                    raise SessionError("BROWSER_PROTOCOL")
-                                await observation.observe(event, protocol)
-                                bundle = observation.bundle(user_agent)
-                                if bundle is not None:
-                                    cookie = None
-                                    if include_sdk_cookie:
-                                        data = await protocol.command("Network.getCookies", {"urls": [SDKCookie.URL]})
-                                        if not isinstance(data, dict):
-                                            raise SessionError("BROWSER_PROTOCOL")
-                                        cookie = SDKCookie.from_browser(data.get("cookies"), now=self.clock())
-                                    return bundle, cookie
+                        yield protocol
                     finally:
                         await protocol.close()
-            except TimeoutError:
-                raise SessionError("CAPTURE_TIMEOUT") from None
             except (aiohttp.ClientError, ValueError, KeyError, TypeError):
                 raise SessionError("BROWSER_PROTOCOL") from None
             finally:
                 if target_id is not None:
                     with suppress(aiohttp.ClientError, TimeoutError):
-                        async with http.get(self.address + "/json/close/" + target_id, allow_redirects=False) as response:
+                        async with http.get(
+                            self.address + "/json/close/" + target_id, allow_redirects=False,
+                            timeout=aiohttp.ClientTimeout(total=2),
+                        ) as response:
                             await response.read()
+
+    async def _capture(self, *, include_sdk_cookie: bool) -> tuple[SessionBundle, SDKCookie | None]:
+        try:
+            async with self.target() as protocol:
+                # Runtime requires Python 3.12; Mypy still targets legacy 3.10.
+                async with asyncio.timeout(self.timeout):  # type: ignore[attr-defined]
+                    await protocol.command("Network.enable")
+                    result = await protocol.command("Runtime.evaluate", {"expression": "navigator.userAgent", "returnByValue": True})
+                    user_agent = result["result"]["value"]
+                    await protocol.command("Page.navigate", {"url": BrowserSession.PAGE})
+                    observation = CaptureObservation(self.clock)
+                    while True:
+                        event = await protocol.events.get()
+                        if event is None:
+                            raise SessionError("BROWSER_PROTOCOL")
+                        await observation.observe(event, protocol)
+                        bundle = observation.bundle(user_agent)
+                        if bundle is not None:
+                            cookie = None
+                            if include_sdk_cookie:
+                                data = await protocol.command("Network.getCookies", {"urls": [SDKCookie.URL]})
+                                if not isinstance(data, dict):
+                                    raise SessionError("BROWSER_PROTOCOL")
+                                cookie = SDKCookie.from_browser(data.get("cookies"), now=self.clock())
+                            return bundle, cookie
+        except TimeoutError:
+            raise SessionError("CAPTURE_TIMEOUT") from None
 
 
 class SessionHelper:

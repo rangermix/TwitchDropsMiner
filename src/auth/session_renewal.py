@@ -9,13 +9,16 @@ import re
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol
 
 import aiohttp
 from yarl import URL
 
 from src.auth.session_bundle import SessionBundle, SessionError
-from src.auth.session_helper import BrowserExporter
+
+
+class ContextSource(Protocol):
+    async def capture(self) -> SessionBundle: ...
 
 
 @dataclass(frozen=True)
@@ -87,7 +90,7 @@ class RenewalSender:
 
 class RenewalLoop:
     def __init__(
-        self, exporter: BrowserExporter, sender: RenewalSender, *,
+        self, exporter: ContextSource, sender: RenewalSender, *,
         clock: Callable[[], float] = time.time,
         sleep: Callable[[float], Awaitable[Any]] = asyncio.sleep,
         report: Callable[[dict[str, Any]], None] = lambda event: print(json.dumps(event), flush=True),
@@ -113,7 +116,7 @@ class RenewalLoop:
                 remaining = accepted_expiry - self.clock()
                 delay = max(0, min(30, remaining / 2), remaining - self.renew_before)
             except SessionError as error:
-                if error.code in {'PAIRING', 'ACCOUNT_MISMATCH', 'DESTINATION', 'CONNECTION'}:
+                if error.code in {'PAIRING', 'ACCOUNT_MISMATCH', 'DESTINATION', 'CONNECTION', 'SDK_EXPIRED'}:
                     raise
                 remaining = accepted_expiry - self.clock()
                 delay = min(retry, max(1, remaining / 2)) if remaining > 0 else retry

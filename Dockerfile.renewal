@@ -1,0 +1,9 @@
+# Build the core image from this checkout first: docker build -t tdm:local .
+ARG TDM_IMAGE=tdm:local
+FROM ${TDM_IMAGE}
+
+# Optional helper only. The ordinary miner image and Python dependencies are unchanged.
+RUN apk add --no-cache chromium
+HEALTHCHECK NONE
+ENTRYPOINT ["python", "-m", "src.auth.server_renewal"]
+CMD ["--seed", "/state/server-seed.json", "--connection", "/state/renewal.json", "--chromium", "/usr/bin/chromium", "--no-sandbox"]
