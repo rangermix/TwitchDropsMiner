@@ -21,6 +21,16 @@ reproduced and fixed process-group and SIGTERM cleanup failures. Two live fresh-
 Python issuances and a protected API delivery passed. Sustained expiry tests remain
 running; see the evidence note for exact boundaries. Task 4 remains in progress.
 
+**Task 4 live checkpoint, 25 September at 06:01 UTC:** the packaged helper's normal
+scheduled cycle passed, including SDK-cookie rotation, saved/delivered context equality,
+browser cleanup, and independent protected requests after the old integrity token expired.
+A separate packaged delivery to the actual miner was followed by Inventory, Campaigns,
+GetStreamInfo and CurrentDrop checks using the production provider in a separate process
+in that miner's container. At 06:06 UTC the active miner's claim path reported success
+and recorded the reward in history; an independent inventory check found it claimed.
+Raw claim status and exclusive attribution were not captured. The original SDK-cookie
+expiry gate and initial-export verification are still pending; this is not completion.
+
 ## Acceptance criteria
 
 - One initial export supplies both the ordinary import bundle and a private server seed.

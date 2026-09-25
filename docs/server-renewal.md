@@ -1,11 +1,14 @@
 # Experimental server renewal
 
 Tracking: [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118). This source
-feature is still undergoing expiry-crossing verification; it is not a released fix.
-Two live Python-helper runs in Alpine Chromium 152 obtained distinct tokens, passed
-account/Inventory/Campaigns validation, and extended the SDK cookie's expiry. The second
-run used only the first server run's saved replacement in a new container/profile.
-This does not yet prove sustained operation across the original seed's expiry.
+feature is still undergoing sustained verification; it is not a released fix.
+The packaged Python helper in Alpine Chromium 152 completed its normal scheduled
+renewal using saved server state. It rotated the SDK cookie, delivered a distinct
+integrity context, and passed account/Inventory/Campaigns validation after the old token
+expired. The actual miner also accepted a context from the packaged helper. A separate
+process in its container checked that accepted state using the production provider,
+passing inventory, campaigns, stream lookup and current-drop queries. The original exported SDK-cookie
+expiry check is still pending; see the [timestamped evidence](notes/2026-09-25-sdk-cookie-renewal.md).
 
 The local computer is needed for initial Twitch login and export. Afterwards a separate
 helper on your home server runs headless Chromium only during renewal. Ordinary miner
@@ -81,4 +84,7 @@ expired SDK state, OAuth revocation or a changed Twitch check can require a new 
 login/export. `SESSION_SDK_EXPIRED` stops attempts before launching Chromium. Invalid
 pairing or a wrong account also stops the command; Docker's restart policy may restart it.
 TDM waits when no valid context remains. It never treats a rejected token as successful
-renewal. Longer operation and automatic-claim evidence are still pending.
+renewal. The active miner reported a successful claim using a Python-delivered context,
+and independent inventory showed the reward claimed. The raw response was not captured,
+so a new claim cannot be distinguished from an already-claimed success. Longer operation
+and the original SDK-cookie expiry check remain pending.

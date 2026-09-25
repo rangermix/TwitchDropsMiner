@@ -16,8 +16,11 @@ Games to Watch does not repair this upstream restriction. Native Chrome login an
 local-session export/import with a browser-assisted renewal helper have passed live
 checks on one home network. An experimental [server renewal helper](docs/server-renewal.md)
 now uses a one-time SDK cookie export and headless Chromium on the server, allowing the
-local browser to close. Its issued tokens passed independent Python validation in Alpine;
-[sustained renewal testing](docs/notes/2026-09-25-sdk-cookie-renewal.md) remains in progress. Fresh browser
+local browser to close. Its normal scheduled cycle and protected requests after the old
+integrity token expired have passed in Alpine. The miner accepted its context, which
+also passed independent inventory, campaign, stream-lookup and current-drop checks in
+that container. The original SDK-cookie
+expiry check and [sustained testing](docs/notes/2026-09-25-sdk-cookie-renewal.md) remain in progress. Fresh browser
 login inside Docker remains rejected.
 These are experimental source features in this branch, not a released fix. The tracking
 issue records implementation, live verification, and release status.
@@ -127,7 +130,8 @@ failed Twitch's integrity check. Reusing the desktop browser's complete matching
 context instead returned inventory and 126 campaigns through both Docker Chrome and a
 plain Python HTTP client inside Docker. The manual import path below now implements
 that approach and supports a local automatic renewal helper. Operation on another
-network and Twitch-side mining progress through an imported session remain unverified. A fresh authenticated GraphQL
+network remains unverified. Later server-renewal tests observed Twitch-side account
+progress, with other-device activity uncontrolled; see the evidence note below. A fresh authenticated GraphQL
 integrity response advertised about **one hour** of validity; the login cookie's much
 longer lifetime does not extend that context. The issued token matched a successful
 authenticated request returning 126 campaigns. An export needs renewal; the imported provider enforces its observed expiry, and the
@@ -185,15 +189,16 @@ For the experimental server-renewal work, add `--server-seed "$HOME/tdm-server-s
 to the export command. This also saves the SDK cookie for `k.twitchcdn.net` alongside
 the matching context in a separate private seed file. Import `tdm-session.json` into
 the dashboard as before, then follow the [server helper setup](docs/server-renewal.md).
-Both files contain credentials. The server helper is experimental and still undergoing
-expiry-crossing verification.
+Both files contain credentials. The server helper is experimental; its normal integrity
+renewal cycle has passed, while the original SDK-cookie expiry check remains pending.
 
 **Live manual-path check (25 September 2026):** the actual dashboard accepted an export
 from the dedicated native Chrome profile into a fresh browser-free Docker TDM instance.
 Identity, Inventory and Campaigns passed; a subsequent read-only query through the
 imported provider returned 129 campaigns. The renewal helper subsequently delivered three distinct new integrity contexts,
-and authenticated campaign access passed inside Docker. This result does not prove
-Twitch-side mining progress with imported state.
+and authenticated campaign access passed inside Docker. That initial check did not
+establish Twitch-side mining progress with imported state; the later server-renewal
+evidence distinguishes account progress from exclusive mining attribution.
 See the [import and renewal evidence](docs/notes/2026-09-25-session-import-renewal.md).
 
 #### Automatic renewal from the local browser (experimental)
@@ -247,16 +252,17 @@ browser-free Docker provider through three replacements with distinct integrity 
 The destination validated each replacement's identity, inventory and campaigns; an
 independent provider query using the first automatic replacement returned 129 campaigns.
 The test used `--renew-before 3550` to observe successive renewals about 51 seconds apart.
-The normal five-minute lead is covered by controlled-clock tests, not a full hour-long
-live run. Cross-network behavior, browser sign-out recovery, and imported mining progress
-remain unverified. The source feature still requires review/release before deployment.
+That local-browser test did not exercise a complete default cycle. The separate server
+helper later passed its normal cycle and protected requests after expiry, as recorded
+above. Cross-network behavior and browser sign-out recovery remain unverified, and
+account progress is not exclusive mining attribution. These source features are unreleased.
 
 #### Desktop Chrome attachment (experimental)
 
 On a machine with a desktop, TDM can attach to a dedicated, normally launched Chrome
 profile. The browser must remain running on that machine while TDM uses it. This has
-been checked on macOS ARM64; other desktop platforms, long runs, and token renewal remain
-unverified.
+been checked on macOS ARM64; other desktop platforms and long-running renewal through
+this direct ChromeDriver path remain unverified.
 Install a [ChromeDriver matching your Chrome build](https://developer.chrome.com/docs/chromedriver/downloads/version-selection).
 Keep both debugging and driver ports on loopback. Use a dedicated profile, not your
 everyday Chrome profile. Do not expose either control port to other machines.

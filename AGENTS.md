@@ -347,10 +347,18 @@ progress to an ignored drop while the miner intentionally targets another reward
   `k.twitchcdn.net`, in addition to the OAuth/client context, enables accepted headless
   server-browser issuance. The SDK cookie must remain private. Fresh profiles without
   it failed; copied local storage was unnecessary. Independent Alpine HTTP validated
-  the same account and 149 campaigns. See `docs/notes/2026-09-25-sdk-cookie-renewal.md`:
-  expiry-crossing, mining and long-run checks are still in progress. The optional
-  `server_renewal` helper implements this candidate; do not present it as a released
-  or completed fix while those checks are pending.
+  the same account and 149 campaigns. The packaged helper's normal renewal cycle then
+  rotated the SDK cookie and passed account/Inventory/Campaigns after the previous
+  integrity token expired. After the actual miner accepted its context, a separate
+  process in that container loaded the accepted state into the production ImportedSession
+  class and passed Inventory, Campaigns, GetStreamInfo and CurrentDrop. See
+  `docs/notes/2026-09-25-sdk-cookie-renewal.md` for generation/producer attribution:
+  the active miner later logged a successful claim and recorded the reward in history.
+  Its claim path accepts both newly claimed and already-claimed responses; raw status
+  and exclusive earning/first-claim attribution were not captured. The original SDK-cookie
+  expiry and initial-export checks are still pending.
+  The optional `server_renewal` helper implements this candidate; do not present it as
+  a released or completed fix while those checks are pending.
 - `TDM_SESSION_IMPORT=1` selects `ImportedSession` as the optional fallback provider,
   mutually exclusive with direct browser configuration. Preserve Android priority and
   `cookies.jar`. Never combine imported web credentials with Android HTTP cookies.

@@ -81,9 +81,9 @@ Twitch-reported minutes between 04:11 and 04:13 UTC, using the server-generated 
 local extrapolation. No other local test miner was running, and the SDK probes never
 opened a player, but possible account activity on other devices was not controlled;
 these observations alone do not attribute the progress exclusively to this miner.
-Further progress across renewal is recorded below; automatic claims are still pending. A changed
-claimed-benefit count alone will not establish a miner claim; that needs a matching
-successful ClaimDrop outcome from the miner.
+Further progress and accepted claim-path evidence are recorded below. A changed
+claimed-benefit count alone does not establish a miner claim; the active miner's own
+result and the distinction between a new claim and an already-claimed response matter.
 
 ## Deployment implication
 
@@ -115,7 +115,7 @@ so it does not interfere with the original sustained mining experiment.
 
 At 05:01 UTC the packaged Python helper started its normal unattended loop against that
 target, accepted generation 3, and scheduled renewal five minutes before its 06:01 UTC
-expiry. This is another ongoing test, not completed expiry evidence.
+expiry. The completed cycle is recorded below.
 
 At 05:04 UTC the original prototype performed its next scheduled renewal with the local
 browser still closed. The miner accepted generation 8, the new token returned 149
@@ -127,7 +127,60 @@ using generation 8 still passed identity, Inventory and 149 Campaigns. Twitch re
 183 watched minutes for the three tracked rewards, up from 124 initially. The first
 unclaimed reward requires 240 minutes, so no new claim is expected yet. These remain
 account-progress observations with the attribution limitation above. The original SDK
-cookie's 07:32 UTC expiry and the packaged helper's normal cycle are still pending.
+cookie's 07:32 UTC expiry remains pending; the packaged helper's normal cycle subsequently
+passed as follows.
+
+## Packaged scheduled cycle and actual miner operations
+
+At 05:56:10 UTC the packaged Python helper performed its default scheduled renewal,
+advancing its catalog-only target from generation 3 to 4. The integrity token differed,
+its expiry advanced to 06:56:08 UTC, and the SDK cookie rotated with an extended expiry.
+The atomically saved server seed matched the context accepted by the target. No local
+browser or new export was involved.
+
+At 06:01:23 UTC, 17 seconds after generation 3's advertised expiry, an independent
+Python request inside the target validated generation 4's account and Inventory and
+returned 147 Campaigns. The helper had no remaining Chromium process or temporary
+browser profile. This proves the packaged helper's real default cycle and accepted
+protected operations after the previous integrity context expired. It does not yet
+cross the original SDK cookie's 07:32 UTC expiry.
+
+Separately, the original prototype delivered generation 9 to the actual miner at
+05:59:31 UTC and scheduled its next renewal for 06:54 UTC. After both that delivery
+and the packaged post-expiry check passed, a packaged Python `--once` run used a copy
+of the continuous Python helper's server-produced seed in a separate state directory. It reused
+the miner's existing pairing, preserving the prototype's credential. At 06:01:38 UTC
+the actual miner accepted generation 10, with expiry at 07:01:35 UTC; the new seed
+matched that delivery and the SDK-cookie expiry advanced again.
+
+At 06:01:41 UTC a separate Python process in the running miner container loaded its
+accepted generation 10 state into the production `ImportedSession` class. This
+independent probe passed Inventory, Campaigns, GetStreamInfo and CurrentDrop; the
+active watch/claim loop remained running separately.
+The catalog contained 147 campaigns, CurrentDrop was present, and the three tracked
+rewards reported 235 watched minutes. The first unclaimed reward requires 240 minutes.
+Progress remains an account observation, without exclusive earning attribution.
+
+The actual miner therefore has mixed test provenance: generations 7–9 came from the
+prototype; generation 10 came from the packaged Python helper. The original prototype's
+server profile and the Python helpers' separate seed files are not shared. Its later
+issuance after the original SDK-cookie expiry remains a separate scheduled gate.
+Code hashes from the running helper and the actual miner's authentication, GraphQL,
+core and claim modules matched source revision `01a87ce`; the live checks did not use
+an older implementation of those paths.
+
+At 06:06:35 UTC the active miner logged `Claimed drop` and `Recorded drop` for Cuddly
+Blue Grrgle while generation 10 was installed. Its history recorded the same reward
+and timestamp. At 06:07:44 UTC the independent production-provider probe in that
+container still passed its four read operations and found the reward claimed at
+240 minutes; the other two rewards had reached 241 minutes.
+
+This establishes the active miner's accepted claim path with the Python-delivered
+context. The raw ClaimDrop response was not logged. `BaseDrop._claim()` accepts both
+`ELIGIBLE_FOR_ALL` and `DROP_INSTANCE_ALREADY_CLAIMED`, so the success messages and
+history do not distinguish those statuses or establish which client claimed first.
+Other-device activity remains uncontrolled; exclusive earning and first-claim
+attribution are not asserted.
 
 The packaged `linux/amd64` image also issued a distinct token and passed independent
 identity/Inventory/Campaigns validation using a copied server replacement seed in a fresh
@@ -143,9 +196,10 @@ termination; the helper exited with code 143 in 0.26 seconds and left no private
 The documented command uses Docker init and a 20-second stop grace.
 
 Core and optional helper images built successfully for both `linux/arm64` and
-`linux/amd64`. No Python dependency
-or ordinary Dockerfile change was needed. Longer expiry, recovery and mining/claim
-verification remain separate requirements; this checkpoint does not close #118.
+`linux/amd64`. No Python dependency or ordinary Dockerfile change was needed. The
+original SDK-cookie expiry gate and live initial-export verification remain pending;
+longer operation, live outage recovery and exclusive earning/claim attribution are
+unverified. This checkpoint does not close #118.
 
 Do not publish session exports, SDK cookie values, request headers, browser profiles or
 pairing credentials. The SDK cookie is authentication-sensitive state and must be stored
