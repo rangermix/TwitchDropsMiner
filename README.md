@@ -59,11 +59,16 @@ Open <http://localhost:8080>.
 ### Docker Compose
 
 From the repository root, build and start the included
-[`docker-compose.yml`](./docker-compose.yml):
+[`docker-compose.yml`](./docker-compose.yml). The first run needs your
+browser's Twitch `auth-token` cookie; see
+[docs/streamlink-integrity.md](./docs/streamlink-integrity.md#setup):
 
 ```bash
+read -rsp 'auth-token: ' TDM_WEB_AUTH_TOKEN && export TDM_WEB_AUTH_TOKEN
 docker compose up -d --build
 ```
+
+Later runs reuse the saved session, so plain `docker compose up -d` is enough.
 
 ### From source
 

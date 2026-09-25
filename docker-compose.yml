@@ -11,9 +11,17 @@ services:
       - ./logs:/app/logs
     environment:
       # Set timezone (optional, defaults to UTC)
-      - TZ=Australia/Sydney
+      - TZ=Europe/Paris
+      # Browser auth-token cookie, needed on the first run only; after that the
+      # session lives in data/cookies.jar. Pass it from the shell, e.g.
+      #   read -rsp 'auth-token: ' TDM_WEB_AUTH_TOKEN; export TDM_WEB_AUTH_TOKEN
+      # See docs/streamlink-integrity.md.
+      - TDM_WEB_AUTH_TOKEN=${TDM_WEB_AUTH_TOKEN:-}
       # Optional: exact public URL when using a reverse proxy (root URL, no subpath).
       # HTTPS here enables Secure cookies even when the proxy uses HTTP to this container.
       # Does not trust forwarded client IPs; leave unset for direct HTTP access.
       # - PUBLIC_BASE_URL=https://drops.example.com
+    # Chromium, used to mint client-integrity tokens, crashes on Docker's
+    # default 64 MB /dev/shm.
+    shm_size: 512m
     restart: unless-stopped

@@ -215,7 +215,10 @@ class BaseDrop:
             response = await self._twitch.gql_request(
                 GQL_OPERATIONS["ClaimDrop"].with_variables(
                     {"input": {"dropInstanceID": self.claim_id}}
-                )
+                ),
+                # claimDropRewards is integrity-gated too; without it every
+                # claim fails with "failed integrity check".
+                integrity=True,
             )
         except GQLException:
             # regardless of the error, we have to assume

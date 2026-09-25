@@ -68,7 +68,7 @@ class Twitch:
         self._campaigns: dict[str, DropsCampaign] = {}
         self._mnt_triggers: deque[datetime] = deque()
         # Client type and auth
-        self._client_type: ClientInfo = ClientType.SMARTBOX
+        self._client_type: ClientInfo = ClientType.WEB
         self._auth_state: _AuthState = _AuthState(self)
         # GUI (will be set by main.py)
         self.gui: WebGUIManager = None  # type: ignore[assignment]
@@ -675,7 +675,9 @@ class Twitch:
         await self._auth_state.validate()
         return self._auth_state
 
-    async def gql_request(self, ops: GQLRequest | list[GQLRequest]) -> JsonType | list[JsonType]:
+    async def gql_request(
+        self, ops: GQLRequest | list[GQLRequest], integrity: bool = False
+    ) -> JsonType | list[JsonType]:
         """
         Execute GraphQL request(s).
 
@@ -683,7 +685,7 @@ class Twitch:
         """
         self._ensure_api_clients()
         assert self._gql_client is not None
-        return await self._gql_client.request(ops)
+        return await self._gql_client.request(ops, integrity=integrity)
 
     async def fetch_campaigns(
         self, campaigns_chunk: list[tuple[str, JsonType]]

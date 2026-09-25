@@ -63,12 +63,16 @@ class GQLClient:
         self._qgl_limiter = RateLimiter(capacity=5, window=1)
 
     @overload
-    async def request(self, ops: GQLRequest) -> JsonType: ...
+    async def request(self, ops: GQLRequest, integrity: bool = False) -> JsonType: ...
 
     @overload
-    async def request(self, ops: list[GQLRequest]) -> list[JsonType]: ...
+    async def request(
+        self, ops: list[GQLRequest], integrity: bool = False
+    ) -> list[JsonType]: ...
 
-    async def request(self, ops: GQLRequest | list[GQLRequest]) -> JsonType | list[JsonType]:
+    async def request(
+        self, ops: GQLRequest | list[GQLRequest], integrity: bool = False
+    ) -> JsonType | list[JsonType]:
         """
         Execute one or more GraphQL operations.
 
@@ -101,7 +105,11 @@ class GQLClient:
                     "POST",
                     "https://gql.twitch.tv/gql",
                     json=ops,
-                    headers=auth_state.headers(user_agent=self._client_type.USER_AGENT, gql=True),
+                    headers=auth_state.headers(
+                        user_agent=self._client_type.USER_AGENT,
+                        gql=True,
+                        integrity=integrity,
+                    ),
                 ) as response:
                     response_json: JsonType | list[JsonType] = await response.json()
 
@@ -131,7 +139,19 @@ class GQLClient:
                                     delay = 5
                                 force_retry = True
                                 break
-                            elif error_dict["message"] == "server error":
+                            elif error_dict["message"] in ("server error", "failed integrity check"):
+                                # "failed integrity check": the campaign catalog
+                                # is gated (see src/auth/integrity.py). Nulling it
+                                # degrades to inventory-only mining instead of
+                                # killing the miner -- but say so, since the
+                                # result is otherwise indistinguishable from an
+                                # empty catalog.
+                                if error_dict["message"] == "failed integrity check":
+                                    logger.warning(
+                                        "Twitch rejected the client-integrity token; "
+                                        "campaign discovery unavailable, mining "
+                                        "inventory only"
+                                    )
                                 # Nullify the key the error path points to
                                 data_dict: JsonType = response_json["data"]
                                 path: list[str] = error_dict.get("path", [])
