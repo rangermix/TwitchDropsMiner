@@ -15,8 +15,10 @@ does not establish complete campaign discovery. Clearing data, reinstalling, or 
 Games to Watch does not repair this upstream restriction. Native Chrome login and
 local-session export/import with a browser-assisted renewal helper have passed live
 checks on one home network. Independent server renewal after a one-time export remains
-unresolved; the helper requires the user’s browser to run. Fresh browser login inside
-Docker remains rejected.
+unresolved in the implemented feature; the helper requires the user’s browser to run.
+A [server-browser experiment using a one-time SDK cookie export](docs/notes/2026-09-25-sdk-cookie-renewal.md)
+has issued accepted tokens, with sustained renewal testing in progress. Fresh browser
+login inside Docker remains rejected.
 These are experimental source features in this branch, not a released fix. The tracking
 issue records implementation, live verification, and release status.
 
@@ -196,6 +198,10 @@ With the exporting browser stopped, direct Alpine HTTP issuance returned new one
 tokens, but Twitch rejected their campaign queries. Replaying captured browser issuance
 headers, including the browser SDK proof headers, also failed; the same test's imported
 token successfully returned 152 campaigns. See the [server-only renewal investigation](docs/notes/2026-09-25-server-only-renewal.md).
+
+A later [SDK cookie experiment](docs/notes/2026-09-25-sdk-cookie-renewal.md) has enabled
+accepted renewal inside a headless server browser after one export. This candidate is
+under sustained live testing and has not been integrated into the feature below.
 
 After a successful manual import, click **Download renewal connection** in the login
 panel. Store `tdm-connection.json` privately on the computer running the dedicated Chrome

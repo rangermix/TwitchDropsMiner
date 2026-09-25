@@ -56,3 +56,7 @@ long unattended operation and imported-session mining progress remain unresolved
 The main Dockerfile and dependency manifests remain unchanged. This investigation
 changes documentation only; the previously verified application tests are not evidence
 of server-only renewal.
+
+Follow-up: the [SDK cookie experiment](2026-09-25-sdk-cookie-renewal.md) subsequently
+produced accepted tokens in a server browser from a one-time seed. That result does not
+change the failed HTTP replay evidence above; sustained operation is being tested.

@@ -342,6 +342,13 @@ progress to an ignored drop while the miner intentionally targets another reward
   direct issuance and a replay of captured browser issuance headers both returned tokens
   whose campaign queries failed. The latter test's imported-token baseline returned 152
   campaigns with the source browser stopped. Server-only renewal remains unresolved.
+- A subsequent experiment found that importing only the `KP_UIDz-ssn` SDK cookie for
+  `k.twitchcdn.net`, in addition to the OAuth/client context, enables accepted headless
+  server-browser issuance. The SDK cookie must remain private. Fresh profiles without
+  it failed; copied local storage was unnecessary. Independent Alpine HTTP validated
+  the same account and 149 campaigns. See `docs/notes/2026-09-25-sdk-cookie-renewal.md`:
+  expiry-crossing, mining and long-run checks are still in progress, and this candidate
+  is not yet integrated. Do not present it as a released or completed fix.
 - `TDM_SESSION_IMPORT=1` selects `ImportedSession` as the optional fallback provider,
   mutually exclusive with direct browser configuration. Preserve Android priority and
   `cookies.jar`. Never combine imported web credentials with Android HTTP cookies.
