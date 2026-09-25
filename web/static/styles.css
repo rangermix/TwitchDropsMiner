@@ -284,7 +284,8 @@ header h1 {
 }
 
 /* Login */
-#login-form input {
+#login-form input,
+#auth-token-input {
     display: block;
     width: 100%;
     padding: 10px;
@@ -296,7 +297,8 @@ header h1 {
 }
 
 #login-form button,
-#oauth-confirm {
+#oauth-confirm,
+#auth-token-submit {
     width: 100%;
     padding: 12px;
     background: var(--accent-color);
@@ -309,8 +311,30 @@ header h1 {
 }
 
 #login-form button:hover,
-#oauth-confirm:hover {
+#oauth-confirm:hover,
+#auth-token-submit:hover {
     opacity: 0.9;
+}
+
+#auth-token-submit:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.auth-token-steps {
+    margin: 10px 0 10px 20px;
+    line-height: 1.6;
+}
+
+.auth-token-note {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.auth-token-error {
+    color: var(--error-color);
+    margin-top: 10px;
 }
 
 .oauth-code {

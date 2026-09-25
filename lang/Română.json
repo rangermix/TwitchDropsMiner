@@ -227,7 +227,7 @@
             "important_notes": "Note importante",
             "github_repo": "Depozit GitHub",
             "how_to_use_items": [
-                "Autentificați-vă folosind contul Twitch (flux cod dispozitiv OAuth)",
+                "Autentificați-vă lipind cookie-ul Twitch auth-token în Formular de conectare",
                 "Legați conturile la <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
                 "Minerul va descoperi automat campaniile și va începe mineritul",
                 "Configurați jocurile prioritare în Setări pentru a vă concentra pe ceea ce doriți",

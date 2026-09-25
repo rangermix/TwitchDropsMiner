@@ -68,6 +68,10 @@ class LoginRequest(BaseModel):
     token: str = ""
 
 
+class AuthTokenRequest(BaseModel):
+    auth_token: str
+
+
 class ChannelSelectRequest(BaseModel):
     channel_id: int
 
@@ -353,6 +357,51 @@ async def submit_login(login_data: LoginRequest):
 
     gui_manager.login.submit_login(login_data.username, login_data.password, login_data.token)
     return {"success": True}
+
+
+async def validate_auth_token(token: str) -> dict | None:
+    """Ask Twitch whether a token is valid; returns its details, or None."""
+    import aiohttp
+
+    async with aiohttp.ClientSession() as session, session.get(
+        "https://id.twitch.tv/oauth2/validate",
+        headers={"Authorization": f"OAuth {token}"},
+        timeout=aiohttp.ClientTimeout(total=10),
+    ) as response:
+        if response.status != 200:
+            return None
+        return await response.json()
+
+
+@app.post("/api/auth-token")
+async def submit_auth_token(request: AuthTokenRequest):
+    """Accept the browser auth-token cookie for the WEB client's first login."""
+    from src.auth import integrity
+
+    if not gui_manager:
+        raise HTTPException(status_code=503, detail="GUI not initialized")
+    # Only while the login flow is waiting: never swap a running session.
+    if not gui_manager.login.get_status().get("auth_token_pending"):
+        raise HTTPException(status_code=409, detail="No login is pending")
+
+    token = request.auth_token.strip()
+    if not token:
+        raise HTTPException(status_code=400, detail="Paste the auth-token value")
+    # Check it here, so a typo gets an answer in the form instead of a
+    # failed login in the miner.
+    details = await validate_auth_token(token)
+    if details is None:
+        raise HTTPException(status_code=400, detail="Twitch rejected this token")
+    # Integrity tokens are bound to the web client; a token from another
+    # client (TV, app) would log in but never see a campaign.
+    if details.get("client_id") != integrity.CLIENT_ID:
+        raise HTTPException(
+            status_code=400,
+            detail="This is not a twitch.tv browser token",
+        )
+
+    gui_manager.login.submit_auth_token(token)
+    return {"success": True, "login": details.get("login")}
 
 
 @app.post("/api/oauth/confirm")

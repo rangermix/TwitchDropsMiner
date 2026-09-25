@@ -22,6 +22,15 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=8080
 
+# Chromium, for minting client-integrity tokens through Streamlink.
+# See src/auth/integrity.py and docs/streamlink-integrity.md.
+# xvfb-run: Chromium has to run headful for Twitch to accept its tokens.
+RUN apk add --no-cache chromium nss freetype harfbuzz ttf-freefont xvfb-run
+# Alpine's launcher appends CHROMIUM_USER_FLAGS; Chromium won't start as root
+# without --no-sandbox.
+ENV TDM_CHROMIUM_PATH=/usr/bin/chromium-browser \
+    CHROMIUM_USER_FLAGS=--no-sandbox
+
 # Set working directory
 WORKDIR /app
 

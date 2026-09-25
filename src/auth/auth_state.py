@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, cast
 
 import aiohttp
 from yarl import URL
 
+from src.auth import integrity
 from src.config import COOKIES_PATH
 from src.i18n import _
 from src.utils import CHARS_HEX_LOWER, create_nonce
@@ -43,6 +46,11 @@ class _AuthState:
         self.session_id: str
         self.access_token: str
         self.client_version: str
+        # Client-integrity, needed for the campaign catalog only. See
+        # src/auth/integrity.py.
+        self.integrity_token: str | None = None
+        self.integrity_expires: datetime | None = None
+        self._integrity_failed_at: datetime | None = None
 
     def _hasattrs(self, *attrs: str) -> bool:
         """Check if all specified attributes exist."""
@@ -155,13 +163,16 @@ class _AuthState:
                 # the device_code has expired, request a new code
                 continue
 
-    def headers(self, *, user_agent: str = "", gql: bool = False) -> JsonType:
+    def headers(
+        self, *, user_agent: str = "", gql: bool = False, integrity: bool = False
+    ) -> JsonType:
         """
         Build HTTP headers for Twitch API requests.
 
         Args:
             user_agent: Optional custom User-Agent string
             gql: If True, include GraphQL-specific headers
+            integrity: If True, attach Client-Integrity when one is held
 
         Returns:
             Dictionary of HTTP headers
@@ -187,6 +198,8 @@ class _AuthState:
             headers["Origin"] = str(client_info.CLIENT_URL)
             headers["Referer"] = str(client_info.CLIENT_URL)
             headers["Authorization"] = f"OAuth {self.access_token}"
+        if integrity and self.integrity_token is not None:
+            headers["Client-Integrity"] = self.integrity_token
         return headers
 
     async def validate(self):
@@ -237,7 +250,18 @@ class _AuthState:
                 for _invalid_token_attempt in range(2):
                     cookie = jar.filter_cookies(client_info.CLIENT_URL)
                     if "auth-token" not in cookie:
-                        self.access_token = await self._oauth_login()
+                        seeded = os.environ.get("TDM_WEB_AUTH_TOKEN", "").strip()
+                        if seeded:
+                            # ClientType.WEB has no device-code flow, so the
+                            # token has to come from a real browser session.
+                            logger.info("Seeding session from TDM_WEB_AUTH_TOKEN")
+                            self.access_token = seeded
+                        elif client_info.CLIENT_ID == integrity.CLIENT_ID:
+                            # WEB has no device-code flow (Twitch rejects it),
+                            # so the dashboard asks for the browser cookie.
+                            self.access_token = await login_form.ask_auth_token()
+                        else:
+                            self.access_token = await self._oauth_login()
                         cookie["auth-token"] = self.access_token
                     elif not hasattr(self, "access_token"):
                         logger.info("Restoring session from cookie")
@@ -275,7 +299,43 @@ class _AuthState:
             # update our cookie and save it
             jar.update_cookies(cookie, client_info.CLIENT_URL)
             jar.save(COOKIES_PATH)
+        await self._refresh_integrity()
         self._logged_in.set()
+
+    @property
+    def integrity_expired(self) -> bool:
+        return (
+            self.integrity_expires is None
+            or datetime.now(timezone.utc) >= self.integrity_expires
+        )
+
+    async def _refresh_integrity(self) -> None:
+        """
+        Mint a new client-integrity token if the current one is due.
+
+        Failure is not fatal: everything except the campaign catalog works
+        without integrity, so the miner keeps running on its inventory.
+        """
+        if not self.integrity_expired:
+            return
+        now = datetime.now(timezone.utc)
+        if (
+            self._integrity_failed_at is not None
+            and now - self._integrity_failed_at < integrity.FAILURE_COOLDOWN
+        ):
+            logger.debug("Integrity refresh still on cooldown, skipping")
+            return
+        result = await integrity.acquire(self.access_token, self.device_id)
+        if result is None:
+            self._integrity_failed_at = now
+            logger.warning(
+                "Could not acquire a client-integrity token; "
+                "campaign discovery stays unavailable until the next attempt"
+            )
+            return
+        self._integrity_failed_at = None
+        self.integrity_token, expires_at = result
+        self.integrity_expires = expires_at - integrity.RENEW_MARGIN
 
     def invalidate(self):
         """Invalidate the current access token."""

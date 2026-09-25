@@ -227,7 +227,7 @@
             "important_notes": "Wichtige Hinweise",
             "github_repo": "GitHub-Repository",
             "how_to_use_items": [
-                "Melden Sie sich mit Ihrem Twitch-Konto an (OAuth Geräte-Code-Flow)",
+                "Melden Sie sich an, indem Sie Ihr Twitch-Cookie auth-token im Bereich Login einfügen",
                 "Verknüpfen Sie Ihre Konten auf <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
                 "Der Miner wird automatisch Kampagnen entdecken und mit dem Sammeln beginnen",
                 "Konfigurieren Sie Prioritäts-Spiele in den Einstellungen, um sich auf das zu konzentrieren, was Sie möchten",

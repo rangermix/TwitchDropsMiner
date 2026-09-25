@@ -65,6 +65,10 @@ From the repository root, build and start the included
 docker compose up -d --build
 ```
 
+On first run the dashboard's Login Form asks for your browser's Twitch
+`auth-token` cookie and explains where to find it; later runs reuse the saved
+session. See [docs/streamlink-integrity.md](./docs/streamlink-integrity.md#setup).
+
 ### From source
 
 Source installations require Python 3.12 or newer and

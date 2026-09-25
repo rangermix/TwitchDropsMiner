@@ -227,7 +227,7 @@
             "important_notes": "Důležité poznámky",
             "github_repo": "GitHub Repozitář",
             "how_to_use_items": [
-                "Přihlaste se pomocí účtu Twitch (OAuth tok kódu zařízení)",
+                "Přihlaste se vložením cookie auth-token z Twitche v sekci Přihlášení k službě Twitch",
                 "Propojte své účty na <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
                 "Těžař automaticky objeví kampaně a začne těžit",
                 "Nakonfigurujte prioritní hry v Nastaveních, abyste se zaměřili na to, co chcete",

@@ -89,6 +89,9 @@ async def test_device_login_migrates_and_restores_sessions(tmp_path, monkeypatch
     monkeypatch.setattr("src.auth.auth_state.COOKIES_PATH", cookie_path)
     monkeypatch.setattr("src.core.client.DATA_DIR", tmp_path)
     client = Twitch(MagicMock())
+    # This exercises the device-code flow, which only SMARTBOX still supports;
+    # pin it so the suite stays meaningful whatever the default client is.
+    client._client_type = ClientType.SMARTBOX
     client.gui = SimpleNamespace(
         login=SimpleNamespace(update=MagicMock(), ask_enter_code=AsyncMock())
     )

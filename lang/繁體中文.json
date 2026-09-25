@@ -227,7 +227,7 @@
             "important_notes": "重要注意事項",
             "github_repo": "GitHub 儲存庫",
             "how_to_use_items": [
-                "使用您的 Twitch 帳戶登入（OAuth 裝置代碼流程）",
+                "將 Twitch 的 auth-token Cookie 貼到「登入 Twitch」中進行登入",
                 "在 <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> 連結您的帳戶",
                 "挖礦器將自動發現活動並開始挖礦",
                 "在設定中配置優先遊戲以專注於您想要的內容",

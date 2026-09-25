@@ -573,6 +573,8 @@ The application uses a web-based interface accessible via browser:
 - Port mapping `8080:8080`
 - Auto-restart policy
 - Timezone configuration
+- Optional `TDM_WEB_AUTH_TOKEN`; otherwise the Login Form asks for the browser `auth-token` cookie (the WEB client has no device-code flow)
+- `shm_size: 512m`, since Chromium crashes on Docker's default 64 MB `/dev/shm`
 
 ### Key Design Decisions
 

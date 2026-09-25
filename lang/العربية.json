@@ -227,7 +227,7 @@
             "important_notes": "ملاحظات مهمة",
             "github_repo": "مستودع GitHub",
             "how_to_use_items": [
-                "قم بتسجيل الدخول باستخدام حساب Twitch الخاص بك (تدفق رمز جهاز OAuth)",
+                "سجّل الدخول بلصق ملف تعريف الارتباط auth-token الخاص بـ Twitch في قسم «تسجيل الدخول»",
                 "اربط حساباتك في <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
                 "سيكتشف المُعدِّن الحملات تلقائيًا ويبدأ التعدين",
                 "قم بتكوين الألعاب ذات الأولوية في الإعدادات للتركيز على ما تريد",

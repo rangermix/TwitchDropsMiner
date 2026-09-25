@@ -103,7 +103,8 @@ class InventoryService:
                     {"channelLogin": str(auth_state.user_id), "dropID": cid}
                 )
                 for cid in campaign_ids
-            ]
+            ],
+            integrity=True,
         )
 
         # Ensure we have a list
@@ -112,8 +113,11 @@ class InventoryService:
         )
 
         fetched_data: dict[str, JsonType] = {
-            (campaign_data := response_json["data"]["user"]["dropCampaign"])["id"]: campaign_data
+            campaign_data["id"]: campaign_data
             for response_json in response_list
+            # null when the catalog is integrity-gated; merge_data keeps the
+            # inventory's copy for that id
+            if (campaign_data := response_json["data"]["user"]["dropCampaign"]) is not None
         }
 
         return GQLClient.merge_data(campaign_ids, fetched_data)
@@ -146,7 +150,9 @@ class InventoryService:
         inventory_data: dict[str, JsonType] = {c["id"]: c for c in ongoing_campaigns}
 
         # fetch general available campaigns data (campaigns)
-        response = await self._twitch.gql_request(GQL_OPERATIONS["Campaigns"])
+        response = await self._twitch.gql_request(
+            GQL_OPERATIONS["Campaigns"], integrity=True
+        )
         available_list: list[JsonType] = response["data"]["currentUser"]["dropCampaigns"] or []
         applicable_statuses = ("ACTIVE", "UPCOMING")
         available_campaigns: dict[str, JsonType] = {

@@ -227,7 +227,7 @@
             "important_notes": "Önemli Notlar",
             "github_repo": "GitHub Deposu",
             "how_to_use_items": [
-                "Twitch hesabınızı kullanarak giriş yapın (OAuth cihaz kodu akışı)",
+                "Twitch auth-token çerezinizi Giriş Yap bölümüne yapıştırarak giriş yapın",
                 "Hesaplarınızı <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> adresinde bağlayın",
                 "Madenci otomatik olarak kampanyaları keşfedecek ve kazımaya başlayacak",
                 "İstediğiniz şeye odaklanmak için Ayarlar'da öncelikli oyunları yapılandırın",
