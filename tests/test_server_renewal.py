@@ -96,7 +96,7 @@ async def sdk_peer(*, fault=None, sdk_started=None):
             elif method == "Network.getCookies":
                 assert params == {"urls": ["https://k.twitchcdn.net/"]}
                 result = {"cookies": [] if fault == "missing_cookie" else [{
-                    "name": "KP_UIDz-ssn", "value": "server-sdk-cookie", "expires": 87400,
+                    "name": "KP_UIDz-ssn", "value": "server-sdk-cookie", "expires": 999 if fault == "expired_cookie" else 87400,
                     "domain": "k.twitchcdn.net", "path": "/", "secure": True, "httpOnly": True,
                 }]}
             await ws.send_json({"id": command["id"], "result": result})

@@ -17,11 +17,12 @@ local-session export/import with a browser-assisted renewal helper have passed l
 checks on one home network. An experimental [server renewal helper](docs/server-renewal.md)
 now uses a one-time SDK cookie export and headless Chromium on the server, allowing the
 local browser to close. Two consecutive scheduled cycles and protected requests after
-each previous integrity token expired have passed in Alpine. The miner accepted its context, which
-also passed independent inventory, campaign, stream-lookup and current-drop checks in
-that container. The original SDK-cookie
-expiry check and [sustained testing](docs/notes/2026-09-25-sdk-cookie-renewal.md) remain in progress. Fresh browser
-login inside Docker remains rejected.
+each previous integrity token expired have passed in Alpine. Renewal also passed after
+the original exported SDK cookie expired, and the miner and helper resumed from saved
+server state after restart. Initial export and subsequent server consumption passed with
+Chrome closed before the server ran. Independent inventory, campaign, stream-lookup and
+current-drop checks passed; see the [timestamped evidence and limits](docs/notes/2026-09-25-sdk-cookie-renewal.md).
+Fresh browser login inside Docker remains rejected.
 These are experimental source features in this branch, not a released fix. The tracking
 issue records implementation, live verification, and release status.
 
@@ -189,8 +190,11 @@ For the experimental server-renewal work, add `--server-seed "$HOME/tdm-server-s
 to the export command. This also saves the SDK cookie for `k.twitchcdn.net` alongside
 the matching context in a separate private seed file. Import `tdm-session.json` into
 the dashboard as before, then follow the [server helper setup](docs/server-renewal.md).
-Both files contain credentials. The server helper is experimental; two normal integrity
-renewal cycles have passed, while the original SDK-cookie expiry check remains pending.
+Both files contain credentials. If the local SDK cookie is absent or expired, the helper
+obtains a new one in an empty temporary browser context, validates the same Twitch
+account and catalog, and disposes that context before export. Your signed-in profile is
+preserved. The server helper is experimental; normal renewal, original SDK-cookie expiry,
+restart persistence and the initial-export handoff have passed on the tested home setup.
 
 **Live manual-path check (25 September 2026):** the actual dashboard accepted an export
 from the dedicated native Chrome profile into a fresh browser-free Docker TDM instance.
@@ -213,8 +217,9 @@ token successfully returned 152 campaigns. See the [server-only renewal investig
 
 A later [SDK cookie experiment](docs/notes/2026-09-25-sdk-cookie-renewal.md) has enabled
 accepted renewal inside a headless server browser after one export. The separate
-[server helper](docs/server-renewal.md) implements that candidate and is under sustained
-live testing. Use it when the local computer must be able to turn off.
+[server helper](docs/server-renewal.md) passed scheduled renewal and expiry/restart tests.
+Use it when the local computer must be able to turn off. Multi-day reliability and other
+desktop platforms remain unverified.
 
 After a successful manual import, click **Download renewal connection** in the login
 panel. Store `tdm-connection.json` privately on the computer running the dedicated Chrome

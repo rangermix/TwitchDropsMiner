@@ -199,8 +199,89 @@ class BrowserExporter:
 
     async def capture_seed(self) -> ServerSeed:
         bundle, cookie = await self._capture(include_sdk_cookie=True)
-        assert cookie is not None
-        return ServerSeed(bundle, cookie)
+        if cookie is not None:
+            bundle.require_fresh(self.clock())
+            cookie.require_fresh(self.clock())
+            return ServerSeed(bundle, cookie)
+        # A signed-in profile can still issue proof after its SDK cookie expires.
+        # Bootstrap in empty, owned storage instead of modifying that profile.
+        from src.auth.imported_session import SessionTransport
+        from src.auth.server_renewal import SDKAcquisition
+
+        transport = SessionTransport()
+        try:
+            identity = await transport.validate(bundle, None)
+            async with self.isolated_target(extra_events=SDKAcquisition.EVENTS) as protocol:
+                seed = await SDKAcquisition(clock=self.clock, timeout=self.timeout).run(protocol, bundle)
+            seed.bundle.require_fresh(self.clock())
+            seed.cookie.require_fresh(self.clock())
+            await transport.validate(seed.bundle, identity.user_id)
+            seed.bundle.require_fresh(self.clock())
+            seed.cookie.require_fresh(self.clock())
+            return seed
+        finally:
+            await transport.close()
+
+    def endpoint(self, value: str, *, target_id: str | None = None) -> URL:
+        endpoint = URL(value)
+        if (
+            endpoint.scheme != "ws" or endpoint.host not in ("127.0.0.1", "localhost", "::1")
+            or endpoint.port != URL(self.address).port or endpoint.user is not None
+            or endpoint.password is not None or endpoint.query or endpoint.fragment
+            or (endpoint.raw_path != f"/devtools/page/{target_id}" if target_id is not None
+                else not re.fullmatch(r"/devtools/browser/[a-zA-Z0-9-]+", endpoint.raw_path))
+        ):
+            raise SessionError("BROWSER_PROTOCOL")
+        return endpoint
+
+    @asynccontextmanager
+    async def isolated_target(self, *, extra_events: frozenset[str] = frozenset()) -> AsyncIterator[DevToolsConnection]:
+        """Dispose only the new context, including on browser-CDP disconnect."""
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as http:
+            try:
+                async with http.get(self.address + "/json/version", allow_redirects=False) as response:
+                    if response.status != 200:
+                        raise SessionError("BROWSER_PROTOCOL")
+                    endpoint = self.endpoint((await response.json())["webSocketDebuggerUrl"])
+                async with http.ws_connect(endpoint, timeout=aiohttp.ClientWSTimeout(ws_close=2)) as socket:
+                    controller = DevToolsConnection(socket)
+                    context_id = None
+                    try:
+                        result = await controller.command("Target.createBrowserContext", {"disposeOnDetach": True})
+                        context_id = result["browserContextId"]
+                        if not isinstance(context_id, str) or not re.fullmatch(r"[a-zA-Z0-9-]+", context_id):
+                            raise SessionError("BROWSER_PROTOCOL")
+                        result = await controller.command("Target.createTarget", {"url": "about:blank", "browserContextId": context_id})
+                        target_id = result["targetId"]
+                        if not isinstance(target_id, str) or not re.fullmatch(r"[a-zA-Z0-9-]+", target_id):
+                            raise SessionError("BROWSER_PROTOCOL")
+                        async with http.get(self.address + "/json/list", allow_redirects=False) as response:
+                            if response.status != 200:
+                                raise SessionError("BROWSER_PROTOCOL")
+                            pages = await response.json()
+                        if not isinstance(pages, list):
+                            raise SessionError("BROWSER_PROTOCOL")
+                        targets = [page for page in pages if isinstance(page, dict) and page.get("id") == target_id]
+                        if len(targets) != 1:
+                            raise SessionError("BROWSER_PROTOCOL")
+                        endpoint = self.endpoint(targets[0]["webSocketDebuggerUrl"], target_id=target_id)
+                        async with http.ws_connect(
+                            endpoint, max_msg_size=16 * 1024 * 1024,
+                            timeout=aiohttp.ClientWSTimeout(ws_close=2),
+                        ) as page_socket:
+                            protocol = DevToolsConnection(page_socket, extra_events=extra_events)
+                            try:
+                                yield protocol
+                            finally:
+                                await protocol.close()
+                    finally:
+                        try:
+                            if context_id is not None:
+                                await controller.command("Target.disposeBrowserContext", {"browserContextId": context_id}, timeout=2)
+                        finally:
+                            await controller.close()
+            except (aiohttp.ClientError, ValueError, KeyError, TypeError, TimeoutError):
+                raise SessionError("BROWSER_PROTOCOL") from None
 
     @asynccontextmanager
     async def target(self, *, extra_events: frozenset[str] = frozenset()) -> AsyncIterator[DevToolsConnection]:
@@ -215,13 +296,7 @@ class BrowserExporter:
                 if not re.fullmatch(r"[a-zA-Z0-9-]+", target["id"]):
                     raise SessionError("BROWSER_PROTOCOL")
                 target_id = target["id"]
-                endpoint = URL(target["webSocketDebuggerUrl"])
-                if (
-                    endpoint.scheme != "ws" or endpoint.host not in ("127.0.0.1", "localhost", "::1")
-                    or endpoint.port != URL(self.address).port or endpoint.user is not None
-                    or endpoint.password is not None or endpoint.query or endpoint.fragment
-                ):
-                    raise SessionError("BROWSER_PROTOCOL")
+                endpoint = self.endpoint(target["webSocketDebuggerUrl"], target_id=target_id)
                 async with http.ws_connect(
                     endpoint, max_msg_size=16 * 1024 * 1024,
                     timeout=aiohttp.ClientWSTimeout(ws_close=2),
@@ -264,7 +339,12 @@ class BrowserExporter:
                                 data = await protocol.command("Network.getCookies", {"urls": [SDKCookie.URL]})
                                 if not isinstance(data, dict):
                                     raise SessionError("BROWSER_PROTOCOL")
-                                cookie = SDKCookie.from_browser(data.get("cookies"), now=self.clock())
+                                if data.get("cookies") != []:
+                                    try:
+                                        cookie = SDKCookie.from_browser(data.get("cookies"), now=self.clock())
+                                    except SessionError as error:
+                                        if error.code != "SDK_EXPIRED":
+                                            raise
                             return bundle, cookie
         except TimeoutError:
             raise SessionError("CAPTURE_TIMEOUT") from None
@@ -304,14 +384,20 @@ class SessionHelper:
             if seed_path:
                 SessionHelper.check_export_paths(args.output, seed_path)
             exporter = BrowserExporter(args.browser)
+            seed = None
             if seed_path:
                 seed = await exporter.capture_seed()
                 # Validate the combined envelope before creating either export.
                 seed = ServerSeed.from_dict(seed.to_dict())
                 bundle = seed.bundle
-                PrivateSessionFile(Path(seed_path)).write(seed.to_dict())
             else:
                 bundle = await exporter.capture()
+            now = time.time()
+            bundle.require_fresh(now)
+            if seed is not None:
+                seed.cookie.require_fresh(now)
+                assert seed_path is not None
+                PrivateSessionFile(Path(seed_path)).write(seed.to_dict())
             PrivateSessionFile(Path(args.output)).write(bundle.to_dict())
             print(json.dumps({"success": True, "expires_at": bundle.expires_at}))
 

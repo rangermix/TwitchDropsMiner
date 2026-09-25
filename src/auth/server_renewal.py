@@ -169,7 +169,13 @@ class SDKExchange:
                     self.proof.set_result(data)
 
 
-class SDKIssuer:
+class SDKAcquisition:
+    """Shared network proof for server renewal and isolated native bootstrap."""
+
+    EVENTS = frozenset({
+        "Fetch.requestPaused", "Page.loadEventFired",
+        "Network.requestServedFromCache", "Network.loadingFailed",
+    })
     SDK_URL = (
         "https://k.twitchcdn.net/149e9513-01fa-4fb0-aad4-566afd725d1b/"
         "2d206a39-8ed7-437e-a3be-862e0f06eea3/p.js"
@@ -197,23 +203,15 @@ class SDKIssuer:
       });
     }"""
 
-    def __init__(self, browser: BrowserOwner, *, clock: Callable[[], float] = time.time, timeout: float = 120):
-        self.browser, self.clock, self.timeout = browser, clock, timeout
+    def __init__(self, *, clock: Callable[[], float] = time.time, timeout: float = 120):
+        self.clock, self.timeout = clock, timeout
 
-    async def issue(self, seed: ServerSeed) -> ServerSeed:
-        seed.cookie.require_fresh(self.clock())
+    async def run(self, protocol: DevToolsConnection, bundle: SessionBundle, cookie: SDKCookie | None = None) -> ServerSeed:
         try:
-            async with (
-                self.browser.start() as address,
-                BrowserExporter(address).target(extra_events=frozenset({
-                    "Fetch.requestPaused", "Page.loadEventFired",
-                    "Network.requestServedFromCache", "Network.loadingFailed",
-                })) as protocol,
-                asyncio.timeout(self.timeout),  # type: ignore[attr-defined]
-            ):
+            async with asyncio.timeout(self.timeout):  # type: ignore[attr-defined]
                 exchange = SDKExchange()
                 events = asyncio.create_task(exchange.run(protocol))
-                acquire = asyncio.create_task(self.acquire(protocol, exchange, seed))
+                acquire = asyncio.create_task(self.acquire(protocol, exchange, bundle, cookie))
                 try:
                     done, _ = await asyncio.wait({events, acquire}, return_when=asyncio.FIRST_COMPLETED)
                     if events in done:
@@ -230,11 +228,16 @@ class SDKIssuer:
         except (KeyError, TypeError, ValueError, AttributeError):
             raise SessionError("BROWSER_PROTOCOL") from None
 
-    async def acquire(self, protocol: DevToolsConnection, exchange: SDKExchange, seed: ServerSeed) -> ServerSeed:
+    async def acquire(
+        self, protocol: DevToolsConnection, exchange: SDKExchange,
+        original: SessionBundle, previous_cookie: SDKCookie | None,
+    ) -> ServerSeed:
         await protocol.command("Network.enable")
         await protocol.command("Network.setCacheDisabled", {"cacheDisabled": True})
         await protocol.command("Network.setBypassServiceWorker", {"bypass": True})
-        await protocol.command("Network.setCookies", {"cookies": [seed.cookie.to_browser_cookie()]})
+        if previous_cookie is not None:
+            previous_cookie.require_fresh(self.clock())
+            await protocol.command("Network.setCookies", {"cookies": [previous_cookie.to_browser_cookie()]})
         await protocol.command("Page.enable")
         await protocol.command("Fetch.enable", {"patterns": [{
             "urlPattern": BrowserSession.PAGE, "resourceType": "Document", "requestStage": "Request",
@@ -244,7 +247,7 @@ class SDKIssuer:
         result = await protocol.command("Runtime.evaluate", {"expression": "navigator.userAgent", "returnByValue": True})
         user_agent = result["result"]["value"]
         result = await protocol.command("Runtime.evaluate", {"expression": "globalThis"})
-        headers = {key: value for key, value in seed.bundle.headers.items() if key != "client-integrity"}
+        headers = {key: value for key, value in original.headers.items() if key != "client-integrity"}
         result = await protocol.command("Runtime.callFunctionOn", {
             "objectId": result["result"]["objectId"], "functionDeclaration": self.SCRIPT,
             "arguments": [{"value": headers}, {"value": self.SDK_URL}],
@@ -265,14 +268,32 @@ class SDKIssuer:
             "version": 1, "captured_at": self.clock(), "expires_at": data["expiration"] / 1000,
             "user_agent": user_agent, "headers": {**headers, "client-integrity": data.get("token")},
         }, now=self.clock())
-        if (bundle.headers["client-integrity"] == seed.bundle.headers["client-integrity"]
-                or bundle.expires_at <= max(seed.bundle.expires_at, self.clock() + 30)):
+        minimum_expiry = self.clock() + 30
+        if previous_cookie is not None:
+            minimum_expiry = max(minimum_expiry, original.expires_at)
+        if (bundle.headers["client-integrity"] == original.headers["client-integrity"]
+                or bundle.expires_at <= minimum_expiry):
             raise SessionError("REPLAY")
         result = await protocol.command("Network.getCookies", {"urls": [SDKCookie.URL]})
         cookie = SDKCookie.from_browser(result.get("cookies"), now=self.clock())
-        if cookie.expires_at <= max(seed.cookie.expires_at, bundle.expires_at):
+        if cookie.expires_at <= max(previous_cookie.expires_at if previous_cookie else 0, bundle.expires_at):
             raise SessionError("SDK_COOKIE")
         return ServerSeed(bundle, cookie)
+
+
+class SDKIssuer:
+    """Renew only fresh SDK seeds in an owned temporary server browser."""
+
+    def __init__(self, browser: BrowserOwner, *, clock: Callable[[], float] = time.time, timeout: float = 120):
+        self.browser, self.clock, self.timeout = browser, clock, timeout
+
+    async def issue(self, seed: ServerSeed) -> ServerSeed:
+        seed.cookie.require_fresh(self.clock())
+        async with (
+            self.browser.start() as address,
+            BrowserExporter(address).target(extra_events=SDKAcquisition.EVENTS) as protocol,
+        ):
+            return await SDKAcquisition(clock=self.clock, timeout=self.timeout).run(protocol, seed.bundle, seed.cookie)
 
 
 class ServerContextSource:

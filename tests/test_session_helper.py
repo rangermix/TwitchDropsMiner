@@ -12,7 +12,7 @@ from src.config import ClientType
 
 
 @asynccontextmanager
-async def devtools(*, matching=True, anonymous=False, fail_campaign=False, preflight=False, sdk_cookie=True, null_cookie_reply=False):
+async def devtools(*, matching=True, anonymous=False, fail_campaign=False, preflight=False, sdk_cookie=True, sdk_expiry=9000, integrity_expiry=4600, null_cookie_reply=False):
     closed = []
     commands = []
     address = []
@@ -38,7 +38,7 @@ async def devtools(*, matching=True, anonymous=False, fail_campaign=False, prefl
             elif method == "Network.getCookies":
                 assert params == {"urls": ["https://k.twitchcdn.net/"]}
                 result = {"cookies": [{
-                    "name": "KP_UIDz-ssn", "value": "private-sdk-cookie", "expires": 9000,
+                    "name": "KP_UIDz-ssn", "value": "private-sdk-cookie", "expires": sdk_expiry,
                     "domain": "k.twitchcdn.net", "path": "/", "secure": True, "httpOnly": True,
                 }] if sdk_cookie else []}
                 if null_cookie_reply:
@@ -48,7 +48,7 @@ async def devtools(*, matching=True, anonymous=False, fail_campaign=False, prefl
                     await ws.send_json({"id": command["id"], "result": {"body": "", "base64Encoded": False}})
                     continue
                 elif params["requestId"] == "issued":
-                    body = {"token": "new-integrity", "expiration": 4600000}
+                    body = {"token": "new-integrity", "expiration": integrity_expiry * 1000}
                 elif fail_campaign:
                     body = [{"errors": [{"message": "failed integrity check"}]}]
                 else:
@@ -138,7 +138,12 @@ async def test_server_seed_export_collects_only_scoped_cookie_and_closes_target(
 
 
 @pytest.mark.asyncio
-async def test_server_seed_export_missing_cookie_fails_without_leaking_or_leaving_tab():
+async def test_server_seed_export_missing_cookie_does_not_export_without_bootstrap(monkeypatch):
+    from unittest.mock import AsyncMock
+
+    # The isolated recovery service is unavailable in this peer. It must still fail
+    # closed, close the ordinary target, and never return a cookie-less seed.
+    monkeypatch.setattr("src.auth.imported_session.SessionTransport.validate", AsyncMock(side_effect=SessionError("SDK_COOKIE")))
     async with devtools(sdk_cookie=False) as (address, closed, _commands):
         with pytest.raises(SessionError, match="SDK_COOKIE"):
             await BrowserExporter(address, clock=lambda: 1000, timeout=1).capture_seed()

@@ -4,6 +4,12 @@ Tracking: [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118).
 This follows the [failed HTTP renewal probes](2026-09-25-server-only-renewal.md).
 These are live experiments, not a shipped unattended-renewal feature.
 
+The completed checks now include two normal packaged renewal cycles, protected requests
+after the previous integrity tokens expired, renewal after the original SDK cookie
+expired, miner/helper restart from saved server state, and the actual initial-export CLI
+followed by server consumption with native Chrome closed. All ran on one home setup;
+multi-day reliability, other desktop platforms and different networks remain unverified.
+
 ## Candidate and evidence boundary
 
 A one-time export of the authenticated request context plus Twitch's `KP_UIDz-ssn`
@@ -60,7 +66,7 @@ account and WEB client, then returned valid Inventory and 149 Campaigns. The ord
 TDM import endpoint also accepted a headless-generated context and resumed inventory
 retrieval. Thus success is not limited to requests inside the browser.
 
-## Sustained test in progress
+## Sustained test
 
 At 04:09 UTC on 25 September, a separate headless Docker helper imported the SDK cookie
 once and began automatically delivering validated contexts to the Alpine miner. The
@@ -68,11 +74,10 @@ first accepted delivery advanced the provider to generation 7. Its integrity tok
 expires at 05:09 UTC. The helper renews five minutes before expiry and restarts its
 server browser for each issuance using the same server profile, without another import.
 
-The original SDK cookie expires at 07:32 UTC. The server obtained a different SDK cookie
-with approximately 24 hours remaining. The sustained run is scheduled through 07:34 UTC
-to check that renewal continues after the original seed's expiry. This is a pending
-check, not a completed longevity claim. Longer operation and recovery from loss or
-revocation of the SDK state remain unverified.
+The original SDK cookie expired at 07:32:20 UTC. The server obtained a different SDK
+cookie with approximately 24 hours remaining and continued through the expiry gate.
+The 07:34 and restart results are recorded below. Longer operation and recovery from
+loss or revocation of the SDK state remain unverified.
 
 The miner selected eligible campaigns and entered its watching state. An independent
 Inventory observer recorded three World of Warcraft rewards advancing from 124 to 126
@@ -127,7 +132,7 @@ using generation 8 still passed identity, Inventory and 149 Campaigns. Twitch re
 183 watched minutes for the three tracked rewards, up from 124 initially. The first
 unclaimed reward requires 240 minutes, so no new claim is expected yet. These remain
 account-progress observations with the attribution limitation above. The original SDK
-cookie's 07:32 UTC expiry remains pending; the packaged helper's normal cycle subsequently
+cookie's 07:32 UTC expiry was still pending at that checkpoint; the packaged helper's normal cycle subsequently
 passed as follows.
 
 ## Packaged scheduled cycle and actual miner operations
@@ -152,7 +157,7 @@ extended its expiry, and the saved seed matched the delivered context. At 06:56:
 17 seconds after generation 4 expired, independent identity/Inventory/Campaigns checks
 still passed with 147 campaigns. There were no remaining browser processes or temporary
 profiles. This adds a second consecutive default-cycle and integrity-expiry check;
-the original SDK-cookie expiry remains a separate pending gate.
+the original SDK-cookie expiry was a separate pending gate, completed below.
 
 Separately, the original prototype delivered generation 9 to the actual miner at
 05:59:31 UTC and scheduled its next renewal for 06:54 UTC. After both that delivery
@@ -173,7 +178,7 @@ Progress remains an account observation, without exclusive earning attribution.
 The actual miner therefore has mixed test provenance: generations 7–9 came from the
 prototype; generation 10 came from the packaged Python helper. The original prototype's
 server profile and the Python helpers' separate seed files are not shared. Its later
-issuance after the original SDK-cookie expiry remains a separate scheduled gate.
+issuance after the original SDK-cookie expiry was a separate scheduled gate, completed below.
 Code hashes from the running helper and the actual miner's authentication, GraphQL,
 core and claim modules matched source revision `01a87ce`; the live checks did not use
 an older implementation of those paths.
@@ -214,9 +219,89 @@ The documented command uses Docker init and a 20-second stop grace.
 
 Core and optional helper images built successfully for both `linux/arm64` and
 `linux/amd64`. No Python dependency or ordinary Dockerfile change was needed. The
-original SDK-cookie expiry gate and live initial-export verification remain pending;
-longer operation, live outage recovery and exclusive earning/claim attribution are
-unverified. This checkpoint does not close #118.
+original SDK-cookie expiry gate and live initial-export verification were pending at
+that checkpoint; their subsequent results follow. Longer operation, live outage recovery
+and exclusive earning/claim attribution remain unverified. This does not close #118.
+
+## Original SDK-cookie expiry and restart
+
+At 07:34:24 UTC, after the original exported SDK cookie expired at 07:32:20 UTC, the
+prototype completed its fifth automatic round and the miner accepted generation 12.
+At 07:34:32 UTC an independent process loaded that accepted state through the production
+provider and passed identity, Inventory, Campaigns (147), GetStreamInfo and CurrentDrop.
+The native source profile remained closed throughout this run; it first reopened later
+at 07:36 UTC for the separate initial-export check.
+
+After stopping the prototype and the catalog helper, the packaged helper used the
+catalog helper's saved server-produced SDK state with the actual miner's existing
+pairing. At 07:35:09 UTC it delivered generation 13. The SDK cookie rotated and its
+expiry advanced; the saved bundle exactly matched the delivered bundle. Independent
+provider requests passed and the miner's authenticated dashboard showed Watching.
+
+The miner and helper were then stopped/restarted using their saved files. The miner
+restored generation 13 without reimport or pairing rotation; independent requests
+passed while its dashboard was still initializing. At 07:35:25 UTC the restarted
+helper delivered generation 14 from saved server state. All four provider operations
+passed again, and at 07:35:28 UTC the actual dashboard reported `Watching: EsfandTV`.
+No Chromium processes or temporary profiles remained between attempts. The original
+export was not recopied and the native browser was not opened for these checks.
+
+The later tokens had approximately two hours of validity. Earlier tokens had about one
+hour. Scheduling follows each token's observed expiry rather than a fixed lifetime.
+
+## Initial export recovery and server handoff
+
+The documented `export --server-seed` command initially failed with `SESSION_SDK_COOKIE`:
+the authenticated native profile could issue a working integrity context but no longer
+contained the required SDK cookie. Scoped and browser-wide cookie reads confirmed the
+absence. Disabling cache and bypassing service workers did not restore it. Native
+requests still contained SDK proof headers; the source of that retained proof was not
+established, so cached SDK storage is a hypothesis rather than a diagnosed cause.
+
+A controlled experiment created an explicitly isolated, empty context in that native
+Chrome browser. It supplied only the allowlisted OAuth/client headers to the actual
+SDK, without copying cookies, storage or captured SDK proof. It obtained a distinct
+token from an uncached POST issuance and a fresh Secure/HttpOnly SDK cookie. The context
+was disposed and Chrome closed before independent Python validation. The exact seed
+then passed a fresh packaged server issuance and independent provider checks.
+
+The export command now uses that isolated bootstrap when its SDK cookie is absent or
+strictly expired. It preserves the original profile and still rejects malformed or
+ambiguous cookie data. Both output files contain the newly validated matching context.
+Account/catalog checks, target ownership, disposal and expiry failures prevent export.
+Server renewal keeps its stricter advancing-expiry checks; an initial bootstrap may
+legitimately have less remaining validity than the original native context.
+
+At 08:01:35 UTC the actual CLI created matching owner-only import and seed files, then
+Chrome closed. At 08:01:43 UTC the rebuilt packaged helper consumed that exact seed and
+the isolated catalog target accepted generation 7 with a distinct token, rotated SDK
+cookie and matching saved state. At 08:01:46 UTC the independent production provider
+passed all four operations and returned 149 campaigns. This target is separate from
+the actual miner, whose continuing server-only state was left untouched.
+
+Independent adversarial review then reproduced two export boundary errors: expiry
+during final validation could overwrite exports with stale state, and a malformed
+target ID could select an unidentified page. Regressions now require freshness after
+context disposal and validation and immediately before file writes, and bind the page
+WebSocket to the exact validated target ID. Existing files survive validation failures.
+
+The final CLI repeat after those fixes created both files at 08:08:09 UTC, closed Chrome,
+and delivered generation 8 to the catalog-only target at 08:08:16 UTC. At 08:08:19 UTC,
+independent identity and all four provider operations passed again (149 campaigns).
+The rebuilt helper then resumed the actual miner's existing server-produced seed without
+copying the new local export into that state. At 08:09:06 UTC it delivered generation 15;
+at 08:09:09 UTC independent provider requests passed and the miner dashboard reported
+`Watching: Sieglinde`. The catalog-only test target was stopped afterwards.
+
+Final local validation passed 520 tests and two subtests with Node 24.19.0, Ruff, Mypy
+for 68 source files, lock validation, all three GNU/Linux release-script suites, and
+core/helper builds for ARM64 and AMD64. The separate `review_android_checkpoint` agent
+independently reran 88 focused tests and approved the two reproduced code fixes. Live
+helper auth-module hashes matched this source, with no browser processes or temporary
+profiles between attempts. These are local/source checks, not PR CI or release approval.
+The reviewer also approved the final documentation, tracker draft and live evidence for
+this diff against `999fddf`, with no remaining blocking findings; the full 520-test and
+Docker baseline above was run by the implementation agent, not repeated by the reviewer.
 
 Do not publish session exports, SDK cookie values, request headers, browser profiles or
 pairing credentials. The SDK cookie is authentication-sensitive state and must be stored

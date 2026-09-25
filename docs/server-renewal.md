@@ -1,14 +1,16 @@
 # Experimental server renewal
 
 Tracking: [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118). This source
-feature is still undergoing sustained verification; it is not a released fix.
+feature has passed the expiry and restart checks below; it is not a released fix.
 The packaged Python helper in Alpine Chromium 152 completed its normal scheduled
 renewal using saved server state. It rotated the SDK cookie, delivered a distinct
 integrity context, and passed account/Inventory/Campaigns validation after the old token
 expired. The actual miner also accepted a context from the packaged helper. A separate
 process in its container checked that accepted state using the production provider,
-passing inventory, campaigns, stream lookup and current-drop queries. The original exported SDK-cookie
-expiry check is still pending; see the [timestamped evidence](notes/2026-09-25-sdk-cookie-renewal.md).
+passing inventory, campaigns, stream lookup and current-drop queries. Renewal after the
+original exported SDK cookie expired, miner/helper restart from server state, and the
+initial-export CLI followed by server consumption have also passed. See the
+[timestamped evidence](notes/2026-09-25-sdk-cookie-renewal.md).
 
 The local computer is needed for initial Twitch login and export. Afterwards a separate
 helper on your home server runs headless Chromium only during renewal. Ordinary miner
@@ -33,6 +35,10 @@ dependencies are added. The optional helper image adds Chromium as an OS package
 
 You can close the local browser after exporting. Do not run the local-browser renewal
 helper at the same time. A new connection download replaces the old helper credential.
+If the native profile no longer has a fresh SDK cookie, export obtains one in a temporary
+empty context inside that browser. It keeps the signed-in profile intact, disposes the
+temporary context, and validates matching account/catalog access before saving either file.
+This recovery uses the local browser only during initial export.
 
 ## Start on the server
 
@@ -86,5 +92,6 @@ pairing or a wrong account also stops the command; Docker's restart policy may r
 TDM waits when no valid context remains. It never treats a rejected token as successful
 renewal. The active miner reported a successful claim using a Python-delivered context,
 and independent inventory showed the reward claimed. The raw response was not captured,
-so a new claim cannot be distinguished from an already-claimed success. Longer operation
-and the original SDK-cookie expiry check remain pending.
+so a new claim cannot be distinguished from an already-claimed success. The multi-hour
+test passed the original SDK-cookie expiry; multi-day operation, long-outage recovery,
+other desktop platforms and different networks remain unverified.

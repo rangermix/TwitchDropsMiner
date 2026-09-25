@@ -1,8 +1,11 @@
-# Server-only integrity renewal remains unresolved
+# HTTP-only integrity renewal probes (historical)
 
 Tracking: [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118).
 This corrects the completion boundary of the earlier
 [browser-assisted renewal checkpoint](2026-09-25-session-import-renewal.md).
+These failed HTTP-only probes remain valid evidence. The later
+[server SDK helper](2026-09-25-sdk-cookie-renewal.md) passed initial export, scheduled
+renewal, original SDK-cookie expiry and restart checks using server-side Chromium.
 
 ## Required behavior
 
@@ -51,12 +54,14 @@ remove that renewal dependency. Any server-side browser alternative must indepen
 prove fresh accepted integrity issuance; passing fresh-login or old-token reuse tests
 would not establish it.
 
-The prior claim that all user gates were complete is withdrawn. Server-only renewal,
-long unattended operation and imported-session mining progress remain unresolved.
+The prior claim that all user gates were complete was withdrawn at this checkpoint.
+Server-only renewal, long unattended operation and imported-session mining progress
+had not yet been established by these HTTP-only probes.
 The main Dockerfile and dependency manifests remain unchanged. This investigation
 changes documentation only; the previously verified application tests are not evidence
 of server-only renewal.
 
 Follow-up: the [SDK cookie experiment](2026-09-25-sdk-cookie-renewal.md) subsequently
 produced accepted tokens in a server browser from a one-time seed. That result does not
-change the failed HTTP replay evidence above; sustained operation is being tested.
+change the failed HTTP replay evidence above. The linked note records the subsequent
+expiry/restart results and their remaining reliability and attribution limits.

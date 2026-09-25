@@ -31,6 +31,27 @@ and recorded the reward in history; an independent inventory check found it clai
 Raw claim status and exclusive attribution were not captured. The original SDK-cookie
 expiry gate and initial-export verification are still pending; this is not completion.
 
+**Task 4 follow-up, 25 September:** the original SDK cookie expired at 07:32 UTC;
+server renewal and independent provider requests passed afterwards. The actual miner
+and helper also restarted from saved server state with the native browser closed.
+The final initial-export check exposed a missing-cookie case in an otherwise working
+native session. A fresh isolated native context obtained a usable continuation seed,
+and the actual export CLI plus separate packaged server consumption passed at 08:01 UTC.
+The export fallback reuses the server SDK acquisition with no copied browser storage;
+bootstrap requires fresh, distinct proof while server renewal still requires advancing
+expiry. Independent review reproduced expiry-at-export and malformed-target errors;
+their regressions and fixes are included in the final verification checkpoint below.
+
+**Task 4 final source checkpoint:** 520 tests plus two subtests, Ruff, Mypy (68 files),
+lock validation, GNU/Linux release-script suites, and ARM64/AMD64 core/helper builds
+passed. Independent adversarial review approved the code after 88 focused tests.
+The repaired CLI-to-server handoff passed again at 08:08 UTC with Chrome closed before
+server consumption. At 08:09 UTC the revised helper resumed the actual miner's existing
+server state and delivered a validated context; the dashboard showed Watching. The
+method's stated initial-login-only browser requirement is demonstrated on this home
+setup. Release/PR validation, other platforms/networks and multi-day reliability remain
+outside this completed experimental verification; #118 stays open for those follow-ups.
+
 ## Acceptance criteria
 
 - One initial export supplies both the ordinary import bundle and a private server seed.

@@ -107,6 +107,7 @@ async def test_cli_optional_seed_keeps_dashboard_bundle_compatible(tmp_path, mon
     from src.auth.session_helper import BrowserExporter, SessionHelper
 
     seed = ServerSeed.from_dict(seed_data(), now=1000)
+    monkeypatch.setattr("src.auth.session_helper.time.time", lambda: 1000)
     monkeypatch.setattr(BrowserExporter, "capture_seed", AsyncMock(return_value=seed))
     bundle_path, seed_path = tmp_path / "session.json", tmp_path / "seed.json"
     await SessionHelper.run(Namespace(
@@ -115,6 +116,26 @@ async def test_cli_optional_seed_keeps_dashboard_bundle_compatible(tmp_path, mon
     assert json.loads(bundle_path.read_text()) == seed.bundle.to_dict()
     assert json.loads(seed_path.read_text()) == seed.to_dict()
     assert "private-sdk-cookie" not in capsys.readouterr().out
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("with_seed", [False, True])
+async def test_cli_rechecks_expiry_before_writing_either_export(tmp_path, monkeypatch, capsys, with_seed):
+    from src.auth.server_seed import ServerSeed
+    from src.auth.session_helper import BrowserExporter, SessionHelper
+
+    seed = ServerSeed.from_dict(seed_data(), now=1000)
+    monkeypatch.setattr("src.auth.session_helper.time.time", lambda: seed.bundle.expires_at + 1)
+    monkeypatch.setattr(BrowserExporter, "capture_seed", AsyncMock(return_value=seed))
+    monkeypatch.setattr(BrowserExporter, "capture", AsyncMock(return_value=seed.bundle))
+    output, seed_path = tmp_path / "session.json", tmp_path / "seed.json"
+    for path in (output, seed_path):
+        path.write_text("previous export")
+    with pytest.raises(SessionError, match="EXPIRED"):
+        await SessionHelper.run(Namespace(command="export", browser="http://127.0.0.1:9222",
+                                         output=str(output), server_seed=str(seed_path) if with_seed else None))
+    assert output.read_text() == seed_path.read_text() == "previous export"
+    assert "success" not in capsys.readouterr().out
 
 
 @pytest.mark.asyncio

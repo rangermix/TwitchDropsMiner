@@ -342,7 +342,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   direct issuance and a replay of captured browser issuance headers both returned tokens
   whose campaign queries failed. The latter test's imported-token baseline returned 152
   campaigns with the source browser stopped. Those HTTP-only approaches remain
-  unsuccessful; the server-browser candidate below is undergoing sustained verification.
+  unsuccessful; the optional server-browser helper below has passed expiry and restart
+  verification on one home setup.
 - A subsequent experiment found that importing only the `KP_UIDz-ssn` SDK cookie for
   `k.twitchcdn.net`, in addition to the OAuth/client context, enables accepted headless
   server-browser issuance. The SDK cookie must remain private. Fresh profiles without
@@ -355,10 +356,11 @@ progress to an ignored drop while the miner intentionally targets another reward
   `docs/notes/2026-09-25-sdk-cookie-renewal.md` for generation/producer attribution:
   the active miner later logged a successful claim and recorded the reward in history.
   Its claim path accepts both newly claimed and already-claimed responses; raw status
-  and exclusive earning/first-claim attribution were not captured. The original SDK-cookie
-  expiry and initial-export checks are still pending.
-  The optional `server_renewal` helper implements this candidate; do not present it as
-  a released or completed fix while those checks are pending.
+  and exclusive earning/first-claim attribution were not captured. Renewal after the
+  original SDK-cookie expiry and miner/helper persistence across restart passed with the
+  native browser closed. The actual initial-export CLI and subsequent server consumption
+  also passed. The optional `server_renewal` helper is still unreleased; these checks do
+  not establish multi-day reliability, different-network behavior or other desktop OSes.
 - `TDM_SESSION_IMPORT=1` selects `ImportedSession` as the optional fallback provider,
   mutually exclusive with direct browser configuration. Preserve Android priority and
   `cookies.jar`. Never combine imported web credentials with Android HTTP cookies.
@@ -385,6 +387,18 @@ progress to an ignored drop while the miner intentionally targets another reward
   seeds, keep credential values out of repr/errors/output, and reject colliding export
   paths before browser access. The server seed may retain an expired integrity context
   for new issuance; the SDK cookie itself must be fresh when used.
+- If capture finds an empty SDK-cookie list or a strictly validated expired cookie,
+  `capture_seed()` bootstraps through `SDKAcquisition` in a new native browser context.
+  Malformed or ambiguous cookies still fail. Create the target explicitly in that context;
+  validate its ID and bind the loopback WebSocket path to that exact target. Copy no
+  cookies, storage or old SDK proof headers. Use `disposeOnDetach` plus bounded explicit
+  disposal; close only owned targets and keep the signed-in profile intact. Validate the
+  original account and the replacement's matching identity/catalog. Recheck freshness
+  after disposal/validation and before writing either export; validation and freshness
+  failures preserve old files. Each output is atomic individually, not as a two-file transaction.
+  A bootstrap token may have a shorter fresh lifetime than the original. Server renewal
+  still requires advancing expiry. `tests/test_session_bootstrap.py` covers these boundaries,
+  including cancellation and rejected disposal, cached responses and wrong accounts.
 - `src/auth/server_renewal.py` launches its own headless Chromium with a temporary
   private profile and loopback DevTools. Import only the SDK cookie, load Twitch's SDK
   at its fixed origin, and correlate a real POST response with the returned token/expiry.
