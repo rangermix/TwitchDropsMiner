@@ -257,13 +257,9 @@ class _AuthState:
                             logger.info("Seeding session from TDM_WEB_AUTH_TOKEN")
                             self.access_token = seeded
                         elif client_info.CLIENT_ID == integrity.CLIENT_ID:
-                            # Without this, WEB falls into the device-code flow,
-                            # which Twitch rejects, and dies on KeyError.
-                            raise RuntimeError(
-                                "No saved Twitch session. Start once with "
-                                "TDM_WEB_AUTH_TOKEN set to your browser's "
-                                "auth-token cookie; see docs/streamlink-integrity.md"
-                            )
+                            # WEB has no device-code flow (Twitch rejects it),
+                            # so the dashboard asks for the browser cookie.
+                            self.access_token = await login_form.ask_auth_token()
                         else:
                             self.access_token = await self._oauth_login()
                         cookie["auth-token"] = self.access_token

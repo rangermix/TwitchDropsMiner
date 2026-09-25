@@ -40,6 +40,10 @@ class LoginFormManager:
         self._oauth_pending: dict[str, str] | None = (
             None  # Store OAuth code for late-connecting clients
         )
+        # ClientType.WEB has no device-code flow: the user pastes the
+        # auth-token cookie from their browser instead.
+        self._auth_token_pending: bool = False
+        self._auth_token: str = ""
 
     def clear(self, login: bool = False, password: bool = False, token: bool = False):
         """Clear login form fields on the client side.
@@ -88,6 +92,29 @@ class LoginFormManager:
         # Clear OAuth state after confirmation
         self._oauth_pending = None
 
+    async def ask_auth_token(self) -> str:
+        """Ask the user to paste their browser's Twitch auth-token cookie.
+
+        Blocks until the web app hands over a token that Twitch has already
+        validated (see the /api/auth-token route).
+
+        Returns:
+            The submitted auth-token
+        """
+        self.update(_.t["login"]["status"]["required"], None)
+        self._login_event.clear()
+        self._auth_token_pending = True
+        await self._broadcaster.emit("auth_token_required", {})
+        await self._login_event.wait()
+        self._auth_token_pending = False
+        token, self._auth_token = self._auth_token, ""
+        return token
+
+    def submit_auth_token(self, token: str):
+        """Hand a validated auth-token to the waiting login flow."""
+        self._auth_token = token
+        self._login_event.set()
+
     def submit_login(self, username: str, password: str, token: str = ""):
         """Submit login credentials (called by webapp when user submits form).
 
@@ -109,4 +136,6 @@ class LoginFormManager:
         # Include OAuth code if pending
         if self._oauth_pending:
             result["oauth_pending"] = self._oauth_pending
+        if self._auth_token_pending:
+            result["auth_token_pending"] = True
         return result

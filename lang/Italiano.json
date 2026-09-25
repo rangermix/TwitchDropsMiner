@@ -227,7 +227,7 @@
             "important_notes": "Note importanti",
             "github_repo": "Repository GitHub",
             "how_to_use_items": [
-                "Accedi utilizzando il tuo account Twitch (flusso del codice dispositivo OAuth)",
+                "Accedi incollando il tuo cookie auth-token di Twitch in Dettagli Login",
                 "Collega i tuoi account su <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
                 "Il miner scoprirà automaticamente le campagne e inizierà il mining",
                 "Configura i giochi prioritari nelle Impostazioni per concentrarti su ciò che desideri",

@@ -12,9 +12,9 @@ services:
     environment:
       # Set timezone (optional, defaults to UTC)
       - TZ=Europe/Paris
-      # Browser auth-token cookie, needed on the first run only; after that the
-      # session lives in data/cookies.jar. Pass it from the shell, e.g.
-      #   read -rsp 'auth-token: ' TDM_WEB_AUTH_TOKEN; export TDM_WEB_AUTH_TOKEN
+      # Optional: the dashboard's Login Form asks for the browser auth-token
+      # cookie on first run. Setting this seeds the session instead; it is
+      # only read when data/cookies.jar has no saved session.
       # See docs/streamlink-integrity.md.
       - TDM_WEB_AUTH_TOKEN=${TDM_WEB_AUTH_TOKEN:-}
       # Optional: exact public URL when using a reverse proxy (root URL, no subpath).

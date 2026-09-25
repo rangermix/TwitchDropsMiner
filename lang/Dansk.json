@@ -227,7 +227,7 @@
             "important_notes": "Vigtige bemærkninger",
             "github_repo": "GitHub-lager",
             "how_to_use_items": [
-                "Log ind med din Twitch-konto (OAuth enhedskodeflow)",
+                "Log ind ved at indsætte din Twitch-cookie auth-token i Login formular",
                 "Tilknyt dine konti på <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
                 "Programmet vil automatisk finde kampagner og begynde at samle",
                 "Konfigurer prioritetsspil i Indstillinger for at fokusere på det, du ønsker",

@@ -227,7 +227,7 @@
             "important_notes": "重要な注意事項",
             "github_repo": "GitHubリポジトリ",
             "how_to_use_items": [
-                "Twitchアカウントを使用してログイン（OAuthデバイスコードフロー）",
+                "Twitch の auth-token Cookie をログインフォームに貼り付けてログイン",
                 "<a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>でアカウントをリンク",
                 "マイナーは自動的にキャンペーンを発見してマイニングを開始します",
                 "設定で優先ゲームを設定して、希望するものに集中します",

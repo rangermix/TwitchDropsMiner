@@ -29,23 +29,31 @@ Ported from Donistr's patch for DevilXD's codebase, posted in
 ## Setup
 
 `WEB` has no device-code flow, so the access token has to come from a browser
-session. In a browser logged into Twitch: DevTools → Application → Cookies →
-`https://www.twitch.tv` → copy `auth-token`, then:
+session. On first run, the dashboard's Login Form asks for it: in a browser
+logged into Twitch, DevTools → Application (or Storage) → Cookies →
+`https://www.twitch.tv` → copy `auth-token`, and paste it there. The form
+explains the same steps.
+
+The miner checks the token with Twitch before accepting it, so a typo is
+reported in the form, and it refuses a token from another client (TV, app),
+which would log in but never see a campaign. It only accepts one while a login
+is pending, so the dashboard cannot swap the account of a running miner.
+
+The session is then saved in `data/cookies.jar`, and later runs restore it.
+Twitch login cookies last about a year, but signing out of that browser session
+revokes it; the Login Form then asks again.
+
+For a setup without the dashboard, `TDM_WEB_AUTH_TOKEN` seeds the session
+instead; it is only read when no saved session exists:
 
 ```bash
 read -rsp 'auth-token: ' TDM_WEB_AUTH_TOKEN && export TDM_WEB_AUTH_TOKEN
 docker compose up -d --build
 ```
 
-`read -s` keeps the token off the screen and out of shell history, and nothing
-is written to disk except `data/cookies.jar`, where the miner saves the session
-on first run. Later runs don't need the variable. Without a saved session or
-the variable, the miner stops with an error saying so. Twitch login cookies
-last about a year, but signing out of that browser session revokes it.
-
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `TDM_WEB_AUTH_TOKEN` | — | Browser `auth-token`, needed for the first run |
+| `TDM_WEB_AUTH_TOKEN` | — | Optional: seeds the first login instead of the Login Form |
 | `TDM_CHROMIUM_PATH` | `/usr/bin/chromium-browser` | Browser Streamlink drives |
 | `TDM_INTEGRITY_HEADLESS` | `0` | Leave off — see below |
 

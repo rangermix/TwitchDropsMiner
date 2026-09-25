@@ -227,7 +227,7 @@
             "important_notes": "Belangrijke opmerkingen",
             "github_repo": "GitHub Repository",
             "how_to_use_items": [
-                "Log in met uw Twitch-account (OAuth apparaatcode stroom)",
+                "Log in door uw Twitch-cookie auth-token te plakken bij Login",
                 "Koppel uw accounts op <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
                 "De miner zal automatisch campagnes ontdekken en beginnen met minen",
                 "Configureer prioriteitsgames in Instellingen om te focussen op wat u wilt",

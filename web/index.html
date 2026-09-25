@@ -70,6 +70,19 @@
                         <div class="oauth-code" id="oauth-code"></div>
                         <button id="oauth-confirm">I've entered the code</button>
                     </div>
+                    <div id="auth-token-display" style="display: none;">
+                        <p>Log in by pasting your Twitch <code>auth-token</code> cookie:</p>
+                        <ol class="auth-token-steps">
+                            <li>Open <a href="https://www.twitch.tv" target="_blank" rel="noopener noreferrer">twitch.tv</a> and log in.</li>
+                            <li>Open the developer tools (<kbd>F12</kbd>), then the <b>Application</b> tab (Chrome, Edge) or <b>Storage</b> tab (Firefox).</li>
+                            <li>Under <b>Cookies</b>, select <code>https://www.twitch.tv</code>.</li>
+                            <li>Copy the value of the <code>auth-token</code> cookie and paste it below.</li>
+                        </ol>
+                        <p class="auth-token-note">This token gives access to your Twitch account, so only paste it here. Logging out of that browser session revokes it, and the miner would then ask again.</p>
+                        <input type="password" id="auth-token-input" placeholder="auth-token" autocomplete="off" spellcheck="false" />
+                        <button id="auth-token-submit">Log in</button>
+                        <div id="auth-token-error" class="auth-token-error" style="display: none;"></div>
+                    </div>
                 </section>
 
                 <!-- Current Drop Progress -->
@@ -331,7 +344,7 @@
 
                 <h3 id="help-howto-header">How to Use</h3>
                 <ol>
-                    <li>Login using your Twitch account (OAuth device code flow)</li>
+                    <li>Log in by pasting your Twitch <code>auth-token</code> cookie in the Login Form</li>
                     <li>Link your accounts at <a href="https://www.twitch.tv/drops/campaigns"
                             target="_blank">twitch.tv/drops/campaigns</a></li>
                     <li>The miner will automatically discover campaigns and start mining</li>

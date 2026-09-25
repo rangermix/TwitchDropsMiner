@@ -318,6 +318,10 @@ socket.on('oauth_code_required', (data) => {
     showOAuthCode(data.url, data.code);
 });
 
+socket.on('auth_token_required', () => {
+    showAuthTokenForm();
+});
+
 socket.on('login_status', (data) => {
     updateLoginStatus(data);
 });
@@ -1139,13 +1143,23 @@ function renderInventory() {
 function showLoginForm() {
     document.getElementById('login-form').style.display = 'block';
     document.getElementById('oauth-code-display').style.display = 'none';
+    document.getElementById('auth-token-display').style.display = 'none';
 }
 
 function showOAuthCode(url, code) {
     document.getElementById('login-form').style.display = 'none';
+    document.getElementById('auth-token-display').style.display = 'none';
     document.getElementById('oauth-code-display').style.display = 'block';
     document.getElementById('oauth-url').href = url;
     document.getElementById('oauth-code').textContent = code;
+}
+
+function showAuthTokenForm() {
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('oauth-code-display').style.display = 'none';
+    document.getElementById('auth-token-display').style.display = 'block';
+    document.getElementById('auth-token-error').style.display = 'none';
+    document.getElementById('auth-token-input').focus();
 }
 
 function updateLoginStatus(data) {
@@ -1158,6 +1172,7 @@ function updateLoginStatus(data) {
         statusEl.style.color = 'var(--success-color)';
         document.getElementById('login-form').style.display = 'none';
         document.getElementById('oauth-code-display').style.display = 'none';
+        document.getElementById('auth-token-display').style.display = 'none';
     } else {
         const loggedOut = t.gui?.login?.logged_out || 'Not logged in';
         statusEl.textContent = data.status || loggedOut;
@@ -1166,6 +1181,8 @@ function updateLoginStatus(data) {
         // Check if OAuth is pending (for late-connecting clients)
         if (data.oauth_pending) {
             showOAuthCode(data.oauth_pending.url, data.oauth_pending.code);
+        } else if (data.auth_token_pending) {
+            showAuthTokenForm();
         }
     }
 }
@@ -1711,6 +1728,41 @@ async function confirmOAuth() {
     }
 }
 
+async function submitAuthToken() {
+    const input = document.getElementById('auth-token-input');
+    const button = document.getElementById('auth-token-submit');
+    const errorEl = document.getElementById('auth-token-error');
+    errorEl.style.display = 'none';
+    button.disabled = true;
+    try {
+        const response = await fetch('/api/auth-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ auth_token: input.value })
+        });
+        if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            errorEl.textContent = body.detail || `Login failed (HTTP ${response.status})`;
+            errorEl.style.display = 'block';
+            return;
+        }
+        // Validated by the server; the miner finishes logging in and
+        // reports back through login_status.
+        input.value = '';
+        document.getElementById('auth-token-display').style.display = 'none';
+        const t = state.translations;
+        const loginStatus = document.getElementById('login-status');
+        loginStatus.textContent = t.gui?.login?.waiting_auth || 'Waiting for authentication...';
+        loginStatus.setAttribute('translation-key', 'waiting_auth');
+    } catch (error) {
+        console.error('Failed to submit auth-token:', error);
+        errorEl.textContent = 'Could not reach the miner';
+        errorEl.style.display = 'block';
+    } finally {
+        button.disabled = false;
+    }
+}
+
 async function verifyProxy() {
     const proxyInput = document.getElementById('proxy-url');
     const proxyUrl = proxyInput ? proxyInput.value.trim() : '';
@@ -2183,7 +2235,7 @@ function applyTranslations(t) {
         const helpContent = helpTab.querySelector('.help-content');
         if (helpContent) {
             const howToItems = t.gui.help.how_to_use_items || [
-                'Login using your Twitch account (OAuth device code flow)',
+                'Log in by pasting your Twitch auth-token cookie in the Login Form',
                 'Link your accounts at <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a>',
                 'The miner will automatically discover campaigns and start mining',
                 'Configure priority games in Settings to focus on what you want',
@@ -2390,6 +2442,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Login form
     document.getElementById('login-button').addEventListener('click', submitLogin);
     document.getElementById('oauth-confirm').addEventListener('click', confirmOAuth);
+    document.getElementById('auth-token-submit').addEventListener('click', submitAuthToken);
+    document.getElementById('auth-token-input').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') submitAuthToken();
+    });
 
     // Settings - auto-save on change
     document.getElementById('dark-mode').addEventListener('change', (e) => {

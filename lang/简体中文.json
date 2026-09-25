@@ -227,7 +227,7 @@
             "important_notes": "重要提示",
             "github_repo": "GitHub 仓库",
             "how_to_use_items": [
-                "使用您的 Twitch 账号登录（OAuth 设备代码流程）",
+                "将 Twitch 的 auth-token Cookie 粘贴到“登录Twitch账号”中进行登录",
                 "在 <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> 关联您的账号",
                 "矿工将自动发现活动并开始挖掘",
                 "在设置中配置优先游戏以关注您想要的内容",

@@ -227,7 +227,7 @@
             "important_notes": "Ważne uwagi",
             "github_repo": "Repozytorium GitHub",
             "how_to_use_items": [
-                "Zaloguj się przy użyciu konta Twitch (przepływ kodu urządzenia OAuth)",
+                "Zaloguj się, wklejając ciasteczko Twitch auth-token w sekcji Logowanie",
                 "Połącz swoje konta na <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
                 "Górnik automatycznie odkryje kampanie i rozpocznie wydobywanie",
                 "Skonfiguruj gry priorytetowe w Ustawieniach, aby skupić się na tym, czego chcesz",

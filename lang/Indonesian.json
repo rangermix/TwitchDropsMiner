@@ -227,7 +227,7 @@
             "important_notes": "Catatan Penting",
             "github_repo": "Repository GitHub",
             "how_to_use_items": [
-                "Masuk menggunakan akun Twitch Anda (alur kode perangkat OAuth)",
+                "Masuk dengan menempelkan cookie auth-token Twitch Anda di Formulir masuk",
                 "Tautkan akun Anda di <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
                 "Penambang akan secara otomatis menemukan kampanye dan mulai menambang",
                 "Konfigurasikan game prioritas di Pengaturan untuk fokus pada yang Anda inginkan",

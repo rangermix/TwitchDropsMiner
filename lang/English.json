@@ -192,7 +192,7 @@
             "about_text": "This application automatically mines timed Twitch drops without downloading stream data.",
             "how_to_use": "How to Use",
             "how_to_use_items": [
-                "Login using your Twitch account (OAuth device code flow)",
+                "Log in by pasting your Twitch auth-token cookie in the Login Form",
                 "Link your accounts at <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
                 "The miner will automatically discover campaigns and start mining",
                 "Configure priority games in Settings to focus on what you want",

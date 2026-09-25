@@ -192,7 +192,7 @@
             "about_text": "Ez az alkalmazás automatikusan bányássza az időzített Twitch jutalmakat anélkül, hogy letöltené a stream adatokat.",
             "how_to_use": "Használati útmutató",
             "how_to_use_items": [
-                "Jelentkezzen be a Twitch fiókjával (OAuth eszközkód folyamat)",
+                "Jelentkezzen be a Twitch auth-token sütijének beillesztésével a Bejelentkezési űrlapon",
                 "Fiókok összekapcsolása a <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> oldalon",
                 "A miner automatikusan felfedezi a kampányokat és elkezdi a bányászást",
                 "Konfigurálja a prioritásos játékokat a beállításokban",
