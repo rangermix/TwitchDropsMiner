@@ -368,6 +368,13 @@ progress to an ignored drop while the miner intentionally targets another reward
   tab in a dedicated local profile, correlates the issued token with a successful
   authenticated campaign request and closes only its tab. The manual `export` command
   writes a private JSON file. Skip CORS preflight responses when observing integrity.
+- The optional `export --server-seed PATH` writes a separate `ServerSeed` without
+  changing the dashboard bundle format. `src/auth/server_seed.py` accepts only the
+  fixed `KP_UIDz-ssn` cookie at `k.twitchcdn.net/`, with Secure/HttpOnly attributes and
+  a valid finite expiry. Capture only that host's cookies, reject missing/ambiguous
+  seeds, keep credential values out of repr/errors/output, and reject colliding export
+  paths before browser access. The server seed may retain an expired integrity context
+  for new issuance; the SDK cookie itself must be fresh when used.
 - `src/web/session_api.py` provides status and manual import. Import requires enabled
   dashboard protection and an authenticated dashboard session, plus existing CSRF/origin
   guards. Bound the actual request body before parsing; never echo failed submissions.

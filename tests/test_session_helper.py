@@ -12,7 +12,7 @@ from src.config import ClientType
 
 
 @asynccontextmanager
-async def devtools(*, matching=True, anonymous=False, fail_campaign=False, preflight=False):
+async def devtools(*, matching=True, anonymous=False, fail_campaign=False, preflight=False, sdk_cookie=True, null_cookie_reply=False):
     closed = []
     commands = []
     address = []
@@ -35,6 +35,14 @@ async def devtools(*, matching=True, anonymous=False, fail_campaign=False, prefl
             result = {}
             if method == "Runtime.evaluate":
                 result = {"result": {"value": "Test Chrome"}}
+            elif method == "Network.getCookies":
+                assert params == {"urls": ["https://k.twitchcdn.net/"]}
+                result = {"cookies": [{
+                    "name": "KP_UIDz-ssn", "value": "private-sdk-cookie", "expires": 9000,
+                    "domain": "k.twitchcdn.net", "path": "/", "secure": True, "httpOnly": True,
+                }] if sdk_cookie else []}
+                if null_cookie_reply:
+                    result = None
             elif method == "Network.getResponseBody":
                 if params["requestId"] == "preflight":
                     await ws.send_json({"id": command["id"], "result": {"body": "", "base64Encoded": False}})
@@ -115,6 +123,33 @@ async def test_empty_cors_preflight_is_not_treated_as_an_integrity_issuance():
     async with devtools(preflight=True) as (address, closed, _commands):
         bundle = await BrowserExporter(address, clock=lambda: 1000, timeout=1).capture()
         assert bundle.headers["client-integrity"] == "new-integrity"
+        assert closed == ["owned-tab"]
+
+
+@pytest.mark.asyncio
+async def test_server_seed_export_collects_only_scoped_cookie_and_closes_target():
+    async with devtools() as (address, closed, commands):
+        seed = await BrowserExporter(address, clock=lambda: 1000, timeout=1).capture_seed()
+        assert seed.bundle.headers["client-integrity"] == "new-integrity"
+        assert seed.cookie.value == "private-sdk-cookie"
+        assert "cookie" not in seed.bundle.headers
+        assert commands.count("Network.getCookies") == 1
+        assert closed == ["owned-tab"]
+
+
+@pytest.mark.asyncio
+async def test_server_seed_export_missing_cookie_fails_without_leaking_or_leaving_tab():
+    async with devtools(sdk_cookie=False) as (address, closed, _commands):
+        with pytest.raises(SessionError, match="SDK_COOKIE"):
+            await BrowserExporter(address, clock=lambda: 1000, timeout=1).capture_seed()
+        assert closed == ["owned-tab"]
+
+
+@pytest.mark.asyncio
+async def test_server_seed_export_normalizes_malformed_cookie_reply_and_closes_target():
+    async with devtools(null_cookie_reply=True) as (address, closed, _commands):
+        with pytest.raises(SessionError, match="BROWSER_PROTOCOL"):
+            await BrowserExporter(address, clock=lambda: 1000, timeout=1).capture_seed()
         assert closed == ["owned-tab"]
 
 

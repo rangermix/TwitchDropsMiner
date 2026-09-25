@@ -181,6 +181,12 @@ TDM saves accepted state separately in `data/imported-session.json`, revalidates
 restart, rejects account changes and stale replacements, and waits for a fresh import
 after expiry. Failed validation preserves the previous accepted context.
 
+For the experimental server-renewal work, add `--server-seed "$HOME/tdm-server-seed.json"`
+to the export command. This also saves the SDK cookie for `k.twitchcdn.net` alongside
+the matching context in a separate private seed file. Import `tdm-session.json` into
+the dashboard as before; the seed file is intended for the server renewal helper,
+which is still being implemented and tested. Both files contain credentials.
+
 **Live manual-path check (25 September 2026):** the actual dashboard accepted an export
 from the dedicated native Chrome profile into a fresh browser-free Docker TDM instance.
 Identity, Inventory and Campaigns passed; a subsequent read-only query through the

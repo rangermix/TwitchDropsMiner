@@ -7,6 +7,7 @@ import asyncio
 import base64
 import json
 import re
+import tempfile
 import time
 from collections.abc import Callable
 from contextlib import suppress
@@ -17,6 +18,7 @@ import aiohttp
 from yarl import URL
 
 from src.auth.browser_session import BrowserSession
+from src.auth.server_seed import SDKCookie, ServerSeed
 from src.auth.session_bundle import PrivateSessionFile, SessionBundle, SessionError
 from src.config import ClientType
 
@@ -179,6 +181,15 @@ class BrowserExporter:
         self.address, self.clock, self.timeout = str(url).rstrip("/"), clock, timeout
 
     async def capture(self) -> SessionBundle:
+        bundle, _cookie = await self._capture(include_sdk_cookie=False)
+        return bundle
+
+    async def capture_seed(self) -> ServerSeed:
+        bundle, cookie = await self._capture(include_sdk_cookie=True)
+        assert cookie is not None
+        return ServerSeed(bundle, cookie)
+
+    async def _capture(self, *, include_sdk_cookie: bool) -> tuple[SessionBundle, SDKCookie | None]:
         target_id = None
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as http:
             try:
@@ -213,7 +224,13 @@ class BrowserExporter:
                                 await observation.observe(event, protocol)
                                 bundle = observation.bundle(user_agent)
                                 if bundle is not None:
-                                    return bundle
+                                    cookie = None
+                                    if include_sdk_cookie:
+                                        data = await protocol.command("Network.getCookies", {"urls": [SDKCookie.URL]})
+                                        if not isinstance(data, dict):
+                                            raise SessionError("BROWSER_PROTOCOL")
+                                        cookie = SDKCookie.from_browser(data.get("cookies"), now=self.clock())
+                                    return bundle, cookie
                     finally:
                         await protocol.close()
             except TimeoutError:
@@ -229,6 +246,26 @@ class BrowserExporter:
 
 class SessionHelper:
     @staticmethod
+    def check_export_paths(output: str, seed: str) -> None:
+        """Reject aliases before capture without modifying existing export files."""
+        try:
+            first, second = Path(output).resolve(), Path(seed).resolve()
+            if first == second or first.is_dir() or second.is_dir():
+                raise ValueError
+            if first.exists() and second.exists() and first.samefile(second):
+                raise ValueError
+            for path in (first, second):
+                path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            if first.parent.samefile(second.parent):
+                # Probe the destination filesystem's case/Unicode equivalence, including
+                # names that do not exist yet. Exclusive creation cannot truncate data.
+                with tempfile.TemporaryDirectory(prefix=".tdm-export-", dir=first.parent) as probe:
+                    (Path(probe) / first.name).touch(exist_ok=False)
+                    (Path(probe) / second.name).touch(exist_ok=False)
+        except (OSError, ValueError, RuntimeError):
+            raise SessionError("OUTPUT_PATH") from None
+
+    @staticmethod
     async def run(args: argparse.Namespace) -> None:
         if args.command == "renew":
             from src.auth.session_renewal import RenewalConnection, RenewalLoop, RenewalSender
@@ -237,7 +274,18 @@ class SessionHelper:
             await RenewalLoop(BrowserExporter(args.browser), RenewalSender(connection),
                               renew_before=args.renew_before).run()
         else:
-            bundle = await BrowserExporter(args.browser).capture()
+            seed_path = getattr(args, "server_seed", None)
+            if seed_path:
+                SessionHelper.check_export_paths(args.output, seed_path)
+            exporter = BrowserExporter(args.browser)
+            if seed_path:
+                seed = await exporter.capture_seed()
+                # Validate the combined envelope before creating either export.
+                seed = ServerSeed.from_dict(seed.to_dict())
+                bundle = seed.bundle
+                PrivateSessionFile(Path(seed_path)).write(seed.to_dict())
+            else:
+                bundle = await exporter.capture()
             PrivateSessionFile(Path(args.output)).write(bundle.to_dict())
             print(json.dumps({"success": True, "expires_at": bundle.expires_at}))
 
@@ -248,6 +296,7 @@ class SessionHelper:
         export = commands.add_parser("export")
         export.add_argument("--browser", required=True)
         export.add_argument("--output", required=True)
+        export.add_argument("--server-seed", help="Also save a private SDK cookie seed for server renewal.")
         renew = commands.add_parser("renew")
         renew.add_argument("--browser", required=True)
         renew.add_argument("--connection", required=True)
