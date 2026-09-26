@@ -50,12 +50,20 @@ An OS crash or forced kill can leave that temporary profile behind.
 
 ## Evidence boundary
 
-The earlier separate server helper passed scheduled renewal, requests after actual
+The integrated flow passed fresh login through the packaged macOS ARM64 helper,
+direct in-memory upload, server validation, automatic admission closure, desktop
+profile cleanup and server restart. On a separate integrated instance, the ordinary
+worker rotated the token and SDK cookie; protected account, Inventory and Campaigns
+requests passed after the original token's actual expiry with admission still closed.
+See the [integrated verification record](notes/2026-09-26-native-helper-integration.md)
+for timestamps, source revisions and the distinction between these two test paths.
+
+The earlier separate server helper also passed scheduled renewal, requests after actual
 integrity-token expiry, renewal beyond the original SDK-cookie expiry, and restart
 with the native browser closed on one home network. See the
 [timestamped record](notes/2026-09-25-sdk-cookie-renewal.md). These results establish
 that server-side issuance can work in that environment, not that every refactoring,
-platform or future Twitch change works. The integrated flow requires its own live
-handoff, renewal and restart checks; [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118)
-records that validation. The old manual import/pair/renew HTTP routes and local export
+platform or future Twitch change works. Authenticated login on every OS and multi-day
+reliability remain unverified; [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118)
+tracks release validation. The old manual import/pair/renew HTTP routes and local export
 CLI are removed from this branch; old connection files cannot be used with it.

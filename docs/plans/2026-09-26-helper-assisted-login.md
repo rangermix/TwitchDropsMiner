@@ -77,6 +77,9 @@ Files: `web/index.html`, `web/static/app.js`, replace `web/static/session-import
 
 ## Implemented validation checkpoints
 
+These entries record the order of implementation. Earlier pending items are superseded
+by the completed live checks below and the [current evidence record](../notes/2026-09-26-native-helper-integration.md).
+
 - Atomic v2 admission/seed/receipt envelope; toggles invalidate ticket epochs, including
   true→false→true. The successful-POST receipt survives closure/restart for ten minutes.
 - Initial server proof accepts a fresh shorter lifetime; strict ordinary renewal is retained.
@@ -121,3 +124,16 @@ Files: `web/index.html`, `web/static/app.js`, replace `web/static/session-import
   files), lock consistency and whitespace checks. The Chinese mobile screenshot was
   regenerated through the actual language selector and mocked settings events; selected
   language, saved language and rendered text now agree. No product fix was needed.
+- The later `71456d3` cleanup checkpoint passed 642 tests and two subtests, both Docker
+  architecture builds, independent review, and actual installed-Chrome packaged smoke
+  on Linux x64, Windows x64 and macOS ARM64/x64.
+- At 2026-09-26 18:37:01 UTC, fresh login and email verification through the packaged
+  macOS ARM64 helper completed direct handoff to an empty TDM instance. Server acceptance,
+  automatic gate closure, private Docker-only state, owned browser/profile cleanup and
+  independent protected account/catalog requests passed; restart retained the same state.
+- Separately, the integrated worker persisted generation 2 during ordinary renewal and
+  independent protected requests passed at 15:28:29.926 UTC, after the original
+  15:28:22.900 expiry. The token and SDK cookie changed while admission stayed closed.
+  These are separate fresh-login and expiry test paths, not a single continuous run;
+  authenticated login on every OS, multi-day reliability and release remain outside this
+  completed implementation checkpoint.

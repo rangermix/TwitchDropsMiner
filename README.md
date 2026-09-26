@@ -15,10 +15,12 @@ No environment flag, dashboard password, manual JSON export, or separate renewal
 connection file is required. Dashboard password protection remains optional.
 
 The Alpine image now includes Chromium for server-side integrity renewal. Mining
-requests still use Python HTTP, with no added Python runtime dependency. Earlier
-server-helper experiments passed real expiry and restart checks on one home network;
-see the [timestamped evidence and limits](docs/notes/2026-09-25-sdk-cookie-renewal.md).
-Those results do not by themselves verify this newly integrated login flow. Fresh
+requests still use Python HTTP, with no added Python runtime dependency. The packaged
+macOS ARM64 helper passed fresh login, direct handoff, cleanup and server restart checks.
+On a separate integrated instance, normal renewal produced a new token that passed
+account, inventory and campaign requests after the original token's actual expiry,
+with helper admission closed. See the [timestamped evidence and limits](docs/notes/2026-09-26-native-helper-integration.md).
+These checks cover one home setup, not authenticated login on every supported OS. Fresh
 interactive login inside Docker remains rejected in the tested browser configurations.
 This branch is experimental and unreleased. [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118)
 tracks integrated validation and release status. Preserve existing `data/cookies.jar`
@@ -134,7 +136,8 @@ Packaged executables do not require Python. See [renewal and recovery](docs/serv
 for storage, expiry and failure behavior. The earlier export/pairing and direct Docker
 browser workflows are retired in this branch; their investigation evidence remains in
 `docs/notes/`. The [current integration record](docs/notes/2026-09-26-native-helper-integration.md)
-separates verified builds and server acceptance from pending fresh-login and expiry checks.
+records native builds, fresh macOS login, restart and actual-expiry renewal checks,
+and the remaining platform and long-term reliability limits.
 
 ### From source
 

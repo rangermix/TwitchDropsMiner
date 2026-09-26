@@ -317,8 +317,13 @@ progress to an ignored drop while the miner intentionally targets another reward
   their focused tests. Legacy BrowserSession is retained only as an experimental library,
   not selectable fresh login. Historical live evidence in docs/notes is not proof of a
   changed integrated flow. Record fresh provider, expiry, restart and native build evidence
-  in `docs/notes/2026-09-26-native-helper-integration.md`; preserve explicit pending checks
-  separately; never infer live drop progress from mocks or a Watching label.
+  in `docs/notes/2026-09-26-native-helper-integration.md`. The 26 September checkpoint
+  passed packaged macOS ARM64 fresh handoff/cleanup/restart and, on a separate instance,
+  normal integrated renewal followed by protected requests after the original expiry.
+  Keep these separate test paths and platform limits explicit; they do not establish
+  authenticated login on every OS, multi-day reliability or live mining progress.
+  Preserve pending checks separately; never infer live drop progress from mocks or a
+  Watching label.
 - New backend and lifecycle coverage is in test_helper_connection/api/lifecycle,
   test_auth_task_cleanup and test_login_helper. Keep old Android cookie/restart coverage,
   account precedence, stale admission, atomic failure, lost-ack, gate-closed renewal,

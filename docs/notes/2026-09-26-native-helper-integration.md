@@ -62,9 +62,24 @@ successful-run cleanup claim; this remains a nonblocking test-harness limitation
   and an explicit loopback debugging port. Earlier launch/cancel checks removed the
   owned profile; the fresh login trial also cleaned up after its ten-minute timeout.
   No `tdm-login-*` temporary directory remained after that timeout.
-- Fresh login through this executable is **pending**. Native desktop control returned
-  `cgWindowNotFound`; the requested manual sign-in did not finish within the trial.
-  Earlier native-login/export proof does not establish the new direct handoff.
+- Fresh login through the packaged macOS ARM64 executable at `71456d3` **passed**.
+  At **18:37:01**, a previously empty TDM instance accepted the session after a new
+  Twitch login and email verification, completed using native desktop control. The
+  earlier trial's window-selection problem was resolved by quitting the other Chrome
+  instance; this was a desktop-control targeting issue, not a new helper prerequisite.
+  The helper captured/uploaded directly, waited for server validation, reported success
+  and exited with code 0. No local export/seed/connection files were used.
+- At **18:38:23**, independent production HTTP requests confirmed the authorized test
+  account, valid Inventory and **173 Campaigns**. The Docker volume contained generation 1
+  and SDK state in a `0600` file; admission was closed, renewal available and its error
+  empty. Dashboard password protection was off. None of the OAuth, integrity or SDK
+  values appeared in the checked session/settings/status/auth-status HTTP responses.
+- The helper's owned Chrome process and profile were gone; no `tdm-login-*` directory
+  remained. At **18:39:41**, a TDM restart preserved the same generation, expiry and file
+  modification time. Independent account/Inventory/Campaigns requests passed again
+  (173 campaigns), new helper admission returned HTTP 403, and the rendered dashboard
+  showed the restored login with helper connection off. This proves authentication and
+  catalog access, not drop progress for the fresh test account.
 - Mocked API browser checks covered desktop 1440×1000 and mobile 390×844, admission
   changes, failed-save rollback, simulated acceptance/closure and Chinese rendering.
   The Chinese screenshot was regenerated through the real language selector and mocked
@@ -98,12 +113,19 @@ miner; its result is authentication/catalog evidence, not new mining-progress ev
 - The accepted token expires at **15:28:22.900** (`1790436502.9`). Its approximately
   three-hour lifetime differs from earlier one/two-hour observations; the worker uses
   the supplied expiry rather than a fixed lifetime.
-- The normal worker's five-minute-early renewal and independent protected requests
-  after the original token's actual expiry are **pending**. The observer changes no
-  clock, interval, stored session or worker behavior. It was restarted after final-image
-  replacement, with the same generation-1 baseline and expiry.
+- At **15:23:40.023**, the observer first saw normal scheduled renewal persist generation 2,
+  with a different integrity token and SDK cookie and expiry **18:23:25.466**. Helper
+  admission remained closed and the worker reported no renewal error.
+- At **15:28:29.926**, **7.026 seconds after the original expiry**, independent production
+  HTTP validation confirmed the same account, valid Inventory and **174 Campaigns** using
+  generation 2. The observer changed no clock, interval, stored session or worker behavior.
+  It was restarted after final-image replacement with the same generation-1 baseline.
+- A later status observation at **18:36:20** showed generation 3, expiry **21:18:29.205**,
+  renewal available, no error and admission still closed. This confirms a second persisted
+  renewal; the explicit independent post-expiry provider probe above covers generation 2.
 
 Historical standalone-worker proof, including the original SDK-cookie expiry crossing,
-remains in [the earlier record](2026-09-25-sdk-cookie-renewal.md). It is not substituted
-for the two pending integrated fresh-login and real-expiry checks above. No release,
-multi-day reliability or universal network/browser compatibility is claimed.
+remains in [the earlier record](2026-09-25-sdk-cookie-renewal.md). The fresh native handoff
+and actual-expiry renewal above were separate integrated test instances/accounts; do not
+describe them as one continuous fresh-login-to-expiry run. No authenticated login on every
+OS, release, multi-day reliability or universal network/browser compatibility is claimed.
