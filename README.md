@@ -131,7 +131,8 @@ python login_helper.py --tdm http://192.168.1.10:8080
 Packaged executables do not require Python. See [renewal and recovery](docs/server-renewal.md)
 for storage, expiry and failure behavior. The earlier export/pairing and direct Docker
 browser workflows are retired in this branch; their investigation evidence remains in
-`docs/notes/`.
+`docs/notes/`. The [current integration record](docs/notes/2026-09-26-native-helper-integration.md)
+separates verified builds and server acceptance from pending fresh-login and expiry checks.
 
 ### From source
 
