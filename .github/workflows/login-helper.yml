@@ -46,7 +46,11 @@ jobs:
           uv pip install -r packaging/login-helper-requirements.txt
           python -m pytest tests/test_login_helper.py tests/test_session_helper.py tests/test_session_bootstrap.py
           python -m PyInstaller --clean --noconfirm packaging/login_helper.spec
-          python packaging/smoke_login_helper.py dist/tdm-login-helper${{ matrix.extension }}
+          if [ "$RUNNER_OS" = Linux ]; then
+            xvfb-run -a python packaging/smoke_login_helper.py dist/tdm-login-helper${{ matrix.extension }} --browser
+          else
+            python packaging/smoke_login_helper.py dist/tdm-login-helper${{ matrix.extension }} --browser
+          fi
       - name: Archive executable with permissions preserved
         run: |
           tar -czf tdm-login-helper-${{ matrix.platform }}.tar.gz -C dist tdm-login-helper${{ matrix.extension }} -C "$GITHUB_WORKSPACE" LICENSE
