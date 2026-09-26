@@ -324,6 +324,40 @@ def test_invalid_destination_cli_error_does_not_echo_untrusted_url():
 
 
 @pytest.mark.asyncio
+async def test_native_browser_removes_auxiliary_temp_files_without_touching_parent_temp(monkeypatch, tmp_path):
+    monkeypatch.setattr(login_helper.tempfile, "tempdir", str(tmp_path))
+    shared = tmp_path / "system-temp"
+    shared.mkdir()
+    unrelated = shared / "unrelated"
+    unrelated.write_text("preserve-existing-state")
+    for name in ("TMPDIR", "TMP", "TEMP"):
+        monkeypatch.setenv(name, str(shared))
+    executable = tmp_path / "chrome"
+    executable.touch()
+    process = Mock(pid=777, poll=Mock(return_value=None), wait=Mock(return_value=0))
+    auxiliary = []
+
+    def launch(_arguments, **kwargs):
+        for name in ("TMPDIR", "TMP", "TEMP"):
+            artifact = Path(kwargs["env"][name]) / (".com.google.Chrome.test-" + name)
+            artifact.write_text("temporary-browser-data")
+            auxiliary.append(artifact)
+        return process
+
+    monkeypatch.setattr(login_helper.subprocess, "Popen", launch)
+    monkeypatch.setattr(login_helper.NativeChrome, "_wait_ready", AsyncMock())
+    monkeypatch.setattr(login_helper.NativeChrome, "_request_close", AsyncMock())
+    async with login_helper.NativeChrome(executable=executable) as browser:
+        profile = browser.profile
+        assert all(path.exists() for path in auxiliary)
+    assert all(not path.exists() for path in auxiliary)
+    assert profile is not None and not profile.exists()
+    assert unrelated.read_text() == "preserve-existing-state"
+    assert list(shared.iterdir()) == [unrelated]
+    assert all(login_helper.os.environ[name] == str(shared) for name in ("TMPDIR", "TMP", "TEMP"))
+
+
+@pytest.mark.asyncio
 async def test_lost_ack_recovers_receipt_without_reposting_credentials():
     async with instance(lose_ack=True, receipts=[{"state": "pending"}, accepted()]) as (address, requests):
         async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK,

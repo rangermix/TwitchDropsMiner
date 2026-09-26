@@ -273,6 +273,8 @@ class NativeChrome:
         self.profile = Path(tempfile.mkdtemp(prefix="tdm-login-"))
         try:
             self.profile.chmod(0o700)
+            temporary = self.profile / "tmp"
+            temporary.mkdir(mode=0o700)
             options: dict[str, Any] = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
             if sys.platform == "win32":
                 options["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
@@ -281,6 +283,9 @@ class NativeChrome:
             port = self.available_port()
             self.address = f"http://127.0.0.1:{port}"
             with self.external_libraries() as environment:
+                # Chrome can leave auxiliary downloads outside its user-data-dir.
+                # Keep all three platform temp locations inside our cleanup boundary.
+                environment.update({name: str(temporary) for name in ("TMPDIR", "TMP", "TEMP")})
                 self.process = subprocess.Popen([str(executable), f"--user-data-dir={self.profile}",
                     "--remote-debugging-address=127.0.0.1", f"--remote-debugging-port={port}",
                     "--no-first-run", "--no-default-browser-check", "--disable-background-mode",

@@ -104,7 +104,8 @@ TDM checks the account, inventory and campaigns, and proves that its own server 
 can issue a usable replacement before accepting the session. It then saves the session
 and SDK cookie together under `/app/data/imported-session.json` and automatically turns
 **Allow helper connection** off. The helper closes its Chrome window and removes the
-temporary TDM profile. Your everyday browser profile is untouched; no exported session
+temporary TDM profile, including Chrome's auxiliary temporary downloads. Your everyday
+browser profile is untouched; no exported session
 or renewal-connection file is kept on your desktop. You can close the helper and turn
 off the desktop after success.
 

@@ -295,7 +295,9 @@ progress to an ignored drop while the miner intentionally targets another reward
   the browser PID, and leave ordinary Chrome profiles untouched. Wait for Twitch login,
   capture in memory via shared BrowserExporter/SDKAcquisition, send directly to the chosen
   root URL without redirects, wait for verified acceptance, close Chrome and delete the
-  owned profile. No exported JSON/seed/connection files are written locally. Cancellation,
+  owned profile. No exported JSON/seed/connection files are written locally.
+  Scope Chrome's TMPDIR, TMP and TEMP to the owned profile so auxiliary files are removed
+  with it; never delete or change the parent's shared temporary directory. Cancellation,
   SIGTERM and SIGHUP must finish bounded cleanup. Forced process kill/power loss cannot
   guarantee cleanup; never silently report successful cleanup if deletion failed.
 - Native console text lives in the top-level `helper` locale section and `HelperMessages`.
