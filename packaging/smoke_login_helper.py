@@ -101,7 +101,8 @@ class PackagedSmoke:
                 # a launch, ownership or cleanup failure yields another code.
                 assert "SESSION_HELPER_LOGIN_TIMEOUT" in result.stderr, result.stdout + result.stderr
                 assert AdmittingInstance.requests == [("/api/helper/connect", "1", b"{}")]
-                assert list(Path(directory).iterdir()) == [], "Helper retained temporary browser files"
+                remaining = sorted(str(path.relative_to(directory)) for path in Path(directory).rglob("*"))
+                assert not remaining, f"Helper retained temporary browser files: {remaining[:30]!r}"
         finally:
             server.shutdown()
             server.server_close()
