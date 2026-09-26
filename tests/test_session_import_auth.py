@@ -14,7 +14,7 @@ from src.web.managers.login import LoginFormManager
 
 def client(monkeypatch, tmp_path):
     monkeypatch.setattr("src.core.client.DATA_DIR", tmp_path)
-    monkeypatch.setenv("TDM_SESSION_IMPORT", "1")
+    monkeypatch.delenv("TDM_SESSION_IMPORT", raising=False)
     for name in ("TDM_BROWSER_URL", "TDM_BROWSER_VIEWER_URL", "TDM_BROWSER_DEBUGGER_ADDRESS"):
         monkeypatch.delenv(name, raising=False)
     miner = Twitch(SimpleNamespace(proxy=""))
@@ -23,13 +23,13 @@ def client(monkeypatch, tmp_path):
     return miner
 
 
-def test_import_mode_selects_provider_and_rejects_two_modes(monkeypatch, tmp_path):
+def test_helper_provider_is_default_and_obsolete_env_cannot_enable_alternative(monkeypatch, tmp_path):
     miner = client(monkeypatch, tmp_path)
     assert isinstance(miner._browser, ImportedSession)
     monkeypatch.setenv("TDM_BROWSER_URL", "http://browser:4444")
     monkeypatch.setenv("TDM_BROWSER_VIEWER_URL", "http://localhost:7900")
-    with pytest.raises(SessionError, match="CONFIG"):
-        Twitch(SimpleNamespace(proxy=""))
+    monkeypatch.setenv("TDM_SESSION_IMPORT", "0")
+    assert isinstance(Twitch(SimpleNamespace(proxy=""))._browser, ImportedSession)
 
 
 @pytest.mark.asyncio

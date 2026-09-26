@@ -206,12 +206,13 @@ class SDKAcquisition:
     def __init__(self, *, clock: Callable[[], float] = time.time, timeout: float = 120):
         self.clock, self.timeout = clock, timeout
 
-    async def run(self, protocol: DevToolsConnection, bundle: SessionBundle, cookie: SDKCookie | None = None) -> ServerSeed:
+    async def run(self, protocol: DevToolsConnection, bundle: SessionBundle,
+                  cookie: SDKCookie | None = None, *, initial: bool = False) -> ServerSeed:
         try:
             async with asyncio.timeout(self.timeout):  # type: ignore[attr-defined]
                 exchange = SDKExchange()
                 events = asyncio.create_task(exchange.run(protocol))
-                acquire = asyncio.create_task(self.acquire(protocol, exchange, bundle, cookie))
+                acquire = asyncio.create_task(self.acquire(protocol, exchange, bundle, cookie, initial=initial))
                 try:
                     done, _ = await asyncio.wait({events, acquire}, return_when=asyncio.FIRST_COMPLETED)
                     if events in done:
@@ -231,6 +232,7 @@ class SDKAcquisition:
     async def acquire(
         self, protocol: DevToolsConnection, exchange: SDKExchange,
         original: SessionBundle, previous_cookie: SDKCookie | None,
+        *, initial: bool = False,
     ) -> ServerSeed:
         await protocol.command("Network.enable")
         await protocol.command("Network.setCacheDisabled", {"cacheDisabled": True})
@@ -269,14 +271,14 @@ class SDKAcquisition:
             "user_agent": user_agent, "headers": {**headers, "client-integrity": data.get("token")},
         }, now=self.clock())
         minimum_expiry = self.clock() + 30
-        if previous_cookie is not None:
+        if previous_cookie is not None and not initial:
             minimum_expiry = max(minimum_expiry, original.expires_at)
         if (bundle.headers["client-integrity"] == original.headers["client-integrity"]
                 or bundle.expires_at <= minimum_expiry):
             raise SessionError("REPLAY")
         result = await protocol.command("Network.getCookies", {"urls": [SDKCookie.URL]})
         cookie = SDKCookie.from_browser(result.get("cookies"), now=self.clock())
-        if cookie.expires_at <= max(previous_cookie.expires_at if previous_cookie else 0, bundle.expires_at):
+        if cookie.expires_at <= max(previous_cookie.expires_at if previous_cookie and not initial else 0, bundle.expires_at):
             raise SessionError("SDK_COOKIE")
         return ServerSeed(bundle, cookie)
 
@@ -287,13 +289,15 @@ class SDKIssuer:
     def __init__(self, browser: BrowserOwner, *, clock: Callable[[], float] = time.time, timeout: float = 120):
         self.browser, self.clock, self.timeout = browser, clock, timeout
 
-    async def issue(self, seed: ServerSeed) -> ServerSeed:
+    async def issue(self, seed: ServerSeed, *, initial: bool = False) -> ServerSeed:
         seed.cookie.require_fresh(self.clock())
         async with (
             self.browser.start() as address,
             BrowserExporter(address).target(extra_events=SDKAcquisition.EVENTS) as protocol,
         ):
-            return await SDKAcquisition(clock=self.clock, timeout=self.timeout).run(protocol, seed.bundle, seed.cookie)
+            return await SDKAcquisition(clock=self.clock, timeout=self.timeout).run(
+                protocol, seed.bundle, seed.cookie, initial=initial,
+            )
 
 
 class ServerContextSource:

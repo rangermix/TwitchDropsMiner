@@ -8,7 +8,7 @@ This package contains all component managers for the web-based GUI:
 - CampaignProgressManager: Active drop mining progress and countdown
 - ChannelListManager: Available channels tracking and display
 - InventoryManager: Drop campaigns and inventory management
-- LoginFormManager: Authentication and OAuth flow handling
+- LoginFormManager: Sanitized helper-assisted login status
 - SettingsManager: Application settings configuration
 - ImageCache: Minimal image caching for campaign artwork
 """
@@ -19,7 +19,7 @@ from src.web.managers.campaigns import CampaignProgressManager
 from src.web.managers.channels import ChannelListManager
 from src.web.managers.console import ConsoleOutputManager
 from src.web.managers.inventory import InventoryManager
-from src.web.managers.login import LoginData, LoginFormManager
+from src.web.managers.login import LoginFormManager
 from src.web.managers.settings import SettingsManager
 from src.web.managers.status import StatusManager, WebsocketStatusManager
 
@@ -33,7 +33,6 @@ __all__ = [
     "ChannelListManager",
     "InventoryManager",
     "LoginFormManager",
-    "LoginData",
     "SettingsManager",
     "ImageCache",
 ]

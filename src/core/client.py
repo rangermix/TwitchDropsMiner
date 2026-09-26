@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 from collections import OrderedDict, abc, deque
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from functools import partial
 from time import time
@@ -13,9 +13,8 @@ import aiohttp
 
 from src.api import GQLClient, HTTPClient
 from src.auth import _AuthState
-from src.auth.browser_session import BrowserConfig, BrowserSession
+from src.auth.helper_connection import HelperConnections
 from src.auth.imported_session import ImportedSession, SessionTransport
-from src.auth.session_bundle import SessionError
 from src.config import (
     MAX_CHANNELS,
     ClientType,
@@ -73,20 +72,11 @@ class Twitch:
         self._mnt_triggers: deque[datetime] = deque()
         # Client type and auth
         self._client_type: ClientInfo = ClientType.ANDROID_APP
-        browser_config = BrowserConfig.from_env()
-        import_mode = os.environ.get("TDM_SESSION_IMPORT", "")
-        if import_mode not in ("", "0", "1") or (import_mode == "1" and browser_config):
-            raise SessionError("CONFIG")
-        self._browser: BrowserSession | ImportedSession | None = (
-            BrowserSession(browser_config, DATA_DIR / "browser-session.json")
-            if browser_config else None
+        self._browser = ImportedSession(
+            DATA_DIR / "imported-session.json", transport=SessionTransport(lambda: self.settings.proxy or None),
+            bound_user_id=lambda: getattr(self._auth_state, "user_id", None),
+            on_identity=lambda identity: self._auth_state.accept_imported_identity(identity),
         )
-        if import_mode == "1":
-            self._browser = ImportedSession(
-                DATA_DIR / "imported-session.json", transport=SessionTransport(lambda: self.settings.proxy or None),
-                bound_user_id=lambda: getattr(self._auth_state, "user_id", None),
-                on_identity=lambda identity: self._auth_state.accept_imported_identity(identity),
-            )
         self._auth_state: _AuthState = _AuthState(self)
         # GUI (will be set by main.py)
         self.gui: WebGUIManager = None  # type: ignore[assignment]
@@ -97,6 +87,7 @@ class Twitch:
         self.channels: OrderedDict[int, Channel] = OrderedDict()
         self.watching_channel: AwaitableValue[Channel] = AwaitableValue()
         self._watching_task: asyncio.Task[None] | None = None
+        self._channel_tasks: set[asyncio.Task[Any]] = set()
         self._watching_restart = asyncio.Event()
         # Manual mode tracking
         self._manual_target_channel: Channel | None = None
@@ -114,6 +105,49 @@ class Twitch:
         self._stream_selector: StreamSelector = StreamSelector()
         # Drop history
         self.drop_history: DropHistory = DropHistory(DATA_DIR)
+        self._run_task: asyncio.Task | None = None
+        self._resume_mining = asyncio.Event()
+        self._resume_mining.set()
+        self._changing_auth = False
+        self.helper = HelperConnections(
+            self._browser, settings, activation=self.authentication_change,
+            on_change=self._helper_changed,
+        )
+
+    def _helper_changed(self) -> None:
+        if self.gui is not None:
+            self.gui.notify_helper_change(self.helper.status())
+
+    @asynccontextmanager
+    async def authentication_change(self):
+        """Drain authenticated work before replacing its identity and derived state."""
+        self._changing_auth = True
+        self._resume_mining.clear()
+        try:
+            tasks = [task for task in (self._run_task, self._watching_task, self._mnt_task)
+                     if task is not None and task is not asyncio.current_task()]
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+            self._watching_task = self._mnt_task = None
+            await self.websocket.stop(clear_topics=True)
+            await self._stop_channel_tasks()
+            yield
+        finally:
+            self._auth_state.clear()
+            self._inventory_service.clear_cached_state()
+            self._inventory_loaded = False
+            if self._state is not State.EXIT:
+                self._state = State.IDLE
+            self._changing_auth = False
+            self._resume_mining.set()
+
+    async def _stop_channel_tasks(self) -> None:
+        """Drain online checks even after their pending display marker is cleared."""
+        tasks = tuple(self._channel_tasks)
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     def _ensure_api_clients(self) -> None:
         """Ensure API clients are initialized (called after GUI is set)."""
@@ -144,6 +178,7 @@ class Twitch:
 
     async def shutdown(self) -> None:
         start_time = time()
+        await self.helper.stop()
         self.stop_watching()
         if self._watching_task is not None:
             self._watching_task.cancel()
@@ -153,6 +188,7 @@ class Twitch:
             self._mnt_task = None
         # stop websocket and close HTTP session
         await self.websocket.stop(clear_topics=True)
+        await self._stop_channel_tasks()
         if self._browser is not None:
             await self._browser.close()
         if self._http_client is not None:
@@ -229,6 +265,7 @@ class Twitch:
         usually by the console or application window being closed.
         """
         self.change_state(State.EXIT)
+        self._resume_mining.set()
         if self._browser is not None:
             self._browser.request_stop()
 
@@ -247,14 +284,27 @@ class Twitch:
 
     async def run(self) -> None:
         """Main entry point for the miner - handles exit requests."""
-        while True:
-            try:
-                await self._run()
-                break
-            except ExitRequest:
-                break
-            except aiohttp.ContentTypeError as exc:
-                raise RequestException(_.t["login"]["unexpected_content"]) from exc
+        self.helper.start()
+        try:
+            while self._state is not State.EXIT:
+                await self._resume_mining.wait()
+                if self._state is State.EXIT:  # type: ignore[comparison-overlap]  # State can change during the await.
+                    break
+                self._run_task = asyncio.create_task(self._run())
+                try:
+                    await self._run_task
+                    break
+                except asyncio.CancelledError:
+                    task = asyncio.current_task()
+                    if self._changing_auth and task is not None and not task.cancelling():  # type: ignore[attr-defined]  # Python 3.12 runtime.
+                        continue
+                    raise
+                except ExitRequest:
+                    break
+                except aiohttp.ContentTypeError as exc:
+                    raise RequestException(_.t["login"]["unexpected_content"]) from exc
+        finally:
+            await self.helper.stop()
 
     async def _run(self) -> None:
         """

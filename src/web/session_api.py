@@ -1,15 +1,15 @@
-"""Dashboard-facing manual import; raw session data is never returned."""
+"""Helper-only authentication routes; responses never contain Twitch credentials."""
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import JSONResponse
 
-from src.auth.imported_session import ImportedSession
-from src.auth.session_bundle import SessionBundle, SessionError
+from src.auth.helper_connection import HelperConnections
+from src.auth.session_bundle import SessionError
 
 
 if TYPE_CHECKING:
@@ -22,83 +22,58 @@ class SessionAPI:
         self.auth, self.get_client = auth, get_client
         self.router = APIRouter()
         self.router.add_api_route("/api/session", self.status, methods=["GET"])
-        self.router.add_api_route("/api/session/import", self.import_file, methods=["POST"])
-        self.router.add_api_route("/api/session/pair", self.pair, methods=["POST"])
-        self.router.add_api_route("/api/session/revoke", self.revoke, methods=["POST"])
-        self.router.add_api_route("/api/session/renew", self.renew, methods=["POST"])
+        self.router.add_api_route("/api/helper/connect", self.connect, methods=["POST"])
+        self.router.add_api_route("/api/helper/session", self.install, methods=["POST"])
+        self.router.add_api_route("/api/helper/result", self.result, methods=["GET"])
 
-    def require_dashboard(self, request: Request) -> None:
-        if not self.auth.enabled or not self.auth.authenticated(self.auth.token(request.scope)):
-            raise HTTPException(401, "dashboard_auth_required")
-
-    def session(self) -> ImportedSession:
+    def helper(self) -> HelperConnections:
         client = self.get_client()
-        if client is None or not isinstance(client._browser, ImportedSession):
-            raise HTTPException(503, "session_import_disabled")
-        return client._browser
+        helper = getattr(client, "helper", None)
+        if not isinstance(helper, HelperConnections):
+            raise HTTPException(503, "session_unavailable")
+        return helper
 
-    async def status(self, request: Request):
-        client = self.get_client()
-        enabled = client is not None and isinstance(client._browser, ImportedSession)
-        if not self.auth.enabled:
-            return {"enabled": enabled, "authentication_required": True}
-        self.require_dashboard(request)
-        return {
-            "enabled": enabled, "authentication_required": False,
-            "session": self.session().status() if enabled else None,
-        }
-
-    async def import_file(self, request: Request):
-        self.require_dashboard(request)
-        session = self.session()
-        try:
-            bundle = SessionBundle.from_json(await request.body(), now=session._clock())
-            status = await session.install(bundle.to_dict(), authorized=lambda: (
-                self.auth.enabled and self.auth.authenticated(self.auth.token(request.scope))
-            ))
-        except SessionError as error:
-            raise HTTPException(400, f"session_{error.code.lower()}") from None
-        return {"success": True, "session": status}
-
-    async def pair(self, request: Request):
-        self.require_dashboard(request)
-        session = self.session()
-        try:
-            credential = await session.pair(authorized=lambda: (
-                self.auth.enabled and self.auth.authenticated(self.auth.token(request.scope))
-            ))
-        except SessionError as error:
-            raise HTTPException(400, f"session_{error.code.lower()}") from None
-        return JSONResponse({
-            "version": 1, "endpoint": self.auth.origin.expected(request) + "/api/session/renew",
-            "credential": credential, "user_id": session.status()["user_id"],
-        }, headers={"Content-Disposition": 'attachment; filename="tdm-connection.json"'})
-
-    async def revoke(self, request: Request):
-        self.require_dashboard(request)
-        try:
-            await self.session().revoke(authorized=lambda: (
-                self.auth.enabled and self.auth.authenticated(self.auth.token(request.scope))
-            ))
-        except SessionError as error:
-            raise HTTPException(400, f"session_{error.code.lower()}") from None
-        return {"success": True, "session": self.session().status()}
-
-    async def renew(self, request: Request):
-        # This is the only cookie-free endpoint. Its credential cannot read the dashboard.
-        if not self.auth.enabled:
-            raise HTTPException(401, "session_pairing")
+    @staticmethod
+    def credential(request: Request) -> str:
         header = request.headers.get("authorization", "")
         if not header.startswith("Bearer "):
-            raise HTTPException(401, "session_pairing")
-        session = self.session()
+            raise HTTPException(401, "session_connection")
+        return header[7:]
+
+    @staticmethod
+    def failure(error: SessionError) -> HTTPException:
+        status = {
+            "HELPER_DISABLED": 403, "CONNECTION": 401, "BUSY": 429,
+            "STOPPED": 503, "BROWSER_START": 503,
+        }.get(error.code, 400)
+        return HTTPException(status, "session_" + error.code.lower())
+
+    async def status(self):
+        return self.helper().status()
+
+    async def connect(self, request: Request):
         try:
-            session._check_renewal(header[7:])
-            bundle = SessionBundle.from_json(await request.body(), now=session._clock())
-            status = await session.install(
-                bundle.to_dict(), renewal_token=header[7:], authorized=lambda: self.auth.enabled,
-            )
+            if await request.json() != {}:
+                raise ValueError
+            return self.helper().connect()
         except SessionError as error:
-            raise HTTPException(401 if error.code in {"PAIRING", "AUTH"} else 400,
-                                f"session_{error.code.lower()}") from None
-        return {"success": True, "session": status}
+            raise self.failure(error) from None
+        except (ValueError, UnicodeError, RecursionError):
+            raise HTTPException(400, "session_format") from None
+
+    async def install(self, request: Request):
+        token = self.credential(request)
+        try:
+            data = json.loads(await request.body())
+            return await self.helper().accept(token, data)
+        except SessionError as error:
+            raise self.failure(error) from None
+        except (ValueError, UnicodeError, RecursionError):
+            raise HTTPException(400, "session_format") from None
+
+    async def result(self, request: Request):
+        token = self.credential(request)
+        try:
+            return self.helper().result(token)
+        except SessionError as error:
+            raise self.failure(error) from None

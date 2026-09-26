@@ -163,7 +163,7 @@ lang/                # Translation JSON files (20 languages)
 
 **src/web/app.py** - FastAPI application:
 
-- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/login`, `/api/oauth/confirm`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`, `/api/history`, `/api/history/export.csv`, `/api/history/stats`
+- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/helper/connect`, `/api/helper/session`, `/api/helper/result`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`, `/api/history`, `/api/history/export.csv`, `/api/history/stats`
 - Socket.IO server for real-time bi-directional communication
 - Serves static web frontend from `web/` directory
 - Integrates with WebGUIManager via `set_managers()`
@@ -240,210 +240,78 @@ progress to an ignored drop while the miner intentionally targets another reward
 6. **CHANNEL_SWITCH** - Select best channel to watch based on priority/ACL
 7. Loop between CHANNEL_SWITCH and periodic INVENTORY_FETCH (hourly)
 
-### Authentication
+### Authentication and helper-assisted login (#118)
 
-- The legacy OAuth device code flow uses twitch.tv/activate; fresh Android device
-  authorization is currently unavailable (see #118). Preserve existing valid sessions.
-- Managed by `src/auth/auth_state.py` (`_AuthState` class)
-- Access tokens stored in `cookies.jar` in DATA_DIR
-- Device ID from Twitch's `unique_id` cookie
-- Session ID generated per run
-- Client info defined in `src/config/client_info.py`; `Twitch` defaults to `ClientType.ANDROID_APP`
-  for OAuth, HTTP, and GraphQL so existing valid Android credentials are reused. Twitch
-  currently rejects fresh Android device-code authorization. Do not switch the default
-  to Smart TV as a complete fix: Smart TV sessions can have incomplete campaign discovery.
-  Track the browser-controlled interactive-login replacement and live evidence in #118.
-- A validated token for another client must fail with `CLIENT_MISMATCH` without deleting
-  its cookie file or clearing its jar. Non-200 device authorization returns a controlled
-  translated login error (`DEVICE_AUTH_<status>`), not a `KeyError` or raw response body.
-- Keep `Channel.url` on `ClientType.WEB.CLIENT_URL`: the Smart TV app shell lacks the
-  beacon/settings fields required by `get_spade_url()` and would prevent watch events.
-- Existing valid Android sessions must not be forced through fresh authorization. Tests in
-  `tests/test_twitch_auth.py` cover token polling and expired tokens for an explicitly
-  selected legacy Smart TV identity, plus default Android host/domain cookie reuse,
-  mismatch credential preservation, rejected device authorization, consistent client IDs,
-  and restart persistence using temporary jars.
-  `tests/test_spade_discovery.py` covers both beacon-discovery formats through actual
-  `send_watch()` calls with mocked responses; these tests do not prove live drop progress.
-
-### Experimental Twitch browser login (#118)
-
-- `src/auth/browser_session.py` owns an optional persistent Google Chrome session over
-  WebDriver (`TDM_BROWSER_URL`) and a separate user-facing viewer URL
-  (`TDM_BROWSER_VIEWER_URL`). Configure both, or use a driver URL with
-  `TDM_BROWSER_DEBUGGER_ADDRESS` to attach to a dedicated desktop Chrome profile.
-  The debugger address must be an explicit loopback host/port; never attach to the
-  user's everyday profile. With no viewer URL, emit the translated desktop prompt and
-  no link. Saved driver state must match both endpoint and debugger address. The optional
-  `docker-compose.browser.yml` uses a private driver, loopback noVNC viewer, required
-  VNC password, and a profile volume writable only by the browser user.
-- Valid Android cookies take priority. Browser fallback handles missing, expired, or
-  incompatible saved tokens without overwriting `cookies.jar`. Browser mode uses
-  anonymous HTTP for metadata and executes authenticated GraphQL in the actual browser;
-  never replay a web token under Android headers. Captured request context must match
-  the active token and Twitch's exact GraphQL URL and include nonempty client integrity.
-  Twitch initially sends authenticated requests without integrity; wait for a complete
-  context and never replace it with an incomplete request or combine different contexts.
-  Reject account switches before any
-  operation, and never invent account linkage when catalog access fails.
-- The browser profile holds credentials; `browser-session.json` contains only driver
-  reconnection state with mode 0600. Driver errors and HTTP debug logs must not include
-  credentials, request headers, payloads, or remote exception text. Cancellation and
-  shutdown close owned sessions and clear pending viewer UI state.
-- Login success requires token validation and non-null inventory and campaign results.
-  An anonymous browser request, passing mocks, or a displayed Watching state is not
-  proof of authenticated access or Twitch-side drop progress. On 24 September 2026,
-  Docker login failed in Chromium 152 and official Chrome 153. Chrome also failed when
-  launched without ChromeDriver in a fresh profile with `navigator.webdriver` false;
-  a separate Firefox 156 WebDriver BiDi comparison was also rejected. Native macOS
-  Chrome 153 accepted fresh login under DevTools control. The actual TDM browser service
-  also validated identity, inventory, and 125 campaigns through attached ChromeDriver
-  after the integrity-context correction. A separate live Twitch inventory query then
-  confirmed the test campaign advancing from 0 to 4 watched minutes while the full miner
-  ran. Restarting the dedicated browser and miner restored login without new credentials.
-  This does not repair Docker login or verify other platforms or long-term renewal.
-  Do not attribute the Docker rejection solely to ChromeDriver, or advertise the Docker
-  experiment as a working login recovery. Track remaining live proof in #118.
-- A separate 24 September session-transfer probe found that desktop Twitch cookies
-  restored identity/inventory in Docker Chrome, but the container's own integrity context
-  still failed campaign access. The complete matching desktop request context returned
-  inventory and 126 campaigns through Docker Chrome and plain Python HTTP inside Docker.
-  This initial read-only portability result did not prove renewal, imported-session
-  mining, or another network. The manual implementation below followed on 25 September. See
-  `docs/notes/2026-09-24-browser-session-portability.md`. Preserve the WEB client identity
-  and keep existing Android credentials separate in any future import implementation.
-- Follow-up fresh-login probes also failed in Camoufox 152.0.4 beta.28, Chrome 153 with
-  Puppeteer-Stealth 2.11.2, and Browserless 2.56.7 Chrome with `launch.stealth=true`.
-  Browserless used AMD64 emulation; the others used ARM64 containers. All reported
-  `navigator.webdriver` false and no authenticated cookie. Do not present generic
-  stealth support as verified Twitch compatibility or infer a single detection cause.
-- A fresh authenticated `gql.twitch.tv/integrity` response advertised about 3600 seconds
-  of validity; an in-memory comparison matched its token to the `Client-Integrity` header
-  on a successful authenticated request returning 126 campaigns. This measures one
-  working issued context, not expiry enforcement or a universal
-  lifetime; anonymous/login-page context can differ. Cookie expiry and OAuth
-  `expires_in: 0` do not establish the lifetime of an exported working bundle. Any future
-  import needs renewal/reconnect handling. Twitch login GET returns `X-Frame-Options:
-  SAMEORIGIN`; TDM cannot read Twitch credentials through an iframe or ordinary popup.
-  Use an explicit local-helper/extension design for export, and keep raw credentials,
-  network bodies, and account identifiers out of reports.
-- Browser login UI text is in `gui.login.browser_prompt`, `browser_desktop_prompt`, and
-  `browser_open` in every locale,
-  with HTTP(S)-only viewer links and safe DOM text. Reconnecting dashboards receive the
-  pending viewer URL, never browser cookies or tokens. The viewer's VNC password and
-  network protection are separate from dashboard authentication.
-
-### Imported browser sessions (#118)
-
-- Required unattended behavior is one-time export followed by server-managed renewal
-  with the exporting computer/browser off. The current local helper does not meet that
-  requirement. Do not equate a distinct token or HTTP 200 from `/integrity` with success:
-  identity and protected Campaigns must pass using that token. On 25 September, Alpine
-  direct issuance and a replay of captured browser issuance headers both returned tokens
-  whose campaign queries failed. The latter test's imported-token baseline returned 152
-  campaigns with the source browser stopped. Those HTTP-only approaches remain
-  unsuccessful; the optional server-browser helper below has passed expiry and restart
-  verification on one home setup.
-- A subsequent experiment found that importing only the `KP_UIDz-ssn` SDK cookie for
-  `k.twitchcdn.net`, in addition to the OAuth/client context, enables accepted headless
-  server-browser issuance. The SDK cookie must remain private. Fresh profiles without
-  it failed; copied local storage was unnecessary. Independent Alpine HTTP validated
-  the same account and 149 campaigns. Two consecutive packaged normal renewal cycles
-  rotated the SDK cookie and passed account/Inventory/Campaigns after each previous
-  integrity token expired. After the actual miner accepted its context, a separate
-  process in that container loaded the accepted state into the production ImportedSession
-  class and passed Inventory, Campaigns, GetStreamInfo and CurrentDrop. See
-  `docs/notes/2026-09-25-sdk-cookie-renewal.md` for generation/producer attribution:
-  the active miner later logged a successful claim and recorded the reward in history.
-  Its claim path accepts both newly claimed and already-claimed responses; raw status
-  and exclusive earning/first-claim attribution were not captured. Renewal after the
-  original SDK-cookie expiry and miner/helper persistence across restart passed with the
-  native browser closed. The actual initial-export CLI and subsequent server consumption
-  also passed. The optional `server_renewal` helper is still unreleased; these checks do
-  not establish multi-day reliability, different-network behavior or other desktop OSes.
-- `TDM_SESSION_IMPORT=1` selects `ImportedSession` as the optional fallback provider,
-  mutually exclusive with direct browser configuration. Preserve Android priority and
-  `cookies.jar`. Never combine imported web credentials with Android HTTP cookies.
-- `src/auth/session_bundle.py` owns the strict versioned bundle and atomic owner-only
-  JSON storage. Only allowlisted Twitch headers, user agent and observed timestamps are
-  accepted. Reject unknown fields/headers, injection characters, wrong clients and
-  nonfinite or invalid timestamps. Do not log bundles, tokens, browser responses or
-  exception payloads. Surface only stable error codes.
-- `ImportedSession` validates the WEB token identity, expected account, Inventory and
-  Campaigns before saving a complete replacement. Pin the first accepted account, also
-  respecting any already validated miner identity. Reject stale/replayed replacements;
-  preserve the last accepted file on validation/save failure. Revalidate persisted state
-  after restart and wait for fresh context at expiry. Stop must interrupt the wait.
-  OAuth changes refresh auth state and request websocket reconnection; integrity-only
-  renewal must also restore a waiting dashboard's logged-in state.
-- `src/auth/session_helper.py` attaches only to loopback DevTools, creates one temporary
-  tab in a dedicated local profile, correlates the issued token with a successful
-  authenticated campaign request and closes only its tab. The manual `export` command
-  writes a private JSON file. Skip CORS preflight responses when observing integrity.
-- The optional `export --server-seed PATH` writes a separate `ServerSeed` without
-  changing the dashboard bundle format. `src/auth/server_seed.py` accepts only the
-  fixed `KP_UIDz-ssn` cookie at `k.twitchcdn.net/`, with Secure/HttpOnly attributes and
-  a valid finite expiry. Capture only that host's cookies, reject missing/ambiguous
-  seeds, keep credential values out of repr/errors/output, and reject colliding export
-  paths before browser access. The server seed may retain an expired integrity context
-  for new issuance; the SDK cookie itself must be fresh when used.
-- If capture finds an empty SDK-cookie list or a strictly validated expired cookie,
-  `capture_seed()` bootstraps through `SDKAcquisition` in a new native browser context.
-  Malformed or ambiguous cookies still fail. Create the target explicitly in that context;
-  validate its ID and bind the loopback WebSocket path to that exact target. Copy no
-  cookies, storage or old SDK proof headers. Use `disposeOnDetach` plus bounded explicit
-  disposal; close only owned targets and keep the signed-in profile intact. Validate the
-  original account and the replacement's matching identity/catalog. Recheck freshness
-  after disposal/validation and before writing either export; validation and freshness
-  failures preserve old files. Each output is atomic individually, not as a two-file transaction.
-  A bootstrap token may have a shorter fresh lifetime than the original. Server renewal
-  still requires advancing expiry. `tests/test_session_bootstrap.py` covers these boundaries,
-  including cancellation and rejected disposal, cached responses and wrong accounts.
-- `src/auth/server_renewal.py` launches its own headless Chromium with a temporary
-  private profile and loopback DevTools. Import only the SDK cookie, load Twitch's SDK
-  at its fixed origin, and correlate a real POST response with the returned token/expiry.
-  Reject cache/service-worker responses, stale tokens and SDK state without an extended
-  expiry. Close the owned target/process/profile on success, failure and cancellation.
-  Validate account, Inventory and Campaigns through `SessionTransport` after Chromium
-  closes, then atomically persist the replacement seed before scoped delivery. Only one
-  helper may own a seed file. The server helper reuses `RenewalLoop`; expired SDK state
-  is terminal and requires a new local login/export. No Python dependencies are added;
-  `Dockerfile.renewal` adds Chromium to an optional Alpine helper image, leaving the core
-  Dockerfile unchanged. Keep setup and proof limits in `docs/server-renewal.md` current.
-- `src/web/session_api.py` provides status and manual import. Import requires enabled
-  dashboard protection and an authenticated dashboard session, plus existing CSRF/origin
-  guards. Bound the actual request body before parsing; never echo failed submissions.
-  `web/static/session-import.js` owns upload/status rendering using textContent and
-  `gui.session_import` in all locales. Clear selected files after submission and preserve
-  visible failures. Both the new asset and app.js use the release version cache key;
-  bump through the normal release workflow before production deployment.
-- `src/auth/session_renewal.py` owns strict connection-file parsing, scoped delivery and
-  scheduling. `session_helper renew` captures immediately and normally refreshes 300
-  seconds before observed expiry; keep the dedicated local Chrome profile running.
-  HTTPS is required except literal loopback HTTP; never follow redirects or send cookies.
-  Retry transient failures with bounded delay while accounting for remaining validity;
-  stop on wrong account, pairing rejection or redirect. Logs contain fixed codes and
-  accepted expiry/generation only. Connection files contain credentials and need private
-  permissions on the user's computer.
-- `/api/session/pair` and `/api/session/revoke` require enabled dashboard auth, including
-  a recheck after waiting for the state lock. Only POST `/api/session/renew` bypasses the
-  dashboard cookie; it keeps origin, write-header and body guards and requires its own
-  account-bound bearer credential. Persist only its SHA-256 digest. Rotation/revocation
-  and newer installs increment a revision; validate Twitch outside the state lock and
-  recheck revision, credential, dashboard authorization, identity and freshness at commit.
-  Revocation leaves the current Twitch context usable until expiry. Disabling dashboard
-  auth blocks renewal but does not erase the pairing; reenabling permits it again unless
-  revoked. A helper that received PAIRING while auth was off has exited and must restart.
-- Never reuse an expired or rejected imported context. Runtime rejection waits for fresh
-  context; retry only absent-data, path-free, known auth/integrity errors and preserve
-  completed batch results so mutations cannot be duplicated. Stop wakes all waiters.
-- On 25 September the actual manual upload UI accepted a native-browser export into a
-  fresh browser-free Docker TDM process. Identity and both catalog operations passed;
-  a subsequent imported-provider query returned 129 campaigns. The automatic helper
-  delivered three distinct replacements; the first also passed an independent catalog
-  query returning 129 campaigns. This used an accelerated renewal lead (3550 seconds),
-  not a full default hour-long cycle. Imported-session mining progress is not proved. Keep proof boundaries in
-  `docs/notes/2026-09-25-session-import-renewal.md` current as implementation progresses.
+- `Twitch` starts with `ClientType.ANDROID_APP` and reuses valid saved Android cookies.
+  Preserve `cookies.jar`; fresh, expired, or wrong-client credentials wait for the helper.
+  Fresh device authorization, direct remote-browser configuration, manual session upload,
+  and the old pairing/renewal HTTP routes are retired. `TDM_SESSION_IMPORT` is not used.
+- `ImportedSession` is always initialized. Accepted helper state takes precedence over
+  preserved Android cookies after restart. Keep `Channel.url` on `ClientType.WEB.CLIENT_URL`
+  for watch beacon discovery. Native/imported requests preserve the matching WEB client,
+  device ID, OAuth token, integrity context and user agent. Do not log any of those values.
+- `src/auth/helper_connection.py` owns short-lived helper admission, validation and
+  server renewal. `POST /api/helper/connect` returns a 10-minute random bearer connection;
+  `POST /api/helper/session` receives the existing ServerSeed envelope. Validate the original
+  account/catalog, independently issue a new server context, and validate that same account
+  before accepting. Initial proof may have a shorter fresh lifetime; normal renewal must
+  advance capture/expiry and preserve account identity. Never accept an HTTP 200 alone.
+- The Settings `allow_helper_connection` value defaults true. The authoritative flag,
+  invalidation epoch, bundle, SDK cookie, account/generation and sanitized receipt are
+  atomically persisted together in private `data/imported-session.json` v2. Settings
+  mirrors this flag but does not persist a second copy in settings.json. Every toggle
+  invalidates old tickets, including true→false→true; success commits false with the state.
+  Existing v1 imported state migrates closed. Storage or validation failure preserves
+  previous state. Disabled admission blocks connections/replacement, never server renewal.
+- `GET /api/helper/result` recovers an accepted upload for its hashed connection for
+  10 minutes, including after gate closure or restart. No credential values are returned.
+  Native helpers reconcile lost/invalid/5xx acknowledgements without repeating the POST;
+  an unconfirmed result is unknown, not a claim that installation failed.
+- Helper protocol routes are admitted by the explicit setting, independently of optional
+  dashboard auth. All other dashboard guards remain intact. Retain the write header,
+  origin/Fetch Metadata checks, 64 KiB payload cap, no-store responses and fixed error codes.
+  There is no session/seed export route. Ordinary dashboard status stays protected when
+  dashboard authentication is enabled.
+- `Twitch.authentication_change()` drains miner, watch, maintenance, fan-out campaign/UI/
+  channel tasks, websocket callbacks and tracked online checks before replacing identity.
+  Clear old topics and derived account state and resume under the accepted provider.
+  Fan-out cleanup must cancel AND await children on parent cancellation. Channel tasks
+  remain tracked after their pending display marker clears. Do not restore the old
+  Android identity after an explicit accepted helper replacement.
+- The integrated worker reads only persisted TDM state, normally renews five minutes
+  before expiry, rotates SDK state and validates account/catalog before atomic replacement.
+  It retries transient failures with bounded delay; exhausted/revoked credentials require
+  reopening admission and running the helper. Shutdown cancels and drains in-flight
+  uploads and renewal so browser cleanup finishes before process exit.
+- `src/auth/server_renewal.py` owns temporary headless Chromium and Twitch SDK issuance.
+  The standard Alpine Dockerfile includes Chromium; no Python runtime dependency was added.
+  Docker uses an init process and a cleanup grace period. Mining GraphQL stays in Python
+  HTTP. No browser/control/viewer port is published. Historical standalone renewal CLI
+  code is not the current deployment interface; its removed HTTP destination cannot be
+  used with this server. See docs/server-renewal.md for current setup.
+- `src/auth/login_helper.py` and root `login_helper.py` implement direct local handoff.
+  Check admission before opening installed Chrome with a temporary owned TDM profile.
+  Use an explicit nonzero loopback CDP port (port zero changes navigator.webdriver), verify
+  the browser PID, and leave ordinary Chrome profiles untouched. Wait for Twitch login,
+  capture in memory via shared BrowserExporter/SDKAcquisition, send directly to the chosen
+  root URL without redirects, wait for verified acceptance, close Chrome and delete the
+  owned profile. No exported JSON/seed/connection files are written locally. Cancellation,
+  SIGTERM and SIGHUP must finish bounded cleanup. Forced process kill/power loss cannot
+  guarantee cleanup; never silently report successful cleanup if deletion failed.
+- Native console text lives in the top-level `helper` locale section and `HelperMessages`.
+  `packaging/login_helper.spec` bundles translations and dependencies. PyInstaller is a
+  pinned build-only dependency; build each target OS separately. CI builds and smoke-tests
+  Linux x64, macOS ARM64/x64 and Windows x64, including startup without Python on PATH.
+- Preserve strict bundle/header/cookie allowlists, private atomic file writes, same-account
+  renewal and accepted-catalog validation. Shared session/SDK primitives remain covered by
+  their focused tests. Legacy BrowserSession is retained only as an experimental library,
+  not selectable fresh login. Historical live evidence in docs/notes is not proof of a
+  changed integrated flow. Record fresh provider, expiry, restart and native build evidence
+  separately; never infer live drop progress from mocks or a Watching label.
+- New backend and lifecycle coverage is in test_helper_connection/api/lifecycle,
+  test_auth_task_cleanup and test_login_helper. Keep old Android cookie/restart coverage,
+  account precedence, stale admission, atomic failure, lost-ack, gate-closed renewal,
+  cancellation, redaction and owned-process/profile cleanup regressions.
 
 ### Dashboard authentication
 
@@ -452,8 +320,9 @@ progress to an ignored drop while the miner intentionally targets another reward
   session-token digests in `data/web_auth.json` using atomic replacement; corrupt state must
   fail closed. Never expose these credentials in settings, broadcasts, validation errors,
   logs, or cache operations. Use one miner process per data directory.
-- `AuthMiddleware` guards FastAPI and the outer Socket.IO ASGI app. Only login resources,
-  auth status, and `/healthz` are public when enabled. Unsafe HTTP requests require
+- `AuthMiddleware` guards FastAPI and the outer Socket.IO ASGI app. Login resources,
+  auth status, and `/healthz` are public when enabled; the three helper protocol routes
+  use independent helper admission as described above. Unsafe HTTP requests require
   `X-TDM-Request: 1`; writes and Socket.IO reject foreign origins. `DashboardOrigin` in
   `src/web/origin.py` owns the optional `PUBLIC_BASE_URL` startup configuration: one
   absolute HTTP(S) root URL supplies the allowed browser origin and cookie scheme even
@@ -709,7 +578,7 @@ The application uses a web-based interface accessible via browser:
 
 **src/web/app.py** - FastAPI application:
 
-- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/login`, `/api/oauth/confirm`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`, `/api/history`, `/api/history/export.csv`, `/api/history/stats`
+- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/helper/connect`, `/api/helper/session`, `/api/helper/result`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`, `/api/history`, `/api/history/export.csv`, `/api/history/stats`
 - Socket.IO server for real-time bi-directional communication
 - Serves static web frontend from `web/` directory
 - Integrates with WebGUIManager via `set_managers()`
@@ -750,7 +619,7 @@ The application uses a web-based interface accessible via browser:
 
 **Dockerfile:**
 
-- Based on `python:3`
+- Based on `python:3-alpine`, including Chromium for internal SDK renewal
 - Installs dependencies from `pyproject.toml`
 - Exposes port 8080
 - Health check on the public `/healthz` endpoint

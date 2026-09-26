@@ -1,4 +1,4 @@
-"""Device-login and saved-session regressions; no live Twitch requests."""
+"""Helper-only fresh login and saved Android regressions; no live requests."""
 
 from contextlib import asynccontextmanager
 from http.cookies import SimpleCookie
@@ -11,7 +11,7 @@ import pytest
 from src.auth import _AuthState
 from src.config import ClientType
 from src.core.client import Twitch
-from src.exceptions import LoginException
+from src.exceptions import ExitRequest
 
 
 class OAuthServer:
@@ -83,57 +83,44 @@ class OAuthServer:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("saved_session", ["fresh", "expired", "smartbox"])
-async def test_explicit_legacy_device_login_restores_sessions(tmp_path, monkeypatch, saved_session):
+async def test_fresh_expired_and_wrong_client_sessions_use_helper(tmp_path, monkeypatch, saved_session):
+    from src.auth.browser_session import BrowserIdentity
+
     cookie_path = tmp_path / "cookies.jar"
     monkeypatch.setattr("src.auth.auth_state.COOKIES_PATH", cookie_path)
     monkeypatch.setattr("src.core.client.DATA_DIR", tmp_path)
     client = Twitch(MagicMock())
-    # Exercise the legacy device-flow implementation with an explicit identity.
-    # The production default must preserve existing Android sessions (below).
-    client._client_type = ClientType.SMARTBOX
     client.gui = SimpleNamespace(
         login=SimpleNamespace(update=MagicMock(), ask_enter_code=AsyncMock())
     )
     jar = aiohttp.CookieJar()
-    if saved_session.startswith("android"):
-        cookies = SimpleCookie({"auth-token": "android-test-token"})
-        if saved_session == "android_domain":
-            cookies["auth-token"]["domain"] = ".twitch.tv"
-        jar.update_cookies(cookies, ClientType.ANDROID_APP.CLIENT_URL)
-    elif saved_session != "fresh":
+    if saved_session != "fresh":
         token = "expired-test-token" if saved_session == "expired" else "smartbox-test-token"
         jar.update_cookies({"auth-token": token}, ClientType.SMARTBOX.CLIENT_URL)
+    jar.save(cookie_path)
+    original = cookie_path.read_bytes()
     server = OAuthServer(jar)
     client.get_session = AsyncMock(return_value=SimpleNamespace(cookie_jar=jar))
     client.request = server.request
+    client._browser.authenticate = AsyncMock(
+        return_value=BrowserIdentity(42, "web-test-token", "browser-device", "Chrome")
+    )
 
     auth = await client._auth_state.validate()
 
-    assert auth.user_id == 12345
-    assert auth.access_token == "smartbox-test-token"
+    assert auth.user_id == 42
+    assert auth.access_token == "web-test-token"
     assert auth._logged_in.is_set()
-    assert server.device_requests == (0 if saved_session == "smartbox" else 1)
-    assert server.token_requests == (0 if saved_session == "smartbox" else 2)
-    assert client.gui.login.ask_enter_code.await_count == server.device_requests
+    assert server.device_requests == server.token_requests == 0
+    client.gui.login.ask_enter_code.assert_not_awaited()
+    client._browser.authenticate.assert_awaited_once()
+    assert cookie_path.read_bytes() == original
     headers = auth.headers(user_agent=client._client_type.USER_AGENT, gql=True)
-    assert headers["Client-Id"] == ClientType.SMARTBOX.CLIENT_ID
-    assert headers["Authorization"] == "OAuth smartbox-test-token"
+    assert headers["Client-Id"] == ClientType.WEB.CLIENT_ID
+    assert headers["Authorization"] == "OAuth web-test-token"
     client._ensure_api_clients()
     assert client._http_client._client_type is client._client_type
     assert client._gql_client._client_type is client._client_type
-
-    # A new process must reuse the saved Smart TV token without another prompt.
-    restored_jar = aiohttp.CookieJar()
-    restored_jar.load(cookie_path)
-    restored_server = OAuthServer(restored_jar)
-    client.get_session = AsyncMock(return_value=SimpleNamespace(cookie_jar=restored_jar))
-    client.request = restored_server.request
-    restored = await _AuthState(client).validate()
-    assert restored.user_id == 12345
-    assert restored.access_token == auth.access_token
-    assert restored_server.device_requests == 0
-    assert restored_server.validations == ["OAuth smartbox-test-token"]
-
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("domain_cookie", [False, True])
@@ -174,6 +161,7 @@ async def test_default_client_reuses_android_cookie_without_device_login(
     client.request = restored_server.request
     restored = await _AuthState(client).validate()
     assert restored.access_token == "android-test-token"
+    assert restored.device_id == auth.device_id
     assert restored_server.device_requests == 0
     assert restored_server.validations == ["OAuth android-test-token"]
 
@@ -195,7 +183,8 @@ async def test_client_mismatch_preserves_cookie_file_and_never_reauthorizes(tmp_
     client.get_session = AsyncMock(return_value=SimpleNamespace(cookie_jar=jar))
     client.request = server.request
 
-    with pytest.raises(LoginException, match="CLIENT_MISMATCH"):
+    client._browser.authenticate = AsyncMock(side_effect=ExitRequest())
+    with pytest.raises(ExitRequest):
         await client._auth_state.validate()
 
     assert cookie_path.read_bytes() == original
@@ -204,11 +193,12 @@ async def test_client_mismatch_preserves_cookie_file_and_never_reauthorizes(tmp_
         == "smartbox-test-token"
     )
     assert server.device_requests == 0
+    client._browser.authenticate.assert_awaited_once()
     assert not client._auth_state._logged_in.is_set()
 
 
 @pytest.mark.asyncio
-async def test_rejected_device_authorization_is_a_controlled_login_error(tmp_path, monkeypatch):
+async def test_fresh_login_waits_for_helper_without_device_authorization(tmp_path, monkeypatch):
     monkeypatch.setattr("src.auth.auth_state.COOKIES_PATH", tmp_path / "cookies.jar")
     monkeypatch.setattr("src.core.client.DATA_DIR", tmp_path)
     client = Twitch(MagicMock())
@@ -218,12 +208,14 @@ async def test_rejected_device_authorization_is_a_controlled_login_error(tmp_pat
     client.get_session = AsyncMock(return_value=SimpleNamespace(cookie_jar=jar))
     client.request = server.request
 
-    with pytest.raises(LoginException, match="DEVICE_AUTH_400"):
+    client._browser.authenticate = AsyncMock(side_effect=ExitRequest())
+    with pytest.raises(ExitRequest):
         await client._auth_state.validate()
 
-    assert server.device_requests == 1
+    assert server.device_requests == 0
     assert server.token_requests == 0
     assert not client._auth_state._logged_in.is_set()
+    client._browser.authenticate.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -241,11 +233,13 @@ async def test_browser_fallback_preserves_android_and_uses_browser_for_web_gql(
     client = Twitch(MagicMock())
     client.gui = SimpleNamespace(login=SimpleNamespace(update=MagicMock()))
     client._browser = SimpleNamespace(
+        status=lambda: {"generation": 0, "state": "waiting"},
         authenticate=AsyncMock(
             return_value=BrowserIdentity(12345, "web-test-token", "browser-device", "Chromium")
         ),
         gql=AsyncMock(return_value={"data": {"currentUser": {"id": "42"}}}),
     )
+    client.gui.login.get_status = lambda: {}
     jar = aiohttp.CookieJar()
     if saved_token:
         jar.update_cookies({"auth-token": saved_token}, ClientType.ANDROID_APP.CLIENT_URL)

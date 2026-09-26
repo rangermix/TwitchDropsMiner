@@ -3,6 +3,9 @@ services:
     build: .
     container_name: twitch-drops-miner
     image: twitch-drops-miner:latest
+    init: true
+    stop_grace_period: 30s
+    shm_size: 256m
     ports:
       - "8080:8080"
     volumes:

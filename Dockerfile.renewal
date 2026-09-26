@@ -2,7 +2,8 @@
 ARG TDM_IMAGE=tdm:local
 FROM ${TDM_IMAGE}
 
-# Optional helper only. The ordinary miner image and Python dependencies are unchanged.
+# Historical standalone experiment. Current TDM renews internally and removes the
+# external renewal route. Do not use this image with the new helper-assisted flow.
 RUN apk add --no-cache chromium
 HEALTHCHECK NONE
 ENTRYPOINT ["python", "-m", "src.auth.server_renewal"]

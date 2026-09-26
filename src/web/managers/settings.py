@@ -40,11 +40,13 @@ class SettingsManager:
         settings: Settings,
         console: ConsoleOutputManager,
         on_change: Callable[[], None] | None = None,
+        on_helper_change: Callable[[bool], None] | None = None,
     ):
         self._broadcaster = broadcaster
         self._settings = settings
         self._console = console
         self._on_change = on_change
+        self._on_helper_change = on_helper_change
         self._available_games: list[str] = []
 
     def get_settings(self, legacy_show_not_linked: bool | None = None) -> dict[str, Any]:
@@ -96,6 +98,13 @@ class SettingsManager:
             settings_data: Dictionary of settings to update
         """
         should_trigger_update = False
+        if "allow_helper_connection" in settings_data:
+            allowed = settings_data["allow_helper_connection"]
+            if type(allowed) is not bool:
+                raise ValueError("Invalid helper permission")
+            if self._on_helper_change is None:
+                raise ValueError("Helper permission unavailable")
+            self._on_helper_change(allowed)
         should_trigger_update |= self.check_and_update_setting(
             "games_to_watch", settings_data.get("games_to_watch"), True
         )

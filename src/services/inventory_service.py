@@ -167,11 +167,11 @@ class InventoryService:
                 chunk_campaigns_data = await coro
                 # merge the inventory and campaigns datas together
                 inventory_data = GQLClient.merge_data(inventory_data, chunk_campaigns_data)
-        except Exception:
-            # asyncio.as_completed doesn't cancel tasks on errors
+        finally:
+            # as_completed does not own children, including on parent cancellation.
             for task in fetch_campaigns_tasks:
                 task.cancel()
-            raise
+            await asyncio.gather(*fetch_campaigns_tasks, return_exceptions=True)
 
         # filter out invalid campaigns
         for campaign_id in list(inventory_data.keys()):
@@ -222,11 +222,10 @@ class InventoryService:
 
                 if self._twitch._state == State.EXIT:
                     raise ExitRequest()
-        except Exception:
-            # asyncio.as_completed doesn't cancel tasks on errors
+        finally:
             for task in add_campaign_tasks:
                 task.cancel()
-            raise
+            await asyncio.gather(*add_campaign_tasks, return_exceptions=True)
 
         self._twitch._mnt_triggers.extend(sorted(switch_triggers))
 

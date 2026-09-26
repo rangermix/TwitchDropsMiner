@@ -86,6 +86,13 @@ class TestDashboardAuth:
             if not path.startswith("/api/") or path in ("/api/auth/status", "/api/auth/login"):
                 continue
             for method in operations:
+                # Helper protocol uses its own explicit admission gate; production
+                # middleware coverage for both dashboard modes is in test_helper_api.
+                if (method, path) in {
+                    ("post", "/api/helper/connect"), ("post", "/api/helper/session"),
+                    ("get", "/api/helper/result"),
+                }:
+                    continue
                 response = protected.request(method, path)
                 assert response.status_code == 401, (method, path)
         for path in ("/docs", "/openapi.json", "/static/app.js", "/socket.io/?EIO=4&transport=polling"):

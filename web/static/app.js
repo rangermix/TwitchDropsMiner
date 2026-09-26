@@ -176,6 +176,7 @@ const socket = io({
 socket.on('connect', () => {
     console.log('Connected to server');
     state.connected = true;
+    globalThis.helperLoginPanel?.load();
     const connText = state.translations.gui?.websocket?.connected || 'Connected';
     document.getElementById('connection-indicator').textContent = '● ' + connText;
     document.getElementById('connection-indicator').className = 'connected';
@@ -225,7 +226,7 @@ socket.on('initial_state', (data) => {
         }
     }
 
-    if (data.settings) updateSettingsUI(data.settings);
+    if (data.settings) updateSettingsUI(data.settings, true);
     if (data.login) updateLoginStatus(data.login);
     if (data.manual_mode) updateManualModeUI(data.manual_mode);
     // Restore current drop progress if it exists
@@ -310,26 +311,16 @@ socket.on('drop_update', (data) => {
     updateDrop(data.campaign_id, data.drop, data.campaign, data.drops);
 });
 
-socket.on('login_required', () => {
-    showLoginForm();
-});
-
-socket.on('oauth_code_required', (data) => {
-    showOAuthCode(data.url, data.code);
-});
-
 socket.on('login_status', (data) => {
     updateLoginStatus(data);
 });
 
-socket.on('login_clear', (data) => {
-    if (data.login) document.getElementById('username').value = '';
-    if (data.password) document.getElementById('password').value = '';
-    if (data.token) document.getElementById('2fa-token').value = '';
+socket.on('helper_status', (data) => {
+    globalThis.helperLoginPanel?.updateStatus(data);
 });
 
 socket.on('settings_updated', (data) => {
-    updateSettingsUI(data);
+    updateSettingsUI(data, true);
 });
 
 socket.on('games_available', (data) => {
@@ -1136,67 +1127,26 @@ function renderInventory() {
     });
 }
 
-function showLoginForm() {
-    document.getElementById('browser-login').hidden = true;
-    document.getElementById('login-form').style.display = 'block';
-    document.getElementById('oauth-code-display').style.display = 'none';
-}
-
-function showOAuthCode(url, code) {
-    document.getElementById('browser-login').hidden = true;
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('oauth-code-display').style.display = 'block';
-    document.getElementById('oauth-url').href = url;
-    document.getElementById('oauth-code').textContent = code;
-}
-
-function showBrowserLogin(url, desktop = false) {
-    const panel = document.getElementById('browser-login');
-    const link = document.getElementById('browser-login-link');
-    panel.hidden = true;
-    state.browserDesktop = desktop === true;
-    link.hidden = state.browserDesktop;
-    link.removeAttribute('href');
-    if (!url && !state.browserDesktop) return;
-    let parsed;
-    if (!state.browserDesktop) {
-        try { parsed = new URL(url); } catch { return; }
-        if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) return;
-        link.href = parsed.href;
-    }
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('oauth-code-display').style.display = 'none';
-    const promptKey = state.browserDesktop ? 'browser_desktop_prompt' : 'browser_prompt';
-    document.getElementById('browser-login-prompt').textContent = state.translations.gui?.login?.[promptKey] || '';
-    link.textContent = state.translations.gui?.login?.browser_open || '';
-    panel.hidden = false;
-}
-
 function updateLoginStatus(data) {
-    showBrowserLogin(data.user_id ? null : data.browser_url, !data.user_id && data.browser_desktop);
+    state.login = data;
     const statusEl = document.getElementById('login-status');
     const t = state.translations;
     if (data.user_id) {
         const userIdLabel = t.gui?.login?.user_id_label || 'User ID:';
-        statusEl.textContent = `${data.status} (${userIdLabel} ${data.user_id})`;
-        statusEl.removeAttribute('translation-key');
+        const loggedIn = t.login?.status?.logged_in || 'Logged in';
+        statusEl.textContent = `${loggedIn} (${userIdLabel} ${data.user_id})`;
         statusEl.style.color = 'var(--success-color)';
-        document.getElementById('login-form').style.display = 'none';
-        document.getElementById('oauth-code-display').style.display = 'none';
     } else {
-        const loggedOut = t.gui?.login?.logged_out || 'Not logged in';
-        statusEl.textContent = data.status || loggedOut;
-        statusEl.setAttribute('translation-key', 'logged_out');
+        statusEl.textContent = t.login?.status?.required || 'Login required';
         statusEl.style.color = 'var(--text-secondary)';
-        // Check if OAuth is pending (for late-connecting clients)
-        if (data.oauth_pending) {
-            showOAuthCode(data.oauth_pending.url, data.oauth_pending.code);
-        }
     }
+    globalThis.helperLoginPanel?.updateLogin(data);
 }
 
-function updateSettingsUI(settings) {
+function updateSettingsUI(settings, syncHelperGate = false) {
     state.settings = settings;
+    // Only live settings events own the gate; unrelated HTTP replies may be stale.
+    if (syncHelperGate) globalThis.helperLoginPanel?.updateSettings(settings);
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('inventory-list-view').checked = settings.inventory_list_view || false;
     applyInventoryViewMode(settings.inventory_list_view || false);
@@ -1702,40 +1652,6 @@ async function exitManualMode() {
     }
 }
 
-async function submitLogin() {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const token = document.getElementById('2fa-token').value;
-
-    try {
-        await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, token })
-        });
-    } catch (error) {
-        console.error('Failed to submit login:', error);
-    }
-}
-
-async function confirmOAuth() {
-    // Signal that OAuth code has been entered
-    try {
-        await fetch('/api/oauth/confirm', {
-            method: 'POST'
-        });
-        // Hide the OAuth form and show waiting message
-        document.getElementById('oauth-code-display').style.display = 'none';
-        const t = state.translations;
-        const waitingAuth = t.gui?.login?.waiting_auth || 'Waiting for authentication...';
-        const loginStatus = document.getElementById('login-status');
-        loginStatus.textContent = waitingAuth;
-        loginStatus.setAttribute('translation-key', 'waiting_auth');
-    } catch (error) {
-        console.error('Failed to confirm OAuth:', error);
-    }
-}
-
 async function verifyProxy() {
     const proxyInput = document.getElementById('proxy-url');
     const proxyUrl = proxyInput ? proxyInput.value.trim() : '';
@@ -1978,7 +1894,7 @@ async function fetchAndApplyTranslations() {
 }
 
 function applyTranslations(t) {
-    globalThis.sessionImportPanel?.render();
+    globalThis.helperLoginPanel?.render();
     translateHistory();
     // Update tab buttons
     const tabButtons = {
@@ -2001,41 +1917,7 @@ function applyTranslations(t) {
         const loginHeader = mainTab.querySelector('.login-panel h2');
         if (loginHeader) loginHeader.textContent = t.gui.login.name;
 
-        const loginStatus = document.getElementById('login-status');
-        if (loginStatus?.hasAttribute('translation-key')) loginStatus.textContent = t.login?.status?.[loginStatus.getAttribute('translation-key')];
-
-        // Update login form placeholders
-        const usernameInput = document.getElementById('username');
-        if (usernameInput) usernameInput.placeholder = t.gui.login.username;
-
-        const passwordInput = document.getElementById('password');
-        if (passwordInput) passwordInput.placeholder = t.gui.login.password;
-
-        const twofaInput = document.getElementById('2fa-token');
-        if (twofaInput) twofaInput.placeholder = t.gui.login.twofa_code;
-
-        const loginButton = document.getElementById('login-button');
-        if (loginButton) loginButton.textContent = t.gui.login.button;
-        document.getElementById('browser-login-prompt').textContent = state.browserDesktop
-            ? t.gui.login.browser_desktop_prompt : t.gui.login.browser_prompt;
-        document.getElementById('browser-login-link').textContent = t.gui.login.browser_open;
-
-        // Update OAuth display text
-        const oauthDisplay = document.getElementById('oauth-code-display');
-        if (oauthDisplay) {
-            const oauthP = oauthDisplay.querySelector('p');
-            if (oauthP) {
-                const link = oauthP.querySelector('a');
-                if (link) {
-                    oauthP.textContent = t.gui.login.oauth_prompt + ' ';
-                    link.textContent = t.gui.login.oauth_activate;
-                    oauthP.appendChild(link);
-                }
-            }
-
-            const oauthConfirmBtn = document.getElementById('oauth-confirm');
-            if (oauthConfirmBtn) oauthConfirmBtn.textContent = t.gui.login.oauth_confirm;
-        }
+        if (state.login) updateLoginStatus(state.login);
     }
 
     // Update Progress section
@@ -2415,10 +2297,6 @@ document.addEventListener('DOMContentLoaded', () => {
             switchTab(button.dataset.tab);
         });
     });
-
-    // Login form
-    document.getElementById('login-button').addEventListener('click', submitLogin);
-    document.getElementById('oauth-confirm').addEventListener('click', confirmOAuth);
 
     // Settings - auto-save on change
     document.getElementById('dark-mode').addEventListener('change', (e) => {

@@ -20,6 +20,23 @@ from src.auth.session_bundle import PrivateSessionFile, SessionError
 from tests.test_server_seed import seed_data
 
 
+@pytest.mark.asyncio
+async def test_initial_server_proof_accepts_fresh_shorter_expiry_but_renewal_does_not():
+    from src.auth.server_renewal import SDKIssuer
+
+    data = seed_data()
+    data["bundle"]["expires_at"] = 8200
+    original = ServerSeed.from_dict(data, now=1000)
+    async with sdk_peer() as (browser, commands, closed, state):
+        issuer = SDKIssuer(browser, clock=lambda: 1000)
+        with pytest.raises(SessionError, match="REPLAY"):
+            await issuer.issue(original)
+        replacement = await issuer.issue(original, initial=True)
+        assert replacement.bundle.expires_at == 5600
+        assert replacement.bundle.headers["client-integrity"] != original.bundle.headers["client-integrity"]
+        assert not state["running"]
+
+
 @asynccontextmanager
 async def sdk_peer(*, fault=None, sdk_started=None):
     commands, closed, address = [], [], []

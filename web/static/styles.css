@@ -283,45 +283,42 @@ header h1 {
     grid-row: 3;
 }
 
-/* Login */
-#login-form input {
-    display: block;
+/* Helper login */
+.helper-login-steps {
+    padding-left: 1.5rem;
+    margin: 14px 0;
+    line-height: 1.5;
+}
+
+.helper-login-steps li + li {
+    margin-top: 6px;
+}
+
+.helper-instance-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+#helper-instance-url {
+    flex: 1 1 220px;
+    min-width: 0;
     width: 100%;
     padding: 10px;
-    margin-bottom: 10px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     background: var(--bg-secondary);
     color: var(--text-primary);
 }
 
-#login-form button,
-#oauth-confirm {
-    width: 100%;
-    padding: 12px;
-    background: var(--accent-color);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
+#helper-login-panel p {
+    margin: 10px 0;
+    overflow-wrap: anywhere;
 }
 
-#login-form button:hover,
-#oauth-confirm:hover {
-    opacity: 0.9;
-}
-
-.oauth-code {
-    font-size: 32px;
-    font-weight: bold;
-    text-align: center;
-    padding: 20px;
-    background: var(--bg-secondary);
-    border-radius: 8px;
-    margin: 15px 0;
-    letter-spacing: 4px;
+#helper-login-panel [hidden] {
+    display: none;
 }
 
 /* Drop Progress */
@@ -1686,12 +1683,6 @@ header h1 {
 
     .mode-badge {
         margin-left: 0;
-    }
-
-    .oauth-code {
-        font-size: 22px;
-        letter-spacing: 2px;
-        padding: 15px;
     }
 
     .tabs {

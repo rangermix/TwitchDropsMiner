@@ -59,32 +59,27 @@
                 <section class="panel login-panel">
                     <h2>Login</h2>
                     <div id="login-status" class="login-status"></div>
-                    <div id="browser-login" hidden>
-                        <p id="browser-login-prompt"></p>
-                        <a id="browser-login-link" target="_blank" rel="noopener noreferrer"></a>
-                    </div>
-                    <div id="session-import-panel" hidden>
-                        <h3 id="session-import-title"></h3>
-                        <p id="session-import-prompt"></p>
-                        <label id="session-import-file-label" for="session-import-file"></label>
-                        <input type="file" id="session-import-file" accept=".json,application/json" disabled />
-                        <button id="session-import-button" class="action-button primary" disabled></button>
-                        <p id="session-import-status" role="status" aria-live="polite"></p>
-                        <p id="session-import-pair-hint"></p>
-                        <button id="session-import-pair" class="action-button" disabled></button>
-                        <button id="session-import-revoke" class="action-button" disabled></button>
-                        <p id="session-import-renewal-status" role="status" aria-live="polite"></p>
-                    </div>
-                    <div id="login-form" style="display: none;">
-                        <input type="text" id="username" placeholder="Username" />
-                        <input type="password" id="password" placeholder="Password" />
-                        <input type="text" id="2fa-token" placeholder="2FA Token (optional)" />
-                        <button id="login-button">Login</button>
-                    </div>
-                    <div id="oauth-code-display" style="display: none;">
-                        <p>Enter this code at: <a id="oauth-url" href="#" target="_blank">Twitch Activate</a></p>
-                        <div class="oauth-code" id="oauth-code"></div>
-                        <button id="oauth-confirm">I've entered the code</button>
+                    <div id="helper-login-panel">
+                        <p id="helper-session-status" role="status" aria-live="polite"></p>
+                        <p id="helper-gate-status" class="help-text"></p>
+                        <button id="helper-status-retry" type="button" class="action-button" hidden>Retry status</button>
+                        <div id="helper-login-instructions">
+                            <ol class="helper-login-steps">
+                                <li id="helper-step-download">Download and run the TDM login helper on your computer.</li>
+                                <li id="helper-step-instance">Enter this TDM instance address in the helper.</li>
+                                <li id="helper-step-chrome">Sign in to Twitch in the Chrome window opened by the helper.</li>
+                                <li id="helper-step-finish">The helper sends the login to TDM automatically. Wait for its result.</li>
+                            </ol>
+                            <p><a id="helper-download" href="https://github.com/rangermix/TwitchDropsMiner/actions/workflows/login-helper.yml" target="_blank" rel="noopener noreferrer">Helper builds for Linux, macOS and Windows</a></p>
+                            <p id="helper-builds-note" class="help-text">Downloads are build artifacts in the native helper workflow. Release downloads are not published yet.</p>
+                            <label id="helper-instance-label" for="helper-instance-url">This TDM instance</label>
+                            <div class="helper-instance-row">
+                                <input id="helper-instance-url" type="text" readonly spellcheck="false" autocomplete="off">
+                                <button id="helper-copy-instance" type="button" class="action-button">Copy address</button>
+                            </div>
+                            <p id="helper-copy-result" class="help-text" role="status" aria-live="polite"></p>
+                        </div>
+                        <p id="helper-renewal-status" class="help-text" role="status" aria-live="polite"></p>
                     </div>
                 </section>
 
@@ -218,6 +213,15 @@
                         <button id="web-auth-disable" class="auth-secondary" type="button" data-auth-text="disable" hidden>Disable protection and clear password</button>
                         <p id="web-auth-result" role="status" aria-live="polite"></p>
                     </form>
+                </section>
+                <section class="settings-section">
+                    <h2 id="helper-settings-title">Twitch login helper</h2>
+                    <label for="allow-helper-connection">
+                        <input id="allow-helper-connection" type="checkbox" checked disabled aria-describedby="helper-setting-help helper-setting-result">
+                        <span id="allow-helper-connection-label">Allow helper connection</span>
+                    </label>
+                    <p id="helper-setting-help" class="help-text">Allow the helper to log in or replace the Twitch account. This turns off after a successful login. Automatic renewal continues while it is off.</p>
+                    <p id="helper-setting-result" role="status" aria-live="polite"></p>
                 </section>
                 <section class="settings-section">
                     <h2 id="settings-general-header">General</h2>
@@ -548,7 +552,7 @@
     </div>
 
     <script src="/static/app.js?v=__APP_VERSION__"></script>
-    <script src="/static/session-import.js?v=__APP_VERSION__"></script>
+    <script src="/static/helper-login.js?v=__APP_VERSION__"></script>
 </body>
 
 </html>

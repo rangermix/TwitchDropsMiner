@@ -1,17 +1,14 @@
-"""Local browser session export and renewal helper (never a password collector)."""
+"""In-memory capture of verified browser context for the direct login helper."""
 
 from __future__ import annotations
 
-import argparse
 import asyncio
 import base64
 import json
 import re
-import tempfile
 import time
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager, suppress
-from pathlib import Path
 from typing import Any
 
 import aiohttp
@@ -19,7 +16,7 @@ from yarl import URL
 
 from src.auth.browser_session import BrowserSession
 from src.auth.server_seed import SDKCookie, ServerSeed
-from src.auth.session_bundle import PrivateSessionFile, SessionBundle, SessionError
+from src.auth.session_bundle import SessionBundle, SessionError
 from src.config import ClientType
 
 
@@ -350,78 +347,7 @@ class BrowserExporter:
             raise SessionError("CAPTURE_TIMEOUT") from None
 
 
-class SessionHelper:
-    @staticmethod
-    def check_export_paths(output: str, seed: str) -> None:
-        """Reject aliases before capture without modifying existing export files."""
-        try:
-            first, second = Path(output).resolve(), Path(seed).resolve()
-            if first == second or first.is_dir() or second.is_dir():
-                raise ValueError
-            if first.exists() and second.exists() and first.samefile(second):
-                raise ValueError
-            for path in (first, second):
-                path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-            if first.parent.samefile(second.parent):
-                # Probe the destination filesystem's case/Unicode equivalence, including
-                # names that do not exist yet. Exclusive creation cannot truncate data.
-                with tempfile.TemporaryDirectory(prefix=".tdm-export-", dir=first.parent) as probe:
-                    (Path(probe) / first.name).touch(exist_ok=False)
-                    (Path(probe) / second.name).touch(exist_ok=False)
-        except (OSError, ValueError, RuntimeError):
-            raise SessionError("OUTPUT_PATH") from None
-
-    @staticmethod
-    async def run(args: argparse.Namespace) -> None:
-        if args.command == "renew":
-            from src.auth.session_renewal import RenewalConnection, RenewalLoop, RenewalSender
-
-            connection = RenewalConnection.from_dict(PrivateSessionFile(Path(args.connection)).read())
-            await RenewalLoop(BrowserExporter(args.browser), RenewalSender(connection),
-                              renew_before=args.renew_before).run()
-        else:
-            seed_path = getattr(args, "server_seed", None)
-            if seed_path:
-                SessionHelper.check_export_paths(args.output, seed_path)
-            exporter = BrowserExporter(args.browser)
-            seed = None
-            if seed_path:
-                seed = await exporter.capture_seed()
-                # Validate the combined envelope before creating either export.
-                seed = ServerSeed.from_dict(seed.to_dict())
-                bundle = seed.bundle
-            else:
-                bundle = await exporter.capture()
-            now = time.time()
-            bundle.require_fresh(now)
-            if seed is not None:
-                seed.cookie.require_fresh(now)
-                assert seed_path is not None
-                PrivateSessionFile(Path(seed_path)).write(seed.to_dict())
-            PrivateSessionFile(Path(args.output)).write(bundle.to_dict())
-            print(json.dumps({"success": True, "expires_at": bundle.expires_at}))
-
-    @staticmethod
-    def main() -> None:
-        parser = argparse.ArgumentParser(description="Export Twitch context from a dedicated local Chrome profile.")
-        commands = parser.add_subparsers(dest="command", required=True)
-        export = commands.add_parser("export")
-        export.add_argument("--browser", required=True)
-        export.add_argument("--output", required=True)
-        export.add_argument("--server-seed", help="Also save a private SDK cookie seed for server renewal.")
-        renew = commands.add_parser("renew")
-        renew.add_argument("--browser", required=True)
-        renew.add_argument("--connection", required=True)
-        renew.add_argument("--renew-before", type=int, default=300,
-                           help="Refresh this many seconds before expiry (30–3600; default 300).")
-        args = parser.parse_args()
-        try:
-            asyncio.run(SessionHelper.run(args))
-        except SessionError as error:
-            parser.exit(1, f"SESSION_{error.code}\n")
-        except KeyboardInterrupt:
-            parser.exit(130)
-
-
 if __name__ == "__main__":
-    SessionHelper.main()
+    from src.auth.login_helper import LoginHelperCLI
+
+    LoginHelperCLI.main()

@@ -1,4 +1,4 @@
-"""Validated browser context imported into a browser-free TDM process."""
+"""Validated browser context with atomic TDM-owned session and renewal state."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 import aiohttp
 
 from src.auth.browser_session import BrowserIdentity, BrowserSession
+from src.auth.server_seed import SDKCookie, ServerSeed
 from src.auth.session_bundle import PrivateSessionFile, SessionBundle, SessionError
 from src.config import GQL_OPERATIONS, ClientType
 from src.exceptions import ExitRequest, LoginException
@@ -106,6 +107,11 @@ class ImportedSession:
         self._generation = 0
         self._revision = 0
         self._renewal_digest = ""
+        self._sdk_cookie: SDKCookie | None = None
+        self.helper_allowed = True
+        self.helper_epoch = 0
+        self._helper_receipt: dict[str, Any] = {}
+        self.on_renewal_needed: Callable[[], None] = lambda: None
         self._lock = asyncio.Lock()
         self._updated = asyncio.Event()
         self._stopping = False
@@ -116,17 +122,46 @@ class ImportedSession:
             state = self._file.read()
             try:
                 if (
-                    not isinstance(state, dict) or state.get("version") != 1
-                    or type(state["user_id"]) is not int or state["user_id"] <= 0
-                    or type(state["generation"]) is not int or state["generation"] < 1
+                    not isinstance(state, dict) or state.get("version") not in (1, 2)
+                    or type(state["generation"]) is not int or state["generation"] < 0
                     or not isinstance(state.get("renewal_digest", ""), str)
                     or not re.fullmatch(r"(?:[0-9a-f]{64})?", state.get("renewal_digest", ""))
                 ):
                     raise ValueError
-                self._bundle = SessionBundle.from_dict(state["bundle"], now=clock())
+                if state["bundle"] is None:
+                    if state.get("version") != 2 or state["user_id"] is not None or state["generation"] != 0:
+                        raise ValueError
+                else:
+                    if type(state["user_id"]) is not int or state["user_id"] <= 0 or state["generation"] < 1:
+                        raise ValueError
+                    self._bundle = SessionBundle.from_dict(state["bundle"], now=clock())
                 self._user_id, self._generation = state["user_id"], state["generation"]
                 self._renewal_digest = state.get("renewal_digest", "")
-                self._restore_pending = True
+                if state.get("version") == 2:
+                    if (type(state.get("helper_allowed")) is not bool
+                            or type(state.get("helper_epoch")) is not int or state["helper_epoch"] < 0):
+                        raise ValueError
+                    self.helper_allowed, self.helper_epoch = state["helper_allowed"], state["helper_epoch"]
+                    cookie = state.get("sdk_cookie")
+                    if cookie is not None:
+                        if self._bundle is None:
+                            raise ValueError
+                        self._sdk_cookie = SDKCookie.from_dict(cookie)
+                    receipt = state.get("helper_receipt", {})
+                    if not isinstance(receipt, dict):
+                        raise ValueError
+                    if receipt and (set(receipt) != {"connection_digest", "expires_at", "user_id", "generation", "session_expires_at"}
+                            or not isinstance(receipt["connection_digest"], str)
+                            or not re.fullmatch(r"[0-9a-f]{64}", receipt["connection_digest"])
+                            or any(type(receipt[key]) is not int or receipt[key] <= 0 for key in ("user_id", "generation"))
+                            or any(type(receipt[key]) not in (int, float) or not 0 < receipt[key] < float("inf")
+                                   for key in ("expires_at", "session_expires_at"))):
+                        raise ValueError
+                    self._helper_receipt = receipt
+                else:
+                    # Migrated accepted sessions are closed until the setting is enabled.
+                    self.helper_allowed = False
+                self._restore_pending = self._bundle is not None
             except (KeyError, TypeError, ValueError, SessionError):
                 raise SessionError("FILE") from None
 
@@ -154,11 +189,44 @@ class ImportedSession:
             "paired": bool(self._renewal_digest),
         }
 
-    def _save(self, bundle: SessionBundle, user_id: int, generation: int, digest: str) -> None:
-        self._file.write({
-            "version": 1, "bundle": bundle.to_dict(), "user_id": user_id,
+    def _save(self, bundle: SessionBundle | None, user_id: int | None, generation: int,
+              digest: str, **changes: Any) -> None:
+        state = {
+            "version": 2, "bundle": bundle.to_dict() if bundle is not None else None, "user_id": user_id,
             "generation": generation, "renewal_digest": digest,
-        })
+            "sdk_cookie": self._sdk_cookie.to_dict() if self._sdk_cookie else None,
+            "helper_allowed": self.helper_allowed, "helper_epoch": self.helper_epoch,
+            "helper_receipt": self._helper_receipt,
+        }
+        state.update(changes)
+        self._file.write(state)
+
+    def set_helper_allowed(self, allowed: bool) -> None:
+        """Persist admission with the session so accepting login closes it atomically."""
+        if type(allowed) is not bool:
+            raise SessionError("CONFIG")
+        if allowed == self.helper_allowed:
+            return
+        epoch = self.helper_epoch + 1
+        self._save(self._bundle, self._user_id, self._generation, self._renewal_digest,
+                   helper_allowed=allowed, helper_epoch=epoch, helper_receipt={})
+        self.helper_allowed, self.helper_epoch, self._helper_receipt = allowed, epoch, {}
+        self._revision += 1
+
+    def seed(self) -> ServerSeed | None:
+        """Internal renewal input; never include it in dashboard status."""
+        if self._bundle is None or self._sdk_cookie is None:
+            return None
+        return ServerSeed(self._bundle, self._sdk_cookie)
+
+    def helper_result(self, digest: str) -> dict[str, Any] | None:
+        receipt = self._helper_receipt
+        if not receipt or receipt["expires_at"] <= self._clock() or not secrets.compare_digest(receipt["connection_digest"], digest):
+            return None
+        return {"success": True, "allow_helper_connection": False, "session": {
+            "state": "ready", "user_id": receipt["user_id"], "generation": receipt["generation"],
+            "expires_at": receipt["session_expires_at"],
+        }}
 
     def _check_renewal(self, token: str) -> None:
         if (not re.fullmatch(r"[A-Za-z0-9_-]{43}", token) or not self._renewal_digest
@@ -201,6 +269,8 @@ class ImportedSession:
     async def install(
         self, data: Any, *, expected_user_id: int | None = None,
         renewal_token: str | None = None, authorized: Callable[[], bool] = lambda: True,
+        sdk_cookie: SDKCookie | None = None, replace: bool = False,
+        helper_receipt: tuple[str, float] | None = None,
     ) -> dict[str, Any]:
         bundle = SessionBundle.from_dict(data, now=self._clock())
         async with self._lock:
@@ -210,15 +280,18 @@ class ImportedSession:
                 raise SessionError("AUTH")
             if renewal_token is not None:
                 self._check_renewal(renewal_token)
-            existing_account = self._bound_account()
+            existing_account = None if replace else self._bound_account()
             if existing_account is not None:
                 if expected_user_id not in (None, existing_account):
                     raise SessionError("ACCOUNT_MISMATCH")
                 expected_user_id = existing_account
-            if self._user_id is not None and expected_user_id not in (None, self._user_id):
+            if not replace and self._user_id is not None and expected_user_id not in (None, self._user_id):
                 raise SessionError("ACCOUNT_MISMATCH")
-            self._check_candidate(bundle)
-            account, revision = self._user_id or expected_user_id, self._revision
+            if replace:
+                bundle.require_fresh(self._clock())
+            else:
+                self._check_candidate(bundle)
+            account, revision = expected_user_id if replace else self._user_id or expected_user_id, self._revision
         # Do not hold the state lock while contacting Twitch: revoke/rotate must win.
         identity = await self._transport.validate(bundle, account)
         async with self._lock:
@@ -230,16 +303,36 @@ class ImportedSession:
                 self._check_renewal(renewal_token)
             if revision != self._revision:
                 raise SessionError("STALE")
-            self._check_candidate(bundle)
-            if self._bound_account() not in (None, identity.user_id):
+            if replace:
+                bundle.require_fresh(self._clock())
+            else:
+                self._check_candidate(bundle)
+            if not replace and self._bound_account() not in (None, identity.user_id):
                 raise SessionError("ACCOUNT_MISMATCH")
+            if sdk_cookie is not None:
+                sdk_cookie.require_fresh(self._clock())
             generation = self._generation + 1
-            self._save(bundle, identity.user_id, generation, self._renewal_digest)
+            receipt = self._helper_receipt
+            if helper_receipt is not None:
+                receipt = {"connection_digest": helper_receipt[0], "expires_at": helper_receipt[1],
+                           "user_id": identity.user_id, "generation": generation, "session_expires_at": bundle.expires_at}
+            allowed = False if replace else self.helper_allowed
+            epoch = self.helper_epoch + 1 if replace else self.helper_epoch
+            cookie = sdk_cookie or self._sdk_cookie
+            digest = "" if replace else self._renewal_digest
+            self._save(bundle, identity.user_id, generation, digest,
+                       sdk_cookie=cookie.to_dict() if cookie else None,
+                       helper_allowed=allowed, helper_epoch=epoch, helper_receipt=receipt)
             self._bundle, self._identity = bundle, identity
             self._user_id, self._generation = identity.user_id, generation
+            self._sdk_cookie, self._renewal_digest = cookie, digest
+            self.helper_allowed, self.helper_epoch, self._helper_receipt = allowed, epoch, receipt
+            if replace:
+                self._expected_user_id = identity.user_id
             self._revision += 1
             self._restore_pending = self._rejected = False
-            self._on_identity(identity)
+            if not replace:
+                self._on_identity(identity)
             self._updated.set()
             return self.status()
 
@@ -269,6 +362,7 @@ class ImportedSession:
                 if not pending:
                     await login.import_pending(True)
                     pending = True
+                self.on_renewal_needed()
                 await self._updated.wait()
             raise ExitRequest()
         finally:

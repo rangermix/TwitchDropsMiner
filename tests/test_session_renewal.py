@@ -98,39 +98,28 @@ async def test_renewal_validates_identity_catalog_and_updates_waiting_consumer(t
     assert token not in session.path.read_text()
 
 
-def test_renewal_api_bearer_scope_and_dashboard_guards(api):
-    from tests.test_session_api import authorize
+def test_legacy_renewal_bearer_cannot_bypass_new_gate_or_dashboard(api):
+    from tests.test_helper_api import enable_dashboard_auth
+    from tests.test_helper_connection import seed
 
-    browser, session = api
-    authorize(browser)
-    assert browser.post('/api/session/import', json=bundle_data()).status_code == 200
-    result = browser.post('/api/session/pair')
-    assert result.status_code == 200
-    connection = result.json()
-    assert connection['endpoint'] == 'http://testserver/api/session/renew'
-    token = connection['credential']
-    assert token not in browser.get('/api/session').text
-    browser.cookies.clear()
-    bearer = {'Authorization': 'Bearer ' + token}
-    assert browser.get('/api/settings', headers=bearer).status_code == 401
-    assert browser.post('/api/session/import', json=bundle_data(), headers=bearer).status_code == 401
-    assert browser.post('/api/session/pair', headers=bearer).status_code == 401
-    assert browser.post('/api/session/renew', json=bundle_data(), headers={'Authorization': 'Bearer wrong'}).status_code == 401
-    assert browser.post('/api/session/renew', json=bundle_data(), headers={**bearer, 'Origin': 'https://evil.test'}).status_code == 403
-    assert browser.post('/api/session/renew', json=bundle_data(), headers={**bearer, 'X-TDM-Request': '0'}).status_code == 403
-    session._clock = lambda: 1100
-    from tests.test_imported_session import transport
-
-    session._transport = transport()
-    response = browser.post('/api/session/renew', json=bundle_data(1100, 'fresh'), headers=bearer)
-    assert response.status_code == 200
-    assert response.json()['session']['generation'] == 2
-    assert token not in response.text
-    assert 'test-token' not in response.text
+    browser, helper, settings = api
+    session = helper.session
+    asyncio.run(session.install(bundle_data()))
+    old_credential = asyncio.run(session.pair())
+    helper.set_allowed(False)
+    enable_dashboard_auth(browser)
+    bearer = {"Authorization": "Bearer " + old_credential}
+    assert browser.get("/api/settings", headers=bearer).status_code == 401
+    assert browser.get("/api/session", headers=bearer).status_code == 401
+    assert browser.post("/api/helper/connect", json={}).status_code == 403
+    response = browser.post("/api/helper/session", json=seed().to_dict(), headers=bearer)
+    assert response.status_code == 403
+    assert old_credential not in response.text
+    assert session.status()["generation"] == 1
 
 
 # Use the production-ASGI fixture for renewal boundary tests as well.
-from tests.test_session_api import api  # noqa: E402,F401
+from tests.test_helper_api import api  # noqa: E402,F401
 
 
 @pytest.mark.asyncio

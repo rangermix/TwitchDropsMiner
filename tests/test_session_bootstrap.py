@@ -91,11 +91,8 @@ async def test_bootstrap_wrong_account_closes_transport_and_returns_no_seed(monk
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("phase", ["context_disposal", "validation"])
-async def test_bootstrap_expiring_before_export_preserves_existing_files(monkeypatch, tmp_path, phase):
-    from argparse import Namespace
-
+async def test_bootstrap_expiring_before_handoff_is_rejected(monkeypatch, phase):
     from src.auth.imported_session import SessionTransport
-    from src.auth.session_helper import SessionHelper
 
     clock, validations = [1000], []
 
@@ -117,13 +114,8 @@ async def test_bootstrap_expiring_before_export_preserves_existing_files(monkeyp
         monkeypatch.setattr(BrowserExporter, "isolated_target", isolated)
         async with devtools(sdk_cookie=False) as (address, _closed, _commands):
             exporter = BrowserExporter(address, clock=lambda: clock[0], timeout=1)
-            monkeypatch.setattr("src.auth.session_helper.BrowserExporter", lambda _address: exporter)
-            output, seed = tmp_path / "session.json", tmp_path / "seed.json"
-            for path in (output, seed):
-                path.write_text("previous export")
             with pytest.raises(SessionError, match="EXPIRED"):
-                await SessionHelper.run(Namespace(command="export", browser=address, output=str(output), server_seed=str(seed)))
-            assert output.read_text() == seed.read_text() == "previous export"
+                await exporter.capture_seed()
             assert validations == ([None] if phase == "context_disposal" else [None, 42])
 
 

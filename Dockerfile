@@ -25,6 +25,9 @@ ENV PYTHONUNBUFFERED=1 \
 # Set working directory
 WORKDIR /app
 
+# Twitch's SDK issues renewable integrity state in an owned, temporary browser.
+RUN apk add --no-cache chromium
+
 # Copy project metadata and install dependencies
 COPY pyproject.toml .
 

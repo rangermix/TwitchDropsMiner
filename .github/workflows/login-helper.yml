@@ -1,0 +1,57 @@
+name: Native login helper
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches: [main, codex/twitch-browser-login]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and smoke test (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            platform: linux-x64
+            extension: ''
+          - runner: macos-15
+            platform: macos-arm64
+            extension: ''
+          - runner: macos-15-intel
+            platform: macos-x64
+            extension: ''
+          - runner: windows-2022
+            platform: windows-x64
+            extension: '.exe'
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@v6
+      - name: Build from locked application dependencies
+        run: |
+          python -m venv env
+          if [ "$RUNNER_OS" = Windows ]; then source env/Scripts/activate; else source env/bin/activate; fi
+          uv sync --active --locked --extra dev --python 3.12
+          uv pip install -r packaging/login-helper-requirements.txt
+          python -m pytest tests/test_login_helper.py tests/test_session_helper.py tests/test_session_bootstrap.py
+          python -m PyInstaller --clean --noconfirm packaging/login_helper.spec
+          python packaging/smoke_login_helper.py dist/tdm-login-helper${{ matrix.extension }}
+      - name: Archive executable with permissions preserved
+        run: |
+          tar -czf tdm-login-helper-${{ matrix.platform }}.tar.gz -C dist tdm-login-helper${{ matrix.extension }} -C "$GITHUB_WORKSPACE" LICENSE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tdm-login-helper-${{ matrix.platform }}
+          path: tdm-login-helper-${{ matrix.platform }}.tar.gz
+          if-no-files-found: error

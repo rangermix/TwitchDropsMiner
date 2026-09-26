@@ -6,29 +6,23 @@
 > files and backups. New login and missing-campaign recovery are tracked in
 > [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118).
 
-Twitch rejects new device-code authorization for the Android app client. This source
-revision restores `ANDROID_APP` as the default so still-valid Android sessions can be
-reused without forced reauthorization. It cannot recover credentials already deleted,
-replaced, or expired. Releases v1.3.1 and v1.3.2 use the Smart TV client, which can log in
-but may show only campaigns already in progress; successful login or a healthy container
-does not establish complete campaign discovery. Clearing data, reinstalling, or changing
-Games to Watch does not repair this upstream restriction. Native Chrome login and
-local-session export/import with a browser-assisted renewal helper have passed live
-checks on one home network. An experimental [server renewal helper](docs/server-renewal.md)
-now uses a one-time SDK cookie export and headless Chromium on the server, allowing the
-local browser to close. Two consecutive scheduled cycles and protected requests after
-each previous integrity token expired have passed in Alpine. Renewal also passed after
-the original exported SDK cookie expired, and the miner and helper resumed from saved
-server state after restart. Initial export and subsequent server consumption passed with
-Chrome closed before the server ran. Independent inventory, campaign, stream-lookup and
-current-drop checks passed; see the [timestamped evidence and limits](docs/notes/2026-09-25-sdk-cookie-renewal.md).
-Fresh browser login inside Docker remains rejected.
-These are experimental source features in this branch, not a released fix. The tracking
-issue records implementation, live verification, and release status.
+Twitch rejects new Android device-code authorization. This branch preserves still-valid
+Android sessions and uses a [local login helper](#helper-assisted-login-experimental)
+for fresh login. The helper opens your installed Chrome, sends the required session
+state directly to your selected TDM instance, and closes its temporary profile. TDM
+stores the accepted state and renews it on the home server; your computer can then close.
+No environment flag, dashboard password, manual JSON export, or separate renewal
+connection file is required. Dashboard password protection remains optional.
 
-`DEVICE_AUTH_400` means Twitch rejected new device authorization. `CLIENT_MISMATCH`
-means a saved token belongs to another client; it is preserved, but cannot be used as
-an Android token. Neither error is fixed by deleting the data directory.
+The Alpine image now includes Chromium for server-side integrity renewal. Mining
+requests still use Python HTTP, with no added Python runtime dependency. Earlier
+server-helper experiments passed real expiry and restart checks on one home network;
+see the [timestamped evidence and limits](docs/notes/2026-09-25-sdk-cookie-renewal.md).
+Those results do not by themselves verify this newly integrated login flow. Fresh
+interactive login inside Docker remains rejected in the tested browser configurations.
+This branch is experimental and unreleased. [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118)
+tracks integrated validation and release status. Preserve existing `data/cookies.jar`
+files: deleting data cannot repair Twitch login or incomplete Smart TV campaign discovery.
 
 <p align="center">
   <a href="https://github.com/rangermix/TwitchDropsMiner/stargazers"><img src="https://img.shields.io/github/stars/rangermix/TwitchDropsMiner?style=for-the-badge&color=yellow" alt="GitHub stars"></a>
@@ -75,7 +69,7 @@ directory to `./data` on the host:
 
 ```bash
 docker run -d \
-  --name twitch-drops-miner \
+  --name twitch-drops-miner --init --stop-timeout 30 \
   -p 8080:8080 \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
@@ -93,265 +87,50 @@ From the repository root, build and start the included
 docker compose up -d --build
 ```
 
-### Experimental browser login (#118)
+### Helper-assisted login (experimental)
 
-The optional browser setup runs **Google Chrome** in a separate container with a
-virtual display and an interactive viewer. TDM controls its persistent session through
-WebDriver. You enter your Twitch credentials and any verification directly on Twitch's
-page. TDM continues only after checking the web token's identity and obtaining both
-inventory and campaign responses. Existing valid Android sessions take priority and do
-not start a browser session.
+Use this source branch on your own home hardware. Current released images do not yet
+include this flow. Existing valid Android sessions start automatically; a new session
+uses the helper:
 
-**Live status (24 September 2026):** Twitch rejected login in both Debian Chromium 152
-and official Google Chrome 153 in Docker with “Your browser is not currently supported.”
-The Chrome WebDriver attempt returned HTTP 400 with Twitch error code `5025`. The same
-Chrome version also failed when launched without ChromeDriver in a separate profile,
-with `navigator.webdriver` false. Firefox 156 controlled through WebDriver BiDi in a
-separate Docker profile was also rejected. Removing ChromeDriver or changing browser
-engine therefore did not resolve the rejection. A separate native Chrome 153 profile on
-macOS did accept fresh login under DevTools control. TDM's browser service then attached
-through ChromeDriver and validated the account, inventory, and 125 campaigns without
-GraphQL errors after waiting for Twitch's complete request context. With the full miner
-running, a separate live Twitch inventory query confirmed the test campaign advancing
-from 0 to 4 watched minutes. This supports the desktop attachment option below; Docker
-login remains unresolved. Restarting both the dedicated Chrome instance and the miner
-restored login and resumed watching without another sign-in. See
-[#118](https://github.com/rangermix/TwitchDropsMiner/issues/118) for current results.
+1. Open TDM and leave **Settings → Allow helper connection** enabled (the default).
+2. Run the native `tdm-login-helper` executable on your desktop and enter the TDM address
+   shown on its Main tab, such as `http://192.168.1.10:8080`. Chrome must be installed.
+3. Sign into Twitch in the Chrome window opened by the helper. Complete any verification
+   there, then wait for the helper's success message. Capture, upload, and server
+   validation happen automatically.
 
-Further fresh-login tests in Docker also failed with the same unsupported-browser message:
-Camoufox 152.0.4 beta.28 (`docker-stealthy-auto-browse`), Chrome 153 with Puppeteer-Stealth,
-and Browserless 2.56.7 Chrome 153 with its built-in `stealth` launch option. Browserless
-ran under AMD64 emulation; the other two used ARM64 containers. All three reported
-`navigator.webdriver` false and produced no authenticated cookie. These results cover
-the tested configurations on one home network, not every browser or fingerprint setup.
+TDM checks the account, inventory and campaigns, and proves that its own server browser
+can issue a usable replacement before accepting the session. It then saves the session
+and SDK cookie together under `/app/data/imported-session.json` and automatically turns
+**Allow helper connection** off. The helper closes its Chrome window and removes the
+temporary TDM profile. Your everyday browser profile is untouched; no exported session
+or renewal-connection file is kept on your desktop. You can close the helper and turn
+off the desktop after success.
 
-A separate session-transfer experiment copied Twitch cookies from the working desktop
-profile into Docker Chrome. Identity and inventory succeeded, but campaign access still
-failed Twitch's integrity check. Reusing the desktop browser's complete matching request
-context instead returned inventory and 126 campaigns through both Docker Chrome and a
-plain Python HTTP client inside Docker. The manual import path below now implements
-that approach and supports a local automatic renewal helper. Operation on another
-network remains unverified. Later server-renewal tests observed Twitch-side account
-progress, with other-device activity uncontrolled; see the evidence note below. A fresh authenticated GraphQL
-integrity response advertised about **one hour** of validity; the login cookie's much
-longer lifetime does not extend that context. The issued token matched a successful
-authenticated request returning 126 campaigns. An export needs renewal; the imported provider enforces its observed expiry, and the
-local helper refreshes it before expiry. Twitch's login page returns
-`X-Frame-Options: SAMEORIGIN`, and browser origin isolation prevents a TDM page from
-reading Twitch cookies or storage. Automatic export would need a local helper or an
-explicitly permitted browser extension, rather than a login iframe. See the
-[session portability investigation](docs/notes/2026-09-24-browser-session-portability.md).
-The direct browser integration still requires its browser to remain running. Manual
-import can operate without that browser until the imported context expires.
+To replace the account or recover after a login expires, turn **Allow helper connection**
+on and repeat the same flow. Turning it off rejects new connections and invalidates
+outstanding uploads. Automatic server renewal continues while it is off. Anyone able
+to reach the helper API while admission is enabled can attempt a new login; the setting
+controls that admission independently of the optional dashboard password. Credentials
+are never returned by the dashboard API. Use the HTTPS dashboard address when accessing
+TDM across an untrusted network.
 
-#### Manual local-browser export and import (experimental)
-
-This source-only option lets a home-hosted TDM instance use a session from a working
-local Chrome browser. The TDM server does not need a browser. It is not in a release.
-
-1. Enable `TDM_SESSION_IMPORT=1` on TDM. For Compose, add
-   `- TDM_SESSION_IMPORT=1` under the miner service's `environment` list. Do not configure
-   `TDM_BROWSER_URL`, `TDM_BROWSER_VIEWER_URL`, or `TDM_BROWSER_DEBUGGER_ADDRESS` with this
-   mode. Still-valid Android credentials retain priority and are never overwritten.
-2. Enable dashboard password protection in **Settings**, then log into the dashboard.
-   Import requires authenticated dashboard access, even on an otherwise unprotected
-   instance. Use HTTPS or a local tunnel when accessing the dashboard remotely.
-3. On your local computer, open a dedicated Chrome profile with loopback DevTools and
-   sign into Twitch there. For example, on macOS:
-
-   ```bash
-   open -na "Google Chrome" --args \
-     --user-data-dir="$HOME/.tdm-login-profile" \
-     --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
-     https://www.twitch.tv/drops/campaigns
-   ```
-
-4. From a local source checkout with its Python environment installed, export:
-
-   ```bash
-   source env/bin/activate
-   python -m src.auth.session_helper export \
-     --browser http://127.0.0.1:9222 --output "$HOME/tdm-session.json"
-   ```
-
-5. On TDM's **Main** tab, choose that file under **Import browser session** and click
-   **Import session**. TDM verifies identity, inventory and campaign access before
-   accepting it. The panel shows the accepted expiry. Keep the exported file private;
-   it contains credentials, and must not be posted to issues or committed to Git.
-
-The helper opens and closes its own tab without closing Chrome. It exports only a
-matching Twitch request context whose integrity token has passed a live campaign query,
-not every browser cookie. Export and server state files use owner-only permissions.
-TDM saves accepted state separately in `data/imported-session.json`, revalidates it after
-restart, rejects account changes and stale replacements, and waits for a fresh import
-after expiry. Failed validation preserves the previous accepted context.
-
-For the experimental server-renewal work, add `--server-seed "$HOME/tdm-server-seed.json"`
-to the export command. This also saves the SDK cookie for `k.twitchcdn.net` alongside
-the matching context in a separate private seed file. Import `tdm-session.json` into
-the dashboard as before, then follow the [server helper setup](docs/server-renewal.md).
-Both files contain credentials. If the local SDK cookie is absent or expired, the helper
-obtains a new one in an empty temporary browser context, validates the same Twitch
-account and catalog, and disposes that context before export. Your signed-in profile is
-preserved. The server helper is experimental; normal renewal, original SDK-cookie expiry,
-restart persistence and the initial-export handoff have passed on the tested home setup.
-
-**Live manual-path check (25 September 2026):** the actual dashboard accepted an export
-from the dedicated native Chrome profile into a fresh browser-free Docker TDM instance.
-Identity, Inventory and Campaigns passed; a subsequent read-only query through the
-imported provider returned 129 campaigns. The renewal helper subsequently delivered three distinct new integrity contexts,
-and authenticated campaign access passed inside Docker. That initial check did not
-establish Twitch-side mining progress with imported state; the later server-renewal
-evidence distinguishes account progress from exclusive mining attribution.
-See the [import and renewal evidence](docs/notes/2026-09-25-session-import-renewal.md).
-
-#### Automatic renewal from the local browser (experimental)
-
-**This is browser-assisted renewal, not autonomous server renewal.** It requires the
-user's computer, signed-in browser and helper to remain available. It does not satisfy
-the intended unattended deployment: export once, then turn off the user's computer.
-With the exporting browser stopped, direct Alpine HTTP issuance returned new one-hour
-tokens, but Twitch rejected their campaign queries. Replaying captured browser issuance
-headers, including the browser SDK proof headers, also failed; the same test's imported
-token successfully returned 152 campaigns. See the [server-only renewal investigation](docs/notes/2026-09-25-server-only-renewal.md).
-
-A later [SDK cookie experiment](docs/notes/2026-09-25-sdk-cookie-renewal.md) has enabled
-accepted renewal inside a headless server browser after one export. The separate
-[server helper](docs/server-renewal.md) passed scheduled renewal and expiry/restart tests.
-Use it when the local computer must be able to turn off. Multi-day reliability and other
-desktop platforms remain unverified.
-
-After a successful manual import, click **Download renewal connection** in the login
-panel. Store `tdm-connection.json` privately on the computer running the dedicated Chrome
-profile. Each download replaces the previous helper credential. It allows only session
-renewal for the already accepted Twitch account, and does not grant dashboard access.
-
-Run the helper from this source checkout on that local computer:
+The [Native login helper workflow](https://github.com/rangermix/TwitchDropsMiner/actions/workflows/login-helper.yml)
+builds Linux x64, macOS ARM64/x64 and Windows x64 artifacts for this branch. Download the
+artifact matching your computer from a successful run; these are test builds, not a
+signed public release. From a source checkout with its dependencies installed:
 
 ```bash
 source env/bin/activate
-chmod 600 "$HOME/Downloads/tdm-connection.json"
-python -m src.auth.session_helper renew \
-  --browser http://127.0.0.1:9222 \
-  --connection "$HOME/Downloads/tdm-connection.json"
+python login_helper.py --tdm http://192.168.1.10:8080
 ```
 
-The helper captures and sends a fresh verified context immediately, then normally renews
-five minutes before its observed expiry. Keep Chrome and this command running. It retries
-transient browser/network failures with bounded delay. If the context expires or Twitch
-rejects it, TDM waits for a new accepted context. If Twitch signs out the local profile,
-sign in there again; the helper does not collect your password. A wrong-account session,
-revoked credential, or redirect stops the helper with a fixed diagnostic code.
-
-The connection file's destination must use HTTPS, except literal loopback HTTP for a
-local instance or tunnel. For a reverse proxy set `PUBLIC_BASE_URL` to the exact public
-HTTPS origin before downloading. No redirects are followed. Protect connection files as
-credentials. **Disconnect helper** revokes future renewal uploads; the already accepted
-Twitch context remains usable until expiry. Disabling dashboard protection also blocks
-renewal. Enabling it again does not revoke the saved helper credential; disconnect or
-replace the connection if you want to invalidate it. If the helper exited with
-`SESSION_PAIRING` while protection was disabled, restart the command after reenabling.
-
-**Live renewal check (25 September 2026):** the helper loop automatically advanced the
-browser-free Docker provider through three replacements with distinct integrity tokens.
-The destination validated each replacement's identity, inventory and campaigns; an
-independent provider query using the first automatic replacement returned 129 campaigns.
-The test used `--renew-before 3550` to observe successive renewals about 51 seconds apart.
-That local-browser test did not exercise a complete default cycle. The separate server
-helper later passed its normal cycle and protected requests after expiry, as recorded
-above. Cross-network behavior and browser sign-out recovery remain unverified, and
-account progress is not exclusive mining attribution. These source features are unreleased.
-
-#### Desktop Chrome attachment (experimental)
-
-On a machine with a desktop, TDM can attach to a dedicated, normally launched Chrome
-profile. The browser must remain running on that machine while TDM uses it. This has
-been checked on macOS ARM64; other desktop platforms and long-running renewal through
-this direct ChromeDriver path remain unverified.
-Install a [ChromeDriver matching your Chrome build](https://developer.chrome.com/docs/chromedriver/downloads/version-selection).
-Keep both debugging and driver ports on loopback. Use a dedicated profile, not your
-everyday Chrome profile. Do not expose either control port to other machines.
-
-For example, on macOS, launch the browser from the repository directory:
-
-```bash
-mkdir -p data/native-browser
-chmod 700 data/native-browser
-open -na 'Google Chrome' --args \
-  --user-data-dir="$PWD/data/native-browser" \
-  --remote-debugging-port=9222 --no-first-run \
-  https://www.twitch.tv/drops/campaigns
-```
-
-Run ChromeDriver in another terminal, with its executable on `PATH`:
-
-```bash
-chromedriver --port=9515 --allowed-ips=127.0.0.1 --log-level=OFF
-```
-
-Then run TDM from its activated source environment:
-
-```bash
-source env/bin/activate
-unset TDM_BROWSER_VIEWER_URL
-TDM_BROWSER_URL=http://127.0.0.1:9515 \
-TDM_BROWSER_DEBUGGER_ADDRESS=127.0.0.1:9222 python main.py
-```
-
-Complete login and any verification in the **dedicated TDM Chrome window**. A login in
-another Chrome window does not authenticate this profile. The dashboard shows a desktop
-login prompt without a viewer link. Chrome retains the session in `data/native-browser`;
-TDM keeps Android cookies separate and waits for Twitch's integrity-bearing request
-context before validating campaign access. On restart, launch the same profile and
-ChromeDriver again if they have stopped. Close TDM before closing its browser. A remote
-dashboard does not provide remote control of this desktop window.
-
-#### Docker browser experiment (login currently rejected)
-
-To reproduce the Docker experiment, create a private, ignored `.env` file in the repository
-root containing a unique viewer password (VNC uses only its first eight characters):
-
-```dotenv
-TDM_BROWSER_VNC_PASSWORD=replace-with-a-unique-password
-```
-
-```bash
-chmod 600 .env
-docker compose -f docker-compose.yml -f docker-compose.browser.yml up -d --build
-```
-
-Open the TDM dashboard, then **Open Twitch login browser**, or visit
-<http://localhost:7900/vnc.html>. Connect with your viewer password and complete Twitch
-login. The viewer is separate from dashboard authentication and is bound to loopback;
-WebDriver is accessible only on the Compose network. On a remote Docker host, forward
-the viewer with `ssh -L 7900:127.0.0.1:7900 user@docker-host` and use the local URL.
-Do not publish ports 4444 or 5900, or expose the browser viewer directly to the internet.
-A viewer can access your signed-in Twitch account.
-
-The `browser-profile` volume holds sensitive Twitch session data, separately from
-`data/cookies.jar`. Preserve both when restarting or upgrading; `docker compose down -v`
-deletes the browser profile. One miner owns one browser/profile. TDM closes its browser
-session on normal shutdown and reuses the profile next time; after an interrupted miner
-process it can reconnect using `data/browser-session.json`. If the browser itself crashes,
-restart the browser and miner. Do not delete a profile simply because login failed.
-
-For a source-run miner using a browser with a remote viewer, point `TDM_BROWSER_URL` at
-a private WebDriver endpoint and set `TDM_BROWSER_VIEWER_URL` to its HTTP(S) viewer URL.
-Desktop attachment instead uses the debugger-address configuration above without a viewer.
-The Python service currently supports Chrome's network-event API; Firefox is not yet an
-implemented backend. Browser requests use the browser's own network connection, so TDM's
-HTTP proxy setting does not configure Chrome; configure the browser network separately.
-
-`BROWSER_DRIVER` means the driver could not start/respond; `BROWSER_REQUEST` means Twitch
-did not return usable JSON over the browser transport; `BROWSER_CATALOG` means login
-could not establish inventory and campaign access. `BROWSER_SESSION_CHANGED` stops
-requests if the interactive browser logs out or switches accounts; restart TDM after
-restoring the intended account. `BROWSER_ACCOUNT_MISMATCH` means the browser account
-differs from the account identified by a still-valid saved token; sign into that account
-in the browser. These errors do not imply that a campaign has ended or
-that an account is linked. Browser login times out after 15 minutes; restart TDM to retry.
-Close/SIGTERM interrupts pending login and closes the owned session. If a browser is
-still being allocated, cleanup can wait up to 65 seconds for the driver to return its ID.
+`--chrome` selects an installed Chrome executable and `--language` selects a translation.
+Packaged executables do not require Python. See [renewal and recovery](docs/server-renewal.md)
+for storage, expiry and failure behavior. The earlier export/pairing and direct Docker
+browser workflows are retired in this branch; their investigation evidence remains in
+`docs/notes/`.
 
 ### From source
 
@@ -367,8 +146,8 @@ Then open <http://localhost:8080>.
 
 ## Using the web app
 
-1. Existing valid Android sessions are restored automatically. Fresh login is currently
-   affected by the [Twitch login outage](https://github.com/rangermix/TwitchDropsMiner/issues/118).
+1. Existing valid Android sessions are restored automatically. For fresh login on this
+   experimental branch, follow the helper-assisted flow above.
 2. Wait for the miner to discover available campaigns.
 3. Choose the games you want to prioritize. You can also search for a game, select
    **Add Game**, and then select **Reload**.

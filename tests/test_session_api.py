@@ -1,80 +1,37 @@
-"""Exercise session import through the production dashboard guards."""
-
-import asyncio
-import importlib
-from collections import deque
-from types import SimpleNamespace
+"""Dashboard session status is sanitized and has no credential export route."""
 
 import pytest
-from fastapi.testclient import TestClient
 
-from src.auth.imported_session import ImportedSession
-from tests.test_imported_session import bundle_data, transport
-
-
-web = importlib.import_module("src.web.app")
+from tests.test_helper_api import api, enable_dashboard_auth  # noqa: F401
+from tests.test_helper_connection import seed
 
 
-@pytest.fixture
-def api(tmp_path, monkeypatch):
-    service = ImportedSession(tmp_path / "session.json", clock=lambda: 1000, transport=transport())
-    monkeypatch.setattr(web, "twitch_client", SimpleNamespace(_browser=service))
-    auth = web.web_auth
-    for name, value in {"path": tmp_path / "auth.json", "password_hash": "",
-                        "sessions": {}, "lock": asyncio.Lock(), "attempts": deque()}.items():
-        monkeypatch.setattr(auth, name, value)
-    with TestClient(web.socket_app, headers={"X-TDM-Request": "1"}) as browser:
-        yield browser, service
-
-
-def authorize(browser):
-    response = browser.post("/api/auth/settings", json={
-        "action": "enable", "current_password": "", "password": "test import password",
-        "confirm_password": "test import password",
-    })
+def test_helper_status_is_available_without_mandatory_dashboard_auth(api):
+    browser, helper, settings = api
+    response = browser.get("/api/session")
     assert response.status_code == 200
+    assert response.json()["allow_helper_connection"] is True
+    assert response.headers["Cache-Control"] == "no-store"
+    token = browser.post("/api/helper/connect", json={}).json()["connection"]
+    headers = {"Authorization": "Bearer " + token}
+    assert browser.post("/api/helper/session", json=seed().to_dict(), headers=headers).status_code == 200
+    response = browser.get("/api/session")
+    assert response.json()["session"]["generation"] == 1
+    assert response.json()["allow_helper_connection"] is False
+    for value in (token, "oauth-42", "private-sdk-cookie", "renewed-private-sdk", "renewed-private-integrity"):
+        assert value not in response.text
 
 
-def test_import_requires_enabled_authenticated_dashboard(api):
-    browser, service = api
-    assert browser.get("/api/session").json()["authentication_required"] is True
-    assert browser.post("/api/session/import", json=bundle_data()).status_code == 401
-    authorize(browser)
-    browser.cookies.clear()
-    assert browser.post("/api/session/import", json=bundle_data()).status_code == 401
-    assert not service.path.exists()
+def test_dashboard_password_still_protects_session_status(api):
+    browser, helper, settings = api
+    enable_dashboard_auth(browser)
+    assert browser.get("/api/session").status_code == 401
+    token = browser.post("/api/helper/connect", json={}).json()["connection"]
+    assert browser.get("/api/session", headers={"Authorization": "Bearer " + token}).status_code == 401
 
 
-def test_manual_import_runs_validation_and_returns_only_status(api):
-    browser, service = api
-    authorize(browser)
-    response = browser.post("/api/session/import", json=bundle_data())
-    assert response.status_code == 200
-    assert response.json()["session"]["state"] == "ready"
-    assert "test-token" not in response.text and "test-integrity" not in response.text
-    status = browser.get("/api/session")
-    assert status.json()["session"]["generation"] == 1
-    assert status.headers["Cache-Control"] == "no-store"
-    assert service.path.exists()
-
-
-@pytest.mark.parametrize("kind", ["origin", "write_header", "large", "malformed"])
-def test_import_guards_and_errors_do_not_echo_submitted_secrets(api, kind):
-    browser, service = api
-    authorize(browser)
-    options = {"json": bundle_data()}
-    expected = 403
-    if kind == "origin":
-        options["headers"] = {"Origin": "https://evil.test"}
-    elif kind == "write_header":
-        options["headers"] = {"X-TDM-Request": "0"}
-    elif kind == "large":
-        options = {"content": '"secret-payload' + "x" * 65536}
-        expected = 413
-    else:
-        options = {"content": '{"headers":"secret-payload"}'}
-        expected = 400
-    response = browser.post("/api/session/import", **options)
-    assert response.status_code == expected
-    assert "secret-payload" not in response.text
-    assert not service.path.exists()
+@pytest.mark.parametrize("path", ["/api/session/export", "/api/helper/session", "/api/helper/seed"])
+def test_no_route_exports_session_credentials(api, path):
+    browser, helper, settings = api
+    response = browser.get(path)
+    assert response.status_code in (404, 405)

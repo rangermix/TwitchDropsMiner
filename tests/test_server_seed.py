@@ -3,8 +3,6 @@
 import copy
 import json
 import stat
-from argparse import Namespace
-from unittest.mock import AsyncMock
 
 import pytest
 
@@ -99,77 +97,3 @@ def test_browser_cookie_selection_rejects_missing_expired_or_ambiguous_seed():
         SDKCookie.from_browser([{**valid, "expires": 999}], now=1000)
     chosen = SDKCookie.from_browser([valid, {"name": "unrelated", "value": "never-export"}], now=1000)
     assert "never-export" not in json.dumps(chosen.to_dict())
-
-
-@pytest.mark.asyncio
-async def test_cli_optional_seed_keeps_dashboard_bundle_compatible(tmp_path, monkeypatch, capsys):
-    from src.auth.server_seed import ServerSeed
-    from src.auth.session_helper import BrowserExporter, SessionHelper
-
-    seed = ServerSeed.from_dict(seed_data(), now=1000)
-    monkeypatch.setattr("src.auth.session_helper.time.time", lambda: 1000)
-    monkeypatch.setattr(BrowserExporter, "capture_seed", AsyncMock(return_value=seed))
-    bundle_path, seed_path = tmp_path / "session.json", tmp_path / "seed.json"
-    await SessionHelper.run(Namespace(
-        command="export", browser="http://127.0.0.1:9222", output=str(bundle_path), server_seed=str(seed_path),
-    ))
-    assert json.loads(bundle_path.read_text()) == seed.bundle.to_dict()
-    assert json.loads(seed_path.read_text()) == seed.to_dict()
-    assert "private-sdk-cookie" not in capsys.readouterr().out
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("with_seed", [False, True])
-async def test_cli_rechecks_expiry_before_writing_either_export(tmp_path, monkeypatch, capsys, with_seed):
-    from src.auth.server_seed import ServerSeed
-    from src.auth.session_helper import BrowserExporter, SessionHelper
-
-    seed = ServerSeed.from_dict(seed_data(), now=1000)
-    monkeypatch.setattr("src.auth.session_helper.time.time", lambda: seed.bundle.expires_at + 1)
-    monkeypatch.setattr(BrowserExporter, "capture_seed", AsyncMock(return_value=seed))
-    monkeypatch.setattr(BrowserExporter, "capture", AsyncMock(return_value=seed.bundle))
-    output, seed_path = tmp_path / "session.json", tmp_path / "seed.json"
-    for path in (output, seed_path):
-        path.write_text("previous export")
-    with pytest.raises(SessionError, match="EXPIRED"):
-        await SessionHelper.run(Namespace(command="export", browser="http://127.0.0.1:9222",
-                                         output=str(output), server_seed=str(seed_path) if with_seed else None))
-    assert output.read_text() == seed_path.read_text() == "previous export"
-    assert "success" not in capsys.readouterr().out
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("alias", ["identical", "case", "symlink_loop", "hardlink"])
-async def test_cli_rejects_colliding_export_paths_before_browser_access(tmp_path, monkeypatch, alias):
-    from src.auth.server_seed import ServerSeed
-    from src.auth.session_helper import BrowserExporter, SessionHelper
-
-    capture = AsyncMock(return_value=ServerSeed.from_dict(seed_data(), now=1000))
-    monkeypatch.setattr(BrowserExporter, "capture_seed", capture)
-    monkeypatch.setattr(BrowserExporter, "capture", AsyncMock(side_effect=AssertionError("unexpected browser access")))
-    path = tmp_path / "session.json"
-    other = path
-    if alias == "case":
-        probe = tmp_path / "case-probe"
-        probe.touch()
-        insensitive = (tmp_path / "CASE-PROBE").exists()
-        probe.unlink()
-        if not insensitive:
-            pytest.skip("filesystem permits distinct case-sensitive output names")
-        other = tmp_path / "Session.json"
-    elif alias == "symlink_loop":
-        path.symlink_to(path.name)
-        other = tmp_path / "seed.json"
-    elif alias == "hardlink":
-        path.write_text("preserve existing data")
-        other = tmp_path / "seed.json"
-        other.hardlink_to(path)
-    with pytest.raises(SessionError, match="OUTPUT_PATH"):
-        await SessionHelper.run(Namespace(
-            command="export", browser="http://127.0.0.1:9222", output=str(path), server_seed=str(other),
-        ))
-    capture.assert_not_awaited()
-    if alias == "hardlink":
-        assert path.read_text() == other.read_text() == "preserve existing data"
-    else:
-        assert not path.exists()
