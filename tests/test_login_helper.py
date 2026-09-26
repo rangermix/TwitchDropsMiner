@@ -20,7 +20,7 @@ def test_native_entrypoint_explains_direct_connection_without_export_files():
     result = subprocess.run(
         [sys.executable, "login_helper.py", "--help"],
         cwd=Path(__file__).resolve().parents[1],
-        capture_output=True, text=True, check=False,
+        capture_output=True, text=True, encoding="utf-8", check=False,
     )
     assert result.returncode == 0
     assert "--tdm" in result.stdout
@@ -317,7 +317,7 @@ async def test_native_browser_arguments_cleanup_and_no_ordinary_profile_access(m
 
 def test_invalid_destination_cli_error_does_not_echo_untrusted_url():
     result = subprocess.run([sys.executable, "login_helper.py", "--tdm", "https://user:secret@example.test"],
-        cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, check=False)
+        cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, encoding="utf-8", check=False)
     assert result.returncode == 1
     assert "secret" not in result.stdout + result.stderr
     assert "HELPER_DESTINATION" in result.stdout + result.stderr
@@ -363,7 +363,7 @@ async def test_login_wait_failure_closes_browser_and_does_not_capture():
 
 def test_legacy_module_cli_no_longer_exposes_file_exports():
     result = subprocess.run([sys.executable, "-m", "src.auth.session_helper", "--help"],
-        cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, check=False)
+        cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, encoding="utf-8", check=False)
     assert result.returncode == 0
     assert "--tdm" in result.stdout
     assert "--output" not in result.stdout

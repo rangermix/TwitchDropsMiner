@@ -302,6 +302,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   `packaging/login_helper.spec` bundles translations and dependencies. PyInstaller is a
   pinned build-only dependency; build each target OS separately. CI builds and smoke-tests
   Linux x64, macOS ARM64/x64 and Windows x64, including startup without Python on PATH.
+  The helper writes UTF-8 console output; subprocess tests must decode it explicitly as
+  UTF-8 rather than using the Windows locale code page.
 - Preserve strict bundle/header/cookie allowlists, private atomic file writes, same-account
   renewal and accepted-catalog validation. Shared session/SDK primitives remain covered by
   their focused tests. Legacy BrowserSession is retained only as an experimental library,

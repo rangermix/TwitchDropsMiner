@@ -117,7 +117,8 @@ are never returned by the dashboard API. Use the HTTPS dashboard address when ac
 TDM across an untrusted network.
 
 The [Native login helper workflow](https://github.com/rangermix/TwitchDropsMiner/actions/workflows/login-helper.yml)
-builds Linux x64, macOS ARM64/x64 and Windows x64 artifacts for this branch. Download the
+builds Linux x64, macOS ARM64/x64 and Windows x64 artifacts for this branch and checks
+packaged startup, translated output, and connection handling. Download the
 artifact matching your computer from a successful run; these are test builds, not a
 signed public release. From a source checkout with its dependencies installed:
 
