@@ -308,6 +308,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   installed Chrome startup, CDP control, login timeout and temporary-profile cleanup.
   Linux uses Xvfb for this display-dependent test; it never supplies account credentials.
   Report remaining temporary filenames on smoke failure without printing their contents.
+  Preserve the auxiliary-file cleanup regression, including unchanged parent environment
+  and unrelated files, when changing native browser launch or cleanup.
   The helper writes UTF-8 console output; subprocess tests must decode it explicitly as
   UTF-8 rather than using the Windows locale code page.
 - Preserve strict bundle/header/cookie allowlists, private atomic file writes, same-account

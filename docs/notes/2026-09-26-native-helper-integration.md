@@ -5,6 +5,9 @@ Implementation: `cf6262fc0b61b108ec00159e352daeaf7c3f41f9`; Windows test decodin
 `2bc7e123de777a38d4927a32aeeada60c7da632a`. This is an unreleased branch checkpoint.
 All times below are UTC on 26 September 2026.
 
+Latest native cleanup checkpoint: `71456d32a7621f1d45c5c13a21813a3d395cd981`.
+The server worker is unchanged by this desktop-helper fix.
+
 ## Build and regression evidence
 
 - The full local suite passed **641 tests and two subtests** with Python 3.12 and
@@ -27,6 +30,31 @@ All times below are UTC on 26 September 2026.
   executable permission. Actual Twitch login on every platform is not established.
 - Final Alpine images built for ARM64 (`6e9a11aa0733`) and AMD64 (`90167f08f404`).
   Both include Chromium; Python runtime dependency manifests are unchanged.
+
+### Installed-Chrome validation follow-up
+
+The packaged test was extended to admit a short-lived local connection, launch actual
+installed Chrome, verify its owned DevTools process, reach a login timeout without
+credentials, and check temporary-file cleanup before the test harness removes its own
+directory. Linux uses Xvfb for its display. This does not establish authenticated login.
+
+The initial Windows and Linux runs found remaining temporary files; Windows passed an
+unchanged diagnostic rerun, while Linux consistently retained `.com.google.Chrome.*`
+and `com.google.Chrome.chrome_chrome_url_fetcher_*` entries outside the already-removed
+profile. Filename-only diagnostics identified the auxiliary-file escape.
+
+At `71456d3`, Chrome's `TMPDIR`, `TMP` and `TEMP` are scoped to a private subdirectory
+inside the owned profile. A new regression failed before the fix and passed afterward,
+verifying auxiliary-file removal, preservation of unrelated files and unchanged parent
+environment. The full suite passed **642 tests and two subtests**; source Ruff, Mypy,
+lock consistency, both Docker architecture builds and independent native review passed.
+
+[Workflow 36244392374](https://github.com/rangermix/TwitchDropsMiner/actions/runs/36244392374)
+passed the extended packaged browser check on Linux x64, Windows x64, macOS x64 and
+macOS ARM64. Local and independent macOS ARM64 rebuild checks also passed. These results
+cover the helper's normal login-timeout cleanup. The test harness's separate 90-second
+forced-kill fallback can leave detached Chrome processes and is not covered by a
+successful-run cleanup claim; this remains a nonblocking test-harness limitation.
 
 ## Desktop and dashboard evidence
 
