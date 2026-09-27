@@ -30,3 +30,6 @@ data/
 
 artifacts/
 .env
+
+# Private development plans, notes, and local verification records
+/.dev-notes/

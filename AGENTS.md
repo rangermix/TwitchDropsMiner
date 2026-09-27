@@ -42,6 +42,15 @@ It is the repository's contribution policy, not optional background reading.
 
 5. **Documentation**:
    - Always update `README.md` and `AGENTS.md` when making changes.
+   - Keep `README.md` short and focused on ordinary users: setup, login, migration,
+     and links. Detailed public instructions belong in `docs/`, the source for the
+     GitHub wiki. Developer contribution policy belongs in `CONTRIBUTING.md`.
+   - Personal development plans, investigation notes, local verification records,
+     and captures belong in `.dev-notes/`, which Git and Docker builds ignore.
+     Never commit them or put them under `docs/`; this overrides skill templates
+     that suggest committing `docs/plans/` or `docs/notes/`. Keep credentials out of
+     public documentation, PRs, issues, and logs. Report concise, redacted validation
+     results in the PR without publishing personal working records.
    - Keep `CLAUDE.md` and `GEMINI.md` as relative symbolic links to `AGENTS.md`; do not replace them with duplicated text. Put any agent-specific instructions in clearly named sections of `AGENTS.md`.
 
 ## Project Overview
@@ -240,8 +249,13 @@ progress to an ignored drop while the miner intentionally targets another reward
 6. **CHANNEL_SWITCH** - Select best channel to watch based on priority/ACL
 7. Loop between CHANNEL_SWITCH and periodic INVENTORY_FETCH (hourly)
 
-### Authentication and helper-assisted login (#118)
+### Authentication and helper-assisted login
 
+- Helper-assisted login is TDM's standard authentication method for new or expired
+  sessions. README guidance covers migration from existing Android/Smart TV sessions
+  and normal helper use. Detailed user instructions live in `docs/authentication.md`.
+  Keep personal investigation and scoped verification records in ignored `.dev-notes/`;
+  do not present the current authentication flow as experimental.
 - `Twitch` starts with `ClientType.ANDROID_APP` and reuses valid saved Android cookies.
   Preserve `cookies.jar`; fresh, expired, or wrong-client credentials wait for the helper.
   Fresh device authorization, direct remote-browser configuration, manual session upload,
@@ -288,7 +302,7 @@ progress to an ignored drop while the miner intentionally targets another reward
   Docker uses an init process and a cleanup grace period. Mining GraphQL stays in Python
   HTTP. No browser/control/viewer port is published. Historical standalone renewal CLI
   code is not the current deployment interface; its removed HTTP destination cannot be
-  used with this server. See docs/server-renewal.md for current setup.
+  used with this server. See `docs/authentication.md` for current setup.
 - `src/auth/login_helper.py` and root `login_helper.py` implement direct local handoff.
   Check admission before opening installed Chrome with a temporary owned TDM profile.
   Use an explicit nonzero loopback CDP port (port zero changes navigator.webdriver), verify
@@ -321,16 +335,14 @@ progress to an ignored drop while the miner intentionally targets another reward
   for unreleased source, not evidence that a release exists.
 - Preserve strict bundle/header/cookie allowlists, private atomic file writes, same-account
   renewal and accepted-catalog validation. Shared session/SDK primitives remain covered by
-  their focused tests. Legacy BrowserSession is retained only as an experimental library,
-  not selectable fresh login. Historical live evidence in docs/notes is not proof of a
-  changed integrated flow. Record fresh provider, expiry, restart and native build evidence
-  in `docs/notes/2026-09-26-native-helper-integration.md`. The 26 September checkpoint
-  passed packaged macOS ARM64 fresh handoff/cleanup/restart and, on a separate instance,
-  normal integrated renewal followed by protected requests after the original expiry.
-  Keep these separate test paths and platform limits explicit; they do not establish
-  authenticated login on every OS, multi-day reliability or live mining progress.
-  Preserve pending checks separately; never infer live drop progress from mocks or a
-  Watching label.
+  their focused tests. Legacy BrowserSession is retained only for historical investigation,
+  not selectable fresh login. Historical live evidence is not proof of a changed
+  integrated flow. Keep personal provider, expiry, restart and native build evidence
+  in ignored `.dev-notes/`; report redacted outcomes and limitations in the PR.
+  Distinguish fresh login, renewal past the original expiry, restart, native build,
+  and live mining checks. Success on one platform does not establish authenticated
+  login on every OS or multi-day reliability. Preserve pending checks separately;
+  never infer live drop progress from mocks or a Watching label.
 - Imported-session GraphQL retries transient HTTP 5xx, connection and timeout failures
   only for exact known persisted read operations in the remaining request batch, with
   at most three attempts. Retry waits release the session lock, support stop/cancellation,
@@ -582,6 +594,18 @@ priority and failover. It uses mocked Twitch state and does not verify live Twit
 - Keep the contributor table header and the `<!-- contributors:start -->` and
   `<!-- contributors:end -->` markers in `README.md`; the updater fails closed if the
   table header or either marker is missing, duplicated, or malformed.
+- `.github/workflows/wiki.yml` publishes the eight public `docs/` guides to the GitHub
+  wiki after relevant `main` pushes or manual runs on `main`. Keep `publish_wiki.py`'s
+  explicit allowlist, relative-link rewriting, source-file links, and generated sidebar.
+  Reject missing files, symlinks, and links to private or unpublished paths before
+  writing output. Preserve unrelated wiki pages and history; never force-push.
+  Check out the triggering SHA without stored checkout credentials, export before
+  exposing `PUBLISHER_TOKEN`, and skip obsolete runs when the documentation, publisher,
+  or workflow differs from current canonical `main`. Unrelated main commits must not
+  suppress publication. Never run publishing with PR code or credentials
+  available to a PR. `tests/test_wiki_publication.py` covers export boundaries, links,
+  idempotence, isolated Git publication, and workflow trust. Keep private `.dev-notes/`
+  outside Git, the Docker build context, and the wiki publication surface.
 - `.github/workflows/version-release.yml` is the release entry point. It must provision
   `uv`, update `src/version.py`, `pyproject.toml`, and `uv.lock` together, and validate all
   three before creating a release branch or tag.
@@ -606,7 +630,7 @@ priority and failover. It uses mocked Twitch state and does not verify live Twit
 - Retired Docker interactive-browser and standalone-renewal recipes are removed. Do not
   revive the old browser URL environment variables or sidecar commands in current setup
   documentation; the standard Alpine image owns server renewal and the native helper
-  owns fresh desktop login. Historical investigation records remain in `docs/notes/`.
+  owns fresh desktop login. Personal investigation records belong in ignored `.dev-notes/`.
 
 
 ### Manual Testing
@@ -687,8 +711,9 @@ The application uses a web-based interface accessible via browser:
 - **WebSocket for real-time** - Socket.IO chosen for reliability (fallback to polling)
 - **Single-page app** - Simpler than full framework (React/Vue), fast load times
 - **Direct Docker support** - Environment detection, proper path handling
-- **Persistent Twitch sessions** - Preserve valid Android credentials; the fresh-login
-  outage and planned controlled-browser replacement are tracked in #118.
+- **Helper-assisted Twitch authentication** - Use desktop Chrome for login, transfer
+  the session directly to TDM, and renew it on the server. Preserve valid saved Android
+  sessions during migration.
 
 ## Project Scope
 
