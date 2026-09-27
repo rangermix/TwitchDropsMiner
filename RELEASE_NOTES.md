@@ -1,3 +1,55 @@
+# Release Notes - v2.0.0
+
+TDM now uses a desktop login helper for new Twitch logins and renews the session on
+the miner host. This is a major release because the previous device-code login and
+manual session-import interfaces have been replaced.
+
+## Upgrade from v1.x
+
+1. Stop TDM and back up its existing data directory privately. Keep the same
+   `/app/data` volume, including `cookies.jar`, settings, and drop history.
+2. Update to `rangermix/twitch-drops-miner:2.0.0` and recreate the container with the
+   same data mount. Include `--init --stop-timeout 30 --shm-size 256m`, or use the
+   updated Compose configuration.
+3. A working Android session is restored automatically. If you used Smart TV login
+   in v1.3.1/v1.3.2, your session expired, or TDM asks you to sign in, download the
+   **2.0.0 login helper** for your desktop from this release.
+4. Enable **Settings → Allow helper connection**, run the helper, enter your TDM
+   address, and sign into Twitch in its Chrome window. Wait for confirmed success.
+
+The helper sends the session directly, closes Chrome, and removes its temporary
+profile. TDM turns helper access off after acceptance and handles renewal itself;
+your desktop can be shut down. Reopen helper access and repeat the login only when
+TDM asks for a new session or you want to change accounts.
+
+## Compatibility changes
+
+- Fresh device-code authorization, manual JSON session uploads, and the old pairing
+  and standalone renewal endpoints are retired. `TDM_SESSION_IMPORT` is no longer
+  used. Remove old browser sidecars and remote-browser configuration.
+- The standard Docker image remains Alpine-based and now includes Chromium for
+  automatic renewal. Only the dashboard port is exposed; mining requests remain in
+  Python. The bundled browser increases the image size.
+- Source installations need `chromium` or `chromium-browser` on the miner host's
+  `PATH`. Run the source miner on Linux or macOS; on Windows, use Docker Desktop
+  with Linux containers. The login helper runs natively on Windows.
+- Google Chrome must be installed on the helper desktop. Native helper downloads
+  are provided for Windows x64, Linux x64, macOS Apple Silicon, and macOS Intel.
+
+## Other changes
+
+- Accepted helper sessions and renewal state survive restarts. Switching accounts
+  clears the previous account's active work and derived state.
+- Transient failures of known read-only Twitch queries are retried with bounded
+  delays; ambiguous mutations are not replayed.
+- The README is shorter, with detailed user guides maintained in `docs/` and the
+  [GitHub wiki](https://github.com/rangermix/TwitchDropsMiner/wiki).
+
+See [installation](https://github.com/rangermix/TwitchDropsMiner/wiki/Installation)
+and [login and recovery](https://github.com/rangermix/TwitchDropsMiner/wiki/Authentication)
+for full instructions. Authentication work is tracked in
+[#118](https://github.com/rangermix/TwitchDropsMiner/issues/118).
+
 # Release Notes - v1.3.2
 
 Fixes dashboard connections behind HTTPS reverse proxies with the optional

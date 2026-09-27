@@ -25,17 +25,20 @@ services operated for other users are outside its support scope.
 
 ## Quick start
 
-With Git and Docker installed, build and start the current source:
+With Docker installed, start TDM from the directory where you want to keep its data:
 
 ```bash
-git clone https://github.com/rangermix/TwitchDropsMiner.git
-cd TwitchDropsMiner
-docker compose up -d --build
+docker run -d \
+  --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
+  -p 8080:8080 \
+  -v "${PWD}/data:/app/data" \
+  --restart unless-stopped \
+  rangermix/twitch-drops-miner:2.0.0
 ```
 
 Open <http://localhost:8080>, or `http://YOUR-SERVER:8080` from another device on your
 home network. Keep the `data` directory when updating or recreating the container.
-For published Docker images, installation without Docker, and updates, see the
+For Docker Compose, installation without Docker, and updates, see the
 [installation guide](docs/installation.md).
 
 ## Sign in
@@ -52,12 +55,13 @@ TDM handles renewal on your server, so your desktop and browser can be turned of
 See [authentication](docs/authentication.md) for platform downloads, unreleased source
 builds, account changes, and login recovery.
 
-## Upgrading an existing installation
+## Upgrading to v2.0
 
 Keep your existing `data` directory, including `cookies.jar`, and the same Docker volume.
 A working Android session is restored automatically. If you used the Smart TV login in
 v1.3.1/v1.3.2, your session has expired, or you are signed out, use the login helper
-matching your updated TDM version.
+matching your updated TDM version. Follow the [v2.0 migration steps](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.0.0)
+when updating your container or source installation.
 
 ## User guides
 
