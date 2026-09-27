@@ -23,6 +23,7 @@ class InventoryFilters(TypedDict):
 
 
 default_settings = {
+    "allow_helper_connection": True,
     "connection_quality": 1,
     "dark_mode": False,
     "drop_name_blacklist": [],
@@ -56,6 +57,7 @@ default_settings = {
 
 @dataclass
 class Settings:
+    allow_helper_connection: bool
     connection_quality: int
     dark_mode: bool
     drop_name_blacklist: list[str]
@@ -88,4 +90,7 @@ class Settings:
         self.drop_name_blacklist = DropIgnorePolicy.normalize_keywords(
             self.drop_name_blacklist
         )
-        json_save(SETTINGS_PATH, vars(self), sort=True)
+        values = vars(self).copy()
+        # Admission is committed atomically with the accepted session/SDK state.
+        values.pop("allow_helper_connection", None)
+        json_save(SETTINGS_PATH, values, sort=True)

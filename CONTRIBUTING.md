@@ -305,6 +305,25 @@ Release automation updates `src/version.py`, `pyproject.toml`, and `uv.lock` tog
 Do not publish releases, change workflow trust boundaries, or bypass required checks as
 part of an ordinary contribution.
 
+### Native helper releases
+
+The existing **Create Version Release** workflow remains the versioned release entry
+point. Its release branch triggers Docker publication, then **GitHub Release** verifies
+the existing version tag and builds helpers from that exact commit. GitHub publication
+waits for Linux x64, Windows x64, macOS ARM64 and macOS x64 builds, their packaged Chrome
+smoke checks, and archive validation. It uploads four versioned `.tar.gz` archives and
+`SHA256SUMS` to a draft, verifies their remote digests, then publishes. Failed uploads
+leave a draft that can be retried; a rerun refuses to modify an already-published release.
+Binaries are unsigned. Each archive contains only the executable and license.
+
+PR/main validation calls the same read-only native workflow and prepares the same asset
+set without publishing. Keep the publishing token out of build jobs, retain the exact-tag
+guard, and never substitute artifacts from a different run or revision. The release
+contract tests exercise missing/unsafe archives, checksums, source/tag mismatches,
+failed uploads, incomplete remote assets, draft recovery and published reruns.
+Merging a change does not publish a new version or satisfy the frontend cache-key bump;
+dispatch the version workflow only when the maintainer authorizes a versioned release.
+
 ## Additional requirements for coding agents
 
 Read this guide and the applicable agent instructions before planning, editing, testing,

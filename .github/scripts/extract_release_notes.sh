@@ -47,4 +47,17 @@ echo '```bash' >> release_notes.md
 echo "docker pull rangermix/twitch-drops-miner:$VERSION" >> release_notes.md
 echo '```' >> release_notes.md
 
+cat >> release_notes.md <<'EOF'
+
+### Native login helper
+
+Download the `tdm-login-helper-<version>-<platform>.tar.gz` asset matching your desktop:
+`windows-x64`, `macos-arm64` (Apple Silicon), `macos-x64` (Intel), or `linux-x64`.
+Extract the archive, run `tdm-login-helper` (`tdm-login-helper.exe` on Windows), enter
+your TDM address, and sign into Twitch in its Chrome window. Wait for confirmed success;
+TDM then renews the session on your home server without the desktop remaining open.
+Chrome must already be installed; Python is not required. Binaries are unsigned.
+`SHA256SUMS` contains checksums for all four archives.
+EOF
+
 echo "✅ Release notes written to release_notes.md"

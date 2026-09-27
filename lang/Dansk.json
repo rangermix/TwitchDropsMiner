@@ -80,16 +80,8 @@
             "history": "Historik"
         },
         "login": {
-            "name": "Login formular",
-            "labels": "Status:\nBruger ID:",
-            "request": "Log venligst ind for at fortsætte.",
-            "username": "Brugernavn",
-            "password": "Kodeord",
-            "twofa_code": "2FA code (valgfrit)",
-            "button": "Log ind",
-            "oauth_prompt": "Indtast denne kode på:",
-            "oauth_activate": "Twitch Aktiver",
-            "oauth_confirm": "Jeg har indtastet koden"
+            "name": "Twitch-login",
+            "user_id_label": "Bruger-id:"
         },
         "websocket": {
             "name": "Websocket-status",
@@ -303,6 +295,54 @@
             "cleared": "Historik ryddet.",
             "clear_error": "Kunne ikke rydde historik: {error}",
             "stats_error": "Kunne ikke indlæse statistik: {error}"
+        },
+        "helper_login": {
+            "step_download": "Download og kør TDM-loginhjælperen på din computer.",
+            "step_instance": "Indtast adressen til denne TDM-instans i hjælperen.",
+            "step_chrome": "Log ind på Twitch i Chrome-vinduet, som hjælperen åbner.",
+            "step_finish": "Hjælperen sender automatisk login til TDM. Vent på resultatet.",
+            "builds": "Hjælperbyg til Linux, macOS og Windows",
+            "builds_note": "Vælg arkivet til dit operativsystem og din TDM-version blandt udgivelsens filer. Chrome er påkrævet; Python er ikke nødvendigt.",
+            "instance": "Denne TDM-instans",
+            "copy": "Kopiér adresse",
+            "copied": "Adresse kopieret.",
+            "copy_manually": "Markér og kopiér adressen ovenfor.",
+            "retry": "Prøv status igen",
+            "settings_title": "Twitch-loginhjælper",
+            "allow": "Tillad forbindelse fra hjælper",
+            "setting_help": "Tillad hjælperen at logge ind eller erstatte Twitch-kontoen. Dette slås fra efter et vellykket login. Automatisk fornyelse fortsætter, mens det er slået fra.",
+            "saving": "Gemmer…",
+            "save_error": "Kunne ikke gemme hjælpertilladelsen. Prøv igen.",
+            "open": "Forbindelse fra hjælperen er tilladt.",
+            "closed": "Forbindelse fra hjælperen er slået fra. Slå den til i Indstillinger for at logge ind eller skifte konto.",
+            "checking": "Kontrollerer hjælperstatus…",
+            "ready": "Session bekræftet. Den aktuelle session er gyldig indtil {expiry}.",
+            "waiting": "Venter på login fra hjælperen.",
+            "expired": "Sessionen er udløbet.",
+            "session_error": "Sessionen er ikke tilgængelig. Kontrollér hjælperens resultat.",
+            "status_error": "Hjælperstatus er ikke tilgængelig. Prøv igen.",
+            "existing": "Det gemte Twitch-login er aktivt.",
+            "renewal": "Automatisk fornyelse stopper ikke, når hjælperforbindelsen slås fra.",
+            "renewal_error": "Automatisk fornyelse kræver handling. Tillad forbindelse fra hjælperen i Indstillinger, og kør hjælperen igen.",
+            "renewal_unavailable": "Denne gemte session kræver et nyt login med hjælperen for at aktivere automatisk fornyelse. Tillad hjælperforbindelsen i Indstillinger, og kør hjælperen.",
+            "renewal_retrying": "Automatisk fornyelse mislykkedes midlertidigt. TDM prøver igen; et nyt login med hjælperen er endnu ikke nødvendigt."
         }
+    },
+    "helper": {
+        "title": "Forbind Twitch med TDM",
+        "destination_prompt": "URL til TDM-instans: ",
+        "destination": "Destination: {url}",
+        "connecting": "Forbinder til TDM…",
+        "login": "Log ind på Twitch i Chrome-vinduet. Lad denne hjælper være åben.",
+        "capturing": "Kontrollerer Twitch-sessionen…",
+        "sending": "Sender sessionen; venter på at TDM verificerer fornyelse på serveren…",
+        "success": "Forbundet. TDM har accepteret sessionen og verificeret fornyelse på serveren. Du kan lukke denne hjælper.",
+        "cancelled": "Annulleret.",
+        "wait_to_close": "Tryk Enter for at lukke.",
+        "tdm_help": "Rod-URL til din TDM-instans",
+        "chrome_help": "Sti til Google Chrome (findes normalt automatisk)",
+        "language_help": "Konsolsprog",
+        "no_pause_help": "Afslut uden at vente på Enter",
+        "result_unknown": "Resultatet er ukendt. Kontroller TDM, før du prøver igen."
     }
 }

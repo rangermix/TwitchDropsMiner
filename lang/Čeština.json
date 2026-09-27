@@ -80,16 +80,8 @@
             "history": "Historie"
         },
         "login": {
-            "name": "Přihlášení k službě Twitch",
-            "labels": "Uživatelské ID:",
-            "request": "Pro přístup je potřeba přihlášení",
-            "username": "Uživatelské Jméno",
-            "password": "Heslo",
-            "twofa_code": "2FA Kód",
-            "button": "Přihlásit se",
-            "oauth_prompt": "Enter this code at:",
-            "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code"
+            "name": "Přihlášení k Twitch",
+            "user_id_label": "ID uživatele:"
         },
         "websocket": {
             "name": "Stav Websocketu",
@@ -303,6 +295,54 @@
             "cleared": "Historie vymazána.",
             "clear_error": "Historii nelze vymazat: {error}",
             "stats_error": "Statistiky nelze načíst: {error}"
+        },
+        "helper_login": {
+            "step_download": "Stáhněte a spusťte pomocníka pro přihlášení TDM na svém počítači.",
+            "step_instance": "Zadejte do pomocníka adresu této instance TDM.",
+            "step_chrome": "Přihlaste se k Twitch v okně Chrome otevřeném pomocníkem.",
+            "step_finish": "Pomocník automaticky odešle přihlášení do TDM. Počkejte na výsledek.",
+            "builds": "Sestavení pomocníka pro Linux, macOS a Windows",
+            "builds_note": "Ze souborů vydání vyberte archiv pro svůj operační systém a verzi TDM. Chrome je vyžadován; Python není potřeba.",
+            "instance": "Tato instance TDM",
+            "copy": "Kopírovat adresu",
+            "copied": "Adresa zkopírována.",
+            "copy_manually": "Vyberte a zkopírujte adresu výše.",
+            "retry": "Znovu zjistit stav",
+            "settings_title": "Pomocník pro přihlášení k Twitch",
+            "allow": "Povolit připojení pomocníka",
+            "setting_help": "Povolte pomocníkovi přihlášení nebo změnu účtu Twitch. Po úspěšném přihlášení se tato možnost vypne. Automatické obnovování pokračuje i po jejím vypnutí.",
+            "saving": "Ukládání…",
+            "save_error": "Oprávnění pomocníka se nepodařilo uložit. Zkuste to znovu.",
+            "open": "Připojení pomocníka je povoleno.",
+            "closed": "Připojení pomocníka je vypnuté. Pro přihlášení nebo změnu účtu jej povolte v nastavení.",
+            "checking": "Kontrola stavu pomocníka…",
+            "ready": "Relace ověřena. Aktuální relace platí do {expiry}.",
+            "waiting": "Čekání na přihlášení z pomocníka.",
+            "expired": "Platnost relace vypršela.",
+            "session_error": "Relace není dostupná. Zkontrolujte výsledek pomocníka.",
+            "status_error": "Stav pomocníka není dostupný. Zkuste to znovu.",
+            "existing": "Uložené přihlášení k Twitch je aktivní.",
+            "renewal": "Vypnutí připojení pomocníka nezastaví automatické obnovování.",
+            "renewal_error": "Automatické obnovování vyžaduje pozornost. Povolte připojení pomocníka v nastavení a spusťte jej znovu.",
+            "renewal_unavailable": "Tato uložená relace vyžaduje nové přihlášení pomocníkem pro automatické obnovování. Povolte připojení pomocníka v nastavení a spusťte jej.",
+            "renewal_retrying": "Automatické obnovení dočasně selhalo. TDM to zkouší znovu; nové přihlášení pomocníkem zatím není nutné."
         }
+    },
+    "helper": {
+        "title": "Připojit Twitch k TDM",
+        "destination_prompt": "URL instance TDM: ",
+        "destination": "Cíl: {url}",
+        "connecting": "Připojování k TDM…",
+        "login": "Přihlaste se k Twitch v okně Chrome. Nechte tohoto pomocníka otevřeného.",
+        "capturing": "Kontrola relace Twitch…",
+        "sending": "Odesílání relace; čekání na ověření obnovy na serveru pomocí TDM…",
+        "success": "Připojeno. TDM přijal relaci a ověřil obnovu na serveru. Tohoto pomocníka můžete zavřít.",
+        "cancelled": "Zrušeno.",
+        "wait_to_close": "Stisknutím Enter zavřete.",
+        "tdm_help": "Kořenová URL vaší instance TDM",
+        "chrome_help": "Cesta ke Google Chrome (obvykle se zjistí automaticky)",
+        "language_help": "Jazyk konzole",
+        "no_pause_help": "Ukončit bez čekání na Enter",
+        "result_unknown": "Výsledek není znám. Před dalším pokusem zkontrolujte TDM."
     }
 }

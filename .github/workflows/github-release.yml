@@ -4,22 +4,30 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: github-release-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   CURRENT_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
 jobs:
-  create-github-release:
-    name: Create GitHub Release
+  prepare-release:
+    name: Verify release source
     runs-on: ubuntu-latest
-
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+      is_prerelease: ${{ steps.validate.outputs.is_prerelease }}
+      sha: ${{ steps.revision.outputs.sha }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
-          ref: ${{ env.CURRENT_BRANCH_NAME }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Extract version from branch
         id: extract
@@ -29,15 +37,68 @@ jobs:
         id: validate
         run: .github/scripts/validate_semver.sh "${{ steps.extract.outputs.version }}"
 
+      - name: Verify release tag matches the source commit
+        id: revision
+        env:
+          RELEASE_VERSION: ${{ steps.extract.outputs.version }}
+        run: |
+          TAG_COMMIT=$(git rev-parse --verify "refs/tags/v${RELEASE_VERSION}^{commit}")
+          SOURCE_COMMIT=$(git rev-parse HEAD)
+          if [ "$TAG_COMMIT" != "$SOURCE_COMMIT" ]; then
+            echo "Release tag does not match the requested source commit" >&2
+            exit 1
+          fi
+          echo "sha=$SOURCE_COMMIT" >> "$GITHUB_OUTPUT"
+
+  build-helpers:
+    name: Build release helpers
+    needs: prepare-release
+    uses: ./.github/workflows/login-helper.yml
+    with:
+      source-ref: ${{ needs.prepare-release.outputs.sha }}
+    permissions:
+      contents: read
+
+  create-github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [prepare-release, build-helpers]
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout verified release source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare-release.outputs.sha }}
+          persist-credentials: false
+
+      - name: Download this run's verified helper assets
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: tdm-login-helper-release
+          path: release-assets
+
+      - name: Verify release asset checksums
+        working-directory: release-assets
+        run: sha256sum --check SHA256SUMS
+
       - name: Extract release notes
         id: release-notes
-        run: .github/scripts/extract_release_notes.sh "${{ steps.extract.outputs.version }}"
+        run: .github/scripts/extract_release_notes.sh "${{ needs.prepare-release.outputs.version }}"
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
-          tag_name: v${{ steps.extract.outputs.version }}
-          name: Release ${{ steps.extract.outputs.version }}
-          body_path: release_notes.md
-          prerelease: ${{ steps.validate.outputs.is_prerelease }}
-          draft: false
+          python-version: '3.12'
+
+      - name: Publish only after all draft assets verify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.prepare-release.outputs.version }}
+          IS_PRERELEASE: ${{ needs.prepare-release.outputs.is_prerelease }}
+        run: |
+          python -m venv env
+          source env/bin/activate
+          python .github/scripts/publish_helper_release.py \
+            --repository "$GITHUB_REPOSITORY" --version "$RELEASE_VERSION" \
+            --prerelease "$IS_PRERELEASE" --assets release-assets --notes release_notes.md

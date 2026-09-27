@@ -80,16 +80,8 @@
             "history": "Geçmiş"
         },
         "login": {
-            "name": "Giriş Yap",
-            "labels": "Durum:\nKullanıcı ID:",
-            "request": "Devam etmek için lütfen giriş yapınız.",
-            "username": "Kullanıcı Adı",
-            "password": "Parola",
-            "twofa_code": "2FA Kodu (opsyonel)",
-            "button": "Kayıt Ol",
-            "oauth_prompt": "Enter this code at:",
-            "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code"
+            "name": "Twitch girişi",
+            "user_id_label": "Kullanıcı kimliği:"
         },
         "websocket": {
             "name": "Websocket Durumu",
@@ -303,6 +295,54 @@
             "cleared": "Geçmiş temizlendi.",
             "clear_error": "Geçmiş temizlenemedi: {error}",
             "stats_error": "İstatistikler yüklenemedi: {error}"
+        },
+        "helper_login": {
+            "step_download": "TDM giriş yardımcısını bilgisayarınıza indirin ve çalıştırın.",
+            "step_instance": "Bu TDM örneğinin adresini yardımcıya girin.",
+            "step_chrome": "Yardımcının açtığı Chrome penceresinde Twitch’e giriş yapın.",
+            "step_finish": "Yardımcı giriş bilgilerini TDM’ye otomatik gönderir. Sonucu bekleyin.",
+            "builds": "Linux, macOS ve Windows için yardımcı derlemeleri",
+            "builds_note": "Sürüm dosyalarından işletim sisteminize ve TDM sürümünüze uygun arşivi seçin. Chrome gereklidir; Python gerekli değildir.",
+            "instance": "Bu TDM örneği",
+            "copy": "Adresi kopyala",
+            "copied": "Adres kopyalandı.",
+            "copy_manually": "Yukarıdaki adresi seçip kopyalayın.",
+            "retry": "Durumu yeniden denetle",
+            "settings_title": "Twitch giriş yardımcısı",
+            "allow": "Yardımcı bağlantısına izin ver",
+            "setting_help": "Yardımcının giriş yapmasına veya Twitch hesabını değiştirmesine izin verir. Başarılı girişten sonra kapanır. Kapalıyken otomatik yenileme devam eder.",
+            "saving": "Kaydediliyor…",
+            "save_error": "Yardımcı izni kaydedilemedi. Yeniden deneyin.",
+            "open": "Yardımcı bağlantısına izin veriliyor.",
+            "closed": "Yardımcı bağlantısı kapalı. Giriş yapmak veya hesabı değiştirmek için Ayarlar’dan açın.",
+            "checking": "Yardımcı durumu denetleniyor…",
+            "ready": "Oturum doğrulandı. Geçerli oturumun bitişi: {expiry}.",
+            "waiting": "Yardımcıdan giriş bekleniyor.",
+            "expired": "Oturumun süresi doldu.",
+            "session_error": "Oturum kullanılamıyor. Yardımcının sonucunu kontrol edin.",
+            "status_error": "Yardımcı durumu alınamıyor. Yeniden deneyin.",
+            "existing": "Kayıtlı Twitch girişi etkin.",
+            "renewal": "Yardımcı bağlantısını kapatmak otomatik yenilemeyi durdurmaz.",
+            "renewal_error": "Otomatik yenileme müdahale gerektiriyor. Ayarlar’dan yardımcı bağlantısına izin verin ve yardımcıyı yeniden çalıştırın.",
+            "renewal_unavailable": "Bu kayıtlı oturumda otomatik yenilemeyi etkinleştirmek için yardımcıyla yeniden giriş gerekir. Ayarlar’dan yardımcı bağlantısına izin verin ve yardımcıyı çalıştırın.",
+            "renewal_retrying": "Otomatik yenileme geçici olarak başarısız oldu. TDM yeniden deniyor; yardımcıyla yeniden giriş henüz gerekmiyor."
         }
+    },
+    "helper": {
+        "title": "Twitch’i TDM’ye bağla",
+        "destination_prompt": "TDM örneği URL’si: ",
+        "destination": "Hedef: {url}",
+        "connecting": "TDM’ye bağlanılıyor…",
+        "login": "Chrome penceresinde Twitch’e giriş yapın. Bu yardımcıyı açık tutun.",
+        "capturing": "Twitch oturumu kontrol ediliyor…",
+        "sending": "Oturum gönderiliyor; TDM’nin sunucuda yenilemeyi doğrulaması bekleniyor…",
+        "success": "Bağlandı. TDM oturumu kabul etti ve sunucuda yenilemeyi doğruladı. Bu yardımcıyı kapatabilirsiniz.",
+        "cancelled": "İptal edildi.",
+        "wait_to_close": "Kapatmak için Enter’a basın.",
+        "tdm_help": "TDM örneğinizin kök URL’si",
+        "chrome_help": "Google Chrome yolu (normalde otomatik algılanır)",
+        "language_help": "Konsol dili",
+        "no_pause_help": "Enter’ı beklemeden çık",
+        "result_unknown": "Sonuç bilinmiyor. Yeniden denemeden önce TDM’yi kontrol edin."
     }
 }

@@ -1,0 +1,496 @@
+"""Validated browser context with atomic TDM-owned session and renewal state."""
+
+from __future__ import annotations
+
+import asyncio
+import hashlib
+import re
+import secrets
+import time
+from collections.abc import Callable
+from contextlib import suppress
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+import aiohttp
+
+from src.auth.browser_session import BrowserIdentity, BrowserSession
+from src.auth.server_seed import SDKCookie, ServerSeed
+from src.auth.session_bundle import PrivateSessionFile, SessionBundle, SessionError
+from src.config import GQL_OPERATIONS, ClientType
+from src.exceptions import ExitRequest, LoginException
+
+
+if TYPE_CHECKING:
+    from src.web.managers.login import LoginFormManager
+
+
+class _TransientRequest(SessionError):
+    """Retryable transport failure, retaining the existing redacted public code."""
+
+    def __init__(self):
+        super().__init__("REQUEST")
+
+
+class SessionTransport:
+    """Send credentials only to fixed Twitch endpoints, without a cookie jar."""
+
+    def __init__(self, proxy: str | None | Callable[[], str | None] = None):
+        self.proxy = proxy
+        self._http: aiohttp.ClientSession | None = None
+
+    async def request(self, method: str, url: str, *, headers: dict[str, str], body: Any = None) -> Any:
+        if (method, url) not in {
+            ("GET", BrowserSession.VALIDATE_URL), ("POST", BrowserSession.GQL_URL),
+        }:
+            raise SessionError("REQUEST")
+        if self._http is None or self._http.closed:
+            self._http = aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=30), cookie_jar=aiohttp.DummyCookieJar(),
+            )
+        try:
+            async with self._http.request(
+                method, url, headers=headers, json=body, proxy=self.proxy() if callable(self.proxy) else self.proxy, allow_redirects=False,
+            ) as response:
+                if 500 <= response.status < 600:
+                    raise _TransientRequest()
+                if response.status != 200:
+                    raise SessionError("AUTH" if response.status in (401, 403) else "REQUEST")
+                return await response.json()
+        except aiohttp.ClientSSLError:
+            raise SessionError("REQUEST") from None
+        except (aiohttp.ClientConnectionError, aiohttp.ClientPayloadError, TimeoutError):
+            raise _TransientRequest() from None
+        except (aiohttp.ClientError, ValueError):
+            raise SessionError("REQUEST") from None
+
+    async def validate(self, bundle: SessionBundle, expected_user_id: int | None) -> BrowserIdentity:
+        identity = await self.request("GET", BrowserSession.VALIDATE_URL, headers={
+            "Authorization": bundle.headers["authorization"], "User-Agent": bundle.user_agent,
+        })
+        try:
+            if not isinstance(identity, dict) or identity.get("client_id") != ClientType.WEB.CLIENT_ID:
+                raise ValueError
+            raw_id = identity["user_id"]
+            if not isinstance(raw_id, str) or not raw_id.isdecimal():
+                raise ValueError
+            user_id = int(raw_id)
+            if user_id <= 0:
+                raise ValueError
+        except (KeyError, TypeError, ValueError):
+            raise SessionError("IDENTITY") from None
+        if expected_user_id is not None and user_id != expected_user_id:
+            raise SessionError("ACCOUNT_MISMATCH")
+        results = await self.request(
+            "POST", BrowserSession.GQL_URL, headers=bundle.request_headers(),
+            body=[GQL_OPERATIONS["Inventory"], GQL_OPERATIONS["Campaigns"]],
+        )
+        try:
+            BrowserSession.campaign_count(results)
+        except LoginException:
+            raise SessionError("CATALOG") from None
+        return BrowserIdentity(
+            user_id, bundle.token, bundle.headers.get("x-device-id") or bundle.headers["device-id"],
+            bundle.user_agent,
+        )
+
+    async def close(self) -> None:
+        if self._http is not None:
+            await self._http.close()
+            self._http = None
+
+
+class ImportedSession:
+    """Replace complete validated contexts atomically and wait at expiry."""
+
+    _RETRY_DELAYS = (1.0, 2.0)
+    _READ_QUERIES = frozenset(
+        (GQL_OPERATIONS[name]["operationName"],
+         GQL_OPERATIONS[name]["extensions"]["persistedQuery"]["sha256Hash"])
+        for name in (
+            "GetStreamInfo", "ChannelPointsContext", "Inventory", "CurrentDrop",
+            "Campaigns", "CampaignDetails", "AvailableDrops", "PlaybackAccessToken",
+            "GameDirectory", "SlugRedirect", "NotificationsList",
+        )
+    )
+
+    def __init__(
+        self, path: Path, *, transport: SessionTransport | None = None,
+        clock: Callable[[], float] = time.time,
+        bound_user_id: Callable[[], int | None] = lambda: None,
+        on_identity: Callable[[BrowserIdentity], None] = lambda identity: None,
+    ):
+        self.path, self._clock = path, clock
+        self._file = PrivateSessionFile(path)
+        self._transport = transport or SessionTransport()
+        self.bound_user_id = bound_user_id
+        self._on_identity = on_identity
+        self._bundle: SessionBundle | None = None
+        self._identity: BrowserIdentity | None = None
+        self._user_id: int | None = None
+        self._expected_user_id: int | None = None
+        self._generation = 0
+        self._revision = 0
+        self._renewal_digest = ""
+        self._sdk_cookie: SDKCookie | None = None
+        self.helper_allowed = True
+        self.helper_epoch = 0
+        self._helper_receipt: dict[str, Any] = {}
+        self.on_renewal_needed: Callable[[], None] = lambda: None
+        self._lock = asyncio.Lock()
+        self._updated = asyncio.Event()
+        self._stopping = False
+        self._login: LoginFormManager | None = None
+        self._restore_pending = False
+        self._rejected = False
+        if path.exists():
+            state = self._file.read()
+            try:
+                if (
+                    not isinstance(state, dict) or state.get("version") not in (1, 2)
+                    or type(state["generation"]) is not int or state["generation"] < 0
+                    or not isinstance(state.get("renewal_digest", ""), str)
+                    or not re.fullmatch(r"(?:[0-9a-f]{64})?", state.get("renewal_digest", ""))
+                ):
+                    raise ValueError
+                if state["bundle"] is None:
+                    if state.get("version") != 2 or state["user_id"] is not None or state["generation"] != 0:
+                        raise ValueError
+                else:
+                    if type(state["user_id"]) is not int or state["user_id"] <= 0 or state["generation"] < 1:
+                        raise ValueError
+                    self._bundle = SessionBundle.from_dict(state["bundle"], now=clock())
+                self._user_id, self._generation = state["user_id"], state["generation"]
+                self._renewal_digest = state.get("renewal_digest", "")
+                if state.get("version") == 2:
+                    if (type(state.get("helper_allowed")) is not bool
+                            or type(state.get("helper_epoch")) is not int or state["helper_epoch"] < 0):
+                        raise ValueError
+                    self.helper_allowed, self.helper_epoch = state["helper_allowed"], state["helper_epoch"]
+                    cookie = state.get("sdk_cookie")
+                    if cookie is not None:
+                        if self._bundle is None:
+                            raise ValueError
+                        self._sdk_cookie = SDKCookie.from_dict(cookie)
+                    receipt = state.get("helper_receipt", {})
+                    if not isinstance(receipt, dict):
+                        raise ValueError
+                    if receipt and (set(receipt) != {"connection_digest", "expires_at", "user_id", "generation", "session_expires_at"}
+                            or not isinstance(receipt["connection_digest"], str)
+                            or not re.fullmatch(r"[0-9a-f]{64}", receipt["connection_digest"])
+                            or any(type(receipt[key]) is not int or receipt[key] <= 0 for key in ("user_id", "generation"))
+                            or any(type(receipt[key]) not in (int, float) or not 0 < receipt[key] < float("inf")
+                                   for key in ("expires_at", "session_expires_at"))):
+                        raise ValueError
+                    self._helper_receipt = receipt
+                else:
+                    # Migrated accepted sessions are closed until the setting is enabled.
+                    self.helper_allowed = False
+                self._restore_pending = self._bundle is not None
+            except (KeyError, TypeError, ValueError, SessionError):
+                raise SessionError("FILE") from None
+
+    def bind_account(self, user_id: int | None) -> None:
+        if user_id is not None:
+            if self._user_id not in (None, user_id) or self._expected_user_id not in (None, user_id):
+                raise SessionError("ACCOUNT_MISMATCH")
+            self._expected_user_id = user_id
+
+    def _bound_account(self) -> int | None:
+        account = self.bound_user_id()
+        if account is not None and self._expected_user_id not in (None, account):
+            raise SessionError("ACCOUNT_MISMATCH")
+        return account or self._expected_user_id
+
+    def status(self) -> dict[str, Any]:
+        return {
+            "state": (
+                "waiting" if self._bundle is None else
+                "expired" if self._bundle.expires_at <= self._clock() else
+                "waiting" if self._identity is None or self._rejected else "ready"
+            ),
+            "user_id": self._user_id, "generation": self._generation,
+            "expires_at": self._bundle.expires_at if self._bundle else None,
+            "paired": bool(self._renewal_digest),
+        }
+
+    def _save(self, bundle: SessionBundle | None, user_id: int | None, generation: int,
+              digest: str, **changes: Any) -> None:
+        state = {
+            "version": 2, "bundle": bundle.to_dict() if bundle is not None else None, "user_id": user_id,
+            "generation": generation, "renewal_digest": digest,
+            "sdk_cookie": self._sdk_cookie.to_dict() if self._sdk_cookie else None,
+            "helper_allowed": self.helper_allowed, "helper_epoch": self.helper_epoch,
+            "helper_receipt": self._helper_receipt,
+        }
+        state.update(changes)
+        self._file.write(state)
+
+    def set_helper_allowed(self, allowed: bool) -> None:
+        """Persist admission with the session so accepting login closes it atomically."""
+        if type(allowed) is not bool:
+            raise SessionError("CONFIG")
+        if allowed == self.helper_allowed:
+            return
+        epoch = self.helper_epoch + 1
+        self._save(self._bundle, self._user_id, self._generation, self._renewal_digest,
+                   helper_allowed=allowed, helper_epoch=epoch, helper_receipt={})
+        self.helper_allowed, self.helper_epoch, self._helper_receipt = allowed, epoch, {}
+        self._revision += 1
+
+    def seed(self) -> ServerSeed | None:
+        """Internal renewal input; never include it in dashboard status."""
+        if self._bundle is None or self._sdk_cookie is None:
+            return None
+        return ServerSeed(self._bundle, self._sdk_cookie)
+
+    def helper_result(self, digest: str) -> dict[str, Any] | None:
+        receipt = self._helper_receipt
+        if not receipt or receipt["expires_at"] <= self._clock() or not secrets.compare_digest(receipt["connection_digest"], digest):
+            return None
+        return {"success": True, "allow_helper_connection": False, "session": {
+            "state": "ready", "user_id": receipt["user_id"], "generation": receipt["generation"],
+            "expires_at": receipt["session_expires_at"],
+        }}
+
+    def _check_renewal(self, token: str) -> None:
+        if (not re.fullmatch(r"[A-Za-z0-9_-]{43}", token) or not self._renewal_digest
+                or not secrets.compare_digest(hashlib.sha256(token.encode()).hexdigest(), self._renewal_digest)):
+            raise SessionError("PAIRING")
+
+    async def pair(self, *, authorized: Callable[[], bool] = lambda: True) -> str:
+        async with self._lock:
+            if not authorized():
+                raise SessionError("AUTH")
+            if self._stopping or self.status()["state"] != "ready":
+                raise SessionError("AUTH")
+            assert self._bundle is not None and self._user_id is not None
+            token = secrets.token_urlsafe(32)
+            digest = hashlib.sha256(token.encode()).hexdigest()
+            self._save(self._bundle, self._user_id, self._generation, digest)
+            self._renewal_digest = digest
+            self._revision += 1
+            return token
+
+    async def revoke(self, *, authorized: Callable[[], bool] = lambda: True) -> None:
+        async with self._lock:
+            if not authorized():
+                raise SessionError("AUTH")
+            if self._bundle is not None and self._user_id is not None:
+                self._save(self._bundle, self._user_id, self._generation, "")
+            self._renewal_digest = ""
+            self._revision += 1
+
+    def _check_candidate(self, bundle: SessionBundle) -> None:
+        bundle.require_fresh(self._clock())
+        previous = self._bundle
+        if previous is not None and (
+            bundle.captured_at <= previous.captured_at
+            or bundle.expires_at <= previous.expires_at
+            or bundle.headers["client-integrity"] == previous.headers["client-integrity"]
+        ):
+            raise SessionError("REPLAY")
+
+    async def install(
+        self, data: Any, *, expected_user_id: int | None = None,
+        renewal_token: str | None = None, authorized: Callable[[], bool] = lambda: True,
+        sdk_cookie: SDKCookie | None = None, replace: bool = False,
+        helper_receipt: tuple[str, float] | None = None,
+    ) -> dict[str, Any]:
+        bundle = SessionBundle.from_dict(data, now=self._clock())
+        async with self._lock:
+            if self._stopping:
+                raise SessionError("STOPPED")
+            if not authorized():
+                raise SessionError("AUTH")
+            if renewal_token is not None:
+                self._check_renewal(renewal_token)
+            existing_account = None if replace else self._bound_account()
+            if existing_account is not None:
+                if expected_user_id not in (None, existing_account):
+                    raise SessionError("ACCOUNT_MISMATCH")
+                expected_user_id = existing_account
+            if not replace and self._user_id is not None and expected_user_id not in (None, self._user_id):
+                raise SessionError("ACCOUNT_MISMATCH")
+            if replace:
+                bundle.require_fresh(self._clock())
+            else:
+                self._check_candidate(bundle)
+            account, revision = expected_user_id if replace else self._user_id or expected_user_id, self._revision
+        # Do not hold the state lock while contacting Twitch: revoke/rotate must win.
+        identity = await self._transport.validate(bundle, account)
+        async with self._lock:
+            if self._stopping:
+                raise SessionError("STOPPED")
+            if not authorized():
+                raise SessionError("AUTH")
+            if renewal_token is not None:
+                self._check_renewal(renewal_token)
+            if revision != self._revision:
+                raise SessionError("STALE")
+            if replace:
+                bundle.require_fresh(self._clock())
+            else:
+                self._check_candidate(bundle)
+            if not replace and self._bound_account() not in (None, identity.user_id):
+                raise SessionError("ACCOUNT_MISMATCH")
+            if sdk_cookie is not None:
+                sdk_cookie.require_fresh(self._clock())
+            generation = self._generation + 1
+            receipt = self._helper_receipt
+            if helper_receipt is not None:
+                receipt = {"connection_digest": helper_receipt[0], "expires_at": helper_receipt[1],
+                           "user_id": identity.user_id, "generation": generation, "session_expires_at": bundle.expires_at}
+            allowed = False if replace else self.helper_allowed
+            epoch = self.helper_epoch + 1 if replace else self.helper_epoch
+            cookie = sdk_cookie or self._sdk_cookie
+            digest = "" if replace else self._renewal_digest
+            self._save(bundle, identity.user_id, generation, digest,
+                       sdk_cookie=cookie.to_dict() if cookie else None,
+                       helper_allowed=allowed, helper_epoch=epoch, helper_receipt=receipt)
+            self._bundle, self._identity = bundle, identity
+            self._user_id, self._generation = identity.user_id, generation
+            self._sdk_cookie, self._renewal_digest = cookie, digest
+            self.helper_allowed, self.helper_epoch, self._helper_receipt = allowed, epoch, receipt
+            if replace:
+                self._expected_user_id = identity.user_id
+            self._revision += 1
+            self._restore_pending = self._rejected = False
+            if not replace:
+                self._on_identity(identity)
+            self._updated.set()
+            return self.status()
+
+    async def authenticate(self, login: LoginFormManager) -> BrowserIdentity:
+        self._login = login
+        pending = False
+        try:
+            while not self._stopping:
+                async with self._lock:
+                    if self._bundle is not None and self._bundle.expires_at > self._clock():
+                        if self._restore_pending:
+                            self._restore_pending = False
+                            try:
+                                self._identity = await self._transport.validate(self._bundle, self._user_id)
+                            except SessionError:
+                                self._rejected = True
+                        if self._stopping:
+                            raise ExitRequest()
+                        if (self._identity is not None and not self._rejected
+                                and self._bundle.expires_at > self._clock()):
+                            if self._bound_account() not in (None, self._identity.user_id):
+                                raise SessionError("ACCOUNT_MISMATCH")
+                            return self._identity
+                    if self._stopping:
+                        raise ExitRequest()
+                    self._updated.clear()
+                if not pending:
+                    await login.import_pending(True)
+                    pending = True
+                self.on_renewal_needed()
+                await self._updated.wait()
+            raise ExitRequest()
+        finally:
+            if pending:
+                await login.import_pending(False)
+
+    @staticmethod
+    def _auth_rejection(row: Any) -> bool:
+        # Retry only a definitive rejection before execution, never a partial result.
+        return (
+            isinstance(row, dict) and "data" not in row
+            and isinstance(row.get("errors"), list) and bool(row["errors"])
+            and all(isinstance(error, dict) and error.get("message") in {
+                "failed integrity check", "invalid oauth token",
+            } and "path" not in error for error in row["errors"])
+        )
+
+    @classmethod
+    def _safe_read(cls, operation: Any) -> bool:
+        """Only exact known persisted reads may be replayed after an ambiguous failure."""
+        try:
+            if not isinstance(operation, dict) or not set(operation) <= {"operationName", "variables", "extensions"}:
+                return False
+            extensions = operation["extensions"]
+            if not isinstance(extensions, dict) or set(extensions) != {"persistedQuery"}:
+                return False
+            query = extensions["persistedQuery"]
+            if (not isinstance(query, dict) or set(query) != {"version", "sha256Hash"}
+                    or type(query["version"]) is not int or query["version"] != 1):
+                return False
+            return (operation["operationName"], query["sha256Hash"]) in cls._READ_QUERIES
+        except (KeyError, TypeError):
+            return False
+
+    async def _wait_retry(self, delay: float) -> None:
+        if self._stopping:
+            raise ExitRequest()
+        with suppress(TimeoutError):
+            await asyncio.wait_for(self._updated.wait(), timeout=delay)
+        if self._stopping:
+            raise ExitRequest()
+
+    async def gql(self, operations: Any) -> Any:
+        if self._login is None:
+            raise SessionError("AUTH")
+        batch = isinstance(operations, list)
+        pending = list(range(len(operations))) if batch else [0]
+        results: list[Any] = [None] * len(pending)
+        request_user_id = self._user_id
+        retries = 0
+        while pending:
+            await self.authenticate(self._login)
+            delay = None
+            async with self._lock:
+                if self._stopping:
+                    raise ExitRequest()
+                if request_user_id != self._user_id:
+                    raise SessionError("STALE")
+                assert self._bundle is not None
+                if self._bundle.expires_at <= self._clock() or self._rejected:
+                    continue
+                body = [operations[index] for index in pending] if batch else operations
+                try:
+                    response = await self._transport.request(
+                        "POST", BrowserSession.GQL_URL, headers=self._bundle.request_headers(), body=body,
+                    )
+                except _TransientRequest:
+                    if self._stopping:
+                        raise ExitRequest() from None
+                    candidates = body if batch else [body]
+                    if retries >= len(self._RETRY_DELAYS) or not all(self._safe_read(op) for op in candidates):
+                        raise
+                    delay = self._RETRY_DELAYS[retries]
+                    retries += 1
+                    self._updated.clear()
+                except SessionError as error:
+                    if error.code != "AUTH":
+                        raise
+                    self._rejected = True
+                    continue
+                else:
+                    rows = response if batch else [response]
+                    if (not isinstance(rows, list) or len(rows) != len(pending)
+                            or any(not isinstance(row, dict) for row in rows)):
+                        raise SessionError("RESPONSE")
+                    rejected = []
+                    for index, row in zip(pending, rows, strict=True):
+                        if self._auth_rejection(row):
+                            rejected.append(index)
+                        else:
+                            results[index] = row
+                    if rejected:
+                        self._rejected = True
+                    pending = rejected
+            if delay is not None:
+                # Renewal/admission changes and stop must not wait behind this delay.
+                await self._wait_retry(delay)
+        return results if batch else results[0]
+
+    def request_stop(self) -> None:
+        self._stopping = True
+        self._updated.set()
+
+    async def close(self) -> None:
+        self.request_stop()
+        await self._transport.close()

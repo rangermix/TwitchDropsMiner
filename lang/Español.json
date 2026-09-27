@@ -80,16 +80,8 @@
             "history": "Historial"
         },
         "login": {
-            "name": "Inicio de sesión",
-            "labels": "Estado:\nUsuario:",
-            "request": "Por favor, inicie sesión para continuar.",
-            "username": "Usuario",
-            "password": "Contraseña",
-            "twofa_code": "Token 2FA (opcional)",
-            "button": "Iniciar sesión",
-            "oauth_prompt": "Ingresa este código en:",
-            "oauth_activate": "Activar Twitch",
-            "oauth_confirm": "He ingresado el código"
+            "name": "Inicio de sesión en Twitch",
+            "user_id_label": "ID de usuario:"
         },
         "websocket": {
             "name": "Estado del Websocket",
@@ -303,6 +295,54 @@
             "cleared": "Historial borrado.",
             "clear_error": "No se pudo borrar el historial: {error}",
             "stats_error": "No se pudieron cargar las estadísticas: {error}"
+        },
+        "helper_login": {
+            "step_download": "Descarga y ejecuta el asistente de inicio de sesión de TDM en tu ordenador.",
+            "step_instance": "Introduce la dirección de esta instancia de TDM en el asistente.",
+            "step_chrome": "Inicia sesión en Twitch en la ventana de Chrome que abre el asistente.",
+            "step_finish": "El asistente envía el inicio de sesión a TDM automáticamente. Espera el resultado.",
+            "builds": "Compilaciones del asistente para Linux, macOS y Windows",
+            "builds_note": "En los archivos de la versión, elige el archivo comprimido para tu sistema operativo y versión de TDM. Se necesita Chrome; Python no es necesario.",
+            "instance": "Esta instancia de TDM",
+            "copy": "Copiar dirección",
+            "copied": "Dirección copiada.",
+            "copy_manually": "Selecciona y copia la dirección de arriba.",
+            "retry": "Reintentar estado",
+            "settings_title": "Asistente de inicio de sesión en Twitch",
+            "allow": "Permitir la conexión del asistente",
+            "setting_help": "Permite al asistente iniciar sesión o cambiar la cuenta de Twitch. Se desactiva tras iniciar sesión correctamente. La renovación automática continúa aunque esté desactivado.",
+            "saving": "Guardando…",
+            "save_error": "No se pudo guardar el permiso del asistente. Inténtalo de nuevo.",
+            "open": "La conexión del asistente está permitida.",
+            "closed": "La conexión del asistente está desactivada. Actívala en Ajustes para iniciar sesión o cambiar de cuenta.",
+            "checking": "Comprobando el estado del asistente…",
+            "ready": "Sesión verificada. La sesión actual es válida hasta {expiry}.",
+            "waiting": "Esperando el inicio de sesión desde el asistente.",
+            "expired": "La sesión ha caducado.",
+            "session_error": "Sesión no disponible. Comprueba el resultado del asistente.",
+            "status_error": "Estado del asistente no disponible. Inténtalo de nuevo.",
+            "existing": "El inicio de sesión guardado de Twitch está activo.",
+            "renewal": "Desactivar la conexión del asistente no detiene la renovación automática.",
+            "renewal_error": "La renovación automática necesita atención. Permite la conexión del asistente en Ajustes y ejecútalo de nuevo.",
+            "renewal_unavailable": "Esta sesión guardada necesita un nuevo inicio de sesión con el asistente para activar la renovación automática. Permite su conexión en Ajustes y ejecútalo.",
+            "renewal_retrying": "La renovación automática ha fallado temporalmente. TDM está reintentando; aún no hace falta iniciar sesión de nuevo con el asistente."
         }
+    },
+    "helper": {
+        "title": "Conectar Twitch a TDM",
+        "destination_prompt": "URL de la instancia de TDM: ",
+        "destination": "Destino: {url}",
+        "connecting": "Conectando con TDM…",
+        "login": "Inicia sesión en Twitch en la ventana de Chrome. Mantén este asistente abierto.",
+        "capturing": "Comprobando la sesión de Twitch…",
+        "sending": "Enviando la sesión; esperando a que TDM verifique la renovación en el servidor…",
+        "success": "Conectado. TDM aceptó la sesión y verificó la renovación en el servidor. Puedes cerrar este asistente.",
+        "cancelled": "Cancelado.",
+        "wait_to_close": "Pulsa Intro para cerrar.",
+        "tdm_help": "URL raíz de tu instancia de TDM",
+        "chrome_help": "Ruta de Google Chrome (normalmente se detecta automáticamente)",
+        "language_help": "Idioma de la consola",
+        "no_pause_help": "Salir sin esperar a Intro",
+        "result_unknown": "El resultado es desconocido. Revisa TDM antes de volver a intentarlo."
     }
 }

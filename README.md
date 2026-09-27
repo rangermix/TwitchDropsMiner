@@ -2,6 +2,31 @@
 
 > Automatically mine timed Twitch Drops without streaming video or audio.
 
+> **Warning: new Twitch device-code login is broken; browser recovery is experimental.** Preserve existing `data/cookies.jar`
+> files and backups. New login and missing-campaign recovery are tracked in
+> [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118).
+
+Twitch rejects new Android device-code authorization. TDM preserves still-valid
+Android sessions and uses a [local login helper](#helper-assisted-login-experimental)
+for fresh login. The helper opens your installed Chrome, sends the required session
+state directly to your selected TDM instance, and closes its temporary profile. TDM
+stores the accepted state and renews it on the home server; your computer can then close.
+No environment flag, dashboard password, manual JSON export, or separate renewal
+connection file is required. Dashboard password protection remains optional.
+
+The Alpine image now includes Chromium for server-side integrity renewal. Mining
+requests still use Python HTTP, with no added Python runtime dependency. The packaged
+macOS ARM64 helper passed fresh login, direct handoff, cleanup and server restart checks.
+On a separate integrated instance, normal renewal produced a new token that passed
+account, inventory and campaign requests after the original token's actual expiry,
+with helper admission closed. See the [timestamped evidence and limits](docs/notes/2026-09-26-native-helper-integration.md).
+These checks cover one home setup, not authenticated login on every supported OS. Fresh
+interactive login inside Docker remains rejected in the tested browser configurations.
+This recovery is experimental. Releases without native helper assets predate this flow;
+use this source version or a release that includes them. [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118)
+tracks validation and release availability. Preserve existing `data/cookies.jar`
+files: deleting data cannot repair Twitch login or incomplete Smart TV campaign discovery.
+
 <p align="center">
   <a href="https://github.com/rangermix/TwitchDropsMiner/stargazers"><img src="https://img.shields.io/github/stars/rangermix/TwitchDropsMiner?style=for-the-badge&color=yellow" alt="GitHub stars"></a>
   <a href="https://github.com/rangermix/TwitchDropsMiner/releases"><img src="https://img.shields.io/github/v/release/rangermix/TwitchDropsMiner?style=for-the-badge&color=brightgreen" alt="Latest release"></a>
@@ -47,7 +72,7 @@ directory to `./data` on the host:
 
 ```bash
 docker run -d \
-  --name twitch-drops-miner \
+  --name twitch-drops-miner --init --stop-timeout 30 \
   -p 8080:8080 \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
@@ -65,6 +90,72 @@ From the repository root, build and start the included
 docker compose up -d --build
 ```
 
+### Helper-assisted login (experimental)
+
+Use TDM on your own home hardware. Existing valid Android sessions start automatically.
+For a new session, first choose a helper archive from the **Assets** of the
+[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases) matching your
+TDM version. Older releases without helper assets do not support this flow. Unreleased
+source builds can use the CI artifacts described below.
+
+| Your desktop | Archive suffix |
+| --- | --- |
+| Windows x64 | `windows-x64.tar.gz` |
+| macOS, Apple Silicon | `macos-arm64.tar.gz` |
+| macOS, Intel | `macos-x64.tar.gz` |
+| Linux x64, glibc (built on Ubuntu 22.04) | `linux-x64.tar.gz` |
+
+Extract `tdm-login-helper-<version>-<platform>.tar.gz`. Each archive contains the
+executable and its license; `SHA256SUMS` on the release page lists archive checksums.
+Chrome must be installed on this desktop; Python is not required. The native binaries
+are unsigned.
+
+1. Open TDM and leave **Settings → Allow helper connection** enabled (the default).
+2. Run the extracted `tdm-login-helper` (`tdm-login-helper.exe` on Windows) and enter the
+   TDM address shown on its Main tab, such as `http://192.168.1.10:8080`.
+3. Sign into Twitch in the Chrome window opened by the helper. Complete any verification
+   there, then wait for the helper's success message. Capture, upload, and server
+   validation happen automatically.
+
+TDM checks the account, inventory and campaigns, and proves that its own server browser
+can issue a usable replacement before accepting the session. It then saves the session
+and SDK cookie together under `/app/data/imported-session.json` and automatically turns
+**Allow helper connection** off. The helper closes its Chrome window and removes the
+temporary TDM profile, including Chrome's auxiliary temporary downloads. Your everyday
+browser profile is untouched; no exported session
+or renewal-connection file is kept on your desktop. You can close the helper and turn
+off the desktop after success.
+
+To replace the account or recover after a login expires, turn **Allow helper connection**
+on and repeat the same flow. Turning it off rejects new connections and invalidates
+outstanding uploads. Automatic server renewal continues while it is off. Anyone able
+to reach the helper API while admission is enabled can attempt a new login; the setting
+controls that admission independently of the optional dashboard password. Credentials
+are never returned by the dashboard API. Use the HTTPS dashboard address when accessing
+TDM across an untrusted network.
+
+The [validation workflow](https://github.com/rangermix/TwitchDropsMiner/actions/workflows/validation.yml)
+calls the same native build workflow used for releases. It checks all four platforms,
+packaged startup, translated output, connection handling, and installed Chrome startup
+and cleanup after a login timeout. These automated checks do not sign into Twitch.
+For unreleased source, download `tdm-login-helper-release` from a successful validation
+run for that source revision, unzip that CI artifact, then extract your platform's
+archive. CI artifacts are test builds and do not mean a version has been released.
+From a source checkout with its dependencies installed:
+
+```bash
+source env/bin/activate
+python login_helper.py --tdm http://192.168.1.10:8080
+```
+
+`--chrome` selects an installed Chrome executable and `--language` selects a translation.
+Packaged executables do not require Python. See [renewal and recovery](docs/server-renewal.md)
+for storage, expiry and failure behavior. The earlier export/pairing and direct Docker
+browser workflows are retired in this branch; their investigation evidence remains in
+`docs/notes/`. The [current integration record](docs/notes/2026-09-26-native-helper-integration.md)
+records native builds, fresh macOS login, restart and actual-expiry renewal checks,
+and the remaining platform and long-term reliability limits.
+
 ### From source
 
 Source installations require Python 3.12 or newer and
@@ -79,17 +170,18 @@ Then open <http://localhost:8080>.
 
 ## Using the web app
 
-1. Log in with your Twitch account through the OAuth device flow.
+1. Existing valid Android sessions are restored automatically. For fresh login on this
+   implementation, follow the helper-assisted flow above.
 2. Wait for the miner to discover available campaigns.
 3. Choose the games you want to prioritize. You can also search for a game, select
    **Add Game**, and then select **Reload**.
 4. Leave the miner running while it selects eligible channels and tracks drop progress.
 
-Twitch login uses the Smart TV device authorization flow. This fixes the
-`KeyError: 'device_code'` startup failure caused by Twitch rejecting the Android app
-client. After upgrading from 1.3.0 or earlier, you may need to authorize the miner
-once more at `twitch.tv/activate`; the new session is saved for later runs. Channel
-pages still use the public Twitch website to discover the watch-event endpoint.
+The Smart TV device-flow workaround in v1.3.1/v1.3.2 did not restore full campaign
+discovery. Do not discard a working Android session to repeat that authorization.
+See [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118) for the current
+login status. Channel pages still use the public Twitch website to discover the
+watch-event endpoint.
 
 In **Games to Watch**, drag games to reorder them or type a priority number to move a
 game directly. Priority 1 is highest; out-of-range numbers are clamped to the list ends.
@@ -328,8 +420,20 @@ deploying them. The validation suite includes GraphQL watch events and batched c
 discovery, alongside settings, full-locale translation schema and placeholder checks,
 and frontend safety checks. Use the software
 responsibly. Release automation verifies that the runtime, package, and lockfile versions
-match before publishing tags and Docker images. Docker validation and release jobs use
-the same pinned, Node-24-native Buildx and image-build action releases.
+match before publishing tags and Docker images. The GitHub release workflow verifies
+that the existing version tag matches its source commit, builds and smoke-tests all four
+native helpers, validates their archive contents and checksums, and attaches the versioned
+archives plus `SHA256SUMS` to a draft. It verifies all five uploaded assets against their
+local SHA-256 digests before publishing. A missing platform or failed upload leaves the
+release unpublished; retries can resume a draft, while already-published releases are
+left unchanged. PR validation exercises the same reusable build and packaging path
+with read-only repository permissions. Docker validation and release jobs use the same
+pinned, Node-24-native Buildx and image-build action releases.
+Native helper builds use the committed dependency lockfile; source CI also checks
+currently compatible dependency versions.
+Imported-session requests retry temporary Twitch failures for known read operations;
+ambiguous mutations and already successful batch members are not repeated. Regression
+coverage includes retry limits, cancellation and account replacement during a retry.
 The suite also covers ignored-keyword normalization, dependency branches, the combined
 expiry/ignore Wanted Queue guard, watch selection, API persistence, translated placeholder
 parity, frontend rendering, and the claimed-drop history store with CSV export and API

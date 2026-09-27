@@ -80,16 +80,8 @@
             "history": "Historique"
         },
         "login": {
-            "name": "Formulaire de connexion",
-            "labels": "Statut :\nIdentifiant utilisateur :",
-            "request": "Veuillez vous connecter pour continuer.",
-            "username": "Nom d'utilisateur",
-            "password": "Mot de passe",
-            "twofa_code": "Code 2FA (facultatif)",
-            "button": "Se connecter",
-            "oauth_prompt": "Entrez ce code sur :",
-            "oauth_activate": "Activer Twitch",
-            "oauth_confirm": "J'ai entré le code"
+            "name": "Connexion Twitch",
+            "user_id_label": "Identifiant utilisateur :"
         },
         "websocket": {
             "name": "État du Websocket",
@@ -303,6 +295,54 @@
             "cleared": "Historique effacé.",
             "clear_error": "Impossible d’effacer l’historique : {error}",
             "stats_error": "Impossible de charger les statistiques : {error}"
+        },
+        "helper_login": {
+            "step_download": "Téléchargez et lancez l’assistant de connexion TDM sur votre ordinateur.",
+            "step_instance": "Saisissez l’adresse de cette instance TDM dans l’assistant.",
+            "step_chrome": "Connectez-vous à Twitch dans la fenêtre Chrome ouverte par l’assistant.",
+            "step_finish": "L’assistant envoie automatiquement la connexion à TDM. Attendez son résultat.",
+            "builds": "Versions de l’assistant pour Linux, macOS et Windows",
+            "builds_note": "Dans les fichiers de la version, choisissez l’archive correspondant à votre système d’exploitation et à votre version de TDM. Chrome est requis ; Python ne l’est pas.",
+            "instance": "Cette instance TDM",
+            "copy": "Copier l’adresse",
+            "copied": "Adresse copiée.",
+            "copy_manually": "Sélectionnez et copiez l’adresse ci-dessus.",
+            "retry": "Réessayer l’état",
+            "settings_title": "Assistant de connexion Twitch",
+            "allow": "Autoriser la connexion de l’assistant",
+            "setting_help": "Autorisez l’assistant à connecter ou remplacer le compte Twitch. Cette option se désactive après une connexion réussie. Le renouvellement automatique continue lorsqu’elle est désactivée.",
+            "saving": "Enregistrement…",
+            "save_error": "Impossible d’enregistrer l’autorisation de l’assistant. Réessayez.",
+            "open": "La connexion de l’assistant est autorisée.",
+            "closed": "La connexion de l’assistant est désactivée. Activez-la dans les paramètres pour vous connecter ou changer de compte.",
+            "checking": "Vérification de l’état de l’assistant…",
+            "ready": "Session vérifiée. Session actuelle valide jusqu’au {expiry}.",
+            "waiting": "En attente de la connexion depuis l’assistant.",
+            "expired": "Session expirée.",
+            "session_error": "Session indisponible. Consultez le résultat de l’assistant.",
+            "status_error": "État de l’assistant indisponible. Réessayez.",
+            "existing": "La connexion Twitch enregistrée est active.",
+            "renewal": "Désactiver la connexion de l’assistant n’arrête pas le renouvellement automatique.",
+            "renewal_error": "Le renouvellement automatique nécessite une intervention. Autorisez la connexion de l’assistant dans les paramètres et relancez-le.",
+            "renewal_unavailable": "Cette session enregistrée nécessite une nouvelle connexion par l’assistant pour activer le renouvellement automatique. Autorisez sa connexion dans les paramètres, puis lancez-le.",
+            "renewal_retrying": "Le renouvellement automatique a échoué temporairement. TDM réessaie ; une nouvelle connexion par l’assistant n’est pas encore nécessaire."
         }
+    },
+    "helper": {
+        "title": "Connecter Twitch à TDM",
+        "destination_prompt": "URL de votre instance TDM : ",
+        "destination": "Destination : {url}",
+        "connecting": "Connexion à TDM…",
+        "login": "Connectez-vous à Twitch dans la fenêtre Chrome. Gardez cet assistant ouvert.",
+        "capturing": "Vérification de la session Twitch…",
+        "sending": "Envoi de la session ; attente de la vérification du renouvellement sur le serveur par TDM…",
+        "success": "Connecté. TDM a accepté la session et vérifié le renouvellement sur le serveur. Vous pouvez fermer cet assistant.",
+        "cancelled": "Annulé.",
+        "wait_to_close": "Appuyez sur Entrée pour fermer.",
+        "tdm_help": "URL racine de votre instance TDM",
+        "chrome_help": "Chemin de Google Chrome (normalement détecté automatiquement)",
+        "language_help": "Langue de la console",
+        "no_pause_help": "Quitter sans attendre la touche Entrée",
+        "result_unknown": "Le résultat est inconnu. Vérifiez TDM avant de réessayer."
     }
 }
