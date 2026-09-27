@@ -43,6 +43,6 @@ jobs:
           GH_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}
         run: |
           python .github/scripts/publish_wiki.py publish \
-            --repository "$GITHUB_REPOSITORY" --source-sha "$GITHUB_SHA" \
+            --repository "$GITHUB_REPOSITORY" --source . --source-sha "$GITHUB_SHA" \
             --exported "$RUNNER_TEMP/tdm-wiki-export" \
             --checkout "$RUNNER_TEMP/tdm-wiki"

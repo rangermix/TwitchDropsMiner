@@ -219,22 +219,36 @@ class WikiExporter:
 class WikiPublisher:
     """Publish only generated pages, retaining all other wiki files and history."""
 
-    def __init__(self, repository: str, exported: Path, checkout: Path, source_sha: str):
+    INPUT_PATHS = ("docs", ".github/scripts/publish_wiki.py", ".github/workflows/wiki.yml")
+
+    def __init__(self, repository: str, exported: Path, checkout: Path, source_sha: str, *, source: Path = Path(".")):
         self.repository = WikiExporter(exported, repository).repository
         if not re.fullmatch(r"[0-9a-f]{40}", source_sha):
             raise WikiError("Expected the exact source commit SHA.")
         self.exported, self.checkout, self.source_sha = exported, checkout, source_sha
+        self.source = WikiTree(source).root
+        self.obsolete = False
 
     @staticmethod
-    def _git(*args: str) -> None:
+    def _git(*args: str) -> str:
         try:
-            subprocess.run([
+            return subprocess.run([
                 "git", "-c", "credential.helper=", "-c", "credential.helper=!gh auth git-credential",
                 "-c", "core.hooksPath=" + os.devnull, *args,
             ], check=True, capture_output=True, text=True,
-                env={**os.environ, "GIT_TERMINAL_PROMPT": "0", "GH_PROMPT_DISABLED": "1"})
+                env={**os.environ, "GIT_TERMINAL_PROMPT": "0", "GH_PROMPT_DISABLED": "1"}).stdout.strip()
         except (OSError, subprocess.CalledProcessError):
             raise WikiError("Git wiki publication failed; no force push was attempted.") from None
+
+    def _current(self) -> bool:
+        if self._git("-C", str(self.source), "rev-parse", "--verify", "HEAD") != self.source_sha:
+            raise WikiError("Wiki source checkout does not match the triggering commit.")
+        self._git("-C", str(self.source), "fetch", "--no-tags", "--depth=1", "--",
+                  f"https://github.com/{self.repository}.git", "refs/heads/main")
+        # A contributor README-only commit does not trigger this workflow. Compare
+        # publication inputs, not HEAD identity, so those jobs can still publish.
+        return not self._git("-C", str(self.source), "diff", "--no-ext-diff", "--name-only",
+                             self.source_sha, "FETCH_HEAD", "--", *self.INPUT_PATHS)
 
     def publish(self) -> bool:
         exported = WikiTree(self.exported)
@@ -243,6 +257,9 @@ class WikiPublisher:
         pages = {name: exported.read(name) for name in sorted(WikiExporter.filenames())}
         if self.checkout.exists() or self.checkout.is_symlink():
             raise WikiError("Wiki clone destination must be new.")
+        self.obsolete = not self._current()
+        if self.obsolete:
+            return False
         self._git("clone", "--single-branch", "--", f"https://github.com/{self.repository}.wiki.git", str(self.checkout))
         changed = WikiTree(self.checkout).apply(pages)
         if not changed:
@@ -267,14 +284,19 @@ if __name__ == "__main__":
     publish.add_argument("--exported", type=Path, required=True)
     publish.add_argument("--checkout", type=Path, required=True)
     publish.add_argument("--source-sha", required=True)
+    publish.add_argument("--source", type=Path, required=True)
     args = parser.parse_args()
     try:
         if args.command == "export":
             WikiExporter(args.source, args.repository).export(args.output)
             print("Validated and exported the eight public guides and sidebar.")
         else:
-            changed = WikiPublisher(args.repository, args.exported, args.checkout, args.source_sha).publish()
-            print("Published public guide changes." if changed else "Wiki public guides are already current.")
+            publisher = WikiPublisher(args.repository, args.exported, args.checkout, args.source_sha, source=args.source)
+            changed = publisher.publish()
+            if publisher.obsolete:
+                print("Skipped obsolete run: wiki publication inputs have changed on main.")
+            else:
+                print("Published public guide changes." if changed else "Wiki public guides are already current.")
     except WikiError as error:
         parser.exit(1, str(error) + "\n")
     except (OSError, UnicodeError, ValueError):

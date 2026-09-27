@@ -600,7 +600,9 @@ priority and failover. It uses mocked Twitch state and does not verify live Twit
   Reject missing files, symlinks, and links to private or unpublished paths before
   writing output. Preserve unrelated wiki pages and history; never force-push.
   Check out the triggering SHA without stored checkout credentials, export before
-  exposing `PUBLISHER_TOKEN`, and never run publishing with PR code or credentials
+  exposing `PUBLISHER_TOKEN`, and skip obsolete runs when the documentation, publisher,
+  or workflow differs from current canonical `main`. Unrelated main commits must not
+  suppress publication. Never run publishing with PR code or credentials
   available to a PR. `tests/test_wiki_publication.py` covers export boundaries, links,
   idempotence, isolated Git publication, and workflow trust. Keep private `.dev-notes/`
   outside Git, the Docker build context, and the wiki publication surface.

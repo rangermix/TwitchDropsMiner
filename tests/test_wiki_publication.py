@@ -163,29 +163,127 @@ def git(*args):
     return subprocess.run(["git", *map(str, args)], capture_output=True, text=True, check=True).stdout.strip()
 
 
-def test_local_git_publication_preserves_pages_and_second_run_does_not_commit(wiki, source, tmp_path, monkeypatch):
+def commit(path, message):
+    git("-C", path, "add", "--all")
+    git("-C", path, "-c", "user.name=Test", "-c", "user.email=test@example.test", "commit", "-m", message)
+    return git("-C", path, "rev-parse", "HEAD")
+
+
+@pytest.fixture
+def local_repositories(wiki, source, tmp_path, monkeypatch):
+    canonical = tmp_path / "canonical.git"
+    git("init", "--bare", "--initial-branch=main", canonical)
+    git("-C", source, "init", "--initial-branch=main")
+    for name in (".github/scripts/publish_wiki.py", ".github/workflows/wiki.yml"):
+        target = source / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("original publication code\n", encoding="utf-8")
+    source_sha = commit(source, "Initial public guides")
+    git("-C", source, "remote", "add", "origin", canonical)
+    git("-C", source, "push", "origin", "main")
+    previous = tmp_path / "previous-source"
+    git("clone", canonical, previous)
     remote = tmp_path / "wiki.git"
     git("init", "--bare", remote)
-    seed = tmp_path / "initial"
+    seed = tmp_path / "initial-wiki"
     git("clone", remote, seed)
     (seed / "Community.md").write_text("community", encoding="utf-8")
-    git("-C", seed, "add", "Community.md")
-    git("-C", seed, "-c", "user.name=Test", "-c", "user.email=test@example.test", "commit", "-m", "Initial")
+    commit(seed, "Initial wiki")
     git("-C", seed, "push", "origin", "HEAD")
-    exported = tmp_path / "export"
-    wiki.WikiExporter(source, "owner/repo").export(exported)
-    original_run = subprocess.run
-    calls = []
+    original_run, calls = subprocess.run, []
 
     def local_run(args, **kwargs):
         calls.append(list(args))
-        args = [str(remote) if a == "https://github.com/owner/repo.wiki.git" else a for a in args]
-        return original_run(args, **kwargs)
+        destinations = {
+            "https://github.com/owner/repo.git": str(canonical),
+            "https://github.com/owner/repo.wiki.git": str(remote),
+        }
+        return original_run([destinations.get(arg, arg) for arg in args], **kwargs)
 
     monkeypatch.setattr(wiki.subprocess, "run", local_run)
-    assert wiki.WikiPublisher("owner/repo", exported, tmp_path / "first", "a" * 40).publish()
+    return source, previous, source_sha, remote, calls
+
+
+@pytest.mark.parametrize("changed_path", [
+    "docs/usage.md", ".github/scripts/publish_wiki.py", ".github/workflows/wiki.yml",
+])
+def test_obsolete_rerun_cannot_roll_back_a_newer_wiki(wiki, local_repositories, tmp_path, monkeypatch, changed_path):
+    source, previous, old_sha, remote, calls = local_repositories
+    old_export = tmp_path / "old-export"
+    wiki.WikiExporter(previous, "owner/repo").export(old_export)
+    (source / changed_path).write_text("# New canonical content\n", encoding="utf-8")
+    latest_sha = commit(source, "Change publication inputs")
+    git("-C", source, "push", "origin", "main")
+    new_export = tmp_path / "new-export"
+    wiki.WikiExporter(source, "owner/repo").export(new_export)
+    monkeypatch.chdir(source)
+    assert wiki.WikiPublisher("owner/repo", new_export, tmp_path / "latest-wiki", latest_sha).publish()
+    published_head = git("--git-dir", remote, "rev-parse", "HEAD")
+    monkeypatch.chdir(previous)
+    stale = wiki.WikiPublisher("owner/repo", old_export, tmp_path / "stale-wiki", old_sha)
+    assert not stale.publish()
+    assert not (tmp_path / "stale-wiki").exists()
+    assert stale.obsolete is True
+    assert git("--git-dir", remote, "rev-parse", "HEAD") == published_head
+    wiki_clones = [call for call in calls if "clone" in call and "https://github.com/owner/repo.wiki.git" in call]
+    assert len(wiki_clones) == 1
+
+
+def test_readme_only_main_commit_does_not_suppress_current_docs(wiki, local_repositories, tmp_path, monkeypatch):
+    source, previous, old_sha, remote, calls = local_repositories
+    (source / "README.md").write_text("Contributor automation changed the README.\n", encoding="utf-8")
+    latest_sha = commit(source, "Update contributor credit only")
+    assert latest_sha != old_sha
+    git("-C", source, "push", "origin", "main")
+    exported = tmp_path / "export"
+    wiki.WikiExporter(previous, "owner/repo").export(exported)
+    monkeypatch.chdir(previous)
+    publisher = wiki.WikiPublisher("owner/repo", exported, tmp_path / "wiki", old_sha)
+    assert publisher.publish()
+    assert publisher.obsolete is False
+    assert git("-C", previous, "rev-parse", "HEAD") == old_sha
+    assert "# Using-TDM" in git("--git-dir", remote, "show", "HEAD:Using-TDM.md")
+    assert any("https://github.com/owner/repo.git" in call and "fetch" in call for call in calls)
+
+
+def test_source_sha_mismatch_stops_before_fetch_or_wiki_access(wiki, local_repositories, tmp_path):
+    source, _previous, _source_sha, _remote, calls = local_repositories
+    exported = tmp_path / "export"
+    wiki.WikiExporter(source, "owner/repo").export(exported)
+    with pytest.raises(wiki.WikiError, match="source checkout"):
+        wiki.WikiPublisher("owner/repo", exported, tmp_path / "wiki", "a" * 40, source=source).publish()
+    assert len(calls) == 1 and "rev-parse" in calls[0]
+    assert not (tmp_path / "wiki").exists()
+
+
+def test_canonical_main_fetch_failure_stops_without_wiki_mutation(wiki, local_repositories, tmp_path, monkeypatch):
+    source, _previous, source_sha, _remote, calls = local_repositories
+    exported = tmp_path / "export"
+    wiki.WikiExporter(source, "owner/repo").export(exported)
+    original_run, attempts = wiki.subprocess.run, []
+
+    def fail_fetch(args, **kwargs):
+        attempts.append(list(args))
+        if "fetch" in args:
+            raise subprocess.CalledProcessError(1, args, stderr="private remote diagnostic")
+        return original_run(args, **kwargs)
+
+    monkeypatch.setattr(wiki.subprocess, "run", fail_fetch)
+    with pytest.raises(wiki.WikiError) as error:
+        wiki.WikiPublisher("owner/repo", exported, tmp_path / "wiki", source_sha, source=source).publish()
+    assert "private" not in str(error.value)
+    assert len([args for args in attempts if "fetch" in args]) == 1
+    assert not any("clone" in args for args in calls)
+    assert not (tmp_path / "wiki").exists()
+
+
+def test_local_git_publication_preserves_pages_and_second_run_does_not_commit(wiki, local_repositories, tmp_path):
+    source, _previous, source_sha, remote, calls = local_repositories
+    exported = tmp_path / "export"
+    wiki.WikiExporter(source, "owner/repo").export(exported)
+    assert wiki.WikiPublisher("owner/repo", exported, tmp_path / "first", source_sha, source=source).publish()
     head = git("--git-dir", remote, "rev-parse", "HEAD")
-    assert not wiki.WikiPublisher("owner/repo", exported, tmp_path / "second", "b" * 40).publish()
+    assert not wiki.WikiPublisher("owner/repo", exported, tmp_path / "second", source_sha, source=source).publish()
     assert git("--git-dir", remote, "rev-parse", "HEAD") == head
     assert (tmp_path / "second/Community.md").read_text() == "community"
     assert len([call for call in calls if "push" in call]) == 1
@@ -244,6 +342,7 @@ def test_workflow_scopes_credentials_to_main_publication_after_validation():
     assert workflow.count("secrets.PUBLISHER_TOKEN") == 1
     assert "GH_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}" in workflow
     assert "publish_wiki.py publish" in workflow
+    assert '--source . --source-sha "$GITHUB_SHA"' in workflow
 
 
 def test_checked_in_public_guides_are_publishable(wiki):

@@ -346,6 +346,8 @@ access to this repository's wiki. A new wiki needs its first **Home** page creat
 through GitHub before Git-based publishing can clone it. Maintainers can rerun the
 workflow after correcting setup; it does not force-push or delete unrelated wiki pages.
 The eight generated pages and `_Sidebar.md` are managed by the source guides.
+Old reruns are skipped when their documentation or publishing code differs from current
+`main`; unrelated commits, such as contributor-credit updates, do not block publication.
 
 To validate the export locally from the activated environment:
 
