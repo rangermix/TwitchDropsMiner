@@ -2,31 +2,6 @@
 
 > Automatically mine timed Twitch Drops without streaming video or audio.
 
-> **Warning: new Twitch device-code login is broken; browser recovery is experimental.** Preserve existing `data/cookies.jar`
-> files and backups. New login and missing-campaign recovery are tracked in
-> [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118).
-
-Twitch rejects new Android device-code authorization. TDM preserves still-valid
-Android sessions and uses a [local login helper](#helper-assisted-login-experimental)
-for fresh login. The helper opens your installed Chrome, sends the required session
-state directly to your selected TDM instance, and closes its temporary profile. TDM
-stores the accepted state and renews it on the home server; your computer can then close.
-No environment flag, dashboard password, manual JSON export, or separate renewal
-connection file is required. Dashboard password protection remains optional.
-
-The Alpine image now includes Chromium for server-side integrity renewal. Mining
-requests still use Python HTTP, with no added Python runtime dependency. The packaged
-macOS ARM64 helper passed fresh login, direct handoff, cleanup and server restart checks.
-On a separate integrated instance, normal renewal produced a new token that passed
-account, inventory and campaign requests after the original token's actual expiry,
-with helper admission closed. See the [timestamped evidence and limits](docs/notes/2026-09-26-native-helper-integration.md).
-These checks cover one home setup, not authenticated login on every supported OS. Fresh
-interactive login inside Docker remains rejected in the tested browser configurations.
-This recovery is experimental. Releases without native helper assets predate this flow;
-use this source version or a release that includes them. [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118)
-tracks validation and release availability. Preserve existing `data/cookies.jar`
-files: deleting data cannot repair Twitch login or incomplete Smart TV campaign discovery.
-
 <p align="center">
   <a href="https://github.com/rangermix/TwitchDropsMiner/stargazers"><img src="https://img.shields.io/github/stars/rangermix/TwitchDropsMiner?style=for-the-badge&color=yellow" alt="GitHub stars"></a>
   <a href="https://github.com/rangermix/TwitchDropsMiner/releases"><img src="https://img.shields.io/github/v/release/rangermix/TwitchDropsMiner?style=for-the-badge&color=brightgreen" alt="Latest release"></a>
@@ -54,7 +29,7 @@ dashboard. It sends Twitch watch events without downloading the stream itself.
 - **Automatic campaign discovery** — detects active and upcoming drop campaigns
 - **Smart channel selection** — prioritizes eligible channels, preferred games, and viewers
 - **Drop-name ignore rules** — excludes unwanted reward names and dependent branches
-- **Persistent sessions** — saves OAuth login state between runs
+- **Helper-assisted authentication** — sign in through desktop Chrome; TDM saves and renews the session automatically
 - **Web dashboard** — manages campaigns, channels, inventory, settings, and login status
 - **Optional dashboard password** — protects the web UI, API, and live connections with one password
 - **Drop history** — records every claimed drop locally (date, game, campaign, rewards)
@@ -90,13 +65,21 @@ From the repository root, build and start the included
 docker compose up -d --build
 ```
 
-### Helper-assisted login (experimental)
+### Migrating an existing installation
 
-Use TDM on your own home hardware. Existing valid Android sessions start automatically.
-For a new session, first choose a helper archive from the **Assets** of the
-[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases) matching your
-TDM version. Older releases without helper assets do not support this flow. Unreleased
-source builds can use the CI artifacts described below.
+Keep your existing `data` directory, including `cookies.jar`, when upgrading TDM. For
+Docker, keep the same volume mounted at `/app/data`.
+
+- **Working Android session:** TDM restores it automatically; no new login is needed.
+- **Smart TV session from v1.3.1/v1.3.2, expired session, or signed out:** complete the
+  [helper-assisted login](#helper-assisted-login) below. Use a helper matching your
+  updated TDM version.
+
+### Helper-assisted login
+
+TDM uses the local login helper for Twitch authentication. Download the archive for your
+desktop from the **Assets** of the [GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases)
+matching your TDM version.
 
 | Your desktop | Archive suffix |
 | --- | --- |
@@ -110,21 +93,17 @@ executable and its license; `SHA256SUMS` on the release page lists archive check
 Chrome must be installed on this desktop; Python is not required. The native binaries
 are unsigned.
 
-1. Open TDM and leave **Settings → Allow helper connection** enabled (the default).
+1. Open TDM and make sure **Settings → Allow helper connection** is enabled.
 2. Run the extracted `tdm-login-helper` (`tdm-login-helper.exe` on Windows) and enter the
    TDM address shown on its Main tab, such as `http://192.168.1.10:8080`.
 3. Sign into Twitch in the Chrome window opened by the helper. Complete any verification
    there, then wait for the helper's success message. Capture, upload, and server
    validation happen automatically.
 
-TDM checks the account, inventory and campaigns, and proves that its own server browser
-can issue a usable replacement before accepting the session. It then saves the session
-and SDK cookie together under `/app/data/imported-session.json` and automatically turns
-**Allow helper connection** off. The helper closes its Chrome window and removes the
-temporary TDM profile, including Chrome's auxiliary temporary downloads. Your everyday
-browser profile is untouched; no exported session
-or renewal-connection file is kept on your desktop. You can close the helper and turn
-off the desktop after success.
+After confirming login, TDM saves the session and automatically turns **Allow helper
+connection** off. The helper closes its Chrome window and removes its temporary profile.
+Your everyday browser profile is untouched. TDM renews the session on the server, so
+you can close the helper and turn off your desktop after success.
 
 To replace the account or recover after a login expires, turn **Allow helper connection**
 on and repeat the same flow. Turning it off rejects new connections and invalidates
@@ -134,14 +113,8 @@ controls that admission independently of the optional dashboard password. Creden
 are never returned by the dashboard API. Use the HTTPS dashboard address when accessing
 TDM across an untrusted network.
 
-The [validation workflow](https://github.com/rangermix/TwitchDropsMiner/actions/workflows/validation.yml)
-calls the same native build workflow used for releases. It checks all four platforms,
-packaged startup, translated output, connection handling, and installed Chrome startup
-and cleanup after a login timeout. These automated checks do not sign into Twitch.
-For unreleased source, download `tdm-login-helper-release` from a successful validation
-run for that source revision, unzip that CI artifact, then extract your platform's
-archive. CI artifacts are test builds and do not mean a version has been released.
-From a source checkout with its dependencies installed:
+For a source installation, use the helper from the same checkout with its dependencies
+installed:
 
 ```bash
 source env/bin/activate
@@ -149,12 +122,10 @@ python login_helper.py --tdm http://192.168.1.10:8080
 ```
 
 `--chrome` selects an installed Chrome executable and `--language` selects a translation.
-Packaged executables do not require Python. See [renewal and recovery](docs/server-renewal.md)
-for storage, expiry and failure behavior. The earlier export/pairing and direct Docker
-browser workflows are retired in this branch; their investigation evidence remains in
-`docs/notes/`. The [current integration record](docs/notes/2026-09-26-native-helper-integration.md)
-records native builds, fresh macOS login, restart and actual-expiry renewal checks,
-and the remaining platform and long-term reliability limits.
+You can also download `tdm-login-helper-release` from a successful
+[validation run](https://github.com/rangermix/TwitchDropsMiner/actions/workflows/validation.yml)
+for your source revision, unzip that artifact, and extract your platform's archive.
+See [renewal and recovery](docs/server-renewal.md) for storage, expiry and failure behavior.
 
 ### From source
 
@@ -170,18 +141,12 @@ Then open <http://localhost:8080>.
 
 ## Using the web app
 
-1. Existing valid Android sessions are restored automatically. For fresh login on this
-   implementation, follow the helper-assisted flow above.
+1. Sign in using the [login helper](#helper-assisted-login), unless TDM has already
+   restored your saved session.
 2. Wait for the miner to discover available campaigns.
 3. Choose the games you want to prioritize. You can also search for a game, select
    **Add Game**, and then select **Reload**.
 4. Leave the miner running while it selects eligible channels and tracks drop progress.
-
-The Smart TV device-flow workaround in v1.3.1/v1.3.2 did not restore full campaign
-discovery. Do not discard a working Android session to repeat that authorization.
-See [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118) for the current
-login status. Channel pages still use the public Twitch website to discover the
-watch-event endpoint.
 
 In **Games to Watch**, drag games to reorder them or type a priority number to move a
 game directly. Priority 1 is highest; out-of-range numbers are clamped to the list ends.

@@ -1,18 +1,16 @@
 # Integrated server renewal
 
-Tracking: [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118). This recovery
-is experimental; releases without helper assets predate it. Use the [helper-assisted login](../README.md#helper-assisted-login-experimental)
-flow once on your desktop: run the helper, enter your TDM address, log into Twitch,
-and wait for success. There is no seed file to transfer, renewal connection to download,
-sidecar to configure, mandatory dashboard password, or environment flag to enable.
+TDM uses [helper-assisted login](../README.md#helper-assisted-login) for Twitch
+authentication and renews the accepted session automatically on the server. Run the
+helper on your desktop, enter your TDM address, log into Twitch, and wait for success.
+Existing installations can follow the [migration steps](../README.md#migrating-an-existing-installation).
 
 Use the native helper archive matching your desktop and TDM release from GitHub release
 assets. Linux x64, Windows x64 and both Mac architectures are built and smoke-tested by
-CI; the release includes archive checksums. For unreleased source, the same packaged
+CI; the release includes archive checksums. For source installations, the same packaged
 assets are available from its successful validation workflow run. The helper uses a
 temporary profile in your installed Chrome and does not reuse your everyday profile.
-The retired Docker login-browser overlay and standalone renewal Dockerfile are no
-longer shipped; the standard TDM image contains everything needed for server renewal.
+The standard TDM image contains everything needed for server renewal.
 
 ## What TDM stores and runs
 
@@ -74,4 +72,4 @@ that server-side issuance can work in that environment, not that every refactori
 platform or future Twitch change works. Authenticated login on every OS and multi-day
 reliability remain unverified; [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118)
 tracks release validation. The old manual import/pair/renew HTTP routes and local export
-CLI are removed from this branch; old connection files cannot be used with it.
+CLI are retired; migrate those installations by signing in with the login helper.

@@ -240,8 +240,12 @@ progress to an ignored drop while the miner intentionally targets another reward
 6. **CHANNEL_SWITCH** - Select best channel to watch based on priority/ACL
 7. Loop between CHANNEL_SWITCH and periodic INVENTORY_FETCH (hourly)
 
-### Authentication and helper-assisted login (#118)
+### Authentication and helper-assisted login
 
+- Helper-assisted login is TDM's standard authentication method for new or expired
+  sessions. README guidance covers migration from existing Android/Smart TV sessions
+  and normal helper use. Keep historical investigation and scoped verification records
+  in `docs/notes/`; do not present the current authentication flow as experimental.
 - `Twitch` starts with `ClientType.ANDROID_APP` and reuses valid saved Android cookies.
   Preserve `cookies.jar`; fresh, expired, or wrong-client credentials wait for the helper.
   Fresh device authorization, direct remote-browser configuration, manual session upload,
@@ -321,7 +325,7 @@ progress to an ignored drop while the miner intentionally targets another reward
   for unreleased source, not evidence that a release exists.
 - Preserve strict bundle/header/cookie allowlists, private atomic file writes, same-account
   renewal and accepted-catalog validation. Shared session/SDK primitives remain covered by
-  their focused tests. Legacy BrowserSession is retained only as an experimental library,
+  their focused tests. Legacy BrowserSession is retained only for historical investigation,
   not selectable fresh login. Historical live evidence in docs/notes is not proof of a
   changed integrated flow. Record fresh provider, expiry, restart and native build evidence
   in `docs/notes/2026-09-26-native-helper-integration.md`. The 26 September checkpoint
@@ -687,8 +691,9 @@ The application uses a web-based interface accessible via browser:
 - **WebSocket for real-time** - Socket.IO chosen for reliability (fallback to polling)
 - **Single-page app** - Simpler than full framework (React/Vue), fast load times
 - **Direct Docker support** - Environment detection, proper path handling
-- **Persistent Twitch sessions** - Preserve valid Android credentials; the fresh-login
-  outage and planned controlled-browser replacement are tracked in #118.
+- **Helper-assisted Twitch authentication** - Use desktop Chrome for login, transfer
+  the session directly to TDM, and renew it on the server. Preserve valid saved Android
+  sessions during migration.
 
 ## Project Scope
 
