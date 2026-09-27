@@ -609,6 +609,10 @@ priority and failover. It uses mocked Twitch state and does not verify live Twit
 - `.github/workflows/version-release.yml` is the release entry point. It must provision
   `uv`, update `src/version.py`, `pyproject.toml`, and `uv.lock` together, and validate all
   three before creating a release branch or tag.
+  Version 2.0 introduces helper-assisted authentication and server Chromium; preserve
+  its data-volume/cookie migration instructions and matching helper downloads. Prepare
+  reviewed release notes before dispatch, then verify the published Docker architectures,
+  source revision, four native archives, and checksums before reporting publication.
 - `.github/workflows/login-helper.yml` is the read-only reusable native build workflow,
   called by both validation and GitHub release workflows. Build Linux x64, macOS ARM64/x64
   and Windows x64 from the caller's exact source SHA, then run packaged installed-Chrome

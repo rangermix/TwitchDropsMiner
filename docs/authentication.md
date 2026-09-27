@@ -21,8 +21,8 @@ preserved Android credentials, including after restart.
 
 ## Download the helper
 
-Check your TDM version in the dashboard. When that version provides native helper
-downloads, choose the matching archive under **Assets** on its
+Check your TDM version in the dashboard. For TDM 2.0.0 and later, choose the matching
+native helper archive under **Assets** on its
 [GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases).
 
 | Your desktop | Archive suffix |
@@ -37,8 +37,8 @@ executable and its license. The release's `SHA256SUMS` file lists checksums for 
 archives. Google Chrome must be installed on this desktop; the packaged helper does
 not require Python. The native binaries are unsigned.
 
-Older releases may have no helper assets, and merging source changes does not create
-a release. For an unreleased source installation, use the helper from the same source
+The v1.x releases do not provide this helper flow. For an unreleased source
+installation, use the helper from the same source
 revision. You can download the `tdm-login-helper-release` artifact from that revision's
 successful [validation run](https://github.com/rangermix/TwitchDropsMiner/actions/workflows/validation.yml),
 unzip the artifact, and extract your platform's archive. Alternatively,
