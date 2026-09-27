@@ -1,5 +1,14 @@
 # Twitch Drops Miner
 
+<!-- Temporary upgrade notice: remove after the v2.1.0 release. -->
+> [!WARNING]
+> **All users must upgrade to [TDM 2.0 or newer](https://github.com/rangermix/TwitchDropsMiner/releases/latest).**
+> Twitch has changed its authentication, and the old sign-in method no longer works.
+>
+> - **v1.3.1–v1.3.2 users:** sign in again with the [login helper](docs/authentication.md#sign-in) after upgrading.
+> - **Other users:** your existing valid login is preserved; you do not need to sign in again. Keep your `data` directory, including `cookies.jar`.
+<!-- End temporary upgrade notice. -->
+
 Automatically earn timed Twitch Drops without downloading stream video or audio.
 
 <p align="center">
