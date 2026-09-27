@@ -9,7 +9,7 @@ import re
 import time
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager, suppress
-from typing import Any
+from typing import Any, Protocol
 
 import aiohttp
 from yarl import URL
@@ -20,10 +20,23 @@ from src.auth.session_bundle import SessionBundle, SessionError
 from src.config import ClientType
 
 
+class _DevToolsMessage(Protocol):
+    @property
+    def type(self) -> aiohttp.WSMsgType: ...
+
+    def json(self) -> object: ...
+
+
+class _DevToolsSocket(Protocol):
+    def __aiter__(self) -> AsyncIterator[_DevToolsMessage]: ...
+
+    async def send_json(self, data: object, /) -> None: ...
+
+
 class DevToolsConnection:
     """Multiplex bounded protocol replies and the few relevant network events."""
 
-    def __init__(self, socket: aiohttp.ClientWebSocketResponse, *, extra_events: frozenset[str] = frozenset()):
+    def __init__(self, socket: _DevToolsSocket, *, extra_events: frozenset[str] = frozenset()):
         self.socket = socket
         self.extra_events = extra_events
         self._sequence = 0

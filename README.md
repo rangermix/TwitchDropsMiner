@@ -429,6 +429,8 @@ release unpublished; retries can resume a draft, while already-published release
 left unchanged. PR validation exercises the same reusable build and packaging path
 with read-only repository permissions. Docker validation and release jobs use the same
 pinned, Node-24-native Buildx and image-build action releases.
+Native helper builds use the committed dependency lockfile; source CI also checks
+currently compatible dependency versions.
 Imported-session requests retry temporary Twitch failures for known read operations;
 ambiguous mutations and already successful batch members are not repeated. Regression
 coverage includes retry limits, cancellation and account replacement during a retry.

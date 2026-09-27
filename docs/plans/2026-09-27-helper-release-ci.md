@@ -52,3 +52,9 @@ upload completed and replace existing public files on reruns. Publication now us
 or resume a draft, upload the exact five local assets, verify the complete remote set
 and digests, then publish. Tests simulate stable/prerelease upload failures, draft
 recovery, corrupt or missing remote assets, and a public rerun with no writes.
+
+Final CI log inspection exposed six advisory Mypy errors with aiohttp 3.14.3 and Mypy
+2.3.1, despite clean locked-environment checks and a green job. Reproduced all six in
+an isolated dependency environment. The DevTools transport annotation now uses only
+its required structural interface, keeping runtime behavior and locked dependencies
+unchanged. Verify both typing environments and re-review before the final CI/merge.

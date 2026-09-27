@@ -312,6 +312,10 @@ progress to an ignored drop while the miner intentionally targets another reward
   and unrelated files, when changing native browser launch or cleanup.
   The helper writes UTF-8 console output; subprocess tests must decode it explicitly as
   UTF-8 rather than using the Windows locale code page.
+  Keep `DevToolsConnection` typed against its narrow websocket protocol (async iteration
+  and `send_json`), compatible with both locked aiohttp and newer supported releases.
+  Do not subscript the older non-generic websocket class or silence new type errors;
+  inspect advisory CI Mypy output even when the enclosing job reports success.
   The dashboard download link targets GitHub releases; keep its archive/version guidance
   translated in every locale. PR build artifacts are an explicitly documented fallback
   for unreleased source, not evidence that a release exists.
