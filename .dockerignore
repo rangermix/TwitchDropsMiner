@@ -60,3 +60,6 @@ logs/
 # Other
 .env
 .env.local
+
+# Private development plans, notes, and local verification records
+/.dev-notes/
