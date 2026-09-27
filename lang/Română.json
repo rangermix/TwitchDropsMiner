@@ -302,7 +302,7 @@
             "step_chrome": "Autentifică-te pe Twitch în fereastra Chrome deschisă de asistent.",
             "step_finish": "Asistentul trimite automat autentificarea către TDM. Așteaptă rezultatul.",
             "builds": "Versiuni ale asistentului pentru Linux, macOS și Windows",
-            "builds_note": "Folosește artefactele de compilare din fluxul asistentului nativ. Descărcările versiunilor oficiale nu sunt încă publicate.",
+            "builds_note": "Din fișierele versiunii, alege arhiva pentru sistemul tău de operare și versiunea TDM. Chrome este necesar; Python nu este necesar.",
             "instance": "Această instanță TDM",
             "copy": "Copiază adresa",
             "copied": "Adresă copiată.",

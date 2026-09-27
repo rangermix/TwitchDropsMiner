@@ -302,7 +302,7 @@
             "step_chrome": "Log ind på Twitch i Chrome-vinduet, som hjælperen åbner.",
             "step_finish": "Hjælperen sender automatisk login til TDM. Vent på resultatet.",
             "builds": "Hjælperbyg til Linux, macOS og Windows",
-            "builds_note": "Brug byggeartefakterne fra arbejdsgangen for den native hjælper. Der er endnu ingen udgivne downloads.",
+            "builds_note": "Vælg arkivet til dit operativsystem og din TDM-version blandt udgivelsens filer. Chrome er påkrævet; Python er ikke nødvendigt.",
             "instance": "Denne TDM-instans",
             "copy": "Kopiér adresse",
             "copied": "Adresse kopieret.",

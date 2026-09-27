@@ -302,7 +302,7 @@
             "step_chrome": "Melde dich im vom Helfer geöffneten Chrome-Fenster bei Twitch an.",
             "step_finish": "Der Helfer sendet die Anmeldung automatisch an TDM. Warte auf das Ergebnis.",
             "builds": "Helfer-Builds für Linux, macOS und Windows",
-            "builds_note": "Nutze die Build-Artefakte des Workflows für den nativen Helfer. Release-Downloads sind noch nicht veröffentlicht.",
+            "builds_note": "Wähle unter den Dateien der Veröffentlichung das Archiv für dein Betriebssystem und deine TDM-Version. Chrome ist erforderlich; Python nicht.",
             "instance": "Diese TDM-Instanz",
             "copy": "Adresse kopieren",
             "copied": "Adresse kopiert.",

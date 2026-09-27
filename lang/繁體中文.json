@@ -302,7 +302,7 @@
             "step_chrome": "在助手開啟的 Chrome 視窗中登入 Twitch。",
             "step_finish": "助手會自動將登入資訊傳送給 TDM。請等待處理結果。",
             "builds": "Linux、macOS 和 Windows 助手組建",
-            "builds_note": "請使用原生助手工作流程的組建產物。目前尚未發布正式版下載。",
+            "builds_note": "請從發行版附件中選擇適合你的作業系統和 TDM 版本的壓縮檔。需要安裝 Chrome，無需安裝 Python。",
             "instance": "此 TDM 執行個體",
             "copy": "複製位址",
             "copied": "已複製位址。",

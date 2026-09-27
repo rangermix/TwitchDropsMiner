@@ -1,6 +1,9 @@
 """Helper-only dashboard entry points, connection gate and session status."""
 
+import json
+import re
 import subprocess
+from html import unescape
 from pathlib import Path
 
 import pytest
@@ -44,7 +47,7 @@ const context = {window:{location:{origin:'https://tdm.test'}}, document:doc, Da
 vm.createContext(context);
 vm.runInContext(fs.readFileSync(process.argv[1], 'utf8'), context);
 const t = {title:'<img onerror=bad()>', step_download:'Download and run', step_instance:'Enter the instance address',
- step_chrome:'Sign in in Chrome', step_finish:'Wait for the helper result', builds:'Native builds', builds_note:'Unreleased build artifacts',
+ step_chrome:'Sign in in Chrome', step_finish:'Wait for the helper result', builds:'Native builds', builds_note:'Choose the matching release archive. Chrome required; Python not required.',
  instance:'This instance', copy:'Copy address', copied:'Copied', copy_manually:'Select and copy the address', retry:'Retry status',
  allow:'Allow helper connection', settings_title:'Twitch helper', setting_help:'Allows login and account replacement; closes after success; renewal continues',
  saving:'Saving', save_error:'Could not save', open:'Connections allowed', closed:'Connections closed; enable in Settings',
@@ -353,3 +356,35 @@ def test_helper_dashboard_translation_keys_match_typed_schema_in_every_locale():
         assert set(gui["helper_login"]) == set(GUIHelperLogin.__annotations__), path.name
         assert set(gui["login"]) == set(GUILoginForm.__annotations__), path.name
         assert "session_import" not in gui
+
+
+def test_helper_download_links_to_releases_with_matching_english_fallback():
+    html = (ROOT / "web/index.html").read_text()
+    english = json.loads((ROOT / "lang/English.json").read_text())["gui"]["helper_login"]
+    anchor = re.search(r'<a\b([^>]*\bid="helper-download"[^>]*)>([^<]*)</a>', html)
+    note = re.search(r'<p\b[^>]*\bid="helper-builds-note"[^>]*>([^<]*)</p>', html)
+    assert anchor is not None and note is not None
+    assert 'href="https://github.com/rangermix/TwitchDropsMiner/releases"' in anchor[1]
+    assert 'rel="noopener noreferrer"' in anchor[1]
+    assert unescape(anchor[2]) == english["builds"]
+    assert unescape(note[1]) == english["builds_note"]
+
+
+@pytest.mark.skipif(NODE is None, reason="Node required for DOM behavior tests")
+def test_release_download_guidance_renders_in_every_locale():
+    notes = []
+    for path in sorted((ROOT / "lang").glob("*.json")):
+        helper = json.loads(path.read_text())["gui"]["helper_login"]
+        for requirement in ("TDM", "Chrome", "Python"):
+            assert requirement in helper["builds_note"], path.name
+        notes.append(helper)
+    run_panel("const locales = " + json.dumps(notes) + ";\n" + r"""
+el('helper-download').href='https://github.com/rangermix/TwitchDropsMiner/releases';
+for(const locale of locales) {
+ Object.assign(t,locale);
+ panel.render();
+ assert.equal(el('helper-builds-note').textContent,locale.builds_note);
+ assert.equal(el('helper-download').textContent,locale.builds);
+ assert.equal(el('helper-download').href,'https://github.com/rangermix/TwitchDropsMiner/releases');
+}
+""")

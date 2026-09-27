@@ -312,6 +312,9 @@ progress to an ignored drop while the miner intentionally targets another reward
   and unrelated files, when changing native browser launch or cleanup.
   The helper writes UTF-8 console output; subprocess tests must decode it explicitly as
   UTF-8 rather than using the Windows locale code page.
+  The dashboard download link targets GitHub releases; keep its archive/version guidance
+  translated in every locale. PR build artifacts are an explicitly documented fallback
+  for unreleased source, not evidence that a release exists.
 - Preserve strict bundle/header/cookie allowlists, private atomic file writes, same-account
   renewal and accepted-catalog validation. Shared session/SDK primitives remain covered by
   their focused tests. Legacy BrowserSession is retained only as an experimental library,
@@ -324,6 +327,12 @@ progress to an ignored drop while the miner intentionally targets another reward
   authenticated login on every OS, multi-day reliability or live mining progress.
   Preserve pending checks separately; never infer live drop progress from mocks or a
   Watching label.
+- Imported-session GraphQL retries transient HTTP 5xx, connection and timeout failures
+  only for exact known persisted read operations in the remaining request batch, with
+  at most three attempts. Retry waits release the session lock, support stop/cancellation,
+  and reject work whose account changed. Never replay ambiguous mutations, raw/unknown
+  operations or already successful batch members. Keep public errors credential-free;
+  `tests/test_imported_session_retry.py` exercises production GQL dispatch and HTTP replies.
 - New backend and lifecycle coverage is in test_helper_connection/api/lifecycle,
   test_auth_task_cleanup and test_login_helper. Keep old Android cookie/restart coverage,
   account precedence, stale admission, atomic failure, lost-ack, gate-closed renewal,
@@ -572,6 +581,28 @@ priority and failover. It uses mocked Twitch state and does not verify live Twit
 - `.github/workflows/version-release.yml` is the release entry point. It must provision
   `uv`, update `src/version.py`, `pyproject.toml`, and `uv.lock` together, and validate all
   three before creating a release branch or tag.
+- `.github/workflows/login-helper.yml` is the read-only reusable native build workflow,
+  called by both validation and GitHub release workflows. Build Linux x64, macOS ARM64/x64
+  and Windows x64 from the caller's exact source SHA, then run packaged installed-Chrome
+  smoke checks before archiving. `.github/scripts/prepare_helper_release.py` accepts only
+  the four expected archives, containing a regular executable and LICENSE, and prepares
+  versioned archives plus `SHA256SUMS` without extracting their contents. Keep the raw
+  artifact download pattern separate from the aggregate artifact so reruns remain valid.
+- `.github/workflows/github-release.yml` validates branch/package/lock versions and the
+  existing version tag against the dispatched source commit before calling the native
+  workflow. Only its final publishing job has `contents: write`; it waits for every
+  platform and archive validation, and downloads assets from that same run.
+  `.github/scripts/publish_helper_release.py` verifies local checksums, uploads only to a
+  draft, then verifies all five remote asset names, sizes, states and SHA-256 digests
+  before publication. Failed uploads leave a resumable draft. Refuse already-published
+  targets before any write; never delete or replace public assets on a rerun. PR jobs
+  never publish. `tests/test_helper_release.py` and `tests/test_helper_publication.py`
+  cover artifact completeness, unsafe members, permissions, checksums, source/tag
+  mismatches, workflow dependencies, upload failures, draft recovery and public reruns.
+- Retired Docker interactive-browser and standalone-renewal recipes are removed. Do not
+  revive the old browser URL environment variables or sidecar commands in current setup
+  documentation; the standard Alpine image owns server renewal and the native helper
+  owns fresh desktop login. Historical investigation records remain in `docs/notes/`.
 
 
 ### Manual Testing

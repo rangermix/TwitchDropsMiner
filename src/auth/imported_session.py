@@ -8,6 +8,7 @@ import re
 import secrets
 import time
 from collections.abc import Callable
+from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -22,6 +23,13 @@ from src.exceptions import ExitRequest, LoginException
 
 if TYPE_CHECKING:
     from src.web.managers.login import LoginFormManager
+
+
+class _TransientRequest(SessionError):
+    """Retryable transport failure, retaining the existing redacted public code."""
+
+    def __init__(self):
+        super().__init__("REQUEST")
 
 
 class SessionTransport:
@@ -44,10 +52,16 @@ class SessionTransport:
             async with self._http.request(
                 method, url, headers=headers, json=body, proxy=self.proxy() if callable(self.proxy) else self.proxy, allow_redirects=False,
             ) as response:
+                if 500 <= response.status < 600:
+                    raise _TransientRequest()
                 if response.status != 200:
                     raise SessionError("AUTH" if response.status in (401, 403) else "REQUEST")
                 return await response.json()
-        except (aiohttp.ClientError, TimeoutError, ValueError):
+        except aiohttp.ClientSSLError:
+            raise SessionError("REQUEST") from None
+        except (aiohttp.ClientConnectionError, aiohttp.ClientPayloadError, TimeoutError):
+            raise _TransientRequest() from None
+        except (aiohttp.ClientError, ValueError):
             raise SessionError("REQUEST") from None
 
     async def validate(self, bundle: SessionBundle, expected_user_id: int | None) -> BrowserIdentity:
@@ -88,6 +102,17 @@ class SessionTransport:
 
 class ImportedSession:
     """Replace complete validated contexts atomically and wait at expiry."""
+
+    _RETRY_DELAYS = (1.0, 2.0)
+    _READ_QUERIES = frozenset(
+        (GQL_OPERATIONS[name]["operationName"],
+         GQL_OPERATIONS[name]["extensions"]["persistedQuery"]["sha256Hash"])
+        for name in (
+            "GetStreamInfo", "ChannelPointsContext", "Inventory", "CurrentDrop",
+            "Campaigns", "CampaignDetails", "AvailableDrops", "PlaybackAccessToken",
+            "GameDirectory", "SlugRedirect", "NotificationsList",
+        )
+    )
 
     def __init__(
         self, path: Path, *, transport: SessionTransport | None = None,
@@ -380,17 +405,47 @@ class ImportedSession:
             } and "path" not in error for error in row["errors"])
         )
 
+    @classmethod
+    def _safe_read(cls, operation: Any) -> bool:
+        """Only exact known persisted reads may be replayed after an ambiguous failure."""
+        try:
+            if not isinstance(operation, dict) or not set(operation) <= {"operationName", "variables", "extensions"}:
+                return False
+            extensions = operation["extensions"]
+            if not isinstance(extensions, dict) or set(extensions) != {"persistedQuery"}:
+                return False
+            query = extensions["persistedQuery"]
+            if (not isinstance(query, dict) or set(query) != {"version", "sha256Hash"}
+                    or type(query["version"]) is not int or query["version"] != 1):
+                return False
+            return (operation["operationName"], query["sha256Hash"]) in cls._READ_QUERIES
+        except (KeyError, TypeError):
+            return False
+
+    async def _wait_retry(self, delay: float) -> None:
+        if self._stopping:
+            raise ExitRequest()
+        with suppress(TimeoutError):
+            await asyncio.wait_for(self._updated.wait(), timeout=delay)
+        if self._stopping:
+            raise ExitRequest()
+
     async def gql(self, operations: Any) -> Any:
         if self._login is None:
             raise SessionError("AUTH")
         batch = isinstance(operations, list)
         pending = list(range(len(operations))) if batch else [0]
         results: list[Any] = [None] * len(pending)
+        request_user_id = self._user_id
+        retries = 0
         while pending:
             await self.authenticate(self._login)
+            delay = None
             async with self._lock:
                 if self._stopping:
                     raise ExitRequest()
+                if request_user_id != self._user_id:
+                    raise SessionError("STALE")
                 assert self._bundle is not None
                 if self._bundle.expires_at <= self._clock() or self._rejected:
                     continue
@@ -399,24 +454,37 @@ class ImportedSession:
                     response = await self._transport.request(
                         "POST", BrowserSession.GQL_URL, headers=self._bundle.request_headers(), body=body,
                     )
+                except _TransientRequest:
+                    if self._stopping:
+                        raise ExitRequest() from None
+                    candidates = body if batch else [body]
+                    if retries >= len(self._RETRY_DELAYS) or not all(self._safe_read(op) for op in candidates):
+                        raise
+                    delay = self._RETRY_DELAYS[retries]
+                    retries += 1
+                    self._updated.clear()
                 except SessionError as error:
                     if error.code != "AUTH":
                         raise
                     self._rejected = True
                     continue
-                rows = response if batch else [response]
-                if (not isinstance(rows, list) or len(rows) != len(pending)
-                        or any(not isinstance(row, dict) for row in rows)):
-                    raise SessionError("RESPONSE")
-                rejected = []
-                for index, row in zip(pending, rows, strict=True):
-                    if self._auth_rejection(row):
-                        rejected.append(index)
-                    else:
-                        results[index] = row
-                if rejected:
-                    self._rejected = True
-                pending = rejected
+                else:
+                    rows = response if batch else [response]
+                    if (not isinstance(rows, list) or len(rows) != len(pending)
+                            or any(not isinstance(row, dict) for row in rows)):
+                        raise SessionError("RESPONSE")
+                    rejected = []
+                    for index, row in zip(pending, rows, strict=True):
+                        if self._auth_rejection(row):
+                            rejected.append(index)
+                        else:
+                            results[index] = row
+                    if rejected:
+                        self._rejected = True
+                    pending = rejected
+            if delay is not None:
+                # Renewal/admission changes and stop must not wait behind this delay.
+                await self._wait_retry(delay)
         return results if batch else results[0]
 
     def request_stop(self) -> None:

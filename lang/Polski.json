@@ -302,7 +302,7 @@
             "step_chrome": "Zaloguj się do Twitch w oknie Chrome otwartym przez pomocnik.",
             "step_finish": "Pomocnik automatycznie prześle dane logowania do TDM. Poczekaj na wynik.",
             "builds": "Kompilacje pomocnika dla Linux, macOS i Windows",
-            "builds_note": "Użyj artefaktów kompilacji z przepływu pracy natywnego pomocnika. Pliki oficjalnych wydań nie są jeszcze dostępne.",
+            "builds_note": "Wśród plików wydania wybierz archiwum dla swojego systemu operacyjnego i wersji TDM. Chrome jest wymagany; Python nie jest potrzebny.",
             "instance": "Ta instancja TDM",
             "copy": "Kopiuj adres",
             "copied": "Adres skopiowany.",

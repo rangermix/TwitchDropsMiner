@@ -302,7 +302,7 @@
             "step_chrome": "Masuk ke Twitch di jendela Chrome yang dibuka oleh asisten.",
             "step_finish": "Asisten mengirimkan sesi masuk ke TDM secara otomatis. Tunggu hasilnya.",
             "builds": "Build asisten untuk Linux, macOS, dan Windows",
-            "builds_note": "Gunakan artefak build dari alur kerja asisten native. Unduhan rilis resmi belum diterbitkan.",
+            "builds_note": "Pilih arsip yang sesuai dengan sistem operasi dan versi TDM Anda dari berkas rilis. Chrome diperlukan; Python tidak diperlukan.",
             "instance": "Instans TDM ini",
             "copy": "Salin alamat",
             "copied": "Alamat disalin.",

@@ -302,7 +302,7 @@
             "step_chrome": "Sign in to Twitch in the Chrome window opened by the helper.",
             "step_finish": "The helper sends the login to TDM automatically. Wait for its result.",
             "builds": "Helper builds for Linux, macOS and Windows",
-            "builds_note": "Use the native helper workflow's build artifacts. Release downloads are not published yet.",
+            "builds_note": "Choose the archive for your operating system and TDM version from the release assets. Chrome is required; Python is not.",
             "instance": "This TDM instance",
             "copy": "Copy address",
             "copied": "Address copied.",

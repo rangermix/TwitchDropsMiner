@@ -302,7 +302,7 @@
             "step_chrome": "Inicie sessão no Twitch na janela do Chrome aberta pelo assistente.",
             "step_finish": "O assistente envia automaticamente o início de sessão para o TDM. Aguarde o resultado.",
             "builds": "Compilações do assistente para Linux, macOS e Windows",
-            "builds_note": "Utilize os artefactos de compilação do fluxo do assistente nativo. Ainda não foram publicadas transferências de versões oficiais.",
+            "builds_note": "Nos ficheiros da versão, escolha o arquivo correspondente ao seu sistema operativo e à sua versão do TDM. O Chrome é necessário; o Python não.",
             "instance": "Esta instância TDM",
             "copy": "Copiar endereço",
             "copied": "Endereço copiado.",

@@ -302,7 +302,7 @@
             "step_chrome": "Meld je aan bij Twitch in het Chrome-venster dat de hulp opent.",
             "step_finish": "De hulp stuurt de aanmelding automatisch naar TDM. Wacht op het resultaat.",
             "builds": "Hulpbuilds voor Linux, macOS en Windows",
-            "builds_note": "Gebruik de buildartefacten van de workflow voor de native hulp. Releasedownloads zijn nog niet gepubliceerd.",
+            "builds_note": "Kies bij de releasebestanden het archief voor je besturingssysteem en TDM-versie. Chrome is vereist; Python niet.",
             "instance": "Deze TDM-instantie",
             "copy": "Adres kopiëren",
             "copied": "Adres gekopieerd.",

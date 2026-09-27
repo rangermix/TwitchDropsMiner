@@ -6,7 +6,7 @@
 > files and backups. New login and missing-campaign recovery are tracked in
 > [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118).
 
-Twitch rejects new Android device-code authorization. This branch preserves still-valid
+Twitch rejects new Android device-code authorization. TDM preserves still-valid
 Android sessions and uses a [local login helper](#helper-assisted-login-experimental)
 for fresh login. The helper opens your installed Chrome, sends the required session
 state directly to your selected TDM instance, and closes its temporary profile. TDM
@@ -22,8 +22,9 @@ account, inventory and campaign requests after the original token's actual expir
 with helper admission closed. See the [timestamped evidence and limits](docs/notes/2026-09-26-native-helper-integration.md).
 These checks cover one home setup, not authenticated login on every supported OS. Fresh
 interactive login inside Docker remains rejected in the tested browser configurations.
-This branch is experimental and unreleased. [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118)
-tracks integrated validation and release status. Preserve existing `data/cookies.jar`
+This recovery is experimental. Releases without native helper assets predate this flow;
+use this source version or a release that includes them. [#118](https://github.com/rangermix/TwitchDropsMiner/issues/118)
+tracks validation and release availability. Preserve existing `data/cookies.jar`
 files: deleting data cannot repair Twitch login or incomplete Smart TV campaign discovery.
 
 <p align="center">
@@ -91,13 +92,27 @@ docker compose up -d --build
 
 ### Helper-assisted login (experimental)
 
-Use this source branch on your own home hardware. Current released images do not yet
-include this flow. Existing valid Android sessions start automatically; a new session
-uses the helper:
+Use TDM on your own home hardware. Existing valid Android sessions start automatically.
+For a new session, first choose a helper archive from the **Assets** of the
+[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases) matching your
+TDM version. Older releases without helper assets do not support this flow. Unreleased
+source builds can use the CI artifacts described below.
+
+| Your desktop | Archive suffix |
+| --- | --- |
+| Windows x64 | `windows-x64.tar.gz` |
+| macOS, Apple Silicon | `macos-arm64.tar.gz` |
+| macOS, Intel | `macos-x64.tar.gz` |
+| Linux x64, glibc (built on Ubuntu 22.04) | `linux-x64.tar.gz` |
+
+Extract `tdm-login-helper-<version>-<platform>.tar.gz`. Each archive contains the
+executable and its license; `SHA256SUMS` on the release page lists archive checksums.
+Chrome must be installed on this desktop; Python is not required. The native binaries
+are unsigned.
 
 1. Open TDM and leave **Settings → Allow helper connection** enabled (the default).
-2. Run the native `tdm-login-helper` executable on your desktop and enter the TDM address
-   shown on its Main tab, such as `http://192.168.1.10:8080`. Chrome must be installed.
+2. Run the extracted `tdm-login-helper` (`tdm-login-helper.exe` on Windows) and enter the
+   TDM address shown on its Main tab, such as `http://192.168.1.10:8080`.
 3. Sign into Twitch in the Chrome window opened by the helper. Complete any verification
    there, then wait for the helper's success message. Capture, upload, and server
    validation happen automatically.
@@ -119,12 +134,14 @@ controls that admission independently of the optional dashboard password. Creden
 are never returned by the dashboard API. Use the HTTPS dashboard address when accessing
 TDM across an untrusted network.
 
-The [Native login helper workflow](https://github.com/rangermix/TwitchDropsMiner/actions/workflows/login-helper.yml)
-builds Linux x64, macOS ARM64/x64 and Windows x64 artifacts for this branch and checks
-packaged startup, translated output, connection handling, and installed Chrome startup and cleanup
-after a login timeout. These checks do not sign into a Twitch account. Download the
-artifact matching your computer from a successful run; these are test builds, not a
-signed public release. From a source checkout with its dependencies installed:
+The [validation workflow](https://github.com/rangermix/TwitchDropsMiner/actions/workflows/validation.yml)
+calls the same native build workflow used for releases. It checks all four platforms,
+packaged startup, translated output, connection handling, and installed Chrome startup
+and cleanup after a login timeout. These automated checks do not sign into Twitch.
+For unreleased source, download `tdm-login-helper-release` from a successful validation
+run for that source revision, unzip that CI artifact, then extract your platform's
+archive. CI artifacts are test builds and do not mean a version has been released.
+From a source checkout with its dependencies installed:
 
 ```bash
 source env/bin/activate
@@ -154,7 +171,7 @@ Then open <http://localhost:8080>.
 ## Using the web app
 
 1. Existing valid Android sessions are restored automatically. For fresh login on this
-   experimental branch, follow the helper-assisted flow above.
+   implementation, follow the helper-assisted flow above.
 2. Wait for the miner to discover available campaigns.
 3. Choose the games you want to prioritize. You can also search for a game, select
    **Add Game**, and then select **Reload**.
@@ -403,8 +420,18 @@ deploying them. The validation suite includes GraphQL watch events and batched c
 discovery, alongside settings, full-locale translation schema and placeholder checks,
 and frontend safety checks. Use the software
 responsibly. Release automation verifies that the runtime, package, and lockfile versions
-match before publishing tags and Docker images. Docker validation and release jobs use
-the same pinned, Node-24-native Buildx and image-build action releases.
+match before publishing tags and Docker images. The GitHub release workflow verifies
+that the existing version tag matches its source commit, builds and smoke-tests all four
+native helpers, validates their archive contents and checksums, and attaches the versioned
+archives plus `SHA256SUMS` to a draft. It verifies all five uploaded assets against their
+local SHA-256 digests before publishing. A missing platform or failed upload leaves the
+release unpublished; retries can resume a draft, while already-published releases are
+left unchanged. PR validation exercises the same reusable build and packaging path
+with read-only repository permissions. Docker validation and release jobs use the same
+pinned, Node-24-native Buildx and image-build action releases.
+Imported-session requests retry temporary Twitch failures for known read operations;
+ambiguous mutations and already successful batch members are not repeated. Regression
+coverage includes retry limits, cancellation and account replacement during a retry.
 The suite also covers ignored-keyword normalization, dependency branches, the combined
 expiry/ignore Wanted Queue guard, watch selection, API persistence, translated placeholder
 parity, frontend rendering, and the claimed-drop history store with CSV export and API

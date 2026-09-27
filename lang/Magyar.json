@@ -302,7 +302,7 @@
             "step_chrome": "Jelentkezz be a Twitchre a segéd által megnyitott Chrome-ablakban.",
             "step_finish": "A segéd automatikusan elküldi a bejelentkezést a TDM-nek. Várd meg az eredményt.",
             "builds": "Segédprogram-változatok Linux, macOS és Windows rendszerekhez",
-            "builds_note": "Használd a natív segéd munkafolyamatának összeállítási fájljait. Hivatalos kiadások még nem tölthetők le.",
+            "builds_note": "A kiadás fájljai közül válaszd az operációs rendszeredhez és a TDM-verziódhoz tartozó archívumot. Chrome szükséges; Python nem.",
             "instance": "Ez a TDM-példány",
             "copy": "Cím másolása",
             "copied": "Cím másolva.",

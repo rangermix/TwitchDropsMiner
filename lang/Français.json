@@ -302,7 +302,7 @@
             "step_chrome": "Connectez-vous à Twitch dans la fenêtre Chrome ouverte par l’assistant.",
             "step_finish": "L’assistant envoie automatiquement la connexion à TDM. Attendez son résultat.",
             "builds": "Versions de l’assistant pour Linux, macOS et Windows",
-            "builds_note": "Utilisez les artefacts de compilation du workflow de l’assistant natif. Aucun téléchargement de version officielle n’est encore publié.",
+            "builds_note": "Dans les fichiers de la version, choisissez l’archive correspondant à votre système d’exploitation et à votre version de TDM. Chrome est requis ; Python ne l’est pas.",
             "instance": "Cette instance TDM",
             "copy": "Copier l’adresse",
             "copied": "Adresse copiée.",

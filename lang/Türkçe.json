@@ -302,7 +302,7 @@
             "step_chrome": "Yardımcının açtığı Chrome penceresinde Twitch’e giriş yapın.",
             "step_finish": "Yardımcı giriş bilgilerini TDM’ye otomatik gönderir. Sonucu bekleyin.",
             "builds": "Linux, macOS ve Windows için yardımcı derlemeleri",
-            "builds_note": "Yerel yardımcı iş akışının derleme çıktılarını kullanın. Resmî sürüm indirmeleri henüz yayımlanmadı.",
+            "builds_note": "Sürüm dosyalarından işletim sisteminize ve TDM sürümünüze uygun arşivi seçin. Chrome gereklidir; Python gerekli değildir.",
             "instance": "Bu TDM örneği",
             "copy": "Adresi kopyala",
             "copied": "Adres kopyalandı.",

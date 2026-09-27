@@ -302,7 +302,7 @@
             "step_chrome": "在助手打开的 Chrome 窗口中登录 Twitch。",
             "step_finish": "助手会自动将登录信息发送给 TDM。请等待处理结果。",
             "builds": "Linux、macOS 和 Windows 助手构建",
-            "builds_note": "请使用原生助手工作流的构建产物。目前尚未发布正式版下载。",
+            "builds_note": "请从发行版附件中选择适合你的操作系统和 TDM 版本的压缩包。需要安装 Chrome，无需安装 Python。",
             "instance": "此 TDM 实例",
             "copy": "复制地址",
             "copied": "地址已复制。",
