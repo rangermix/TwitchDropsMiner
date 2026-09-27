@@ -5,6 +5,25 @@ desktop, lets you sign into Twitch, and sends the session directly to your chose
 instance. TDM saves and renews it automatically. Your desktop can be shut down after
 the helper confirms success; the miner itself must remain running.
 
+## Headless home server or NAS
+
+**Headless home servers are supported.** Run the miner and login helper on the
+machines below:
+
+| Machine | What runs there |
+| --- | --- |
+| Your home server or NAS | TDM mines drops and renews the session with temporary headless Chromium. No desktop or display is needed; the official Docker image includes Chromium. |
+| Your desktop or laptop | The login helper opens installed Google Chrome for you to sign in, then sends the session to the server's TDM address. |
+
+Choose the helper archive for your **desktop's operating system and CPU**, even if
+the server uses a different platform. For example, use the Windows helper on your
+Windows PC when TDM runs in Docker on a Linux NAS.
+
+The helper finds and launches Chrome on the computer where you run it. `--tdm`
+selects the destination miner; it does not move Chrome to that server. Use a local
+terminal on your desktop: commands entered in an SSH session to the server run on
+the server instead.
+
 ## Existing installations
 
 Keep your existing data directory, including `cookies.jar`, when upgrading.
@@ -49,13 +68,30 @@ older TDM version that lacks the helper flow.
 
 1. Open your TDM dashboard. In **Settings**, enable **Allow helper connection**.
    It is enabled by default on a new instance.
-2. On your desktop, run the extracted `tdm-login-helper`, or
-   `tdm-login-helper.exe` on Windows.
+2. On your desktop or laptop, run the extracted `tdm-login-helper`, or
+   `tdm-login-helper.exe` on Windows. Run it in your local desktop session, outside
+   the server's SSH session and TDM container.
 3. Enter the TDM address shown on the dashboard's **Main** tab, such as
    `http://192.168.1.10:8080`. Use an address reachable from this desktop;
    `localhost` works only when TDM runs on the same computer.
 4. Sign into Twitch in the Chrome window opened by the helper and complete any
    Twitch verification there. Wait for the helper to confirm successful acceptance.
+
+You can also supply the address when starting the helper. From the folder containing
+the extracted executable, run this in **PowerShell on your Windows desktop**:
+
+```powershell
+.\tdm-login-helper.exe --tdm http://192.168.1.10:8080
+```
+
+Or in a **local terminal on your macOS or Linux desktop**:
+
+```bash
+./tdm-login-helper --tdm http://192.168.1.10:8080
+```
+
+Replace the example address with the same TDM root URL you can open from that
+desktop, including any custom port. The Chrome login window opens on that desktop.
 
 The helper sends the session automatically; you do not export or upload a file.
 After successful acceptance, TDM saves the session and turns **Allow helper connection**
@@ -108,8 +144,9 @@ that cleanup.
 
 Use the same source revision as TDM on your desktop, with Python 3.12 or newer,
 [uv](https://docs.astral.sh/uv/), and Google Chrome installed. These commands run
-only the login helper; the miner can be on another computer. Create `env/` only
-on the first setup.
+only the login helper; the miner can be on another computer. Run them in a local
+terminal on your desktop, from the repository root. Create `env/` only on the first
+setup.
 
 On Linux or macOS:
 
@@ -129,8 +166,8 @@ uv sync --active --locked --python 3.12
 python login_helper.py --tdm http://192.168.1.10:8080
 ```
 
-Replace the example with your instance's root URL. `--chrome` selects an installed
-Chrome executable, and `--language` selects a translation. Without `--tdm`, the
-helper asks for the address interactively.
+Replace the example with your instance's root URL. `--chrome` selects a Chrome
+executable on the desktop running the helper, and `--language` selects a translation.
+Without `--tdm`, the helper asks for the address interactively.
 
 [All guides](README.md) · [Next: Using the dashboard](usage.md)

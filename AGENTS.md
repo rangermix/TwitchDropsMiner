@@ -307,6 +307,12 @@ progress to an ignored drop while the miner intentionally targets another reward
   code is not the current deployment interface; its removed HTTP destination cannot be
   used with this server. See `docs/authentication.md` for current setup.
 - `src/auth/login_helper.py` and root `login_helper.py` implement direct local handoff.
+  Keep setup instructions explicit about the two machines: run the native/source helper
+  in the user's local desktop session with installed Google Chrome, and choose its
+  archive for that desktop's OS/CPU. `--tdm` selects the reachable miner root URL;
+  `--chrome` selects a local executable. A headless home server/NAS runs the miner
+  and its temporary renewal Chromium without a desktop or display. An SSH session
+  to that server does not run the helper on the user's desktop.
   Check admission before opening installed Chrome with a temporary owned TDM profile.
   Use an explicit nonzero loopback CDP port (port zero changes navigator.webdriver), verify
   the browser PID, and leave ordinary Chrome profiles untouched. Wait for Twitch login,
