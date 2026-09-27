@@ -1,6 +1,7 @@
 """Native login handoff: destination, admission, browser lifecycle and privacy."""
 
 import asyncio
+import stat
 import subprocess
 import sys
 from contextlib import asynccontextmanager
@@ -382,6 +383,101 @@ async def test_unconfirmed_lost_ack_reports_unknown_without_reopening_admission(
 
 
 @pytest.mark.asyncio
+async def test_server_browser_start_failure_is_reported_without_receipt_polling():
+    async with instance(complete={"detail": "session_browser_start"}, complete_status=503,
+                        receipts=[{"state": "pending"}]) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK,
+                receipt_attempts=2, receipt_interval=0) as client:
+            with pytest.raises(SessionError, match="HELPER_SERVER_BROWSER"):
+                await client.send(await client.connect(), seed())
+    assert [row[0] for row in requests] == ["/api/helper/connect", "/api/helper/session"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows read-only deletion semantics")
+async def test_native_cleanup_removes_readonly_files_only_in_owned_profile(tmp_path):
+    profile = tmp_path / "owned"
+    profile.mkdir()
+    readonly = profile / "readonly-browser-file"
+    readonly.write_text("temporary-browser-data")
+    readonly.chmod(stat.S_IREAD)
+    unrelated = tmp_path / "ordinary-profile-file"
+    unrelated.write_text("preserve-existing-state")
+    unrelated.chmod(stat.S_IREAD)
+    browser = login_helper.NativeChrome()
+    browser.profile = profile
+    try:
+        await browser.close()
+        assert not profile.exists()
+        assert browser.profile is None
+        assert unrelated.read_text() == "preserve-existing-state"
+        assert not unrelated.stat().st_mode & stat.S_IWRITE
+    finally:
+        for path in (readonly, unrelated):
+            if path.exists():
+                path.chmod(stat.S_IREAD | stat.S_IWRITE)
+
+
+@pytest.mark.asyncio
+async def test_cleanup_retries_when_a_child_disappears_but_profile_remains(monkeypatch, tmp_path):
+    profile = tmp_path / "owned"
+    profile.mkdir()
+    (profile / "Cookies").write_text("temporary-browser-data")
+    browser = login_helper.NativeChrome()
+    browser.profile = profile
+    remove = login_helper.shutil.rmtree
+    attempts = []
+
+    def raced_remove(path, **kwargs):
+        attempts.append(path)
+        if len(attempts) == 1:
+            raise FileNotFoundError("browser already removed a temporary child")
+        remove(path, **kwargs)
+
+    monkeypatch.setattr(login_helper.shutil, "rmtree", raced_remove)
+    await browser.close()
+    assert not profile.exists()
+    assert browser.profile is None
+    assert len(attempts) == 2
+
+
+@pytest.mark.asyncio
+async def test_persistent_profile_lock_is_reported_without_claiming_cleanup(monkeypatch, tmp_path):
+    profile = tmp_path / "owned"
+    profile.mkdir()
+    (profile / "Cookies").write_text("temporary-browser-data")
+    browser = login_helper.NativeChrome()
+    browser.profile = profile
+    remove = Mock(side_effect=PermissionError("private-profile-path"))
+    monkeypatch.setattr(login_helper.shutil, "rmtree", remove)
+    with pytest.raises(SessionError, match="HELPER_PROFILE_CLEANUP") as error:
+        await browser.close()
+    assert "private-profile-path" not in str(error.value)
+    assert browser.profile == profile and profile.exists()
+    assert remove.call_count == 4
+
+
+@pytest.mark.asyncio
+async def test_cleanup_does_not_follow_a_link_to_an_unrelated_readonly_file(tmp_path):
+    profile = tmp_path / "owned"
+    profile.mkdir()
+    unrelated = tmp_path / "unrelated"
+    unrelated.write_text("preserve-existing-state")
+    unrelated.chmod(stat.S_IREAD)
+    link = profile / "browser-link"
+    browser = login_helper.NativeChrome()
+    browser.profile = profile
+    try:
+        link.symlink_to(unrelated)
+        await browser.close()
+        assert not profile.exists()
+        assert unrelated.read_text() == "preserve-existing-state"
+        assert not unrelated.stat().st_mode & stat.S_IWRITE
+    finally:
+        unrelated.chmod(stat.S_IREAD | stat.S_IWRITE)
+
+
+@pytest.mark.asyncio
 async def test_login_wait_failure_closes_browser_and_does_not_capture():
     browser = FakeBrowser(authentication_error=SessionError("HELPER_LOGIN_TIMEOUT"))
     exporter = Mock()
@@ -578,7 +674,11 @@ async def test_browser_close_verifies_process_owner_before_sending_close(owned):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("status,text", [(504, "<html>gateway timeout</html>"), (200, '{"success":'), (200, '{}')])
+@pytest.mark.parametrize("status,text", [
+    (504, "<html>gateway timeout</html>"), (200, '{"success":'), (200, '{}'),
+    (503, '{"detail":"private-unrecognized-error"}'), (503, '{"detail":'),
+    (500, '{"detail":"session_browser_start"}'),
+])
 async def test_ambiguous_upload_response_recovers_committed_receipt(status, text):
     async with instance(complete_status=status, complete_text=text, receipts=[{"state": "pending"}, accepted()]) as (address, requests):
         async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK,

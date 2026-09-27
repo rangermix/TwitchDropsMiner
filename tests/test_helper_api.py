@@ -57,6 +57,19 @@ def enable_dashboard_auth(client):
     client.cookies.clear()
 
 
+def test_server_browser_start_rejection_does_not_install_session_or_close_gate(api):
+    client, helper, _settings = api
+    token = client.post("/api/helper/connect", json={}).json()["connection"]
+    helper.issuer.issue.side_effect = SessionError("BROWSER_START")
+    response = client.post("/api/helper/session", headers={"Authorization": "Bearer " + token},
+                           json=seed().to_dict())
+    assert response.status_code == 503
+    assert response.json() == {"detail": "session_browser_start"}
+    assert helper.session.seed() is None
+    assert helper.allowed
+    assert not helper.session.path.exists()
+
+
 @pytest.mark.parametrize("dashboard_protected", [False, True])
 def test_helper_admission_and_acceptance_do_not_need_dashboard_password(api, dashboard_protected):
     client, helper, settings = api
