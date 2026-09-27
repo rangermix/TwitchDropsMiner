@@ -42,7 +42,7 @@ docker run -d \
   -p 8080:8080 \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.0.0
+  rangermix/twitch-drops-miner:2.0.1
 ```
 
 Open <http://localhost:8080>, or `http://YOUR-SERVER:8080` from another device on your
@@ -66,6 +66,8 @@ The helper uploads the session automatically and closes its temporary Chrome win
 TDM handles renewal on your server, so your desktop and browser can be turned off.
 See [authentication](docs/authentication.md#headless-home-server-or-nas) for which
 machine runs each part, platform downloads, and login recovery.
+For Chrome discovery, an unknown helper result, or a startup error involving
+`web_auth.json`, see [troubleshooting](docs/troubleshooting.md).
 
 ## Upgrading to v2.0
 

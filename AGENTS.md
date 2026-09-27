@@ -284,6 +284,10 @@ progress to an ignored drop while the miner intentionally targets another reward
   10 minutes, including after gate closure or restart. No credential values are returned.
   Native helpers reconcile lost/invalid/5xx acknowledgements without repeating the POST;
   an unconfirmed result is unknown, not a claim that installation failed.
+- The native helper recognizes only the fixed HTTP 503 `session_browser_start`
+  rejection as `HELPER_SERVER_BROWSER`, because it precedes session installation.
+  Unknown, malformed and gateway 5xx responses still reconcile through receipts;
+  never replay the credential POST or echo arbitrary server error text.
 - Helper protocol routes are admitted by the explicit setting, independently of optional
   dashboard auth. All other dashboard guards remain intact. Retain the write header,
   origin/Fetch Metadata checks, 64 KiB payload cap, no-store responses and fixed error codes.
@@ -323,6 +327,15 @@ progress to an ignored drop while the miner intentionally targets another reward
   with it; never delete or change the parent's shared temporary directory. Cancellation,
   SIGTERM and SIGHUP must finish bounded cleanup. Forced process kill/power loss cannot
   guarantee cleanup; never silently report successful cleanup if deletion failed.
+- Native profile deletion may clear a Windows read-only attribute only on an owned
+  file/directory that failed deletion. Do not follow symlinks or junctions, alter
+  unrelated profiles, or suppress persistent locks/permission errors. A missing child
+  is not proof that the profile root was deleted; retry while the root remains.
+  Keep real Windows read-only cleanup and disappearing-child regressions covered.
+- Linux desktop discovery currently checks native `google-chrome` and
+  `google-chrome-stable`. Flatpak launchers and Firefox are not supported login
+  backends; do not imply that `--chrome` accepts a shell command or bypass browser
+  PID ownership checks to accept a sandbox launcher.
 - Native console text lives in the top-level `helper` locale section and `HelperMessages`.
   `packaging/login_helper.spec` bundles translations and dependencies. PyInstaller is a
   pinned build-only dependency; build each target OS separately. CI builds and smoke-tests

@@ -1,3 +1,45 @@
+# Release Notes - v2.0.1
+
+This patch improves login-helper cleanup and makes a server-browser startup failure
+actionable instead of reporting an unknown login result.
+
+## Login helper fixes
+
+- On Windows, temporary Chrome profiles containing read-only files can now be
+  removed. Cleanup stays within the helper's owned profile and preserves unrelated
+  files, symlink targets and junction targets.
+- If Chrome removes a temporary child during cleanup, the helper retries while the
+  profile still exists instead of incorrectly reporting successful deletion.
+- A confirmed failure to start Chromium on the miner host now reports
+  `SESSION_HELPER_SERVER_BROWSER`. Missing or ambiguous acknowledgements still use
+  result recovery without uploading credentials again. Persistent cleanup failures
+  remain visible.
+
+These address reproducible causes of the errors reported in
+[#128](https://github.com/rangermix/TwitchDropsMiner/issues/128); they do not establish
+that every reported login failure has the same cause.
+
+## Setup and recovery guidance
+
+- Clarifies native Chrome discovery on Linux and that Flatpak Chrome and Firefox
+  are not currently supported login-helper backends
+  ([#130](https://github.com/rangermix/TwitchDropsMiner/issues/130),
+  [#129](https://github.com/rangermix/TwitchDropsMiner/issues/129)).
+- Explains safe recovery for malformed `data/web_auth.json` dashboard-password
+  state ([#132](https://github.com/rangermix/TwitchDropsMiner/issues/132)). Startup
+  continues to fail closed; this release does not reset credentials automatically.
+- Explains that the dashboard's **Connected** indicator is its connection to TDM,
+  not confirmation of Twitch authentication, and lists useful login diagnostics.
+
+## Updating
+
+Update the miner to `rangermix/twitch-drops-miner:2.0.1` and download the matching
+**2.0.1 login helper** for your desktop OS and CPU from this release. The helper
+changes require replacing the helper executable; updating only Docker is not enough.
+Preserve the existing data volume. A working saved Twitch session does not require
+another login. Native downloads cover Windows x64, Linux x64, macOS ARM64 and macOS
+x64, with archive checksums in `SHA256SUMS`.
+
 # Release Notes - v2.0.0
 
 TDM now uses a desktop login helper for new Twitch logins and renews the session on

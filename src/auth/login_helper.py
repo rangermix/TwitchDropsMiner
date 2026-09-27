@@ -13,6 +13,7 @@ import shutil
 import signal
 import socket
 import ssl
+import stat
 import subprocess
 import sys
 import tempfile
@@ -85,9 +86,6 @@ class HelperHTTP:
                     timeout=aiohttp.ClientTimeout(total=300 if path.endswith("/session") else 10, connect=10)) as response:
                 if 300 <= response.status < 400:
                     raise SessionError("HELPER_REDIRECT")
-                if response.status >= 500:
-                    # A gateway can lose the reply after TDM has committed.
-                    raise SessionError("HELPER_NETWORK")
                 raw = bytearray()
                 async for chunk in response.content.iter_chunked(8192):
                     raw.extend(chunk)
@@ -96,11 +94,19 @@ class HelperHTTP:
                 try:
                     data = json.loads(raw)
                 except (ValueError, UnicodeError, RecursionError):
+                    if response.status >= 500:
+                        raise SessionError("HELPER_NETWORK") from None
                     if 400 <= response.status < 500:
                         raise SessionError("HELPER_REJECTED") from None
                     raise SessionError("HELPER_RESPONSE") from None
                 if response.status != 200:
                     detail = data.get("detail") if isinstance(data, dict) else None
+                    # This fixed server error occurs before any session is installed.
+                    # Other 5xx replies can lose an acknowledgement after commit.
+                    if response.status == 503 and detail == "session_browser_start":
+                        raise SessionError("HELPER_SERVER_BROWSER")
+                    if response.status >= 500:
+                        raise SessionError("HELPER_NETWORK")
                     if response.status == 403 and detail == "session_helper_disabled":
                         raise SessionError("HELPER_DISABLED")
                     if response.status in (401, 403) and detail in (
@@ -400,16 +406,35 @@ class NativeChrome:
             profile = self.profile
             for attempt in range(4):
                 try:
-                    shutil.rmtree(profile)
-                    self.profile = None
-                    break
-                except FileNotFoundError:
+                    # Python 3.12 is required; the repository's Mypy target is still 3.10.
+                    shutil.rmtree(profile, onexc=self._remove_readonly)  # type: ignore[call-arg]
                     self.profile = None
                     break
                 except OSError:
+                    # A missing child does not prove the entire profile was removed.
+                    if not profile.exists():
+                        self.profile = None
+                        break
                     if attempt == 3:
                         raise SessionError("HELPER_PROFILE_CLEANUP") from None
                     await asyncio.sleep(.25)
+
+    def _remove_readonly(self, function: Callable[..., Any], path: str, error: BaseException) -> None:
+        target = Path(path)
+        if (sys.platform != "win32" or not isinstance(error, PermissionError)
+                or function not in (os.unlink, os.rmdir) or self.profile is None
+                or target.is_symlink()
+                or not target.resolve().is_relative_to(self.profile.resolve())):
+            raise error
+        info = target.lstat()
+        if getattr(info, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
+            raise error
+        mode = info.st_mode
+        if mode & stat.S_IWRITE:
+            raise error
+        # Only clear the read-only attribute on an owned entry that failed deletion.
+        target.chmod(mode | stat.S_IWRITE)
+        function(path)
 
 
 class NativeLoginHelper:

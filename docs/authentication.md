@@ -56,6 +56,12 @@ executable and its license. The release's `SHA256SUMS` file lists checksums for 
 archives. Google Chrome must be installed on this desktop; the packaged helper does
 not require Python. The native binaries are unsigned.
 
+On Linux, automatic desktop discovery checks `google-chrome` and
+`google-chrome-stable` on `PATH`. Use a native Chrome installation; Flatpak Chrome
+is not currently supported by the helper. `--chrome` accepts a local executable
+path, not a command such as `flatpak run com.google.Chrome`. Firefox is not currently
+supported for helper login; it can still open the TDM dashboard.
+
 The v1.x releases do not provide this helper flow. For an unreleased source
 installation, use the helper from the same source
 revision. You can download the `tdm-login-helper-release` artifact from that revision's
