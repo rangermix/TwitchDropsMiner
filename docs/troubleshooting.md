@@ -6,6 +6,10 @@ display and Twitch's recorded progress can differ.
 
 ## The helper cannot connect or open Chrome
 
+- Run the helper in a local session on your desktop or laptop with a display.
+  An SSH terminal connected to your headless server runs it on the server. Follow
+  the [headless home server instructions](authentication.md#headless-home-server-or-nas)
+  and choose the helper for your desktop's operating system and CPU.
 - Use the TDM root address reachable from the helper desktop. `localhost` refers to
   that desktop, not another computer running the miner.
 - Enable **Settings → Allow helper connection** before starting the helper. A
@@ -14,8 +18,9 @@ display and Twitch's recorded progress can differ.
 - Use a helper matching your TDM version or source revision. Older releases may not
   provide helper assets or support the current flow. Follow the
   [download guidance](authentication.md#download-the-helper).
-- Install Google Chrome on the helper desktop. With the source helper, `--chrome`
-  can select its executable if it is not found automatically.
+- Install Google Chrome on the helper desktop. `--chrome` can select its local
+  executable if it is not found automatically. `--tdm` only selects the miner's
+  address; it does not select a remote Chrome process.
 - If you use a reverse proxy, use its configured root URL and follow
   [Dashboard access](dashboard-access.md#reverse-proxy-and-https).
 

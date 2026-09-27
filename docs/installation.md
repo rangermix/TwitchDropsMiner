@@ -1,9 +1,10 @@
 # Installation
 
-Run Twitch Drops Miner on your own computer or home server. Docker is the simplest
-option: the image built from this source includes the Chromium installation needed
-for automatic session renewal. The separate login helper runs on a desktop with Google
-Chrome.
+Run Twitch Drops Miner on your own computer or headless home server or NAS. Docker
+is the simplest option: the image includes Chromium for automatic session renewal,
+which runs without a desktop or display on the server. Run the separate login helper
+on your desktop or laptop with Google Chrome installed. See
+[which machine runs each part](authentication.md#headless-home-server-or-nas).
 
 ## Choose a version
 
