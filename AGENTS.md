@@ -288,8 +288,7 @@ progress to an ignored drop while the miner intentionally targets another reward
   rejection as `HELPER_SERVER_BROWSER`, because it precedes session installation.
   Unknown, malformed and gateway 5xx responses still reconcile through receipts;
   never replay the credential POST or echo arbitrary server error text.
-- Helper protocol routes are admitted by the explicit setting, independently of optional
-  dashboard auth. The desktop helper preserves an explicit allowlist of HTTP 400
+- The desktop helper preserves an explicit allowlist of HTTP 400
   session-validation codes from `/api/helper/session`, using existing translated
   diagnostics. Unknown details remain generic; never echo arbitrary response text,
   apply the mapping to other routes, or change ambiguous 5xx receipt reconciliation.
