@@ -288,6 +288,10 @@ progress to an ignored drop while the miner intentionally targets another reward
   rejection as `HELPER_SERVER_BROWSER`, because it precedes session installation.
   Unknown, malformed and gateway 5xx responses still reconcile through receipts;
   never replay the credential POST or echo arbitrary server error text.
+- Initial admission may keep the helper bundle that already passed catalog validation
+  when the server reissue fails that same check with `CATALOG`. Do not install the
+  rejected reissue, skip the catalog check, or treat this as proof that server renewal
+  works. Record `renewal_error=CATALOG`. Other admission errors still reject.
 - Helper protocol routes are admitted by the explicit setting, independently of optional
   dashboard auth. All other dashboard guards remain intact. Retain the write header,
   origin/Fetch Metadata checks, 64 KiB payload cap, no-store responses and fixed error codes.

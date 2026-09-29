@@ -90,6 +90,34 @@ async def test_success_atomically_saves_seed_closes_gate_and_returns_no_credenti
 
 
 @pytest.mark.asyncio
+async def test_catalog_rejected_reissue_keeps_validated_helper_session(connection):
+    controller, session, settings, clock, issuer = connection
+
+    async def request(method, url, *, headers, body=None):
+        if method == "GET":
+            return {"client_id": ClientType.WEB.CLIENT_ID, "user_id": "42"}
+        if str(headers.get("client-integrity", "")).startswith("new-integrity"):
+            rejected = catalog()
+            rejected[1] = {
+                "errors": [{"message": "failed integrity check"}],
+                "data": {"currentUser": {"dropCampaigns": None}},
+            }
+            return rejected
+        return catalog()
+
+    session._transport.request = AsyncMock(side_effect=request)
+    ticket = controller.connect()
+    result = await controller.accept(ticket["connection"], seed().to_dict())
+    assert result["success"] is True
+    assert session.seed().bundle.headers["client-integrity"] == "initial-integrity"
+    assert session.seed().cookie.value == "private-sdk-cookie"
+    assert controller.status()["renewal_error"] == "CATALOG"
+    assert controller.allowed is False
+    for secret in ("oauth-42", "private-sdk-cookie", "rotated-sdk-cookie", "new-integrity"):
+        assert secret not in json.dumps(result)
+
+
+@pytest.mark.asyncio
 async def test_restart_preserves_closed_permission_seed_and_lost_ack_receipt(connection):
     controller, session, settings, clock, issuer = connection
     ticket = controller.connect()
@@ -276,6 +304,39 @@ async def test_worker_renews_on_normal_schedule_with_admission_closed(connection
         assert session.status()["generation"] == 2
         assert session.status()["expires_at"] > initial_expiry
         assert not controller.allowed
+    finally:
+        await controller.stop()
+
+
+@pytest.mark.asyncio
+async def test_failed_reissue_does_not_retry_immediately(connection):
+    controller, session, settings, clock, issuer = connection
+    await controller.accept(controller.connect()["connection"], seed().to_dict())
+    kept = session.seed().bundle.headers["client-integrity"]
+    attempts = 0
+
+    async def issue(previous, **kwargs):
+        nonlocal attempts
+        attempts += 1
+        raise SessionError("SDK_COOKIE")
+
+    issuer.issue.side_effect = issue
+    failed = asyncio.Event()
+
+    async def wait(delay=None):
+        if delay is None:
+            failed.set()
+            await asyncio.Event().wait()
+        return False
+
+    controller._wait = wait
+    controller.start()
+    try:
+        await asyncio.wait_for(failed.wait(), 1)
+        await asyncio.sleep(0.05)
+        assert attempts == 1
+        assert controller.status()["renewal_error"] == "SDK_COOKIE"
+        assert session.seed().bundle.headers["client-integrity"] == kept
     finally:
         await controller.stop()
 
