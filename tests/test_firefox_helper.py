@@ -321,6 +321,8 @@ def test_firefox_desktop_discovery(monkeypatch, tmp_path, platform, relative):
     monkeypatch.setenv("PROGRAMFILES(X86)", str(tmp_path / "missing"))
     monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "missing"))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    is_file = Path.is_file
+    monkeypatch.setattr(Path, "is_file", lambda path: path == executable and is_file(path))
     assert login_helper.NativeFirefox.find_firefox() == executable
 
 

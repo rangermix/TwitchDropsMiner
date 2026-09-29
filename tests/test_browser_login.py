@@ -139,7 +139,29 @@ def test_chromium_desktop_discovery(monkeypatch, tmp_path, platform, relative):
     monkeypatch.setattr(login_helper.Path, "home", classmethod(lambda cls: tmp_path))
     for name in ("PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA"):
         monkeypatch.setenv(name, str(tmp_path))
+    is_file = Path.is_file
+    monkeypatch.setattr(Path, "is_file", lambda path: path == executable and is_file(path))
     assert login_helper.NativeChromium.find_chromium() == executable
+
+
+@pytest.mark.parametrize("find,relative,code", [
+    (login_helper.NativeChrome.find_chrome, "Google Chrome.app/Contents/MacOS/Google Chrome", "HELPER_CHROME_MISSING"),
+    (login_helper.NativeChromium.find_chromium, "Chromium.app/Contents/MacOS/Chromium", "HELPER_CHROMIUM_MISSING"),
+    (login_helper.NativeFirefox.find_firefox, "Firefox.app/Contents/MacOS/firefox", "HELPER_FIREFOX_MISSING"),
+])
+def test_macos_discovery_prefers_system_then_user_installation(monkeypatch, tmp_path, find, relative, code):
+    system = Path("/Applications") / relative
+    user = tmp_path / "Applications" / relative
+    installed = {system, user}
+    monkeypatch.setattr(login_helper.sys, "platform", "darwin")
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
+    monkeypatch.setattr(Path, "is_file", lambda path: path in installed)
+    assert find() == system
+    installed.remove(system)
+    assert find() == user
+    installed.remove(user)
+    with pytest.raises(SessionError, match=code):
+        find()
 
 
 @pytest.mark.parametrize("command", ["chromium", "chromium-browser"])
