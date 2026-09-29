@@ -96,6 +96,21 @@ an updated helper executable, not just an updated miner. Codes beginning with
 | `SESSION_REQUEST` | The helper's validation request to Twitch failed. Check Twitch connectivity and retry after any outage. |
 | `SESSION_HELPER_FAILED` | An unexpected internal error occurred. Check TDM before retrying; report helper/browser versions, desktop OS and the code without credentials. |
 
+Source helpers newer than 2.0.2 preserve recognized server validation codes such as
+`SESSION_AUTH`, `SESSION_CATALOG`, and `SESSION_ACCOUNT_MISMATCH` instead of reducing
+them to `SESSION_HELPER_REJECTED`. These use the existing explanations above and do
+not indicate that login succeeded. Unknown response text is never displayed. The
+published 2.0.2 helper still uses the generic rejection for these server responses.
+
+On source builds with catalog diagnostics, a rejected catalog validation emits
+`Catalog validation rejected` in the miner log. It contains only fixed operation
+names, field-shape labels and error categories: `persisted_query_not_found`,
+`integrity`, `service`, `other`, or `malformed`. No raw GraphQL message or response
+is included. An `integrity` category means Twitch returned the exact message
+`failed integrity check`; it is not proof of an incorrect password or a schema
+bug. Do not bypass admission checks or treat a rejected session as usable. These
+diagnostics classify the failure; they do not fix Twitch acceptance.
+
 If a session upload has already started, an unknown result, interruption or cleanup
 error is not proof that installation failed. Verify the miner's Twitch login first.
 

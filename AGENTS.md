@@ -288,6 +288,15 @@ progress to an ignored drop while the miner intentionally targets another reward
   rejection as `HELPER_SERVER_BROWSER`, because it precedes session installation.
   Unknown, malformed and gateway 5xx responses still reconcile through receipts;
   never replay the credential POST or echo arbitrary server error text.
+- The desktop helper preserves an explicit allowlist of HTTP 400
+  session-validation codes from `/api/helper/session`, using existing translated
+  diagnostics. Unknown details remain generic; never echo arbitrary response text,
+  apply the mapping to other routes, or change ambiguous 5xx receipt reconciliation.
+  Keep regression coverage for malformed details, redaction, and one credential POST.
+- Catalog admission failures log only fixed operation labels, response-shape labels
+  and exact allowlisted GraphQL error categories. Never log raw responses, errors,
+  tokens, identity values, cookies or request headers. Keep rejection unchanged;
+  a diagnostic category is not an authentication workaround or successful login.
 - Helper protocol routes are admitted by the explicit setting, independently of optional
   dashboard auth. All other dashboard guards remain intact. Retain the write header,
   origin/Fetch Metadata checks, 64 KiB payload cap, no-store responses and fixed error codes.
