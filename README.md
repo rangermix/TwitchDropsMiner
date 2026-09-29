@@ -72,7 +72,8 @@ Automatic selection uses Chrome → Chromium → Firefox. The updated browser fl
 and error guidance require an updated helper; see
 [browser selection and version guidance](docs/authentication.md#choose-a-browser).
 For browser discovery, helper error codes, or a startup error involving
-`web_auth.json`, see [troubleshooting](docs/troubleshooting.md).
+`web_auth.json`, see [troubleshooting](docs/troubleshooting.md). When reporting a
+rejected login, include the exact fixed error code, never session data or cookies.
 
 ## Upgrading to v2.0
 

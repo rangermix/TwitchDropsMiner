@@ -115,6 +115,16 @@ class HelperHTTP:
                         raise SessionError("HELPER_EXPIRED")
                     if response.status == 429 and detail == "session_busy":
                         raise SessionError("HELPER_BUSY")
+                    # Preserve only known pre-commit validation codes. Never echo
+                    # arbitrary remote text or reinterpret ambiguous 5xx replies.
+                    if response.status == 400 and path == "/api/helper/session":
+                        for code in (
+                            "AUTH", "IDENTITY", "CATALOG", "ACCOUNT_MISMATCH", "REQUEST",
+                            "EXPIRED", "SDK_EXPIRED", "SDK_ISSUANCE", "SDK_TIMEOUT",
+                            "FORMAT", "SDK_SEED", "SDK_COOKIE", "SDK_PAGE", "REPLAY",
+                        ):
+                            if detail == "session_" + code.lower():
+                                raise SessionError(code)
                     raise SessionError("HELPER_REJECTED")
                 if not isinstance(data, dict):
                     raise SessionError("HELPER_RESPONSE")

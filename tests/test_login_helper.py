@@ -382,6 +382,32 @@ async def test_unconfirmed_lost_ack_reports_unknown_without_reopening_admission(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("code", [
+    "AUTH", "IDENTITY", "CATALOG", "ACCOUNT_MISMATCH", "REQUEST",
+    "EXPIRED", "SDK_EXPIRED", "SDK_ISSUANCE", "SDK_TIMEOUT", "FORMAT",
+])
+async def test_admission_preserves_known_validation_codes_without_reposting(code):
+    async with instance(complete={"detail": "session_" + code.lower()}, complete_status=400) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK) as client:
+            with pytest.raises(SessionError) as error:
+                await client.send(await client.connect(), seed())
+            assert error.value.code == code
+    assert [row[0] for row in requests] == ["/api/helper/connect", "/api/helper/session"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("detail", ["session_private-secret", "session_auth\nprivate-secret", ["session_auth"], {"private-secret": 1}, None])
+async def test_admission_never_echoes_unrecognized_remote_details(detail):
+    async with instance(complete={"detail": detail}, complete_status=400) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK) as client:
+            with pytest.raises(SessionError) as error:
+                await client.send(await client.connect(), seed())
+            assert error.value.code == "HELPER_REJECTED"
+            assert "private-secret" not in str(error.value)
+    assert len(requests) == 2
+
+
+@pytest.mark.asyncio
 async def test_server_browser_start_failure_is_reported_without_receipt_polling():
     async with instance(complete={"detail": "session_browser_start"}, complete_status=503,
                         receipts=[{"state": "pending"}]) as (address, requests):

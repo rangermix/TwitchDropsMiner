@@ -289,6 +289,12 @@ progress to an ignored drop while the miner intentionally targets another reward
   Unknown, malformed and gateway 5xx responses still reconcile through receipts;
   never replay the credential POST or echo arbitrary server error text.
 - Helper protocol routes are admitted by the explicit setting, independently of optional
+  dashboard auth. The desktop helper preserves an explicit allowlist of HTTP 400
+  session-validation codes from `/api/helper/session`, using existing translated
+  diagnostics. Unknown details remain generic; never echo arbitrary response text,
+  apply the mapping to other routes, or change ambiguous 5xx receipt reconciliation.
+  Keep regression coverage for malformed details, redaction, and one credential POST.
+- Helper protocol routes are admitted by the explicit setting, independently of optional
   dashboard auth. All other dashboard guards remain intact. Retain the write header,
   origin/Fetch Metadata checks, 64 KiB payload cap, no-store responses and fixed error codes.
   There is no session/seed export route. Ordinary dashboard status stays protected when
