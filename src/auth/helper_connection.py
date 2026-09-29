@@ -133,17 +133,29 @@ class HelperConnections:
             identity = await self.session._transport.validate(seed.bundle, None)
             renewed = await self.issuer.issue(seed, initial=True)
             self._check(token)
-            # Freeze authenticated miner work only after proving server issuance.
+            # A server reissue that Twitch rejects for campaign integrity must not
+            # discard the helper bundle that already passed the same catalog check.
             async with self.activation():
-                await self.session.install(
-                    renewed.bundle.to_dict(), expected_user_id=identity.user_id,
-                    sdk_cookie=renewed.cookie, replace=True,
-                    authorized=lambda: self._check(token),
-                    helper_receipt=(self.digest(token), self.clock() + self.CONNECTION_SECONDS),
-                )
+                try:
+                    await self.session.install(
+                        renewed.bundle.to_dict(), expected_user_id=identity.user_id,
+                        sdk_cookie=renewed.cookie, replace=True,
+                        authorized=lambda: self._check(token),
+                        helper_receipt=(self.digest(token), self.clock() + self.CONNECTION_SECONDS),
+                    )
+                    self._renewal_error = None
+                except SessionError as error:
+                    if error.code != "CATALOG":
+                        raise
+                    await self.session.install(
+                        seed.bundle.to_dict(), expected_user_id=identity.user_id,
+                        sdk_cookie=seed.cookie, replace=True,
+                        authorized=lambda: self._check(token),
+                        helper_receipt=(self.digest(token), self.clock() + self.CONNECTION_SECONDS),
+                    )
+                    self._renewal_error = "CATALOG"
             self._connections.clear()
             self.settings.allow_helper_connection = self.allowed
-            self._renewal_error = None
             self._wake.set()
             self.on_change()
             result = self.session.helper_result(self.digest(token))
