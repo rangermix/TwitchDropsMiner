@@ -293,6 +293,10 @@ progress to an ignored drop while the miner intentionally targets another reward
   diagnostics. Unknown details remain generic; never echo arbitrary response text,
   apply the mapping to other routes, or change ambiguous 5xx receipt reconciliation.
   Keep regression coverage for malformed details, redaction, and one credential POST.
+- Catalog admission failures log only fixed operation labels, response-shape labels
+  and exact allowlisted GraphQL error categories. Never log raw responses, errors,
+  tokens, identity values, cookies or request headers. Keep rejection unchanged;
+  a diagnostic category is not an authentication workaround or successful login.
 - Helper protocol routes are admitted by the explicit setting, independently of optional
   dashboard auth. All other dashboard guards remain intact. Retain the write header,
   origin/Fetch Metadata checks, 64 KiB payload cap, no-store responses and fixed error codes.

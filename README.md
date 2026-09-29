@@ -74,6 +74,8 @@ and error guidance require an updated helper; see
 For browser discovery, helper error codes, or a startup error involving
 `web_auth.json`, see [troubleshooting](docs/troubleshooting.md). When reporting a
 rejected login, include the exact fixed error code, never session data or cookies.
+For `SESSION_CATALOG`, source builds also emit a redacted category/shape diagnostic
+in the miner log; it does not contain the original response or credentials.
 
 ## Upgrading to v2.0
 
