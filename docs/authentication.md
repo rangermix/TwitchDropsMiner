@@ -1,6 +1,6 @@
 # Twitch login
 
-New Twitch logins use the local TDM login helper. It opens Google Chrome on your
+New Twitch logins use the local TDM login helper. It opens Chrome, Chromium or Firefox on your
 desktop, lets you sign into Twitch, and sends the session directly to your chosen TDM
 instance. TDM saves and renews it automatically. Your desktop can be shut down after
 the helper confirms success; the miner itself must remain running.
@@ -13,14 +13,14 @@ machines below:
 | Machine | What runs there |
 | --- | --- |
 | Your home server or NAS | TDM mines drops and renews the session with temporary headless Chromium. No desktop or display is needed; the official Docker image includes Chromium. |
-| Your desktop or laptop | The login helper opens installed Google Chrome for you to sign in, then sends the session to the server's TDM address. |
+| Your desktop or laptop | The login helper opens installed Chrome, Chromium or Firefox for you to sign in, then sends the session to the server's TDM address. |
 
 Choose the helper archive for your **desktop's operating system and CPU**, even if
 the server uses a different platform. For example, use the Windows helper on your
 Windows PC when TDM runs in Docker on a Linux NAS.
 
-The helper finds and launches Chrome on the computer where you run it. `--tdm`
-selects the destination miner; it does not move Chrome to that server. Use a local
+The helper finds and launches the browser on the computer where you run it. `--tdm`
+selects the destination miner; it does not move the browser to that server. Use a local
 terminal on your desktop: commands entered in an SSH session to the server run on
 the server instead.
 
@@ -53,14 +53,10 @@ native helper archive under **Assets** on its
 
 Extract `tdm-login-helper-<version>-<platform>.tar.gz`. The archive contains the
 executable and its license. The release's `SHA256SUMS` file lists checksums for the
-archives. Google Chrome must be installed on this desktop; the packaged helper does
+archives. Chrome, Chromium or Firefox 143+ must be installed on this desktop; the packaged helper does
 not require Python. The native binaries are unsigned.
 
-On Linux, automatic desktop discovery checks `google-chrome` and
-`google-chrome-stable` on `PATH`. Use a native Chrome installation; Flatpak Chrome
-is not currently supported by the helper. `--chrome` accepts a local executable
-path, not a command such as `flatpak run com.google.Chrome`. Firefox is not currently
-supported for helper login; it can still open the TDM dashboard.
+See [browser selection](#choose-a-browser) for supported installations and version guidance.
 
 The v1.x releases do not provide this helper flow. For an unreleased source
 installation, use the helper from the same source
@@ -80,8 +76,10 @@ older TDM version that lacks the helper flow.
 3. Enter the TDM address shown on the dashboard's **Main** tab, such as
    `http://192.168.1.10:8080`. Use an address reachable from this desktop;
    `localhost` works only when TDM runs on the same computer.
-4. Sign into Twitch in the Chrome window opened by the helper and complete any
-   Twitch verification there. Wait for the helper to confirm successful acceptance.
+4. Sign into Twitch in the browser window opened by the helper and complete any
+   Twitch verification there. Close all windows of that helper-opened browser
+   instance after login (on macOS, quit that instance from the browser menu).
+   Keep the helper open; the browser will reopen for verification. Wait for success.
 
 You can also supply the address when starting the helper. From the folder containing
 the extracted executable, run this in **PowerShell on your Windows desktop**:
@@ -97,16 +95,72 @@ Or in a **local terminal on your macOS or Linux desktop**:
 ```
 
 Replace the example address with the same TDM root URL you can open from that
-desktop, including any custom port. The Chrome login window opens on that desktop.
+desktop, including any custom port. The browser login window opens on that desktop.
 
 The helper sends the session automatically; you do not export or upload a file.
 After successful acceptance, TDM saves the session and turns **Allow helper connection**
-off. The helper closes its Chrome window and deletes its temporary profile. It does
-not change your everyday Chrome profile.
+off. The helper closes its browser window and deletes its temporary profile. It does
+not change your everyday browser profile.
 
 If the helper reports that the result is unknown after a connection problem, check
 TDM's login status before trying again. A successful response may have been lost on
 the network. Reopen helper access only if another login is needed.
+
+## Choose a browser
+
+Chromium/Firefox selection, the shared close-and-reopen flow, and expanded error
+explanations require a helper built
+from this source revision or a later release containing these changes. The v2.0.0
+and v2.0.1 helper binaries support Chrome only. Updating the miner alone does not
+update a downloaded helper. For unreleased changes, follow the matching source or
+validation-artifact instructions above.
+
+The default `--browser auto` looks for **Chrome → Chromium → Firefox**, using the
+first installed browser. It does not switch browsers after a launch or login failure.
+To select Firefox explicitly:
+
+```powershell
+.\tdm-login-helper.exe --tdm http://192.168.1.10:8080 --browser firefox
+```
+
+On macOS or Linux use `./tdm-login-helper` instead. From source, use
+`python login_helper.py` with the same options. `--browser chrome` explicitly selects
+Chrome; `--browser chromium` selects Chromium. `--chrome /path/to/chrome`,
+`--chromium /path/to/chromium` or `--firefox /path/to/firefox` selects that browser
+and its local executable; explicit selections never fall back to another browser.
+Do not combine contradictory options.
+
+Firefox 143 or newer is required for network-response capture. Use a native installation
+on Windows, macOS or Linux. Discovery checks the usual application folders on Windows
+and macOS, and `google-chrome`, `google-chrome-stable`, `chromium`, `chromium-browser`,
+`firefox` and `firefox-esr` on Linux `PATH`. ESR must also meet the minimum version. Flatpak and Snap launchers are
+not supported; executable options do not accept shell commands such as `flatpak run`.
+Browser updates or Twitch changes can still affect authentication; changing browsers
+is not a guaranteed fix for Twitch validation failures.
+
+All three browsers use a separate temporary profile. The miner still uses its own headless
+Chromium for renewal, regardless of which desktop browser you choose.
+Sign-in runs without browser automation enabled. After you finish signing in
+and quit that helper-opened browser instance, the helper reopens its own temporary
+profile to verify and transfer the saved session. Leave the reopened window alone
+until the helper finishes. Closing the browser before login and any verification steps
+are complete does not establish a session. Do not close your everyday browser instance.
+For error meanings and known recovery steps, see the
+[helper error reference](troubleshooting.md#helper-error-code-reference).
+
+### Why a separate browser profile?
+
+The helper reads the temporary profile in which you just signed in. It does not read
+your everyday browser profile. Keeping its own profile lets it close and
+clean up its browser without touching your other tabs, saved passwords, or browsing data.
+An already-running browser also cannot simply be reopened under the helper's control
+using the same locked profile.
+
+A Twitch login cookie alone is not the complete renewable session sent to TDM.
+The helper also captures the matching browser/device context and fresh Twitch integrity
+proof, and verifies an accepted authenticated campaign response. TDM validates the
+account before accepting the session. A signed-in page can therefore
+appear before verification finishes. Existing-profile import is not currently supported.
 
 ## Allow helper connection and account replacement
 
@@ -149,7 +203,7 @@ that cleanup.
 ## Run the helper from source
 
 Use the same source revision as TDM on your desktop, with Python 3.12 or newer,
-[uv](https://docs.astral.sh/uv/), and Google Chrome installed. These commands run
+[uv](https://docs.astral.sh/uv/), and Chrome, Chromium or Firefox 143+ installed. These commands run
 only the login helper; the miner can be on another computer. Run them in a local
 terminal on your desktop, from the repository root. Create `env/` only on the first
 setup.
@@ -172,8 +226,8 @@ uv sync --active --locked --python 3.12
 python login_helper.py --tdm http://192.168.1.10:8080
 ```
 
-Replace the example with your instance's root URL. `--chrome` selects a Chrome
-executable on the desktop running the helper, and `--language` selects a translation.
+Replace the example with your instance's root URL. `--browser` selects the browser;
+`--chrome`, `--chromium` and `--firefox` select local executables, and `--language` selects a translation.
 Without `--tdm`, the helper asks for the address interactively.
 
 [All guides](README.md) · [Next: Using the dashboard](usage.md)

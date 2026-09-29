@@ -1,4 +1,4 @@
-"""One-time native Chrome login, sent directly to the selected TDM instance."""
+"""One-time native browser login, sent directly to the selected TDM instance."""
 
 from __future__ import annotations
 
@@ -28,6 +28,7 @@ import aiohttp
 import truststore
 from yarl import URL
 
+from src.auth.helper_errors import HelperDiagnostics
 from src.auth.server_seed import ServerSeed
 from src.auth.session_bundle import SessionBundle, SessionError
 from src.auth.session_helper import BrowserExporter, DevToolsConnection
@@ -110,8 +111,10 @@ class HelperHTTP:
                     if response.status == 403 and detail == "session_helper_disabled":
                         raise SessionError("HELPER_DISABLED")
                     if response.status in (401, 403) and detail in (
-                            "session_helper_expired", "session_helper_connection_invalid"):
+                            "session_helper_expired", "session_helper_connection_invalid", "session_connection"):
                         raise SessionError("HELPER_EXPIRED")
+                    if response.status == 429 and detail == "session_busy":
+                        raise SessionError("HELPER_BUSY")
                     raise SessionError("HELPER_REJECTED")
                 if not isinstance(data, dict):
                     raise SessionError("HELPER_RESPONSE")
@@ -172,6 +175,8 @@ class NativeChrome:
     """Own only a temporary TDM profile and the Chrome process launched for it."""
 
     LOGIN_URL = "https://www.twitch.tv/login"
+    LOGIN_MESSAGE = "login"
+    LOGIN_MISSING_CODE = "HELPER_LOGIN_MISSING"
 
     def __init__(self, executable: Path | None = None, *, startup_timeout: float = 30):
         self.executable = executable
@@ -180,6 +185,8 @@ class NativeChrome:
         self.process: subprocess.Popen | None = None
         self.address = ""
         self._closing: asyncio.Task[None] | None = None
+        self._capturing = False
+        self._verified = False
 
     @staticmethod
     def find_chrome() -> Path:
@@ -216,9 +223,9 @@ class NativeChrome:
                         if not (os.path.normcase(part) == root or os.path.normcase(part).startswith(root + os.sep)))
         return environment
 
-    @staticmethod
+    @classmethod
     @contextmanager
-    def external_libraries() -> Iterator[dict[str, str]]:
+    def external_libraries(cls) -> Iterator[dict[str, str]]:
         # PyInstaller adjusts shared-library lookup for its own bundled libraries.
         # Chrome and taskkill must inherit the ordinary operating-system lookup.
         reset = None
@@ -229,7 +236,7 @@ class NativeChrome:
             if not reset(None):
                 raise SessionError("HELPER_BROWSER")
         try:
-            yield NativeChrome.external_environment()
+            yield cls.external_environment()
         finally:
             if reset is not None:
                 reset(str(sys._MEIPASS))
@@ -249,8 +256,47 @@ class NativeChrome:
                 and type(process.get("id")) is int and process["id"] == self.process.pid
                 for process in processes):
             raise SessionError("HELPER_BROWSER_OWNER")
+        self._verified = True
+
+    def find_executable(self) -> Path:
+        executable = self.executable or self.find_chrome()
+        if not executable.is_file():
+            raise SessionError("HELPER_CHROME_MISSING")
+        return executable
+
+    def launch_arguments(self, executable: Path, port: int) -> list[str]:
+        args = [str(executable), f"--user-data-dir={self.profile}",
+            "--no-first-run", "--no-default-browser-check", "--disable-background-mode",
+            "--disable-sync"]
+        if self._capturing:
+            args.extend(["--remote-debugging-address=127.0.0.1", f"--remote-debugging-port={port}", "about:blank"])
+        else:
+            args.append(self.LOGIN_URL)
+        return args
+
+    def exporter(self, *, timeout: float) -> BrowserExporter:
+        return BrowserExporter(self.address, timeout=timeout)
+
+    def _launch_browser(self, executable: Path) -> None:
+        assert self.profile is not None
+        self.executable = executable
+        options: dict[str, Any] = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
+        if sys.platform == "win32":
+            options["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+        else:
+            options["start_new_session"] = True
+        port = self.available_port() if self._capturing else 0
+        self.address = f"http://127.0.0.1:{port}" if self._capturing else ""
+        with self.external_libraries() as environment:
+            # Keep browser auxiliary files inside the owned cleanup boundary.
+            environment.update({name: str(self.profile / "tmp") for name in ("TMPDIR", "TMP", "TEMP")})
+            self.process = subprocess.Popen(self.launch_arguments(executable, port), env=environment, **options)
 
     async def _wait_ready(self) -> None:
+        if not self._capturing:
+            if self.process is None or self.process.poll() is not None:
+                raise SessionError("HELPER_BROWSER")
+            return
         async with asyncio.timeout(self.startup_timeout):  # type: ignore[attr-defined]
             async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=2), trust_env=False) as http:
                 while self.process is not None and self.process.poll() is None:
@@ -273,29 +319,13 @@ class NativeChrome:
         raise SessionError("HELPER_BROWSER")
 
     async def __aenter__(self) -> NativeChrome:
-        executable = self.executable or self.find_chrome()
-        if not executable.is_file():
-            raise SessionError("HELPER_CHROME_MISSING")
+        executable = self.find_executable()
         self.profile = Path(tempfile.mkdtemp(prefix="tdm-login-"))
         try:
             self.profile.chmod(0o700)
             temporary = self.profile / "tmp"
             temporary.mkdir(mode=0o700)
-            options: dict[str, Any] = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
-            if sys.platform == "win32":
-                options["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
-            else:
-                options["start_new_session"] = True
-            port = self.available_port()
-            self.address = f"http://127.0.0.1:{port}"
-            with self.external_libraries() as environment:
-                # Chrome can leave auxiliary downloads outside its user-data-dir.
-                # Keep all three platform temp locations inside our cleanup boundary.
-                environment.update({name: str(temporary) for name in ("TMPDIR", "TMP", "TEMP")})
-                self.process = subprocess.Popen([str(executable), f"--user-data-dir={self.profile}",
-                    "--remote-debugging-address=127.0.0.1", f"--remote-debugging-port={port}",
-                    "--no-first-run", "--no-default-browser-check", "--disable-background-mode",
-                    "--disable-sync", self.LOGIN_URL], env=environment, **options)
+            self._launch_browser(executable)
             await self._wait_ready()
             return self
         except BaseException as error:
@@ -317,28 +347,45 @@ class NativeChrome:
         except (aiohttp.ClientError, ValueError, TypeError, KeyError, TimeoutError):
             raise SessionError("HELPER_BROWSER") from None
 
+    async def _restart_for_capture(self) -> None:
+        if self._capturing:
+            return
+        # Let the user close the owned instance normally so its cookies/storage
+        # are flushed. Never read a live profile or force-close successful login.
+        while self.process is not None and self.process.poll() is None:
+            await asyncio.sleep(.2)
+        if self.process is None or self.process.returncode != 0:
+            raise SessionError("HELPER_BROWSER")
+        self._capturing = True
+        self._verified = False
+        self._launch_browser(self.find_executable())
+        await self._wait_ready()
+
+    async def _check_login(self) -> None:
+        if self.process is None or self.process.poll() is not None:
+            raise SessionError("HELPER_BROWSER")
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5), trust_env=False) as http:
+            endpoint = await self._browser_socket(http)
+            async with http.ws_connect(endpoint, timeout=aiohttp.ClientWSTimeout(ws_close=2)) as socket:
+                protocol = DevToolsConnection(socket)
+                try:
+                    self._require_owner(await protocol.command("SystemInfo.getProcessInfo", timeout=2))
+                    data = await protocol.command("Storage.getCookies", timeout=5)
+                    if not isinstance(data, dict) or not isinstance(data.get("cookies"), list):
+                        raise SessionError("BROWSER_PROTOCOL")
+                    if not any(isinstance(cookie, dict) and cookie.get("name") == "auth-token"
+                               and cookie.get("domain") in (".twitch.tv", "twitch.tv", "www.twitch.tv")
+                               and isinstance(cookie.get("value"), str) and cookie["value"]
+                               for cookie in data["cookies"]):
+                        raise SessionError(self.LOGIN_MISSING_CODE)
+                finally:
+                    await protocol.close()
+
     async def wait_authenticated(self, *, timeout: float) -> None:
         try:
             async with asyncio.timeout(timeout):  # type: ignore[attr-defined]
-                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5), trust_env=False) as http:
-                    endpoint = await self._browser_socket(http)
-                    async with http.ws_connect(endpoint, timeout=aiohttp.ClientWSTimeout(ws_close=2)) as socket:
-                        protocol = DevToolsConnection(socket)
-                        try:
-                            while True:
-                                if self.process is None or self.process.poll() is not None:
-                                    raise SessionError("HELPER_BROWSER")
-                                data = await protocol.command("Storage.getCookies", timeout=5)
-                                if not isinstance(data, dict) or not isinstance(data.get("cookies"), list):
-                                    raise SessionError("HELPER_BROWSER")
-                                if any(isinstance(cookie, dict) and cookie.get("name") == "auth-token"
-                                       and cookie.get("domain") in (".twitch.tv", "twitch.tv", "www.twitch.tv")
-                                       and isinstance(cookie.get("value"), str) and cookie["value"]
-                                       for cookie in data["cookies"]):
-                                    return
-                                await asyncio.sleep(1)
-                        finally:
-                            await protocol.close()
+                await self._restart_for_capture()
+                await self._check_login()
         except TimeoutError:
             raise SessionError("HELPER_LOGIN_TIMEOUT") from None
         except (aiohttp.ClientError, OSError, ValueError):
@@ -437,11 +484,243 @@ class NativeChrome:
         function(path)
 
 
-class NativeLoginHelper:
-    """Admission precedes Chrome; success follows server proof and local cleanup."""
+class NativeChromium(NativeChrome):
+    """Use native Chromium with the same manual-login and CDP capture flow."""
 
-    def __init__(self, destination: str, *, browser_factory: Callable[..., Any] = NativeChrome,
-                 exporter_factory: Callable[..., Any] = BrowserExporter,
+    @staticmethod
+    def find_chromium() -> Path:
+        if sys.platform == "darwin":
+            candidates = [Path(root) / "Chromium.app/Contents/MacOS/Chromium"
+                          for root in ("/Applications", str(Path.home() / "Applications"))]
+        elif sys.platform == "win32":
+            candidates = [Path(root) / "Chromium/Application/chrome.exe" for name in (
+                "PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA") if (root := os.environ.get(name))]
+        else:
+            candidates = [Path(value) for command in ("chromium", "chromium-browser")
+                          if (value := shutil.which(command))]
+        for path in candidates:
+            if path.is_file():
+                return path
+        raise SessionError("HELPER_CHROMIUM_MISSING")
+
+    def find_executable(self) -> Path:
+        executable = self.executable or self.find_chromium()
+        if not executable.is_file():
+            raise SessionError("HELPER_CHROMIUM_MISSING")
+        return executable
+
+
+class NativeFirefox(NativeChrome):
+    """Use installed Firefox while sharing owned-process/profile cleanup."""
+
+    LOGIN_MISSING_CODE = "HELPER_FIREFOX_LOGIN"
+
+    def __init__(self, executable: Path | None = None, *, startup_timeout: float = 30):
+        super().__init__(executable, startup_timeout=startup_timeout)
+        self.remote: DevToolsConnection | None = None
+        self.http: aiohttp.ClientSession | None = None
+
+    @staticmethod
+    def external_environment() -> dict[str, str]:
+        environment = NativeChrome.external_environment()
+        # An inherited Marionette flag also marks an ordinary launch as automated.
+        for name in ("MOZ_MARIONETTE", "MOZ_MARIONETTE_PREF_STATE_ACROSS_RESTARTS",
+                     "MOZ_REMOTE_ALLOW_SYSTEM_ACCESS"):
+            environment.pop(name, None)
+        return environment
+
+    @staticmethod
+    def find_firefox() -> Path:
+        candidates: list[Path] = []
+        if sys.platform == "darwin":
+            candidates = [Path(root) / "Firefox.app/Contents/MacOS/firefox"
+                          for root in ("/Applications", str(Path.home() / "Applications"))]
+        elif sys.platform == "win32":
+            candidates = [Path(root) / "Mozilla Firefox/firefox.exe" for name in (
+                "PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA") if (root := os.environ.get(name))]
+        else:
+            candidates = [Path(value) for command in ("firefox", "firefox-esr")
+                          if (value := shutil.which(command))]
+        for path in candidates:
+            if path.is_file():
+                return path
+        raise SessionError("HELPER_FIREFOX_MISSING")
+
+    def find_executable(self) -> Path:
+        executable = self.executable or self.find_firefox()
+        if not executable.is_file():
+            raise SessionError("HELPER_FIREFOX_MISSING")
+        return executable
+
+    def launch_arguments(self, executable: Path, port: int) -> list[str]:
+        self.executable = executable
+        args = [str(executable), "--new-instance", "--profile", str(self.profile)]
+        if sys.platform == "win32":
+            # The native launcher must stay alive until its browser child exits.
+            args.append("--wait-for-browser")
+        if self._capturing:
+            args.extend(["--remote-debugging-port", str(port), "about:blank"])
+        else:
+            # RemoteAgent enables navigator.webdriver at startup, even before
+            # session.new. Leave manual Twitch sign-in entirely outside BiDi.
+            args.append(self.LOGIN_URL)
+        return args
+
+    def _owns_pid(self, pid: int) -> bool:
+        if self.process is None or self.process.poll() is not None:
+            return False
+        if pid == self.process.pid:
+            return True
+        if sys.platform != "win32" or self.executable is None:
+            return False
+        # Windows Firefox's launcher stays alive while its browser child runs.
+        # Verify the direct parent and executable using OS data, not BiDi claims.
+        from ctypes import wintypes
+
+        class ProcessEntry(ctypes.Structure):
+            _fields_ = [("size", wintypes.DWORD), ("usage", wintypes.DWORD),
+                ("pid", wintypes.DWORD), ("heap", ctypes.c_size_t), ("module", wintypes.DWORD),
+                ("threads", wintypes.DWORD), ("parent", wintypes.DWORD),
+                ("priority", wintypes.LONG), ("flags", wintypes.DWORD),
+                ("name", wintypes.WCHAR * 260)]
+
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD, wintypes.DWORD]
+        kernel.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel.OpenProcess.restype = wintypes.HANDLE
+        kernel.QueryFullProcessImageNameW.argtypes = [wintypes.HANDLE, wintypes.DWORD,
+                                                     wintypes.LPWSTR, ctypes.POINTER(wintypes.DWORD)]
+        first, following = kernel.Process32FirstW, kernel.Process32NextW
+        for function in (first, following):
+            function.argtypes = [wintypes.HANDLE, ctypes.POINTER(ProcessEntry)]
+            function.restype = wintypes.BOOL
+        snapshot = kernel.CreateToolhelp32Snapshot(2, 0)
+        if snapshot == wintypes.HANDLE(-1).value:
+            return False
+        try:
+            entry = ProcessEntry()
+            entry.size = ctypes.sizeof(entry)
+            available = first(snapshot, ctypes.byref(entry))
+            while available:
+                if entry.pid == pid:
+                    if entry.parent != self.process.pid:
+                        return False
+                    handle = kernel.OpenProcess(0x1000, False, pid)
+                    if not handle:
+                        return False
+                    try:
+                        path, size = ctypes.create_unicode_buffer(32768), wintypes.DWORD(32768)
+                        return bool(kernel.QueryFullProcessImageNameW(handle, 0, path, ctypes.byref(size))
+                                    and Path(path.value).resolve() == self.executable.resolve())
+                    finally:
+                        kernel.CloseHandle(handle)
+                available = following(snapshot, ctypes.byref(entry))
+            return False
+        finally:
+            kernel.CloseHandle(snapshot)
+
+    def _require_firefox_owner(self, result: Any) -> None:
+        capabilities = result.get("capabilities") if isinstance(result, dict) else None
+        if (not isinstance(capabilities, dict) or self.process is None or self.profile is None
+                or type(capabilities.get("moz:processID")) is not int
+                or not self._owns_pid(capabilities["moz:processID"])
+                or not isinstance(capabilities.get("moz:profile"), str)
+                or Path(capabilities["moz:profile"]).resolve() != self.profile.resolve()):
+            raise SessionError("HELPER_BROWSER_OWNER")
+        self._verified = True
+        version = str(capabilities.get("browserVersion", "")).split(".")[0]
+        if not version.isdecimal() or int(version) < 143:
+            raise SessionError("HELPER_FIREFOX_VERSION")
+
+    async def _wait_ready(self) -> None:
+        from src.auth.firefox_session import FirefoxPage
+
+        if not self._capturing:
+            if self.process is None or self.process.poll() is not None:
+                raise SessionError("HELPER_BROWSER")
+            return
+        self.http = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=2), trust_env=False)
+        async with asyncio.timeout(self.startup_timeout):  # type: ignore[attr-defined]
+            while self.process is not None and self.process.poll() is None:
+                try:
+                    socket = await self.http.ws_connect(self.address.replace("http:", "ws:") + "/session",
+                        max_msg_size=16 * 1024 * 1024, timeout=aiohttp.ClientWSTimeout(ws_close=1))
+                except (aiohttp.ClientError, TimeoutError, OSError):
+                    await asyncio.sleep(.1)
+                    continue
+                self.remote = DevToolsConnection(socket, extra_events=FirefoxPage.EVENTS)
+                self._require_firefox_owner(await self.remote.command("session.new", {"capabilities": {}}, timeout=5))
+                return
+        raise SessionError("HELPER_BROWSER")
+
+    async def _check_login(self) -> None:
+        from src.auth.firefox_session import FirefoxPage
+
+        assert self.remote is not None
+        if self.process is None or self.process.poll() is not None:
+            raise SessionError("HELPER_BROWSER")
+        data = await self.remote.command("storage.getCookies", {
+            "filter": {"name": "auth-token"},
+            "partition": {"type": "storageKey", "userContext": "default"},
+        }, timeout=5)
+        if not isinstance(data, dict) or not isinstance(data.get("cookies"), list):
+            raise SessionError("BROWSER_PROTOCOL")
+        if not any(isinstance(cookie, dict)
+                   and cookie.get("domain") in (".twitch.tv", "twitch.tv", "www.twitch.tv")
+                   and cookie.get("name") == "auth-token" and FirefoxPage.string(cookie.get("value"))
+                   for cookie in data["cookies"]):
+            raise SessionError(self.LOGIN_MISSING_CODE)
+
+    def exporter(self, *, timeout: float) -> BrowserExporter:
+        from src.auth.firefox_session import FirefoxExporter
+
+        assert self.remote is not None
+        return FirefoxExporter(self.address, self.remote, timeout=timeout)
+
+    async def _request_close(self) -> None:
+        if self.remote is not None and self._verified:
+            await self.remote.command("browser.close", timeout=2)
+
+    async def _close(self) -> None:
+        try:
+            await super()._close()
+        finally:
+            if self.remote is not None:
+                await self.remote.close()
+                self.remote = None
+            if self.http is not None:
+                await self.http.close()
+                self.http = None
+
+
+class BrowserSelection:
+    @staticmethod
+    def create(choice: str = "auto", *, chrome: Path | None = None, chromium: Path | None = None,
+               firefox: Path | None = None) -> NativeChrome:
+        browsers = (
+            ("chrome", NativeChrome, chrome, NativeChrome.find_chrome, "HELPER_CHROME_MISSING"),
+            ("chromium", NativeChromium, chromium, NativeChromium.find_chromium, "HELPER_CHROMIUM_MISSING"),
+            ("firefox", NativeFirefox, firefox, NativeFirefox.find_firefox, "HELPER_FIREFOX_MISSING"),
+        )
+        for name, browser, executable, _find, _missing in browsers:
+            if executable is not None or choice == name:
+                return browser(executable)
+        for _name, browser, _executable, find, missing in browsers:
+            try:
+                return browser(find())
+            except SessionError as error:
+                if error.code != missing:
+                    raise
+        raise SessionError("HELPER_BROWSER_MISSING")
+
+
+class NativeLoginHelper:
+    """Admission precedes the browser; success follows proof and local cleanup."""
+
+    def __init__(self, destination: str, *, browser_factory: Callable[..., Any] = BrowserSelection.create,
+                 exporter_factory: Callable[..., Any] | None = None,
                  clock: Callable[[], float] = time.time, report: Callable[[str], None] = lambda _key: None):
         self.destination = HelperDestination(destination)
         self.browser_factory, self.exporter_factory = browser_factory, exporter_factory
@@ -452,10 +731,12 @@ class NativeLoginHelper:
         async with HelperHTTP(self.destination, clock=self.clock) as client:
             ticket = await client.connect()
             async with self.browser_factory() as browser:
-                self.report("login")
+                self.report(getattr(browser, "LOGIN_MESSAGE", "login"))
                 await browser.wait_authenticated(timeout=max(1, ticket.expires_at - self.clock() - 15))
                 self.report("capturing")
-                exporter = self.exporter_factory(browser.address, timeout=min(120, max(1, ticket.expires_at - self.clock())))
+                timeout = min(120, max(1, ticket.expires_at - self.clock()))
+                exporter = (self.exporter_factory(browser.address, timeout=timeout) if self.exporter_factory
+                            else browser.exporter(timeout=timeout))
                 seed = await exporter.capture_seed()
                 self.report("sending")
                 await client.send(ticket, seed)
@@ -463,6 +744,12 @@ class NativeLoginHelper:
 
 
 class LoginHelperCLI:
+    @staticmethod
+    def report_error(code: str) -> None:
+        code, guidance = HelperDiagnostics.describe(code)
+        print(_.t["login"]["error_code"].format(error_code=code), file=sys.stderr)
+        print(guidance, file=sys.stderr)
+
     @staticmethod
     async def run_cancellable(helper: NativeLoginHelper) -> None:
         """Translate ordinary POSIX termination into owned-resource cleanup."""
@@ -494,28 +781,35 @@ class LoginHelperCLI:
         words = _.t["helper"]
         parser = argparse.ArgumentParser(description=words["title"])
         parser.add_argument("--tdm", help=words["tdm_help"])
-        parser.add_argument("--chrome", type=Path, help=words["chrome_help"])
+        parser.add_argument("--browser", choices=("auto", "chrome", "chromium", "firefox"),
+                            default="auto", help=words["browser_help"])
+        paths = parser.add_mutually_exclusive_group()
+        paths.add_argument("--chrome", type=Path, help=words["chrome_help"])
+        paths.add_argument("--chromium", type=Path, help=words["chromium_help"])
+        paths.add_argument("--firefox", type=Path, help=words["firefox_help"])
         parser.add_argument("--language", choices=_.get_languages(), help=words["language_help"])
         parser.add_argument("--no-pause", action="store_true", help=words["no_pause_help"])
         args = parser.parse_args()
+        if any(getattr(args, name) is not None and args.browser not in ("auto", name)
+               for name in ("chrome", "chromium", "firefox")):
+            parser.error(words["browser_conflict"])
         result = 0
         try:
             destination = args.tdm or input(words["destination_prompt"]).strip()
-            helper = NativeLoginHelper(destination, browser_factory=lambda: NativeChrome(args.chrome),
+            helper = NativeLoginHelper(destination, browser_factory=lambda: BrowserSelection.create(
+                args.browser, chrome=args.chrome, chromium=args.chromium, firefox=args.firefox),
                 report=lambda key: print(words[key], flush=True))  # type: ignore[literal-required]
             print(words["destination"].format(url=helper.destination.url), flush=True)
             asyncio.run(LoginHelperCLI.run_cancellable(helper))
         except SessionError as error:
             # Codes originate in our validators; never print response bodies or exceptions.
-            print(_.t["login"]["error_code"].format(error_code=f"SESSION_{error.code}"), file=sys.stderr)
-            if error.code == "HELPER_RESULT_UNKNOWN":
-                print(words["result_unknown"], file=sys.stderr)
+            LoginHelperCLI.report_error(error.code)
             result = 1
         except (KeyboardInterrupt, EOFError, asyncio.CancelledError):
             print(words["cancelled"], file=sys.stderr)
             result = 130
         except Exception:
-            print(_.t["login"]["error_code"].format(error_code="SESSION_HELPER_FAILED"), file=sys.stderr)
+            LoginHelperCLI.report_error("HELPER_FAILED")
             result = 1
         if result != 130 and getattr(sys, "frozen", False) and sys.stdin.isatty() and not args.no_pause:
             with suppress(KeyboardInterrupt, EOFError):

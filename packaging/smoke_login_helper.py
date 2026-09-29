@@ -62,6 +62,7 @@ class PackagedSmoke:
                 help_result = subprocess.run([str(self.executable), "--help"], **options)
                 assert help_result.returncode == 0, help_result.stderr
                 assert "--tdm" in help_result.stdout and "--output" not in help_result.stdout
+                assert all(option in help_result.stdout for option in ("--browser", "--chromium", "--firefox"))
                 translated = subprocess.run([str(self.executable), "--language", "简体中文", "--help"], **options)
                 assert translated.returncode == 0, translated.stderr
                 assert "连接 Twitch 与 TDM" in translated.stdout
@@ -69,6 +70,7 @@ class PackagedSmoke:
                     f"http://127.0.0.1:{server.server_port}", "--no-pause"], **options)
                 assert refused.returncode == 1, refused.stdout + refused.stderr
                 assert "SESSION_HELPER_DISABLED" in refused.stderr
+                assert "Allow helper connection" in refused.stderr
                 assert RefusingInstance.requests == [("/api/helper/connect", "1", b"{}")]
                 assert list(Path(directory).iterdir()) == [], "Helper retained local files"
         finally:
@@ -77,13 +79,14 @@ class PackagedSmoke:
             thread.join(timeout=5)
         print("Packaged helper: startup, locales, admission and no-local-files checks passed.")
 
-    def browser(self) -> None:
-        # Only the test harness imports source for installed-Chrome discovery. All
+    def browser(self, choice: str = "chrome") -> None:
+        # Only the test harness imports source for installed-browser discovery. All
         # browser startup, control and cleanup run in the actual packaged binary.
         sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-        from src.auth.login_helper import NativeChrome
+        from src.auth.login_helper import BrowserSelection
 
-        chrome = NativeChrome.find_chrome()
+        executable = BrowserSelection.create(choice).find_executable()
+        AdmittingInstance.requests.clear()
         server = ThreadingHTTPServer(("127.0.0.1", 0), AdmittingInstance)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
@@ -93,13 +96,13 @@ class PackagedSmoke:
                                "PYTHONPATH": "", "PYTHONHOME": ""}
                 environment.pop("VIRTUAL_ENV", None)
                 result = subprocess.run([str(self.executable), "--tdm",
-                    f"http://127.0.0.1:{server.server_port}", "--chrome", str(chrome), "--no-pause"],
+                    f"http://127.0.0.1:{server.server_port}", "--" + choice, str(executable), "--no-pause"],
                     cwd=directory, env=environment, capture_output=True, text=True,
                     encoding="utf-8", timeout=90, check=False)
                 assert result.returncode == 1, result.stdout + result.stderr
-                # This code is reachable only after the CDP ownership check succeeds;
-                # a launch, ownership or cleanup failure yields another code.
+                # The manual phase must time out without activating browser automation.
                 assert "SESSION_HELPER_LOGIN_TIMEOUT" in result.stderr, result.stdout + result.stderr
+                assert "close all its windows" in result.stdout
                 assert AdmittingInstance.requests == [("/api/helper/connect", "1", b"{}")]
                 remaining = sorted(str(path.relative_to(directory)) for path in Path(directory).rglob("*"))
                 assert not remaining, f"Helper retained temporary browser files: {remaining[:30]!r}"
@@ -107,15 +110,21 @@ class PackagedSmoke:
             server.shutdown()
             server.server_close()
             thread.join(timeout=5)
-        print("Packaged helper: installed Chrome startup, control, timeout and profile cleanup passed.")
+        print(f"Packaged helper: installed {choice} manual launch, timeout and profile cleanup passed.")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("executable", type=Path)
     parser.add_argument("--browser", action="store_true")
+    parser.add_argument("--chromium-browser", action="store_true")
+    parser.add_argument("--firefox-browser", action="store_true")
     args = parser.parse_args()
     smoke = PackagedSmoke(args.executable)
     smoke.run()
     if args.browser:
         smoke.browser()
+    if args.chromium_browser:
+        smoke.browser("chromium")
+    if args.firefox_browser:
+        smoke.browser("firefox")

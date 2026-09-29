@@ -312,7 +312,7 @@ part of an ordinary contribution.
 The existing **Create Version Release** workflow remains the versioned release entry
 point. Its release branch triggers Docker publication, then **GitHub Release** verifies
 the existing version tag and builds helpers from that exact commit. GitHub publication
-waits for Linux x64, Windows x64, macOS ARM64 and macOS x64 builds, their packaged Chrome
+waits for Linux x64, Windows x64, macOS ARM64 and macOS x64 builds, their packaged Chrome/Firefox
 smoke checks, and archive validation. It uploads four versioned `.tar.gz` archives and
 `SHA256SUMS` to a draft, verifies their remote digests, then publishes. Failed uploads
 leave a draft that can be retried; a rerun refuses to modify an already-published release.

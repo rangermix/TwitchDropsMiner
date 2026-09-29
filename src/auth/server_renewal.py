@@ -20,7 +20,7 @@ from src.auth.browser_session import BrowserSession
 from src.auth.imported_session import SessionTransport
 from src.auth.server_seed import SDKCookie, ServerSeed
 from src.auth.session_bundle import PrivateSessionFile, SessionBundle, SessionError
-from src.auth.session_helper import BrowserExporter, DevToolsConnection
+from src.auth.session_helper import BrowserExporter, CaptureProtocol
 from src.auth.session_renewal import RenewalConnection, RenewalLoop, RenewalSender
 
 
@@ -127,7 +127,7 @@ class SDKExchange:
         self.loaded = asyncio.Event()
         self.proof: asyncio.Future[Any] = asyncio.get_running_loop().create_future()
 
-    async def run(self, protocol: DevToolsConnection) -> None:
+    async def run(self, protocol: CaptureProtocol) -> None:
         while True:
             event = await protocol.events.get()
             if event is None:
@@ -206,7 +206,7 @@ class SDKAcquisition:
     def __init__(self, *, clock: Callable[[], float] = time.time, timeout: float = 120):
         self.clock, self.timeout = clock, timeout
 
-    async def run(self, protocol: DevToolsConnection, bundle: SessionBundle,
+    async def run(self, protocol: CaptureProtocol, bundle: SessionBundle,
                   cookie: SDKCookie | None = None, *, initial: bool = False) -> ServerSeed:
         try:
             async with asyncio.timeout(self.timeout):  # type: ignore[attr-defined]
@@ -230,7 +230,7 @@ class SDKAcquisition:
             raise SessionError("BROWSER_PROTOCOL") from None
 
     async def acquire(
-        self, protocol: DevToolsConnection, exchange: SDKExchange,
+        self, protocol: CaptureProtocol, exchange: SDKExchange,
         original: SessionBundle, previous_cookie: SDKCookie | None,
         *, initial: bool = False,
     ) -> ServerSeed:

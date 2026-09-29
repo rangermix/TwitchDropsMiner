@@ -1,3 +1,54 @@
+# Release Notes - v2.0.2
+
+The desktop login helper now supports native Firefox and Chromium alongside Chrome,
+with a consistent sign-in flow and translated explanations for helper errors.
+
+## Browser support and sign-in
+
+- Automatic selection searches **Chrome → Chromium → Firefox**, using the first
+  installed browser. It does not switch browsers after a launch or login failure.
+- Select a browser with `--browser chrome`, `--browser chromium` or
+  `--browser firefox`. Use `--chrome`, `--chromium` or `--firefox` to specify its
+  local executable. Firefox, including ESR, requires version **143 or newer**.
+- All three browsers open normally for sign-in. Complete Twitch login and any
+  email or two-factor verification, then close all windows of the helper's browser
+  instance. On macOS, quit that instance. **Keep the helper open:** it reopens the
+  same temporary profile to verify and send the session. Wait for its success message.
+- Firefox capture handles Twitch's URL fragments, avoiding a timeout that could
+  otherwise occur after the browser showed a signed-in campaign page.
+- The helper leaves everyday browser profiles untouched and removes its owned
+  temporary profile when finished. Firefox derivatives have not been validated;
+  Flatpak and Snap launchers remain unsupported.
+
+Firefox support addresses [#129](https://github.com/rangermix/TwitchDropsMiner/issues/129).
+Chromium/Firefox fallback also provides alternatives when Chrome is absent
+([#135](https://github.com/rangermix/TwitchDropsMiner/issues/135)).
+
+## Error explanations and recovery
+
+- Helper error codes now include explanations and known recovery steps in all
+  20 languages, covering browser discovery, login, capture, server verification,
+  uncertain results and cleanup.
+- Expired/invalid helper connections and a busy miner have distinct diagnostics.
+  Unknown or ambiguous upload results still use receipt recovery without sending
+  the session a second time; check TDM before retrying.
+- Guidance distinguishes the desktop login browser from Chromium on the miner
+  host. Improved explanations do not establish a fix for every server startup,
+  renewal or upload failure. See the
+  [error reference](https://github.com/rangermix/TwitchDropsMiner/wiki/Troubleshooting#helper-error-code-reference).
+
+## Updating
+
+Update the miner to `rangermix/twitch-drops-miner:2.0.2` and replace your desktop
+helper with the matching **2.0.2 executable**. Updating only the miner does not
+update the helper. Native archives cover Linux x64, Windows x64, macOS ARM64 and
+macOS x64; `SHA256SUMS` contains their checksums.
+
+Preserve your existing data volume. A working saved Twitch session does not need
+another login. Run the helper on your desktop or laptop even when TDM runs on a
+headless home server or NAS; the miner still uses its own headless Chromium for
+renewal. See the [login guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Authentication).
+
 # Release Notes - v2.0.1
 
 This patch improves login-helper cleanup and makes a server-browser startup failure

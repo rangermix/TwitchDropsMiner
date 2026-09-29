@@ -45,7 +45,7 @@ const doc = {getElementById(id) {
 }, addEventListener(){}};
 const context = {window:{location:{origin:'https://tdm.test'}}, document:doc, Date, setInterval(){}, console};
 vm.createContext(context);
-vm.runInContext(fs.readFileSync(process.argv[1], 'utf8'), context);
+vm.runInContext(fs.readFileSync(process.argv[2], 'utf8'), context);
 const t = {title:'<img onerror=bad()>', step_download:'Download and run', step_instance:'Enter the instance address',
  step_chrome:'Sign in in Chrome', step_finish:'Wait for the helper result', builds:'Native builds', builds_note:'Choose the matching release archive. Chrome required; Python not required.',
  instance:'This instance', copy:'Copy address', copied:'Copied', copy_manually:'Select and copy the address', retry:'Retry status',
@@ -68,10 +68,11 @@ const status=(allowed,session={state:'waiting'})=>({enabled:true,allow_helper_co
 def run_panel(body: str) -> None:
     assert SCRIPT.exists(), "the helper panel must replace the manual import UI"
     result = subprocess.run(
-        [NODE, "-e", HARNESS + "\n(async()=>{\n" + body + r"""
+        [NODE, "-", str(SCRIPT)],
+        input=HARNESS + "\n(async()=>{\n" + body + r"""
 })().catch(error=>{console.error(error);process.exit(1)});
-""", str(SCRIPT)],
-        capture_output=True, text=True,
+""",
+        capture_output=True, text=True, encoding="utf-8",
     )
     assert result.returncode == 0, result.stderr
 

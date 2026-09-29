@@ -354,7 +354,47 @@ class GUIMessages(TypedDict):
     wanted: GUIWanted
 
 
+class HelperErrors(TypedDict):
+    destination: str
+    disabled: str
+    expired: str
+    busy: str
+    chrome_missing: str
+    chromium_missing: str
+    login_missing: str
+    firefox_missing: str
+    browser_missing: str
+    firefox_version: str
+    firefox_login: str
+    browser: str
+    browser_owner: str
+    login_timeout: str
+    network: str
+    redirect: str
+    response: str
+    rejected: str
+    server_browser: str
+    result_unknown: str
+    browser_cleanup: str
+    profile_cleanup: str
+    browser_protocol: str
+    capture_timeout: str
+    capture_limit: str
+    session_expired: str
+    session_invalid: str
+    sdk: str
+    validation: str
+    account: str
+    twitch_network: str
+    failed: str
+
+
 class HelperMessages(TypedDict):
+    errors: HelperErrors
+    browser_help: str
+    chromium_help: str
+    firefox_help: str
+    browser_conflict: str
     result_unknown: str
     title: str
     destination_prompt: str

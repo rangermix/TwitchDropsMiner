@@ -312,18 +312,28 @@ progress to an ignored drop while the miner intentionally targets another reward
   used with this server. See `docs/authentication.md` for current setup.
 - `src/auth/login_helper.py` and root `login_helper.py` implement direct local handoff.
   Keep setup instructions explicit about the two machines: run the native/source helper
-  in the user's local desktop session with installed Google Chrome, and choose its
+  in the user's local desktop session with installed Chrome, Chromium or Firefox 143+, and choose its
   archive for that desktop's OS/CPU. `--tdm` selects the reachable miner root URL;
-  `--chrome` selects a local executable. A headless home server/NAS runs the miner
+  `--chrome`/`--chromium`/`--firefox` select local executables. `--browser auto` searches
+  Chrome, then Chromium, then Firefox, advancing only when a browser is absent.
+  Explicit choices never fall back; launch/login errors never switch browsers.
+  A headless home server/NAS runs the miner
   and its temporary renewal Chromium without a desktop or display. An SSH session
   to that server does not run the helper on the user's desktop.
-  Check admission before opening installed Chrome with a temporary owned TDM profile.
-  Use an explicit nonzero loopback CDP port (port zero changes navigator.webdriver), verify
-  the browser PID, and leave ordinary Chrome profiles untouched. Wait for Twitch login,
+  Check admission before opening any browser with a temporary owned TDM profile.
+  All three start without remote automation for manual sign-in. Require a successful
+  normal user exit before reopening the same executable and profile at `about:blank`
+  for capture; never force-close successful login before storage flushes. Tell macOS
+  users to quit only the helper-owned instance. A scoped saved cookie is a prerequisite,
+  not proof of acceptance. Missing login, crashes, timeouts and cancellation stay distinct.
+  `NativeChromium` shares Chrome's lifecycle and capture protocol. During capture,
+  Chrome/Chromium use an explicit nonzero loopback CDP port (zero changes navigator.webdriver);
+  Firefox uses a loopback BiDi session. Verify browser process ownership and leave ordinary
+  browser profiles untouched. Wait for Twitch login,
   capture in memory via shared BrowserExporter/SDKAcquisition, send directly to the chosen
-  root URL without redirects, wait for verified acceptance, close Chrome and delete the
+  root URL without redirects, wait for verified acceptance, close the browser and delete the
   owned profile. No exported JSON/seed/connection files are written locally.
-  Scope Chrome's TMPDIR, TMP and TEMP to the owned profile so auxiliary files are removed
+  Scope the browser's TMPDIR, TMP and TEMP to the owned profile so auxiliary files are removed
   with it; never delete or change the parent's shared temporary directory. Cancellation,
   SIGTERM and SIGHUP must finish bounded cleanup. Forced process kill/power loss cannot
   guarantee cleanup; never silently report successful cleanup if deletion failed.
@@ -332,23 +342,60 @@ progress to an ignored drop while the miner intentionally targets another reward
   unrelated profiles, or suppress persistent locks/permission errors. A missing child
   is not proof that the profile root was deleted; retry while the root remains.
   Keep real Windows read-only cleanup and disappearing-child regressions covered.
-- Linux desktop discovery currently checks native `google-chrome` and
-  `google-chrome-stable`. Flatpak launchers and Firefox are not supported login
-  backends; do not imply that `--chrome` accepts a shell command or bypass browser
-  PID ownership checks to accept a sandbox launcher.
+- Linux desktop discovery checks native `google-chrome`, `google-chrome-stable`,
+  `chromium`, `chromium-browser`, `firefox` and `firefox-esr` in that order.
+  Firefox requires version 143+ for BiDi response capture,
+  including ESR. Flatpak/Snap launchers are unsupported; executable options do not
+  accept shell commands. Do not bypass ownership checks to accept a sandbox launcher.
+- `NativeFirefox` owns one loopback BiDi session and verifies both process ownership
+  and the temporary profile before capture. Manual sign-in first uses an ordinary
+  owned Firefox without RemoteAgent/Marionette flags; inherited Marionette activation
+  and privileged-access environment variables are removed only from the child copy.
+  Require a normal user exit before restarting that same profile with BiDi at
+  `about:blank`. Do not spoof navigator properties, read/copy a live profile, or
+  force-close a successful login before Firefox flushes storage. Explicitly instruct
+  macOS users to quit the helper-owned instance. A retained scoped cookie is only a
+  prerequisite: capture and server account/catalog checks still decide acceptance.
+  On Windows, pass `--wait-for-browser` so the ordinary launcher stays alive.
+  On Windows the native Firefox launcher
+  may own a direct browser child: verify that relationship and its executable with OS
+  data, never just a remote PID claim. Cleanup must stop only the owned process tree.
+  `FirefoxExporter` adapts BiDi to shared `BrowserExporter`/`SDKAcquisition` proof checks;
+  retain scoped network subscriptions, bounded bodies/events, OPTIONS filtering and
+  same-account validation. Forward page-load events only when explicitly requested by
+  SDK acquisition. Bootstrap uses a fresh Firefox user context, with no existing service
+  workers; dispose it on success, failure and cancellation. Server renewal remains Chromium.
+- `HelperDiagnostics` maps fixed codes to translated explanations and known recovery
+  steps in `helper.errors` across all locales. Never print arbitrary error/response text
+  or claim a speculative fix is guaranteed. Unknown upload and cleanup outcomes must
+  tell users to check TDM before retrying. Preserve receipt reconciliation for ambiguous
+  5xx replies and never resend the credential POST. `docs/troubleshooting.md` lists codes.
+- Firefox BiDi retains URL fragments such as Twitch's `#origin=twilight` on both
+  request and response events. Remove only the fragment before matching/translating
+  capture URLs; preserve strict scheme, authority, path and query allowlists. Keep
+  issued-proof/campaign correlation unchanged and retain fragment and endpoint-lookalike
+  regressions in `tests/test_firefox_helper.py`.
 - Native console text lives in the top-level `helper` locale section and `HelperMessages`.
   `packaging/login_helper.spec` bundles translations and dependencies. PyInstaller is a
   pinned build-only dependency; build each target OS separately. CI builds and smoke-tests
   Linux x64, macOS ARM64/x64 and Windows x64, including startup without Python on PATH.
   The optional packaged browser smoke admits a short-lived local connection and checks
-  installed Chrome startup, CDP control, login timeout and temporary-profile cleanup.
+  installed Chrome/Firefox manual startup, login timeout and profile cleanup;
+  `--chromium-browser` adds the same check for installed native Chromium.
+  Capture control and the close/reopen lifecycle are covered separately by protocol
+  tests and native browser probes; the manual timeout smoke does not establish capture.
   Linux uses Xvfb for this display-dependent test; it never supplies account credentials.
   Report remaining temporary filenames on smoke failure without printing their contents.
   Preserve the auxiliary-file cleanup regression, including unchanged parent environment
   and unrelated files, when changing native browser launch or cleanup.
   The helper writes UTF-8 console output; subprocess tests must decode it explicitly as
   UTF-8 rather than using the Windows locale code page.
-  Keep `DevToolsConnection` typed against its narrow websocket protocol (async iteration
+  Firefox selection, capture, isolated bootstrap and failure paths are covered in
+  `tests/test_firefox_helper.py`; manual sign-in/restart, child environment, missing
+  saved login and cancellation in `tests/test_firefox_login.py`. Chromium discovery,
+  Chrome/Chromium close/reopen, ownership, saved login and cancellation are covered in
+  `tests/test_browser_login.py`; diagnostics, locale completeness and CLI choices in
+  `tests/test_helper_errors.py`. Keep `DevToolsConnection` typed against its narrow websocket protocol (async iteration
   and `send_json`), compatible with both locked aiohttp and newer supported releases.
   Do not subscript the older non-generic websocket class or silence new type errors;
   inspect advisory CI Mypy output even when the enclosing job reports success.
@@ -638,7 +685,7 @@ priority and failover. It uses mocked Twitch state and does not verify live Twit
 - `.github/workflows/login-helper.yml` is the read-only reusable native build workflow,
   called by both validation and GitHub release workflows. Build Linux x64, macOS ARM64/x64
   and Windows x64 from the caller's exact source SHA, then run packaged installed-Chrome
-  smoke checks before archiving. `.github/scripts/prepare_helper_release.py` accepts only
+  and installed-Firefox smoke checks before archiving. `.github/scripts/prepare_helper_release.py` accepts only
   the four expected archives, containing a regular executable and LICENSE, and prepares
   versioned archives plus `SHA256SUMS` without extracting their contents. Keep the raw
   artifact download pattern separate from the aggregate artifact so reruns remain valid.
@@ -737,7 +784,7 @@ The application uses a web-based interface accessible via browser:
 - **WebSocket for real-time** - Socket.IO chosen for reliability (fallback to polling)
 - **Single-page app** - Simpler than full framework (React/Vue), fast load times
 - **Direct Docker support** - Environment detection, proper path handling
-- **Helper-assisted Twitch authentication** - Use desktop Chrome for login, transfer
+- **Helper-assisted Twitch authentication** - Use desktop Chrome, Chromium or Firefox for login, transfer
   the session directly to TDM, and renew it on the server. Preserve valid saved Android
   sessions during migration.
 

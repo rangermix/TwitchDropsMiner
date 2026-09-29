@@ -33,6 +33,16 @@ class _DevToolsSocket(Protocol):
     async def send_json(self, data: object, /) -> None: ...
 
 
+class CaptureProtocol(Protocol):
+    """The narrow browser operations shared by capture and SDK validation."""
+
+    events: asyncio.Queue[dict[str, Any] | None]
+
+    async def command(self, method: str, params: dict[str, Any] | None = None, *, timeout: float = 30) -> Any: ...
+
+    async def body(self, request_id: str) -> Any: ...
+
+
 class DevToolsConnection:
     """Multiplex bounded protocol replies and the few relevant network events."""
 
@@ -132,7 +142,7 @@ class CaptureObservation:
         self.issued: dict[str, tuple[float, float]] = {}
         self.campaigns: dict[str, bool] = {}
 
-    async def observe(self, event: dict[str, Any], protocol: DevToolsConnection) -> None:
+    async def observe(self, event: dict[str, Any], protocol: CaptureProtocol) -> None:
         method, params = event["method"], event["params"]
         request_id = params["requestId"]
         if len(self.responses) + len(self.requests) > 256:
@@ -245,7 +255,7 @@ class BrowserExporter:
         return endpoint
 
     @asynccontextmanager
-    async def isolated_target(self, *, extra_events: frozenset[str] = frozenset()) -> AsyncIterator[DevToolsConnection]:
+    async def isolated_target(self, *, extra_events: frozenset[str] = frozenset()) -> AsyncIterator[CaptureProtocol]:
         """Dispose only the new context, including on browser-CDP disconnect."""
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as http:
             try:
@@ -294,7 +304,7 @@ class BrowserExporter:
                 raise SessionError("BROWSER_PROTOCOL") from None
 
     @asynccontextmanager
-    async def target(self, *, extra_events: frozenset[str] = frozenset()) -> AsyncIterator[DevToolsConnection]:
+    async def target(self, *, extra_events: frozenset[str] = frozenset()) -> AsyncIterator[CaptureProtocol]:
         """Create, connect and close only the target owned by this operation."""
         target_id = None
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as http:

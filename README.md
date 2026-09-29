@@ -56,17 +56,22 @@ For Docker Compose, installation without Docker, and updates, see the
 home server or NAS. The server does not need a desktop or display.
 
 1. Get the [login helper](docs/authentication.md#download-the-helper) for your desktop,
-   matching your TDM release or source revision. Chrome must be installed on that desktop.
+   matching your TDM release or source revision. Install Chrome, Chromium or Firefox 143+.
 2. Enable **Settings → Allow helper connection** in TDM. Run the helper on your desktop
    and enter the server's dashboard URL, such as `http://192.168.1.10:8080`.
-3. Sign into Twitch in the Chrome window it opens and wait for the helper's success
-   message. Then choose your games in TDM.
+3. Complete Twitch login and close all windows of the helper's browser (on macOS,
+   quit that browser instance). Keep the helper open; it reopens the browser to
+   verify the session. Wait for success, then choose your games in TDM.
 
-The helper uploads the session automatically and closes its temporary Chrome window.
+The helper verifies and uploads the session, then closes its temporary browser window.
+It uses a separate profile; your everyday browser login is not imported.
 TDM handles renewal on your server, so your desktop and browser can be turned off.
 See [authentication](docs/authentication.md#headless-home-server-or-nas) for which
 machine runs each part, platform downloads, and login recovery.
-For Chrome discovery, an unknown helper result, or a startup error involving
+Automatic selection uses Chrome → Chromium → Firefox. The updated browser flow
+and error guidance require an updated helper; see
+[browser selection and version guidance](docs/authentication.md#choose-a-browser).
+For browser discovery, helper error codes, or a startup error involving
 `web_auth.json`, see [troubleshooting](docs/troubleshooting.md).
 
 ## Upgrading to v2.0

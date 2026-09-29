@@ -305,10 +305,9 @@ async def test_native_browser_arguments_cleanup_and_no_ordinary_profile_access(m
     async with login_helper.NativeChrome(executable=executable) as browser:
         profile = browser.profile
         assert profile is not None and profile.exists()
-        assert browser.address == "http://127.0.0.1:9222"
+        assert browser.address == ""
         assert "https://www.twitch.tv/login" in command
-        assert "--remote-debugging-port=9222" in command
-        assert "--remote-debugging-address=127.0.0.1" in command
+        assert not any(argument.startswith("--remote-debugging-") for argument in command)
         assert "--enable-automation" not in command
         assert "--headless" not in command
     assert not profile.exists()
@@ -585,8 +584,10 @@ async def test_native_browser_waits_for_twitch_authentication_without_exporting_
         async for message in ws:
             data = message.json()
             commands.append(data["method"])
-            await ws.send_json({"id": data["id"], "result": {"cookies": [
-                {"name": "auth-token", "domain": ".twitch.tv", "value": "secret-test-cookie"}]}})
+            result = ({"processInfo": [{"type": "browser", "id": 123}]}
+                      if data["method"] == "SystemInfo.getProcessInfo" else {"cookies": [
+                          {"name": "auth-token", "domain": ".twitch.tv", "value": "secret-test-cookie"}]})
+            await ws.send_json({"id": data["id"], "result": result})
         return ws
 
     app = web.Application()
@@ -598,18 +599,19 @@ async def test_native_browser_waits_for_twitch_authentication_without_exporting_
     await site.start()
     address.append(f"http://127.0.0.1:{site._server.sockets[0].getsockname()[1]}")
     browser = login_helper.NativeChrome()
+    browser._capturing = True
     browser.address = address[0]
-    browser.process = Mock(poll=Mock(return_value=None))
+    browser.process = Mock(pid=123, poll=Mock(return_value=None))
     try:
         assert await browser.wait_authenticated(timeout=5) is None
-        assert commands == ["Storage.getCookies"]
+        assert commands == ["SystemInfo.getProcessInfo", "Storage.getCookies"]
         assert "secret-test-cookie" not in json.dumps(browser.__dict__, default=str)
     finally:
         await runner.cleanup()
 
 
 @pytest.mark.asyncio
-async def test_native_chrome_uses_nonzero_debug_port_to_preserve_normal_browser_launch(monkeypatch, tmp_path):
+async def test_native_chrome_capture_uses_nonzero_debug_port(monkeypatch, tmp_path):
     monkeypatch.setattr(login_helper.tempfile, "tempdir", str(tmp_path))
     executable = tmp_path / "chrome"
     executable.touch()
@@ -626,7 +628,9 @@ async def test_native_chrome_uses_nonzero_debug_port_to_preserve_normal_browser_
     monkeypatch.setattr(login_helper.subprocess, "Popen", launch)
     monkeypatch.setattr(login_helper.NativeChrome, "_wait_ready", AsyncMock(), raising=False)
     monkeypatch.setattr(login_helper.NativeChrome, "_request_close", AsyncMock())
-    async with login_helper.NativeChrome(executable=executable):
+    browser = login_helper.NativeChrome(executable=executable)
+    browser._capturing = True
+    async with browser:
         assert "--remote-debugging-port=0" not in arguments
         port = int(next(a.split("=", 1)[1] for a in arguments if a.startswith("--remote-debugging-port=")))
         assert 0 < port <= 65535

@@ -3,7 +3,8 @@
 Run Twitch Drops Miner on your own computer or headless home server or NAS. Docker
 is the simplest option: the image includes Chromium for automatic session renewal,
 which runs without a desktop or display on the server. Run the separate login helper
-on your desktop or laptop with Google Chrome installed. See
+on your desktop or laptop with Chrome, Chromium or Firefox 143+ installed.
+Chromium/Firefox selection requires the updated helper described in the browser-selection guide. See
 [which machine runs each part](authentication.md#headless-home-server-or-nas).
 
 ## Choose a version
@@ -69,7 +70,7 @@ or use your own reverse proxy, follow [Dashboard access](dashboard-access.md).
 
 Install Python 3.12 or newer and [uv](https://docs.astral.sh/uv/). The miner host also
 needs a Chromium executable named `chromium` or `chromium-browser` on its `PATH` for
-automatic renewal. Google Chrome on the helper desktop does not satisfy that server
+automatic renewal. A browser on the helper desktop does not satisfy that server
 requirement when the desktop and miner are different machines.
 
 Run the source miner on Linux or macOS. On Windows, use Docker Desktop with Linux
