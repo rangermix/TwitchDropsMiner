@@ -308,6 +308,39 @@ async def test_worker_renews_on_normal_schedule_with_admission_closed(connection
         await controller.stop()
 
 
+@pytest.mark.asyncio
+async def test_failed_reissue_does_not_retry_immediately(connection):
+    controller, session, settings, clock, issuer = connection
+    await controller.accept(controller.connect()["connection"], seed().to_dict())
+    kept = session.seed().bundle.headers["client-integrity"]
+    attempts = 0
+
+    async def issue(previous, **kwargs):
+        nonlocal attempts
+        attempts += 1
+        raise SessionError("SDK_COOKIE")
+
+    issuer.issue.side_effect = issue
+    failed = asyncio.Event()
+
+    async def wait(delay=None):
+        if delay is None:
+            failed.set()
+            await asyncio.Event().wait()
+        return False
+
+    controller._wait = wait
+    controller.start()
+    try:
+        await asyncio.wait_for(failed.wait(), 1)
+        await asyncio.sleep(0.05)
+        assert attempts == 1
+        assert controller.status()["renewal_error"] == "SDK_COOKIE"
+        assert session.seed().bundle.headers["client-integrity"] == kept
+    finally:
+        await controller.stop()
+
+
 @pytest.mark.parametrize("error,needs_login", [(None, False), ("REQUEST", False), ("CATALOG", False), ("SDK_EXPIRED", True), ("ACCOUNT_MISMATCH", True), ("AUTH", True)])
 def test_status_distinguishes_retryable_renewal_failures_from_new_login(connection, error, needs_login):
     controller, *_ = connection
