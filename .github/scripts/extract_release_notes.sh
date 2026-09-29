@@ -54,9 +54,12 @@ cat >> release_notes.md <<'EOF'
 Download the `tdm-login-helper-<version>-<platform>.tar.gz` asset matching your desktop:
 `windows-x64`, `macos-arm64` (Apple Silicon), `macos-x64` (Intel), or `linux-x64`.
 Extract the archive, run `tdm-login-helper` (`tdm-login-helper.exe` on Windows), enter
-your TDM address, and sign into Twitch in its Chrome window. Wait for confirmed success;
-TDM then renews the session on your home server without the desktop remaining open.
-Chrome must already be installed; Python is not required. Binaries are unsigned.
+your TDM address, and sign into Twitch in the browser it opens. Complete verification,
+then close all windows of that browser instance (on macOS, quit it). Keep the helper
+open; the browser reopens to verify and transfer the session. Wait for confirmed
+success. TDM then renews the session on your home server without the desktop remaining open.
+Install native Chrome, Chromium or Firefox 143+; automatic selection uses that order.
+Python is not required. Binaries are unsigned.
 `SHA256SUMS` contains checksums for all four archives.
 EOF
 
