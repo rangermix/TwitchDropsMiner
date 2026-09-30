@@ -13,9 +13,11 @@ import aiohttp
 
 from src.api import GQLClient, HTTPClient
 from src.auth import _AuthState
-from src.auth.helper_connection import HelperConnections
+from src.auth.container_login import ContainerLogin
 from src.auth.imported_session import ImportedSession, SessionTransport
+from src.auth.session_controller import SessionController
 from src.config import (
+    COOKIES_PATH,
     MAX_CHANNELS,
     ClientType,
     State,
@@ -109,14 +111,34 @@ class Twitch:
         self._resume_mining = asyncio.Event()
         self._resume_mining.set()
         self._changing_auth = False
-        self.helper = HelperConnections(
-            self._browser, settings, activation=self.authentication_change,
-            on_change=self._helper_changed,
+        self.session_controller = SessionController(
+            self._browser, activation=self.authentication_change,
+            on_change=self._session_changed,
         )
+        self.login_browser = ContainerLogin(self.session_controller, on_change=self._session_changed)
+        self._logout_lock = asyncio.Lock()
 
-    def _helper_changed(self) -> None:
+    def _session_changed(self) -> None:
+        self.login_browser.session_changed()
         if self.gui is not None:
-            self.gui.notify_helper_change(self.helper.status())
+            self.gui.notify_session_change()
+
+    async def logout(self) -> None:
+        async with self._logout_lock:
+            await self.login_browser.cancel()
+
+            async def clear_cookies() -> None:
+                session = await self.get_session()
+                session.cookie_jar.clear()
+                COOKIES_PATH.unlink(missing_ok=True)
+
+            try:
+                await self.session_controller.logout(clear_cookies)
+            finally:
+                # A persisted logout wins even if deleting legacy cookies failed.
+                if self._browser.logged_out:
+                    self.gui.login.update(_.t["login"]["status"]["logged_out"], None)
+                    self.login_browser.request_login()
 
     @asynccontextmanager
     async def authentication_change(self):
@@ -178,7 +200,8 @@ class Twitch:
 
     async def shutdown(self) -> None:
         start_time = time()
-        await self.helper.stop()
+        await self.login_browser.stop()
+        await self.session_controller.stop()
         self.stop_watching()
         if self._watching_task is not None:
             self._watching_task.cancel()
@@ -284,7 +307,7 @@ class Twitch:
 
     async def run(self) -> None:
         """Main entry point for the miner - handles exit requests."""
-        self.helper.start()
+        self.session_controller.start()
         try:
             while self._state is not State.EXIT:
                 await self._resume_mining.wait()
@@ -304,7 +327,8 @@ class Twitch:
                 except aiohttp.ContentTypeError as exc:
                     raise RequestException(_.t["login"]["unexpected_content"]) from exc
         finally:
-            await self.helper.stop()
+            await self.login_browser.stop()
+            await self.session_controller.stop()
 
     async def _run(self) -> None:
         """

@@ -10,7 +10,7 @@ and [Using the dashboard](usage.md).
 | Guide | What you will find |
 | --- | --- |
 | [Installation](installation.md) | Docker, Compose, source setup, persistent data, and upgrades |
-| [Twitch login](authentication.md) | Login helper downloads, existing sessions, account replacement, and automatic renewal |
+| [Twitch login](authentication.md) | Dashboard browser login, existing sessions, logout, and automatic renewal |
 | [Using the dashboard](usage.md) | Game priorities, campaigns, inventory, ignored rewards, and drop history |
 | [Dashboard access](dashboard-access.md) | Optional password protection, reverse proxies, and password recovery |
 | [Telegram notifications](notifications.md) | Bot setup, testing, saved credentials, and disabling alerts |

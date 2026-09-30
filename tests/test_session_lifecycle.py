@@ -1,4 +1,4 @@
-"""Helper login replaces authenticated runtime state and survives process restart."""
+"""Browser login replaces authenticated runtime state and survives process restart."""
 
 import asyncio
 import time
@@ -13,22 +13,22 @@ from src.auth.browser_session import BrowserIdentity
 from src.auth.session_bundle import SessionBundle
 from src.config import ClientType, State
 from src.core.client import Twitch
-from tests.test_helper_connection import seed
+from tests.test_session_controller import seed
 from tests.test_imported_session import transport
 
 
 def miner(tmp_path, monkeypatch):
     monkeypatch.setattr("src.core.client.DATA_DIR", tmp_path)
-    client = Twitch(SimpleNamespace(proxy="", allow_helper_connection=True))
+    client = Twitch(SimpleNamespace(proxy=""))
     client.gui = MagicMock()
     client.gui.login.import_pending = AsyncMock()
     return client
 
 
 @pytest.mark.asyncio
-async def test_fresh_login_waits_for_helper_without_device_authorization(tmp_path, monkeypatch):
+async def test_fresh_login_waits_for_browser_without_device_authorization(tmp_path, monkeypatch):
     client = miner(tmp_path, monkeypatch)
-    client._browser.authenticate = AsyncMock(return_value=BrowserIdentity(42, "helper-token", "device", "Chrome"))
+    client._browser.authenticate = AsyncMock(return_value=BrowserIdentity(42, "browser-token", "device", "Chrome"))
     client.get_session = AsyncMock(return_value=SimpleNamespace(cookie_jar=aiohttp.CookieJar()))
     client.request = MagicMock(side_effect=AssertionError("Fresh login must not request a device code"))
     auth = await client.get_auth()
@@ -38,7 +38,7 @@ async def test_fresh_login_waits_for_helper_without_device_authorization(tmp_pat
 
 
 @pytest.mark.asyncio
-async def test_saved_helper_session_takes_precedence_over_preserved_android_cookies(tmp_path, monkeypatch):
+async def test_saved_browser_session_takes_precedence_over_preserved_android_cookies(tmp_path, monkeypatch):
     client = miner(tmp_path, monkeypatch)
     now = time.time()
     client._browser._transport = transport()
@@ -90,8 +90,8 @@ async def test_replacement_drains_old_authenticated_work_before_resuming(tmp_pat
     client._run = run
     client._inventory_service.clear_cached_state = MagicMock()
     client.websocket.stop = AsyncMock()
-    client.helper.start = MagicMock()
-    client.helper.stop = AsyncMock()
+    client.session_controller.start = MagicMock()
+    client.session_controller.stop = AsyncMock()
     task = asyncio.create_task(client.run())
     await entered.wait()
     client._watching_task = asyncio.create_task(asyncio.Event().wait())
@@ -111,4 +111,38 @@ async def test_replacement_drains_old_authenticated_work_before_resuming(tmp_pat
     task.cancel()
     with pytest.raises(asyncio.CancelledError):
         await task
-    client.helper.stop.assert_awaited()
+    client.session_controller.stop.assert_awaited()
+
+
+@pytest.mark.asyncio
+async def test_persisted_logout_prevents_legacy_cookie_reactivation(tmp_path, monkeypatch):
+    client = miner(tmp_path, monkeypatch)
+    await client._browser.logout()
+    restarted = miner(tmp_path, monkeypatch)
+    restarted.get_session = AsyncMock(side_effect=AssertionError("Logout must bypass old Android cookies"))
+    restarted._browser.authenticate = AsyncMock(return_value=BrowserIdentity(17, "fresh", "device", "Chrome"))
+    auth = await restarted.get_auth()
+    assert auth.user_id == 17 and auth.browser_active
+    restarted.get_session.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_logout_stops_owned_login_clears_cookies_and_requests_new_browser(tmp_path, monkeypatch):
+    client = miner(tmp_path, monkeypatch)
+    legacy = tmp_path / "cookies.jar"
+    legacy.write_text("old account")
+    monkeypatch.setattr("src.core.client.COOKIES_PATH", legacy)
+    jar = aiohttp.CookieJar()
+    jar.update_cookies({"auth-token": "old"}, ClientType.ANDROID_APP.CLIENT_URL)
+    client.get_session = AsyncMock(return_value=SimpleNamespace(cookie_jar=jar))
+    client.login_browser.cancel = AsyncMock()
+    client.login_browser.request_login = MagicMock()
+    client.websocket.stop = AsyncMock()
+    client._auth_state.user_id = 42
+    client._auth_state._logged_in.set()
+    await client.logout()
+    client.login_browser.cancel.assert_awaited_once()
+    client.login_browser.request_login.assert_called_once()
+    assert not legacy.exists() and not list(jar)
+    assert not client._auth_state._logged_in.is_set()
+    assert client._browser.logged_out

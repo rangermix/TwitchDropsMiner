@@ -13,7 +13,22 @@
 </head>
 
 <body>
-    <div class="container">
+    <section id="twitch-login-screen" class="container browser-login-screen" aria-labelledby="twitch-login-title">
+        <h1 id="twitch-login-title">Sign in to Twitch</h1>
+        <p id="twitch-login-instructions">Sign in below, complete verification, then select Finish sign in.</p>
+        <p id="twitch-login-status" role="status" aria-live="polite">Starting browser…</p>
+        <div class="browser-login-actions">
+            <button id="twitch-login-finish" type="button" class="action-button" hidden>Finish sign in</button>
+            <button id="twitch-login-retry" type="button" class="action-button" hidden>Retry</button>
+        </div>
+        <p id="twitch-login-error" role="status" aria-live="polite"></p>
+        <details class="browser-login-access">
+            <summary data-auth-text="title">Dashboard password</summary>
+            <div id="twitch-login-access"></div>
+        </details>
+        <div id="twitch-vnc" class="browser-login-viewer" hidden></div>
+    </section>
+    <div id="dashboard" class="container" hidden>
         <header>
             <div class="header-top">
                 <h1>🎮 Twitch Drops Miner</h1>
@@ -59,28 +74,7 @@
                 <section class="panel login-panel">
                     <h2>Login</h2>
                     <div id="login-status" class="login-status"></div>
-                    <div id="helper-login-panel">
-                        <p id="helper-session-status" role="status" aria-live="polite"></p>
-                        <p id="helper-gate-status" class="help-text"></p>
-                        <button id="helper-status-retry" type="button" class="action-button" hidden>Retry status</button>
-                        <div id="helper-login-instructions">
-                            <ol class="helper-login-steps">
-                                <li id="helper-step-download">Download and run the TDM login helper on your computer.</li>
-                                <li id="helper-step-instance">Enter this TDM instance address in the helper.</li>
-                                <li id="helper-step-chrome">Sign into Twitch in the helper's browser, then close all its windows (macOS: quit that browser instance). Leave this helper open; the browser will reopen to verify the session.</li>
-                                <li id="helper-step-finish">The helper sends the login to TDM automatically. Wait for its result.</li>
-                            </ol>
-                            <p><a id="helper-download" href="https://github.com/rangermix/TwitchDropsMiner/releases" target="_blank" rel="noopener noreferrer">Helper builds for Linux, macOS and Windows</a></p>
-                            <p id="helper-builds-note" class="help-text">Choose the archive for your operating system and TDM version from the release assets. Install Chrome, Chromium or Firefox 143+; Python is not required.</p>
-                            <label id="helper-instance-label" for="helper-instance-url">This TDM instance</label>
-                            <div class="helper-instance-row">
-                                <input id="helper-instance-url" type="text" readonly spellcheck="false" autocomplete="off">
-                                <button id="helper-copy-instance" type="button" class="action-button">Copy address</button>
-                            </div>
-                            <p id="helper-copy-result" class="help-text" role="status" aria-live="polite"></p>
-                        </div>
-                        <p id="helper-renewal-status" class="help-text" role="status" aria-live="polite"></p>
-                    </div>
+                    <p id="twitch-renewal-status" class="help-text" role="status" aria-live="polite"></p>
                 </section>
 
                 <!-- Current Drop Progress -->
@@ -196,7 +190,8 @@
         <!-- Settings Tab -->
         <div id="settings-tab" class="tab-content">
             <div class="settings-container">
-                <section class="settings-section">
+                <div id="dashboard-access-slot"></div>
+                <section id="dashboard-access-controls" class="settings-section">
                     <h2 data-auth-text="title">Dashboard password</h2>
                     <p id="web-auth-state"></p>
                     <p class="help-text" data-auth-text="help">Protect this dashboard with one password. Changing it signs out other sessions. Disabling protection clears the password.</p>
@@ -213,15 +208,6 @@
                         <button id="web-auth-disable" class="auth-secondary" type="button" data-auth-text="disable" hidden>Disable protection and clear password</button>
                         <p id="web-auth-result" role="status" aria-live="polite"></p>
                     </form>
-                </section>
-                <section class="settings-section">
-                    <h2 id="helper-settings-title">Twitch login helper</h2>
-                    <label for="allow-helper-connection">
-                        <input id="allow-helper-connection" type="checkbox" checked disabled aria-describedby="helper-setting-help helper-setting-result">
-                        <span id="allow-helper-connection-label">Allow helper connection</span>
-                    </label>
-                    <p id="helper-setting-help" class="help-text">Allow the helper to log in or replace the Twitch account. This turns off after a successful login. Automatic renewal continues while it is off.</p>
-                    <p id="helper-setting-result" role="status" aria-live="polite"></p>
                 </section>
                 <section class="settings-section">
                     <h2 id="settings-general-header">General</h2>
@@ -340,6 +326,11 @@
                     <p id="clear-cache-help" class="help-text">Clears local campaign and channel data, keeps
                         your login and settings, then reloads from Twitch.</p>
                 </section>
+                <section class="settings-section">
+                    <button id="twitch-logout" type="button" class="action-button">Log out of Twitch</button>
+                    <p id="twitch-logout-help" class="help-text">Clears this miner's Twitch session and opens sign in again.</p>
+                    <p id="twitch-logout-result" role="status" aria-live="polite"></p>
+                </section>
             </div>
         </div>
 
@@ -351,7 +342,7 @@
 
                 <h3 id="help-howto-header">How to Use</h3>
                 <ol>
-                    <li>Login using your Twitch account (OAuth device code flow)</li>
+                    <li>Sign in to Twitch in the browser shown in this dashboard</li>
                     <li>Link your accounts at <a href="https://www.twitch.tv/drops/campaigns"
                             target="_blank">twitch.tv/drops/campaigns</a></li>
                     <li>The miner will automatically discover campaigns and start mining</li>
@@ -552,7 +543,7 @@
     </div>
 
     <script src="/static/app.js?v=__APP_VERSION__"></script>
-    <script src="/static/helper-login.js?v=__APP_VERSION__"></script>
+    <script src="/static/browser-login.js?v=__APP_VERSION__"></script>
 </body>
 
 </html>

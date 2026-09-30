@@ -98,30 +98,6 @@ async def test_renewal_validates_identity_catalog_and_updates_waiting_consumer(t
     assert token not in session.path.read_text()
 
 
-def test_legacy_renewal_bearer_cannot_bypass_new_gate_or_dashboard(api):
-    from tests.test_helper_api import enable_dashboard_auth
-    from tests.test_helper_connection import seed
-
-    browser, helper, settings = api
-    session = helper.session
-    asyncio.run(session.install(bundle_data()))
-    old_credential = asyncio.run(session.pair())
-    helper.set_allowed(False)
-    enable_dashboard_auth(browser)
-    bearer = {"Authorization": "Bearer " + old_credential}
-    assert browser.get("/api/settings", headers=bearer).status_code == 401
-    assert browser.get("/api/session", headers=bearer).status_code == 401
-    assert browser.post("/api/helper/connect", json={}).status_code == 403
-    response = browser.post("/api/helper/session", json=seed().to_dict(), headers=bearer)
-    assert response.status_code == 403
-    assert old_credential not in response.text
-    assert session.status()["generation"] == 1
-
-
-# Use the production-ASGI fixture for renewal boundary tests as well.
-from tests.test_helper_api import api  # noqa: E402,F401
-
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize('action', ['pair', 'revoke'])
 async def test_management_rechecks_dashboard_authorization_after_lock_wait(tmp_path, action):

@@ -37,6 +37,14 @@ jobs:
         id: validate
         run: .github/scripts/validate_semver.sh "${{ steps.extract.outputs.version }}"
 
+      - name: Verify source version consistency
+        env:
+          RELEASE_VERSION: ${{ steps.extract.outputs.version }}
+        run: |
+          python -m venv env
+          source env/bin/activate
+          python .github/scripts/publish_release.py --verify-only --version "$RELEASE_VERSION"
+
       - name: Verify release tag matches the source commit
         id: revision
         env:
@@ -50,19 +58,10 @@ jobs:
           fi
           echo "sha=$SOURCE_COMMIT" >> "$GITHUB_OUTPUT"
 
-  build-helpers:
-    name: Build release helpers
-    needs: prepare-release
-    uses: ./.github/workflows/login-helper.yml
-    with:
-      source-ref: ${{ needs.prepare-release.outputs.sha }}
-    permissions:
-      contents: read
-
   create-github-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [prepare-release, build-helpers]
+    needs: prepare-release
     permissions:
       contents: write
     steps:
@@ -71,16 +70,6 @@ jobs:
         with:
           ref: ${{ needs.prepare-release.outputs.sha }}
           persist-credentials: false
-
-      - name: Download this run's verified helper assets
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: tdm-login-helper-release
-          path: release-assets
-
-      - name: Verify release asset checksums
-        working-directory: release-assets
-        run: sha256sum --check SHA256SUMS
 
       - name: Extract release notes
         id: release-notes
@@ -91,7 +80,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Publish only after all draft assets verify
+      - name: Publish the verified source release
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_VERSION: ${{ needs.prepare-release.outputs.version }}
@@ -99,6 +88,6 @@ jobs:
         run: |
           python -m venv env
           source env/bin/activate
-          python .github/scripts/publish_helper_release.py \
+          python .github/scripts/publish_release.py \
             --repository "$GITHUB_REPOSITORY" --version "$RELEASE_VERSION" \
-            --prerelease "$IS_PRERELEASE" --assets release-assets --notes release_notes.md
+            --prerelease "$IS_PRERELEASE" --notes release_notes.md

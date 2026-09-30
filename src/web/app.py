@@ -14,7 +14,7 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, StrictBool
+from pydantic import BaseModel
 
 from src.config.paths import DATA_DIR
 from src.version import __version__
@@ -70,7 +70,6 @@ class ChannelSelectRequest(BaseModel):
 
 
 class SettingsUpdate(BaseModel):
-    allow_helper_connection: StrictBool | None = None
     games_to_watch: list[str] | None = None
     drop_name_blacklist: list[str] | None = None
     dark_mode: bool | None = None
@@ -526,6 +525,9 @@ async def get_wanted_items(sid):
 # Mount static files (CSS, JS, images)
 # Web files are in project_root/web/, we're in project_root/src/web/
 web_dir = Path(__file__).parent.parent.parent / "web"
+novnc_dir = Path("/usr/share/novnc")
+if novnc_dir.exists():
+    app.mount("/static/novnc", StaticFiles(directory=novnc_dir), name="novnc")
 if web_dir.exists():
     static_dir = web_dir / "static"
     if static_dir.exists():

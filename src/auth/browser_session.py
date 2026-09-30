@@ -1,7 +1,6 @@
-"""Persistent, interactive Chromium session owned by TDM via WebDriver.
+"""Historical WebDriver adapter and shared browser identity/catalog validation.
 
-Only this service handles browser credentials. The browser keeps its profile and
-executes Twitch requests itself; web credentials never enter the Android cookie jar.
+The integrated dashboard uses ContainerLogin and ImportedSession.
 """
 
 from __future__ import annotations
@@ -12,7 +11,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 import aiohttp
 from yarl import URL
@@ -23,7 +22,8 @@ from src.i18n import _
 
 
 if TYPE_CHECKING:
-    from src.web.managers.login import LoginFormManager
+    class BrowserLoginStatus(Protocol):
+        async def browser_pending(self, viewer_url: str | None, *, desktop: bool = False) -> None: ...
 
 
 def browser_error(code: str) -> LoginException:
@@ -302,7 +302,7 @@ fetch(url, {method: body === null ? 'GET' : 'POST', headers,
                 self.GQL_URL, {"content-type": "application/json", **self._headers}, operations
             )
 
-    async def authenticate(self, login: LoginFormManager) -> BrowserIdentity:
+    async def authenticate(self, login: BrowserLoginStatus) -> BrowserIdentity:
         if self._stopping:
             raise ExitRequest()
         self._login_task = asyncio.create_task(self._authenticate(login))
@@ -323,7 +323,7 @@ fetch(url, {method: body === null ? 'GET' : 'POST', headers,
         if self._login_task is not None:
             self._login_task.cancel()
 
-    async def _authenticate(self, login: LoginFormManager) -> BrowserIdentity:
+    async def _authenticate(self, login: BrowserLoginStatus) -> BrowserIdentity:
         """Wait for user login, then prove identity and both inventory endpoints."""
         try:
             await self.start()

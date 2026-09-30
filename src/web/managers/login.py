@@ -1,4 +1,4 @@
-"""Sanitized Twitch login status for the helper-assisted dashboard."""
+"""Sanitized Twitch login status for the integrated browser."""
 
 from __future__ import annotations
 
@@ -24,18 +24,15 @@ class LoginFormManager:
         self._import_pending = False
 
     def update(self, status: str, user_id: int | None):
-        """Publish the current identity and clear a completed helper prompt."""
+        """Publish the current identity and clear a completed login prompt."""
         self._status = status
         self._user_id = user_id
         if user_id is not None:
             self._import_pending = False
         asyncio.create_task(self._broadcaster.emit("login_status", self.get_status()))
 
-    async def browser_pending(self, viewer_url: str | None, *, desktop: bool = False) -> None:
-        """Retain the experimental browser callback without exposing a login route."""
-
     def get_status(self) -> dict[str, Any]:
-        """Return only public identity and helper-waiting state for reconnects."""
+        """Return only public identity and waiting state for reconnects."""
         result: dict[str, Any] = {"status": self._status, "user_id": self._user_id}
         if self._import_pending:
             result["import_pending"] = True
@@ -49,4 +46,5 @@ class LoginFormManager:
         if pending:
             self._status = _.t["login"]["status"]["required"]
             self._user_id = None
+            self._manager._twitch.login_browser.request_login()
         await self._broadcaster.emit("login_status", self.get_status())

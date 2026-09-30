@@ -25,8 +25,10 @@ ENV PYTHONUNBUFFERED=1 \
 # Set working directory
 WORKDIR /app
 
-# Twitch's SDK issues renewable integrity state in an owned, temporary browser.
-RUN apk add --no-cache chromium
+# Login and renewal use private browsers; only the dashboard port is exposed.
+RUN apk add --no-cache chromium xvfb openbox x11vnc xdotool novnc tzdata
+RUN addgroup -g 10001 -S tdm-browser \
+    && adduser -u 10001 -S -D -H -h /nonexistent -s /sbin/nologin -G tdm-browser tdm-browser
 
 # Copy project metadata and install dependencies
 COPY pyproject.toml .
@@ -42,8 +44,7 @@ COPY icons/ ./icons/
 COPY web/ ./web/
 
 # Create data directory for persistent storage
-RUN mkdir -p /app/data && chmod 777 /app/data
-RUN mkdir -p /app/logs && chmod 777 /app/logs
+RUN mkdir -p /app/data /app/logs && chmod 700 /app/data /app/logs
 
 # Expose web port
 EXPOSE 8080

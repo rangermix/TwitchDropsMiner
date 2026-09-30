@@ -283,44 +283,6 @@ header h1 {
     grid-row: 3;
 }
 
-/* Helper login */
-.helper-login-steps {
-    padding-left: 1.5rem;
-    margin: 14px 0;
-    line-height: 1.5;
-}
-
-.helper-login-steps li + li {
-    margin-top: 6px;
-}
-
-.helper-instance-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 6px;
-}
-
-#helper-instance-url {
-    flex: 1 1 220px;
-    min-width: 0;
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-}
-
-#helper-login-panel p {
-    margin: 10px 0;
-    overflow-wrap: anywhere;
-}
-
-#helper-login-panel [hidden] {
-    display: none;
-}
-
 /* Drop Progress */
 .drop-name {
     font-weight: bold;
@@ -1865,3 +1827,29 @@ header h1 {
     justify-content: flex-end;
     gap: 12px;
 }
+:root .browser-login-screen {
+    max-width: 1440px;
+    padding-bottom: 24px;
+}
+
+.browser-login-viewer {
+    width: 100%;
+    height: min(72vh, 800px);
+    min-height: 320px;
+    margin-top: 16px;
+    overflow: hidden;
+    background: #1f1f23;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.browser-login-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+[hidden] { display: none !important; }
+
+.browser-login-access { margin-top: 16px; }
+.browser-login-access summary { cursor: pointer; }

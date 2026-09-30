@@ -1,4 +1,4 @@
-"""The dashboard exposes helper login status without legacy login entry points."""
+"""The dashboard exposes container browser login status without legacy login entry points."""
 
 import asyncio
 import subprocess
@@ -11,10 +11,9 @@ from tests.javascript_helpers import APP_JS, NODE, extract_javascript_function
 
 
 @pytest.mark.asyncio
-async def test_pending_helper_status_survives_reconnect_without_browser_or_device_data():
+async def test_pending_container_browser_status_survives_reconnect_without_browser_or_device_data():
     broadcaster = MagicMock(emit=AsyncMock())
     login = LoginFormManager(broadcaster, MagicMock())
-    await login.browser_pending("http://localhost:7900/vnc.html", desktop=True)
     await login.import_pending(True)
     assert set(login.get_status()) == {"status", "user_id", "import_pending"}
     assert login.get_status()["import_pending"] is True
@@ -52,7 +51,7 @@ function showBrowserLogin() { legacyPrompts++; }
 function showOAuthCode() { legacyPrompts++; }
 """ + function + r"""
 updateLoginStatus({user_id: null, import_pending: true, oauth_pending: {url: 'private-old-url', code: 'private-old-code'}});
-assert.equal(legacyPrompts, 0, 'fresh login must use the helper only');
+assert.equal(legacyPrompts, 0, 'fresh login must use the container browser only');
 assert.equal(document.getElementById('login-status').textContent, 'Login required');
 updateLoginStatus({user_id: 42, status: 'Logged in'});
 assert.equal(document.getElementById('login-status').textContent, 'Logged in (User ID: 42)');

@@ -13,7 +13,7 @@ services:
       - ./data:/app/data
       - ./logs:/app/logs
     environment:
-      # Set timezone (optional, defaults to UTC)
+      # Match the timezone of your home internet connection for Twitch browser login.
       - TZ=Australia/Sydney
       # Optional: exact public URL when using a reverse proxy (root URL, no subpath).
       # HTTPS here enables Secure cookies even when the proxy uses HTTP to this container.
