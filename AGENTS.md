@@ -45,9 +45,6 @@ It is the repository's contribution policy, not optional background reading.
    - Keep `README.md` short and focused on ordinary users: setup, login, migration,
      and links. Detailed public instructions belong in `docs/`, the source for the
      GitHub wiki. Developer contribution policy belongs in `CONTRIBUTING.md`.
-   - Keep the marked upgrade warning at the top of `README.md` until v2.1.0 is
-     released; then remove that notice and this reminder. It distinguishes users
-     of v1.3.1/v1.3.2 who must sign in again from other users with valid saved logins.
    - Personal development plans, investigation notes, local verification records,
      and captures belong in `.dev-notes/`, which Git and Docker builds ignore.
      Never commit them or put them under `docs/`; this overrides skill templates

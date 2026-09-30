@@ -1,23 +1,22 @@
 # Installation
 
-Run TDM on your own computer or home server with Docker. The current source build
-includes the dashboard’s Twitch login browser and automatic session renewal.
-No desktop or display is needed on the server. Until a release includes this flow,
-build this checkout with Compose or the Dockerfile below; older published images
-still use their release’s authentication instructions.
+Run TDM on your own computer or home server with Docker. The published v2.1.0 image
+includes the dashboard's Twitch login browser and automatic session renewal.
+No desktop or display is needed on the server. Older images use their release's
+authentication instructions.
 
 ## Docker
 
-From the source repository root:
+Pull and start the published image:
 
 ```bash
-docker build -t twitch-drops-miner .
+docker pull rangermix/twitch-drops-miner:2.1.0
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  twitch-drops-miner
+  rangermix/twitch-drops-miner:2.1.0
 ```
 
 Open [http://localhost:8080](http://localhost:8080). From another computer on your home
@@ -26,6 +25,16 @@ network, use the miner host's LAN address, such as `http://192.168.1.10:8080`.
 The data mount keeps settings and login credentials outside the container. The init
 process and shutdown timeout let TDM close its temporary renewal browser when stopped.
 Only the dashboard port is needed; do not publish a browser or browser-control port.
+
+The data and log mounts must enforce private Linux directory permissions. If your
+host bind mount ignores them, use a Docker named volume, for example
+`-v twitch-drops-miner-data:/app/data` in place of the data bind mount above. Preserve
+that volume when updating. Copy existing data from a private backup while TDM is
+stopped before changing mounts; a new empty volume does not contain the old login
+or settings.
+
+To build a source checkout, run `docker build -t twitch-drops-miner .` from the
+repository root and use `twitch-drops-miner` as the image in the run command above.
 
 To retain file logs outside the container, also mount `./logs:/app/logs`. You can read
 the container's console output with:

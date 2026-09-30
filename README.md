@@ -1,14 +1,5 @@
 # Twitch Drops Miner
 
-<!-- Temporary upgrade notice: remove after the v2.1.0 release. -->
-> [!WARNING]
-> **All users must upgrade to [TDM 2.0 or newer](https://github.com/rangermix/TwitchDropsMiner/releases/latest).**
-> Twitch has changed its authentication, and the old sign-in method no longer works.
->
-> - **v1.3.1–v1.3.2 users:** sign in again with the [dashboard browser](docs/authentication.md#sign-in) after upgrading.
-> - **Other users:** your existing valid login is preserved; you do not need to sign in again. Keep your `data` directory, including `cookies.jar`.
-<!-- End temporary upgrade notice. -->
-
 Automatically earn timed Twitch Drops without downloading stream video or audio.
 
 <p align="center">
@@ -34,16 +25,16 @@ services operated for other users are outside its support scope.
 
 ## Quick start
 
-With Docker installed, build and start TDM from this source checkout:
+With Docker installed, pull and start the published image:
 
 ```bash
-docker build -t twitch-drops-miner .
+docker pull rangermix/twitch-drops-miner:2.1.0
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  twitch-drops-miner
+  rangermix/twitch-drops-miner:2.1.0
 ```
 
 Open <http://localhost:8080>, or `http://YOUR-SERVER:8080` from another device on your
@@ -66,7 +57,7 @@ included in the image. Your everyday browser profile is separate.
 TDM renews the session automatically. **Settings → Log out of Twitch**, at the
 bottom, clears this miner’s session and opens sign in again for account replacement.
 See [authentication](docs/authentication.md) and [troubleshooting](docs/troubleshooting.md).
-The integrated login requires this source build until a release includes it.
+The integrated login is included in [v2.1.0](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.1.0).
 
 ## Upgrading to v2.0
 
