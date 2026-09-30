@@ -176,7 +176,7 @@ const socket = io({
 socket.on('connect', () => {
     console.log('Connected to server');
     state.connected = true;
-    globalThis.helperLoginPanel?.load();
+    globalThis.browserLoginPanel?.load();
     const connText = state.translations.gui?.websocket?.connected || 'Connected';
     document.getElementById('connection-indicator').textContent = '● ' + connText;
     document.getElementById('connection-indicator').className = 'connected';
@@ -315,8 +315,8 @@ socket.on('login_status', (data) => {
     updateLoginStatus(data);
 });
 
-socket.on('helper_status', (data) => {
-    globalThis.helperLoginPanel?.updateStatus(data);
+socket.on('session_status', (data) => {
+    globalThis.browserLoginPanel?.updateStatus(data);
 });
 
 socket.on('settings_updated', (data) => {
@@ -1140,13 +1140,11 @@ function updateLoginStatus(data) {
         statusEl.textContent = t.login?.status?.required || 'Login required';
         statusEl.style.color = 'var(--text-secondary)';
     }
-    globalThis.helperLoginPanel?.updateLogin(data);
+    globalThis.browserLoginPanel?.updateLogin(data);
 }
 
-function updateSettingsUI(settings, syncHelperGate = false) {
+function updateSettingsUI(settings) {
     state.settings = settings;
-    // Only live settings events own the gate; unrelated HTTP replies may be stale.
-    if (syncHelperGate) globalThis.helperLoginPanel?.updateSettings(settings);
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('inventory-list-view').checked = settings.inventory_list_view || false;
     applyInventoryViewMode(settings.inventory_list_view || false);
@@ -1894,7 +1892,7 @@ async function fetchAndApplyTranslations() {
 }
 
 function applyTranslations(t) {
-    globalThis.helperLoginPanel?.render();
+    globalThis.browserLoginPanel?.render();
     translateHistory();
     // Update tab buttons
     const tabButtons = {

@@ -5,7 +5,7 @@
 > **All users must upgrade to [TDM 2.0 or newer](https://github.com/rangermix/TwitchDropsMiner/releases/latest).**
 > Twitch has changed its authentication, and the old sign-in method no longer works.
 >
-> - **v1.3.1–v1.3.2 users:** sign in again with the [login helper](docs/authentication.md#sign-in) after upgrading.
+> - **v1.3.1–v1.3.2 users:** sign in again with the [dashboard browser](docs/authentication.md#sign-in) after upgrading.
 > - **Other users:** your existing valid login is preserved; you do not need to sign in again. Keep your `data` directory, including `cookies.jar`.
 <!-- End temporary upgrade notice. -->
 
@@ -28,21 +28,22 @@ services operated for other users are outside its support scope.
 
 - Choose and prioritize games, or let TDM discover available campaigns.
 - Track campaigns and rewards, and ignore drops you do not want.
-- Sign in through the local helper; TDM saves and renews your session automatically.
+- Sign in inside the dashboard; TDM saves and renews your session automatically.
 - Review claimed-drop history, export it to CSV, and receive Telegram notifications.
 - Manage everything from a web dashboard with optional password protection.
 
 ## Quick start
 
-With Docker installed, start TDM from the directory where you want to keep its data:
+With Docker installed, build and start TDM from this source checkout:
 
 ```bash
+docker build -t twitch-drops-miner .
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
-  -p 8080:8080 \
+  -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.0.1
+  twitch-drops-miner
 ```
 
 Open <http://localhost:8080>, or `http://YOUR-SERVER:8080` from another device on your
@@ -52,34 +53,26 @@ For Docker Compose, installation without Docker, and updates, see the
 
 ## Sign in
 
-**Run the login helper on your desktop or laptop**, even when TDM runs on a headless
-home server or NAS. The server does not need a desktop or display.
+1. Open the dashboard. When Twitch login is required, TDM shows its container browser
+   and the Twitch sign in page automatically.
+2. Sign in and complete any Twitch verification inside that browser. Select **Finish
+   sign in** (or close the Chromium window) after Twitch confirms you are signed in.
+3. TDM verifies your account and campaign access, saves the session, and returns to
+   the normal dashboard. Select your games there.
 
-1. Get the [login helper](docs/authentication.md#download-the-helper) for your desktop,
-   matching your TDM release or source revision. Install Chrome, Chromium or Firefox 143+.
-2. Enable **Settings → Allow helper connection** in TDM. Run the helper on your desktop
-   and enter the server's dashboard URL, such as `http://192.168.1.10:8080`.
-3. Complete Twitch login and close all windows of the helper's browser (on macOS,
-   quit that browser instance). Keep the helper open; it reopens the browser to
-   verify the session. Wait for success, then choose your games in TDM.
-
-The helper verifies and uploads the session, then closes its temporary browser window.
-It uses a separate profile; your everyday browser login is not imported.
-TDM handles renewal on your server, so your desktop and browser can be turned off.
-See [authentication](docs/authentication.md#headless-home-server-or-nas) for which
-machine runs each part, platform downloads, and login recovery.
-Automatic selection uses Chrome → Chromium → Firefox. The updated browser flow
-and error guidance require an updated helper; see
-[browser selection and version guidance](docs/authentication.md#choose-a-browser).
-For browser discovery, helper error codes, or a startup error involving
-`web_auth.json`, see [troubleshooting](docs/troubleshooting.md).
+Set Docker’s `TZ` to match your home internet connection’s timezone; change
+`Australia/Sydney` in the example as needed. Chromium and the temporary display are
+included in the image. Your everyday browser profile is separate.
+TDM renews the session automatically. **Settings → Log out of Twitch**, at the
+bottom, clears this miner’s session and opens sign in again for account replacement.
+See [authentication](docs/authentication.md) and [troubleshooting](docs/troubleshooting.md).
+The integrated login requires this source build until a release includes it.
 
 ## Upgrading to v2.0
 
 Keep your existing `data` directory, including `cookies.jar`, and the same Docker volume.
 A working Android session is restored automatically. If you used the Smart TV login in
-v1.3.1/v1.3.2, your session has expired, or you are signed out, use the login helper
-matching your updated TDM version. Follow the [v2.0 migration steps](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.0.0)
+v1.3.1/v1.3.2, your session has expired, or you are signed out, sign in using the dashboard browser. Follow the [v2.0 migration steps](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.0.0)
 when updating your container or source installation.
 
 ## User guides

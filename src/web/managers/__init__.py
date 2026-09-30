@@ -8,7 +8,7 @@ This package contains all component managers for the web-based GUI:
 - CampaignProgressManager: Active drop mining progress and countdown
 - ChannelListManager: Available channels tracking and display
 - InventoryManager: Drop campaigns and inventory management
-- LoginFormManager: Sanitized helper-assisted login status
+- LoginFormManager: Sanitized integrated browser login status
 - SettingsManager: Application settings configuration
 - ImageCache: Minimal image caching for campaign artwork
 """

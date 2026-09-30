@@ -1,14 +1,15 @@
-"""Helper-only authentication routes; responses never contain Twitch credentials."""
+"""Dashboard-protected Twitch login actions and a same-origin VNC bridge."""
 
 from __future__ import annotations
 
-import json
+import asyncio
 from collections.abc import Callable
+from contextlib import suppress
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, WebSocket
+from starlette.websockets import WebSocketDisconnect
 
-from src.auth.helper_connection import HelperConnections
 from src.auth.session_bundle import SessionError
 
 
@@ -18,62 +19,115 @@ if TYPE_CHECKING:
 
 
 class SessionAPI:
+    MAX_VIEWERS = 4
+    MAX_INPUT_BYTES = 65536
+
     def __init__(self, auth: WebAuth, get_client: Callable[[], Twitch | None]):
         self.auth, self.get_client = auth, get_client
+        self._viewers = 0
         self.router = APIRouter()
         self.router.add_api_route("/api/session", self.status, methods=["GET"])
-        self.router.add_api_route("/api/helper/connect", self.connect, methods=["POST"])
-        self.router.add_api_route("/api/helper/session", self.install, methods=["POST"])
-        self.router.add_api_route("/api/helper/result", self.result, methods=["GET"])
+        self.router.add_api_route("/api/session/finish", self.finish, methods=["POST"])
+        self.router.add_api_route("/api/session/retry", self.retry, methods=["POST"])
+        self.router.add_api_route("/api/session/logout", self.logout, methods=["POST"])
+        self.router.add_api_websocket_route("/api/session/vnc", self.viewer)
 
-    def helper(self) -> HelperConnections:
+    def client(self) -> Twitch:
         client = self.get_client()
-        helper = getattr(client, "helper", None)
-        if not isinstance(helper, HelperConnections):
+        if client is None:
             raise HTTPException(503, "session_unavailable")
-        return helper
-
-    @staticmethod
-    def credential(request: Request) -> str:
-        header = request.headers.get("authorization", "")
-        if not header.startswith("Bearer "):
-            raise HTTPException(401, "session_connection")
-        return header[7:]
+        return client
 
     @staticmethod
     def failure(error: SessionError) -> HTTPException:
-        status = {
-            "HELPER_DISABLED": 403, "CONNECTION": 401, "BUSY": 429,
-            "STOPPED": 503, "BROWSER_START": 503,
-        }.get(error.code, 400)
-        return HTTPException(status, "session_" + error.code.lower())
+        return HTTPException(409 if error.code == "BROWSER_STATE" else 503,
+                             "session_" + error.code.lower())
 
     async def status(self):
-        return self.helper().status()
+        client = self.client()
+        return {**client.session_controller.status(), "browser": client.login_browser.status(),
+                "logged_in": client._auth_state._logged_in.is_set()}
 
-    async def connect(self, request: Request):
+    async def finish(self):
         try:
-            if await request.json() != {}:
-                raise ValueError
-            return self.helper().connect()
+            await self.client().login_browser.finish()
+            return await self.status()
         except SessionError as error:
             raise self.failure(error) from None
-        except (ValueError, UnicodeError, RecursionError):
-            raise HTTPException(400, "session_format") from None
 
-    async def install(self, request: Request):
-        token = self.credential(request)
+    async def retry(self):
         try:
-            data = json.loads(await request.body())
-            return await self.helper().accept(token, data)
+            await self.client().login_browser.retry()
+            return await self.status()
         except SessionError as error:
             raise self.failure(error) from None
-        except (ValueError, UnicodeError, RecursionError):
-            raise HTTPException(400, "session_format") from None
 
-    async def result(self, request: Request):
-        token = self.credential(request)
+    async def logout(self):
         try:
-            return self.helper().result(token)
-        except SessionError as error:
-            raise self.failure(error) from None
+            await self.client().logout()
+            return await self.status()
+        except (OSError, SessionError):
+            raise HTTPException(503, "session_logout_failed") from None
+
+    async def viewer(self, websocket: WebSocket):
+        token = self.auth.token(websocket.scope)
+        if (websocket.headers.get("origin") != self.auth.origin.expected(websocket)
+                or websocket.headers.get("sec-fetch-site") == "cross-site"
+                or not self.auth.allowed(token) or self._viewers >= self.MAX_VIEWERS):
+            await websocket.close(code=1008)
+            return
+        client = self.get_client()
+        login = getattr(client, "login_browser", None)
+        if login is None or login.state != "sign_in" or login.desktop is None:
+            await websocket.close(code=1008)
+            return
+        attempt, port = login.attempt, login.desktop.port
+        self._viewers += 1
+        writer = None
+        tasks: list[asyncio.Task] = []
+
+        def allowed() -> bool:
+            return (self.auth.allowed(token) and login.attempt == attempt
+                    and login.state == "sign_in" and login.desktop is not None)
+
+        try:
+            reader, writer = await asyncio.open_connection("127.0.0.1", port)
+            await websocket.accept()
+
+            async def browser_output():
+                while allowed():
+                    data = await reader.read(65536)
+                    if not data or not allowed():
+                        return
+                    await websocket.send_bytes(data)
+
+            async def browser_input():
+                while allowed():
+                    message = await websocket.receive()
+                    if message["type"] == "websocket.disconnect":
+                        return
+                    data = message.get("bytes")
+                    if not isinstance(data, bytes) or len(data) > self.MAX_INPUT_BYTES or not allowed():
+                        return
+                    writer.write(data)
+                    await writer.drain()
+
+            async def authorization():
+                while allowed():
+                    await asyncio.sleep(.25)
+
+            tasks = [asyncio.create_task(worker()) for worker in (browser_output, browser_input, authorization)]
+            await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        except (OSError, RuntimeError, WebSocketDisconnect):
+            pass
+        finally:
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+            if writer is not None:
+                writer.close()
+                with suppress(OSError):
+                    await writer.wait_closed()
+            self._viewers -= 1
+            with suppress(RuntimeError, OSError):
+                await websocket.close(code=1008)

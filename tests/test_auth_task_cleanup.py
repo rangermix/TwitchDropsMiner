@@ -8,7 +8,7 @@ import pytest
 
 from src.models.channel import Channel
 from src.websocket.websocket import Websocket
-from tests.test_helper_lifecycle import miner
+from tests.test_session_lifecycle import miner
 
 
 @pytest.mark.asyncio

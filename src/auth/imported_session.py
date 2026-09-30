@@ -133,9 +133,7 @@ class ImportedSession:
         self._revision = 0
         self._renewal_digest = ""
         self._sdk_cookie: SDKCookie | None = None
-        self.helper_allowed = True
-        self.helper_epoch = 0
-        self._helper_receipt: dict[str, Any] = {}
+        self.logged_out = False
         self.on_renewal_needed: Callable[[], None] = lambda: None
         self._lock = asyncio.Lock()
         self._updated = asyncio.Event()
@@ -147,14 +145,14 @@ class ImportedSession:
             state = self._file.read()
             try:
                 if (
-                    not isinstance(state, dict) or state.get("version") not in (1, 2)
+                    not isinstance(state, dict) or state.get("version") not in (1, 2, 3)
                     or type(state["generation"]) is not int or state["generation"] < 0
                     or not isinstance(state.get("renewal_digest", ""), str)
                     or not re.fullmatch(r"(?:[0-9a-f]{64})?", state.get("renewal_digest", ""))
                 ):
                     raise ValueError
                 if state["bundle"] is None:
-                    if state.get("version") != 2 or state["user_id"] is not None or state["generation"] != 0:
+                    if state.get("version") not in (2, 3) or state["user_id"] is not None or state["generation"] != 0:
                         raise ValueError
                 else:
                     if type(state["user_id"]) is not int or state["user_id"] <= 0 or state["generation"] < 1:
@@ -162,30 +160,18 @@ class ImportedSession:
                     self._bundle = SessionBundle.from_dict(state["bundle"], now=clock())
                 self._user_id, self._generation = state["user_id"], state["generation"]
                 self._renewal_digest = state.get("renewal_digest", "")
-                if state.get("version") == 2:
-                    if (type(state.get("helper_allowed")) is not bool
-                            or type(state.get("helper_epoch")) is not int or state["helper_epoch"] < 0):
-                        raise ValueError
-                    self.helper_allowed, self.helper_epoch = state["helper_allowed"], state["helper_epoch"]
+                if state.get("version") in (2, 3):
                     cookie = state.get("sdk_cookie")
                     if cookie is not None:
                         if self._bundle is None:
                             raise ValueError
                         self._sdk_cookie = SDKCookie.from_dict(cookie)
-                    receipt = state.get("helper_receipt", {})
-                    if not isinstance(receipt, dict):
+                if state.get("version") == 3:
+                    if type(state.get("logged_out")) is not bool:
                         raise ValueError
-                    if receipt and (set(receipt) != {"connection_digest", "expires_at", "user_id", "generation", "session_expires_at"}
-                            or not isinstance(receipt["connection_digest"], str)
-                            or not re.fullmatch(r"[0-9a-f]{64}", receipt["connection_digest"])
-                            or any(type(receipt[key]) is not int or receipt[key] <= 0 for key in ("user_id", "generation"))
-                            or any(type(receipt[key]) not in (int, float) or not 0 < receipt[key] < float("inf")
-                                   for key in ("expires_at", "session_expires_at"))):
+                    self.logged_out = state["logged_out"]
+                    if self.logged_out and self._bundle is not None:
                         raise ValueError
-                    self._helper_receipt = receipt
-                else:
-                    # Migrated accepted sessions are closed until the setting is enabled.
-                    self.helper_allowed = False
                 self._restore_pending = self._bundle is not None
             except (KeyError, TypeError, ValueError, SessionError):
                 raise SessionError("FILE") from None
@@ -217,41 +203,31 @@ class ImportedSession:
     def _save(self, bundle: SessionBundle | None, user_id: int | None, generation: int,
               digest: str, **changes: Any) -> None:
         state = {
-            "version": 2, "bundle": bundle.to_dict() if bundle is not None else None, "user_id": user_id,
+            "version": 3, "bundle": bundle.to_dict() if bundle is not None else None, "user_id": user_id,
             "generation": generation, "renewal_digest": digest,
             "sdk_cookie": self._sdk_cookie.to_dict() if self._sdk_cookie else None,
-            "helper_allowed": self.helper_allowed, "helper_epoch": self.helper_epoch,
-            "helper_receipt": self._helper_receipt,
+            "logged_out": self.logged_out,
         }
         state.update(changes)
         self._file.write(state)
 
-    def set_helper_allowed(self, allowed: bool) -> None:
-        """Persist admission with the session so accepting login closes it atomically."""
-        if type(allowed) is not bool:
-            raise SessionError("CONFIG")
-        if allowed == self.helper_allowed:
-            return
-        epoch = self.helper_epoch + 1
-        self._save(self._bundle, self._user_id, self._generation, self._renewal_digest,
-                   helper_allowed=allowed, helper_epoch=epoch, helper_receipt={})
-        self.helper_allowed, self.helper_epoch, self._helper_receipt = allowed, epoch, {}
-        self._revision += 1
+    async def logout(self) -> None:
+        """Persist logout before clearing memory, preventing legacy-cookie restoration."""
+        async with self._lock:
+            self._save(None, None, 0, "", sdk_cookie=None, logged_out=True)
+            self._bundle = self._identity = self._sdk_cookie = None
+            self._user_id = self._expected_user_id = None
+            self._generation, self._renewal_digest = 0, ""
+            self.logged_out = True
+            self._restore_pending = self._rejected = False
+            self._revision += 1
+            self._updated.set()
 
     def seed(self) -> ServerSeed | None:
         """Internal renewal input; never include it in dashboard status."""
         if self._bundle is None or self._sdk_cookie is None:
             return None
         return ServerSeed(self._bundle, self._sdk_cookie)
-
-    def helper_result(self, digest: str) -> dict[str, Any] | None:
-        receipt = self._helper_receipt
-        if not receipt or receipt["expires_at"] <= self._clock() or not secrets.compare_digest(receipt["connection_digest"], digest):
-            return None
-        return {"success": True, "allow_helper_connection": False, "session": {
-            "state": "ready", "user_id": receipt["user_id"], "generation": receipt["generation"],
-            "expires_at": receipt["session_expires_at"],
-        }}
 
     def _check_renewal(self, token: str) -> None:
         if (not re.fullmatch(r"[A-Za-z0-9_-]{43}", token) or not self._renewal_digest
@@ -295,7 +271,6 @@ class ImportedSession:
         self, data: Any, *, expected_user_id: int | None = None,
         renewal_token: str | None = None, authorized: Callable[[], bool] = lambda: True,
         sdk_cookie: SDKCookie | None = None, replace: bool = False,
-        helper_receipt: tuple[str, float] | None = None,
     ) -> dict[str, Any]:
         bundle = SessionBundle.from_dict(data, now=self._clock())
         async with self._lock:
@@ -337,21 +312,15 @@ class ImportedSession:
             if sdk_cookie is not None:
                 sdk_cookie.require_fresh(self._clock())
             generation = self._generation + 1
-            receipt = self._helper_receipt
-            if helper_receipt is not None:
-                receipt = {"connection_digest": helper_receipt[0], "expires_at": helper_receipt[1],
-                           "user_id": identity.user_id, "generation": generation, "session_expires_at": bundle.expires_at}
-            allowed = False if replace else self.helper_allowed
-            epoch = self.helper_epoch + 1 if replace else self.helper_epoch
             cookie = sdk_cookie or self._sdk_cookie
             digest = "" if replace else self._renewal_digest
             self._save(bundle, identity.user_id, generation, digest,
                        sdk_cookie=cookie.to_dict() if cookie else None,
-                       helper_allowed=allowed, helper_epoch=epoch, helper_receipt=receipt)
+                       logged_out=False)
             self._bundle, self._identity = bundle, identity
             self._user_id, self._generation = identity.user_id, generation
             self._sdk_cookie, self._renewal_digest = cookie, digest
-            self.helper_allowed, self.helper_epoch, self._helper_receipt = allowed, epoch, receipt
+            self.logged_out = False
             if replace:
                 self._expected_user_id = identity.user_id
             self._revision += 1

@@ -1,3 +1,51 @@
+# Release Notes - v2.1.0
+
+Twitch sign-in now happens inside the TDM dashboard using Chromium included in the
+Docker image. The separate desktop login helper is retired.
+
+## Sign in from the dashboard
+
+- When Twitch login is needed, TDM displays its temporary container browser with
+  Twitch's sign-in page. Complete any email or two-factor verification, then select
+  **Finish sign in**. TDM verifies the session and returns to the normal dashboard.
+- Initial sign-in and automatic session renewal use the container's own browsers.
+  No desktop browser installation, helper download, pairing ticket, or additional
+  VNC port is required.
+- **Log out of Twitch** at the bottom of Settings replaces **Allow helper
+  connection**. Logging out clears the saved Twitch session and opens a fresh login
+  browser while preserving miner settings and dashboard password protection.
+- Login controls, instructions, and recovery messages are available in all 20
+  supported languages.
+
+## Private browser access
+
+- The browser viewer uses the dashboard's password protection and origin checks.
+  Password setup is also available before signing in to Twitch.
+- The interactive browser runs under a separate container user. TDM checks that
+  private data and logs are inaccessible to that user before starting the viewer.
+  Temporary browser profiles and display processes are removed after each attempt.
+- Browser retry, logout, container restart, and saved-session migration have
+  regression coverage. A saved session from v2.0 remains usable on upgrade.
+
+## Updating
+
+Update to `rangermix/twitch-drops-miner:2.1.0`, preserving your existing data volume.
+Set Docker's **TZ** to the timezone of your home internet connection; a mismatch can
+cause Twitch to reject browser login. Existing working sessions do not require a
+new sign-in.
+
+The standard Docker image includes Chromium and the display components. Its data
+and log mounts must enforce Linux directory permissions; a mount that ignores
+private permissions cannot open the login viewer. Docker named volumes are an
+alternative on such hosts. Source installations need the documented Linux browser
+environment. See the [login guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Authentication)
+and [dashboard access guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Dashboard-access).
+
+This replaces the desktop-helper path discussed in
+[#130](https://github.com/rangermix/TwitchDropsMiner/issues/130),
+[#129](https://github.com/rangermix/TwitchDropsMiner/issues/129), and
+[#135](https://github.com/rangermix/TwitchDropsMiner/issues/135).
+
 # Release Notes - v2.0.2
 
 The desktop login helper now supports native Firefox and Chromium alongside Chrome,

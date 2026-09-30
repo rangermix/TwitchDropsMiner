@@ -1,6 +1,6 @@
 # Using the dashboard
 
-After TDM restores your session or accepts a [helper login](authentication.md), wait
+After TDM restores your session or accepts a [browser login](authentication.md), wait
 for it to discover campaigns. Choose the games and rewards you want, then leave the
 miner running while it selects eligible channels and tracks progress.
 

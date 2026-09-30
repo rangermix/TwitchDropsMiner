@@ -175,7 +175,7 @@ lang/                # Translation JSON files (20 languages)
 
 **src/web/app.py** - FastAPI application:
 
-- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/helper/connect`, `/api/helper/session`, `/api/helper/result`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`, `/api/history`, `/api/history/export.csv`, `/api/history/stats`
+- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/session`, `/api/session/finish`, `/api/session/retry`, `/api/session/logout`, `/api/session/vnc`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`, `/api/history`, `/api/history/export.csv`, `/api/history/stats`
 - Socket.IO server for real-time bi-directional communication
 - Serves static web frontend from `web/` directory
 - Integrates with WebGUIManager via `set_managers()`
@@ -252,176 +252,53 @@ progress to an ignored drop while the miner intentionally targets another reward
 6. **CHANNEL_SWITCH** - Select best channel to watch based on priority/ACL
 7. Loop between CHANNEL_SWITCH and periodic INVENTORY_FETCH (hourly)
 
-### Authentication and helper-assisted login
+### Authentication and integrated browser login
 
-- Helper-assisted login is TDM's standard authentication method for new or expired
-  sessions. README guidance covers migration from existing Android/Smart TV sessions
-  and normal helper use. Detailed user instructions live in `docs/authentication.md`.
-  Keep personal investigation and scoped verification records in ignored `.dev-notes/`;
-  do not present the current authentication flow as experimental.
-- `Twitch` starts with `ClientType.ANDROID_APP` and reuses valid saved Android cookies.
-  Preserve `cookies.jar`; fresh, expired, or wrong-client credentials wait for the helper.
-  Fresh device authorization, direct remote-browser configuration, manual session upload,
-  and the old pairing/renewal HTTP routes are retired. `TDM_SESSION_IMPORT` is not used.
-- `ImportedSession` is always initialized. Accepted helper state takes precedence over
-  preserved Android cookies after restart. Keep `Channel.url` on `ClientType.WEB.CLIENT_URL`
-  for watch beacon discovery. Native/imported requests preserve the matching WEB client,
-  device ID, OAuth token, integrity context and user agent. Do not log any of those values.
-- `src/auth/helper_connection.py` owns short-lived helper admission, validation and
-  server renewal. `POST /api/helper/connect` returns a 10-minute random bearer connection;
-  `POST /api/helper/session` receives the existing ServerSeed envelope. Validate the original
-  account/catalog, independently issue a new server context, and validate that same account
-  before accepting. Initial proof may have a shorter fresh lifetime; normal renewal must
-  advance capture/expiry and preserve account identity. Never accept an HTTP 200 alone.
-- The Settings `allow_helper_connection` value defaults true. The authoritative flag,
-  invalidation epoch, bundle, SDK cookie, account/generation and sanitized receipt are
-  atomically persisted together in private `data/imported-session.json` v2. Settings
-  mirrors this flag but does not persist a second copy in settings.json. Every toggle
-  invalidates old tickets, including true→false→true; success commits false with the state.
-  Existing v1 imported state migrates closed. Storage or validation failure preserves
-  previous state. Disabled admission blocks connections/replacement, never server renewal.
-- `GET /api/helper/result` recovers an accepted upload for its hashed connection for
-  10 minutes, including after gate closure or restart. No credential values are returned.
-  Native helpers reconcile lost/invalid/5xx acknowledgements without repeating the POST;
-  an unconfirmed result is unknown, not a claim that installation failed.
-- The native helper recognizes only the fixed HTTP 503 `session_browser_start`
-  rejection as `HELPER_SERVER_BROWSER`, because it precedes session installation.
-  Unknown, malformed and gateway 5xx responses still reconcile through receipts;
-  never replay the credential POST or echo arbitrary server error text.
-- Helper protocol routes are admitted by the explicit setting, independently of optional
-  dashboard auth. All other dashboard guards remain intact. Retain the write header,
-  origin/Fetch Metadata checks, 64 KiB payload cap, no-store responses and fixed error codes.
-  There is no session/seed export route. Ordinary dashboard status stays protected when
-  dashboard authentication is enabled.
-- `Twitch.authentication_change()` drains miner, watch, maintenance, fan-out campaign/UI/
-  channel tasks, websocket callbacks and tracked online checks before replacing identity.
-  Clear old topics and derived account state and resume under the accepted provider.
-  Fan-out cleanup must cancel AND await children on parent cancellation. Channel tasks
-  remain tracked after their pending display marker clears. Do not restore the old
-  Android identity after an explicit accepted helper replacement.
-- The integrated worker reads only persisted TDM state, normally renews five minutes
-  before expiry, rotates SDK state and validates account/catalog before atomic replacement.
-  It retries transient failures with bounded delay; exhausted/revoked credentials require
-  reopening admission and running the helper. Shutdown cancels and drains in-flight
-  uploads and renewal so browser cleanup finishes before process exit.
-- `src/auth/server_renewal.py` owns temporary headless Chromium and Twitch SDK issuance.
-  The standard Alpine Dockerfile includes Chromium; no Python runtime dependency was added.
-  Docker uses an init process and a cleanup grace period. Mining GraphQL stays in Python
-  HTTP. No browser/control/viewer port is published. Historical standalone renewal CLI
-  code is not the current deployment interface; its removed HTTP destination cannot be
-  used with this server. See `docs/authentication.md` for current setup.
-- `src/auth/login_helper.py` and root `login_helper.py` implement direct local handoff.
-  Keep setup instructions explicit about the two machines: run the native/source helper
-  in the user's local desktop session with installed Chrome, Chromium or Firefox 143+, and choose its
-  archive for that desktop's OS/CPU. `--tdm` selects the reachable miner root URL;
-  `--chrome`/`--chromium`/`--firefox` select local executables. `--browser auto` searches
-  Chrome, then Chromium, then Firefox, advancing only when a browser is absent.
-  Explicit choices never fall back; launch/login errors never switch browsers.
-  A headless home server/NAS runs the miner
-  and its temporary renewal Chromium without a desktop or display. An SSH session
-  to that server does not run the helper on the user's desktop.
-  Check admission before opening any browser with a temporary owned TDM profile.
-  All three start without remote automation for manual sign-in. Require a successful
-  normal user exit before reopening the same executable and profile at `about:blank`
-  for capture; never force-close successful login before storage flushes. Tell macOS
-  users to quit only the helper-owned instance. A scoped saved cookie is a prerequisite,
-  not proof of acceptance. Missing login, crashes, timeouts and cancellation stay distinct.
-  `NativeChromium` shares Chrome's lifecycle and capture protocol. During capture,
-  Chrome/Chromium use an explicit nonzero loopback CDP port (zero changes navigator.webdriver);
-  Firefox uses a loopback BiDi session. Verify browser process ownership and leave ordinary
-  browser profiles untouched. Wait for Twitch login,
-  capture in memory via shared BrowserExporter/SDKAcquisition, send directly to the chosen
-  root URL without redirects, wait for verified acceptance, close the browser and delete the
-  owned profile. No exported JSON/seed/connection files are written locally.
-  Scope the browser's TMPDIR, TMP and TEMP to the owned profile so auxiliary files are removed
-  with it; never delete or change the parent's shared temporary directory. Cancellation,
-  SIGTERM and SIGHUP must finish bounded cleanup. Forced process kill/power loss cannot
-  guarantee cleanup; never silently report successful cleanup if deletion failed.
-- Native profile deletion may clear a Windows read-only attribute only on an owned
-  file/directory that failed deletion. Do not follow symlinks or junctions, alter
-  unrelated profiles, or suppress persistent locks/permission errors. A missing child
-  is not proof that the profile root was deleted; retry while the root remains.
-  Keep real Windows read-only cleanup and disappearing-child regressions covered.
-- Linux desktop discovery checks native `google-chrome`, `google-chrome-stable`,
-  `chromium`, `chromium-browser`, `firefox` and `firefox-esr` in that order.
-  Firefox requires version 143+ for BiDi response capture,
-  including ESR. Flatpak/Snap launchers are unsupported; executable options do not
-  accept shell commands. Do not bypass ownership checks to accept a sandbox launcher.
-- `NativeFirefox` owns one loopback BiDi session and verifies both process ownership
-  and the temporary profile before capture. Manual sign-in first uses an ordinary
-  owned Firefox without RemoteAgent/Marionette flags; inherited Marionette activation
-  and privileged-access environment variables are removed only from the child copy.
-  Require a normal user exit before restarting that same profile with BiDi at
-  `about:blank`. Do not spoof navigator properties, read/copy a live profile, or
-  force-close a successful login before Firefox flushes storage. Explicitly instruct
-  macOS users to quit the helper-owned instance. A retained scoped cookie is only a
-  prerequisite: capture and server account/catalog checks still decide acceptance.
-  On Windows, pass `--wait-for-browser` so the ordinary launcher stays alive.
-  On Windows the native Firefox launcher
-  may own a direct browser child: verify that relationship and its executable with OS
-  data, never just a remote PID claim. Cleanup must stop only the owned process tree.
-  `FirefoxExporter` adapts BiDi to shared `BrowserExporter`/`SDKAcquisition` proof checks;
-  retain scoped network subscriptions, bounded bodies/events, OPTIONS filtering and
-  same-account validation. Forward page-load events only when explicitly requested by
-  SDK acquisition. Bootstrap uses a fresh Firefox user context, with no existing service
-  workers; dispose it on success, failure and cancellation. Server renewal remains Chromium.
-- `HelperDiagnostics` maps fixed codes to translated explanations and known recovery
-  steps in `helper.errors` across all locales. Never print arbitrary error/response text
-  or claim a speculative fix is guaranteed. Unknown upload and cleanup outcomes must
-  tell users to check TDM before retrying. Preserve receipt reconciliation for ambiguous
-  5xx replies and never resend the credential POST. `docs/troubleshooting.md` lists codes.
-- Firefox BiDi retains URL fragments such as Twitch's `#origin=twilight` on both
-  request and response events. Remove only the fragment before matching/translating
-  capture URLs; preserve strict scheme, authority, path and query allowlists. Keep
-  issued-proof/campaign correlation unchanged and retain fragment and endpoint-lookalike
-  regressions in `tests/test_firefox_helper.py`.
-- Native console text lives in the top-level `helper` locale section and `HelperMessages`.
-  `packaging/login_helper.spec` bundles translations and dependencies. PyInstaller is a
-  pinned build-only dependency; build each target OS separately. CI builds and smoke-tests
-  Linux x64, macOS ARM64/x64 and Windows x64, including startup without Python on PATH.
-  The optional packaged browser smoke admits a short-lived local connection and checks
-  installed Chrome/Firefox manual startup, login timeout and profile cleanup;
-  `--chromium-browser` adds the same check for installed native Chromium.
-  Capture control and the close/reopen lifecycle are covered separately by protocol
-  tests and native browser probes; the manual timeout smoke does not establish capture.
-  Linux uses Xvfb for this display-dependent test; it never supplies account credentials.
-  Report remaining temporary filenames on smoke failure without printing their contents.
-  Preserve the auxiliary-file cleanup regression, including unchanged parent environment
-  and unrelated files, when changing native browser launch or cleanup.
-  The helper writes UTF-8 console output; subprocess tests must decode it explicitly as
-  UTF-8 rather than using the Windows locale code page.
-  Firefox selection, capture, isolated bootstrap and failure paths are covered in
-  `tests/test_firefox_helper.py`; manual sign-in/restart, child environment, missing
-  saved login and cancellation in `tests/test_firefox_login.py`. Chromium discovery,
-  Chrome/Chromium close/reopen, ownership, saved login and cancellation are covered in
-  `tests/test_browser_login.py`; diagnostics, locale completeness and CLI choices in
-  `tests/test_helper_errors.py`. Keep `DevToolsConnection` typed against its narrow websocket protocol (async iteration
-  and `send_json`), compatible with both locked aiohttp and newer supported releases.
-  Do not subscript the older non-generic websocket class or silence new type errors;
-  inspect advisory CI Mypy output even when the enclosing job reports success.
-  The dashboard download link targets GitHub releases; keep its archive/version guidance
-  translated in every locale. PR build artifacts are an explicitly documented fallback
-  for unreleased source, not evidence that a release exists.
-- Preserve strict bundle/header/cookie allowlists, private atomic file writes, same-account
-  renewal and accepted-catalog validation. Shared session/SDK primitives remain covered by
-  their focused tests. Legacy BrowserSession is retained only for historical investigation,
-  not selectable fresh login. Historical live evidence is not proof of a changed
-  integrated flow. Keep personal provider, expiry, restart and native build evidence
-  in ignored `.dev-notes/`; report redacted outcomes and limitations in the PR.
-  Distinguish fresh login, renewal past the original expiry, restart, native build,
-  and live mining checks. Success on one platform does not establish authenticated
-  login on every OS or multi-day reliability. Preserve pending checks separately;
-  never infer live drop progress from mocks or a Watching label.
-- Imported-session GraphQL retries transient HTTP 5xx, connection and timeout failures
-  only for exact known persisted read operations in the remaining request batch, with
-  at most three attempts. Retry waits release the session lock, support stop/cancellation,
-  and reject work whose account changed. Never replay ambiguous mutations, raw/unknown
-  operations or already successful batch members. Keep public errors credential-free;
-  `tests/test_imported_session_retry.py` exercises production GQL dispatch and HTTP replies.
-- New backend and lifecycle coverage is in test_helper_connection/api/lifecycle,
-  test_auth_task_cleanup and test_login_helper. Keep old Android cookie/restart coverage,
-  account precedence, stale admission, atomic failure, lost-ack, gate-closed renewal,
-  cancellation, redaction and owned-process/profile cleanup regressions.
+- `ImportedSession` owns validated WEB contexts and reads persisted formats 1/2/3.
+  Accepted browser state takes precedence over valid saved Android cookies. Fresh,
+  expired or rejected sessions wait for the integrated container browser. Do not
+  restore legacy cookies after explicit logout. Version 3 atomically persists a
+  logged-out marker with cleared session/SDK state; successful login clears it.
+- `ContainerLogin` owns one temporary attempt with a 15-minute interactive timeout.
+  Launch ordinary Chromium at Twitch sign in without remote automation, close its
+  window normally to flush storage, then reopen the owned profile for CDP capture.
+  Verify the browser PID before reading credentials. Finish sign in uses EWMH close;
+  the window X works too. Profiles and all owned processes must be drained through
+  cancellation, startup failures, timeout and shutdown. Never attach another profile.
+- `SessionController` validates the captured account and catalog, independently issues
+  a server context, revalidates the same account and atomically installs the seed.
+  Account replacement and logout use `Twitch.authentication_change()` to cancel AND
+  await miner, watch, maintenance, websocket callbacks and tracked channel/UI tasks.
+  Clear old topics and derived account state before resuming. Epoch/revision checks
+  prevent delayed login or renewal from reinstalling credentials after logout.
+- The renewal worker rotates SDK state, normally five minutes before expiry, with
+  bounded retries and same-account/freshness validation. Mining GraphQL stays in
+  Python. Preserve safe-read retry rules; never replay ambiguous mutations.
+- `SessionAPI` exposes sanitized status and finish/retry/logout actions. There is no
+  session upload/export, helper admission, pairing, or renewal HTTP route. The binary
+  `/api/session/vnc` WebSocket connects only to the current attempt’s loopback VNC
+  listener, requires the exact dashboard origin and optional dashboard session, and
+  rechecks authorization/attempt/state while connected. Cap viewers and input frames.
+  All login HTTP actions retain CSRF/origin guards and fixed redacted error codes.
+- The interactive desktop runs as dedicated UID/GID `tdm-browser`, with supplementary
+  groups cleared and only PATH/timezone/locale environment inherited. Protect miner
+  data and logs with mode 0700 and verify it took effect before starting VNC; fail
+  closed on mounts that ignore chmod or give the browser ownership. Keep temporary
+  display/profile directories owned by the browser UID. Root-only SDK profiles remain
+  unreadable to it. Retain tests for file-access isolation and pre-login password setup.
+- Docker includes Chromium, Xvfb, openbox, x11vnc, xdotool, noVNC and timezone data.
+  Set `TZ` to the home internet connection’s timezone. Use init, shared memory and
+  a cleanup grace period. Only the dashboard port is published. Display numbers are
+  allocated by Xvfb to avoid stale fixed-display locks after engine restarts.
+- The frontend shows the VNC sign in page when Twitch is logged out, keeps verification
+  visible until cleanup, then restores the normal dashboard. Settings ends with Twitch
+  logout. The dashboard-password form is reparented into the sign in screen while
+  logged out, preserving its single form and listeners. Desktop helper code, downloads
+  and packaging are retired. Detailed user
+  guidance lives in `docs/authentication.md`; private tests and credentials stay ignored.
+- Preserve matching WEB client/device/token/integrity/user-agent for imported requests,
+  `Channel.url` on WEB for beacon discovery, locale/schema parity and safe DOM rendering.
+  Never include session, SDK, password or verification data in dashboard status/logs.
 
 ### Dashboard authentication
 
@@ -431,8 +308,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   fail closed. Never expose these credentials in settings, broadcasts, validation errors,
   logs, or cache operations. Use one miner process per data directory.
 - `AuthMiddleware` guards FastAPI and the outer Socket.IO ASGI app. Login resources,
-  auth status, and `/healthz` are public when enabled; the three helper protocol routes
-  use independent helper admission as described above. Unsafe HTTP requests require
+  auth status, and `/healthz` are public when enabled. Login actions and the VNC
+  viewer require the dashboard session when protection is enabled. Unsafe HTTP requests require
   `X-TDM-Request: 1`; writes and Socket.IO reject foreign origins. `DashboardOrigin` in
   `src/web/origin.py` owns the optional `PUBLIC_BASE_URL` startup configuration: one
   absolute HTTP(S) root URL supplies the allowed browser origin and cookie scheme even
@@ -678,32 +555,15 @@ priority and failover. It uses mocked Twitch state and does not verify live Twit
 - `.github/workflows/version-release.yml` is the release entry point. It must provision
   `uv`, update `src/version.py`, `pyproject.toml`, and `uv.lock` together, and validate all
   three before creating a release branch or tag.
-  Version 2.0 introduces helper-assisted authentication and server Chromium; preserve
-  its data-volume/cookie migration instructions and matching helper downloads. Prepare
-  reviewed release notes before dispatch, then verify the published Docker architectures,
-  source revision, four native archives, and checksums before reporting publication.
-- `.github/workflows/login-helper.yml` is the read-only reusable native build workflow,
-  called by both validation and GitHub release workflows. Build Linux x64, macOS ARM64/x64
-  and Windows x64 from the caller's exact source SHA, then run packaged installed-Chrome
-  and installed-Firefox smoke checks before archiving. `.github/scripts/prepare_helper_release.py` accepts only
-  the four expected archives, containing a regular executable and LICENSE, and prepares
-  versioned archives plus `SHA256SUMS` without extracting their contents. Keep the raw
-  artifact download pattern separate from the aggregate artifact so reruns remain valid.
-- `.github/workflows/github-release.yml` validates branch/package/lock versions and the
-  existing version tag against the dispatched source commit before calling the native
-  workflow. Only its final publishing job has `contents: write`; it waits for every
-  platform and archive validation, and downloads assets from that same run.
-  `.github/scripts/publish_helper_release.py` verifies local checksums, uploads only to a
-  draft, then verifies all five remote asset names, sizes, states and SHA-256 digests
-  before publication. Failed uploads leave a resumable draft. Refuse already-published
-  targets before any write; never delete or replace public assets on a rerun. PR jobs
-  never publish. `tests/test_helper_release.py` and `tests/test_helper_publication.py`
-  cover artifact completeness, unsafe members, permissions, checksums, source/tag
-  mismatches, workflow dependencies, upload failures, draft recovery and public reruns.
-- Retired Docker interactive-browser and standalone-renewal recipes are removed. Do not
-  revive the old browser URL environment variables or sidecar commands in current setup
-  documentation; the standard Alpine image owns server renewal and the native helper
-  owns fresh desktop login. Personal investigation records belong in ignored `.dev-notes/`.
+  Preserve existing data-volume/session migration instructions. Prepare versioned
+  frontend cache keys through the authorized release workflow before deployment.
+- `.github/workflows/github-release.yml` verifies the existing tag against the
+  dispatched source SHA and checks branch/package/lock/source version equality.
+  Only the final publishing job has `contents: write`. `publish_release.py` creates
+  or resumes an asset-free draft and refuses to modify published releases. Native
+  desktop helper builds and release assets are retired. PR jobs never publish.
+- Keep browser/control listeners private; do not revive standalone sidecar URLs or
+  credential-upload routes. The standard Alpine image owns login and renewal.
 
 
 ### Manual Testing
@@ -726,7 +586,7 @@ The application uses a web-based interface accessible via browser:
 
 **src/web/app.py** - FastAPI application:
 
-- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/helper/connect`, `/api/helper/session`, `/api/helper/result`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`, `/api/history`, `/api/history/export.csv`, `/api/history/stats`
+- REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/session`, `/api/session/finish`, `/api/session/retry`, `/api/session/logout`, `/api/session/vnc`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`, `/api/history`, `/api/history/export.csv`, `/api/history/stats`
 - Socket.IO server for real-time bi-directional communication
 - Serves static web frontend from `web/` directory
 - Integrates with WebGUIManager via `set_managers()`
@@ -784,8 +644,8 @@ The application uses a web-based interface accessible via browser:
 - **WebSocket for real-time** - Socket.IO chosen for reliability (fallback to polling)
 - **Single-page app** - Simpler than full framework (React/Vue), fast load times
 - **Direct Docker support** - Environment detection, proper path handling
-- **Helper-assisted Twitch authentication** - Use desktop Chrome, Chromium or Firefox for login, transfer
-  the session directly to TDM, and renew it on the server. Preserve valid saved Android
+- **Integrated Twitch authentication** - Sign in through the container browser in the
+  dashboard, then validate and renew the saved session. Preserve valid saved Android
   sessions during migration.
 
 ## Project Scope

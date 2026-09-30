@@ -11,7 +11,7 @@ from src.auth.browser_session import BrowserSession
 from src.auth.session_bundle import SessionError
 from src.config import GQL_OPERATIONS, ClientType
 from src.exceptions import ExitRequest
-from tests.test_helper_lifecycle import miner
+from tests.test_session_lifecycle import miner
 from tests.test_imported_session import bundle_data, catalog
 
 

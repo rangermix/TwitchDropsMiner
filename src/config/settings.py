@@ -23,7 +23,6 @@ class InventoryFilters(TypedDict):
 
 
 default_settings = {
-    "allow_helper_connection": True,
     "connection_quality": 1,
     "dark_mode": False,
     "drop_name_blacklist": [],
@@ -57,7 +56,6 @@ default_settings = {
 
 @dataclass
 class Settings:
-    allow_helper_connection: bool
     connection_quality: int
     dark_mode: bool
     drop_name_blacklist: list[str]
@@ -77,6 +75,7 @@ class Settings:
     def load(self):
         # TODO: remvoe customized serde in the future
         settings = json_load(SETTINGS_PATH, default_settings, merge=True)
+        settings.pop("allow_helper_connection", None)
         for key, value in settings.items():
             if value is URL:
                 setattr(self, key, str(value))
@@ -91,6 +90,4 @@ class Settings:
             self.drop_name_blacklist
         )
         values = vars(self).copy()
-        # Admission is committed atomically with the accepted session/SDK state.
-        values.pop("allow_helper_connection", None)
         json_save(SETTINGS_PATH, values, sort=True)

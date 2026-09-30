@@ -102,6 +102,8 @@ class OwnedChromium:
                 process = await asyncio.create_subprocess_exec(
                     *args, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
                     start_new_session=os.name == "posix",
+                    env={**os.environ, "XDG_CONFIG_HOME": str(profile / "config"),
+                         "XDG_CACHE_HOME": str(profile / "cache")},
                 )
                 try:
                     address = await self.wait_ready(process, profile)

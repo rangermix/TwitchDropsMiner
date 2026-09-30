@@ -233,6 +233,7 @@ async def test_browser_fallback_preserves_android_and_uses_browser_for_web_gql(
     client = Twitch(MagicMock())
     client.gui = SimpleNamespace(login=SimpleNamespace(update=MagicMock()))
     client._browser = SimpleNamespace(
+        logged_out=False,
         status=lambda: {"generation": 0, "state": "waiting"},
         authenticate=AsyncMock(
             return_value=BrowserIdentity(12345, "web-test-token", "browser-device", "Chromium")
