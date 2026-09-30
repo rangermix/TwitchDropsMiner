@@ -39,7 +39,7 @@ and log mounts must enforce Linux directory permissions; a mount that ignores
 private permissions cannot open the login viewer. Docker named volumes are an
 alternative on such hosts. Source installations need the documented Linux browser
 environment. See the [login guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Authentication)
-and [dashboard access guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Dashboard-Access).
+and [dashboard access guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Dashboard-access).
 
 This replaces the desktop-helper path discussed in
 [#130](https://github.com/rangermix/TwitchDropsMiner/issues/130),
