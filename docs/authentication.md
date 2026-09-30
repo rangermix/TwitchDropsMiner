@@ -20,7 +20,7 @@ Sessions and integrity proofs are checked locally against Twitch before acceptan
 
 ## Docker and timezone
 
-Use the current source Docker build until a published release includes this flow.
+Use the published `rangermix/twitch-drops-miner:2.1.0` image or build the current source.
 The image includes Chromium, Xvfb, a window manager and noVNC. It does not need a
 display on the home server or NAS. Only the dashboard port is published; VNC and
 browser control remain on container loopback addresses.
