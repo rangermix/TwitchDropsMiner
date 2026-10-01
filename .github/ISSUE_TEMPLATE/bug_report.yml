@@ -1,0 +1,85 @@
+name: Bug report
+description: Report a reproducible problem with Twitch Drops Miner.
+title: "Bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues first and read the [troubleshooting guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Troubleshooting).
+        Support is best-effort for personal use on your own hardware and home network; VPS/cloud hosting and services for other users are outside the support scope.
+        Never share passwords, verification codes, tokens, cookies, browser profiles, authentication files, or an entire data directory. Inspect logs and screenshots before sharing.
+  - type: input
+    id: app-version
+    attributes:
+      label: Application version
+      description: Copy the running version from the dashboard or startup log. For source installs, also include the commit. A Docker tag such as latest is not a version.
+      placeholder: "Version number; source commit if applicable"
+    validations:
+      required: true
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation method
+      options:
+        - Official Docker image
+        - Locally built Docker image
+        - Python source
+        - Other (describe below)
+    validations:
+      required: true
+  - type: textarea
+    id: hosting-environment
+    attributes:
+      label: Hosting environment
+      description: Include home hardware or hosting provider, host OS/version, CPU architecture, and Docker image tag (digest if available) or Python version. Mention VPN/proxy/tunnel use, configured TZ, and custom image/resource limits. Do not include private addresses or credentials.
+      placeholder: "Home NAS; model; OS/version; amd64 or arm64; Docker image tag; TZ; VPN/proxy/tunnel or none"
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Dashboard browser and device
+      description: Include browser/version and device OS. For login bugs, say whether the error is in the dashboard's embedded Twitch browser or your usual browser. Write not applicable for problems before the dashboard starts.
+      placeholder: "Firefox version on Windows; error inside embedded Twitch browser"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the actions and relevant settings. For mining bugs, include public game/campaign/drop/channel links or IDs and the time with timezone. If intermittent, describe what happened before the failure.
+      placeholder: |
+        1. Start TDM with ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happens instead, including the exact error text and frequency? For mining bugs, compare TDM with Twitch's own Drops inventory and mention simultaneous manual viewing.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted logs or screenshots
+      description: Include a short excerpt around the failure with its time and timezone. Paste error text even if attaching a screenshot. If no evidence is available, say so and explain why. Never attach authentication files or unredacted captures.
+    validations:
+      required: true
+  - type: textarea
+    id: troubleshooting
+    attributes:
+      label: Troubleshooting already tried
+      description: List attempts and results, or none. If safely tested, mention whether the latest release reproduces it and the last working version; otherwise say not tested. Keep existing data and credentials.
+    validations:
+      required: true

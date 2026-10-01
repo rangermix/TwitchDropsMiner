@@ -24,6 +24,20 @@ It is the repository's contribution policy, not optional background reading.
 
 ## Development Guidelines
 
+### Issue triage
+
+- `.github/ISSUE_TEMPLATE/bug_report.yml` requires the running app version,
+  installation method, hosting environment, dashboard browser/device, reproduction
+  steps, expected/actual behavior, redacted evidence, and troubleshooting results.
+  Keep the form simple; allow an explanation when evidence is unavailable or browser
+  details do not apply. The chooser disables blank issues and preserves a separate
+  feature/question/documentation template.
+- Read the issue and its comments before asking for missing information. Tailor the
+  request to unresolved gaps, avoid duplicating unanswered requests, and distinguish
+  feature requests, retired version-specific paths, and confirmed recoveries from
+  current defects. Never request credentials, authentication files, whole data
+  directories, or unredacted network captures. Preserve the home-hosting support scope.
+
 1. **Testing**:
    - Always add unit tests for backend changes.
    - Frontend changes should have tests if possible.
