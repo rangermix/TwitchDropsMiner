@@ -81,7 +81,9 @@ same guides in [docs](docs/README.md):
 ## Help and contributions
 
 Search [existing issues](https://github.com/rangermix/TwitchDropsMiner/issues) before
-reporting a problem. See [CONTRIBUTING.md](CONTRIBUTING.md) for bug reports, translations,
+reporting a problem. Use the [bug-report form](https://github.com/rangermix/TwitchDropsMiner/issues/new?template=bug_report.yml)
+with the running app version, hosting environment, reproduction steps, and redacted evidence.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for bug reports, translations,
 and development. This fork uses AI-assisted development with automated checks and
 independent review.
 

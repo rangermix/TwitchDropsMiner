@@ -54,6 +54,13 @@ such as `Bug: queue keeps an expired reward` or `Feature: filter campaigns by ga
 
 ### Bug reports
 
+Use the [bug-report form](https://github.com/rangermix/TwitchDropsMiner/issues/new?template=bug_report.yml).
+Its required fields collect the running application version, installation method,
+hosting environment, dashboard browser/device, reproduction steps, expected and actual
+behavior, redacted evidence, and troubleshooting results. Write `not applicable` for
+browser details when startup fails, or explain when logs/screenshots are unavailable.
+Other requests have a separate template; the chooser does not offer blank issues.
+
 Include enough information for someone else to reproduce the problem:
 
 - Application version or source commit, installation method, OS, and browser when
