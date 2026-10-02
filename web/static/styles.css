@@ -1854,12 +1854,6 @@ header h1 {
 .browser-login-access { margin-top: 16px; }
 .browser-login-access summary { cursor: pointer; }
 
-/* =====================================================================
-   Dashboard redesign (top bar, Main tab layout, sidebar, footer)
-   Only presentation - markup ids/classes used by app.js are unchanged.
-   ===================================================================== */
-
-/* Dark palette matching the design mockup (applies with "Dark Mode" on) */
 body.dark-mode {
     --bg-primary: #0d0d11;
     --bg-secondary: #1c1c24;
@@ -1882,7 +1876,6 @@ body.dark-mode {
     white-space: nowrap;
 }
 
-/* ---- Top bar ---- */
 header {
     padding: 10px 18px;
     margin-bottom: 14px;
@@ -1991,7 +1984,6 @@ header h1 {
     margin-left: 0;
 }
 
-/* ---- Main tab: content left, sidebar right ---- */
 .main-grid {
     grid-template-columns: minmax(0, 1fr) 320px;
     grid-template-rows: auto auto;
@@ -2023,7 +2015,6 @@ header h1 {
     letter-spacing: 0.03em;
 }
 
-/* ---- Current drop + Now Watching ---- */
 .progress-layout {
     display: grid;
     grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
@@ -2151,7 +2142,6 @@ header h1 {
     text-overflow: ellipsis;
 }
 
-/* ---- Wanted queue as a card grid ---- */
 #wanted-items-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -2209,7 +2199,6 @@ header h1 {
     padding: 28px;
 }
 
-/* ---- Sidebar: channels ---- */
 .channels-list {
     height: auto;
     max-height: 340px;
@@ -2282,7 +2271,6 @@ header h1 {
     background: var(--success-color);
 }
 
-/* ---- Sidebar: logs ---- */
 .console-output {
     height: 240px;
     margin: 0 12px 14px;
@@ -2291,7 +2279,6 @@ header h1 {
     background: var(--bg-primary);
 }
 
-/* ---- Footer ---- */
 .footer {
     margin: 14px auto 0;
     padding: 8px 14px;
@@ -2308,7 +2295,6 @@ header h1 {
     color: var(--warning-color);
 }
 
-/* ---- Responsive ---- */
 @media (max-width: 1024px) {
     .main-grid {
         grid-template-columns: minmax(0, 1fr);
@@ -2359,13 +2345,6 @@ header h1 {
     }
 }
 
-
-/* =====================================================================
-   Revision 2: top bar like the mockup, equal-height rows, game art,
-   "alternative channels" list
-   ===================================================================== */
-
-/* ---- Top bar ---- */
 header h1 {
     display: flex;
     align-items: center;
@@ -2477,7 +2456,6 @@ header h1 {
     border-top: none;
 }
 
-/* ---- Equal heights ---- */
 .main-grid {
     align-items: stretch;
 }
@@ -2498,7 +2476,6 @@ header h1 {
     min-height: 260px;
 }
 
-/* the two lists fill the panel instead of deciding its height */
 .channels-list,
 .console-output {
     flex: 1 1 0;
@@ -2544,7 +2521,6 @@ header h1 {
     width: auto;
 }
 
-/* ---- Game artwork in the drop card ---- */
 .drop-art {
     position: relative;
     height: 170px;
@@ -2579,7 +2555,6 @@ header h1 {
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
 }
 
-/* ---- Alternative channels ---- */
 .channel-item {
     display: flex;
     align-items: center;
