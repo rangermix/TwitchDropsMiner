@@ -638,8 +638,12 @@ The application uses a web-based interface accessible via browser:
 
 **Dockerfile:**
 
-- Based on `python:3-alpine`, including Chromium for internal SDK renewal
-- Installs dependencies from `pyproject.toml`
+- Based on `python:3.14-alpine3.24`, including Chromium for internal SDK renewal.
+  Upgrade Alpine packages during builds and pull refreshed base images for security rebuilds.
+  Copy noVNC browser assets from a separate stage; the application's authenticated VNC
+  proxy replaces websockify, so its unused server dependencies stay out of the runtime.
+- Installs dependencies from `pyproject.toml`, then removes pip and its vendored
+  installation tools from the runtime; dependency changes require rebuilding the image.
 - Exposes port 8080
 - Health check on the public `/healthz` endpoint
 
