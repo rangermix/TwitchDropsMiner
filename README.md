@@ -40,7 +40,8 @@ docker run -d \
 Open <http://localhost:8080>, or `http://YOUR-SERVER:8080` from another device on your
 home network. Keep the `data` directory when updating or recreating the container.
 For Docker Compose, installation without Docker, and updates, see the
-[installation guide](docs/installation.md).
+[installation guide](docs/installation.md), including how to rebuild with refreshed
+base images and security updates.
 
 ## Sign in
 
