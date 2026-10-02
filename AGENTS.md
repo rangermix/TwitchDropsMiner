@@ -574,7 +574,7 @@ priority and failover. It uses mocked Twitch state and does not verify live Twit
   or resumes an asset-free draft and refuses to modify published releases. Native
   desktop helper builds and release assets are retired. PR jobs never publish.
 - Keep browser/control listeners private; do not revive standalone sidecar URLs or
-  credential-upload routes. The standard Debian image owns login and renewal.
+  credential-upload routes. The standard Alpine image owns login and renewal.
 
 
 ### Manual Testing
@@ -638,15 +638,10 @@ The application uses a web-based interface accessible via browser:
 
 **Dockerfile:**
 
-- Based on `python:3.14-slim-trixie`, using Debian's security repository for Chromium.
-  Upgrade Debian packages during builds and pull refreshed base images for security rebuilds.
-  Copy only noVNC's `core`, `vendor`, and copyright from the assets stage; the app's
-  authenticated VNC proxy replaces websockify. Do not install noVNC's unused server
-  dependencies in the runtime image. Preserve UID/GID 10001 for the isolated browser.
-- Run the offline image smoke check after Docker changes:
-  `docker run --rm -i IMAGE python - < .github/scripts/check_container.py`.
-  It checks noVNC imports and licenses, desktop startup, VNC greeting, browser identity,
-  cleanup, and absence of unused websockify/Redis modules without contacting Twitch.
+- Based on `python:3.14-alpine3.24`, including Chromium for internal SDK renewal.
+  Upgrade Alpine packages during builds and pull refreshed base images for security rebuilds.
+  Copy noVNC browser assets from a separate stage; the application's authenticated VNC
+  proxy replaces websockify, so its unused server dependencies stay out of the runtime.
 - Installs dependencies from `pyproject.toml`, then removes pip and its vendored
   installation tools from the runtime; dependency changes require rebuilding the image.
 - Exposes port 8080

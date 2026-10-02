@@ -1,10 +1,8 @@
 # Extract only noVNC's browser library, without installing its websockify server.
-FROM python:3.14-slim-trixie AS novnc-assets
-RUN apt-get update \
-    && apt-get download novnc \
-    && dpkg-deb --extract novnc_*.deb /novnc
+FROM alpine:3.24 AS novnc-assets
+RUN apk add --no-cache novnc
 
-FROM python:3.14-slim-trixie
+FROM python:3.14-alpine3.24
 
 # Build arguments for metadata
 ARG BUILD_DATE
@@ -32,16 +30,11 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 # Login and renewal use private browsers; only the dashboard port is exposed.
-RUN apt-get update \
-    && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends chromium xvfb openbox x11vnc xdotool tzdata \
-    && rm -rf /var/lib/apt/lists/*
-COPY --from=novnc-assets /novnc/usr/share/novnc/core/ /usr/share/novnc/core/
-COPY --from=novnc-assets /novnc/usr/share/novnc/vendor/ /usr/share/novnc/vendor/
-COPY --from=novnc-assets /novnc/usr/share/doc/novnc/copyright /usr/share/novnc/copyright
-RUN groupadd --gid 10001 tdm-browser \
-    && useradd --uid 10001 --gid tdm-browser --no-create-home --home-dir /nonexistent \
-        --shell /usr/sbin/nologin tdm-browser
+RUN apk upgrade --no-cache \
+    && apk add --no-cache chromium xvfb openbox x11vnc xdotool tzdata
+COPY --from=novnc-assets /usr/share/novnc/ /usr/share/novnc/
+RUN addgroup -g 10001 -S tdm-browser \
+    && adduser -u 10001 -S -D -H -h /nonexistent -s /sbin/nologin -G tdm-browser tdm-browser
 
 # Copy project metadata and install dependencies
 COPY pyproject.toml .

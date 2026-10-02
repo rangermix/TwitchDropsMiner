@@ -35,10 +35,10 @@ or settings.
 
 To build a source checkout, run `docker build --pull -t twitch-drops-miner .` from the
 repository root and use `twitch-drops-miner` as the image in the run command above.
-For a security rebuild, add `--no-cache` to refresh Debian packages as well as the
+For a security rebuild, add `--no-cache` to refresh Alpine packages as well as the
 base image. The runtime includes noVNC's browser library; its unused websockify
-server dependencies are excluded. Source builds use Debian's security repository
-for Chromium updates; published images need a maintainer rebuild to pick up fixes.
+server dependencies are excluded. Published images need a maintainer rebuild to
+pick up fixes; Chromium updates depend on availability in Alpine's repositories.
 
 To retain file logs outside the container, also mount `./logs:/app/logs`. You can read
 the container's console output with:
