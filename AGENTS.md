@@ -310,6 +310,11 @@ progress to an ignored drop while the miner intentionally targets another reward
 - Preserve matching WEB client/device/token/integrity/user-agent for imported requests,
   `Channel.url` on WEB for beacon discovery, locale/schema parity and safe DOM rendering.
   Never include session, SDK, password or verification data in dashboard status/logs.
+- `LoginFormManager` may publish the account's Twitch avatar as an optional `avatar_url`
+  in login status. It is fetched once per account change through the authenticated
+  `currentUser` GQL raw query (`GQLRawQuery`), accepted only when it is an `https://`
+  URL, and rendered by the frontend as a CSS background on `#user-avatar` with the
+  initial-letter fallback preserved. It must never be sourced from or expose credentials.
 
 ### Dashboard authentication
 
