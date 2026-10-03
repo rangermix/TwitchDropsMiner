@@ -494,14 +494,29 @@ The application requires:
 - Dependencies from `pyproject.toml` (includes FastAPI, uvicorn, Socket.IO)
 - Node.js 24 for frontend behavior tests
 
-Docker deployment:
+Docker deployment from a source checkout:
 
 ```bash
-# Build and run with docker-compose
-docker-compose up -d
+# Build and run the included Compose configuration
+docker compose up -d --build
 
 # Access at http://localhost:8080
 ```
+
+Keep the README's Docker update commands aligned with `docs/installation.md`.
+Published-image updates pull before stopping/removing the old container, stop on
+command failures, and recreate with the same data mount and custom runtime options.
+Retain `--init`, the 30-second shutdown grace period, `--shm-size 256m`, and the
+user's timezone. Explain that `latest` and restart policies do not update running
+containers automatically. Keep the README and installation guide's published-image
+`compose.yaml` examples synchronized, including browser settings and persistent
+data/log mounts. Pinned-image Compose updates must explain changing the image tag
+before pulling. The included `docker-compose.yml` builds the checkout; use
+`docker compose pull` for the published-image configuration without `build:`.
+Keep those configurations in separate folders because `compose.yaml` takes
+precedence. Migration from `docker run` must preserve the exact data mount, remove
+the stopped old container before Compose creates its replacement, and avoid running
+two miners against the same data or using `down -v` to update.
 
 ## Testing
 
