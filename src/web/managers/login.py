@@ -46,5 +46,5 @@ class LoginFormManager:
         if pending:
             self._status = _.t["login"]["status"]["required"]
             self._user_id = None
-            self._manager._twitch.login_browser.request_login()
+            self._manager._twitch.request_login()
         await self._broadcaster.emit("login_status", self.get_status())

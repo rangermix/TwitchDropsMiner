@@ -6,7 +6,7 @@ display and Twitch's recorded progress can differ.
 
 ## The login browser does not open or connect
 
-- Use the source Docker build with the integrated browser. Check container resources
+- Use the current published Docker image or source build with the integrated browser. Check container resources
   and use the supplied init process, 30-second stop grace period and shared memory size.
 - Set `TZ` to the timezone of your home internet connection. A mismatch can produce
   Twitch’s “browser not supported” message. Check the host clock as well.
@@ -31,6 +31,25 @@ The dashboard’s connection indicator confirms access to TDM, not Twitch login.
 A cleanup error can occur after a session was saved; check the current login before
 retrying. Report the fixed code, image/source version and redacted logs, never the
 browser profile, session file, password, verification code or OAuth headers.
+
+## Twitch says the browser is not supported
+
+If the message appears inside a working embedded browser, Twitch is rejecting that
+browser's sign-in. Changing the browser used to view the dashboard does not change
+the Chromium browser running inside the container.
+
+After checking the timezone and host clock, you can select **Use desktop helper**
+on the sign-in screen and use a native browser on your own computer. Update the miner
+and download its matching Windows, Linux, or macOS helper. Follow the
+[desktop helper steps](authentication.md#desktop-helper-fallback); the helper needs
+only the dashboard URL. Access opens for ten minutes and accepts the first helper.
+Select **Return to embedded browser** to cancel it or start over after expiry.
+
+The helper is an alternative sign-in path, not a guarantee that Twitch will accept
+the login. If it cannot connect to TDM, check that its URL is reachable from the
+helper computer and that the access window is still open. `localhost` points to the
+helper computer itself. If the helper reports an unknown result, check the dashboard
+before trying again. Keep saved credentials and browser profiles private.
 
 ## Startup fails while reading web_auth.json
 

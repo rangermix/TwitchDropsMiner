@@ -11,6 +11,7 @@ import pytest
 
 from src.auth.browser_session import BrowserIdentity
 from src.auth.session_bundle import SessionBundle
+from src.auth.session_bundle import SessionError
 from src.config import ClientType, State
 from src.core.client import Twitch
 from tests.test_session_controller import seed
@@ -146,3 +147,41 @@ async def test_logout_stops_owned_login_clears_cookies_and_requests_new_browser(
     assert not legacy.exists() and not list(jar)
     assert not client._auth_state._logged_in.is_set()
     assert client._browser.logged_out
+
+
+@pytest.mark.asyncio
+async def test_helper_selection_drains_container_before_opening_admission(tmp_path, monkeypatch):
+    client = miner(tmp_path, monkeypatch)
+    entered, release = asyncio.Event(), asyncio.Event()
+
+    async def cancel():
+        entered.set()
+        await release.wait()
+
+    client.login_browser.cancel = AsyncMock(side_effect=cancel)
+    client.login_browser.request_login = MagicMock()
+    enabling = asyncio.create_task(client.enable_helper(lambda: True))
+    await entered.wait()
+    assert client.helper.status()["state"] == "disabled" and not enabling.done()
+    release.set()
+    assert await enabling is None
+    token = client.helper.connect()["connection"]
+    client.request_login()
+    client.login_browser.request_login.assert_not_called()
+    await client.cancel_helper()
+    client.login_browser.request_login.assert_called_once()
+    with pytest.raises(SessionError, match="CONNECTION"):
+        client.helper.result(token)
+
+
+@pytest.mark.asyncio
+async def test_late_helper_cancel_does_not_reopen_login_for_authenticated_account(tmp_path, monkeypatch):
+    client = miner(tmp_path, monkeypatch)
+    client._auth_state._logged_in.set()
+    client.login_browser.cancel = AsyncMock()
+    client.login_browser.request_login = MagicMock()
+    with pytest.raises(SessionError, match="HELPER_STATE"):
+        await client.enable_helper(lambda: True)
+    await client.cancel_helper()
+    client.login_browser.cancel.assert_not_awaited()
+    client.login_browser.request_login.assert_not_called()

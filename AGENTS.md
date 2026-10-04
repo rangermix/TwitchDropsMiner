@@ -285,8 +285,9 @@ progress to an ignored drop while the miner intentionally targets another reward
 - The renewal worker rotates SDK state, normally five minutes before expiry, with
   bounded retries and same-account/freshness validation. Mining GraphQL stays in
   Python. Preserve safe-read retry rules; never replay ambiguous mutations.
-- `SessionAPI` exposes sanitized status and finish/retry/logout actions. There is no
-  session upload/export, helper admission, pairing, or renewal HTTP route. The binary
+- `SessionAPI` exposes sanitized status and finish/retry/logout actions, plus optional
+  desktop-helper enable/cancel actions guarded by dashboard authentication and CSRF.
+  There is no general session upload/export or renewal HTTP route. The binary
   `/api/session/vnc` WebSocket connects only to the current attempt’s loopback VNC
   listener, requires the exact dashboard origin and optional dashboard session, and
   rechecks authorization/attempt/state while connected. Cap viewers and input frames.
@@ -304,12 +305,39 @@ progress to an ignored drop while the miner intentionally targets another reward
 - The frontend shows the VNC sign in page when Twitch is logged out, keeps verification
   visible until cleanup, then restores the normal dashboard. Settings ends with Twitch
   logout. The dashboard-password form is reparented into the sign in screen while
-  logged out, preserving its single form and listeners. Desktop helper code, downloads
-  and packaging are retired. Detailed user
+  logged out, preserving its single form and listeners. Embedded login stays the default;
+  desktop helpers are an explicit fallback. Detailed user
   guidance lives in `docs/authentication.md`; private tests and credentials stay ignored.
 - Preserve matching WEB client/device/token/integrity/user-agent for imported requests,
   `Channel.url` on WEB for beacon discovery, locale/schema parity and safe DOM rendering.
   Never include session, SDK, password or verification data in dashboard status/logs.
+- `HelperConnections` owns only temporary admission and receipts. It must call the
+  shared `SessionController.accept()`; never add a second renewal worker or bypass
+  current account validation, authentication-change draining, or logged-out persistence.
+  Dashboard enable cancels and awaits the container attempt, then opens a ten-minute
+  window for one helper. Native `/api/helper/connect` accepts an empty JSON object
+  without a pairing code and issues the first client a scoped ticket;
+  `/api/helper/session` submits once and `/api/helper/result` recovers
+  a lost acknowledgement. These exact method/path pairs bypass dashboard cookies
+  but retain origin/Fetch Metadata/request-header checks and bounded bodies. Upload
+  and result routes require the issued bearer ticket. Admission is closed by default,
+  requires an explicit dashboard action, and never uses a persistent enable flag.
+  Atomically recheck the live window after parsing before issuing the one ticket.
+  Recheck admission expiry and initiating dashboard authorization before installation.
+  Cancel, logout, shutdown, replacement login and new admission invalidate stale work.
+  In-memory receipts are intentionally lost on restart; never replay ambiguous uploads.
+  Keep tickets out of URLs, CLI arguments, logs, status, broadcasts and storage.
+  Document that the first reachable helper is admitted during the trusted-network window.
+  `tests/test_helper_admission.py` and `tests/test_desktop_helper_api.py` cover these boundaries.
+- Keep the released helper instructions and download links aligned with the four build
+  targets: Windows x64, Linux x64, macOS arm64, and macOS x64. Users choose the helper
+  computer's platform and match the miner release. The login screen's **Use desktop
+  helper** action shows only the dashboard URL; do not reintroduce a pairing-code or
+  dashboard-password prompt in the helper. **Return to embedded browser** revokes access.
+  Explain the ten-minute, first-helper admission window and retain the embedded browser
+  as the default. On macOS, users must quit the helper-owned browser instance to flush
+  its profile. Keep the release-ready README, installation examples, login guide, and
+  generated release-note instructions consistent with these behaviors.
 
 ### Dashboard authentication
 
@@ -586,10 +614,13 @@ priority and failover. It uses mocked Twitch state and does not verify live Twit
 - `.github/workflows/github-release.yml` verifies the existing tag against the
   dispatched source SHA and checks branch/package/lock/source version equality.
   Only the final publishing job has `contents: write`. `publish_release.py` creates
-  or resumes an asset-free draft and refuses to modify published releases. Native
-  desktop helper builds and release assets are retired. PR jobs never publish.
+  or resumes a draft and refuses to modify published releases. Native helper builds
+  cover Windows x64, Linux x64, macOS arm64 and macOS x64 from the verified source SHA.
+  Validate archive contents and checksums before upload, and remote size/digests before
+  publication. PR jobs never publish. The helper asks only for the dashboard URL.
 - Keep browser/control listeners private; do not revive standalone sidecar URLs or
-  credential-upload routes. The standard Alpine image owns login and renewal.
+  unrestricted credential-upload routes. The standard Alpine image owns default login
+  and renewal; an admitted desktop helper supplies only an initial validated session.
 
 
 ### Manual Testing

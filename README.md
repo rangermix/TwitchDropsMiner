@@ -33,13 +33,13 @@ With Docker installed, choose one setup below. Shell examples use Bash
 Pull and start the published image:
 
 ```bash
-docker pull rangermix/twitch-drops-miner:2.1.0
+docker pull rangermix/twitch-drops-miner:2.1.1
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.1.0
+  rangermix/twitch-drops-miner:2.1.1
 ```
 
 ### Docker Compose
@@ -50,7 +50,7 @@ inside it. Set `TZ` to your home internet connection's timezone:
 ```yaml
 services:
   twitch-drops-miner:
-    image: rangermix/twitch-drops-miner:2.1.0
+    image: rangermix/twitch-drops-miner:2.1.1
     container_name: twitch-drops-miner
     init: true
     stop_grace_period: 30s
@@ -91,7 +91,10 @@ included in the image. Your everyday browser profile is separate.
 TDM renews the session automatically. **Settings → Log out of Twitch**, at the
 bottom, clears this miner’s session and opens sign in again for account replacement.
 See [authentication](docs/authentication.md) and [troubleshooting](docs/troubleshooting.md).
-The integrated login is included in [v2.1.0](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.1.0).
+If Twitch rejects the embedded browser, select **Use desktop helper** and run the
+matching Windows, Linux, or macOS helper with your dashboard address. The first helper
+to connect is accepted during a ten-minute window; no pairing code is needed.
+See [desktop helper downloads and steps](docs/authentication.md#desktop-helper-fallback).
 
 ## Updating Docker
 

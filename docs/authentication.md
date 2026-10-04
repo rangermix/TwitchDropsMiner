@@ -1,8 +1,10 @@
 # Twitch login
 
-TDM shows an interactive Chromium browser inside its dashboard when no valid Twitch
-session is available. The browser runs in the miner’s Docker container. No desktop
-helper, local browser installation, additional port, or session upload is needed.
+TDM shows an interactive Chromium browser inside its dashboard by default when no valid
+Twitch session is available. It runs in the miner’s Docker container. An optional
+[desktop helper](#desktop-helper-fallback) lets you sign in on your own computer if
+Twitch rejects the embedded browser. Both paths use the dashboard port and the same
+server-side session verification and automatic renewal.
 
 ## Sign in
 
@@ -20,7 +22,7 @@ Sessions and integrity proofs are checked locally against Twitch before acceptan
 
 ## Docker and timezone
 
-Use the published `rangermix/twitch-drops-miner:2.1.0` image or build the current source.
+Use the published `rangermix/twitch-drops-miner:2.1.1` image or build the current source.
 The image includes Chromium, Xvfb, a window manager and noVNC. It does not need a
 display on the home server or NAS. Only the dashboard port is published; VNC and
 browser control remain on container loopback addresses.
@@ -29,6 +31,70 @@ Set `TZ` to match the timezone of your home internet connection, for example
 `TZ=Australia/Sydney`. A mismatched timezone can cause Twitch to reject the browser.
 Keep the host clock correct. If the miner uses a proxy, the interactive browser uses
 the container’s network; use consistent network routing for login and mining.
+
+## Desktop helper fallback
+
+The optional desktop helper is available in v2.1.1. It opens a temporary browser on
+your computer for Twitch sign-in, then sends the verified session to your miner.
+The embedded browser remains the default, and TDM still verifies the account and
+renewal on the miner server. Twitch can reject either browser; this fallback does
+not guarantee successful sign-in.
+
+Download the helper matching your **miner version** from the sign-in screen or its
+[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.1.1).
+Choose the platform of the computer where you will run the helper, which may differ
+from your miner server:
+
+| Computer | v2.1.1 archive |
+| --- | --- |
+| Windows x64 | `tdm-login-helper-2.1.1-windows-x64.tar.gz` |
+| Linux x64 | `tdm-login-helper-2.1.1-linux-x64.tar.gz` |
+| macOS Apple silicon (arm64) | `tdm-login-helper-2.1.1-macos-arm64.tar.gz` |
+| macOS Intel (x64) | `tdm-login-helper-2.1.1-macos-x64.tar.gz` |
+
+Extract the archive to a folder before running it. Install a native Chrome, Chromium,
+or Firefox 143+ browser on that computer; the helper does not include a browser.
+
+1. On the sign-in screen, choose **Use desktop helper**. This closes the embedded
+   browser and opens a ten-minute window for one desktop helper to connect.
+2. Within ten minutes, run `tdm-login-helper.exe` on Windows or `./tdm-login-helper`
+   from the extracted folder in a Linux/macOS terminal. Enter the dashboard address
+   shown by TDM, such as `http://192.168.1.10:8080`. The helper asks only for this URL;
+   there is no pairing code or dashboard-password prompt. `localhost` works only
+   when the helper and miner run on the same computer.
+3. Complete Twitch sign-in and verification in the helper-opened browser. Close all
+   windows of that browser instance normally after Twitch confirms the login; on
+   macOS, quit that instance. Keep the helper running while it reopens its temporary
+   profile, verifies the session, and sends it directly to the selected miner.
+4. Wait for the helper's success message and the normal dashboard. The helper and
+   desktop computer are no longer needed for automatic renewal.
+
+Only enable helper access when you are ready to connect from a trusted home network.
+The first helper that reaches the miner during that window is admitted; later
+connections are rejected. The connection expires after ten minutes and is revoked
+by cancellation, logout, or restarting TDM. **Return to embedded browser** revokes
+desktop access. If the helper fails before completing login, return to the embedded
+browser and select **Use desktop helper** again to open a new window.
+If the helper cannot determine whether its upload succeeded, check
+the dashboard before starting over; it does not repeat a credential upload automatically.
+
+For a source checkout, activate the project environment and run:
+
+```bash
+python login_helper.py --tdm http://192.168.1.10:8080
+```
+
+The helper connects using the dashboard address. `--browser chrome`,
+`--browser chromium`, or `--browser firefox` selects a browser; automatic selection
+tries them in that order. `--chrome`, `--chromium`, and `--firefox` accept an installed
+native executable path. Flatpak and Snap browser launchers are not supported. The source
+environment setup is in [CONTRIBUTING.md](../CONTRIBUTING.md#development-setup).
+
+The release's `SHA256SUMS` file lists checksums for all four helper archives. Use the
+same dashboard address you normally trust, on your home network or over HTTPS with
+a valid certificate. Your everyday browser profiles are untouched; temporary helper
+profiles are removed when the helper finishes. Keep any profile left after a crash
+private, and never copy cookies or authentication files into the dashboard.
 
 ## Existing installations
 
@@ -80,9 +146,10 @@ permissions, and omits miner secrets from browser environment variables. If a bi
 mount cannot enforce private permissions, login fails with `BROWSER_ISOLATION`; use
 a Linux filesystem or a Docker named volume for data/logs.
 
-A source installation additionally needs Linux, a root miner process with a separate
+A source installation using the embedded browser additionally needs Linux, a root miner process with a separate
 `tdm-browser` system user, `chromium`, `Xvfb`, `openbox`, `x11vnc` and `xdotool`, noVNC
-at `/usr/share/novnc`, and timezone data. Ordinary source processes can restore saved
-sessions, but use Docker for new interactive login.
+at `/usr/share/novnc`, and timezone data. The desktop helper is an alternative for
+interactive sign-in, but the miner host still needs Chromium for server-side
+verification and renewal. See [source installation](installation.md#run-from-source).
 
 [All guides](README.md) · [Next: Games and drops](usage.md)

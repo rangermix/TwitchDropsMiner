@@ -7,7 +7,7 @@ from collections.abc import Callable
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, HTTPException, WebSocket
+from fastapi import APIRouter, HTTPException, Request, WebSocket
 from starlette.websockets import WebSocketDisconnect
 
 from src.auth.session_bundle import SessionError
@@ -30,6 +30,8 @@ class SessionAPI:
         self.router.add_api_route("/api/session/finish", self.finish, methods=["POST"])
         self.router.add_api_route("/api/session/retry", self.retry, methods=["POST"])
         self.router.add_api_route("/api/session/logout", self.logout, methods=["POST"])
+        self.router.add_api_route("/api/session/helper/enable", self.enable_helper, methods=["POST"])
+        self.router.add_api_route("/api/session/helper/cancel", self.cancel_helper, methods=["POST"])
         self.router.add_api_websocket_route("/api/session/vnc", self.viewer)
 
     def client(self) -> Twitch:
@@ -40,13 +42,29 @@ class SessionAPI:
 
     @staticmethod
     def failure(error: SessionError) -> HTTPException:
-        return HTTPException(409 if error.code == "BROWSER_STATE" else 503,
+        return HTTPException(409 if error.code in ("BROWSER_STATE", "HELPER_STATE") else 503,
                              "session_" + error.code.lower())
 
     async def status(self):
         client = self.client()
         return {**client.session_controller.status(), "browser": client.login_browser.status(),
+                "helper": client.helper.status(),
                 "logged_in": client._auth_state._logged_in.is_set()}
+
+    async def enable_helper(self, request: Request):
+        try:
+            token = self.auth.token(request.scope)
+            await self.client().enable_helper(lambda: self.auth.allowed(token))
+            return await self.status()
+        except SessionError as error:
+            raise self.failure(error) from None
+
+    async def cancel_helper(self):
+        try:
+            await self.client().cancel_helper()
+            return await self.status()
+        except SessionError as error:
+            raise self.failure(error) from None
 
     async def finish(self):
         try:
@@ -57,6 +75,8 @@ class SessionAPI:
 
     async def retry(self):
         try:
+            if self.client().helper.selected:
+                raise SessionError("HELPER_STATE")
             await self.client().login_browser.retry()
             return await self.status()
         except SessionError as error:
