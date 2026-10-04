@@ -1853,3 +1853,24 @@ header h1 {
 
 .browser-login-access { margin-top: 16px; }
 .browser-login-access summary { cursor: pointer; }
+
+.browser-helper-downloads {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    padding-left: 20px;
+}
+
+.browser-helper-connection { max-width: 680px; margin-top: 16px; }
+.browser-helper-connection label { display: block; margin: 12px 0 6px; }
+.browser-helper-connection input {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+.browser-helper-downloads a { color: var(--accent-color); }

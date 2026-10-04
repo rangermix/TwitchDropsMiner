@@ -1,7 +1,8 @@
 # Installation
 
-Run TDM on your own computer or home server with Docker. The published v2.1.0 image
-includes the dashboard's Twitch login browser and automatic session renewal.
+Run TDM on your own computer or home server with Docker. The published v2.1.1 image
+includes the dashboard's Twitch login browser, optional desktop-helper access, and
+automatic session renewal.
 No desktop or display is needed on the server. Older images use their release's
 authentication instructions.
 
@@ -10,13 +11,13 @@ authentication instructions.
 Pull and start the published image:
 
 ```bash
-docker pull rangermix/twitch-drops-miner:2.1.0
+docker pull rangermix/twitch-drops-miner:2.1.1
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.1.0
+  rangermix/twitch-drops-miner:2.1.1
 ```
 
 Open [http://localhost:8080](http://localhost:8080). From another computer on your home
@@ -59,7 +60,7 @@ timezone of your home internet connection before starting:
 ```yaml
 services:
   twitch-drops-miner:
-    image: rangermix/twitch-drops-miner:2.1.0
+    image: rangermix/twitch-drops-miner:2.1.1
     container_name: twitch-drops-miner
     init: true
     stop_grace_period: 30s
@@ -80,7 +81,7 @@ Start it from that folder:
 docker compose pull && docker compose up -d
 ```
 
-This example pins `2.1.0`, like the Docker quick start. Change the image tag to choose
+This example pins `2.1.1`, like the Docker quick start. Change the image tag to choose
 another release, or use `latest` to select the current stable image whenever you
 pull and recreate. The restart policy does not update images automatically.
 
@@ -166,9 +167,12 @@ Install Python 3.12 or newer and [uv](https://docs.astral.sh/uv/). The miner hos
 needs a Chromium executable named `chromium` or `chromium-browser` on its `PATH` for
 automatic renewal.
 
-Use Docker for new interactive login. The integrated desktop requires a separate
+Docker includes the tools needed for new interactive login. The integrated desktop requires a separate
 unprivileged browser user and private miner data/log permissions; the image configures
-these automatically. Source requirements are listed in the [login guide](authentication.md#dashboard-access-and-source-installations).
+these automatically. The [desktop helper](authentication.md#desktop-helper-fallback)
+can handle interactive sign-in on another home computer; the miner still needs Chromium
+for verification and renewal. Embedded-browser source requirements are listed in the
+[login guide](authentication.md#dashboard-access-and-source-installations).
 From the repository root:
 
 ```bash
@@ -248,7 +252,7 @@ docker compose pull && docker compose up -d
 
 Compose pulls the selected image and recreates the service when its image or
 configuration changes, preserving its mounts. There is no need to remove the service
-manually. A version tag such as `2.1.0` stays on that release until you change it.
+manually. A version tag such as `2.1.1` stays on that release until you change it.
 
 For the repository's Compose file, run this from your original Git clone on the
 branch you intend to update:

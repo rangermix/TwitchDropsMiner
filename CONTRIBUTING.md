@@ -318,9 +318,12 @@ part of an ordinary contribution.
 
 The **Create Version Release** workflow remains the authorized release entry point.
 **GitHub Release** verifies the existing tag and branch/package/lock/source versions
-against the dispatched commit, then creates or resumes an asset-free draft before
+against the dispatched commit, then builds matching native helper archives and creates or resumes a draft before
 publication. Only its final job has publishing permission. Published releases are
-immutable on rerun. Native desktop helper builds and assets are retired.
+immutable on rerun. Helper archives for Windows x64, Linux x64, macOS arm64 and macOS x64
+must pass build, smoke, archive-content and checksum validation before publication.
+Only the final publishing job uploads assets, checks their remote sizes/digests, and
+publishes. Read-only pull-request builds never publish or use release credentials.
 Merging does not publish a new version or satisfy the frontend cache-key bump;
 dispatch the version workflow only when the maintainer authorizes a release.
 

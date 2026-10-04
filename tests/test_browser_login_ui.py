@@ -1,4 +1,4 @@
-"""The dashboard exposes container browser login status without legacy login entry points."""
+"""Login status updates leave embedded/optional-helper controls to the login panel."""
 
 import asyncio
 import subprocess
@@ -51,7 +51,7 @@ function showBrowserLogin() { legacyPrompts++; }
 function showOAuthCode() { legacyPrompts++; }
 """ + function + r"""
 updateLoginStatus({user_id: null, import_pending: true, oauth_pending: {url: 'private-old-url', code: 'private-old-code'}});
-assert.equal(legacyPrompts, 0, 'fresh login must use the container browser only');
+assert.equal(legacyPrompts, 0, 'login updates must not revive retired credential or device-code controls');
 assert.equal(document.getElementById('login-status').textContent, 'Login required');
 updateLoginStatus({user_id: 42, status: 'Logged in'});
 assert.equal(document.getElementById('login-status').textContent, 'Logged in (User ID: 42)');
