@@ -1883,13 +1883,15 @@ header {
 }
 
 .header-top {
-    gap: 24px;
+    display: grid;
+    grid-template-columns: auto max-content minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
     margin-bottom: 0;
-    flex-wrap: wrap;
 }
 
 header h1 {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 500;
     color: var(--text-primary);
     white-space: nowrap;
@@ -1897,15 +1899,14 @@ header h1 {
 
 .tabs {
     margin-bottom: 0;
-    gap: 4px;
-    flex: 1 1 auto;
-    flex-wrap: wrap;
+    gap: 3px;
+    min-width: 0;
+    flex-wrap: nowrap;
 }
 
 .tab-button {
     flex: none;
-    padding: 8px 14px;
-    font-size: 14px;
+    font-size: 13px;
     background: transparent;
     border: none;
     border-radius: 8px;
@@ -1924,8 +1925,25 @@ header h1 {
 }
 
 .header-controls {
-    gap: 14px;
-    flex-wrap: wrap;
+    gap: 10px;
+    min-width: 0;
+    width: auto;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+}
+
+.header-controls > :not(.header-user):not(#web-auth-logout-result) {
+    flex: none;
+}
+
+#web-auth-logout-result:empty {
+    display: none;
+}
+
+#web-auth-logout-result {
+    min-width: 0;
+    max-width: 160px;
+    overflow-wrap: anywhere;
 }
 
 .header-user {
@@ -1943,6 +1961,13 @@ header h1 {
 .header-user .help-text {
     font-size: 11px;
     margin: 0;
+}
+
+.header-user .login-status,
+.header-user .help-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .header-user .help-text:empty {
@@ -2315,26 +2340,36 @@ header h1 {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1279px) {
     .header-top {
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 10px 14px;
+        grid-template-columns: auto minmax(0, 1fr);
     }
 
     .tabs {
-        order: 3;
-        flex: 1 1 100%;
-        overflow-x: auto;
+        grid-column: 1 / -1;
+        grid-row: 2;
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 600px) {
+    .header-top {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .tabs {
+        grid-row: 3;
+        justify-content: center;
     }
 
     .header-controls {
-        width: auto;
-        margin-left: auto;
+        grid-row: 2;
+        justify-content: flex-start;
         flex-wrap: wrap;
     }
+}
 
+@media (max-width: 768px) {
     .progress-layout {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -2353,26 +2388,23 @@ header h1 {
 header h1 {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
 .brand-icon {
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
     color: var(--text-secondary);
     flex: none;
-}
-
-.tabs {
-    gap: 6px;
 }
 
 .tab-button {
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
+    gap: 6px;
+    padding: 8px;
+    white-space: nowrap;
     box-shadow: none;
 }
 
@@ -2415,7 +2447,10 @@ header h1 {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    min-width: 46px;
+    max-width: 250px;
+    flex: 1 1 auto;
 }
 
 .user-avatar {
@@ -2443,12 +2478,26 @@ header h1 {
 .header-user .login-panel {
     display: block;
     text-align: left;
+    min-width: 0;
 }
 
 .header-user .login-status {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-primary) !important;
+}
+
+@media (max-width: 600px) {
+    .header-user {
+        flex-basis: 100%;
+        max-width: none;
+    }
+
+    .header-user .login-status,
+    .header-user .help-text {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
 }
 
 .language-selector select {

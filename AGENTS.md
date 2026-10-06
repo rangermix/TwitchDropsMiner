@@ -203,6 +203,14 @@ lang/                # Translation JSON files (20 languages)
   Use canonical channel `login`/`url` for thumbnails and Twitch links; `name` is a display
   label and may contain localized characters. Keep the card title translated.
   Regression: `test_stream_preview.py`.
+- The dashboard header keeps brand, translated tabs and account controls in one row
+  from 1280 CSS pixels. Narrower screens give navigation a separate row; phones also
+  group account controls and allow account text to wrap. Desktop account/renewal text
+  may shorten with ellipsis, but its full translated text remains in the DOM and title.
+  Update both titles on state changes, including logout and renewal errors. Check all
+  20 locales, dashboard logout controls, keyboard tab navigation and narrow viewports
+  in a rendered browser. `test_header_frontend.py` and `test_browser_login_panel.py`
+  cover full tooltip text and removal of stale account/renewal information.
 
 **src/websocket/pool.py** - WebSocket management:
 
@@ -700,8 +708,14 @@ The application uses a web-based interface accessible via browser:
 
 **Dockerfile:**
 
-- Based on `python:3-alpine`, including Chromium for internal SDK renewal
-- Installs dependencies from `pyproject.toml`
+- Uses floating `python:alpine` and `alpine:latest` base tags, including Chromium for
+  internal SDK renewal. Upgrade Alpine packages during builds; security rebuilds must
+  pull current base images and bypass cached package-install layers.
+  Copy noVNC browser assets from a separate stage; the application's authenticated VNC
+  proxy replaces websockify, so its unused server dependencies stay out of the runtime.
+- Installs dependencies from `pyproject.toml`, then removes installed pip and its vendored
+  modules; Python's bundled `ensurepip` bootstrap wheel remains. Dependency changes
+  require rebuilding the image.
 - Exposes port 8080
 - Health check on the public `/healthz` endpoint
 

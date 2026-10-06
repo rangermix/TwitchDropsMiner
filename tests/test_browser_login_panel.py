@@ -87,6 +87,20 @@ def run_panel(body):
 
 
 @pytest.mark.skipif(NODE is None, reason="Node required")
+def test_renewal_tooltip_preserves_translation_and_clears_stale_text():
+    run_panel(r"""
+t.renewal_ready = '<b>A long translated renewal message</b>';
+panel.updateStatus(status('idle',true));
+assert.equal(el('twitch-renewal-status').title,t.renewal_ready);
+assert.equal(el('twitch-renewal-status').textContent,t.renewal_ready);
+panel.updateStatus(status('idle',false));
+assert.equal(el('twitch-renewal-status').title,'');
+panel.updateStatus({...status('idle',true),renewal_error:true});
+assert.equal(el('twitch-renewal-status').title,t.renewal_retry);
+""")
+
+
+@pytest.mark.skipif(NODE is None, reason="Node required")
 def test_login_shows_vnc_and_returns_only_after_verification_cleanup():
     run_panel(r"""
 assert.equal(el('dashboard').hidden,true);

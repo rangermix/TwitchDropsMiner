@@ -25,7 +25,9 @@ services operated for other users are outside its support scope.
 
 The redesigned dashboard's **Now Watching** card automatically shows a Twitch JPEG
 thumbnail, refreshed on channel updates at most once per minute. It does not play video
-or audio. This dashboard change is available from source pending release.
+or audio. The header adapts to longer translations and smaller screens; hover over
+shortened account or renewal text to read it in full. This dashboard change is available
+from source pending release.
 
 ## Quick start
 
@@ -79,6 +81,8 @@ For either setup, open <http://localhost:8080>, or `http://YOUR-SERVER:8080` fro
 another device on your home network. Keep the `data` directory when updating.
 For Compose management, source builds, and switching an existing installation to
 Compose, see the [installation guide](docs/installation.md#docker-compose).
+For source security rebuilds with refreshed base images and packages, see the
+[build instructions](docs/installation.md#docker).
 
 ## Sign in
 
@@ -186,6 +190,7 @@ or [buying the maintainer a coffee](https://buymeacoffee.com/rangermix).
 <!-- contributors:start -->
 | Contributor | Merged pull requests |
 | --- | --- |
+| [@0zLloen](https://github.com/0zLloen) | [#152](https://github.com/rangermix/TwitchDropsMiner/pull/152) |
 | [@3lb0z0](https://github.com/3lb0z0) | [#110](https://github.com/rangermix/TwitchDropsMiner/pull/110) |
 | [@birdhimself](https://github.com/birdhimself) | [#41](https://github.com/rangermix/TwitchDropsMiner/pull/41) |
 | [@capkz](https://github.com/capkz) | [#70](https://github.com/rangermix/TwitchDropsMiner/pull/70) |

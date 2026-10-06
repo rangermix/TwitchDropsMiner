@@ -1169,6 +1169,7 @@ function updateLoginStatus(data) {
         statusEl.textContent = t.login?.status?.required || 'Login required';
         statusEl.style.color = 'var(--text-secondary)';
     }
+    statusEl.title = statusEl.textContent;
     const avatarEl = document.getElementById('user-avatar');
     if (avatarEl) {
         const avatarUrl = data.avatar_url;
