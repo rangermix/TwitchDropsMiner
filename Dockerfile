@@ -1,8 +1,8 @@
 # Extract only noVNC's browser library, without installing its websockify server.
-FROM alpine:3.24 AS novnc-assets
+FROM alpine:latest AS novnc-assets
 RUN apk add --no-cache novnc
 
-FROM python:3.14-alpine3.24
+FROM python:alpine
 
 # Build arguments for metadata
 ARG BUILD_DATE

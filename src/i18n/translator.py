@@ -82,6 +82,23 @@ class GUIBrowserLogin(TypedDict):
     action_failed: str
     renewal_ready: str
     renewal_retry: str
+    helper_title: str
+    helper_help: str
+    helper_downloads: str
+    helper_builds_note: str
+    helper_cancel: str
+    helper_instructions: str
+    helper_access_help: str
+    helper_url: str
+    helper_waiting: str
+    helper_connected: str
+    helper_verifying: str
+    helper_error: str
+    helper_expired: str
+    helper_windows: str
+    helper_linux: str
+    helper_macos_arm: str
+    helper_macos_intel: str
 
 
 class GUILoginForm(TypedDict):
@@ -342,7 +359,66 @@ class GUIMessages(TypedDict):
     wanted: GUIWanted
 
 
+class HelperErrors(TypedDict):
+    destination: str
+    disabled: str
+    expired: str
+    busy: str
+    chrome_missing: str
+    chromium_missing: str
+    login_missing: str
+    firefox_missing: str
+    browser_missing: str
+    firefox_version: str
+    firefox_login: str
+    browser: str
+    browser_owner: str
+    login_timeout: str
+    network: str
+    redirect: str
+    response: str
+    rejected: str
+    server_browser: str
+    result_unknown: str
+    browser_cleanup: str
+    profile_cleanup: str
+    browser_protocol: str
+    capture_timeout: str
+    capture_limit: str
+    session_expired: str
+    session_invalid: str
+    sdk: str
+    validation: str
+    account: str
+    twitch_network: str
+    failed: str
+
+
+class HelperMessages(TypedDict):
+    errors: HelperErrors
+    browser_help: str
+    chromium_help: str
+    firefox_help: str
+    browser_conflict: str
+    result_unknown: str
+    title: str
+    destination_prompt: str
+    destination: str
+    connecting: str
+    login: str
+    capturing: str
+    sending: str
+    success: str
+    cancelled: str
+    wait_to_close: str
+    tdm_help: str
+    chrome_help: str
+    language_help: str
+    no_pause_help: str
+
+
 class Translation(TypedDict):
+    helper: HelperMessages
     language_name: str
     english_name: str
     status: StatusMessages

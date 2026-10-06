@@ -25,23 +25,58 @@ services operated for other users are outside its support scope.
 
 ## Quick start
 
-With Docker installed, pull and start the published image:
+With Docker installed, choose one setup below. Shell examples use Bash
+(Linux, macOS, or WSL).
+
+### Docker run
+
+Pull and start the published image:
 
 ```bash
-docker pull rangermix/twitch-drops-miner:2.1.0
+docker pull rangermix/twitch-drops-miner:2.1.1
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.1.0
+  rangermix/twitch-drops-miner:2.1.1
 ```
 
-Open <http://localhost:8080>, or `http://YOUR-SERVER:8080` from another device on your
-home network. Keep the `data` directory when updating or recreating the container.
-For Docker Compose, installation without Docker, and updates, see the
-[installation guide](docs/installation.md), including how to rebuild with refreshed
-base images and security updates.
+### Docker Compose
+
+For a new installation, create a dedicated folder and save this as `compose.yaml`
+inside it. Set `TZ` to your home internet connection's timezone:
+
+```yaml
+services:
+  twitch-drops-miner:
+    image: rangermix/twitch-drops-miner:2.1.1
+    container_name: twitch-drops-miner
+    init: true
+    stop_grace_period: 30s
+    shm_size: 256m
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      TZ: Australia/Sydney
+    restart: unless-stopped
+```
+
+From that folder, pull and start the image:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+For either setup, open <http://localhost:8080>, or `http://YOUR-SERVER:8080` from
+another device on your home network. Keep the `data` directory when updating.
+For Compose management, source builds, and switching an existing installation to
+Compose, see the [installation guide](docs/installation.md#docker-compose).
+For source security rebuilds with refreshed base images and packages, see the
+[build instructions](docs/installation.md#docker).
 
 ## Sign in
 
@@ -58,7 +93,55 @@ included in the image. Your everyday browser profile is separate.
 TDM renews the session automatically. **Settings → Log out of Twitch**, at the
 bottom, clears this miner’s session and opens sign in again for account replacement.
 See [authentication](docs/authentication.md) and [troubleshooting](docs/troubleshooting.md).
-The integrated login is included in [v2.1.0](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.1.0).
+If Twitch rejects the embedded browser, select **Use desktop helper** and run the
+matching Windows, Linux, or macOS helper with your dashboard address. The first helper
+to connect is accepted during a ten-minute window; no pairing code is needed.
+See [desktop helper downloads and steps](docs/authentication.md#desktop-helper-fallback).
+
+## Updating Docker
+
+### With docker run
+
+For the `docker run` setup above, run this from the **same folder** so `${PWD}/data`
+still points to your existing data. Keep your own timezone and any custom container
+name, ports, mounts, or environment options when adapting the commands.
+Review the [release notes](https://github.com/rangermix/TwitchDropsMiner/releases) first.
+
+```bash
+docker pull rangermix/twitch-drops-miner:latest &&
+docker stop --timeout 30 twitch-drops-miner &&
+docker rm twitch-drops-miner &&
+docker run -d \
+  --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
+  -p 8080:8080 -e TZ=Australia/Sydney \
+  -v "${PWD}/data:/app/data" \
+  --restart unless-stopped \
+  rangermix/twitch-drops-miner:latest
+```
+
+This replaces the container while keeping the mounted data. `latest` selects the
+current stable image when you pull; it does not update automatically. To choose a
+specific release, replace `latest` in both places with its version tag.
+
+### With Docker Compose
+
+For the published-image setup above, change the `image:` tag in `compose.yaml` to
+the release you want, or use `latest`. From the folder containing that file, run:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+For the repository's source-building `docker-compose.yml`, run this from your
+original Git clone on the branch you intend to update:
+
+```bash
+git pull --ff-only && docker compose up -d --build
+```
+
+This builds that branch's source, which may be newer than the published release, and
+reuses the configured data/log mounts. For named volumes, custom Compose files, and
+backup guidance, see [detailed update steps](docs/installation.md#persistent-data-and-upgrades).
 
 ## Upgrading to v2.0
 
@@ -107,7 +190,7 @@ or [buying the maintainer a coffee](https://buymeacoffee.com/rangermix).
 | [@EthanBlazkowicz](https://github.com/EthanBlazkowicz) | [#33](https://github.com/rangermix/TwitchDropsMiner/pull/33) |
 | [@Klages](https://github.com/Klages) | [#94](https://github.com/rangermix/TwitchDropsMiner/pull/94) · [#95](https://github.com/rangermix/TwitchDropsMiner/pull/95) |
 | [@Knight-sys](https://github.com/Knight-sys) | [#3](https://github.com/rangermix/TwitchDropsMiner/pull/3) |
-| [@rangermix](https://github.com/rangermix) | [#1](https://github.com/rangermix/TwitchDropsMiner/pull/1) · [#2](https://github.com/rangermix/TwitchDropsMiner/pull/2) · [#7](https://github.com/rangermix/TwitchDropsMiner/pull/7) · [#8](https://github.com/rangermix/TwitchDropsMiner/pull/8) · [#9](https://github.com/rangermix/TwitchDropsMiner/pull/9) · [#13](https://github.com/rangermix/TwitchDropsMiner/pull/13) · [#20](https://github.com/rangermix/TwitchDropsMiner/pull/20) · [#24](https://github.com/rangermix/TwitchDropsMiner/pull/24) · [#29](https://github.com/rangermix/TwitchDropsMiner/pull/29) · [#32](https://github.com/rangermix/TwitchDropsMiner/pull/32) · [#45](https://github.com/rangermix/TwitchDropsMiner/pull/45) · [#74](https://github.com/rangermix/TwitchDropsMiner/pull/74) · [#79](https://github.com/rangermix/TwitchDropsMiner/pull/79) · [#80](https://github.com/rangermix/TwitchDropsMiner/pull/80) · [#84](https://github.com/rangermix/TwitchDropsMiner/pull/84) · [#86](https://github.com/rangermix/TwitchDropsMiner/pull/86) · [#88](https://github.com/rangermix/TwitchDropsMiner/pull/88) · [#93](https://github.com/rangermix/TwitchDropsMiner/pull/93) · [#89](https://github.com/rangermix/TwitchDropsMiner/pull/89) · [#90](https://github.com/rangermix/TwitchDropsMiner/pull/90) · [#91](https://github.com/rangermix/TwitchDropsMiner/pull/91) · [#92](https://github.com/rangermix/TwitchDropsMiner/pull/92) · [#104](https://github.com/rangermix/TwitchDropsMiner/pull/104) · [#105](https://github.com/rangermix/TwitchDropsMiner/pull/105) · [#116](https://github.com/rangermix/TwitchDropsMiner/pull/116) · [#119](https://github.com/rangermix/TwitchDropsMiner/pull/119) · [#120](https://github.com/rangermix/TwitchDropsMiner/pull/120) · [#124](https://github.com/rangermix/TwitchDropsMiner/pull/124) · [#125](https://github.com/rangermix/TwitchDropsMiner/pull/125) · [#126](https://github.com/rangermix/TwitchDropsMiner/pull/126) · [#127](https://github.com/rangermix/TwitchDropsMiner/pull/127) · [#131](https://github.com/rangermix/TwitchDropsMiner/pull/131) · [#133](https://github.com/rangermix/TwitchDropsMiner/pull/133) · [#145](https://github.com/rangermix/TwitchDropsMiner/pull/145) · [#146](https://github.com/rangermix/TwitchDropsMiner/pull/146) · [#149](https://github.com/rangermix/TwitchDropsMiner/pull/149) |
+| [@rangermix](https://github.com/rangermix) | [#1](https://github.com/rangermix/TwitchDropsMiner/pull/1) · [#2](https://github.com/rangermix/TwitchDropsMiner/pull/2) · [#7](https://github.com/rangermix/TwitchDropsMiner/pull/7) · [#8](https://github.com/rangermix/TwitchDropsMiner/pull/8) · [#9](https://github.com/rangermix/TwitchDropsMiner/pull/9) · [#13](https://github.com/rangermix/TwitchDropsMiner/pull/13) · [#20](https://github.com/rangermix/TwitchDropsMiner/pull/20) · [#24](https://github.com/rangermix/TwitchDropsMiner/pull/24) · [#29](https://github.com/rangermix/TwitchDropsMiner/pull/29) · [#32](https://github.com/rangermix/TwitchDropsMiner/pull/32) · [#45](https://github.com/rangermix/TwitchDropsMiner/pull/45) · [#74](https://github.com/rangermix/TwitchDropsMiner/pull/74) · [#79](https://github.com/rangermix/TwitchDropsMiner/pull/79) · [#80](https://github.com/rangermix/TwitchDropsMiner/pull/80) · [#84](https://github.com/rangermix/TwitchDropsMiner/pull/84) · [#86](https://github.com/rangermix/TwitchDropsMiner/pull/86) · [#88](https://github.com/rangermix/TwitchDropsMiner/pull/88) · [#93](https://github.com/rangermix/TwitchDropsMiner/pull/93) · [#89](https://github.com/rangermix/TwitchDropsMiner/pull/89) · [#90](https://github.com/rangermix/TwitchDropsMiner/pull/90) · [#91](https://github.com/rangermix/TwitchDropsMiner/pull/91) · [#92](https://github.com/rangermix/TwitchDropsMiner/pull/92) · [#104](https://github.com/rangermix/TwitchDropsMiner/pull/104) · [#105](https://github.com/rangermix/TwitchDropsMiner/pull/105) · [#116](https://github.com/rangermix/TwitchDropsMiner/pull/116) · [#119](https://github.com/rangermix/TwitchDropsMiner/pull/119) · [#120](https://github.com/rangermix/TwitchDropsMiner/pull/120) · [#124](https://github.com/rangermix/TwitchDropsMiner/pull/124) · [#125](https://github.com/rangermix/TwitchDropsMiner/pull/125) · [#126](https://github.com/rangermix/TwitchDropsMiner/pull/126) · [#127](https://github.com/rangermix/TwitchDropsMiner/pull/127) · [#131](https://github.com/rangermix/TwitchDropsMiner/pull/131) · [#133](https://github.com/rangermix/TwitchDropsMiner/pull/133) · [#145](https://github.com/rangermix/TwitchDropsMiner/pull/145) · [#146](https://github.com/rangermix/TwitchDropsMiner/pull/146) · [#149](https://github.com/rangermix/TwitchDropsMiner/pull/149) · [#153](https://github.com/rangermix/TwitchDropsMiner/pull/153) · [#154](https://github.com/rangermix/TwitchDropsMiner/pull/154) |
 | [@Sean-Destefano](https://github.com/Sean-Destefano) | [#49](https://github.com/rangermix/TwitchDropsMiner/pull/49) |
 | [@SimpliAj](https://github.com/SimpliAj) | [#72](https://github.com/rangermix/TwitchDropsMiner/pull/72) |
 | [@Stein-N](https://github.com/Stein-N) | [#71](https://github.com/rangermix/TwitchDropsMiner/pull/71) |

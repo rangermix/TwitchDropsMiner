@@ -1,0 +1,3 @@
+# Build tools only; the application's runtime dependencies remain in uv.lock.
+pyinstaller==6.22.3
+pyinstaller-hooks-contrib==2026.7

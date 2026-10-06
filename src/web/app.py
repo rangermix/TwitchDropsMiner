@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from src.config.paths import DATA_DIR
 from src.version import __version__
 from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
+from src.web.helper_api import HelperAPI
 from src.web.session_api import SessionAPI
 
 
@@ -54,6 +55,7 @@ twitch_client: Twitch | None = None
 _server_instance: uvicorn.Server | None = None
 
 app.include_router(SessionAPI(web_auth, lambda: twitch_client).router)
+app.include_router(HelperAPI(web_auth, lambda: twitch_client).router)
 
 
 def set_managers(gui: WebGUIManager, twitch: Twitch):

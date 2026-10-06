@@ -21,7 +21,9 @@ def api(tmp_path, monkeypatch):
     for name, value in {"path": tmp_path / "auth.json", "password_hash": "", "sessions": {},
                         "lock": asyncio.Lock(), "attempts": deque(), "origin": DashboardOrigin("")}.items():
         monkeypatch.setattr(auth, name, value)
-    miner = SimpleNamespace(session_controller=SimpleNamespace(status=lambda: {
+    miner = SimpleNamespace(helper=SimpleNamespace(selected=False, status=lambda: {
+        "state": "disabled", "expires_at": None, "error": None, "attempt": 0}, cancel=AsyncMock()),
+        session_controller=SimpleNamespace(status=lambda: {
         "session": {"state": "waiting", "user_id": None, "generation": 0}, "renewal_available": False,
         "renewal_error": None, "renewal_requires_login": False}),
         login_browser=SimpleNamespace(status=lambda: {"state": "starting", "attempt": 1, "error": None},
@@ -45,7 +47,8 @@ def test_status_only_contains_public_state(api):
     assert response.json()["browser"]["state"] == "starting"
     assert response.json()["logged_in"] is False
     assert response.headers["cache-control"] == "no-store"
-    assert set(response.json()) == {"session", "renewal_available", "renewal_error", "renewal_requires_login", "browser", "logged_in"}
+    assert set(response.json()) == {"session", "renewal_available", "renewal_error", "renewal_requires_login", "browser", "helper", "logged_in"}
+    assert set(response.json()["helper"]) == {"state", "expires_at", "error", "attempt"}
 
 
 @pytest.mark.parametrize("action", ["finish", "retry", "logout"])
@@ -71,9 +74,8 @@ def test_logout_failure_is_sanitized(api):
     assert response.json() == {"detail": "session_logout_failed"}
 
 
-@pytest.mark.parametrize("path", ["/api/helper/connect", "/api/helper/session", "/api/helper/result",
-                                  "/api/session/export", "/api/session/seed", "/api/session/pair"])
-def test_retired_helper_and_credential_routes_do_not_exist(api, path):
+@pytest.mark.parametrize("path", ["/api/session/export", "/api/session/seed", "/api/session/pair"])
+def test_unpaired_credential_routes_do_not_exist(api, path):
     client, miner = api
     assert client.get(path).status_code in (404, 405)
     assert client.post(path, json={}).status_code in (404, 405)

@@ -22,6 +22,29 @@
             <button id="twitch-login-retry" type="button" class="action-button" hidden>Retry</button>
         </div>
         <p id="twitch-login-error" role="status" aria-live="polite"></p>
+        <details id="twitch-helper-panel" class="browser-login-access">
+            <summary id="twitch-helper-title">Use desktop helper</summary>
+            <p id="twitch-helper-help"></p>
+            <p id="twitch-helper-downloads"></p>
+            <ul class="browser-helper-downloads">
+                <li><a id="twitch-helper-windows" href="https://github.com/rangermix/TwitchDropsMiner/releases/download/v__APP_VERSION__/tdm-login-helper-__APP_VERSION__-windows-x64.tar.gz">Windows (x64)</a></li>
+                <li><a id="twitch-helper-linux" href="https://github.com/rangermix/TwitchDropsMiner/releases/download/v__APP_VERSION__/tdm-login-helper-__APP_VERSION__-linux-x64.tar.gz">Linux (x64)</a></li>
+                <li><a id="twitch-helper-macos-arm" href="https://github.com/rangermix/TwitchDropsMiner/releases/download/v__APP_VERSION__/tdm-login-helper-__APP_VERSION__-macos-arm64.tar.gz">macOS (Apple silicon)</a></li>
+                <li><a id="twitch-helper-macos-intel" href="https://github.com/rangermix/TwitchDropsMiner/releases/download/v__APP_VERSION__/tdm-login-helper-__APP_VERSION__-macos-x64.tar.gz">macOS (Intel)</a></li>
+            </ul>
+            <p id="twitch-helper-builds-note"></p>
+            <div class="browser-login-actions">
+                <button id="twitch-helper-enable" type="button" class="action-button" disabled>Use desktop helper</button>
+                <button id="twitch-helper-cancel" type="button" class="action-button" hidden>Return to embedded browser</button>
+            </div>
+            <div id="twitch-helper-connection" class="browser-helper-connection" hidden>
+                <p id="twitch-helper-instructions"></p>
+                <label id="twitch-helper-url-label" for="twitch-helper-url"></label>
+                <input id="twitch-helper-url" type="text" readonly autocomplete="off" spellcheck="false">
+                <p id="twitch-helper-access-help"></p>
+            </div>
+            <p id="twitch-helper-status" role="status" aria-live="polite"></p>
+        </details>
         <details class="browser-login-access">
             <summary data-auth-text="title">Dashboard password</summary>
             <div id="twitch-login-access"></div>
