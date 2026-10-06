@@ -14,6 +14,12 @@ env:
   PYTHON_VERSION: '3.12'
 
 jobs:
+  native-helper:
+    name: Native helper builds and smoke tests
+    uses: ./.github/workflows/login-helper.yml
+    with:
+      source-ref: ${{ github.sha }}
+
   lint:
     name: Code Quality (Ruff & Mypy)
     runs-on: ubuntu-latest

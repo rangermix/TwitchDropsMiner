@@ -87,6 +87,11 @@ class TestDashboardAuth:
                 continue
             for method in operations:
                 response = protected.request(method, path)
+                if method == "post" and path == "/api/helper/connect":
+                    # Admission has its own dashboard-enabled, expiring gate; this
+                    # fixture has no running miner. Upload/result still need a ticket.
+                    assert response.status_code == 503, (method, path)
+                    continue
                 assert response.status_code == 401, (method, path)
         for path in ("/docs", "/openapi.json", "/static/app.js", "/socket.io/?EIO=4&transport=polling"):
             assert protected.get(path).status_code == 401, path

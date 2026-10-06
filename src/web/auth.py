@@ -157,6 +157,8 @@ class AuthMiddleware:
 
     PUBLIC = {"/login", "/healthz", "/api/auth/status", "/api/auth/login",
               "/static/auth.js", "/static/auth.css", "/static/styles.css", "/static/favicon.png"}
+    HELPER_NATIVE = frozenset({("POST", "/api/helper/connect"), ("POST", "/api/helper/session"),
+                              ("GET", "/api/helper/result")})
 
     def __init__(self, app: ASGIApp, auth: WebAuth):
         self.app, self.auth = app, auth
@@ -170,21 +172,22 @@ class AuthMiddleware:
         socket = scope["type"] == "websocket" or path.startswith("/socket.io")
         mutation = scope.get("method", "GET") not in ("GET", "HEAD", "OPTIONS")
         origin = connection.headers.get("origin")
+        helper_native = (scope.get("method"), path) in self.HELPER_NATIVE
         unsafe_origin = origin is not None and origin != self.auth.origin.expected(connection)
-        forbidden = (mutation or socket) and (
+        forbidden = (mutation or socket or helper_native) and (
             unsafe_origin or connection.headers.get("sec-fetch-site") == "cross-site"
-            or (mutation and not socket and connection.headers.get("x-tdm-request") != "1")
+            or ((mutation or helper_native) and not socket and connection.headers.get("x-tdm-request") != "1")
         )
         if forbidden:
             return await self.reject(scope, receive, send, 403, "forbidden")
-        if path not in self.PUBLIC and not self.auth.allowed(self.auth.token(scope)):
+        if path not in self.PUBLIC and not helper_native and not self.auth.allowed(self.auth.token(scope)):
             if path == "/" and scope["type"] == "http":
                 return await RedirectResponse("/login", status_code=303,
                     headers={"Cache-Control": "no-store"})(scope, receive, send)
             return await self.reject(scope, receive, send, 401, "authentication_required")
         # Bound auth payloads before Pydantic parses them; do not echo submitted secrets.
-        if mutation and path.startswith(("/api/auth/", "/api/session/")):
-            limit = 65536 if path.startswith("/api/session/") else 16384
+        if mutation and path.startswith(("/api/auth/", "/api/session/", "/api/helper/")):
+            limit = 16384 if path.startswith("/api/auth/") else 65536
             body = b""
             while True:
                 message = await receive()

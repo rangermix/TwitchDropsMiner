@@ -74,6 +74,7 @@ class WebGUIManager:
     def notify_session_change(self) -> None:
         status = {**self._twitch.session_controller.status(),
                   "browser": self._twitch.login_browser.status(),
+                  "helper": self._twitch.helper.status(),
                   "logged_in": self._twitch._auth_state._logged_in.is_set()}
         asyncio.create_task(self._broadcaster.emit("session_status", status))
 

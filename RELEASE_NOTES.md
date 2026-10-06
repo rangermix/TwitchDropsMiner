@@ -1,3 +1,38 @@
+# Release Notes - v2.1.1
+
+An optional desktop helper provides another way to sign in when Twitch rejects the
+embedded browser, as reported in [#148](https://github.com/rangermix/TwitchDropsMiner/issues/148).
+The dashboard's embedded browser remains the default.
+
+## Desktop helper fallback
+
+- Select **Use desktop helper** on the sign-in screen, run the helper matching this
+  release, and enter your dashboard URL. There is no pairing-code or extra
+  dashboard-password step. Access stays open for ten minutes and accepts the first
+  helper to connect; **Return to embedded browser** cancels access.
+- Downloadable archives cover **Windows x64**, **Linux x64**, **macOS Apple silicon
+  (arm64)**, and **macOS Intel (x64)**. Extract the archive and run it on a computer
+  with native Chrome, Chromium, or Firefox 143+. `SHA256SUMS` lists the archive checksums.
+- Complete Twitch verification in the helper's browser, then close that browser
+  instance normally (quit it on macOS). Leave the helper open until it reports success.
+  TDM verifies the account and renewal before restoring the dashboard.
+- Cancelling, logging out, or restarting TDM closes helper access. Invalidated attempts
+  cannot install a delayed session. The helper is no longer needed after successful
+  login; renewal continues on the miner. Instructions and errors support all 20 languages.
+
+The helper changes where interactive sign-in happens; it does not guarantee that
+Twitch will accept every login. See the
+[login guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Authentication#desktop-helper-fallback)
+for downloads, browser selection, and recovery.
+
+## Updating
+
+Update to `rangermix/twitch-drops-miner:2.1.1` while preserving your existing data
+mount, settings, timezone, and container options. Working saved sessions remain usable;
+a new sign-in is needed only when the existing session cannot be restored or renewed.
+Helper downloads must match the miner release. The normal dashboard login and
+automatic renewal remain available without running a desktop helper.
+
 # Release Notes - v2.1.0
 
 Twitch sign-in now happens inside the TDM dashboard using Chromium included in the

@@ -1,4 +1,4 @@
-"""The dashboard exposes container browser login status without legacy login entry points."""
+"""Login status updates leave embedded/optional-helper controls to the login panel."""
 
 import asyncio
 import subprocess
@@ -38,7 +38,7 @@ async def test_login_status_publishes_twitch_avatar_url():
     broadcaster = MagicMock(emit=AsyncMock())
     manager = MagicMock()
     manager._twitch._gql_client.request = AsyncMock(
-        return_value={"data": {"currentUser": {"profileImageURL": "https://static-cdn.jtvnw.net/avatar.png"}}}
+        return_value={"data": {"currentUser": {"id": "7", "profileImageURL": "https://static-cdn.jtvnw.net/avatar.png"}}}
     )
     login = LoginFormManager(broadcaster, manager)
     login.update("Logged in", 7)
@@ -52,22 +52,83 @@ async def test_avatar_requires_https_and_resets_on_account_change():
     broadcaster = MagicMock(emit=AsyncMock())
     manager = MagicMock()
     manager._twitch._gql_client.request = AsyncMock(
-        return_value={"data": {"currentUser": {"profileImageURL": "http://insecure.example/avatar.png"}}}
+        return_value={"data": {"currentUser": {"id": "7", "profileImageURL": "http://insecure.example/avatar.png"}}}
     )
     login = LoginFormManager(broadcaster, manager)
     login.update("Logged in", 7)
     for _ in range(5):
         await asyncio.sleep(0)
     assert "avatar_url" not in login.get_status()
-    manager._twitch._gql_client.request = AsyncMock(
-        return_value={"data": {"currentUser": {"profileImageURL": "https://static-cdn.jtvnw.net/avatar.png"}}}
-    )
+    manager._twitch._gql_client.request.assert_awaited_once()
+    manager._twitch._gql_client.request.reset_mock()
     login.update("Logged in", 7)
     for _ in range(5):
         await asyncio.sleep(0)
-    assert login.get_status()["avatar_url"] == "https://static-cdn.jtvnw.net/avatar.png"
+    manager._twitch._gql_client.request.assert_not_awaited()
+    assert "avatar_url" not in login.get_status()
     login.update("Logged out", None)
     assert "avatar_url" not in login.get_status()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("reply", [
+    {"data": {"currentUser": {"id": "8", "profileImageURL": "https://cdn.example/avatar.png"}}},
+    {"data": {"currentUser": {"profileImageURL": "https://cdn.example/avatar.png"}}},
+    {"data": {"currentUser": None}},
+    {"data": []},
+])
+async def test_avatar_rejects_wrong_account_or_malformed_response(reply):
+    manager = MagicMock()
+    manager._twitch._gql_client.request = AsyncMock(return_value=reply)
+    login = LoginFormManager(MagicMock(emit=AsyncMock()), manager)
+    login.update("Logged in", 7)
+    for _ in range(5):
+        await asyncio.sleep(0)
+    assert "avatar_url" not in login.get_status()
+
+
+@pytest.mark.asyncio
+async def test_avatar_failure_is_optional_and_does_not_repeat_or_log_response(caplog):
+    manager = MagicMock()
+    manager._twitch._gql_client.request = AsyncMock(side_effect=ValueError("private-provider-response"))
+    login = LoginFormManager(MagicMock(emit=AsyncMock()), manager)
+    with caplog.at_level("DEBUG", logger="TwitchDrops"):
+        for _ in range(3):
+            login.update("Logged in", 7)
+            for _ in range(5):
+                await asyncio.sleep(0)
+    manager._twitch._gql_client.request.assert_awaited_once()
+    assert "private-provider-response" not in caplog.text
+    assert login.get_status() == {"status": "Logged in", "user_id": 7}
+
+
+@pytest.mark.asyncio
+async def test_avatar_is_cancelled_when_login_is_cleared():
+    entered, cleaned = asyncio.Event(), asyncio.Event()
+    tasks = []
+
+    async def request(*args):
+        tasks.append(asyncio.current_task())
+        entered.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            cleaned.set()
+
+    manager = MagicMock()
+    manager._twitch._gql_client.request = request
+    login = LoginFormManager(MagicMock(emit=AsyncMock()), manager)
+    login.update("Logged in", 7)
+    await entered.wait()
+    try:
+        login.update("Logged out", None)
+        await asyncio.sleep(0)
+        assert cleaned.is_set()
+        assert tasks[0].done()
+    finally:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
 
 @pytest.mark.skipif(NODE is None, reason="Node required for DOM behavior tests")
@@ -93,7 +154,7 @@ function showBrowserLogin() { legacyPrompts++; }
 function showOAuthCode() { legacyPrompts++; }
 """ + function + r"""
 updateLoginStatus({user_id: null, import_pending: true, oauth_pending: {url: 'private-old-url', code: 'private-old-code'}});
-assert.equal(legacyPrompts, 0, 'fresh login must use the container browser only');
+assert.equal(legacyPrompts, 0, 'login updates must not revive retired credential or device-code controls');
 assert.equal(document.getElementById('login-status').textContent, 'Login required');
 updateLoginStatus({user_id: 42, status: 'Logged in'});
 assert.equal(document.getElementById('login-status').textContent, 'Logged in (User ID: 42)');
