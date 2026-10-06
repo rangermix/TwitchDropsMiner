@@ -150,7 +150,10 @@
                 "emote": "Emotikon",
                 "other": "Jiné",
                 "clear": "Vymazat filtry",
-                "search_placeholder": "Hledat hry..."
+                "search_placeholder": "Hledat hry...",
+                "account_link": "Propojení účtu",
+                "all": "Všechny",
+                "linked": "Propojeno"
             }
         },
         "settings": {
@@ -214,7 +217,10 @@
             "confirm_btn": "Potvrdit",
             "cancel_btn": "Zrušit",
             "game_priority": "Priorita hry {game}",
-            "remove_game": "Odebrat {game}"
+            "remove_game": "Odebrat {game}",
+            "allow_unlinked_campaigns": "Povolit těžbu kampaní označených jako nepropojené",
+            "allow_unlinked_campaigns_warning": "Varování: Toto obchází pouze kontrolu propojení účtu v TDM. Nepropojí účty ani nezaručí postup na Twitchi, vyzvednutí nebo odměny ve hře. TDM může zobrazovat odhadované minuty. Zkontrolujte inventář Twitch Drops a propojte správný herní účet, abyste získali odměny.",
+            "allow_unlinked_campaigns_save_error": "Možnost těžby bez propojení účtu se nepodařilo uložit. Zkuste to znovu."
         },
         "help": {
             "about": "O Twitch Drops Miner",

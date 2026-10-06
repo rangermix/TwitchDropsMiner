@@ -150,7 +150,10 @@
                 "emote": "Emote",
                 "other": "Overig",
                 "clear": "Filters wissen",
-                "search_placeholder": "Zoek spellen..."
+                "search_placeholder": "Zoek spellen...",
+                "account_link": "Accountkoppeling",
+                "all": "Alle",
+                "linked": "Gekoppeld"
             }
         },
         "settings": {
@@ -214,7 +217,10 @@
             "confirm_btn": "Bevestigen",
             "cancel_btn": "Annuleren",
             "game_priority": "Prioriteit voor {game}",
-            "remove_game": "{game} verwijderen"
+            "remove_game": "{game} verwijderen",
+            "allow_unlinked_campaigns": "Mining toestaan voor campagnes die als niet gekoppeld worden gemeld",
+            "allow_unlinked_campaigns_warning": "Waarschuwing: dit omzeilt alleen de controle van TDM op accountkoppeling. Het koppelt geen accounts en garandeert geen Twitch-voortgang, claims of beloningen in het spel. TDM kan geschatte minuten tonen. Controleer je Twitch Drops-inventaris en koppel het juiste spelaccount om beloningen te ontvangen.",
+            "allow_unlinked_campaigns_save_error": "De miningoptie voor niet-gekoppelde accounts kon niet worden opgeslagen. Probeer het opnieuw."
         },
         "help": {
             "about": "Over Twitch Drops Miner",

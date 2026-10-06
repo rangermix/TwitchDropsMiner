@@ -14,9 +14,10 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictBool, field_validator
 
 from src.config.paths import DATA_DIR
+from src.config.settings import InventoryFilterSettings
 from src.version import __version__
 from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
 from src.web.helper_api import HelperAPI
@@ -72,6 +73,7 @@ class ChannelSelectRequest(BaseModel):
 
 
 class SettingsUpdate(BaseModel):
+    allow_unlinked_campaigns: StrictBool | None = None
     games_to_watch: list[str] | None = None
     drop_name_blacklist: list[str] | None = None
     dark_mode: bool | None = None
@@ -84,6 +86,17 @@ class SettingsUpdate(BaseModel):
     inventory_filters: dict | None = None
     inventory_list_view: bool | None = None
     mining_benefits: dict[str, bool] | None = None
+
+    @field_validator("inventory_filters")
+    @classmethod
+    def validate_link_status(cls, value: dict | None) -> dict | None:
+        if (
+            value is not None
+            and "link_status" in value
+            and value["link_status"] not in InventoryFilterSettings.LINK_STATUSES
+        ):
+            raise ValueError("Invalid account-link filter")
+        return value
 
 
 class ProxyVerifyRequest(BaseModel):

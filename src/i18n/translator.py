@@ -169,6 +169,9 @@ class GUIWanted(TypedDict):
 
 
 class GUIInvFilters(TypedDict):
+    account_link: str
+    all: str
+    linked: str
     active: str
     not_linked: str
     upcoming: str
@@ -230,6 +233,9 @@ class GUITelegramSettings(TypedDict):
 
 
 class GUISettings(TypedDict):
+    allow_unlinked_campaigns: str
+    allow_unlinked_campaigns_warning: str
+    allow_unlinked_campaigns_save_error: str
     general: GUISettingsGeneral
     telegram: GUITelegramSettings
     mining_benefits: str

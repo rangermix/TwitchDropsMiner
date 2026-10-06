@@ -150,7 +150,10 @@
                 "emote": "Émote",
                 "other": "Autre",
                 "clear": "Effacer les filtres",
-                "search_placeholder": "Rechercher des jeux..."
+                "search_placeholder": "Rechercher des jeux...",
+                "account_link": "Liaison du compte",
+                "all": "Toutes",
+                "linked": "Lié"
             }
         },
         "settings": {
@@ -214,7 +217,10 @@
             "confirm_btn": "Confirmer",
             "cancel_btn": "Annuler",
             "game_priority": "Priorité de {game}",
-            "remove_game": "Retirer {game}"
+            "remove_game": "Retirer {game}",
+            "allow_unlinked_campaigns": "Autoriser le minage des campagnes signalées comme non liées",
+            "allow_unlinked_campaigns_warning": "Attention : ceci contourne uniquement la vérification de liaison de TDM. Cela ne lie pas les comptes et ne garantit ni progression Twitch, ni récupération, ni récompenses en jeu. TDM peut afficher des minutes estimées. Vérifiez votre inventaire de Drops Twitch et liez le bon compte de jeu pour recevoir les récompenses.",
+            "allow_unlinked_campaigns_save_error": "Impossible d’enregistrer l’option de minage des comptes non liés. Réessayez."
         },
         "help": {
             "about": "À propos de Twitch Drops Miner",

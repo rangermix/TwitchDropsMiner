@@ -30,6 +30,10 @@ longer translations, grouping account controls and navigation on smaller screens
 Hover over shortened account or renewal text to read it in full. This dashboard change
 is available from source pending release.
 
+Inventory supports **All / Linked / Not Linked** account-link filters. Settings has a
+default-off option to mine campaigns reported as Not Linked; read its warning and
+check Twitch progress. See the [dashboard guide](docs/usage.md#account-link-override).
+
 ## Quick start
 
 With Docker installed, choose one setup below. Shell examples use Bash
@@ -107,6 +111,10 @@ If Twitch rejects the embedded browser, select **Use desktop helper** and run th
 matching Windows, Linux, or macOS helper with your dashboard address. The first helper
 to connect is accepted during a ten-minute window; no pairing code is needed.
 See [desktop helper downloads and steps](docs/authentication.md#desktop-helper-fallback).
+
+Keep session data directories private. On Windows, credential files inherit the
+directory's access permissions (ACLs); Unix file-mode numbers do not verify those
+permissions. On Linux/macOS, session files use owner-only permissions.
 
 ## Updating Docker
 

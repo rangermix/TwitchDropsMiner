@@ -140,10 +140,10 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         filters = mock_settings.inventory_filters
         self.assertTrue(filters["show_active"])
         self.assertEqual(filters["game_name_search"], ["Game A"])
-        self.assertFalse(filters["show_only_not_linked"])
+        self.assertEqual(filters["link_status"], "all")
         self.assertNotIn("show_not_linked", filters)
         self.assertTrue(response_settings["inventory_filters"]["show_not_linked"])
-        self.assertFalse(response_settings["inventory_filters"]["show_only_not_linked"])
+        self.assertEqual(response_settings["inventory_filters"]["link_status"], "all")
         self.assertNotIn("show_not_linked", manager.get_settings()["inventory_filters"])
         mock_broadcaster.emit.assert_awaited_once_with(
             "settings_updated", response_settings
@@ -165,7 +165,7 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
 
         filters = mock_settings.inventory_filters
         self.assertTrue(filters["show_active"])
-        self.assertFalse(filters["show_only_not_linked"])
+        self.assertEqual(filters["link_status"], "all")
         self.assertNotIn("show_not_linked", filters)
         self.assertNotIn("show_not_linked", response_settings["inventory_filters"])
 

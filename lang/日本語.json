@@ -150,7 +150,10 @@
                 "emote": "エモート",
                 "other": "その他",
                 "clear": "フィルター解除",
-                "search_placeholder": "ゲームを検索..."
+                "search_placeholder": "ゲームを検索...",
+                "account_link": "アカウント連携",
+                "all": "すべて",
+                "linked": "連携済み"
             }
         },
         "settings": {
@@ -214,7 +217,10 @@
             "confirm_btn": "確認",
             "cancel_btn": "キャンセル",
             "game_priority": "{game} の優先順位",
-            "remove_game": "{game} を削除"
+            "remove_game": "{game} を削除",
+            "allow_unlinked_campaigns": "未連携と表示されたキャンペーンのマイニングを許可する",
+            "allow_unlinked_campaigns_warning": "警告：TDMのアカウント連携チェックのみをスキップします。アカウントは連携されず、Twitchの進捗、Dropsの受け取り、ゲーム内報酬は保証されません。TDMは推定分数を表示する場合があります。TwitchのDropsインベントリを確認し、報酬を受け取るために正しいゲームアカウントを連携してください。",
+            "allow_unlinked_campaigns_save_error": "アカウント連携のマイニング設定を保存できませんでした。もう一度お試しください。"
         },
         "help": {
             "about": "Twitch Drops Minerについて",

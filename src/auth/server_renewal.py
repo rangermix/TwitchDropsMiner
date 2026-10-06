@@ -51,21 +51,21 @@ class OwnedChromium:
 
     @staticmethod
     async def stop(process: asyncio.subprocess.Process) -> None:
-        def send(sig: signal.Signals) -> None:
+        def send(*, force: bool = False) -> None:
             with suppress(ProcessLookupError):
                 if os.name == "posix":
-                    os.killpg(process.pid, sig)
+                    os.killpg(process.pid, signal.SIGKILL if force else signal.SIGTERM)
                 elif process.returncode is None:
-                    process.terminate() if sig == signal.SIGTERM else process.kill()
+                    process.kill() if force else process.terminate()
 
-        send(signal.SIGTERM)
+        send()
         try:
             await asyncio.wait_for(process.wait(), 5)
         except TimeoutError:
             pass
         finally:
             # The leader can exit before descendants that ignore SIGTERM.
-            send(signal.SIGKILL)
+            send(force=True)
         if process.returncode is None:
             try:
                 await asyncio.wait_for(process.wait(), 2)

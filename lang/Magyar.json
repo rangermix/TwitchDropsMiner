@@ -182,7 +182,10 @@
             "confirm_btn": "Megerősítés",
             "cancel_btn": "Mégse",
             "game_priority": "{game} prioritása",
-            "remove_game": "{game} eltávolítása"
+            "remove_game": "{game} eltávolítása",
+            "allow_unlinked_campaigns": "A nem összekapcsoltként jelzett kampányok bányászatának engedélyezése",
+            "allow_unlinked_campaigns_warning": "Figyelem: Ez csak a TDM fiók-összekapcsolási ellenőrzését kerüli meg. Nem kapcsol össze fiókokat, és nem garantál Twitch-előrehaladást, igénylést vagy játékon belüli jutalmakat. A TDM becsült perceket jeleníthet meg. Ellenőrizd a Twitch Drops-készletedet, és kapcsold össze a megfelelő játékfiókot a jutalmak átvételéhez.",
+            "allow_unlinked_campaigns_save_error": "Nem sikerült menteni a fiók-összekapcsolási bányászati beállítást. Próbáld újra."
         },
         "help": {
             "about": "A Twitch Drops Miner-ről",
@@ -269,7 +272,10 @@
                 "emote": "Emotikon",
                 "other": "Egyéb",
                 "clear": "Szűrők törlése",
-                "search_placeholder": "Írjon a játékok kereséséhez..."
+                "search_placeholder": "Írjon a játékok kereséséhez...",
+                "account_link": "Fiók összekapcsolása",
+                "all": "Összes",
+                "linked": "Összekapcsolva"
             }
         },
         "history": {

@@ -182,7 +182,10 @@
             "confirm_btn": "Confirm",
             "cancel_btn": "Cancel",
             "game_priority": "Priority for {game}",
-            "remove_game": "Remove {game}"
+            "remove_game": "Remove {game}",
+            "allow_unlinked_campaigns": "Allow mining campaigns reported as Not Linked",
+            "allow_unlinked_campaigns_warning": "Warning: This bypasses only TDM's account-link check. It does not link accounts or guarantee Twitch progress, claims, or in-game rewards. TDM may show estimated minutes. Check Twitch's Drops inventory and link the correct game account to receive rewards.",
+            "allow_unlinked_campaigns_save_error": "Could not save the account-link mining option. Please try again."
         },
         "help": {
             "about": "About Twitch Drops Miner",
@@ -269,7 +272,10 @@
                 "emote": "Emote",
                 "other": "Other",
                 "clear": "Clear Filters",
-                "search_placeholder": "Type to search games..."
+                "search_placeholder": "Type to search games...",
+                "account_link": "Account link",
+                "all": "All",
+                "linked": "Linked"
             }
         },
         "history": {
