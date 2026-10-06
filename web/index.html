@@ -175,8 +175,12 @@
                             <span>Active</span>
                         </label>
                         <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-not-linked" />
-                            <span>Not Linked</span>
+                            <span id="filter-link-status-label">Account link</span>
+                            <select id="filter-link-status" aria-labelledby="filter-link-status-label">
+                                <option value="all">All</option>
+                                <option value="linked">Linked</option>
+                                <option value="not_linked">Not Linked</option>
+                            </select>
                         </label>
                         <label class="filter-checkbox">
                             <input type="checkbox" id="filter-upcoming" checked />
@@ -322,6 +326,15 @@
                             <span>Other</span>
                         </label>
                     </div>
+                </section>
+
+                <section class="settings-section">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="allow-unlinked-campaigns" aria-describedby="allow-unlinked-warning" />
+                        <span id="allow-unlinked-label">Allow mining campaigns reported as Not Linked</span>
+                    </label>
+                    <p id="allow-unlinked-warning" class="help-text account-link-warning" role="note">Warning: This bypasses only TDM's account-link check. It does not link accounts or guarantee Twitch progress, claims, or in-game rewards. TDM may show estimated minutes. Check Twitch's Drops inventory and link the correct game account to receive rewards.</p>
+                    <p id="allow-unlinked-error" class="help-text" role="alert" hidden></p>
                 </section>
 
                 <section class="settings-section">

@@ -708,7 +708,7 @@ function getInventoryFilters() {
     // Get filter state from UI checkboxes and selected games array
     return {
         show_active: document.getElementById('filter-active')?.checked || false,
-        show_only_not_linked: document.getElementById('filter-not-linked')?.checked || false,
+        link_status: document.getElementById('filter-link-status')?.value || 'all',
         show_upcoming: document.getElementById('filter-upcoming')?.checked || false,
         show_expired: document.getElementById('filter-expired')?.checked || false,
         show_finished: document.getElementById('filter-finished')?.checked || false,
@@ -732,7 +732,8 @@ function campaignMatchesFilters(campaign, filters) {
     if (!filters.show_finished && isFinished) return false;
 
     // Link state narrows the status result instead of joining its OR group.
-    if (filters.show_only_not_linked && campaign.linked) return false;
+    if (filters.link_status === 'linked' && !campaign.linked) return false;
+    if (filters.link_status === 'not_linked' && campaign.linked) return false;
 
     // Active, upcoming, and expired remain OR-based status filters.
     const hasStatusFilters = filters.show_active || filters.show_upcoming || filters.show_expired;
@@ -792,7 +793,7 @@ function onInventoryFilterChange() {
 function clearInventoryFilters() {
     // Uncheck all filter checkboxes
     document.getElementById('filter-active').checked = false;
-    document.getElementById('filter-not-linked').checked = false;
+    document.getElementById('filter-link-status').value = 'all';
     document.getElementById('filter-upcoming').checked = false;
     document.getElementById('filter-expired').checked = false;
     document.getElementById('filter-finished').checked = false;
@@ -1203,6 +1204,8 @@ function updateLoginStatus(data) {
 
 function updateSettingsUI(settings) {
     state.settings = settings;
+    const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
+    if (allowUnlinked) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('inventory-list-view').checked = settings.inventory_list_view || false;
     applyInventoryViewMode(settings.inventory_list_view || false);
@@ -1261,7 +1264,7 @@ function updateSettingsUI(settings) {
     // Restore inventory filters from settings
     if (settings.inventory_filters) {
         document.getElementById('filter-active').checked = settings.inventory_filters.show_active || false;
-        document.getElementById('filter-not-linked').checked = settings.inventory_filters.show_only_not_linked || false;
+        document.getElementById('filter-link-status').value = settings.inventory_filters.link_status || 'all';
         document.getElementById('filter-upcoming').checked = settings.inventory_filters.show_upcoming || false;
         document.getElementById('filter-expired').checked = settings.inventory_filters.show_expired || false;
         document.getElementById('filter-finished').checked = settings.inventory_filters.show_finished || false;
@@ -1900,6 +1903,34 @@ async function saveSettings() {
     }
 }
 
+async function onUnlinkedMiningChange() {
+    const input = document.getElementById('allow-unlinked-campaigns');
+    const error = document.getElementById('allow-unlinked-error');
+    const requested = input.checked;
+    const message = state.translations.gui?.settings?.allow_unlinked_campaigns_save_error ||
+        'Could not save the account-link mining option. Please try again.';
+    input.disabled = true;
+    error.hidden = true;
+    error.textContent = '';
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ allow_unlinked_campaigns: requested })
+        });
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || data.settings?.allow_unlinked_campaigns !== requested) throw new Error(message);
+        updateSettingsUI(data.settings);
+    } catch (failure) {
+        input.checked = state.settings.allow_unlinked_campaigns === true;
+        error.textContent = message;
+        error.hidden = false;
+    } finally {
+        input.disabled = false;
+    }
+}
+
 async function fetchAndPopulateLanguages() {
     try {
         const response = await fetch('/api/languages');
@@ -2020,6 +2051,12 @@ function applyTranslations(t) {
         if (generalHeader) generalHeader.textContent = t.gui.settings.general.name;
 
         const benefitsHeader = document.getElementById('settings-benefits-header');
+        const allowUnlinkedLabel = document.getElementById('allow-unlinked-label');
+        if (allowUnlinkedLabel) allowUnlinkedLabel.textContent = t.gui.settings.allow_unlinked_campaigns;
+        const allowUnlinkedWarning = document.getElementById('allow-unlinked-warning');
+        if (allowUnlinkedWarning) allowUnlinkedWarning.textContent = t.gui.settings.allow_unlinked_campaigns_warning;
+        const allowUnlinkedError = document.getElementById('allow-unlinked-error');
+        if (allowUnlinkedError && !allowUnlinkedError.hidden) allowUnlinkedError.textContent = t.gui.settings.allow_unlinked_campaigns_save_error;
         if (benefitsHeader && t.gui.settings.mining_benefits) benefitsHeader.textContent = t.gui.settings.mining_benefits;
 
         const dropBlacklistHeader = document.getElementById('settings-drop-blacklist-header');
@@ -2248,7 +2285,11 @@ function applyTranslations(t) {
             if (el) el.textContent = text;
         };
         updateLabel('filter-active', f.active);
-        updateLabel('filter-not-linked', f.not_linked);
+        document.getElementById('filter-link-status-label').textContent = f.account_link;
+        const linkStatus = document.getElementById('filter-link-status');
+        linkStatus.querySelector('[value="all"]').textContent = f.all;
+        linkStatus.querySelector('[value="linked"]').textContent = f.linked;
+        linkStatus.querySelector('[value="not_linked"]').textContent = f.not_linked;
         updateLabel('filter-upcoming', f.upcoming);
         updateLabel('filter-expired', f.expired);
         updateLabel('filter-finished', f.finished);
@@ -2376,6 +2417,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
     document.getElementById('minimum-refresh-interval').addEventListener('change', saveSettings);
     document.getElementById('drop-name-blacklist').addEventListener('change', saveSettings);
+    document.getElementById('allow-unlinked-campaigns').addEventListener('change', onUnlinkedMiningChange);
     // Proxy uses a manual "Set Proxy" button instead of auto-save
     document.getElementById('set-proxy-btn').addEventListener('click', () => {
         const proxyInput = document.getElementById('proxy-url');
@@ -2423,7 +2465,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inventory filters
     document.getElementById('filter-active').addEventListener('change', onInventoryFilterChange);
-    document.getElementById('filter-not-linked').addEventListener('change', onInventoryFilterChange);
+    document.getElementById('filter-link-status').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-upcoming').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-expired').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-finished').addEventListener('change', onInventoryFilterChange);

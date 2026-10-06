@@ -150,7 +150,10 @@
                 "emote": "Emote",
                 "other": "Outro",
                 "clear": "Limpar Filtros",
-                "search_placeholder": "Pesquisar jogos..."
+                "search_placeholder": "Pesquisar jogos...",
+                "account_link": "Vínculo da conta",
+                "all": "Todas",
+                "linked": "Vinculada"
             }
         },
         "settings": {
@@ -214,7 +217,10 @@
             "confirm_btn": "Confirmar",
             "cancel_btn": "Cancelar",
             "game_priority": "Prioridade de {game}",
-            "remove_game": "Remover {game}"
+            "remove_game": "Remover {game}",
+            "allow_unlinked_campaigns": "Permitir minerar campanhas indicadas como não vinculadas",
+            "allow_unlinked_campaigns_warning": "Aviso: isto ignora apenas a verificação de vínculo de conta do TDM. Não vincula contas nem garante progresso na Twitch, resgates ou recompensas no jogo. O TDM pode mostrar minutos estimados. Confira o inventário de Drops da Twitch e vincule a conta de jogo correta para receber recompensas.",
+            "allow_unlinked_campaigns_save_error": "Não foi possível salvar a opção de mineração de contas não vinculadas. Tente novamente."
         },
         "help": {
             "about": "Sobre o Twitch Drops Miner",

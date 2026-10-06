@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
-from typing import TypedDict
+from typing import Any, Literal, TypedDict, cast
 
 from yarl import URL
 
 from src.config import DEFAULT_LANG, SETTINGS_PATH
-from src.utils import DropIgnorePolicy, json_load, json_save
+from src.utils import DropIgnorePolicy, json_load, json_save, merge_json
 
 
 class InventoryFilters(TypedDict):
@@ -18,11 +19,12 @@ class InventoryFilters(TypedDict):
     show_benefit_other: bool
     show_expired: bool
     show_finished: bool
-    show_only_not_linked: bool
+    link_status: Literal["all", "linked", "not_linked"]
     show_upcoming: bool
 
 
 default_settings = {
+    "allow_unlinked_campaigns": False,
     "connection_quality": 1,
     "dark_mode": False,
     "drop_name_blacklist": [],
@@ -37,7 +39,7 @@ default_settings = {
         "show_benefit_other": True,
         "show_expired": False,
         "show_finished": False,
-        "show_only_not_linked": False,
+        "link_status": "all",
         "show_upcoming": True,
     },
     "inventory_list_view": False,
@@ -54,8 +56,32 @@ default_settings = {
 }
 
 
+class InventoryFilterSettings:
+    """Normalize display filters and migrate the previous restrictive checkbox."""
+
+    LINK_STATUSES = ("all", "linked", "not_linked")
+
+    @classmethod
+    def normalize(
+        cls, updates: dict[str, Any], current: InventoryFilters | None = None
+    ) -> InventoryFilters:
+        values: dict[str, Any] = deepcopy(dict(current or {}))
+        if "link_status" not in updates and "show_only_not_linked" in updates:
+            values["link_status"] = (
+                "not_linked" if updates["show_only_not_linked"] is True else "all"
+            )
+        values.update(updates)
+        if values.get("link_status") not in cls.LINK_STATUSES:
+            values["link_status"] = "all"
+        template = default_settings["inventory_filters"]
+        assert isinstance(template, dict)
+        merge_json(values, template)
+        return cast(InventoryFilters, values)
+
+
 @dataclass
 class Settings:
+    allow_unlinked_campaigns: bool
     connection_quality: int
     dark_mode: bool
     drop_name_blacklist: list[str]
@@ -74,7 +100,13 @@ class Settings:
 
     def load(self):
         # TODO: remvoe customized serde in the future
-        settings = json_load(SETTINGS_PATH, default_settings, merge=True)
+        # Migrate filters before the generic merge discards their previous key.
+        settings = json_load(SETTINGS_PATH, deepcopy(default_settings), merge=False)
+        filters = settings.get("inventory_filters")
+        settings["inventory_filters"] = InventoryFilterSettings.normalize(
+            filters if isinstance(filters, dict) else {}
+        )
+        merge_json(settings, default_settings)
         settings.pop("allow_helper_connection", None)
         for key, value in settings.items():
             if value is URL:

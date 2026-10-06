@@ -8,10 +8,10 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from src.config.settings import default_settings
+from src.config.settings import InventoryFilterSettings
 from src.i18n.translator import _
 from src.models.game import Game
-from src.utils import DropIgnorePolicy, merge_json
+from src.utils import DropIgnorePolicy
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -53,7 +53,7 @@ class SettingsManager:
         Args:
             legacy_show_not_linked: Request-scoped value echoed only in the
                 immediate settings POST response for a legacy frontend. It is
-                never persisted, mapped to ``show_only_not_linked``, or returned
+                never persisted, mapped to ``link_status``, or returned
                 by a later GET/page reload.
 
         Returns:
@@ -96,6 +96,12 @@ class SettingsManager:
             settings_data: Dictionary of settings to update
         """
         should_trigger_update = False
+        previous_allow_unlinked = getattr(self._settings, "allow_unlinked_campaigns", False)
+        requested_allow_unlinked = settings_data.get("allow_unlinked_campaigns")
+        override_changed = (
+            isinstance(requested_allow_unlinked, bool)
+            and requested_allow_unlinked != previous_allow_unlinked
+        )
         should_trigger_update |= self.check_and_update_setting(
             "games_to_watch", settings_data.get("games_to_watch"), True
         )
@@ -153,7 +159,19 @@ class SettingsManager:
             "mining_benefits", settings_data.get("mining_benefits"), True
         )
 
-        self._settings.save()
+        if override_changed and isinstance(requested_allow_unlinked, bool):
+            self._settings.allow_unlinked_campaigns = requested_allow_unlinked
+        try:
+            self._settings.save()
+        except Exception:
+            # A rejected save must not silently enable or disable live mining.
+            self._settings.allow_unlinked_campaigns = previous_allow_unlinked
+            raise
+        if override_changed:
+            self._log_change(
+                f"Setting changed: allow_unlinked_campaigns = {requested_allow_unlinked}"
+            )
+            should_trigger_update = True
         response_settings = self.get_settings(legacy_show_not_linked)
         asyncio.create_task(self._broadcaster.emit("settings_updated", response_settings))
 
@@ -164,14 +182,7 @@ class SettingsManager:
 
     def _normalize_inventory_filters(self, updates: dict[str, Any]) -> dict[str, Any]:
         """Merge partial filter updates and discard legacy or unknown keys."""
-        current: dict[str, Any] = copy.deepcopy(dict(self._settings.inventory_filters))
-        current.pop("show_not_linked", None)
-        current.update(updates)
-        current.pop("show_not_linked", None)
-        template = default_settings["inventory_filters"]
-        assert isinstance(template, dict)
-        merge_json(current, template)
-        return current
+        return dict(InventoryFilterSettings.normalize(updates, self._settings.inventory_filters))
 
     def check_and_update_setting(
         self,

@@ -6,10 +6,10 @@ import json
 import os
 import signal
 import sys
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from aiohttp import web
@@ -214,18 +214,28 @@ async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatc
     from src.auth.server_renewal import OwnedChromium
 
     calls, profiles, stopped = [], [], []
-    process = SimpleNamespace(pid=987654, returncode=None, wait=AsyncMock(return_value=0))
+    async def wait():
+        process.returncode = 0
+        return 0
+
+    process = SimpleNamespace(
+        pid=987654, returncode=None, wait=AsyncMock(side_effect=wait),
+        terminate=Mock(side_effect=lambda: stopped.append((987654, "terminate"))),
+        kill=Mock(side_effect=lambda: stopped.append((987654, "kill"))),
+    )
 
     async def spawn(*args, **kwargs):
         calls.append((args, kwargs))
         profile = Path(next(arg.split("=", 1)[1] for arg in args if arg.startswith("--user-data-dir=")))
         profiles.append(profile)
-        assert profile.stat().st_mode & 0o077 == 0
+        if os.name == "posix":
+            assert profile.stat().st_mode & 0o077 == 0
         (profile / "DevToolsActivePort").write_text("54321\n/devtools/browser/test-id\n")
         return process
 
     monkeypatch.setattr(asyncio, "create_subprocess_exec", spawn)
-    monkeypatch.setattr("os.killpg", lambda pid, sig: stopped.append((pid, sig)))
+    if os.name == "posix":
+        monkeypatch.setattr("os.killpg", lambda pid, sig: stopped.append((pid, sig)))
     browser = OwnedChromium("test-chromium", no_sandbox=True)
     if outcome == "startup_timeout":
         monkeypatch.setattr(browser, "wait_ready", AsyncMock(side_effect=TimeoutError))
@@ -247,6 +257,51 @@ async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatc
     assert "--headless=new" in args and "--remote-debugging-address=127.0.0.1" in args
     assert "--remote-debugging-port=0" in args
     assert kwargs["stdout"] == kwargs["stderr"] == asyncio.subprocess.DEVNULL
+    assert kwargs["start_new_session"] is (os.name == "posix")
+    if os.name == "posix":
+        assert stopped == [(process.pid, signal.SIGTERM), (process.pid, signal.SIGKILL)]
+    else:
+        assert stopped == [(process.pid, "terminate")]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("platform", ["posix", "nt"])
+@pytest.mark.parametrize("timeout", [False, True])
+async def test_owned_browser_cleanup_uses_platform_api_and_escalates(monkeypatch, platform, timeout):
+    from src.auth import server_renewal
+
+    waits = 0
+
+    async def wait():
+        nonlocal waits
+        waits += 1
+        if timeout and waits == 1:
+            raise TimeoutError
+        process.returncode = 0
+        return 0
+
+    process = SimpleNamespace(
+        pid=987654, returncode=None, wait=AsyncMock(side_effect=wait),
+        terminate=Mock(), kill=Mock(),
+    )
+    killpg = Mock()
+    # Patch only this module's OS/signal bindings; do not change pathlib's host OS.
+    monkeypatch.setattr(server_renewal, "os", SimpleNamespace(name=platform, killpg=killpg))
+    signals = {"SIGTERM": 15}
+    if platform == "posix":
+        signals["SIGKILL"] = 9
+    monkeypatch.setattr(server_renewal, "signal", SimpleNamespace(**signals))
+    await server_renewal.OwnedChromium.stop(process)
+    assert process.returncode == 0
+    assert process.wait.await_count == (2 if timeout else 1)
+    if platform == "posix":
+        assert killpg.call_args_list == [((process.pid, 15),), ((process.pid, 9),)]
+        process.terminate.assert_not_called()
+        process.kill.assert_not_called()
+    else:
+        killpg.assert_not_called()
+        process.terminate.assert_called_once()
+        assert process.kill.call_count == int(timeout)
 
 
 @pytest.mark.asyncio
@@ -284,10 +339,8 @@ async def test_owned_browser_stops_descendant_that_outlives_group_leader():
         output, _ = await ps.communicate()
         assert not output.strip() or output.strip().startswith(b"Z"), "live browser descendant escaped cleanup"
     finally:
-        try:
+        with suppress(ProcessLookupError):
             os.killpg(process.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
         await process.wait()
         server.close()
         await server.wait_closed()
@@ -416,7 +469,8 @@ async def test_source_restarts_from_server_replacement_and_validates_before_save
     assert seen[1].cookie.value == "new-cookie-1"
     assert seen[1].bundle.headers["client-integrity"] == "new-proof-1"
     assert transport.close.await_count == 2
-    assert path.stat().st_mode & 0o077 == 0
+    if os.name == "posix":
+        assert path.stat().st_mode & 0o077 == 0
 
 
 @pytest.mark.asyncio

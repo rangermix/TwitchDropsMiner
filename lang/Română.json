@@ -150,7 +150,10 @@
                 "emote": "Emoticon",
                 "other": "Altele",
                 "clear": "Șterge filtre",
-                "search_placeholder": "Caută jocuri..."
+                "search_placeholder": "Caută jocuri...",
+                "account_link": "Asocierea contului",
+                "all": "Toate",
+                "linked": "Asociat"
             }
         },
         "settings": {
@@ -214,7 +217,10 @@
             "confirm_btn": "Confirmă",
             "cancel_btn": "Anulează",
             "game_priority": "Prioritate pentru {game}",
-            "remove_game": "Elimină {game}"
+            "remove_game": "Elimină {game}",
+            "allow_unlinked_campaigns": "Permite colectarea din campanii raportate ca neasociate",
+            "allow_unlinked_campaigns_warning": "Avertisment: aceasta ocolește doar verificarea asocierii contului făcută de TDM. Nu asociază conturi și nu garantează progres pe Twitch, revendicări sau recompense în joc. TDM poate afișa minute estimate. Verifică inventarul Drops Twitch și asociază contul de joc corect pentru a primi recompense.",
+            "allow_unlinked_campaigns_save_error": "Opțiunea de colectare fără asocierea contului nu a putut fi salvată. Încearcă din nou."
         },
         "help": {
             "about": "Despre Twitch Drops Miner",

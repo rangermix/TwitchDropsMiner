@@ -150,7 +150,10 @@
                 "emote": "表情",
                 "other": "其他",
                 "clear": "清除過濾器",
-                "search_placeholder": "搜尋遊戲..."
+                "search_placeholder": "搜尋遊戲...",
+                "account_link": "帳號連結",
+                "all": "全部",
+                "linked": "已連結"
             }
         },
         "settings": {
@@ -214,7 +217,10 @@
             "confirm_btn": "確認",
             "cancel_btn": "取消",
             "game_priority": "{game} 的優先順序",
-            "remove_game": "移除 {game}"
+            "remove_game": "移除 {game}",
+            "allow_unlinked_campaigns": "允許挖掘顯示為「未連結」的活動",
+            "allow_unlinked_campaigns_warning": "警告：此選項僅略過 TDM 的帳號連結檢查。它不會連結帳號，也不保證 Twitch 進度、領取成功或遊戲內獎勵。TDM 可能顯示估算的分鐘數。請檢查 Twitch 的 Drops 庫存，並連結正確的遊戲帳號以接收獎勵。",
+            "allow_unlinked_campaigns_save_error": "無法儲存帳號連結挖掘選項，請重試。"
         },
         "help": {
             "about": "關於 Twitch Drops Miner",

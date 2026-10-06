@@ -150,7 +150,10 @@
                 "emote": "Emote",
                 "other": "Andet",
                 "clear": "Ryd filtre",
-                "search_placeholder": "Søg efter spil..."
+                "search_placeholder": "Søg efter spil...",
+                "account_link": "Kontoforbindelse",
+                "all": "Alle",
+                "linked": "Forbundet"
             }
         },
         "settings": {
@@ -214,7 +217,10 @@
             "confirm_btn": "Bekræft",
             "cancel_btn": "Annuller",
             "game_priority": "Prioritet for {game}",
-            "remove_game": "Fjern {game}"
+            "remove_game": "Fjern {game}",
+            "allow_unlinked_campaigns": "Tillad mining af kampagner vist som ikke forbundet",
+            "allow_unlinked_campaigns_warning": "Advarsel: Dette omgår kun TDMs kontrol af kontoforbindelsen. Det forbinder ikke konti og garanterer ikke Twitch-fremskridt, afhentning eller belønninger i spillet. TDM kan vise estimerede minutter. Kontrollér Twitch Drops-inventaret, og forbind den korrekte spilkonto for at modtage belønninger.",
+            "allow_unlinked_campaigns_save_error": "Kunne ikke gemme indstillingen for mining uden kontoforbindelse. Prøv igen."
         },
         "help": {
             "about": "Om Twitch Drops Miner",

@@ -242,8 +242,16 @@ lang/                # Translation JSON files (20 languages)
   case-insensitive substrings entered one per line; whitespace and blanks are removed and
   duplicates are casefolded while preserving the first spelling/order.
 - Inventory filters (Status, Benefit Type, Game Search); Active/Upcoming/Expired use
-  OR semantics, Not Linked narrows the result, and Finished opts claimed campaigns in.
-  Zero-minute subscription rewards are omitted from Inventory and Wanted Drops Queue;
+  OR semantics; All / Linked / Not Linked narrows the result using Twitch-reported
+  linkage, independently of mining eligibility. Finished opts claimed campaigns in.
+  Persist `inventory_filters.link_status`; migrate the previous `show_only_not_linked`
+  checkbox before merging defaults. The older `show_not_linked` key stays ignored.
+- `allow_unlinked_campaigns` defaults false. Only explicit boolean true bypasses the
+  campaign account-link gate; preserve raw `linked` metadata, badge/emote eligibility,
+  timing, ACL/category, Games to Watch, prerequisites, claims, and ignore checks.
+  Changes trigger game selection refresh. Keep the warning and save-failure feedback
+  translated and safely rendered. Estimated minutes do not prove Twitch progress.
+- Zero-minute subscription rewards are omitted from Inventory and Wanted Drops Queue;
   individually expired and non-mineable rewards are omitted from the queue without hiding
   upcoming or sequential rewards; successful claims refresh the queue immediately; the
   actively watched channel remains visible while game settings are changing
@@ -609,6 +617,14 @@ missing category/drops flags, offline and nonparticipating channels, disabled or
 Games to Watch selection, campaign/drop eligibility, active-campaign selection, and fallback
 priority and failover. It uses mocked Twitch state and does not verify live Twitch progress.
 
+Session persistence tests retain POSIX 0600/0700 assertions only on POSIX; Windows
+credential files inherit their destination directory ACLs, so mode bits cannot prove
+Windows privacy. Keep those directories private. Owned Chromium cleanup uses process
+groups on POSIX and terminate/kill on Windows without requiring SIGKILL there; retain
+both platform branches and graceful/forced-stop regression coverage. Firefox URL
+allowlist tests need a realistic capture deadline so scheduling delay does not mask
+protocol rejection; preserve rejection and target-cleanup assertions.
+
 ### Continuous Integration
 
 - `.github/workflows/validation.yml` runs Ruff, Mypy, the Python test suite, language
@@ -763,7 +779,6 @@ with this policy when reviewing proposals or documenting deployment options.
 
 - Multi-account support
 - Channel points mining
-- Mining for unlinked campaigns
 - Desktop GUI
 
 ### Claimed Drop History

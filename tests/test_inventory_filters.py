@@ -24,13 +24,13 @@ def test_inventory_filter_defaults_hide_finished_without_restricting_link_state(
     filters = default_settings["inventory_filters"]
 
     assert filters["show_finished"] is False
-    assert filters["show_only_not_linked"] is False
+    assert filters["link_status"] == "all"
     assert "show_not_linked" not in filters
 
     html = INDEX_HTML.read_text(encoding="utf-8")
-    input_tag = re.search(r'<input\b[^>]*\bid="filter-not-linked"[^>]*>', html)
-    assert input_tag is not None
-    assert re.search(r"\bchecked\b", input_tag.group(0)) is None
+    select_tag = re.search(r'<select\b[^>]*\bid="filter-link-status"[^>]*>', html)
+    assert select_tag is not None
+    assert '<option value="all">All</option>' in html
 
 
 def test_legacy_not_linked_setting_migrates_to_neutral_restriction():
@@ -41,7 +41,7 @@ def test_legacy_not_linked_setting_migrates_to_neutral_restriction():
     merge_json(legacy_filters, default_settings["inventory_filters"])
 
     assert "show_not_linked" not in legacy_filters
-    assert legacy_filters["show_only_not_linked"] is False
+    assert legacy_filters["link_status"] == "all"
 
 
 class TestInventoryDropUpdates(unittest.IsolatedAsyncioTestCase):
@@ -121,7 +121,7 @@ def test_campaign_filter_behavior_matrix():
     )
     base_filters = {
         "show_active": False,
-        "show_only_not_linked": False,
+        "link_status": "all",
         "show_upcoming": False,
         "show_expired": False,
         "show_finished": False,
@@ -170,17 +170,17 @@ def test_campaign_filter_behavior_matrix():
         case(
             expected=False,
             campaign_changes={"active": True},
-            filter_changes={"show_active": True, "show_only_not_linked": True},
+            filter_changes={"show_active": True, "link_status": "not_linked"},
         ),
         case(
             expected=True,
             campaign_changes={"active": True, "linked": False},
-            filter_changes={"show_active": True, "show_only_not_linked": True},
+            filter_changes={"show_active": True, "link_status": "not_linked"},
         ),
         case(
             expected=False,
             campaign_changes={"expired": True, "linked": False},
-            filter_changes={"show_active": True, "show_only_not_linked": True},
+            filter_changes={"show_active": True, "link_status": "not_linked"},
         ),
         case(
             expected=True,

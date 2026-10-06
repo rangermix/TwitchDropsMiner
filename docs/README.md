@@ -29,7 +29,9 @@ Support is best-effort and limited to that setup. VPS, cloud, other third-party
 hosting, and services operated for other users are outside the support scope.
 Continued compatibility with Twitch is not guaranteed.
 
-Your Twitch account must be linked to the relevant game account, and the reward must
+Link the correct game account to receive in-game rewards. TDM skips campaigns
+reported as Not Linked by default; the [optional override](usage.md#account-link-override)
+permits mining attempts without guaranteeing progress or delivery. The reward must
 be available to you and earned by watching. Review your
 [Twitch Drops campaigns](https://www.twitch.tv/drops/campaigns) before mining. Avoid
 watching Twitch manually with the same account while the miner is running, because

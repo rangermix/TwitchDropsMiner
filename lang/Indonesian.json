@@ -150,7 +150,10 @@
                 "emote": "Emote",
                 "other": "Lainnya",
                 "clear": "Hapus Filter",
-                "search_placeholder": "Cari game..."
+                "search_placeholder": "Cari game...",
+                "account_link": "Tautan akun",
+                "all": "Semua",
+                "linked": "Tertaut"
             }
         },
         "settings": {
@@ -214,7 +217,10 @@
             "confirm_btn": "Konfirmasi",
             "cancel_btn": "Batal",
             "game_priority": "Prioritas untuk {game}",
-            "remove_game": "Hapus {game}"
+            "remove_game": "Hapus {game}",
+            "allow_unlinked_campaigns": "Izinkan penambangan kampanye yang dilaporkan Tidak Tertaut",
+            "allow_unlinked_campaigns_warning": "Peringatan: Ini hanya melewati pemeriksaan tautan akun TDM. Ini tidak menautkan akun atau menjamin progres Twitch, klaim, atau hadiah dalam game. TDM dapat menampilkan perkiraan menit. Periksa inventaris Drops Twitch dan tautkan akun game yang benar untuk menerima hadiah.",
+            "allow_unlinked_campaigns_save_error": "Tidak dapat menyimpan opsi penambangan akun tidak tertaut. Silakan coba lagi."
         },
         "help": {
             "about": "Tentang Twitch Drops Miner",

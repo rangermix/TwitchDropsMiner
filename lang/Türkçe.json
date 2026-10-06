@@ -150,7 +150,10 @@
                 "emote": "İfade",
                 "other": "Diğer",
                 "clear": "Filtreleri Temizle",
-                "search_placeholder": "Oyun ara..."
+                "search_placeholder": "Oyun ara...",
+                "account_link": "Hesap bağlantısı",
+                "all": "Tümü",
+                "linked": "Bağlı"
             }
         },
         "settings": {
@@ -214,7 +217,10 @@
             "confirm_btn": "Onayla",
             "cancel_btn": "İptal",
             "game_priority": "{game} için öncelik",
-            "remove_game": "{game} oyununu kaldır"
+            "remove_game": "{game} oyununu kaldır",
+            "allow_unlinked_campaigns": "Bağlı Değil olarak bildirilen kampanyaların kazılmasına izin ver",
+            "allow_unlinked_campaigns_warning": "Uyarı: Bu yalnızca TDM’nin hesap bağlantısı kontrolünü atlar. Hesapları bağlamaz; Twitch ilerlemesini, ödül talebini veya oyun içi ödülleri garanti etmez. TDM tahmini dakikalar gösterebilir. Twitch Drops envanterini kontrol edin ve ödülleri almak için doğru oyun hesabını bağlayın.",
+            "allow_unlinked_campaigns_save_error": "Hesap bağlantısı kazım seçeneği kaydedilemedi. Lütfen tekrar deneyin."
         },
         "help": {
             "about": "Twitch Drops Miner Hakkında",

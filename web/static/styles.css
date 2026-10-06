@@ -21,6 +21,25 @@
     --hover-bg: #efeff4;
 }
 
+#filter-link-status {
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font: inherit;
+}
+
+.settings-section .account-link-warning {
+    color: var(--text-primary);
+    border-left: 3px solid var(--warning-color);
+    padding-left: 10px;
+}
+
+#allow-unlinked-error {
+    color: var(--error-color);
+}
+
 body.dark-mode {
     --bg-primary: #1a1a1a;
     --bg-secondary: #2a2a2a;

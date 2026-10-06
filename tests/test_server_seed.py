@@ -2,6 +2,7 @@
 
 import copy
 import json
+import os
 import stat
 
 import pytest
@@ -28,7 +29,8 @@ def test_seed_preserves_expired_integrity_context_for_new_issuance(tmp_path):
     path = tmp_path / "server-seed.json"
     PrivateSessionFile(path).write(seed.to_dict())
     assert ServerSeed.from_dict(PrivateSessionFile(path).read(), now=5000) == seed
-    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    if os.name == "posix":
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600
     assert "private-sdk-cookie" not in repr(seed)
     assert "test-token" not in repr(seed)
 
