@@ -204,9 +204,10 @@ lang/                # Translation JSON files (20 languages)
   label and may contain localized characters. Keep the card title translated.
   Regression: `test_stream_preview.py`.
 - The dashboard header keeps brand, translated tabs and account controls in one row
-  from 1280 CSS pixels. Narrower screens give navigation a separate row; phones also
-  group account controls and allow account text to wrap. Desktop account/renewal text
-  may shorten with ellipsis, but its full translated text remains in the DOM and title.
+  from 1280 CSS pixels. Narrower screens give navigation a separate row; screens through
+  768 pixels also group account controls and allow account text to wrap. Desktop
+  account/renewal text may shorten with ellipsis, but its full translated text remains
+  in the DOM and title.
   Update both titles on state changes, including logout and renewal errors. Check all
   20 locales, dashboard logout controls, keyboard tab navigation and narrow viewports
   in a rendered browser. `test_header_frontend.py` and `test_browser_login_panel.py`

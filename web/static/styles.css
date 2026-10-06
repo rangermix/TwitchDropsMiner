@@ -2352,7 +2352,7 @@ header h1 {
     }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
     .header-top {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -2487,7 +2487,7 @@ header h1 {
     color: var(--text-primary) !important;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
     .header-user {
         flex-basis: 100%;
         max-width: none;

@@ -25,9 +25,9 @@ services operated for other users are outside its support scope.
 
 The redesigned dashboard's **Now Watching** card automatically shows a Twitch JPEG
 thumbnail, refreshed on channel updates at most once per minute. It does not play video
-or audio. The header adapts to longer translations and smaller screens; hover over
-shortened account or renewal text to read it in full. This dashboard change is available
-from source pending release.
+or audio. The header adapts to longer translations, grouping account controls and
+navigation on smaller screens. Hover over shortened account or renewal text to read it
+in full. This dashboard change is available from source pending release.
 
 ## Quick start
 
