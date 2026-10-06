@@ -9,7 +9,8 @@ const state = {
     settings: {},
     currentDrop: null,
     countdownTimer: null,  // Track the active countdown timer
-    translations: {}  // Store current translations
+    translations: {},  // Store current translations
+    previewEnabled: false  // Explicit opt-in for this page only
 };
 
 // ==================== UI Utilities ====================
@@ -434,10 +435,18 @@ function updateNowWatching() {
     const t = state.translations.gui?.channels || {};
     const img = document.getElementById('now-watching-img');
     const preview = document.getElementById('now-watching-preview');
-    const enabled = Boolean(channel?.login);
+    const button = document.getElementById('now-watching-toggle');
+    if (!channel) state.previewEnabled = false;
+    const enabled = state.previewEnabled && Boolean(channel?.login);
     preview.hidden = !enabled;
+    button.disabled = !channel?.login;
+    button.setAttribute('aria-pressed', String(Boolean(enabled)));
+    button.textContent = enabled ? (t.hide_preview || 'Hide thumbnail') : (t.show_preview || 'Show thumbnail');
+    button.title = t.preview_help || 'Loads Twitch thumbnails and uses extra bandwidth. Off on each page load.';
     document.getElementById('now-watching-title').textContent = t.now_watching || 'Now Watching';
     document.getElementById('now-watching-live').textContent = t.online || 'Online';
+    document.getElementById('now-watching-off').textContent = t.preview_off || 'Thumbnail is off';
+    document.getElementById('now-watching-off').hidden = enabled;
     if (!enabled) {
         img.style.backgroundImage = '';
         delete img.dataset.src;
@@ -449,7 +458,7 @@ function updateNowWatching() {
     card.classList.remove('hidden');
     if (enabled) {
         const login = String(channel.login).toLowerCase();
-        // Channel events refresh the JPEG thumbnail at most once per minute.
+        // Only opted-in pages load thumbnails; channel events refresh at most once per minute.
         const url = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${encodeURIComponent(login)}-440x248.jpg?t=${Math.floor(Date.now() / 60000)}`;
         if (img.dataset.src !== url) {
             img.dataset.src = url;
@@ -461,6 +470,11 @@ function updateNowWatching() {
         ? ` | ${Number(channel.viewers).toLocaleString()} ${viewersText}`
         : '';
     document.getElementById('now-watching-info').textContent = channel.name + viewers;
+}
+
+function toggleNowWatchingPreview() {
+    state.previewEnabled = !state.previewEnabled;
+    updateNowWatching();
 }
 
 function renderChannels() {
@@ -2330,6 +2344,7 @@ function switchTab(tabName) {
 // ==================== Event Listeners ====================
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('now-watching-toggle').addEventListener('click', toggleNowWatchingPreview);
     // Fetch and display version information
     fetchAndDisplayVersion();
 

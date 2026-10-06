@@ -115,7 +115,11 @@
             "channel_count": "kanál",
             "channel_count_plural": "kanály",
             "viewers": "diváci",
-            "now_watching": "Právě sledovaný kanál"
+            "now_watching": "Právě sledovaný kanál",
+            "show_preview": "Zobrazit miniaturu",
+            "hide_preview": "Skrýt miniaturu",
+            "preview_off": "Miniatura je vypnutá",
+            "preview_help": "Načítá miniatury Twitch a využívá další přenosová data. Při každém načtení stránky je vypnutý."
         },
         "inventory": {
             "status": {

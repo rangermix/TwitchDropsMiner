@@ -2147,6 +2147,18 @@ header h1 {
     background: var(--error-color);
 }
 
+#now-watching-toggle {
+    margin: 0 14px 12px;
+    white-space: normal;
+}
+
+#now-watching-off {
+    flex: 1;
+    padding: 16px 14px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
 .now-watching-preview {
     flex: 1;
     min-height: 130px;

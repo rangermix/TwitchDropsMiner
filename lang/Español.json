@@ -115,7 +115,11 @@
             "channel_count": "canal",
             "channel_count_plural": "canales",
             "viewers": "espectadores",
-            "now_watching": "Viendo ahora"
+            "now_watching": "Viendo ahora",
+            "show_preview": "Mostrar miniatura",
+            "hide_preview": "Ocultar miniatura",
+            "preview_off": "La miniatura está desactivada",
+            "preview_help": "Carga miniaturas de Twitch y consume ancho de banda adicional. Desactivada cada vez que se carga la página."
         },
         "inventory": {
             "status": {

@@ -197,8 +197,10 @@ lang/                # Translation JSON files (20 languages)
   with the application version and serves `/` with `Cache-Control: no-cache`
 - Any `app.js` or `styles.css` change requires an application version bump through the release
   workflow before deployment so existing clients receive a new asset cache key
-- Now Watching automatically shows a JPEG thumbnail for the watched channel. Channel
-  events refresh it at most once per minute; losing the watched channel clears its source.
+- Now Watching offers a page-local thumbnail toggle, off on each page load. Only an
+  explicit opt-in loads a JPEG; channel events refresh it at most once per minute.
+  Disabling it clears the image source, and losing the watched channel resets the toggle.
+  Keep translated labels, native keyboard activation and `aria-pressed` state in sync.
   The dashboard does not play stream video or audio.
   Use canonical channel `login`/`url` for thumbnails and Twitch links; `name` is a display
   label and may contain localized characters. Keep the card title translated.
