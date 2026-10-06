@@ -114,7 +114,12 @@
             "no_channels_for_games": "選択したゲームのチャンネルが見つかりません...",
             "channel_count": "チャンネル",
             "channel_count_plural": "チャンネル",
-            "viewers": "視聴者"
+            "viewers": "視聴者",
+            "now_watching": "視聴中のチャンネル",
+            "show_preview": "サムネイルを表示",
+            "hide_preview": "サムネイルを非表示",
+            "preview_off": "サムネイルはオフです",
+            "preview_help": "Twitchのサムネイルを読み込み、追加の通信量を使用します。ページを読み込むたびにオフになります。"
         },
         "inventory": {
             "status": {

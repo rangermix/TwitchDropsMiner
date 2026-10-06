@@ -197,6 +197,23 @@ lang/                # Translation JSON files (20 languages)
   with the application version and serves `/` with `Cache-Control: no-cache`
 - Any `app.js` or `styles.css` change requires an application version bump through the release
   workflow before deployment so existing clients receive a new asset cache key
+- Now Watching offers a page-local thumbnail toggle, off on each page load. Only an
+  explicit opt-in loads a JPEG; channel events refresh it at most once per minute.
+  Disabling it clears the image source, and losing the watched channel resets the toggle.
+  Keep translated labels, native keyboard activation and `aria-pressed` state in sync.
+  The dashboard does not play stream video or audio.
+  Use canonical channel `login`/`url` for thumbnails and Twitch links; `name` is a display
+  label and may contain localized characters. Keep the card title translated.
+  Regression: `test_stream_preview.py`.
+- The dashboard header keeps brand, translated tabs and account controls in one row
+  from 1280 CSS pixels. Narrower screens give navigation a separate row; screens through
+  768 pixels also group account controls and allow account text to wrap. Desktop
+  account/renewal text may shorten with ellipsis, but its full translated text remains
+  in the DOM and title.
+  Update both titles on state changes, including logout and renewal errors. Check all
+  20 locales, dashboard logout controls, keyboard tab navigation and narrow viewports
+  in a rendered browser. `test_header_frontend.py` and `test_browser_login_panel.py`
+  cover full tooltip text and removal of stale account/renewal information.
 
 **src/websocket/pool.py** - WebSocket management:
 
@@ -316,6 +333,16 @@ progress to an ignored drop while the miner intentionally targets another reward
 - Preserve matching WEB client/device/token/integrity/user-agent for imported requests,
   `Channel.url` on WEB for beacon discovery, locale/schema parity and safe DOM rendering.
   Never include session, SDK, password or verification data in dashboard status/logs.
+- `LoginFormManager` may publish the account's Twitch avatar as an optional `avatar_url`
+  in login status. It is fetched once per account change through the authenticated
+  `currentUser` GQL raw query (`GQLRawQuery`), accepted only when it is an `https://`
+  URL, and rendered by the frontend as a CSS background on `#user-avatar` with the
+  initial-letter fallback preserved. It must never be sourced from or expose credentials.
+  Avatar requests are optional, bounded to ten seconds, attempted once per account
+  context, and accepted only for the matching `currentUser.id`. Track and cancel them
+  when login clears; cancel AND await them before identity replacement and shutdown.
+  Keep exception details out of avatar logs. Preserve responsive wrapping of header
+  navigation and account controls at tablet widths.
 - `HelperConnections` owns only temporary admission and receipts. It must call the
   shared `SessionController.accept()`; never add a second renewal worker or bypass
   current account validation, authentication-change draining, or logged-out persistence.

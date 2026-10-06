@@ -114,7 +114,12 @@
             "no_channels_for_games": "Nincs csatorna a kiválasztott játékokhoz...",
             "channel_count": "csatorna",
             "channel_count_plural": "csatornák",
-            "viewers": "néző"
+            "viewers": "néző",
+            "now_watching": "Most nézett csatorna",
+            "show_preview": "Bélyegkép megjelenítése",
+            "hide_preview": "Bélyegkép elrejtése",
+            "preview_off": "A bélyegkép ki van kapcsolva",
+            "preview_help": "Twitch-bélyegképeket tölt be, és további sávszélességet használ. Minden oldalbetöltéskor kikapcsolva."
         },
         "settings": {
             "general": {

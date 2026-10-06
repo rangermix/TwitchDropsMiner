@@ -8,7 +8,45 @@ import pytest
 
 from src.models.channel import Channel
 from src.websocket.websocket import Websocket
+from src.web.managers.login import LoginFormManager
 from tests.test_session_lifecycle import miner
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("boundary", ["identity", "shutdown"])
+async def test_avatar_request_is_drained_before_identity_or_http_teardown(tmp_path, monkeypatch, boundary):
+    client = miner(tmp_path, monkeypatch)
+    entered, cleaned = asyncio.Event(), asyncio.Event()
+    tasks = []
+
+    async def request(*args):
+        tasks.append(asyncio.current_task())
+        entered.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            await asyncio.sleep(0)
+            cleaned.set()
+
+    client._gql_client = MagicMock(request=request)
+    client.gui.login = LoginFormManager(MagicMock(emit=AsyncMock()), client.gui)
+    client.gui._twitch = client
+    client.gui.login.update("Logged in", 7)
+    await entered.wait()
+    try:
+        if boundary == "identity":
+            async with client.authentication_change():
+                assert cleaned.is_set() and tasks[0].done()
+        else:
+            async def close():
+                assert cleaned.is_set() and tasks[0].done()
+            client._http_client = MagicMock(close=close)
+            await client.shutdown()
+        assert cleaned.is_set()
+    finally:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
 
 @pytest.mark.asyncio

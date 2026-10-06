@@ -114,7 +114,12 @@
             "no_channels_for_games": "找不到所選遊戲的頻道...",
             "channel_count": "頻道",
             "channel_count_plural": "頻道",
-            "viewers": "觀眾"
+            "viewers": "觀眾",
+            "now_watching": "正在觀看",
+            "show_preview": "顯示縮圖",
+            "hide_preview": "隱藏縮圖",
+            "preview_off": "縮圖已關閉",
+            "preview_help": "載入 Twitch 縮圖會消耗額外流量。每次載入頁面時預設關閉。"
         },
         "inventory": {
             "status": {

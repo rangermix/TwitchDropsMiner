@@ -114,7 +114,12 @@
             "no_channels_for_games": "Nessun canale trovato per i giochi selezionati...",
             "channel_count": "canale",
             "channel_count_plural": "canali",
-            "viewers": "spettatori"
+            "viewers": "spettatori",
+            "now_watching": "Canale in visione",
+            "show_preview": "Mostra miniatura",
+            "hide_preview": "Nascondi miniatura",
+            "preview_off": "La miniatura è disattivata",
+            "preview_help": "Carica miniature di Twitch e usa banda aggiuntiva. Disattivata a ogni caricamento della pagina."
         },
         "inventory": {
             "status": {

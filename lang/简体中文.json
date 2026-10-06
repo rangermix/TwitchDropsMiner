@@ -114,7 +114,12 @@
             "no_channels_for_games": "所选游戏未找到频道...",
             "channel_count": "频道",
             "channel_count_plural": "频道",
-            "viewers": "观众"
+            "viewers": "观众",
+            "now_watching": "正在观看",
+            "show_preview": "显示缩略图",
+            "hide_preview": "隐藏缩略图",
+            "preview_off": "缩略图已关闭",
+            "preview_help": "加载 Twitch 缩略图会消耗额外流量。每次加载页面时默认关闭。"
         },
         "inventory": {
             "status": {

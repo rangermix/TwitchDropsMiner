@@ -23,6 +23,7 @@ def miner(tmp_path, monkeypatch):
     client = Twitch(SimpleNamespace(proxy=""))
     client.gui = MagicMock()
     client.gui.login.import_pending = AsyncMock()
+    client.gui.login.stop_avatar = AsyncMock()
     return client
 
 

@@ -114,7 +114,12 @@
             "no_channels_for_games": "Seçili oyunlar için kanal bulunamadı...",
             "channel_count": "kanal",
             "channel_count_plural": "kanal",
-            "viewers": "izleyici"
+            "viewers": "izleyici",
+            "now_watching": "Şimdi izlenen",
+            "show_preview": "Küçük resmi göster",
+            "hide_preview": "Küçük resmi gizle",
+            "preview_off": "Küçük resim kapalı",
+            "preview_help": "Twitch küçük resimlerini yükler ve ek bant genişliği kullanır. Her sayfa yüklemesinde kapalıdır."
         },
         "inventory": {
             "status": {

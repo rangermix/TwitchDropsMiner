@@ -114,7 +114,12 @@
             "no_channels_for_games": "لم يتم العثور على قنوات للألعاب المحددة...",
             "channel_count": "قناة",
             "channel_count_plural": "قنوات",
-            "viewers": "مشاهدين"
+            "viewers": "مشاهدين",
+            "now_watching": "تتم المشاهدة الآن",
+            "show_preview": "إظهار الصورة المصغّرة",
+            "hide_preview": "إخفاء الصورة المصغّرة",
+            "preview_off": "الصورة المصغّرة متوقفة",
+            "preview_help": "يحمّل صور Twitch المصغّرة ويستهلك بيانات إضافية. متوقف عند كل تحميل للصفحة."
         },
         "inventory": {
             "status": {

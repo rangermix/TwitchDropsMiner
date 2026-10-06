@@ -84,6 +84,7 @@ class BrowserLoginPanel {
         this.element('twitch-renewal-status').textContent = browser?.state === 'error' ? (t.error || '')
             : this.data?.renewal_error ? (t.renewal_retry || '')
             : this.data?.renewal_available ? (t.renewal_ready || '') : '';
+        this.element('twitch-renewal-status').title = this.element('twitch-renewal-status').textContent;
         this.element('twitch-vnc').hidden = helperActive || browser?.state !== 'sign_in';
         this.element('twitch-helper-panel').hidden = normal;
         if (helperActive) this.element('twitch-helper-panel').open = true;

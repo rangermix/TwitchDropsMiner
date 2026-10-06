@@ -177,6 +177,7 @@ class Twitch:
             self._watching_task = self._mnt_task = None
             await self.websocket.stop(clear_topics=True)
             await self._stop_channel_tasks()
+            await self.gui.login.stop_avatar()
             yield
         finally:
             self._auth_state.clear()
@@ -236,6 +237,7 @@ class Twitch:
         # stop websocket and close HTTP session
         await self.websocket.stop(clear_topics=True)
         await self._stop_channel_tasks()
+        await self.gui.login.stop_avatar()
         if self._browser is not None:
             await self._browser.close()
         if self._http_client is not None:

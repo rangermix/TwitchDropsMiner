@@ -114,7 +114,12 @@
             "no_channels_for_games": "Nie znaleziono kanałów dla wybranych gier...",
             "channel_count": "kanał",
             "channel_count_plural": "kanały",
-            "viewers": "widzowie"
+            "viewers": "widzowie",
+            "now_watching": "Teraz oglądany kanał",
+            "show_preview": "Pokaż miniaturę",
+            "hide_preview": "Ukryj miniaturę",
+            "preview_off": "Miniatura jest wyłączona",
+            "preview_help": "Ładuje miniatury Twitch i zużywa dodatkową przepustowość. Wyłączony przy każdym wczytaniu strony."
         },
         "inventory": {
             "status": {

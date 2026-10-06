@@ -221,6 +221,11 @@ class Channel:
         return GQL_OPERATIONS["GetStreamInfo"].with_variables({"channel": self._login})
 
     @property
+    def login(self) -> str:
+        """Canonical Twitch login for links and thumbnail URLs."""
+        return self._login
+
+    @property
     def name(self) -> str:
         if self._display_name is not None:
             return self._display_name

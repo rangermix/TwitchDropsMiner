@@ -9,7 +9,8 @@ const state = {
     settings: {},
     currentDrop: null,
     countdownTimer: null,  // Track the active countdown timer
-    translations: {}  // Store current translations
+    translations: {},  // Store current translations
+    previewEnabled: false  // Explicit opt-in for this page only
 };
 
 // ==================== UI Utilities ====================
@@ -427,7 +428,57 @@ function channelMatchesGameFilter(channel, gamesToWatchSet) {
         Boolean(channel.game && gamesToWatchSet.has(channel.game.toLowerCase()));
 }
 
+function updateNowWatching() {
+    const card = document.getElementById('now-watching');
+    if (!card) return;
+    const channel = Object.values(state.channels).find(ch => ch.watching);
+    const t = state.translations.gui?.channels || {};
+    const img = document.getElementById('now-watching-img');
+    const preview = document.getElementById('now-watching-preview');
+    const button = document.getElementById('now-watching-toggle');
+    if (!channel) state.previewEnabled = false;
+    const enabled = state.previewEnabled && Boolean(channel?.login);
+    preview.hidden = !enabled;
+    button.disabled = !channel?.login;
+    button.setAttribute('aria-pressed', String(Boolean(enabled)));
+    button.textContent = enabled ? (t.hide_preview || 'Hide thumbnail') : (t.show_preview || 'Show thumbnail');
+    button.title = t.preview_help || 'Loads Twitch thumbnails and uses extra bandwidth. Off on each page load.';
+    document.getElementById('now-watching-title').textContent = t.now_watching || 'Now Watching';
+    document.getElementById('now-watching-live').textContent = t.online || 'Online';
+    document.getElementById('now-watching-off').textContent = t.preview_off || 'Thumbnail is off';
+    document.getElementById('now-watching-off').hidden = enabled;
+    if (!enabled) {
+        img.style.backgroundImage = '';
+        delete img.dataset.src;
+    }
+    if (!channel) {
+        card.classList.add('hidden');
+        return;
+    }
+    card.classList.remove('hidden');
+    if (enabled) {
+        const login = String(channel.login).toLowerCase();
+        // Only opted-in pages load thumbnails; channel events refresh at most once per minute.
+        const url = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${encodeURIComponent(login)}-440x248.jpg?t=${Math.floor(Date.now() / 60000)}`;
+        if (img.dataset.src !== url) {
+            img.dataset.src = url;
+            img.style.backgroundImage = `url("${url}")`;
+        }
+    }
+    const viewersText = state.translations.gui?.channels?.viewers || 'viewers';
+    const viewers = channel.viewers !== null && channel.viewers !== undefined
+        ? ` | ${Number(channel.viewers).toLocaleString()} ${viewersText}`
+        : '';
+    document.getElementById('now-watching-info').textContent = channel.name + viewers;
+}
+
+function toggleNowWatchingPreview() {
+    state.previewEnabled = !state.previewEnabled;
+    updateNowWatching();
+}
+
 function renderChannels() {
+    updateNowWatching();
     const container = document.getElementById('channels-list');
     container.innerHTML = '';
 
@@ -459,98 +510,88 @@ function renderChannels() {
         return;
     }
 
-    // Group channels by game
-    const gameGroups = {};
-    filteredChannels.forEach(channel => {
-        const gameName = channel.game || 'No Game';
-        const gameId = channel.game_id || 'no-game';
-        const gameIcon = channel.game_icon;
-
-        if (!gameGroups[gameId]) {
-            gameGroups[gameId] = {
-                name: gameName,
-                icon: gameIcon,
-                channels: []
-            };
-        }
-        gameGroups[gameId].channels.push(channel);
+    // Flat list: watching first, then online, then by viewers
+    const sortedChannels = [...filteredChannels].sort((a, b) => {
+        if (Boolean(a.watching) !== Boolean(b.watching)) return b.watching ? 1 : -1;
+        if (Boolean(a.online) !== Boolean(b.online)) return b.online ? 1 : -1;
+        return (b.viewers || 0) - (a.viewers || 0);
     });
 
-    // Sort games: prioritize games with watching channels, then by total viewers
-    const sortedGames = Object.entries(gameGroups).sort(([idA, groupA], [idB, groupB]) => {
-        const hasWatchingA = groupA.channels.some(ch => ch.watching);
-        const hasWatchingB = groupB.channels.some(ch => ch.watching);
+    const formatViewers = n => {
+        if (n >= 1e6) return `${+(n / 1e6).toFixed(2)}M`;
+        if (n >= 1e3) return `${+(n / 1e3).toFixed(2)}K`;
+        return String(n);
+    };
 
-        if (hasWatchingA !== hasWatchingB) return hasWatchingB ? 1 : -1;
+    sortedChannels.forEach(channel => {
+        const div = document.createElement('div');
+        div.className = 'channel-item';
+        if (channel.watching) div.classList.add('watching');
+        div.classList.add(channel.online ? 'online' : 'offline');
 
-        // Sum total viewers for each game
-        const totalViewersA = groupA.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
-        const totalViewersB = groupB.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
+        const name = String(channel.name || '?');
+        let hue = 0;
+        for (const ch of name) hue = (hue * 31 + ch.charCodeAt(0)) % 360;
+        const avatar = makeElement('span', { class: 'channel-avatar' }, name[0].toUpperCase());
+        avatar.style.background = `hsl(${hue}, 45%, 38%)`;
 
-        return totalViewersB - totalViewersA;
-    });
-
-    // Render each game group
-    sortedGames.forEach(([gameId, group]) => {
-        // Create game header
-        const gameHeader = document.createElement('div');
-        gameHeader.className = 'game-group-header';
-
-        const channelCount = group.channels.length;
-        const totalViewers = group.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
-
-        const channelText = channelCount === 1
-            ? (t.gui?.channels?.channel_count || 'channel')
-            : (t.gui?.channels?.channel_count_plural || 'channels');
-        const viewersText = t.gui?.channels?.viewers || 'viewers';
-
-        if (group.icon) {
-            gameHeader.appendChild(makeImageElement(group.icon.replace('{width}', '40').replace('{height}', '53'), group.name, 'game-icon'));
-        }
-        gameHeader.appendChild(makeElement('div', { class: 'game-group-info' }, null, el => {
-            el.appendChild(makeElement('div', { class: 'game-group-name' }, group.name));
-            el.appendChild(makeElement('div', { class: 'game-group-stats' }, `${channelCount} ${channelText} • ${totalViewers.toLocaleString()} ${viewersText}`));
-        }));
-
-        container.appendChild(gameHeader);
-
-        // Sort channels within game: watching first, then online, then by viewers
-        group.channels.sort((a, b) => {
-            if (a.watching !== b.watching) return b.watching ? 1 : -1;
-            if (a.online !== b.online) return b.online ? 1 : -1;
-            return (b.viewers || 0) - (a.viewers || 0);
+        const nameDiv = makeElement('div', { class: 'channel-name' }, name, el => {
+            if (channel.drops_enabled) {
+                el.appendChild(document.createTextNode(' '));
+                el.appendChild(makeElement('span', { class: 'channel-badge drops' }, 'DROPS'));
+            }
+            if (channel.acl_based) {
+                el.appendChild(document.createTextNode(' '));
+                el.appendChild(makeElement('span', { class: 'channel-badge acl' }, 'ACL'));
+            }
+        });
+        const stateDiv = makeElement('div', { class: 'channel-info' }, channel.online ? t.gui?.channels?.online : t.gui?.channels?.offline, el => {
+            if (channel.game) {
+                el.appendChild(makeElement('span', { class: 'channel-game' }, ` · ${channel.game}`));
+            }
+        });
+        const textDiv = makeElement('div', { class: 'channel-text' }, '', el => {
+            el.appendChild(nameDiv);
+            el.appendChild(stateDiv);
         });
 
-        // Render channels in this game
-        group.channels.forEach(channel => {
-            const div = document.createElement('div');
-            div.className = 'channel-item';
-            if (channel.watching) div.classList.add('watching');
-            if (channel.online) div.classList.add('online');
-            else div.classList.add('offline');
-
-            const nameDiv = makeElement('div', { class: 'channel-name' }, channel.name, el => {
-                if (channel.drops_enabled) {
-                    el.appendChild(document.createTextNode(' '));
-                    el.appendChild(makeElement('span', { class: 'channel-badge drops' }, 'DROPS'));
-                }
-                if (channel.acl_based) {
-                    el.appendChild(document.createTextNode(' '));
-                    el.appendChild(makeElement('span', { class: 'channel-badge acl' }, 'ACL'));
-                }
-            });
-            const infoDiv = makeElement('div', { class: 'channel-info' }, channel.viewers !== null ? channel.viewers.toLocaleString() + ' viewers' : 'Offline', el => {
-                if (channel.watching) {
-                    el.appendChild(document.createTextNode(' • '));
-                    el.appendChild(makeElement('strong', {}, 'WATCHING'));
-                }
-            });
-            div.replaceChildren(nameDiv, infoDiv);
-
-            div.onclick = () => selectChannel(channel.id);
-            container.appendChild(div);
+        const viewersDiv = makeElement('span', { class: 'channel-viewers' },
+            channel.viewers !== null && channel.viewers !== undefined ? formatViewers(channel.viewers) : '');
+        const link = makeElement('a', {
+            class: 'channel-ext',
+            href: channel.url,
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            title: name,
+            'aria-label': name,
         });
+        link.addEventListener('click', e => e.stopPropagation());
+
+        div.replaceChildren(avatar, textDiv, viewersDiv, link);
+        div.onclick = () => selectChannel(channel.id);
+        container.appendChild(div);
     });
+}
+
+function updateDropArt() {
+    const art = document.getElementById('drop-art');
+    if (!art) return;
+    const drop = state.currentDrop;
+    const campaign = drop && (state.campaigns[drop.campaign_id] ||
+        Object.values(state.campaigns).find(c => c.game_name === drop.game_name));
+    const raw = campaign?.game_box_art_url;
+    if (!raw) {
+        art.classList.add('hidden');
+        return;
+    }
+    const url = raw.replace('{width}', '285').replace('{height}', '380');
+    if (art.dataset.src !== url) {
+        art.dataset.src = url;
+        art.querySelector('.drop-art-bg').style.backgroundImage = `url("${url}")`;
+        art.querySelector('.drop-art-poster').src = url;
+    }
+    art.querySelector('.drop-art-poster').alt = drop.game_name || '';
+    art.classList.remove('hidden');
 }
 
 function updateDropProgress(data) {
@@ -567,6 +608,7 @@ function updateDropProgress(data) {
     document.getElementById('drop-info').style.display = 'block';
 
     document.getElementById('drop-name').textContent = data.drop_name;
+    updateDropArt();
 
     // Make campaign name clickable with link to Twitch
     const dropGameEl = document.getElementById('drop-game');
@@ -959,6 +1001,7 @@ function applyInventoryViewMode(listView) {
 }
 
 function renderInventory() {
+    updateDropArt();
     const container = document.getElementById('inventory-grid');
     container.innerHTML = '';
 
@@ -1139,6 +1182,21 @@ function updateLoginStatus(data) {
     } else {
         statusEl.textContent = t.login?.status?.required || 'Login required';
         statusEl.style.color = 'var(--text-secondary)';
+    }
+    statusEl.title = statusEl.textContent;
+    const avatarEl = document.getElementById('user-avatar');
+    if (avatarEl) {
+        const avatarUrl = data.avatar_url;
+        if (typeof avatarUrl === 'string' && avatarUrl.startsWith('https://')) {
+            avatarEl.textContent = '';
+            avatarEl.style.backgroundImage = `url("${avatarUrl}")`;
+        } else {
+            const displayName = data.username || data.user_name || data.name || '';
+            avatarEl.textContent = displayName ? String(displayName)[0].toUpperCase() : '';
+            avatarEl.style.backgroundImage = '';
+        }
+        avatarEl.classList.toggle('logged-in', Boolean(data.user_id));
+        avatarEl.classList.toggle('avatar-image', Boolean(data.user_id) && typeof avatarUrl === 'string' && avatarUrl.startsWith('https://'));
     }
     globalThis.browserLoginPanel?.updateLogin(data);
 }
@@ -2286,6 +2344,7 @@ function switchTab(tabName) {
 // ==================== Event Listeners ====================
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('now-watching-toggle').addEventListener('click', toggleNowWatchingPreview);
     // Fetch and display version information
     fetchAndDisplayVersion();
 
@@ -2440,7 +2499,7 @@ function renderWantedItems(tree) {
         // Game Icon
         let iconUrl = gameGroup.game_icon;
         if (iconUrl) {
-            iconUrl = iconUrl.replace('{width}', '40').replace('{height}', '53');
+            iconUrl = iconUrl.replace('{width}', '144').replace('{height}', '192');
         }
 
         const headerChildren = [makeElement('span', { class: 'wanted-game-index' }, `#${index + 1}`)];

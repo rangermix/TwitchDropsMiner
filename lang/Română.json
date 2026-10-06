@@ -114,7 +114,12 @@
             "no_channels_for_games": "Nu s-au găsit canale pentru jocurile selectate...",
             "channel_count": "canal",
             "channel_count_plural": "canale",
-            "viewers": "spectatori"
+            "viewers": "spectatori",
+            "now_watching": "Canal urmărit acum",
+            "show_preview": "Afișează miniatura",
+            "hide_preview": "Ascunde miniatura",
+            "preview_off": "Miniatura este oprită",
+            "preview_help": "Încarcă miniaturi Twitch și folosește trafic suplimentar. Oprită la fiecare încărcare a paginii."
         },
         "inventory": {
             "status": {

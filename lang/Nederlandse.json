@@ -114,7 +114,12 @@
             "no_channels_for_games": "Geen kanalen gevonden voor geselecteerde games...",
             "channel_count": "kanaal",
             "channel_count_plural": "kanalen",
-            "viewers": "kijkers"
+            "viewers": "kijkers",
+            "now_watching": "Nu aan het kijken",
+            "show_preview": "Miniatuur tonen",
+            "hide_preview": "Miniatuur verbergen",
+            "preview_off": "Miniatuur staat uit",
+            "preview_help": "Laadt Twitch-miniaturen en gebruikt extra bandbreedte. Uit bij elke paginalading."
         },
         "inventory": {
             "status": {

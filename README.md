@@ -23,6 +23,13 @@ services operated for other users are outside its support scope.
 - Review claimed-drop history, export it to CSV, and receive Telegram notifications.
 - Manage everything from a web dashboard with optional password protection.
 
+The redesigned dashboard's **Now Watching** card offers **Show thumbnail**, off on
+each page load. When enabled, it shows a Twitch JPEG thumbnail, refreshed on channel
+updates at most once per minute. It does not play video or audio. The header adapts to
+longer translations, grouping account controls and navigation on smaller screens.
+Hover over shortened account or renewal text to read it in full. This dashboard change
+is available from source pending release.
+
 ## Quick start
 
 With Docker installed, choose one setup below. Shell examples use Bash
