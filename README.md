@@ -87,6 +87,9 @@ For source security rebuilds with refreshed base images and packages, see the
 3. TDM verifies your account and campaign access, saves the session, and returns to
    the normal dashboard. Select your games there.
 
+You can close and reopen the dashboard tab during sign in; the container browser
+keeps running until the attempt finishes or times out.
+
 Set Docker’s `TZ` to match your home internet connection’s timezone; change
 `Australia/Sydney` in the example as needed. Chromium and the temporary display are
 included in the image. Your everyday browser profile is separate.

@@ -149,5 +149,5 @@ class SessionAPI:
                 with suppress(OSError):
                     await writer.wait_closed()
             self._viewers -= 1
-            with suppress(RuntimeError, OSError):
+            with suppress(RuntimeError, OSError, WebSocketDisconnect):
                 await websocket.close(code=1008)
