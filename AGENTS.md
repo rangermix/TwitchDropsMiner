@@ -322,6 +322,11 @@ progress to an ignored drop while the miner intentionally targets another reward
   logged out, preserving its single form and listeners. Embedded login stays the default;
   desktop helpers are an explicit fallback. Detailed user
   guidance lives in `docs/authentication.md`; private tests and credentials stay ignored.
+- `SessionAPI.viewer()` drains its bridge tasks, closes the VNC connection and releases
+  its viewer slot on disconnect or cancellation. Its final WebSocket close must tolerate
+  `WebSocketDisconnect`, including Starlette's conversion of transport `OSError`.
+  Preserve regression coverage for abrupt viewer closure, task cancellation and
+  propagation of unexpected close errors; disconnecting a viewer does not end login.
 - Preserve matching WEB client/device/token/integrity/user-agent for imported requests,
   `Channel.url` on WEB for beacon discovery, locale/schema parity and safe DOM rendering.
   Never include session, SDK, password or verification data in dashboard status/logs.
