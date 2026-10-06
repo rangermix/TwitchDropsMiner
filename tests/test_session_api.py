@@ -90,7 +90,8 @@ def test_viewer_is_rejected_without_current_interactive_browser(api, origin):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("ending", ["revoked", "attempt", "verifying", "text", "oversize"])
+@pytest.mark.parametrize("ending", ["revoked", "attempt", "verifying", "text", "oversize",
+                                  "disconnect", "disconnect_close_error", "cancelled", "unexpected_close_error"])
 async def test_vnc_bridges_binary_frames_then_disconnects_and_drains(tmp_path, ending):
     received, closed = asyncio.Event(), asyncio.Event()
     input_bytes = []
@@ -118,6 +119,11 @@ async def test_vnc_bridges_binary_frames_then_disconnects_and_drains(tmp_path, e
 
     async def send(message):
         await output.put(message)
+        if message["type"] == "websocket.close":
+            if ending == "disconnect_close_error":
+                raise OSError("viewer transport already closed")
+            if ending == "unexpected_close_error":
+                raise ValueError("unexpected close failure")
 
     scope = {"type": "websocket", "path": "/api/session/vnc", "scheme": "ws", "query_string": b"",
              "server": ("testserver", 80), "client": ("local", 1),
@@ -136,9 +142,17 @@ async def test_vnc_bridges_binary_frames_then_disconnects_and_drains(tmp_path, e
             browser.attempt += 1
         elif ending == "verifying":
             browser.state = "verifying"
+        elif ending == "cancelled":
+            task.cancel()
+        elif ending in ("disconnect", "disconnect_close_error", "unexpected_close_error"):
+            await queue.put({"type": "websocket.disconnect", "code": 1000})
         else:
             await queue.put({"type": "websocket.receive", **({"text": "invalid"} if ending == "text" else {"bytes": b"x" * 65537})})
-        await asyncio.wait_for(task, 1)
+        if ending in ("cancelled", "unexpected_close_error"):
+            with pytest.raises(asyncio.CancelledError if ending == "cancelled" else ValueError):
+                await asyncio.wait_for(task, 1)
+        else:
+            await asyncio.wait_for(task, 1)
         await asyncio.wait_for(closed.wait(), 1)
         assert input_bytes == [b"abc"]
         assert api._viewers == 0
