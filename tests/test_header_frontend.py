@@ -31,5 +31,7 @@ for (const locale of locales) {
     assert.ok(!status.title.includes('123456789'));
 }
 """
-    result = subprocess.run([NODE, "-e", script], capture_output=True, text=True, encoding="utf-8")
+    result = subprocess.run(
+        [NODE, "-"], input=script, capture_output=True, text=True, encoding="utf-8"
+    )
     assert result.returncode == 0, result.stderr
