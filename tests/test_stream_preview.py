@@ -1,5 +1,6 @@
-"""The optional dashboard thumbnail must not load until explicitly enabled."""
+"""The dashboard shows a canonical Twitch thumbnail without a preview toggle."""
 
+import json
 import subprocess
 
 import pytest
@@ -29,90 +30,79 @@ const watching = {id: 7, name: '配信者', login: 'some_streamer', online: true
 """
 
 
-def run_preview_script(assertions: str, *, with_toggle: bool = False):
+def run_preview_script(assertions: str):
     source = APP_JS.read_text()
     functions = extract_javascript_function(source, "updateNowWatching")
-    if with_toggle:
-        functions += extract_javascript_function(source, "toggleNowWatchingPreview")
     script = HARNESS + source.split("// ==================== UI Utilities")[0] + functions
     script += r"""
 state.channels = {7: watching};
 state.translations = {gui: {channels: {now_watching: 'Watching', online: 'Online',
-    show_preview: 'Show', hide_preview: 'Hide', preview_off: 'Off',
-    preview_help: 'Extra bandwidth', viewers: 'viewers'}}};
+    viewers: 'viewers'}}};
 """ + assertions
     result = subprocess.run([NODE, "-e", script], capture_output=True, text=True, encoding="utf-8")
     assert result.returncode == 0, result.stderr
 
 
 @pytest.mark.skipif(NODE is None, reason="Node required for DOM behavior tests")
-def test_preview_is_off_by_default_through_repeated_channel_updates():
+def test_watched_channel_loads_canonical_thumbnail_automatically():
     run_preview_script(r"""
-for (let i = 0; i < 3; i++) {
-    updateNowWatching();
-    const img = document.getElementById('now-watching-img');
-    assert.ok(!img.style.backgroundImage, 'default must not load a Twitch thumbnail');
-    assert.ok(!img.dataset.src);
-    assert.equal(document.getElementById('now-watching-preview').hidden, true);
-    now += 60000;
-}
-assert.equal(state.previewEnabled, false);
+updateNowWatching();
+const img = document.getElementById('now-watching-img');
+assert.match(img.style.backgroundImage, /live_user_some_streamer-440x248.jpg/);
+assert.equal(document.getElementById('now-watching-preview').hidden, false);
 assert.match(document.getElementById('now-watching-info').textContent, /配信者.*123/);
-assert.equal(document.getElementById('now-watching-toggle').attributes['aria-pressed'], 'false');
+const source = img.dataset.src;
+now += 1000;
+updateNowWatching();
+assert.equal(img.dataset.src, source, 'same minute reuses the thumbnail');
+now += 60000;
+updateNowWatching();
+assert.notEqual(img.dataset.src, source, 'new minute may refresh the thumbnail');
 """)
 
 
 @pytest.mark.skipif(NODE is None, reason="Node required for DOM behavior tests")
-def test_preview_opt_in_uses_login_and_clears_source_when_disabled_or_no_channel():
+def test_thumbnail_switches_channel_and_clears_source_when_watching_stops():
     run_preview_script(r"""
 updateNowWatching();
-toggleNowWatchingPreview();
 const img = document.getElementById('now-watching-img');
-const button = document.getElementById('now-watching-toggle');
-assert.match(img.style.backgroundImage, /live_user_some_streamer-440x248.jpg/);
-assert.equal(document.getElementById('now-watching-preview').hidden, false);
-assert.equal(button.textContent, 'Hide');
-assert.equal(button.attributes['aria-pressed'], 'true');
-const firstSource = img.dataset.src;
-now += 1000;
+state.channels = {8: {...watching, id: 8, login: 'other_streamer'}};
 updateNowWatching();
-assert.equal(img.dataset.src, firstSource);
-now += 60000;
-updateNowWatching();
-assert.notEqual(img.dataset.src, firstSource);
-state.channels[7] = {...watching, login: 'other_streamer'};
-updateNowWatching();
-assert.match(img.dataset.src, /live_user_other_streamer-/);
-toggleNowWatchingPreview();
-assert.equal(img.style.backgroundImage, '');
-assert.ok(!img.dataset.src);
-assert.equal(button.textContent, 'Show');
-now += 60000;
-updateNowWatching();
-assert.equal(img.style.backgroundImage, '');
-toggleNowWatchingPreview();
 assert.match(img.dataset.src, /live_user_other_streamer-/);
 state.channels = {};
 updateNowWatching();
 assert.equal(img.style.backgroundImage, '');
 assert.ok(!img.dataset.src);
-assert.equal(state.previewEnabled, false);
-assert.equal(button.disabled, true);
 assert.ok(document.getElementById('now-watching').classList.contains('hidden'));
 state.channels = {7: watching};
 updateNowWatching();
+assert.match(img.dataset.src, /live_user_some_streamer-/);
+state.channels = {7: {...watching, login: ''}};
+updateNowWatching();
 assert.equal(img.style.backgroundImage, '');
-""", with_toggle=True)
+assert.ok(!img.dataset.src);
+""")
 
 
 @pytest.mark.skipif(NODE is None, reason="Node required for DOM behavior tests")
-def test_preview_updates_translations_without_enabling_it():
+def test_thumbnail_title_updates_with_safe_translations():
     run_preview_script(r"""
 updateNowWatching();
-state.translations.gui.channels.show_preview = '<b>Afficher</b>';
-state.translations.gui.channels.now_watching = 'Chaîne regardée';
+const source = document.getElementById('now-watching-img').dataset.src;
+state.translations.gui.channels.now_watching = '<b>Chaîne regardée</b>';
 updateNowWatching();
-assert.equal(document.getElementById('now-watching-toggle').textContent, '<b>Afficher</b>');
-assert.equal(document.getElementById('now-watching-title').textContent, 'Chaîne regardée');
-assert.ok(!document.getElementById('now-watching-img').style.backgroundImage);
+assert.equal(document.getElementById('now-watching-title').textContent, '<b>Chaîne regardée</b>');
+assert.equal(document.getElementById('now-watching-img').dataset.src, source);
 """)
+
+
+def test_preview_toggle_is_removed_from_dashboard_and_locales():
+    root = APP_JS.parents[2]
+    source = APP_JS.read_text()
+    assert 'previewEnabled' not in source
+    assert 'toggleNowWatchingPreview' not in source
+    assert 'now-watching-toggle' not in (root / 'web/index.html').read_text()
+    removed = {'show_preview', 'hide_preview', 'preview_off', 'preview_help'}
+    for locale in (root / 'lang').glob('*.json'):
+        channels = json.loads(locale.read_text())['gui']['channels']
+        assert removed.isdisjoint(channels), locale.name

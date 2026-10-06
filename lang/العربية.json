@@ -115,11 +115,7 @@
             "channel_count": "قناة",
             "channel_count_plural": "قنوات",
             "viewers": "مشاهدين",
-            "now_watching": "تتم المشاهدة الآن",
-            "show_preview": "إظهار المعاينة",
-            "hide_preview": "إخفاء المعاينة",
-            "preview_off": "معاينة البث متوقفة",
-            "preview_help": "يحمّل صور Twitch المصغّرة ويستهلك بيانات إضافية. متوقف عند كل تحميل للصفحة."
+            "now_watching": "تتم المشاهدة الآن"
         },
         "inventory": {
             "status": {

@@ -115,11 +115,7 @@
             "channel_count": "chaîne",
             "channel_count_plural": "chaînes",
             "viewers": "spectateurs",
-            "now_watching": "Chaîne regardée",
-            "show_preview": "Afficher l’aperçu",
-            "hide_preview": "Masquer l’aperçu",
-            "preview_off": "L’aperçu du stream est désactivé",
-            "preview_help": "Charge des miniatures Twitch et utilise de la bande passante supplémentaire. Désactivé à chaque chargement de la page."
+            "now_watching": "Chaîne regardée"
         },
         "inventory": {
             "status": {

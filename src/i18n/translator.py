@@ -133,10 +133,6 @@ class GUIProgress(TypedDict):
 class GUIChannels(TypedDict):
     name: str
     now_watching: str
-    show_preview: str
-    hide_preview: str
-    preview_off: str
-    preview_help: str
     online: str
     pending: str
     offline: str

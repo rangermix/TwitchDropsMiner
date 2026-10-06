@@ -115,11 +115,7 @@
             "channel_count": "canal",
             "channel_count_plural": "canais",
             "viewers": "espectadores",
-            "now_watching": "A assistir agora",
-            "show_preview": "Mostrar pré-visualização",
-            "hide_preview": "Ocultar pré-visualização",
-            "preview_off": "A pré-visualização está desativada",
-            "preview_help": "Carrega miniaturas do Twitch e usa largura de banda adicional. Desativada sempre que a página é carregada."
+            "now_watching": "A assistir agora"
         },
         "inventory": {
             "status": {

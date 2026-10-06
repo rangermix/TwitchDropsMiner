@@ -115,11 +115,7 @@
             "channel_count": "csatorna",
             "channel_count_plural": "csatornák",
             "viewers": "néző",
-            "now_watching": "Most nézett csatorna",
-            "show_preview": "Előnézet megjelenítése",
-            "hide_preview": "Előnézet elrejtése",
-            "preview_off": "A közvetítés előnézete ki van kapcsolva",
-            "preview_help": "Twitch-bélyegképeket tölt be, és további sávszélességet használ. Minden oldalbetöltéskor kikapcsolva."
+            "now_watching": "Most nézett csatorna"
         },
         "settings": {
             "general": {

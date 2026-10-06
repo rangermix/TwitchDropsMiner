@@ -115,11 +115,7 @@
             "channel_count": "canale",
             "channel_count_plural": "canali",
             "viewers": "spettatori",
-            "now_watching": "Canale in visione",
-            "show_preview": "Mostra anteprima",
-            "hide_preview": "Nascondi anteprima",
-            "preview_off": "L’anteprima dello stream è disattivata",
-            "preview_help": "Carica miniature di Twitch e usa banda aggiuntiva. Disattivata a ogni caricamento della pagina."
+            "now_watching": "Canale in visione"
         },
         "inventory": {
             "status": {

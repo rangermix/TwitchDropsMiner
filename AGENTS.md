@@ -197,12 +197,12 @@ lang/                # Translation JSON files (20 languages)
   with the application version and serves `/` with `Cache-Control: no-cache`
 - Any `app.js` or `styles.css` change requires an application version bump through the release
   workflow before deployment so existing clients receive a new asset cache key
-- Now Watching thumbnails require an explicit page-local opt-in, default false on every
-  page load. Turning the preview off or losing the watched channel clears its source;
-  never set a remote thumbnail source while disabled. The miner does not load stream media.
+- Now Watching automatically shows a JPEG thumbnail for the watched channel. Channel
+  events refresh it at most once per minute; losing the watched channel clears its source.
+  The dashboard does not play stream video or audio.
   Use canonical channel `login`/`url` for thumbnails and Twitch links; `name` is a display
-  label and may contain localized characters. Keep preview labels translated and the
-  toggle keyboard accessible with `aria-pressed`. Regression: `test_stream_preview.py`.
+  label and may contain localized characters. Keep the card title translated.
+  Regression: `test_stream_preview.py`.
 
 **src/websocket/pool.py** - WebSocket management:
 

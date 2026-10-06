@@ -115,11 +115,7 @@
             "channel_count": "頻道",
             "channel_count_plural": "頻道",
             "viewers": "觀眾",
-            "now_watching": "正在觀看",
-            "show_preview": "顯示預覽",
-            "hide_preview": "隱藏預覽",
-            "preview_off": "直播預覽已關閉",
-            "preview_help": "載入 Twitch 縮圖會消耗額外流量。每次載入頁面時預設關閉。"
+            "now_watching": "正在觀看"
         },
         "inventory": {
             "status": {

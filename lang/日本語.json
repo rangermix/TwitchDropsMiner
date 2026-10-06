@@ -115,11 +115,7 @@
             "channel_count": "チャンネル",
             "channel_count_plural": "チャンネル",
             "viewers": "視聴者",
-            "now_watching": "視聴中のチャンネル",
-            "show_preview": "プレビューを表示",
-            "hide_preview": "プレビューを非表示",
-            "preview_off": "配信プレビューはオフです",
-            "preview_help": "Twitchのサムネイルを読み込み、追加の通信量を使用します。ページを読み込むたびにオフになります。"
+            "now_watching": "視聴中のチャンネル"
         },
         "inventory": {
             "status": {

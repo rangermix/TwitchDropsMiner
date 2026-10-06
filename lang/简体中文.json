@@ -115,11 +115,7 @@
             "channel_count": "频道",
             "channel_count_plural": "频道",
             "viewers": "观众",
-            "now_watching": "正在观看",
-            "show_preview": "显示预览",
-            "hide_preview": "隐藏预览",
-            "preview_off": "直播预览已关闭",
-            "preview_help": "加载 Twitch 缩略图会消耗额外流量。每次加载页面时默认关闭。"
+            "now_watching": "正在观看"
         },
         "inventory": {
             "status": {

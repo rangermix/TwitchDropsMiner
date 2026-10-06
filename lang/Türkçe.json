@@ -115,11 +115,7 @@
             "channel_count": "kanal",
             "channel_count_plural": "kanal",
             "viewers": "izleyici",
-            "now_watching": "Şimdi izlenen",
-            "show_preview": "Önizlemeyi göster",
-            "hide_preview": "Önizlemeyi gizle",
-            "preview_off": "Yayın önizlemesi kapalı",
-            "preview_help": "Twitch küçük resimlerini yükler ve ek bant genişliği kullanır. Her sayfa yüklemesinde kapalıdır."
+            "now_watching": "Şimdi izlenen"
         },
         "inventory": {
             "status": {

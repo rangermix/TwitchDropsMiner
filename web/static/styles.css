@@ -2105,18 +2105,6 @@ header h1 {
     flex-wrap: wrap;
 }
 
-#now-watching-toggle {
-    margin: 0 14px 12px;
-    white-space: normal;
-}
-
-#now-watching-off {
-    flex: 1;
-    padding: 16px 14px;
-    color: var(--text-secondary);
-    text-align: center;
-}
-
 .live-badge {
     display: inline-flex;
     align-items: center;

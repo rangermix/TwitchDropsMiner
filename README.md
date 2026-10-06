@@ -23,9 +23,9 @@ services operated for other users are outside its support scope.
 - Review claimed-drop history, export it to CSV, and receive Telegram notifications.
 - Manage everything from a web dashboard with optional password protection.
 
-The redesigned dashboard's **Now Watching → Show preview** loads an optional Twitch
-thumbnail. It is off on every page load to save bandwidth; **Hide preview** stops
-thumbnail updates. This dashboard change is available from source pending release.
+The redesigned dashboard's **Now Watching** card automatically shows a Twitch JPEG
+thumbnail, refreshed on channel updates at most once per minute. It does not play video
+or audio. This dashboard change is available from source pending release.
 
 ## Quick start
 

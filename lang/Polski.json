@@ -115,11 +115,7 @@
             "channel_count": "kanał",
             "channel_count_plural": "kanały",
             "viewers": "widzowie",
-            "now_watching": "Teraz oglądany kanał",
-            "show_preview": "Pokaż podgląd",
-            "hide_preview": "Ukryj podgląd",
-            "preview_off": "Podgląd transmisji jest wyłączony",
-            "preview_help": "Ładuje miniatury Twitch i zużywa dodatkową przepustowość. Wyłączony przy każdym wczytaniu strony."
+            "now_watching": "Teraz oglądany kanał"
         },
         "inventory": {
             "status": {

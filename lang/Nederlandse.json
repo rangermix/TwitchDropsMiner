@@ -115,11 +115,7 @@
             "channel_count": "kanaal",
             "channel_count_plural": "kanalen",
             "viewers": "kijkers",
-            "now_watching": "Nu aan het kijken",
-            "show_preview": "Voorbeeld tonen",
-            "hide_preview": "Voorbeeld verbergen",
-            "preview_off": "Streamvoorbeeld staat uit",
-            "preview_help": "Laadt Twitch-miniaturen en gebruikt extra bandbreedte. Uit bij elke paginalading."
+            "now_watching": "Nu aan het kijken"
         },
         "inventory": {
             "status": {

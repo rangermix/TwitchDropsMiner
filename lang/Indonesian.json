@@ -115,11 +115,7 @@
             "channel_count": "channel",
             "channel_count_plural": "channel",
             "viewers": "penonton",
-            "now_watching": "Sedang ditonton",
-            "show_preview": "Tampilkan pratinjau",
-            "hide_preview": "Sembunyikan pratinjau",
-            "preview_off": "Pratinjau siaran dinonaktifkan",
-            "preview_help": "Memuat gambar mini Twitch dan menggunakan bandwidth tambahan. Nonaktif setiap kali halaman dimuat."
+            "now_watching": "Sedang ditonton"
         },
         "inventory": {
             "status": {

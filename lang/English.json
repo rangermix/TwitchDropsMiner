@@ -115,11 +115,7 @@
             "channel_count": "channel",
             "channel_count_plural": "channels",
             "viewers": "viewers",
-            "now_watching": "Now Watching",
-            "show_preview": "Show preview",
-            "hide_preview": "Hide preview",
-            "preview_off": "Stream preview is off",
-            "preview_help": "Loads Twitch thumbnails and uses extra bandwidth. Off on each page load."
+            "now_watching": "Now Watching"
         },
         "settings": {
             "general": {

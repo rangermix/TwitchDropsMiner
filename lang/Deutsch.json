@@ -115,11 +115,7 @@
             "channel_count": "Kanal",
             "channel_count_plural": "Kanäle",
             "viewers": "Zuschauer",
-            "now_watching": "Wird gerade angesehen",
-            "show_preview": "Vorschau anzeigen",
-            "hide_preview": "Vorschau ausblenden",
-            "preview_off": "Stream-Vorschau ist aus",
-            "preview_help": "Lädt Twitch-Vorschaubilder und verbraucht zusätzliche Bandbreite. Bei jedem Laden der Seite ausgeschaltet."
+            "now_watching": "Wird gerade angesehen"
         },
         "inventory": {
             "status": {
