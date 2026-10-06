@@ -103,6 +103,61 @@ async def test_avatar_failure_is_optional_and_does_not_repeat_or_log_response(ca
 
 
 @pytest.mark.asyncio
+async def test_avatar_timeout_leaves_login_usable_and_does_not_retry(monkeypatch):
+    timeouts = []
+
+    async def timeout(awaitable, seconds):
+        timeouts.append(seconds)
+        awaitable.close()
+        raise asyncio.TimeoutError
+
+    monkeypatch.setattr("src.web.managers.login.asyncio.wait_for", timeout)
+    manager = MagicMock()
+    manager._twitch._gql_client.request = AsyncMock()
+    login = LoginFormManager(MagicMock(emit=AsyncMock()), manager)
+    login.update("Logged in", 7)
+    await asyncio.sleep(0)
+    login.update("Logged in", 7)
+    await asyncio.sleep(0)
+    assert timeouts == [10]
+    assert login.get_status() == {"status": "Logged in", "user_id": 7}
+
+
+@pytest.mark.asyncio
+async def test_delayed_old_account_avatar_cannot_overwrite_new_account():
+    old_entered, release_old, new_done = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    calls = 0
+
+    async def request(*args):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            old_entered.set()
+            try:
+                await release_old.wait()
+            except asyncio.CancelledError:
+                await release_old.wait()
+            return {"data": {"currentUser": {"id": "7", "profileImageURL": "https://cdn.example/old.png"}}}
+        new_done.set()
+        return {"data": {"currentUser": {"id": "8", "profileImageURL": "https://cdn.example/new.png"}}}
+
+    manager = MagicMock()
+    manager._twitch._gql_client.request = request
+    login = LoginFormManager(MagicMock(emit=AsyncMock()), manager)
+    login.update("Logged in", 7)
+    await old_entered.wait()
+    try:
+        login.update("Logged in", 8)
+        await new_done.wait()
+        release_old.set()
+        await asyncio.gather(*tuple(login._avatar_tasks))
+        assert login.get_status()["avatar_url"] == "https://cdn.example/new.png"
+    finally:
+        release_old.set()
+        await login.stop_avatar()
+
+
+@pytest.mark.asyncio
 async def test_avatar_is_cancelled_when_login_is_cleared():
     entered, cleaned = asyncio.Event(), asyncio.Event()
     tasks = []
