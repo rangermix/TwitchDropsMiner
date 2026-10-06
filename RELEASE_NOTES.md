@@ -1,3 +1,49 @@
+# Release Notes - v2.2.0
+
+This minor release refreshes the dashboard and adds control over campaigns reported
+as Not Linked, alongside browser cleanup fixes and Docker dependency updates.
+
+## Refreshed dashboard
+
+- A more compact, responsive header groups navigation, account information and
+  connection controls across desktop, tablet and mobile screens. Account and renewal
+  messages retain their full text in tooltips when space is limited.
+- The watched-channel thumbnail is optional and **off on each page load**. Enable
+  it from Now Watching to see a static image; TDM does not play stream video or audio.
+- Updated controls and guidance are available in all 20 supported languages.
+
+## Account-link controls
+
+- Inventory now offers **All / Linked / Not Linked** filters. The selection is saved,
+  and the previous Not Linked checkbox preference migrates automatically.
+- Settings adds **Allow mining campaigns reported as Not Linked**, default **off**.
+  Enable it to attempt mining when you believe Twitch's reported link status is
+  incorrect or stale. Other campaign, channel, timing, prerequisite and ignore checks
+  still apply, and campaign cards keep the reported Linked/Not Linked label.
+- The warning explains that this option does not link accounts or guarantee Twitch
+  progress, claims or in-game rewards. TDM can show estimated minutes; check Twitch's
+  Drops inventory and link the correct game account for reward delivery.
+- Failed saves restore the confirmed override value, and unrelated settings saves
+  cannot silently undo a recent toggle.
+
+## Fixes and maintenance
+
+- Closing or disconnecting the embedded sign-in viewer no longer causes the cleanup
+  traceback addressed in [#159](https://github.com/rangermix/TwitchDropsMiner/pull/159).
+- Chromium cleanup uses Windows process APIs without requiring Unix-only signals.
+  Platform-specific persistence and lifecycle tests now pass on Windows, and Firefox
+  URL rejection tests tolerate scheduling delays while retaining their validation.
+- Docker builds refresh Alpine packages and Chromium and remove unused noVNC server
+  dependencies.
+
+## Updating
+
+Update to `rangermix/twitch-drops-miner:2.2.0` while preserving your existing `/app/data`
+mount, settings, timezone and container options. See the
+[installation and update guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Installation).
+Reload the dashboard after upgrading to load the new UI assets. If you use the desktop
+helper, download the matching **2.2.0** helper from this release.
+
 # Release Notes - v2.1.1
 
 An optional desktop helper provides another way to sign in when Twitch rejects the
