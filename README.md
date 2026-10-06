@@ -75,6 +75,8 @@ For either setup, open <http://localhost:8080>, or `http://YOUR-SERVER:8080` fro
 another device on your home network. Keep the `data` directory when updating.
 For Compose management, source builds, and switching an existing installation to
 Compose, see the [installation guide](docs/installation.md#docker-compose).
+For source security rebuilds with refreshed base images and packages, see the
+[build instructions](docs/installation.md#docker).
 
 ## Sign in
 

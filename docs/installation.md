@@ -34,8 +34,14 @@ that volume when updating. Copy existing data from a private backup while TDM is
 stopped before changing mounts; a new empty volume does not contain the old login
 or settings.
 
-To build a source checkout, run `docker build -t twitch-drops-miner .` from the
+To build a source checkout, run `docker build --pull -t twitch-drops-miner .` from the
 repository root and use `twitch-drops-miner` as the image in the run command above.
+Source builds use the current upstream Python/Alpine images through floating
+`python:alpine` and `alpine:latest` tags. For a security rebuild, run
+`docker build --pull --no-cache -t twitch-drops-miner .` to refresh base images and
+Alpine packages. The runtime includes noVNC's browser library; its unused websockify
+server dependencies are excluded. Published images need a maintainer rebuild to
+pick up fixes; Chromium updates depend on availability in Alpine's repositories.
 
 To retain file logs outside the container, also mount `./logs:/app/logs`. You can read
 the container's console output with:
@@ -111,6 +117,9 @@ and start from the repository root:
 ```bash
 docker compose up -d --build
 ```
+
+For a security rebuild, run `docker compose build --pull --no-cache`, then
+`docker compose up -d` to recreate the service with refreshed base images and packages.
 
 The included file keeps data in `./data` and logs in `./logs` and includes the same
 browser settings as the published-image example. The default branch may contain

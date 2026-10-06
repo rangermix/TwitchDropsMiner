@@ -1,4 +1,8 @@
-FROM python:3-alpine
+# Extract only noVNC's browser library, without installing its websockify server.
+FROM alpine:latest AS novnc-assets
+RUN apk add --no-cache novnc
+
+FROM python:alpine
 
 # Build arguments for metadata
 ARG BUILD_DATE
@@ -26,7 +30,9 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 # Login and renewal use private browsers; only the dashboard port is exposed.
-RUN apk add --no-cache chromium xvfb openbox x11vnc xdotool novnc tzdata
+RUN apk upgrade --no-cache \
+    && apk add --no-cache chromium xvfb openbox x11vnc xdotool tzdata
+COPY --from=novnc-assets /usr/share/novnc/ /usr/share/novnc/
 RUN addgroup -g 10001 -S tdm-browser \
     && adduser -u 10001 -S -D -H -h /nonexistent -s /sbin/nologin -G tdm-browser tdm-browser
 
@@ -34,7 +40,8 @@ RUN addgroup -g 10001 -S tdm-browser \
 COPY pyproject.toml .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir . \
+    && pip uninstall --yes pip
 
 # Copy application code
 COPY main.py ./
