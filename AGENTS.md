@@ -21,6 +21,14 @@ It is the repository's contribution policy, not optional background reading.
   or PR. Never claim completion of checks that did not run or approval not received.
 - Do not declare a PR ready to merge while required checks or review are missing or
   blocking findings remain. Document the gap and keep an incomplete PR in draft.
+- When taking on an issue or PR, first post a comment there acknowledging that work
+  is starting and briefly stating the scope, before investigation, implementation,
+  or review. If both an issue and a PR are being worked on, acknowledge both.
+- Before ending or pausing work, update every issue or PR being worked on with the
+  outcome, relevant evidence or validation, and any remaining action or request for
+  information. Post this update for every outcome, including resolved, closed,
+  no change needed, blocked, or more information needed, even when no code changed
+  or the issue or PR remains open.
 
 ## Development Guidelines
 

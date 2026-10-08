@@ -376,6 +376,14 @@ Read this guide and the applicable agent instructions before planning, editing, 
 or reviewing. Pass these requirements to any delegated implementation or review agent.
 The checklist is a completion requirement, not an optional suggestion.
 
+When taking on an issue or PR, first comment there to acknowledge that work is starting
+and briefly state the scope, before investigation, implementation, or review. Acknowledge
+both threads when working on both an issue and a PR. Before ending or pausing work,
+update each thread with the outcome, relevant evidence or validation, and any remaining
+action or request for information. This applies to every outcome, including resolved,
+closed, no change needed, blocked, or more information needed, even if no code changed
+or the issue or PR remains open.
+
 Inspect the current checkout and preserve existing user changes. Stay within the
 authorized task; a request to edit files does not by itself authorize publishing a PR,
 merging, or releasing. Do not weaken tests, remove security checks, or alter this policy

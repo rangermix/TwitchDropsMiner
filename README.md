@@ -187,7 +187,8 @@ reporting a problem. Use the [bug-report form](https://github.com/rangermix/Twit
 with the running app version, hosting environment, reproduction steps, and redacted evidence.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for bug reports, translations,
 and development. This fork uses AI-assisted development with automated checks and
-independent review.
+independent review. Agents acknowledge work in the relevant issue or PR before starting
+and post the outcome there when work ends or pauses.
 
 Based on [DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner).
 See [credits](docs/credits.md) for the original project and translation contributors.
