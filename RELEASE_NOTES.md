@@ -1,3 +1,22 @@
+# Release Notes - v2.2.1
+
+This patch fixes stalled Twitch Drop progress reported in
+[#163](https://github.com/rangermix/TwitchDropsMiner/issues/163).
+
+- Restore watch traffic by polling stream playlists and sending HEAD requests for
+  each new media segment. Stream audio and video are not downloaded.
+- Deduplicate successful segments, preserve state across ordinary stream metadata
+  updates, refresh expired playlist URLs, and stop requests when watching changes.
+- Bound network waits so a failed segment cannot stall the miner. Keep minute
+  telemetry and progress fallback on their existing cadence despite faster polling.
+- Handle malformed playlists safely without printing signed stream URLs or bodies.
+
+Update to `rangermix/twitch-drops-miner:2.2.1`, preserving your existing data mount,
+settings, timezone and container options. Valid saved logins remain usable. See the
+[installation and update guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Installation).
+The release also includes matching desktop helpers for Linux x64, Windows x64,
+macOS arm64 and macOS x64, with archive checksums in `SHA256SUMS`.
+
 # Release Notes - v2.2.0
 
 This minor release refreshes the dashboard and adds control over campaigns reported

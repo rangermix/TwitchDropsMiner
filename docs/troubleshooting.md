@@ -86,6 +86,11 @@ needed for login and renewal. See [Automatic renewal](authentication.md#automati
 
 ## No campaigns or no progress
 
+If TDM 2.2.0 says it is watching but Twitch inventory does not advance, update to
+2.2.1 or newer while preserving your data directory. The patch restores segment watch
+requests without downloading stream audio or video. A Watching label or accepted
+telemetry alone does not establish progress; compare with Twitch inventory.
+
 Check the campaign on Twitch and work through these conditions:
 
 1. The Twitch account is linked to the correct game account and is eligible for the

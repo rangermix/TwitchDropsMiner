@@ -1,6 +1,7 @@
 # Twitch Drops Miner
 
 Automatically earn timed Twitch Drops without downloading stream video or audio.
+Mining reads playlist metadata and checks segment response headers to keep bandwidth low.
 
 <p align="center">
   <a href="https://github.com/rangermix/TwitchDropsMiner/stargazers"><img src="https://img.shields.io/github/stars/rangermix/TwitchDropsMiner?style=for-the-badge&color=yellow" alt="GitHub stars"></a>

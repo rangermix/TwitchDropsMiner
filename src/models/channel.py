@@ -1,19 +1,20 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import re
 from base64 import b64encode
-from typing import TYPE_CHECKING, Any, SupportsInt, cast
+from collections import OrderedDict
+from time import monotonic
+from typing import TYPE_CHECKING, Any, SupportsInt
 
 import aiohttp
 from yarl import URL
 
 from src.config.client_info import ClientType
-from src.config.constants import CALL, ONLINE_DELAY, GQLOperation, JsonType, URLType
+from src.config.constants import CALL, ONLINE_DELAY, WATCH_INTERVAL, GQLOperation, JsonType, URLType
 from src.config.operations import GQL_OPERATIONS
-from src.exceptions import MinerException, RequestException
+from src.exceptions import ExitRequest, MinerException
 from src.models.game import Game
 from src.utils.json_utils import isonow, json_minify
 
@@ -74,13 +75,16 @@ class Stream:
     def from_get_stream(cls, channel: Channel, channel_data: JsonType) -> Stream:
         stream = channel_data["stream"]
         settings = channel_data["broadcastSettings"]
-        return cls(
+        result = cls(
             channel,
             id=stream["id"],
             game=settings["game"],
             viewers=stream["viewersCount"],
             title=settings["title"],
         )
+        if channel._stream is not None and result == channel._stream:
+            result._stream_url = channel._stream._stream_url
+        return result
 
     @classmethod
     def from_directory(
@@ -108,40 +112,56 @@ class Stream:
         playback_token_response: JsonType = await self.channel._twitch.gql_request(
             GQL_OPERATIONS["PlaybackAccessToken"].with_variables({"login": self.channel._login})
         )
-        token_data: JsonType = playback_token_response["data"]["streamPlaybackAccessToken"]
-        token_value = token_data["value"]
-        token_signature = token_data["signature"]
-        # using the token, query Twitch for a list of all available stream qualities
-        available_qualities: str = ""
-        try:
-            async with self.channel._twitch.request(
-                "GET",
-                URL(
-                    "https://usher.ttvnw.net/api/channel/hls/"
-                    f"{self.channel._login}.m3u8?sig={token_signature}&token={token_value}"
-                ),
-            ) as qualities_response:
-                available_qualities = await qualities_response.text()
-            # try to decode the suspected JSON
-            try:
-                available_json: JsonType = json.loads(available_qualities)
-            except json.JSONDecodeError:
-                # No JSON: this is the expected path. Do nothing and continue with the below.
-                pass
-            else:
-                # JSON was decoded - if there's an error, log it and report failure
-                if isinstance(available_json, list):
-                    available_json = available_json[0]
-                if "error" in available_json:
-                    logger.error(f'Stream URL get error: "{available_json["error"]}"')
-                    self.channel.set_offline()
+        data = playback_token_response.get("data")
+        token_data = data.get("streamPlaybackAccessToken") if isinstance(data, dict) else None
+        if not isinstance(token_data, dict) or not all(
+            isinstance(token_data.get(key), str) and token_data[key] for key in ("value", "signature")
+        ):
+            return None
+        master_url = URL(
+            f"https://usher.ttvnw.net/api/channel/hls/{self.channel._login}.m3u8"
+        ).with_query(sig=token_data["signature"], token=token_data["value"])
+        async with self.channel._twitch.request("GET", master_url) as response:
+            if response.status != 200:
                 return None
-            # pick the last URL from the list, usually with the lowest quality stream
-            self._stream_url = cast(URLType, URL(available_qualities.strip().split("\n")[-1]))
-        except (aiohttp.InvalidURL, ValueError):
-            self.channel._twitch.print(available_qualities)
-            raise
+            master = await response.text()
+        qualities = self.playlist_urls(master, master_url, master=True)
+        if not qualities:
+            return None
+        # The last quality is normally audio-only or the lowest bandwidth variant.
+        self._stream_url = URLType(str(qualities[-1]))
         return self._stream_url
+
+    @staticmethod
+    def playlist_urls(playlist: str, base: URL, *, master: bool = False) -> list[URL]:
+        """Resolve URI lines associated with the expected HLS entry tag."""
+        if not playlist.lstrip().startswith("#EXTM3U"):
+            return []
+        tag = "#EXT-X-STREAM-INF:" if master else "#EXTINF:"
+        urls: list[URL] = []
+        pending = False
+        try:
+            for raw in playlist.splitlines():
+                line = raw.strip()
+                if not line:
+                    continue
+                if line.startswith("#"):
+                    if line.startswith(tag):
+                        pending = True
+                    continue
+                if not pending:
+                    return []
+                url = base.join(URL(line))
+                if (url.scheme not in ("http", "https") or not url.host
+                        or url.user is not None or master and not url.path.endswith(".m3u8")):
+                    return []
+                urls.append(url)
+                pending = False
+            return [] if pending else urls
+        except (ValueError, aiohttp.InvalidURL):
+            # Upstream bodies and signed URLs must never become diagnostics.
+            return []
+
 
 
 class Channel:
@@ -154,6 +174,9 @@ class Channel:
         "_spade_url",
         "_stream",
         "_pending_stream_up",
+        "_watch_broadcast_id",
+        "_watched_segments",
+        "_last_spade_sent",
         "acl_based",
     )
 
@@ -174,6 +197,9 @@ class Channel:
         self._spade_url: URLType | None = None
         self._stream: Stream | None = None
         self._pending_stream_up: asyncio.Task[Any] | None = None
+        self._watch_broadcast_id: int | None = None
+        self._watched_segments: OrderedDict[str, None] = OrderedDict()
+        self._last_spade_sent: float | None = None
         # ACL-based channels are:
         # • considered first when switching channels
         # • if we're watching a non-based channel, a based channel going up triggers a switch
@@ -431,68 +457,117 @@ class Channel:
         if needs_display:
             self.display()
 
-    # NOTE: This is currently unused.
+    def _watch_current(self, stream: Stream) -> bool:
+        return (
+            self._stream is not None
+            and self._stream.broadcast_id == stream.broadcast_id
+            and self._twitch.watching_channel.get_with_default(None) is self
+        )
+
     async def _send_watch_playlist(self) -> bool:
-        """
-        This performs a HEAD request on the stream's current playlist,
-        to simulate watching the stream.
-        Optimally, send every ~20 seconds to advance drops.
-        """
-        if self._stream is None:
-            return False
-        # get the stream url
-        stream_url = await self._stream.get_stream_url()
-        if stream_url is None:
-            return False
-        # fetch a list of chunks available to download for the stream
-        # NOTE: the CDN is configured to forcibly disconnect shortly after serving the list,
-        # if we don't do it yourselves. Lets help it by actually doing it ourselves instead.
-        async with self._twitch.request(
-            "GET", stream_url, headers={"Connection": "close"}
-        ) as chunks_response:
-            if chunks_response.status >= 400:
-                # if the stream goes OFFLINE, trying to get a list of chunks returns a 404
-                return False
-            available_chunks: str = await chunks_response.text()
-        # the response may contain some invalid JSON with duplicate double quotes
-        # in the value strings: we need to get rid of them by removing the "url" key entirely
-        # if no JSON can be found within the response, this is a NOOP
-        available_chunks = re.sub(r'"url": ?".+}",', "", available_chunks)
-        # try to decode the suspected JSON
+        """HEAD every new media segment, without fetching audio or video bodies."""
         try:
-            available_json: JsonType = json.loads(available_chunks)
-        except json.JSONDecodeError:
-            # No JSON: this is the expected path. Do nothing and continue with the below.
-            pass
-        else:
-            # JSON was decoded - if there's an error, log it and report failure
-            if isinstance(available_json, list):
-                available_json = available_json[0]
-            if "error" in available_json:
-                logger.error(f'Send watch error: "{available_json["error"]}"')
+            # HTTPClient retries network/5xx failures. Bound the entire poll as well
+            # as individual requests so one missing segment cannot stall watching.
+            return await asyncio.wait_for(self._watch_playlist(), timeout=10)
+        except ExitRequest:
+            raise
+        except (MinerException, aiohttp.ClientError, TimeoutError, ValueError):
             return False
-        # the list contains ~10-13 chunks of the stream at 2s intervals,
-        # pick the last chunk URL available. Ensure it's not the end-of-stream tag,
-        # otherwise use the 2nd to last line.
-        chunks_list: list[str] = available_chunks.strip().split("\n")
-        selected_chunk: str = chunks_list[-1]
-        if selected_chunk == "#EXT-X-ENDLIST":
-            selected_chunk = chunks_list[-2]
-        stream_chunk_url: URLType = URLType(selected_chunk)
-        # sending a HEAD request is enough to advance the drops,
-        # without downloading the actual stream data
-        async with self._twitch.request("HEAD", stream_chunk_url) as head_response:
-            return head_response.status == 200
+
+    async def _watch_playlist(self) -> bool:
+        stream = self._stream
+        if stream is None or not self._watch_current(stream):
+            return False
+        if self._watch_broadcast_id != stream.broadcast_id:
+            self._watch_broadcast_id = stream.broadcast_id
+            self._watched_segments.clear()
+            self._last_spade_sent = None
+        stream_url = await stream.get_stream_url()
+        if stream_url is None or not self._watch_current(stream):
+            return False
+        status, playlist = await asyncio.wait_for(
+            self._watch_response("GET", stream_url), timeout=5
+        )
+        if status != 200:
+            if status in (401, 403, 404):
+                stream._stream_url = None
+                if self._stream is not None and self._stream == stream:
+                    self._stream._stream_url = None
+            return False
+        if not self._watch_current(stream):
+            return False
+        segments = Stream.playlist_urls(playlist, URL(stream_url))
+        if not segments:
+            return False
+        succeeded = True
+        for url in segments:
+            if not self._watch_current(stream):
+                return False
+            key = str(url)
+            if key in self._watched_segments:
+                continue
+            try:
+                status, _ = await asyncio.wait_for(
+                    self._watch_response("HEAD", url), timeout=3
+                )
+                if not self._watch_current(stream):
+                    return False
+                if status == 200:
+                    self._watched_segments[key] = None
+                    # Retain some history for temporarily stale CDN snapshots,
+                    # while keeping memory bounded during long broadcasts.
+                    if len(self._watched_segments) > 256:
+                        self._watched_segments.popitem(last=False)
+                else:
+                    succeeded = False
+                    if status in (401, 403, 404):
+                        stream._stream_url = None
+            except ExitRequest:
+                raise
+            except (MinerException, aiohttp.ClientError, TimeoutError):
+                succeeded = False
+        return succeeded
+
+    async def _watch_response(self, method: str, url: URLType | URL) -> tuple[int, str]:
+        headers = {"Connection": "close"} if method == "GET" else {}
+        async with self._twitch.request(method, url, headers=headers) as response:
+            return response.status, await response.text() if method == "GET" else ""
 
     async def send_watch(self) -> bool:
-        if self._stream is None:
+        stream = self._stream
+        if stream is None:
             return False
+        succeeded = await self._send_watch_playlist()
+        if not succeeded or not self._watch_current(stream):
+            return False
+        now = monotonic()
+        # Telemetry is auxiliary; its response does not establish Drop credit.
+        if (
+            self._last_spade_sent is None
+            or now - self._last_spade_sent >= WATCH_INTERVAL.total_seconds()
+        ):
+            self._last_spade_sent = now
+            await self._send_watch_spade()
+        return self._watch_current(stream)
+
+    async def _send_watch_spade(self) -> bool:
         try:
-            if self._spade_url is None:
-                self._spade_url = await self.get_spade_url()
-            async with self._twitch.request(
-                "POST", self._spade_url, data=self._stream._spade_payload
-            ) as response:
-                return response.status == 204
-        except (MinerException, RequestException):
+            return await asyncio.wait_for(self._post_spade(), timeout=5)
+        except ExitRequest:
+            raise
+        except (MinerException, aiohttp.ClientError, TimeoutError):
             return False
+
+    async def _post_spade(self) -> bool:
+        stream = self._stream
+        if stream is None:
+            return False
+        if self._spade_url is None:
+            self._spade_url = await self.get_spade_url()
+        if not self._watch_current(stream):
+            return False
+        async with self._twitch.request(
+            "POST", self._spade_url, data=stream._spade_payload
+        ) as response:
+            return response.status == 204
