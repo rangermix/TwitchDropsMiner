@@ -20,6 +20,7 @@ services operated for other users are outside its support scope.
 
 - Choose and prioritize games, or let TDM discover available campaigns.
 - Track campaigns and rewards, and ignore drops you do not want.
+- Source builds skip channels while Twitch reports an active ban, including temporary bans.
 - Sign in inside the dashboard; TDM saves and renews your session automatically.
 - Review claimed-drop history, export it to CSV, and receive Telegram notifications.
 - Manage everything from a web dashboard with optional password protection.
@@ -34,6 +35,10 @@ is available from source pending release.
 Inventory supports **All / Linked / Not Linked** account-link filters. Settings has a
 default-off option to mine campaigns reported as Not Linked; read its warning and
 check Twitch progress. See the [dashboard guide](docs/usage.md#account-link-override).
+
+Source builds also offer **Settings → Dump diagnosis data** for bug reports. It saves
+deidentified miner state and recent sanitized API responses in your data volume;
+see [diagnosis data](docs/troubleshooting.md#save-diagnosis-data).
 
 ## Quick start
 

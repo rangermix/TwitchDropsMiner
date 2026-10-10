@@ -159,6 +159,26 @@ lang/                # Translation JSON files (20 languages)
 - `Stream` class: Active stream with game, viewers, drop status
 - Stream URL fetching and validation
 - ACL-based vs directory channels
+- `Channel.banned` accepts an error-free, matching-channel `user.self.banStatus`
+  object with boolean `isPermanent`. Both true and false mean an active ban; false
+  identifies a temporary ban. Null explicitly clears a ban. Missing, malformed or
+  errored responses retain known state. A temporary ban expires at a valid, timezone-aware
+  `expiresAt`; absent or invalid expiry waits for a confirmed null status. Permanent
+  bans ignore expiry. This account-specific field comes from the separate raw
+  `ChannelBanStatus` query to Twitch GraphQL, not broadcast status or watch failures.
+- `ChannelService.filter_banned_channels()` checks every discovery/reload candidate in
+  batches of 20 with a ten-second timeout, drains tasks on cancellation/exit, and
+  removes confirmed bans before sorting and the tracking cap. Preserve existing
+  persisted stream reads and safe-read retry rules. Optional failures do not classify
+  unknown channels as banned. Watch eligibility and transport also reject known bans,
+  including manual selection and special-category ACLs. Explicit unbans take effect at
+  the next discovery/reload check; temporary expiry queues discovery automatically.
+  Retain known bans across rediscovery failures and synchronize watched/manual objects
+  by channel ID, preserve known bans on optional failures, and keep delayed online checks
+  from redisplaying a banned channel. Regression coverage: `tests/test_banned_channels.py`.
+  Keep confirmed bans and expiry callbacks across cache recovery until expiry or a
+  confirmed null response. Cancel callbacks and clear account-owned ban state on
+  identity replacement and shutdown.
 
 **src/models/campaign.py** - Drop campaigns:
 
@@ -201,6 +221,26 @@ lang/                # Translation JSON files (20 languages)
 - The Settings **Clear All Cache** action discards local campaign, channel, and other
   derived miner state, preserves OAuth login and settings, and then reloads from Twitch.
   It is a recovery and diagnostic action, not a correction for Twitch campaign metadata.
+- **Dump diagnosis data** calls dashboard-protected `POST /api/diagnostics`; retain
+  origin/CSRF guards, a 4-KiB body limit, allowlisted browser metadata and fixed redacted
+  validation/storage errors. There is no upload or file-download route. `Diagnostics`
+  in `src/diagnostics.py` owns per-client capture, strict snapshot projection and atomic
+  saves in `DATA_DIR/diagnostics` (`/app/data/diagnostics` in Docker). Keep the directory
+  0700 and files 0600 on POSIX, reject symlinks, drain cancelled writer threads while
+  holding the admission lock, and enforce the ten-second cooldown. Retain ten generated
+  files, each at most 8 MiB, with explicit snapshot/truncation counts.
+- Capture responses from the miner HTTP transport, authenticated GraphQL/OAuth
+  transport, SDK integrity exchange, Twitch websocket, Telegram, version checks and
+  proxy verification. Sanitize before retaining any payload; keep two recent samples
+  per API operation plus counts. API body capture is capped at 256 KiB, with bounded
+  nodes/depth/arrays. New response reads must also be bounded. Non-JSON bodies and
+  rejected authentication responses retain only metadata. Never record request headers,
+  cookies, tokens, passwords, SDK/browser profiles, verification data, signed URLs or
+  formatted logs/tracebacks. Unknown keys/free text and identities use HMAC aliases;
+  exports use fresh per-dump aliases. Project snapshot booleans/numbers strictly rather
+  than trusting raw model annotations. Clear capture state on account replacement;
+  remove the warning-location handler on shutdown. Regression coverage:
+  `tests/test_diagnostics.py` and `tests/test_diagnostics_frontend.py`.
 - `serve_index()` replaces the `__APP_VERSION__` placeholder in local CSS/JavaScript URLs
   with the application version and serves `/` with `Cache-Control: no-cache`
 - Any `app.js` or `styles.css` change requires an application version bump through the release

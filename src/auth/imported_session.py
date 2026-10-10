@@ -22,6 +22,7 @@ from src.exceptions import ExitRequest, LoginException
 
 
 if TYPE_CHECKING:
+    from src.diagnostics import Diagnostics
     from src.web.managers.login import LoginFormManager
 
 
@@ -35,8 +36,10 @@ class _TransientRequest(SessionError):
 class SessionTransport:
     """Send credentials only to fixed Twitch endpoints, without a cookie jar."""
 
-    def __init__(self, proxy: str | None | Callable[[], str | None] = None):
+    def __init__(self, proxy: str | None | Callable[[], str | None] = None, *,
+                 diagnostics: Diagnostics | None = None):
         self.proxy = proxy
+        self.diagnostics = diagnostics
         self._http: aiohttp.ClientSession | None = None
 
     async def request(self, method: str, url: str, *, headers: dict[str, str], body: Any = None) -> Any:
@@ -52,16 +55,28 @@ class SessionTransport:
             async with self._http.request(
                 method, url, headers=headers, json=body, proxy=self.proxy() if callable(self.proxy) else self.proxy, allow_redirects=False,
             ) as response:
+                if response.status != 200 and self.diagnostics is not None:
+                    self.diagnostics.record_http(method, url, response.status, operations=body)
                 if 500 <= response.status < 600:
                     raise _TransientRequest()
                 if response.status != 200:
                     raise SessionError("AUTH" if response.status in (401, 403) else "REQUEST")
-                return await response.json()
+                payload = await response.json()
+                if self.diagnostics is not None:
+                    self.diagnostics.record_http(method, url, response.status, payload=payload, operations=body)
+                return payload
         except aiohttp.ClientSSLError:
+            if self.diagnostics is not None:
+                self.diagnostics.record(self.diagnostics.endpoint(url, method), outcome="tls")
             raise SessionError("REQUEST") from None
-        except (aiohttp.ClientConnectionError, aiohttp.ClientPayloadError, TimeoutError):
+        except (aiohttp.ClientConnectionError, aiohttp.ClientPayloadError, TimeoutError) as error:
+            if self.diagnostics is not None:
+                self.diagnostics.record(self.diagnostics.endpoint(url, method),
+                                        outcome="timeout" if isinstance(error, TimeoutError) else "connection")
             raise _TransientRequest() from None
         except (aiohttp.ClientError, ValueError):
+            if self.diagnostics is not None:
+                self.diagnostics.record(self.diagnostics.endpoint(url, method), outcome="decode")
             raise SessionError("REQUEST") from None
 
     async def validate(self, bundle: SessionBundle, expected_user_id: int | None) -> BrowserIdentity:

@@ -220,7 +220,13 @@
             "remove_game": "{game} oyununu kaldır",
             "allow_unlinked_campaigns": "Bağlı Değil olarak bildirilen kampanyaların kazılmasına izin ver",
             "allow_unlinked_campaigns_warning": "Uyarı: Bu yalnızca TDM’nin hesap bağlantısı kontrolünü atlar. Hesapları bağlamaz; Twitch ilerlemesini, ödül talebini veya oyun içi ödülleri garanti etmez. TDM tahmini dakikalar gösterebilir. Twitch Drops envanterini kontrol edin ve ödülleri almak için doğru oyun hesabını bağlayın.",
-            "allow_unlinked_campaigns_save_error": "Hesap bağlantısı kazım seçeneği kaydedilemedi. Lütfen tekrar deneyin."
+            "allow_unlinked_campaigns_save_error": "Hesap bağlantısı kazım seçeneği kaydedilemedi. Lütfen tekrar deneyin.",
+            "dump_diagnostics": "Tanılama verilerini kaydet",
+            "diagnostics_help": "Kimlik bilgileri kaldırılmış madenci durumunu ve temizlenmiş son API yanıtlarını bağlı veri birimindeki data/diagnostics klasörüne kaydeder.",
+            "diagnostics_saving": "Tanılama verileri kaydediliyor…",
+            "diagnostics_saved": "Tanılama verileri {path} konumuna kaydedildi.",
+            "diagnostics_error": "Tanılama verileri kaydedilemedi. Tekrar deneyin.",
+            "diagnostics_busy": "Tanılama kaydı zaten sürüyor veya yeni tamamlandı. Birkaç saniye bekleyip tekrar deneyin."
         },
         "help": {
             "about": "Twitch Drops Miner Hakkında",

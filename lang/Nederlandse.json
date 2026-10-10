@@ -220,7 +220,13 @@
             "remove_game": "{game} verwijderen",
             "allow_unlinked_campaigns": "Mining toestaan voor campagnes die als niet gekoppeld worden gemeld",
             "allow_unlinked_campaigns_warning": "Waarschuwing: dit omzeilt alleen de controle van TDM op accountkoppeling. Het koppelt geen accounts en garandeert geen Twitch-voortgang, claims of beloningen in het spel. TDM kan geschatte minuten tonen. Controleer je Twitch Drops-inventaris en koppel het juiste spelaccount om beloningen te ontvangen.",
-            "allow_unlinked_campaigns_save_error": "De miningoptie voor niet-gekoppelde accounts kon niet worden opgeslagen. Probeer het opnieuw."
+            "allow_unlinked_campaigns_save_error": "De miningoptie voor niet-gekoppelde accounts kon niet worden opgeslagen. Probeer het opnieuw.",
+            "dump_diagnostics": "Diagnosegegevens opslaan",
+            "diagnostics_help": "Slaat de minerstatus zonder identificerende gegevens en recente opgeschoonde API-antwoorden op in data/diagnostics op het gekoppelde gegevensvolume.",
+            "diagnostics_saving": "Diagnosegegevens opslaan…",
+            "diagnostics_saved": "Diagnosegegevens opgeslagen in {path}.",
+            "diagnostics_error": "Kan diagnosegegevens niet opslaan. Probeer het opnieuw.",
+            "diagnostics_busy": "Een diagnose wordt al opgeslagen of is zojuist opgeslagen. Wacht enkele seconden en probeer het opnieuw."
         },
         "help": {
             "about": "Over Twitch Drops Miner",

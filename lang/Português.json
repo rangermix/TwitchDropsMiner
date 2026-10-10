@@ -220,7 +220,13 @@
             "remove_game": "Remover {game}",
             "allow_unlinked_campaigns": "Permitir minerar campanhas indicadas como não vinculadas",
             "allow_unlinked_campaigns_warning": "Aviso: isto ignora apenas a verificação de vínculo de conta do TDM. Não vincula contas nem garante progresso na Twitch, resgates ou recompensas no jogo. O TDM pode mostrar minutos estimados. Confira o inventário de Drops da Twitch e vincule a conta de jogo correta para receber recompensas.",
-            "allow_unlinked_campaigns_save_error": "Não foi possível salvar a opção de mineração de contas não vinculadas. Tente novamente."
+            "allow_unlinked_campaigns_save_error": "Não foi possível salvar a opção de mineração de contas não vinculadas. Tente novamente.",
+            "dump_diagnostics": "Guardar dados de diagnóstico",
+            "diagnostics_help": "Guarda o estado desidentificado do minerador e as respostas recentes das APIs, depuradas, em data/diagnostics no volume de dados montado.",
+            "diagnostics_saving": "A guardar dados de diagnóstico…",
+            "diagnostics_saved": "Dados de diagnóstico guardados em {path}.",
+            "diagnostics_error": "Não foi possível guardar os dados de diagnóstico. Tente novamente.",
+            "diagnostics_busy": "Já está a ser guardado um diagnóstico ou acabou de ser guardado. Aguarde alguns segundos e tente novamente."
         },
         "help": {
             "about": "Sobre o Twitch Drops Miner",

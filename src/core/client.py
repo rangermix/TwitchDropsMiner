@@ -26,6 +26,7 @@ from src.config import (
     WebsocketTopic,
 )
 from src.config.paths import DATA_DIR
+from src.diagnostics import Diagnostics
 from src.drop_history import DropHistory
 from src.exceptions import (
     ExitRequest,
@@ -62,6 +63,7 @@ gql_logger = logging.getLogger("TwitchDrops.gql")
 class Twitch:
     def __init__(self, settings: Settings):
         self.settings: Settings = settings
+        self.diagnostics = Diagnostics(DATA_DIR)
         # State management
         self._state: State = State.IDLE
         self._state_change = asyncio.Event()
@@ -77,7 +79,9 @@ class Twitch:
         # Client type and auth
         self._client_type: ClientInfo = ClientType.ANDROID_APP
         self._browser = ImportedSession(
-            DATA_DIR / "imported-session.json", transport=SessionTransport(lambda: self.settings.proxy or None),
+            DATA_DIR / "imported-session.json", transport=SessionTransport(
+                lambda: self.settings.proxy or None, diagnostics=self.diagnostics,
+            ),
             bound_user_id=lambda: getattr(self._auth_state, "user_id", None),
             on_identity=lambda identity: self._auth_state.accept_imported_identity(identity),
         )
@@ -181,6 +185,8 @@ class Twitch:
             yield
         finally:
             self._auth_state.clear()
+            self._channel_service.clear_bans()
+            self.diagnostics.clear()
             self._inventory_service.clear_cached_state()
             self._inventory_loaded = False
             if self._state is not State.EXIT:
@@ -198,7 +204,8 @@ class Twitch:
     def _ensure_api_clients(self) -> None:
         """Ensure API clients are initialized (called after GUI is set)."""
         if self._http_client is None:
-            self._http_client = HTTPClient(self.settings, self.gui, self, self._client_type)
+            self._http_client = HTTPClient(self.settings, self.gui, self, self._client_type,
+                                          diagnostics=self.diagnostics)
         if self._gql_client is None:
             self._gql_client = GQLClient(self._http_client, self._auth_state, self._client_type)
 
@@ -224,6 +231,8 @@ class Twitch:
 
     async def shutdown(self) -> None:
         start_time = time()
+        self._channel_service.clear_bans()
+        self.diagnostics.stop_logs()
         await self.helper.stop()
         await self.login_browser.stop()
         await self.session_controller.stop()
@@ -333,6 +342,7 @@ class Twitch:
 
     async def run(self) -> None:
         """Main entry point for the miner - handles exit requests."""
+        self.diagnostics.start_logs()
         self.session_controller.start()
         try:
             while self._state is not State.EXIT:
@@ -353,6 +363,8 @@ class Twitch:
                 except aiohttp.ContentTypeError as exc:
                     raise RequestException(_.t["login"]["unexpected_content"]) from exc
         finally:
+            self._channel_service.clear_bans()
+            self.diagnostics.stop_logs()
             await self.login_browser.stop()
             await self.helper.stop()
             await self.session_controller.stop()
@@ -546,11 +558,24 @@ class Twitch:
                     # for every campaign without an ACL, for it's game,
                     # add a list of live channels with drops enabled
                     new_channels.update(await self.get_live_streams(game, drops_enabled=True))
+                # Filter account-specific bans before priority sorting and the tracking cap.
+                retained_channels = [channel for channel in (
+                    self.watching_channel.get_with_default(None), self._manual_target_channel,
+                ) if channel is not None]
+                unbanned_channels = await self._channel_service.filter_banned_channels(
+                    new_channels, retained_channels=retained_channels,
+                )
+                banned_channels = [channel for channel in (
+                    *new_channels, *retained_channels,
+                ) if channel.banned]
+                self._remove_channel_topics(set(banned_channels))
+                for channel in banned_channels:
+                    channel.remove()
                 # sort them descending by viewers, by priority and by game priority
                 # NOTE: Viewers sort also ensures ONLINE channels are sorted to the top
                 # NOTE: We can drop using the set now, because there's no more channels being added
                 ordered_channels: list[Channel] = sorted(
-                    new_channels, key=ChannelService.get_viewers_key, reverse=True
+                    unbanned_channels, key=ChannelService.get_viewers_key, reverse=True
                 )
                 ordered_channels.sort(key=lambda ch: ch.acl_based, reverse=True)
                 ordered_channels.sort(key=self._channel_service.get_priority)
@@ -613,6 +638,9 @@ class Twitch:
                     no_acl,
                     acl_channels,
                     new_channels,
+                    unbanned_channels,
+                    banned_channels,
+                    retained_channels,
                     to_add_topics,
                     ordered_channels,
                     watching_channel,

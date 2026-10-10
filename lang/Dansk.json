@@ -220,7 +220,13 @@
             "remove_game": "Fjern {game}",
             "allow_unlinked_campaigns": "Tillad mining af kampagner vist som ikke forbundet",
             "allow_unlinked_campaigns_warning": "Advarsel: Dette omgår kun TDMs kontrol af kontoforbindelsen. Det forbinder ikke konti og garanterer ikke Twitch-fremskridt, afhentning eller belønninger i spillet. TDM kan vise estimerede minutter. Kontrollér Twitch Drops-inventaret, og forbind den korrekte spilkonto for at modtage belønninger.",
-            "allow_unlinked_campaigns_save_error": "Kunne ikke gemme indstillingen for mining uden kontoforbindelse. Prøv igen."
+            "allow_unlinked_campaigns_save_error": "Kunne ikke gemme indstillingen for mining uden kontoforbindelse. Prøv igen.",
+            "dump_diagnostics": "Gem diagnosedata",
+            "diagnostics_help": "Gemmer minerens tilstand uden personoplysninger og seneste rensede API-svar i data/diagnostics på din monterede datavolumen.",
+            "diagnostics_saving": "Gemmer diagnosedata…",
+            "diagnostics_saved": "Diagnosedata gemt i {path}.",
+            "diagnostics_error": "Kunne ikke gemme diagnosedata. Prøv igen.",
+            "diagnostics_busy": "En diagnosticering kører allerede eller er lige blevet gemt. Vent et par sekunder, og prøv igen."
         },
         "help": {
             "about": "Om Twitch Drops Miner",

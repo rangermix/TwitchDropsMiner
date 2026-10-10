@@ -378,9 +378,12 @@
                     <div class="settings-actions">
                         <button id="reload-btn" class="action-button" type="button">Reload</button>
                         <button id="clear-cache-btn" class="action-button" type="button">Clear All Cache</button>
+                        <button id="dump-diagnostics-btn" class="action-button" type="button" aria-describedby="diagnostics-help">Dump diagnosis data</button>
                     </div>
                     <p id="clear-cache-help" class="help-text">Clears local campaign and channel data, keeps
                         your login and settings, then reloads from Twitch.</p>
+                    <p id="diagnostics-help" class="help-text">Saves deidentified miner state and recent sanitized API responses to data/diagnostics in your mounted data volume.</p>
+                    <p id="diagnostics-result" class="help-text" role="status" aria-live="polite"></p>
                 </section>
                 <section class="settings-section">
                     <button id="twitch-logout" type="button" class="action-button">Log out of Twitch</button>

@@ -1,3 +1,31 @@
+# Release Notes - v2.2.2
+
+This patch skips channels that Twitch reports as banned for your account and adds
+deidentified diagnosis files for bug reports, addressing
+[#165](https://github.com/rangermix/TwitchDropsMiner/issues/165).
+
+- Exclude both permanent and temporary bans from discovery and watching, including
+  manual selections. Temporary bans stop excluding the channel at their reported
+  expiry; otherwise a later check must confirm that the ban is gone.
+- Preserve confirmed bans through failed checks and **Clear All Cache**. Missing
+  ban information does not create a ban or change other campaign eligibility checks.
+- Add **Settings → Dump diagnosis data** in all 20 languages. Reproduce the problem,
+  then save miner state, runtime/browser details, progress, and recent sanitized
+  responses from the miner's operational APIs in the existing data volume at
+  `/app/data/diagnostics`.
+- Replace identities and free text with aliases and exclude credentials, headers,
+  cookies and browser profiles. Diagnosis files retain bounded recent evidence,
+  with ten files kept at up to 8 MiB each. Files are not uploaded automatically.
+- Keep Twitch-reported progress separate from local estimates in diagnosis data.
+
+Update to `rangermix/twitch-drops-miner:2.2.2`, preserving your existing data mount,
+settings, timezone and container options. Reload the dashboard after upgrading to
+load the new controls. See the
+[installation guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Installation)
+and [diagnosis guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Troubleshooting#save-diagnosis-data).
+Matching desktop helpers cover Windows x64, Linux x64, macOS arm64 and macOS x64;
+their archive checksums are listed in `SHA256SUMS`.
+
 # Release Notes - v2.2.1
 
 This patch fixes stalled Twitch Drop progress reported in

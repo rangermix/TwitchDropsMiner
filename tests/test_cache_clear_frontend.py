@@ -27,7 +27,7 @@ def test_clear_cache_button_is_next_to_reload_and_explains_preserved_state():
     )
 
     assert actions is not None
-    assert re.findall(r'<button\b[^>]*\bid="([^"]+)"', actions.group("body")) == [
+    assert re.findall(r'<button\b[^>]*\bid="([^"]+)"', actions.group("body"))[:2] == [
         "reload-btn",
         "clear-cache-btn",
     ]

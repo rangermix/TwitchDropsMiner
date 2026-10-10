@@ -115,6 +115,14 @@ Try **Reload** after correcting settings. **Clear All Cache** can rebuild local
 campaign and channel data while keeping login, settings, and dashboard protection.
 It cannot repair inaccurate campaign information supplied by Twitch.
 
+Source builds exclude channels when Twitch reports any active ban for your account,
+including temporary bans. A temporary ban stops excluding the channel at Twitch's
+reported expiry; otherwise a subsequent discovery or **Reload** must confirm that
+the ban is gone. Missing ban information does not create a ban. **Clear All Cache**
+preserves confirmed bans when a subsequent check fails, until expiry or a confirmed
+no-ban response. This does not override campaign eligibility or establish that Twitch
+will award progress.
+
 ## Dashboard writes or live updates fail behind a proxy
 
 A page loading successfully does not mean its live connection or settings writes use
@@ -138,6 +146,37 @@ field blank to reuse it. Failed notifications are not retried and do not reverse
 successful drop claim. See [Telegram notifications](notifications.md).
 
 ## Logs and reporting a problem
+
+### Save diagnosis data
+
+In source builds, reproduce the problem and select **Settings → Dump diagnosis data**.
+The result shows the saved JSON filename. With the supplied Docker mount
+`./data:/app/data`, find it in your host's `data/diagnostics` folder; inside the
+container it is `/app/data/diagnostics`. A named volume keeps it in that same container
+path. Source installations use their configured data directory.
+
+The file contains miner status, relevant settings, campaign/drop progress, channel
+ban results, runtime/browser details and recent sanitized API evidence. Twitch's
+reported minutes and local estimated minutes are listed separately. Identities,
+names, free text, URLs and unknown fields use aliases consistent within one file
+and different across files. Credentials, request headers, cookies, browser profiles,
+passwords, verification codes and full log messages are excluded. Warning/error
+locations are included without message bodies or tracebacks.
+
+API evidence covers the miner's HTTP, GraphQL/OAuth, SDK integrity, Twitch websocket,
+Telegram, update-check and proxy-check paths. Capture starts during operation and
+resets when the Twitch account changes. Each API operation keeps its two most recent
+samples and a count; JSON bodies are sanitized with size and structure limits.
+HTML, playlists, segment data, oversized bodies and rejected authentication responses
+retain only metadata. Interactive browser traffic and a desktop helper's own local
+traffic are excluded. No stream audio or video is captured.
+
+Dumps are saved locally; nothing is uploaded automatically. Keep the generated file
+alongside the reproduction steps in your bug report. Save after reproducing, before
+logging out or restarting. TDM retains the ten newest generated files, each at most
+8 MiB. Counts and truncation markers describe omitted data. Wait ten seconds between
+saves. If saving fails, check the data volume's free space and write permissions;
+startup failures before the dashboard is available still need the redacted logs below.
 
 For Docker, inspect console output with:
 

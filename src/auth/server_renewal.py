@@ -14,7 +14,7 @@ import time
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, suppress
 from pathlib import Path
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from src.auth.browser_session import BrowserSession
 from src.auth.imported_session import SessionTransport
@@ -22,6 +22,10 @@ from src.auth.server_seed import SDKCookie, ServerSeed
 from src.auth.session_bundle import PrivateSessionFile, SessionBundle, SessionError
 from src.auth.session_helper import BrowserExporter, CaptureProtocol
 from src.auth.session_renewal import RenewalConnection, RenewalLoop, RenewalSender
+
+
+if TYPE_CHECKING:
+    from src.diagnostics import Diagnostics
 
 
 class BrowserOwner(Protocol):
@@ -122,7 +126,8 @@ class SDKExchange:
 
     URL = "https://gql.twitch.tv/integrity"
 
-    def __init__(self):
+    def __init__(self, diagnostics: Diagnostics | None = None):
+        self.diagnostics = diagnostics
         self.posts: set[str] = set()
         self.responses: dict[str, dict[str, Any]] = {}
         self.cached: set[str] = set()
@@ -158,15 +163,28 @@ class SDKExchange:
                 self.cached.add(request_id)
             elif method == "Network.responseReceived" and request_id in self.posts:
                 self.responses[request_id] = params["response"]
+                if self.diagnostics is not None and params["response"].get("status") != 200:
+                    self.diagnostics.record("twitch_integrity", status=params["response"].get("status"))
             elif method == "Network.loadingFailed" and request_id in self.posts:
+                if self.diagnostics is not None:
+                    self.diagnostics.record("twitch_integrity", outcome="connection")
                 raise SessionError("SDK_ISSUANCE")
             elif method == "Network.loadingFinished" and request_id in self.posts:
                 response = self.responses.get(request_id, {})
                 if (response.get("url") != self.URL or response.get("status") != 200
                         or response.get("fromDiskCache") or response.get("fromServiceWorker")
                         or request_id in self.cached):
+                    if self.diagnostics is not None and response.get("status") == 200:
+                        self.diagnostics.record("twitch_integrity", {"error": "SDK_ISSUANCE"}, status=200)
                     raise SessionError("SDK_ISSUANCE")
-                data = await protocol.body(request_id)
+                try:
+                    data = await protocol.body(request_id)
+                except SessionError as error:
+                    if self.diagnostics is not None:
+                        self.diagnostics.record("twitch_integrity", {"error": error.code}, status=200, outcome="decode")
+                    raise
+                if self.diagnostics is not None:
+                    self.diagnostics.record("twitch_integrity", data, status=200)
                 if not self.proof.done():
                     self.proof.set_result(data)
 
@@ -205,14 +223,16 @@ class SDKAcquisition:
       });
     }"""
 
-    def __init__(self, *, clock: Callable[[], float] = time.time, timeout: float = 120):
+    def __init__(self, *, clock: Callable[[], float] = time.time, timeout: float = 120,
+                 diagnostics: Diagnostics | None = None):
         self.clock, self.timeout = clock, timeout
+        self.diagnostics = diagnostics
 
     async def run(self, protocol: CaptureProtocol, bundle: SessionBundle,
                   cookie: SDKCookie | None = None, *, initial: bool = False) -> ServerSeed:
         try:
             async with asyncio.timeout(self.timeout):  # type: ignore[attr-defined]
-                exchange = SDKExchange()
+                exchange = SDKExchange(self.diagnostics)
                 events = asyncio.create_task(exchange.run(protocol))
                 acquire = asyncio.create_task(self.acquire(protocol, exchange, bundle, cookie, initial=initial))
                 try:
@@ -288,8 +308,10 @@ class SDKAcquisition:
 class SDKIssuer:
     """Renew only fresh SDK seeds in an owned temporary server browser."""
 
-    def __init__(self, browser: BrowserOwner, *, clock: Callable[[], float] = time.time, timeout: float = 120):
+    def __init__(self, browser: BrowserOwner, *, clock: Callable[[], float] = time.time, timeout: float = 120,
+                 diagnostics: Diagnostics | None = None):
         self.browser, self.clock, self.timeout = browser, clock, timeout
+        self.diagnostics = diagnostics
 
     async def issue(self, seed: ServerSeed, *, initial: bool = False) -> ServerSeed:
         seed.cookie.require_fresh(self.clock())
@@ -297,7 +319,7 @@ class SDKIssuer:
             self.browser.start() as address,
             BrowserExporter(address).target(extra_events=SDKAcquisition.EVENTS) as protocol,
         ):
-            return await SDKAcquisition(clock=self.clock, timeout=self.timeout).run(
+            return await SDKAcquisition(clock=self.clock, timeout=self.timeout, diagnostics=self.diagnostics).run(
                 protocol, seed.bundle, seed.cookie, initial=initial,
             )
 

@@ -220,7 +220,13 @@
             "remove_game": "移除 {game}",
             "allow_unlinked_campaigns": "允許挖掘顯示為「未連結」的活動",
             "allow_unlinked_campaigns_warning": "警告：此選項僅略過 TDM 的帳號連結檢查。它不會連結帳號，也不保證 Twitch 進度、領取成功或遊戲內獎勵。TDM 可能顯示估算的分鐘數。請檢查 Twitch 的 Drops 庫存，並連結正確的遊戲帳號以接收獎勵。",
-            "allow_unlinked_campaigns_save_error": "無法儲存帳號連結挖掘選項，請重試。"
+            "allow_unlinked_campaigns_save_error": "無法儲存帳號連結挖掘選項，請重試。",
+            "dump_diagnostics": "匯出診斷資料",
+            "diagnostics_help": "將去識別化的礦工狀態與已清除敏感資訊的近期 API 回應儲存至掛載資料磁碟區中的 data/diagnostics。",
+            "diagnostics_saving": "正在儲存診斷資料…",
+            "diagnostics_saved": "診斷資料已儲存至 {path}。",
+            "diagnostics_error": "無法儲存診斷資料，請重試。",
+            "diagnostics_busy": "診斷資料正在儲存或剛剛儲存完成，請稍等幾秒後重試。"
         },
         "help": {
             "about": "關於 Twitch Drops Miner",

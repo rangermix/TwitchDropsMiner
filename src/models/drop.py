@@ -199,7 +199,7 @@ class BaseDrop:
             bot_token = self._twitch.settings.telegram_bot_token
             chat_id = self._twitch.settings.telegram_chat_id
             if bot_token and chat_id:
-                await TelegramNotifier(bot_token, chat_id).notify_drop_claimed(self)
+                await TelegramNotifier(bot_token, chat_id, diagnostics=getattr(self._twitch, "diagnostics", None)).notify_drop_claimed(self)
         except Exception as e:
             logger.warning("Failed to send Telegram notification: %s", e)
 

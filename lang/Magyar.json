@@ -185,7 +185,13 @@
             "remove_game": "{game} eltávolítása",
             "allow_unlinked_campaigns": "A nem összekapcsoltként jelzett kampányok bányászatának engedélyezése",
             "allow_unlinked_campaigns_warning": "Figyelem: Ez csak a TDM fiók-összekapcsolási ellenőrzését kerüli meg. Nem kapcsol össze fiókokat, és nem garantál Twitch-előrehaladást, igénylést vagy játékon belüli jutalmakat. A TDM becsült perceket jeleníthet meg. Ellenőrizd a Twitch Drops-készletedet, és kapcsold össze a megfelelő játékfiókot a jutalmak átvételéhez.",
-            "allow_unlinked_campaigns_save_error": "Nem sikerült menteni a fiók-összekapcsolási bányászati beállítást. Próbáld újra."
+            "allow_unlinked_campaigns_save_error": "Nem sikerült menteni a fiók-összekapcsolási bányászati beállítást. Próbáld újra.",
+            "dump_diagnostics": "Diagnosztikai adatok mentése",
+            "diagnostics_help": "Az azonosítóktól megtisztított bányászállapotot és a legutóbbi szűrt API-válaszokat a csatolt adatkötet data/diagnostics mappájába menti.",
+            "diagnostics_saving": "Diagnosztikai adatok mentése…",
+            "diagnostics_saved": "Diagnosztikai adatok mentve ide: {path}.",
+            "diagnostics_error": "Nem sikerült menteni a diagnosztikai adatokat. Próbálja újra.",
+            "diagnostics_busy": "Egy diagnosztikai mentés már folyamatban van, vagy éppen befejeződött. Várjon néhány másodpercet, majd próbálja újra."
         },
         "help": {
             "about": "A Twitch Drops Miner-ről",
