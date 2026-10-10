@@ -220,7 +220,13 @@
             "remove_game": "Retirer {game}",
             "allow_unlinked_campaigns": "Autoriser le minage des campagnes signalées comme non liées",
             "allow_unlinked_campaigns_warning": "Attention : ceci contourne uniquement la vérification de liaison de TDM. Cela ne lie pas les comptes et ne garantit ni progression Twitch, ni récupération, ni récompenses en jeu. TDM peut afficher des minutes estimées. Vérifiez votre inventaire de Drops Twitch et liez le bon compte de jeu pour recevoir les récompenses.",
-            "allow_unlinked_campaigns_save_error": "Impossible d’enregistrer l’option de minage des comptes non liés. Réessayez."
+            "allow_unlinked_campaigns_save_error": "Impossible d’enregistrer l’option de minage des comptes non liés. Réessayez.",
+            "dump_diagnostics": "Enregistrer les données de diagnostic",
+            "diagnostics_help": "Enregistre l’état désidentifié du mineur et les réponses récentes des API, expurgées, dans data/diagnostics sur votre volume de données monté.",
+            "diagnostics_saving": "Enregistrement des données de diagnostic…",
+            "diagnostics_saved": "Données de diagnostic enregistrées dans {path}.",
+            "diagnostics_error": "Impossible d’enregistrer les données de diagnostic. Réessayez.",
+            "diagnostics_busy": "Un diagnostic est déjà en cours ou vient d’être enregistré. Attendez quelques secondes et réessayez."
         },
         "help": {
             "about": "À propos de Twitch Drops Miner",

@@ -220,7 +220,13 @@
             "remove_game": "{game} entfernen",
             "allow_unlinked_campaigns": "Mining für als nicht verknüpft gemeldete Kampagnen erlauben",
             "allow_unlinked_campaigns_warning": "Warnung: Dies umgeht nur TDMs Prüfung der Kontoverknüpfung. Es verknüpft keine Konten und garantiert weder Twitch-Fortschritt noch das Einfordern oder die Lieferung von Spielbelohnungen. TDM kann geschätzte Minuten anzeigen. Prüfe dein Twitch-Drops-Inventar und verknüpfe das richtige Spielkonto, um Belohnungen zu erhalten.",
-            "allow_unlinked_campaigns_save_error": "Die Mining-Einstellung zur Kontoverknüpfung konnte nicht gespeichert werden. Bitte versuche es erneut."
+            "allow_unlinked_campaigns_save_error": "Die Mining-Einstellung zur Kontoverknüpfung konnte nicht gespeichert werden. Bitte versuche es erneut.",
+            "dump_diagnostics": "Diagnosedaten speichern",
+            "diagnostics_help": "Speichert den anonymisierten Miner-Zustand und zuletzt bereinigte API-Antworten unter data/diagnostics im eingebundenen Datenvolume.",
+            "diagnostics_saving": "Diagnosedaten werden gespeichert…",
+            "diagnostics_saved": "Diagnosedaten unter {path} gespeichert.",
+            "diagnostics_error": "Diagnosedaten konnten nicht gespeichert werden. Bitte erneut versuchen.",
+            "diagnostics_busy": "Diagnosedaten werden bereits gespeichert oder wurden gerade gespeichert. Bitte einige Sekunden warten und erneut versuchen."
         },
         "help": {
             "about": "Über Twitch Drops Miner",

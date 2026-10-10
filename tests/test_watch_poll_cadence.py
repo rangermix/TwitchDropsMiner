@@ -19,6 +19,7 @@ async def test_playlist_polling_preserves_minute_progress_cadence(current_sessio
     bumps = []
     channel = MagicMock()
     channel.online = True
+    channel.banned = False
     channel.id = 123
 
     async def send_watch():
@@ -81,6 +82,7 @@ async def test_blocked_progress_query_is_drained_and_playlist_polling_resumes(mo
     entered, release, drained = asyncio.Event(), asyncio.Event(), asyncio.Event()
     channel = MagicMock()
     channel.online = True
+    channel.banned = False
     channel.id = 123
 
     async def send_watch():

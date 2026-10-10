@@ -185,7 +185,13 @@
             "remove_game": "Remove {game}",
             "allow_unlinked_campaigns": "Allow mining campaigns reported as Not Linked",
             "allow_unlinked_campaigns_warning": "Warning: This bypasses only TDM's account-link check. It does not link accounts or guarantee Twitch progress, claims, or in-game rewards. TDM may show estimated minutes. Check Twitch's Drops inventory and link the correct game account to receive rewards.",
-            "allow_unlinked_campaigns_save_error": "Could not save the account-link mining option. Please try again."
+            "allow_unlinked_campaigns_save_error": "Could not save the account-link mining option. Please try again.",
+            "dump_diagnostics": "Dump diagnosis data",
+            "diagnostics_help": "Saves deidentified miner state and recent sanitized API responses to data/diagnostics in your mounted data volume.",
+            "diagnostics_saving": "Saving diagnosis data…",
+            "diagnostics_saved": "Diagnosis data saved to {path}.",
+            "diagnostics_error": "Could not save diagnosis data. Try again.",
+            "diagnostics_busy": "A diagnosis dump is already running or was just saved. Wait a few seconds and try again."
         },
         "help": {
             "about": "About Twitch Drops Miner",

@@ -220,7 +220,13 @@
             "remove_game": "Hapus {game}",
             "allow_unlinked_campaigns": "Izinkan penambangan kampanye yang dilaporkan Tidak Tertaut",
             "allow_unlinked_campaigns_warning": "Peringatan: Ini hanya melewati pemeriksaan tautan akun TDM. Ini tidak menautkan akun atau menjamin progres Twitch, klaim, atau hadiah dalam game. TDM dapat menampilkan perkiraan menit. Periksa inventaris Drops Twitch dan tautkan akun game yang benar untuk menerima hadiah.",
-            "allow_unlinked_campaigns_save_error": "Tidak dapat menyimpan opsi penambangan akun tidak tertaut. Silakan coba lagi."
+            "allow_unlinked_campaigns_save_error": "Tidak dapat menyimpan opsi penambangan akun tidak tertaut. Silakan coba lagi.",
+            "dump_diagnostics": "Simpan data diagnosis",
+            "diagnostics_help": "Menyimpan status miner tanpa identitas dan respons API terbaru yang telah disanitasi ke data/diagnostics pada volume data yang terpasang.",
+            "diagnostics_saving": "Menyimpan data diagnosis…",
+            "diagnostics_saved": "Data diagnosis disimpan ke {path}.",
+            "diagnostics_error": "Tidak dapat menyimpan data diagnosis. Coba lagi.",
+            "diagnostics_busy": "Penyimpanan diagnosis sedang berlangsung atau baru selesai. Tunggu beberapa detik lalu coba lagi."
         },
         "help": {
             "about": "Tentang Twitch Drops Miner",

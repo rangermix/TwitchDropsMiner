@@ -220,7 +220,13 @@
             "remove_game": "Odebrat {game}",
             "allow_unlinked_campaigns": "Povolit těžbu kampaní označených jako nepropojené",
             "allow_unlinked_campaigns_warning": "Varování: Toto obchází pouze kontrolu propojení účtu v TDM. Nepropojí účty ani nezaručí postup na Twitchi, vyzvednutí nebo odměny ve hře. TDM může zobrazovat odhadované minuty. Zkontrolujte inventář Twitch Drops a propojte správný herní účet, abyste získali odměny.",
-            "allow_unlinked_campaigns_save_error": "Možnost těžby bez propojení účtu se nepodařilo uložit. Zkuste to znovu."
+            "allow_unlinked_campaigns_save_error": "Možnost těžby bez propojení účtu se nepodařilo uložit. Zkuste to znovu.",
+            "dump_diagnostics": "Uložit diagnostická data",
+            "diagnostics_help": "Uloží stav mineru bez identifikačních údajů a poslední očištěné odpovědi API do data/diagnostics na připojeném datovém svazku.",
+            "diagnostics_saving": "Ukládání diagnostických dat…",
+            "diagnostics_saved": "Diagnostická data byla uložena do {path}.",
+            "diagnostics_error": "Diagnostická data se nepodařilo uložit. Zkuste to znovu.",
+            "diagnostics_busy": "Ukládání diagnostiky již probíhá nebo právě skončilo. Počkejte několik sekund a zkuste to znovu."
         },
         "help": {
             "about": "O Twitch Drops Miner",

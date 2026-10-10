@@ -220,7 +220,13 @@
             "remove_game": "移除 {game}",
             "allow_unlinked_campaigns": "允许挖掘显示为“未关联”的活动",
             "allow_unlinked_campaigns_warning": "警告：此选项仅跳过 TDM 的账号关联检查。它不会关联账号，也不保证 Twitch 进度、领取成功或游戏内奖励。TDM 可能显示估算的分钟数。请检查 Twitch 的 Drops 库存，并关联正确的游戏账号以接收奖励。",
-            "allow_unlinked_campaigns_save_error": "无法保存账号关联挖掘选项，请重试。"
+            "allow_unlinked_campaigns_save_error": "无法保存账号关联挖掘选项，请重试。",
+            "dump_diagnostics": "导出诊断数据",
+            "diagnostics_help": "将去标识化的矿工状态和已清理敏感信息的近期 API 响应保存到挂载数据卷中的 data/diagnostics。",
+            "diagnostics_saving": "正在保存诊断数据…",
+            "diagnostics_saved": "诊断数据已保存到 {path}。",
+            "diagnostics_error": "无法保存诊断数据，请重试。",
+            "diagnostics_busy": "诊断数据正在保存或刚刚保存完成，请稍等几秒后重试。"
         },
         "help": {
             "about": "关于 Twitch 掉宝矿工",

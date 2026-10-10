@@ -220,7 +220,13 @@
             "remove_game": "Usuń {game}",
             "allow_unlinked_campaigns": "Zezwalaj na zbieranie dropów z kampanii oznaczonych jako niepołączone",
             "allow_unlinked_campaigns_warning": "Ostrzeżenie: pomija to tylko sprawdzanie połączenia konta przez TDM. Nie łączy kont ani nie gwarantuje postępu na Twitchu, odbioru dropów lub nagród w grze. TDM może wyświetlać szacowane minuty. Sprawdź ekwipunek Drops na Twitchu i połącz właściwe konto gry, aby otrzymać nagrody.",
-            "allow_unlinked_campaigns_save_error": "Nie udało się zapisać opcji zbierania dropów bez połączenia konta. Spróbuj ponownie."
+            "allow_unlinked_campaigns_save_error": "Nie udało się zapisać opcji zbierania dropów bez połączenia konta. Spróbuj ponownie.",
+            "dump_diagnostics": "Zapisz dane diagnostyczne",
+            "diagnostics_help": "Zapisuje stan minera bez danych identyfikujących i ostatnie oczyszczone odpowiedzi API w data/diagnostics na zamontowanym woluminie danych.",
+            "diagnostics_saving": "Zapisywanie danych diagnostycznych…",
+            "diagnostics_saved": "Dane diagnostyczne zapisano w {path}.",
+            "diagnostics_error": "Nie udało się zapisać danych diagnostycznych. Spróbuj ponownie.",
+            "diagnostics_busy": "Zapis danych diagnostycznych trwa lub właśnie się zakończył. Poczekaj kilka sekund i spróbuj ponownie."
         },
         "help": {
             "about": "O Twitch Drops Miner",

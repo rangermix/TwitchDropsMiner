@@ -247,6 +247,12 @@ class GUISettings(TypedDict):
     drop_name_blacklist_placeholder: str
     clear_all_cache: str
     clear_all_cache_help: str
+    dump_diagnostics: str
+    diagnostics_help: str
+    diagnostics_saving: str
+    diagnostics_saved: str
+    diagnostics_error: str
+    diagnostics_busy: str
     games_to_watch: str
     games_help: str
     search_games: str

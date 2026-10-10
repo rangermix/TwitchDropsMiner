@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from src.config import ClientInfo
     from src.config.settings import Settings
     from src.core.client import Twitch
+    from src.diagnostics import Diagnostics
     from src.web.gui_manager import WebGUIManager
 
 
@@ -49,6 +50,7 @@ class HTTPClient:
         gui: WebGUIManager,
         twitch: Twitch,
         client_type: ClientInfo,
+        *, diagnostics: Diagnostics | None = None,
     ):
         """
         Initialize the HTTP client.
@@ -70,6 +72,7 @@ class HTTPClient:
         self._client_type = client_type
         self._session: aiohttp.ClientSession | None = None
         self._browser_mode = False
+        self._diagnostics = diagnostics
 
     def enable_browser_mode(self, client_type: ClientInfo) -> None:
         """Use anonymous metadata HTTP alongside browser-owned authenticated GQL.
@@ -200,20 +203,30 @@ class HTTPClient:
 
                 if response.status < 500:
                     # Pre-read the response to avoid getting errors outside the context manager
-                    raw_response = await response.read()  # noqa: F841
+                    raw_response = await response.read()
+                    if self._diagnostics is not None:
+                        self._diagnostics.record_http(method, url, response.status,
+                                                      body=raw_response, operations=kwargs.get("json"))
                     yield response
                     return
 
+                if self._diagnostics is not None:
+                    self._diagnostics.record_http(method, url, response.status)
                 self.gui.print(_.t["error"]["site_down"].format(seconds=round(delay)))
             except aiohttp.ClientConnectorCertificateError:
                 # SSL verification failures should not be retried
+                if self._diagnostics is not None:
+                    self._diagnostics.record(self._diagnostics.endpoint(url, method), outcome="tls")
                 raise
             except (
                 aiohttp.ClientConnectionError,
                 asyncio.TimeoutError,
                 aiohttp.ClientPayloadError,
-            ):
+            ) as error:
                 # Connection problems, retry with backoff
+                if self._diagnostics is not None:
+                    self._diagnostics.record(self._diagnostics.endpoint(url, method),
+                                             outcome="timeout" if isinstance(error, TimeoutError) else "connection")
                 if backoff.steps > 1:
                     # Don't show quick retries to the user
                     self.gui.print(_.t["error"]["no_connection"].format(seconds=round(delay)))

@@ -220,7 +220,13 @@
             "remove_game": "Elimină {game}",
             "allow_unlinked_campaigns": "Permite colectarea din campanii raportate ca neasociate",
             "allow_unlinked_campaigns_warning": "Avertisment: aceasta ocolește doar verificarea asocierii contului făcută de TDM. Nu asociază conturi și nu garantează progres pe Twitch, revendicări sau recompense în joc. TDM poate afișa minute estimate. Verifică inventarul Drops Twitch și asociază contul de joc corect pentru a primi recompense.",
-            "allow_unlinked_campaigns_save_error": "Opțiunea de colectare fără asocierea contului nu a putut fi salvată. Încearcă din nou."
+            "allow_unlinked_campaigns_save_error": "Opțiunea de colectare fără asocierea contului nu a putut fi salvată. Încearcă din nou.",
+            "dump_diagnostics": "Salvează datele de diagnostic",
+            "diagnostics_help": "Salvează starea minerului fără date de identificare și răspunsurile API recente, curățate, în data/diagnostics pe volumul de date montat.",
+            "diagnostics_saving": "Se salvează datele de diagnostic…",
+            "diagnostics_saved": "Datele de diagnostic au fost salvate în {path}.",
+            "diagnostics_error": "Datele de diagnostic nu au putut fi salvate. Încercați din nou.",
+            "diagnostics_busy": "O salvare de diagnostic este deja în curs sau tocmai s-a încheiat. Așteptați câteva secunde și încercați din nou."
         },
         "help": {
             "about": "Despre Twitch Drops Miner",

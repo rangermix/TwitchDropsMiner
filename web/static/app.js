@@ -2162,6 +2162,10 @@ function applyTranslations(t) {
 
         const clearCacheHelp = document.getElementById('clear-cache-help');
         if (clearCacheHelp) clearCacheHelp.textContent = t.gui.settings.clear_all_cache_help;
+        const diagnosticsButton = document.getElementById('dump-diagnostics-btn');
+        if (diagnosticsButton) diagnosticsButton.textContent = t.gui.settings.dump_diagnostics;
+        const diagnosticsHelp = document.getElementById('diagnostics-help');
+        if (diagnosticsHelp) diagnosticsHelp.textContent = t.gui.settings.diagnostics_help;
 
         // Re-render games to watch with translated empty messages
         renderGamesToWatch();
@@ -2360,6 +2364,49 @@ async function clearAllCache() {
     await requestCampaignRefresh('/api/cache/clear', button, 'clear cache');
 }
 
+async function dumpDiagnostics() {
+    const button = document.getElementById('dump-diagnostics-btn');
+    const result = document.getElementById('diagnostics-result');
+    if (!button || !result || button.disabled) return;
+    const t = state.translations?.gui?.settings;
+    if (!t) return;
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    result.textContent = t.diagnostics_saving;
+    result.className = 'help-text';
+    const agent = navigator.userAgent || '';
+    const browser = /Edg\//.test(agent) ? 'Edge' : /Firefox\//.test(agent) ? 'Firefox'
+        : /Chrome\//.test(agent) ? 'Chrome' : /Safari\//.test(agent) ? 'Safari' : 'Other';
+    const platform = /Android/.test(agent) ? 'Android' : /iPhone|iPad/.test(agent) ? 'iOS'
+        : /Windows/.test(agent) ? 'Windows' : /Macintosh/.test(agent) ? 'macOS'
+        : /Linux/.test(agent) ? 'Linux' : 'Other';
+    try {
+        const response = await fetch('/api/diagnostics', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-TDM-Request': '1' },
+            body: JSON.stringify({ browser: {
+                width: Math.min(32000, Math.max(0, Math.round(window.innerWidth))),
+                height: Math.min(32000, Math.max(0, Math.round(window.innerHeight))),
+                browser, platform, tab: 'settings', online: Boolean(navigator.onLine),
+                socket_connected: Boolean(socket && socket.connected)
+            } })
+        });
+        const data = await response.json();
+        if (!response.ok || data.success !== true || typeof data.file !== 'string') {
+            result.textContent = response.status === 429 ? t.diagnostics_busy : t.diagnostics_error;
+            result.className = 'help-text error';
+            return;
+        }
+        result.textContent = t.diagnostics_saved.replace('{path}', `data/${data.file}`);
+        result.className = 'help-text success';
+    } catch (_) {
+        result.textContent = t.diagnostics_error;
+        result.className = 'help-text error';
+    } finally {
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+    }
+}
+
 
 // ==================== Tab Management ====================
 
@@ -2434,6 +2481,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('save-telegram-btn').addEventListener('click', handleSaveTelegramClick);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
     document.getElementById('clear-cache-btn').addEventListener('click', clearAllCache);
+    document.getElementById('dump-diagnostics-btn').addEventListener('click', dumpDiagnostics);
 
     // History tab
     document.getElementById('history-btn-filter')?.addEventListener('click', () => {

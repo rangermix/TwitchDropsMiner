@@ -220,7 +220,13 @@
             "remove_game": "{game} を削除",
             "allow_unlinked_campaigns": "未連携と表示されたキャンペーンのマイニングを許可する",
             "allow_unlinked_campaigns_warning": "警告：TDMのアカウント連携チェックのみをスキップします。アカウントは連携されず、Twitchの進捗、Dropsの受け取り、ゲーム内報酬は保証されません。TDMは推定分数を表示する場合があります。TwitchのDropsインベントリを確認し、報酬を受け取るために正しいゲームアカウントを連携してください。",
-            "allow_unlinked_campaigns_save_error": "アカウント連携のマイニング設定を保存できませんでした。もう一度お試しください。"
+            "allow_unlinked_campaigns_save_error": "アカウント連携のマイニング設定を保存できませんでした。もう一度お試しください。",
+            "dump_diagnostics": "診断データを保存",
+            "diagnostics_help": "識別情報を除いたマイナーの状態と、機密情報を除去した最近のAPI応答を、マウントされたデータボリュームのdata/diagnosticsに保存します。",
+            "diagnostics_saving": "診断データを保存しています…",
+            "diagnostics_saved": "診断データを{path}に保存しました。",
+            "diagnostics_error": "診断データを保存できませんでした。もう一度お試しください。",
+            "diagnostics_busy": "診断データの保存中、または保存直後です。数秒待ってからもう一度お試しください。"
         },
         "help": {
             "about": "Twitch Drops Minerについて",

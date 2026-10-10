@@ -5,15 +5,25 @@ import logging
 import re
 from base64 import b64encode
 from collections import OrderedDict
-from time import monotonic
+from datetime import timezone
+from time import monotonic, time
 from typing import TYPE_CHECKING, Any, SupportsInt
 
 import aiohttp
+from dateutil.parser import isoparse
 from yarl import URL
 
 from src.config.client_info import ClientType
-from src.config.constants import CALL, ONLINE_DELAY, WATCH_INTERVAL, GQLOperation, JsonType, URLType
-from src.config.operations import GQL_OPERATIONS
+from src.config.constants import (
+    CALL,
+    ONLINE_DELAY,
+    WATCH_INTERVAL,
+    GQLOperation,
+    GQLRawQuery,
+    JsonType,
+    URLType,
+)
+from src.config.operations import CHANNEL_BAN_QUERY, GQL_OPERATIONS
 from src.exceptions import ExitRequest, MinerException
 from src.models.game import Game
 from src.utils.json_utils import isonow, json_minify
@@ -177,6 +187,9 @@ class Channel:
         "_watch_broadcast_id",
         "_watched_segments",
         "_last_spade_sent",
+        "_banned",
+        "_ban_expires_at",
+        "_ban_permanent",
         "acl_based",
     )
 
@@ -200,6 +213,9 @@ class Channel:
         self._watch_broadcast_id: int | None = None
         self._watched_segments: OrderedDict[str, None] = OrderedDict()
         self._last_spade_sent: float | None = None
+        self._banned: bool = False
+        self._ban_expires_at: float | None = None
+        self._ban_permanent: bool | None = None
         # ACL-based channels are:
         # • considered first when switching channels
         # • if we're watching a non-based channel, a based channel going up triggers a switch
@@ -245,6 +261,57 @@ class Channel:
     @property
     def stream_gql(self) -> GQLOperation:
         return GQL_OPERATIONS["GetStreamInfo"].with_variables({"channel": self._login})
+
+    @property
+    def ban_gql(self) -> GQLRawQuery:
+        return GQLRawQuery(CHANNEL_BAN_QUERY, {"channelID": str(self.id)})
+
+    @property
+    def banned(self) -> bool:
+        """Whether a confirmed ban has not yet reached its reported expiry."""
+        return self._banned and (self._ban_expires_at is None or time() < self._ban_expires_at)
+
+    @property
+    def ban_expires_at(self) -> float | None:
+        return self._ban_expires_at
+
+    @property
+    def ban_permanent(self) -> bool | None:
+        return self._ban_permanent
+
+    def inherit_ban(self, other: Channel) -> None:
+        """Preserve a confirmed ban across rediscovery within the same account context."""
+        if self._twitch is other._twitch and self.id == other.id and other.banned:
+            self._banned = True
+            self._ban_expires_at = other._ban_expires_at
+            self._ban_permanent = other._ban_permanent
+
+    def update_ban_status(self, response: JsonType) -> None:
+        """Retain known state when an optional check is missing, invalid, or rejected."""
+        if response.get("errors"):
+            return
+        data = response.get("data")
+        user = data.get("user") if isinstance(data, dict) else None
+        if not isinstance(user, dict) or user.get("id") != str(self.id):
+            return
+        account = user.get("self")
+        if not isinstance(account, dict) or "banStatus" not in account:
+            return
+        status = account["banStatus"]
+        if status is None:
+            self._banned = False
+            self._ban_expires_at = self._ban_permanent = None
+        elif isinstance(status, dict) and type(status.get("isPermanent")) is bool:
+            self._banned = True
+            self._ban_permanent = status["isPermanent"]
+            self._ban_expires_at = None
+            if not self._ban_permanent and isinstance(status.get("expiresAt"), str):
+                try:
+                    expiry = isoparse(status["expiresAt"])
+                    if expiry.tzinfo is not None:
+                        self._ban_expires_at = expiry.astimezone(timezone.utc).timestamp()
+                except (ValueError, OverflowError):
+                    pass
 
     @property
     def login(self) -> str:
@@ -317,6 +384,8 @@ class Channel:
 
     def display(self, *, add: bool = False) -> None:
         """Display or update this channel in the GUI channel list."""
+        if self.banned:
+            return
         self._gui_channels.display(self, add=add)
 
     def remove(self) -> None:
@@ -459,7 +528,8 @@ class Channel:
 
     def _watch_current(self, stream: Stream) -> bool:
         return (
-            self._stream is not None
+            not self.banned
+            and self._stream is not None
             and self._stream.broadcast_id == stream.broadcast_id
             and self._twitch.watching_channel.get_with_default(None) is self
         )

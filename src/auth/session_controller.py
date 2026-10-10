@@ -30,7 +30,7 @@ class SessionController:
         self.issuer = issuer or SDKIssuer(OwnedChromium(
             shutil.which("chromium") or shutil.which("chromium-browser") or "chromium",
             no_sandbox=os.name == "posix" and os.geteuid() == 0,
-        ))
+        ), diagnostics=getattr(session._transport, "diagnostics", None))
         self.activation, self.on_change = activation, on_change
         self._lock = asyncio.Lock()
         self._wake = asyncio.Event()

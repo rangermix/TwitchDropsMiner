@@ -56,6 +56,7 @@ class WatchService:
 
         A channel can be watched if:
         - The channel is online
+        - Twitch has not reported an active ban for the signed-in account
         - A campaign for a wanted game can be progressed on this channel
         - Drops are enabled, unless the campaign uses a special category
 
@@ -69,7 +70,7 @@ class WatchService:
             True if the channel can be watched, False otherwise
         """
         wanted_games = self._twitch.wanted_games
-        if not wanted_games or not channel.online:
+        if not wanted_games or not channel.online or channel.banned:
             return False
 
         return any(
@@ -182,7 +183,7 @@ class WatchService:
         while True:
             channel: Channel = await self._twitch.watching_channel.get()
 
-            if not channel.online:
+            if not channel.online or channel.banned:
                 # if the channel isn't online anymore, we stop watching it
                 self.stop_watching()
                 continue
