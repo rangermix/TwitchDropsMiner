@@ -43,8 +43,11 @@ def _drop(
 
 
 def _campaign(campaign_id: str, drops: list[dict]) -> DropsCampaign:
+    twitch = MagicMock()
+    twitch.settings.telegram_bot_token = ""
+    twitch.settings.telegram_chat_id = ""
     return DropsCampaign(
-        MagicMock(),
+        twitch,
         {
             "id": campaign_id,
             "name": f"Campaign {campaign_id}",

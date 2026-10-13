@@ -12,7 +12,8 @@ def extract_javascript_function(source: str, name: str) -> str:
     """Extract a top-level JavaScript function declaration from source text."""
     signature = f"function {name}("
     start = source.index(signature)
-    brace_start = source.index("{", start)
+    # Skip object defaults in the parameter list before locating the function body.
+    brace_start = source.index("{", source.index(")", start))
     depth = 0
 
     for index in range(brace_start, len(source)):

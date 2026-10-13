@@ -12,6 +12,8 @@ from src.config.operations import GQL_OPERATIONS
 from src.exceptions import GQLException
 from src.i18n import _
 from src.models.benefit import Benefit
+from src.services.discord_service import DiscordNotifier
+from src.services.telegram_service import TelegramNotifier
 from src.utils import DropIgnoreReason
 
 
@@ -187,9 +189,33 @@ class BaseDrop:
                 _.t["status"]["claimed_drop"].format(drop=claim_text.replace("\n", " "))
             )
             await self._twitch.gui.broadcast_wanted_items_now()
+            await self._send_telegram_notification()
+            await self._send_discord_notification()
         elif not result:
             logger.error(f"Drop claim has potentially failed! Drop ID: {self.id}")
         return result
+
+    async def _send_telegram_notification(self) -> None:
+        """Notify once per successful claim without affecting the claim result."""
+        try:
+            bot_token = self._twitch.settings.telegram_bot_token
+            chat_id = self._twitch.settings.telegram_chat_id
+            if bot_token and chat_id:
+                await TelegramNotifier(bot_token, chat_id, diagnostics=getattr(self._twitch, "diagnostics", None)).notify_drop_claimed(self)
+        except Exception as e:
+            logger.warning("Failed to send Telegram notification: %s", e)
+
+    async def _send_discord_notification(self) -> None:
+        """Notify on the shared claim transition; transport failures cannot undo it."""
+        try:
+            webhook_url = self._twitch.settings.discord_webhook_url
+            if webhook_url:
+                await DiscordNotifier(
+                    webhook_url, diagnostics=getattr(self._twitch, "diagnostics", None)
+                ).notify_drop_claimed(self)
+        except Exception:
+            # Exception messages may contain the URL's secret token.
+            logger.warning("Failed to send Discord notification")
 
     async def _claim(self) -> bool:
         """
@@ -338,10 +364,13 @@ class TimedDrop(BaseDrop):
         return False
 
     async def claim(self) -> bool:
+        was_claimed = self.is_claimed
         result = await super().claim()
         if result:
             self.real_current_minutes = self.required_minutes
             self.extra_current_minutes = 0
+            if not was_claimed:
+                self._twitch.drop_history.record(self, self.campaign)
         self._on_state_changed()
         return result
 

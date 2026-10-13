@@ -127,7 +127,11 @@ class DropsCampaign:
 
     @property
     def eligible(self) -> bool:
-        return self.linked or self.has_badge_or_emote
+        return (
+            self.linked
+            or self.has_badge_or_emote
+            or getattr(self._twitch.settings, "allow_unlinked_campaigns", False) is True
+        )
 
     @cached_property
     def has_badge_or_emote(self) -> bool:
@@ -213,11 +217,17 @@ class DropsCampaign:
                 or (  # channel isn't specified,
                     # or there's no ACL, or the channel is in the ACL
                     (not self.allowed_channels or channel in self.allowed_channels)
-                    # and the channel is live and playing the campaign's game
+                    # and the channel plays the campaign's game, or is a live
+                    # participant in a special-category campaign with an ACL
                     and (
                         ignore_channel_status
                         or channel.game is not None
                         and channel.game == self.game
+                        or (
+                            channel.online
+                            and self.game.is_special()
+                            and bool(self.allowed_channels)
+                        )
                     )
                 )
             )

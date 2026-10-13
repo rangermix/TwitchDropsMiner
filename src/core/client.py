@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections import OrderedDict, abc, deque
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from functools import partial
 from time import time
@@ -12,12 +13,21 @@ import aiohttp
 
 from src.api import GQLClient, HTTPClient
 from src.auth import _AuthState
+from src.auth.container_login import ContainerLogin
+from src.auth.helper_connection import HelperConnections
+from src.auth.imported_session import ImportedSession, SessionTransport
+from src.auth.session_bundle import SessionError
+from src.auth.session_controller import SessionController
 from src.config import (
+    COOKIES_PATH,
     MAX_CHANNELS,
     ClientType,
     State,
     WebsocketTopic,
 )
+from src.config.paths import DATA_DIR
+from src.diagnostics import Diagnostics
+from src.drop_history import DropHistory
 from src.exceptions import (
     ExitRequest,
     RequestException,
@@ -53,6 +63,7 @@ gql_logger = logging.getLogger("TwitchDrops.gql")
 class Twitch:
     def __init__(self, settings: Settings):
         self.settings: Settings = settings
+        self.diagnostics = Diagnostics(DATA_DIR)
         # State management
         self._state: State = State.IDLE
         self._state_change = asyncio.Event()
@@ -67,6 +78,13 @@ class Twitch:
         self._mnt_triggers: deque[datetime] = deque()
         # Client type and auth
         self._client_type: ClientInfo = ClientType.ANDROID_APP
+        self._browser = ImportedSession(
+            DATA_DIR / "imported-session.json", transport=SessionTransport(
+                lambda: self.settings.proxy or None, diagnostics=self.diagnostics,
+            ),
+            bound_user_id=lambda: getattr(self._auth_state, "user_id", None),
+            on_identity=lambda identity: self._auth_state.accept_imported_identity(identity),
+        )
         self._auth_state: _AuthState = _AuthState(self)
         # GUI (will be set by main.py)
         self.gui: WebGUIManager = None  # type: ignore[assignment]
@@ -77,6 +95,7 @@ class Twitch:
         self.channels: OrderedDict[int, Channel] = OrderedDict()
         self.watching_channel: AwaitableValue[Channel] = AwaitableValue()
         self._watching_task: asyncio.Task[None] | None = None
+        self._channel_tasks: set[asyncio.Task[Any]] = set()
         self._watching_restart = asyncio.Event()
         # Manual mode tracking
         self._manual_target_channel: Channel | None = None
@@ -92,11 +111,101 @@ class Twitch:
         self._inventory_service: InventoryService = InventoryService(self)
         self._watch_service: WatchService = WatchService(self)
         self._stream_selector: StreamSelector = StreamSelector()
+        # Drop history
+        self.drop_history: DropHistory = DropHistory(DATA_DIR)
+        self._run_task: asyncio.Task | None = None
+        self._resume_mining = asyncio.Event()
+        self._resume_mining.set()
+        self._changing_auth = False
+        self.session_controller = SessionController(
+            self._browser, activation=self.authentication_change,
+            on_change=self._session_changed,
+        )
+        self.login_browser = ContainerLogin(self.session_controller, on_change=self._session_changed)
+        self.helper = HelperConnections(self.session_controller, on_change=self._session_changed)
+        self._logout_lock = asyncio.Lock()
+
+    def _session_changed(self) -> None:
+        self.login_browser.session_changed()
+        self.helper.session_changed()
+        if self.gui is not None:
+            self.gui.notify_session_change()
+
+    def request_login(self) -> None:
+        if not self.helper.selected:
+            self.login_browser.request_login()
+
+    async def enable_helper(self, authorized) -> None:
+        async with self._logout_lock:
+            if self._auth_state._logged_in.is_set():
+                raise SessionError("HELPER_STATE")
+            await self.helper.cancel()
+            await self.login_browser.cancel()
+            self.helper.enable(authorized)
+
+    async def cancel_helper(self) -> None:
+        async with self._logout_lock:
+            await self.helper.cancel()
+            if not self._auth_state._logged_in.is_set() and self._browser.status()["state"] != "ready":
+                self.login_browser.request_login()
+
+    async def logout(self) -> None:
+        async with self._logout_lock:
+            await self.helper.cancel()
+            await self.login_browser.cancel()
+
+            async def clear_cookies() -> None:
+                session = await self.get_session()
+                session.cookie_jar.clear()
+                COOKIES_PATH.unlink(missing_ok=True)
+
+            try:
+                await self.session_controller.logout(clear_cookies)
+            finally:
+                # A persisted logout wins even if deleting legacy cookies failed.
+                if self._browser.logged_out:
+                    self.gui.login.update(_.t["login"]["status"]["logged_out"], None)
+                    self.login_browser.request_login()
+
+    @asynccontextmanager
+    async def authentication_change(self):
+        """Drain authenticated work before replacing its identity and derived state."""
+        self._changing_auth = True
+        self._resume_mining.clear()
+        try:
+            tasks = [task for task in (self._run_task, self._watching_task, self._mnt_task)
+                     if task is not None and task is not asyncio.current_task()]
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+            self._watching_task = self._mnt_task = None
+            await self.websocket.stop(clear_topics=True)
+            await self._stop_channel_tasks()
+            await self.gui.login.stop_avatar()
+            yield
+        finally:
+            self._auth_state.clear()
+            self._channel_service.clear_bans()
+            self.diagnostics.clear()
+            self._inventory_service.clear_cached_state()
+            self._inventory_loaded = False
+            if self._state is not State.EXIT:
+                self._state = State.IDLE
+            self._changing_auth = False
+            self._resume_mining.set()
+
+    async def _stop_channel_tasks(self) -> None:
+        """Drain online checks even after their pending display marker is cleared."""
+        tasks = tuple(self._channel_tasks)
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     def _ensure_api_clients(self) -> None:
         """Ensure API clients are initialized (called after GUI is set)."""
         if self._http_client is None:
-            self._http_client = HTTPClient(self.settings, self.gui, self, self._client_type)
+            self._http_client = HTTPClient(self.settings, self.gui, self, self._client_type,
+                                          diagnostics=self.diagnostics)
         if self._gql_client is None:
             self._gql_client = GQLClient(self._http_client, self._auth_state, self._client_type)
 
@@ -122,6 +231,11 @@ class Twitch:
 
     async def shutdown(self) -> None:
         start_time = time()
+        self._channel_service.clear_bans()
+        self.diagnostics.stop_logs()
+        await self.helper.stop()
+        await self.login_browser.stop()
+        await self.session_controller.stop()
         self.stop_watching()
         if self._watching_task is not None:
             self._watching_task.cancel()
@@ -131,6 +245,10 @@ class Twitch:
             self._mnt_task = None
         # stop websocket and close HTTP session
         await self.websocket.stop(clear_topics=True)
+        await self._stop_channel_tasks()
+        await self.gui.login.stop_avatar()
+        if self._browser is not None:
+            await self._browser.close()
         if self._http_client is not None:
             await self._http_client.close()
         self._drops.clear()
@@ -205,6 +323,9 @@ class Twitch:
         usually by the console or application window being closed.
         """
         self.change_state(State.EXIT)
+        self._resume_mining.set()
+        if self._browser is not None:
+            self._browser.request_stop()
 
     def print(self, message: str, *, collapse_key: str | None = None) -> None:
         """Print a message in the GUI."""
@@ -221,14 +342,32 @@ class Twitch:
 
     async def run(self) -> None:
         """Main entry point for the miner - handles exit requests."""
-        while True:
-            try:
-                await self._run()
-                break
-            except ExitRequest:
-                break
-            except aiohttp.ContentTypeError as exc:
-                raise RequestException(_.t["login"]["unexpected_content"]) from exc
+        self.diagnostics.start_logs()
+        self.session_controller.start()
+        try:
+            while self._state is not State.EXIT:
+                await self._resume_mining.wait()
+                if self._state is State.EXIT:  # type: ignore[comparison-overlap]  # State can change during the await.
+                    break
+                self._run_task = asyncio.create_task(self._run())
+                try:
+                    await self._run_task
+                    break
+                except asyncio.CancelledError:
+                    task = asyncio.current_task()
+                    if self._changing_auth and task is not None and not task.cancelling():  # type: ignore[attr-defined]  # Python 3.12 runtime.
+                        continue
+                    raise
+                except ExitRequest:
+                    break
+                except aiohttp.ContentTypeError as exc:
+                    raise RequestException(_.t["login"]["unexpected_content"]) from exc
+        finally:
+            self._channel_service.clear_bans()
+            self.diagnostics.stop_logs()
+            await self.login_browser.stop()
+            await self.helper.stop()
+            await self.session_controller.stop()
 
     async def _run(self) -> None:
         """
@@ -419,11 +558,24 @@ class Twitch:
                     # for every campaign without an ACL, for it's game,
                     # add a list of live channels with drops enabled
                     new_channels.update(await self.get_live_streams(game, drops_enabled=True))
+                # Filter account-specific bans before priority sorting and the tracking cap.
+                retained_channels = [channel for channel in (
+                    self.watching_channel.get_with_default(None), self._manual_target_channel,
+                ) if channel is not None]
+                unbanned_channels = await self._channel_service.filter_banned_channels(
+                    new_channels, retained_channels=retained_channels,
+                )
+                banned_channels = [channel for channel in (
+                    *new_channels, *retained_channels,
+                ) if channel.banned]
+                self._remove_channel_topics(set(banned_channels))
+                for channel in banned_channels:
+                    channel.remove()
                 # sort them descending by viewers, by priority and by game priority
                 # NOTE: Viewers sort also ensures ONLINE channels are sorted to the top
                 # NOTE: We can drop using the set now, because there's no more channels being added
                 ordered_channels: list[Channel] = sorted(
-                    new_channels, key=ChannelService.get_viewers_key, reverse=True
+                    unbanned_channels, key=ChannelService.get_viewers_key, reverse=True
                 )
                 ordered_channels.sort(key=lambda ch: ch.acl_based, reverse=True)
                 ordered_channels.sort(key=self._channel_service.get_priority)
@@ -486,6 +638,9 @@ class Twitch:
                     no_acl,
                     acl_channels,
                     new_channels,
+                    unbanned_channels,
+                    banned_channels,
+                    retained_channels,
                     to_add_topics,
                     ordered_channels,
                     watching_channel,

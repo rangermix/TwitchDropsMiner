@@ -1,0 +1,48 @@
+name: Publish public guides to Wiki
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/scripts/publish_wiki.py'
+      - '.github/workflows/wiki.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-public-wiki
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'rangermix/TwitchDropsMiner' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the triggering main commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Validate and export public guides without publisher credentials
+        run: |
+          python .github/scripts/publish_wiki.py export \
+            --source . --repository "$GITHUB_REPOSITORY" \
+            --output "$RUNNER_TEMP/tdm-wiki-export"
+
+      - name: Publish validated guides
+        env:
+          GH_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}
+        run: |
+          python .github/scripts/publish_wiki.py publish \
+            --repository "$GITHUB_REPOSITORY" --source . --source-sha "$GITHUB_SHA" \
+            --exported "$RUNNER_TEMP/tdm-wiki-export" \
+            --checkout "$RUNNER_TEMP/tdm-wiki"

@@ -2,17 +2,27 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
+from urllib.parse import quote
 
 import socketio
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictBool, field_validator
 
+from src.config.paths import DATA_DIR
+from src.config.settings import InventoryFilterSettings
 from src.version import __version__
+from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
+from src.web.diagnostics_api import DiagnosticsAPI
+from src.web.helper_api import HelperAPI
+from src.web.session_api import SessionAPI
 
 
 if TYPE_CHECKING:
@@ -27,27 +37,28 @@ logger = logging.getLogger("TwitchDrops")
 # Create FastAPI app
 app = FastAPI(title="Twitch Drops Miner Web", version=__version__)
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+web_auth = WebAuth(DATA_DIR / "web_auth.json", public_base_url=os.environ.get("PUBLIC_BASE_URL", ""))
+sio = AuthSocketServer(web_auth)
+app.include_router(AuthAPI(web_auth, sio).router)
+app.add_middleware(AuthMiddleware, auth=web_auth)
+# The outer guard covers Engine.IO polling and WebSocket upgrades too.
+socket_app = AuthMiddleware(socketio.ASGIApp(sio, app), web_auth)
 
-# Create Socket.IO server
-sio = socketio.AsyncServer(
-    async_mode="asgi", cors_allowed_origins="*", logger=False, engineio_logger=False
-)
 
-# Wrap with ASGI app
-socket_app = socketio.ASGIApp(sio, app)
+@app.exception_handler(RequestValidationError)
+async def validation_error(request, exc):
+    if request.url.path.startswith(("/api/auth/", "/api/diagnostics", "/api/settings")):
+        return JSONResponse({"detail": "invalid_request"}, status_code=422)
+    return await request_validation_exception_handler(request, exc)
 
 # Global references (set by main.py)
 gui_manager: WebGUIManager | None = None
 twitch_client: Twitch | None = None
 _server_instance: uvicorn.Server | None = None
+
+app.include_router(SessionAPI(web_auth, lambda: twitch_client).router)
+app.include_router(HelperAPI(web_auth, lambda: twitch_client).router)
+app.include_router(DiagnosticsAPI(lambda: twitch_client).router)
 
 
 def set_managers(gui: WebGUIManager, twitch: Twitch):
@@ -59,17 +70,12 @@ def set_managers(gui: WebGUIManager, twitch: Twitch):
 
 
 # Pydantic models for API
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-    token: str = ""
-
-
 class ChannelSelectRequest(BaseModel):
     channel_id: int
 
 
 class SettingsUpdate(BaseModel):
+    allow_unlinked_campaigns: StrictBool | None = None
     games_to_watch: list[str] | None = None
     drop_name_blacklist: list[str] | None = None
     dark_mode: bool | None = None
@@ -78,9 +84,23 @@ class SettingsUpdate(BaseModel):
     connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
     discord_webhook_url: str | None = None
+    discord_remove_webhook: StrictBool | None = None
+    telegram_bot_token: str | None = None
+    telegram_chat_id: str | None = None
     inventory_filters: dict | None = None
     inventory_list_view: bool | None = None
     mining_benefits: dict[str, bool] | None = None
+
+    @field_validator("inventory_filters")
+    @classmethod
+    def validate_link_status(cls, value: dict | None) -> dict | None:
+        if (
+            value is not None
+            and "link_status" in value
+            and value["link_status"] not in InventoryFilterSettings.LINK_STATUSES
+        ):
+            raise ValueError("Invalid account-link filter")
+        return value
 
 
 class ProxyVerifyRequest(BaseModel):
@@ -88,7 +108,12 @@ class ProxyVerifyRequest(BaseModel):
 
 
 class DiscordTestRequest(BaseModel):
-    discord_webhook_url: str
+    discord_webhook_url: str = ""
+
+
+class TelegramTestRequest(BaseModel):
+    telegram_bot_token: str
+    telegram_chat_id: str
 
 
 # ==================== REST API Endpoints ====================
@@ -215,7 +240,12 @@ async def update_settings(settings: SettingsUpdate):
         raise HTTPException(status_code=503, detail="GUI not initialized")
 
     settings_dict = settings.model_dump(exclude_unset=True)
-    updated_settings = gui_manager.settings.update_settings(settings_dict)
+    try:
+        updated_settings = gui_manager.settings.update_settings(settings_dict)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="invalid_settings") from None
+    except Exception:
+        raise HTTPException(status_code=500, detail="settings_save_failed") from None
     return {"success": True, "settings": updated_settings}
 
 
@@ -237,6 +267,8 @@ async def verify_proxy(request: ProxyVerifyRequest):
             aiohttp.ClientSession() as session,
             session.get("https://www.twitch.tv", proxy=proxy_url, timeout=10) as response,
         ):
+            if twitch_client is not None:
+                twitch_client.diagnostics.record_http("GET", "https://www.twitch.tv", response.status)
             # Just checking if we can connect and get a response
             if response.status < 500:
                 latency = round((time.time() - start_time) * 1000)
@@ -251,12 +283,36 @@ async def verify_proxy(request: ProxyVerifyRequest):
                     "message": f"Proxy reachable but returned {response.status}",
                 }
     except Exception as e:
+        if twitch_client is not None:
+            twitch_client.diagnostics.record("twitch_page", outcome="timeout" if isinstance(e, TimeoutError) else "connection")
         return {"success": False, "message": f"Connection failed: {str(e)}"}
 
 
 @app.post("/api/settings/test-discord")
 async def test_discord(request: DiscordTestRequest):
-    """Test Discord webhook connection"""
+    """Test a supplied or saved webhook without persisting or exposing its token."""
+    from src.services.discord_service import DiscordNotifier
+    from src.web.managers.settings import DISCORD_WEBHOOK_MASK
+
+    if gui_manager is None:
+        raise HTTPException(status_code=503, detail="not_initialized")
+    webhook_url = request.discord_webhook_url.strip()
+    if not webhook_url or webhook_url == DISCORD_WEBHOOK_MASK:
+        webhook_url = gui_manager.settings._settings.discord_webhook_url
+    if not DiscordNotifier.is_valid_webhook(webhook_url):
+        return {"success": False, "error": "invalid_discord_webhook"}
+    try:
+        result = await DiscordNotifier(
+            webhook_url, diagnostics=getattr(twitch_client, "diagnostics", None)
+        ).test_connection()
+        return {"success": result}
+    except Exception:
+        return {"success": False, "error": "discord_connection_failed"}
+
+
+@app.post("/api/settings/test-telegram")
+async def test_telegram(request: TelegramTestRequest):
+    """Test Telegram bot connection"""
     # Ensure project root is on sys.path so `src` package can be imported
     import sys
     from pathlib import Path
@@ -265,41 +321,42 @@ async def test_discord(request: DiscordTestRequest):
     if str(project_root) not in sys.path:
         sys.path.insert(0, str(project_root))
 
-    from src.services.discord_service import DiscordNotifier
-    from src.web.managers.settings import DISCORD_WEBHOOK_MASK
+    from src.services.telegram_service import TelegramNotifier
+    from src.web.managers.settings import TELEGRAM_TOKEN_MASK
 
-    # Never trust a masked/empty URL from the client: fall back to the stored
-    # webhook so tests work without echoing the secret back.
-    webhook_url = (request.discord_webhook_url or "").strip()
+    # Never trust a masked/empty token from the client: fall back to the
+    # stored credential so tests work without echoing the secret back.
+    bot_token = (request.telegram_bot_token or "").strip()
+    chat_id = (request.telegram_chat_id or "").strip()
     if gui_manager is not None:
         stored_settings = getattr(gui_manager.settings, "_settings", None)
-        if not webhook_url or webhook_url == DISCORD_WEBHOOK_MASK:
-            webhook_url = str(getattr(stored_settings, "discord_webhook_url", "") or "").strip()
+        if not bot_token or bot_token == TELEGRAM_TOKEN_MASK:
+            bot_token = str(getattr(stored_settings, "telegram_bot_token", "") or "").strip()
+        if not chat_id:
+            chat_id = str(getattr(stored_settings, "telegram_chat_id", "") or "").strip()
 
-    if not webhook_url:
-        return {"success": False, "message": "Discord Webhook URL is required"}
+    if not bot_token or not chat_id:
+        return {"success": False, "message": "Bot token and chat ID are required"}
 
     try:
-        notifier = DiscordNotifier(webhook_url)
+        notifier = TelegramNotifier(bot_token, chat_id, diagnostics=getattr(twitch_client, "diagnostics", None))
         result = await notifier.test_connection()
 
         if result:
             return {
                 "success": True,
-                "message": "✓ Discord connection successful! You will receive drop notifications."
+                "message": "✓ Telegram connection successful! You will receive drop notifications."
             }
         else:
             return {
                 "success": False,
-                "message": "Failed to connect to Discord. Please check your Webhook URL."
+                "message": "Failed to connect to Telegram. Please check your bot token and chat ID."
             }
     except Exception as e:
         return {
             "success": False,
-            "message": f"Discord error: {str(e)}"
+            "message": f"Telegram error: {str(e)}"
         }
-
-
 @app.get("/api/version")
 async def get_version():
     """Get current application version and check for updates"""
@@ -322,13 +379,24 @@ async def get_version():
         ):
             if response.status == 200:
                 data = await response.json()
+                if twitch_client is not None:
+                    twitch_client.diagnostics.record_http(
+                        "GET", "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest",
+                        response.status, payload=data,
+                    )
                 latest_version = data.get("tag_name", "").lstrip("v")
                 download_url = data.get("html_url")
 
                 # Compare versions (simple string comparison works for semantic versioning)
                 if latest_version and latest_version > current_version:
                     update_available = True
+            elif twitch_client is not None:
+                twitch_client.diagnostics.record_http(
+                    "GET", "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest", response.status,
+                )
     except Exception as e:
+        if twitch_client is not None:
+            twitch_client.diagnostics.record("github_version", outcome="timeout" if isinstance(e, TimeoutError) else "connection")
         logger.warning(f"Failed to check for updates: {str(e)}")
 
     return {
@@ -337,27 +405,6 @@ async def get_version():
         "update_available": update_available,
         "download_url": download_url or "https://github.com/rangermix/TwitchDropsMiner/releases",
     }
-
-
-@app.post("/api/login")
-async def submit_login(login_data: LoginRequest):
-    """Submit login credentials"""
-    if not gui_manager:
-        raise HTTPException(status_code=503, detail="GUI not initialized")
-
-    gui_manager.login.submit_login(login_data.username, login_data.password, login_data.token)
-    return {"success": True}
-
-
-@app.post("/api/oauth/confirm")
-async def confirm_oauth():
-    """Confirm OAuth code has been entered by user"""
-    if not gui_manager:
-        raise HTTPException(status_code=503, detail="GUI not initialized")
-
-    # Just set the event to signal the user has acknowledged the code
-    gui_manager.login._login_event.set()
-    return {"success": True}
 
 
 @app.post("/api/reload")
@@ -380,6 +427,78 @@ async def clear_all_cache():
     if not twitch_client.request_inventory_refresh(clear_cache=True):
         raise HTTPException(status_code=409, detail="Twitch client is shutting down")
     return {"success": True}
+
+
+@app.get("/api/history")
+async def get_history(game: str | None = None, since: str | None = None, limit: int | None = None):
+    """Get claimed drop history with optional filters."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    since_dt = _parse_history_since(since)
+    limit = min(limit, 5000) if limit else None
+    entries = twitch_client.drop_history.get_entries(
+        game=game or None, since=since_dt, limit=limit
+    )
+    return {"total": twitch_client.drop_history.total_count, "entries": entries}
+
+
+@app.get("/api/history/export.csv")
+async def export_history_csv(game: str | None = None, since: str | None = None):
+    """Export claimed drop history as CSV (UTF-8 BOM for Excel)."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    since_dt = _parse_history_since(since)
+    csv_content = twitch_client.drop_history.to_csv(game=game or None, since=since_dt)
+    filename = "drop_history.csv" if not game else f"drop_history_{game}.csv"
+    return PlainTextResponse(
+        content="\ufeff" + csv_content,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": (
+                'attachment; filename="drop_history.csv"; '
+                f"filename*=UTF-8''{quote(filename, safe='')}"
+            )
+        },
+    )
+
+
+@app.get("/api/history/stats")
+async def get_history_stats():
+    """Get aggregated drop history statistics."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    return {
+        "total_drops": twitch_client.drop_history.total_count,
+        "by_game": twitch_client.drop_history.stats_by_game(),
+        "by_month": twitch_client.drop_history.stats_by_month(),
+    }
+
+
+@app.delete("/api/history")
+async def clear_history():
+    """Delete all claimed drop history."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    twitch_client.drop_history.clear()
+    return {"success": True}
+
+
+def _parse_history_since(since: str | None) -> datetime | None:
+    """Parse the 'since' query parameter (ISO date/date-time) into a UTC datetime."""
+    if not since:
+        return None
+    try:
+        # Accept both a bare date (YYYY-MM-DD) and a full ISO timestamp
+        parsed = datetime.fromisoformat(since)
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
+    except (ValueError, TypeError):
+        return None
 
 
 @app.post("/api/close")
@@ -411,6 +530,8 @@ async def exit_manual_mode():
 @sio.event
 async def connect(sid, environ):
     """Client connected"""
+    if not sio.register(sid, environ["asgi.scope"]):
+        return False
     logger.info(f"Web client connected: {sid}")
 
     # Send initial state to new client
@@ -435,12 +556,15 @@ async def connect(sid, environ):
 @sio.event
 async def disconnect(sid):
     """Client disconnected"""
+    sio.forget(sid)
     logger.info(f"Web client disconnected: {sid}")
 
 
 @sio.event
 async def request_login(sid):
     """Client requested login form submission"""
+    if not await sio.authorize(sid):
+        return
     logger.info(f"Login request from client: {sid}")
     # The actual login data comes via REST API
 
@@ -448,6 +572,8 @@ async def request_login(sid):
 @sio.event
 async def request_reload(sid):
     """Client requested application reload"""
+    if not await sio.authorize(sid):
+        return
     if twitch_client:
         twitch_client.request_inventory_refresh()
 
@@ -455,6 +581,8 @@ async def request_reload(sid):
 @sio.event
 async def get_wanted_items(sid):
     """Client requested wanted items list"""
+    if not await sio.authorize(sid):
+        return
     if gui_manager:
         await sio.emit("wanted_items_update", gui_manager.get_wanted_game_tree(), to=sid)
 
@@ -462,6 +590,9 @@ async def get_wanted_items(sid):
 # Mount static files (CSS, JS, images)
 # Web files are in project_root/web/, we're in project_root/src/web/
 web_dir = Path(__file__).parent.parent.parent / "web"
+novnc_dir = Path("/usr/share/novnc")
+if novnc_dir.exists():
+    app.mount("/static/novnc", StaticFiles(directory=novnc_dir), name="novnc")
 if web_dir.exists():
     static_dir = web_dir / "static"
     if static_dir.exists():

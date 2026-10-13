@@ -3,6 +3,9 @@ services:
     build: .
     container_name: twitch-drops-miner
     image: twitch-drops-miner:latest
+    init: true
+    stop_grace_period: 30s
+    shm_size: 256m
     ports:
       - "8080:8080"
     volumes:
@@ -10,6 +13,10 @@ services:
       - ./data:/app/data
       - ./logs:/app/logs
     environment:
-      # Set timezone (optional, defaults to UTC)
+      # Match the timezone of your home internet connection for Twitch browser login.
       - TZ=Australia/Sydney
+      # Optional: exact public URL when using a reverse proxy (root URL, no subpath).
+      # HTTPS here enables Secure cookies even when the proxy uses HTTP to this container.
+      # Does not trust forwarded client IPs; leave unset for direct HTTP access.
+      # - PUBLIC_BASE_URL=https://drops.example.com
     restart: unless-stopped

@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from typing import TYPE_CHECKING
 
 import aiohttp
 
 
 if TYPE_CHECKING:
-    from src.models.drop import TimedDrop
+    from src.diagnostics import Diagnostics
+    from src.models.drop import BaseDrop
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -19,7 +21,7 @@ logger = logging.getLogger("TwitchDrops")
 EMBED_COLOR = 9127187
 
 # Discord markdown characters that need a backslash escape to render literally.
-_MARKDOWN_CHARS = "\\*_~|`"
+_MARKDOWN_CHARS = "\\*_~|`[]()"
 
 
 def _escape_markdown(text: str) -> str:
@@ -54,7 +56,7 @@ def _truncate(text: str, limit: int = 1024) -> str:
 class DiscordNotifier:
     """Service for sending drop claim notifications via a Discord webhook."""
 
-    def __init__(self, webhook_url: str | None = None):
+    def __init__(self, webhook_url: str | None = None, *, diagnostics: Diagnostics | None = None):
         """
         Initialize Discord notifier.
 
@@ -62,10 +64,18 @@ class DiscordNotifier:
             webhook_url: Discord webhook URL (e.g.,
                 https://discord.com/api/webhooks/ID/TOKEN)
         """
-        self.webhook_url = webhook_url
-        self.enabled = bool(webhook_url)
+        self.webhook_url = webhook_url if self.is_valid_webhook(webhook_url) else None
+        self.enabled = bool(self.webhook_url)
+        self.diagnostics = diagnostics
 
-    async def notify_drop_claimed(self, drop: TimedDrop) -> bool:
+    @staticmethod
+    def is_valid_webhook(value: object) -> bool:
+        """Accept only Discord's HTTPS webhook endpoint, without URL modifiers."""
+        return isinstance(value, str) and re.fullmatch(
+            r"https://discord\.com/api/webhooks/[0-9]{1,30}/[A-Za-z0-9_-]{1,200}", value
+        ) is not None
+
+    async def notify_drop_claimed(self, drop: BaseDrop) -> bool:
         """
         Send an embed notification when a drop is claimed.
 
@@ -97,8 +107,8 @@ class DiscordNotifier:
             }
 
             return await self._send_embed(embed)
-        except Exception as e:
-            logger.warning(f"Failed to send Discord notification: {e}")
+        except Exception:
+            logger.warning("Failed to send Discord notification")
             return False
 
     async def test_connection(self) -> bool:
@@ -119,8 +129,8 @@ class DiscordNotifier:
                 "footer": {"text": "TwitchDropsMiner Bot"},
             }
             return await self._send_embed(embed)
-        except Exception as e:
-            logger.warning(f"Discord connection test failed: {e}")
+        except Exception:
+            logger.warning("Discord connection test failed")
             return False
 
     async def _send_embed(self, embed: dict) -> bool:
@@ -136,24 +146,30 @@ class DiscordNotifier:
             return False
 
         embed = _escape_embed(embed)
-        payload = {"embeds": [embed]}
+        payload = {"embeds": [embed], "allowed_mentions": {"parse": []}}
         try:
             async with aiohttp.ClientSession() as session, session.post(
                 self.webhook_url,
                 json=payload,
+                allow_redirects=False,
                 timeout=aiohttp.ClientTimeout(total=10),
             ) as response:
+                if self.diagnostics is not None:
+                    self.diagnostics.record("discord", status=response.status)
                 if response.status in (200, 204):
                     logger.debug("Discord notification sent successfully")
                     return True
-                error_text = await response.text()
-                logger.warning(f"Discord API error {response.status}: {error_text}")
+                logger.warning("Discord notification rejected")
                 return False
         except asyncio.TimeoutError:
+            if self.diagnostics is not None:
+                self.diagnostics.record("discord", outcome="timeout")
             logger.warning("Discord notification timeout")
             return False
-        except Exception as e:
-            logger.warning(f"Discord notification error: {e}")
+        except Exception:
+            if self.diagnostics is not None:
+                self.diagnostics.record("discord", outcome="connection")
+            logger.warning("Discord notification connection failed")
             return False
 
 

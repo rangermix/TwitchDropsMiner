@@ -57,23 +57,53 @@ class GUIStatus(TypedDict):
 
 
 class GUITabs(TypedDict):
+    history: str
     main: str
     inventory: str
     settings: str
     help: str
 
 
+class GUIBrowserLogin(TypedDict):
+    title: str
+    instructions: str
+    finish: str
+    retry: str
+    starting: str
+    sign_in: str
+    verifying: str
+    error: str
+    unavailable: str
+    viewer_closed: str
+    logout: str
+    logout_help: str
+    logout_confirm: str
+    logout_failed: str
+    action_failed: str
+    renewal_ready: str
+    renewal_retry: str
+    helper_title: str
+    helper_help: str
+    helper_downloads: str
+    helper_builds_note: str
+    helper_cancel: str
+    helper_instructions: str
+    helper_access_help: str
+    helper_url: str
+    helper_waiting: str
+    helper_connected: str
+    helper_verifying: str
+    helper_error: str
+    helper_expired: str
+    helper_windows: str
+    helper_linux: str
+    helper_macos_arm: str
+    helper_macos_intel: str
+
+
 class GUILoginForm(TypedDict):
     name: str
-    labels: str
-    request: str
-    username: str
-    password: str
-    twofa_code: str
-    button: str
-    oauth_prompt: str
-    oauth_activate: str
-    oauth_confirm: str
+    user_id_label: str
 
 
 class GUIWebsocket(TypedDict):
@@ -102,6 +132,11 @@ class GUIProgress(TypedDict):
 
 class GUIChannels(TypedDict):
     name: str
+    now_watching: str
+    show_preview: str
+    hide_preview: str
+    preview_off: str
+    preview_help: str
     online: str
     pending: str
     offline: str
@@ -134,6 +169,9 @@ class GUIWanted(TypedDict):
 
 
 class GUIInvFilters(TypedDict):
+    account_link: str
+    all: str
+    linked: str
     active: str
     not_linked: str
     upcoming: str
@@ -180,18 +218,45 @@ class GUIDiscordSettings(TypedDict):
     description: str
     webhook_url: str
     webhook_url_hint: str
-    save_settings: str
-    test_connection: str
     setup_steps: list[str]
     success: str
     saved: str
     error: str
     missing_credentials: str
+    remove_webhook: str
+    removed: str
+    credentials_help: str
+    save_error: str
+    save_settings: str
+    test_connection: str
+
+
+class GUITelegramSettings(TypedDict):
+    name: str
+    description: str
+    bot_token: str
+    chat_id: str
+    save_settings: str
+    test_connection: str
+    how_to_setup: str
+    setup_steps: list[str]
+    success: str
+    saved: str
+    error: str
+    save_error: str
+    credentials_help: str
+    missing_credentials: str
+    get_from_botfather: str
+    your_user_id: str
 
 
 class GUISettings(TypedDict):
+    allow_unlinked_campaigns: str
+    allow_unlinked_campaigns_warning: str
+    allow_unlinked_campaigns_save_error: str
     general: GUISettingsGeneral
     discord: GUIDiscordSettings
+    telegram: GUITelegramSettings
     mining_benefits: str
     mining_benefits_help: str
     reload: str
@@ -201,6 +266,12 @@ class GUISettings(TypedDict):
     drop_name_blacklist_placeholder: str
     clear_all_cache: str
     clear_all_cache_help: str
+    dump_diagnostics: str
+    diagnostics_help: str
+    diagnostics_saving: str
+    diagnostics_saved: str
+    diagnostics_error: str
+    diagnostics_busy: str
     games_to_watch: str
     games_help: str
     search_games: str
@@ -208,11 +279,18 @@ class GUISettings(TypedDict):
     add_game_hint: str
     select_all: str
     deselect_all: str
+    deselect_all_warning: str
+    confirm_btn: str
+    cancel_btn: str
     selected_games: str
+    game_priority: str
+    remove_game: str
     available_games: str
     no_games_selected: str
     no_games_match: str
     all_games_selected: str
+    multiple_games_found: str
+    manual_game_warning: str
     actions: str
     connection_quality: str
     minimum_refresh: str
@@ -240,11 +318,71 @@ class GUIHeader(TypedDict):
     disconnected: str
 
 
+class GUIAuth(TypedDict):
+    title: str
+    help: str
+    login_title: str
+    password: str
+    remember: str
+    login: str
+    logout: str
+    current_password: str
+    new_password: str
+    confirm_password: str
+    enable: str
+    change: str
+    disable: str
+    enabled: str
+    disabled: str
+    invalid_password: str
+    password_length: str
+    password_mismatch: str
+    rate_limited: str
+    auth_changed: str
+    authentication_required: str
+    forbidden: str
+    invalid_request: str
+    request_failed: str
+
+
+class GUIHistory(TypedDict):
+    title: str
+    filter_game: str
+    since: str
+    apply: str
+    export: str
+    stats: str
+    clear: str
+    total: str
+    claimed_at: str
+    game: str
+    campaign: str
+    drop: str
+    rewards: str
+    minutes: str
+    loading: str
+    empty: str
+    count: str
+    filtered_count: str
+    load_error: str
+    previous: str
+    next: str
+    by_game: str
+    by_month: str
+    clear_confirm: str
+    cleared: str
+    clear_error: str
+    stats_error: str
+
+
 class GUIMessages(TypedDict):
+    auth: GUIAuth
+    history: GUIHistory
     output: str
     status: GUIStatus
     tabs: GUITabs
     login: GUILoginForm
+    browser_login: GUIBrowserLogin
     websocket: GUIWebsocket
     progress: GUIProgress
     channels: GUIChannels
@@ -257,7 +395,66 @@ class GUIMessages(TypedDict):
     wanted: GUIWanted
 
 
+class HelperErrors(TypedDict):
+    destination: str
+    disabled: str
+    expired: str
+    busy: str
+    chrome_missing: str
+    chromium_missing: str
+    login_missing: str
+    firefox_missing: str
+    browser_missing: str
+    firefox_version: str
+    firefox_login: str
+    browser: str
+    browser_owner: str
+    login_timeout: str
+    network: str
+    redirect: str
+    response: str
+    rejected: str
+    server_browser: str
+    result_unknown: str
+    browser_cleanup: str
+    profile_cleanup: str
+    browser_protocol: str
+    capture_timeout: str
+    capture_limit: str
+    session_expired: str
+    session_invalid: str
+    sdk: str
+    validation: str
+    account: str
+    twitch_network: str
+    failed: str
+
+
+class HelperMessages(TypedDict):
+    errors: HelperErrors
+    browser_help: str
+    chromium_help: str
+    firefox_help: str
+    browser_conflict: str
+    result_unknown: str
+    title: str
+    destination_prompt: str
+    destination: str
+    connecting: str
+    login: str
+    capturing: str
+    sending: str
+    success: str
+    cancelled: str
+    wait_to_close: str
+    tdm_help: str
+    chrome_help: str
+    language_help: str
+    no_pause_help: str
+
+
 class Translation(TypedDict):
+    helper: HelperMessages
     language_name: str
     english_name: str
     status: StatusMessages

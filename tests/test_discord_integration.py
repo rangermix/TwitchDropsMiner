@@ -11,11 +11,14 @@ Covers the review findings:
 
 import asyncio
 import unittest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.config.settings import Settings
 from src.services.discord_service import DiscordNotifier, _escape_embed
+from src.models.drop import BaseDrop
+from src.services.telegram_service import TelegramNotifier
 from src.services.message_handlers import MessageHandlerService
+from tests.test_watch_drop_filtering import _campaign, _drop
 from src.web.managers.console import ConsoleOutputManager
 from src.web.managers.settings import DISCORD_WEBHOOK_MASK, SettingsManager
 
@@ -61,104 +64,149 @@ class TestSettingsWebhookMasking(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(response["discord_configured"])
 
     async def test_update_accepts_replacement_webhook_url_without_echoing(self):
-        manager = self._manager(webhook_url="https://discord.com/api/webhooks/old/old")
-        manager.update_settings({"discord_webhook_url": "https://discord.com/api/webhooks/new/new"})
+        manager = self._manager(webhook_url="https://discord.com/api/webhooks/111/old")
+        manager.update_settings({"discord_webhook_url": "https://discord.com/api/webhooks/222/new"})
         await asyncio.sleep(0)
         self.assertEqual(
             manager._settings.discord_webhook_url,
-            "https://discord.com/api/webhooks/new/new",
+            "https://discord.com/api/webhooks/222/new",
         )
         emitted = self.mock_broadcaster.emit.await_args.args[1]
         self.assertEqual(emitted["discord_webhook_url"], DISCORD_WEBHOOK_MASK)
         self.assertTrue(emitted["discord_configured"])
         console_output = manager._console.print.call_args_list
         display = str(sorted(console_output))
-        self.assertNotIn("https://discord.com/api/webhooks/new/new", display)
+        self.assertNotIn("https://discord.com/api/webhooks/222/new", display)
 
     async def test_update_ignores_masked_placeholder_echo(self):
-        manager = self._manager(webhook_url="https://discord.com/api/webhooks/real/real")
+        manager = self._manager(webhook_url="https://discord.com/api/webhooks/333/real")
         manager.update_settings({"discord_webhook_url": DISCORD_WEBHOOK_MASK})
         await asyncio.sleep(0)
         self.assertEqual(
             manager._settings.discord_webhook_url,
-            "https://discord.com/api/webhooks/real/real",
+            "https://discord.com/api/webhooks/333/real",
         )
 
     async def test_update_ignores_empty_webhook_url(self):
-        manager = self._manager(webhook_url="https://discord.com/api/webhooks/real/real")
+        manager = self._manager(webhook_url="https://discord.com/api/webhooks/333/real")
         manager.update_settings({"discord_webhook_url": ""})
         await asyncio.sleep(0)
         self.assertEqual(
             manager._settings.discord_webhook_url,
-            "https://discord.com/api/webhooks/real/real",
+            "https://discord.com/api/webhooks/333/real",
         )
 
     async def test_proxy_only_update_does_not_touch_discord(self):
-        manager = self._manager(webhook_url="https://discord.com/api/webhooks/real/real")
+        manager = self._manager(webhook_url="https://discord.com/api/webhooks/333/real")
         manager.update_settings({"proxy": "http://1.2.3.4:8080"})
         await asyncio.sleep(0)
         self.assertEqual(
             manager._settings.discord_webhook_url,
-            "https://discord.com/api/webhooks/real/real",
+            "https://discord.com/api/webhooks/333/real",
         )
 
 
 class TestNotificationGatedOnClaim(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self.mock_twitch = MagicMock()
-        self.mock_twitch.settings = MagicMock()
-        self.mock_twitch.settings.discord_webhook_url = (
-            "https://discord.com/api/webhooks/111/aaa_bbb"
+        self.drop_data = _drop("drop-1", "Watch", 30)
+        self.campaign = _campaign("discord", [self.drop_data])
+        self.drop = self.campaign.timed_drops["drop-1"]
+        self.drop.update_claim("inst-1")
+        self.twitch = self.campaign._twitch
+        self.twitch.settings.discord_webhook_url = "https://discord.com/api/webhooks/111/aaa_bbb"
+        self.twitch.gql_request = AsyncMock(
+            return_value={"data": {"claimDropRewards": {"status": "ELIGIBLE_FOR_ALL"}}}
         )
-        self.mock_twitch.gql_request = AsyncMock(
-            return_value={"data": {"currentUser": {"dropCurrentSession": None}}}
+        self.twitch.gui.broadcast_wanted_items_now = AsyncMock()
+        self.twitch.watching_channel.get_with_default.return_value = None
+        self.twitch._drops = {self.drop.id: self.drop}
+        self.service = MessageHandlerService(self.twitch)
+        self.sent = self.enterContext(
+            patch.object(DiscordNotifier, "_send_embed", new=AsyncMock(return_value=True))
         )
+        self.enterContext(patch("src.services.message_handlers.asyncio.sleep", new=AsyncMock()))
 
-        self.service = MessageHandlerService(self.mock_twitch)
-
-        self.drop = MagicMock()
-        self.drop.id = "drop-1"
-        self.drop.campaign = MagicMock()
-        self.drop.claim = AsyncMock(return_value=True)
-
-        self.channel = MagicMock()
-        self.channel.id = 100
-        self.mock_twitch.channels.get.return_value = self.channel
-        self.mock_twitch.watching_channel.get_with_default.return_value = self.channel
-        self.mock_twitch._drops.get.return_value = self.drop
-
-        self.drop.update = MagicMock()
-
-    def _claim_message(self, failed: bool = False):
-        self.drop.claim.return_value = not failed
+    def _claim_message(self):
         return {
             "type": "drop-claim",
             "data": {"drop_id": "drop-1", "drop_instance_id": "inst-1"},
         }
 
-    async def test_discord_notification_sent_on_successful_claim(self):
-        with (
-            unittest.mock.patch(
-                "src.services.message_handlers.asyncio.sleep", new=AsyncMock()
-            ),
-            unittest.mock.patch.object(
-                self.service, "_send_discord_notification", new=AsyncMock()
-            ) as notify,
-        ):
-            await self.service.process_drops(1, self._claim_message(failed=False))
-            notify.assert_awaited_once_with(self.drop)
+    async def test_direct_inventory_claim_sends_notification(self):
+        self.assertTrue(await self.drop.claim())
+        self.assertTrue(self.drop.is_claimed)
+        self.sent.assert_awaited_once()
+        self.assertIn("Campaign discord", str(self.sent.await_args.args[0]))
+        self.assertIn("Reward Watch", str(self.sent.await_args.args[0]))
+        self.twitch.gui.broadcast_wanted_items_now.assert_awaited_once_with()
+        self.twitch.drop_history.record.assert_called_once_with(self.drop, self.campaign)
 
-    async def test_discord_notification_skipped_on_failed_claim(self):
-        with (
-            unittest.mock.patch(
-                "src.services.message_handlers.asyncio.sleep", new=AsyncMock()
-            ),
-            unittest.mock.patch.object(
-                self.service, "_send_discord_notification", new=AsyncMock()
-            ) as notify,
-        ):
-            await self.service.process_drops(1, self._claim_message(failed=True))
-            notify.assert_not_awaited()
+    async def test_telegram_failure_does_not_block_discord_or_history(self):
+        self.twitch.settings.telegram_bot_token = "dummy-token"
+        self.twitch.settings.telegram_chat_id = "42"
+        with patch.object(
+            TelegramNotifier, "notify_drop_claimed", new=AsyncMock(side_effect=RuntimeError("failed"))
+        ) as telegram:
+            self.assertTrue(await self.drop.claim())
+        telegram.assert_awaited_once_with(self.drop)
+        self.sent.assert_awaited_once()
+        self.twitch.drop_history.record.assert_called_once_with(self.drop, self.campaign)
+
+    async def test_base_drop_claim_also_sends_notification(self):
+        drop = BaseDrop(self.campaign, self.drop_data, {})
+        drop.update_claim("inst-1")
+        self.assertTrue(await drop.claim())
+        self.sent.assert_awaited_once()
+
+    async def test_websocket_claim_sends_one_notification(self):
+        await self.service.process_drops(1, self._claim_message())
+        self.assertTrue(self.drop.is_claimed)
+        self.sent.assert_awaited_once()
+
+    async def test_repeated_websocket_claim_does_not_notify_twice(self):
+        await self.service.process_drops(1, self._claim_message())
+        await self.service.process_drops(1, self._claim_message())
+        self.sent.assert_awaited_once()
+        self.twitch.gql_request.assert_awaited_once()
+        self.twitch.drop_history.record.assert_called_once_with(self.drop, self.campaign)
+
+    async def test_inventory_claim_followed_by_websocket_notifies_once(self):
+        self.assertTrue(await self.drop.claim())
+        await self.service.process_drops(1, self._claim_message())
+        self.sent.assert_awaited_once()
+
+    async def test_failed_claim_does_not_send_notification(self):
+        self.twitch.gql_request.return_value = {"data": {"claimDropRewards": None}}
+        await self.service.process_drops(1, self._claim_message())
+        self.assertFalse(self.drop.is_claimed)
+        self.sent.assert_not_awaited()
+        self.twitch.drop_history.record.assert_not_called()
+
+    async def test_already_claimed_drop_is_not_added_to_history_again(self):
+        self.drop.is_claimed = True
+        self.assertTrue(await self.drop.claim())
+        self.twitch.drop_history.record.assert_not_called()
+
+    async def test_unconfigured_claim_does_not_send_notification(self):
+        self.twitch.settings.discord_webhook_url = ""
+        self.assertTrue(await self.drop.claim())
+        self.sent.assert_not_awaited()
+
+    async def test_notification_rejection_preserves_successful_claim(self):
+        self.sent.return_value = False
+        self.assertTrue(await self.drop.claim())
+        self.assertTrue(self.drop.is_claimed)
+        self.assertEqual(self.drop.current_minutes, self.drop.required_minutes)
+        self.sent.assert_awaited_once()
+
+    async def test_notification_exception_preserves_successful_claim(self):
+        with patch.object(
+            DiscordNotifier, "notify_drop_claimed", new=AsyncMock(side_effect=RuntimeError("failed"))
+        ) as notify:
+            self.assertTrue(await self.drop.claim())
+        self.assertTrue(self.drop.is_claimed)
+        self.assertEqual(self.drop.current_minutes, self.drop.required_minutes)
+        notify.assert_awaited_once_with(self.drop)
 
 
 class TestDiscordMessageEscaping(unittest.IsolatedAsyncioTestCase):
