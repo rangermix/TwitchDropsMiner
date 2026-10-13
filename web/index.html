@@ -287,6 +287,23 @@
                 </section>
 
                 <section class="settings-section">
+                    <h2 id="settings-discord-header">Discord Notifications</h2>
+                    <p id="settings-discord-help" class="help-text">Configure drop claim notifications on Discord.</p>
+                    <p id="settings-discord-credentials-help" class="help-text">Leave the URL blank to reuse the saved webhook. Remove Webhook disables notifications and deletes the saved URL.</p>
+                    <label>
+                        <span id="settings-discord-webhook-url-label">Discord Webhook URL:</span>
+                        <input type="password" id="discord-webhook-url" autocomplete="off" placeholder="https://discord.com/api/webhooks/ID/TOKEN">
+                        <small id="settings-discord-webhook-url-hint">Paste the full Webhook URL (it embeds your secret token).</small>
+                    </label>
+                    <div class="button-group">
+                        <button id="save-discord-btn" class="secondary-btn">Save Settings</button>
+                        <button id="test-discord-btn" class="secondary-btn">Test Connection</button>
+                        <button id="remove-discord-btn" class="secondary-btn">Remove Webhook</button>
+                    </div>
+                    <div id="discord-test-result" class="verify-result" style="display: none;"></div>
+                </section>
+
+                <section class="settings-section">
                     <h2 id="settings-telegram-header">Telegram Notifications</h2>
                     <p id="settings-telegram-help" class="help-text">Configure drop claim notifications on Telegram.</p>
                     <p id="settings-telegram-credentials-help" class="help-text">Leave the token blank to keep the saved token. To disable notifications, clear the Chat ID and save.</p>

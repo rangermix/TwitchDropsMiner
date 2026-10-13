@@ -1230,6 +1230,13 @@ function updateSettingsUI(settings) {
         proxyIndicator.title = proxyUrl ? `Proxy active: ${proxyUrl}` : 'Proxy disabled';
     }
 
+    const discordWebhookInput = document.getElementById('discord-webhook-url');
+    if (discordWebhookInput) {
+        discordWebhookInput.value = '';
+        discordWebhookInput.placeholder = settings.discord_configured
+            ? '••••••••' : 'https://discord.com/api/webhooks/ID/TOKEN';
+    }
+
     // Populate Telegram fields if present in settings (the server never
     // echoes the stored bot token; it returns a mask placeholder instead).
     const botTokenInput = document.getElementById('telegram-bot-token');
@@ -1751,6 +1758,68 @@ async function verifyProxy() {
     }
 }
 
+async function saveDiscordSettings(webhookUrl, removeWebhook = false) {
+    const dc = state.translations.gui?.settings?.discord || {};
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ discord_webhook_url: webhookUrl, discord_remove_webhook: removeWebhook })
+        });
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        if (data.success !== true || !data.settings) throw new Error();
+        updateSettingsUI(data.settings);
+    } catch (error) {
+        throw new Error(dc.save_error || 'Failed to save Discord settings.');
+    }
+}
+
+async function updateDiscordSettings(action) {
+    if (state.discordActionPending) return;
+    const input = document.getElementById('discord-webhook-url');
+    const result = document.getElementById('discord-test-result');
+    if (!result) return;
+    const dc = state.translations.gui?.settings?.discord || {};
+    const webhookUrl = input ? input.value.trim() : '';
+    result.style.display = 'block';
+    if (action !== 'remove' && !webhookUrl && !state.settings.discord_configured) {
+        result.className = 'verify-result error';
+        result.textContent = dc.missing_credentials || 'Please enter a Discord Webhook URL.';
+        return;
+    }
+    state.discordActionPending = true;
+    const controls = ['save-discord-btn', 'test-discord-btn', 'remove-discord-btn', 'discord-webhook-url']
+        .map(id => document.getElementById(id)).filter(Boolean);
+    controls.forEach(control => { control.disabled = true; });
+    result.className = 'verify-result loading';
+    result.textContent = `${action === 'test' ? (dc.test_connection || 'Test Connection') : (dc.save_settings || 'Save Settings')}…`;
+    let saving = false;
+    try {
+        if (action === 'test') {
+            const response = await fetch('/api/settings/test-discord', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ discord_webhook_url: webhookUrl })
+            });
+            if (!response.ok || (await response.json()).success !== true) throw new Error();
+        }
+        saving = true;
+        await saveDiscordSettings(action === 'remove' ? '' : webhookUrl, action === 'remove');
+        result.className = 'verify-result success';
+        result.textContent = action === 'test' ? (dc.success || 'Discord connection successful!')
+            : action === 'remove' ? (dc.removed || 'Webhook removed. Discord notifications are disabled.')
+            : (dc.saved || 'Settings saved successfully!');
+    } catch (error) {
+        result.className = 'verify-result error';
+        result.textContent = saving ? (dc.save_error || 'Failed to save Discord settings.')
+            : (dc.error || 'Failed to connect to Discord. Please check your Webhook URL.');
+    } finally {
+        state.discordActionPending = false;
+        controls.forEach(control => { control.disabled = false; });
+    }
+}
+
 async function testTelegramConnection() {
     const botTokenInput = document.getElementById('telegram-bot-token');
     const chatIdInput = document.getElementById('telegram-chat-id');
@@ -2123,6 +2192,22 @@ function applyTranslations(t) {
         const reloadBtn = document.getElementById('reload-btn');
         if (reloadBtn) reloadBtn.textContent = t.gui.settings.reload_campaigns;
 
+        const discordTrans = t.gui?.settings?.discord;
+        if (discordTrans) {
+            const labels = {
+                'settings-discord-header': 'name', 'settings-discord-help': 'description',
+                'settings-discord-webhook-url-label': 'webhook_url',
+                'settings-discord-webhook-url-hint': 'webhook_url_hint',
+                'settings-discord-credentials-help': 'credentials_help',
+                'save-discord-btn': 'save_settings', 'test-discord-btn': 'test_connection',
+                'remove-discord-btn': 'remove_webhook'
+            };
+            for (const [id, key] of Object.entries(labels)) {
+                const element = document.getElementById(id);
+                if (element) element.textContent = discordTrans[key];
+            }
+        }
+
         // Update Telegram Notifications section.
         const tgTrans = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
         if (tgTrans) {
@@ -2226,6 +2311,11 @@ function applyTranslations(t) {
                            makeElement('p', {}, tg.description),
                            makeHelpList('ol', tg.steps)]
                         : [];
+                })(),
+                ...(function () {
+                    const dc = t.gui?.settings?.discord;
+                    return dc ? [makeElement('h3', { id: 'help-discord-header' }, dc.name),
+                        makeElement('p', {}, dc.description), makeHelpList('ol', dc.setup_steps)] : [];
                 })(),
                 makeElement('div', { class: 'help-links' }, '', el =>
                     el.appendChild(makeElement('a', { href: 'https://github.com/rangermix/TwitchDropsMiner', target: '_blank', rel: 'noopener noreferrer' }, t.gui.help.github_repo || 'GitHub Repository'))
@@ -2477,6 +2567,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
+    document.getElementById('test-discord-btn').addEventListener('click', () => updateDiscordSettings('test'));
+    document.getElementById('save-discord-btn').addEventListener('click', () => updateDiscordSettings('save'));
+    document.getElementById('remove-discord-btn').addEventListener('click', () => updateDiscordSettings('remove'));
     document.getElementById('test-telegram-btn').addEventListener('click', testTelegramConnection);
     document.getElementById('save-telegram-btn').addEventListener('click', handleSaveTelegramClick);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
@@ -2975,7 +3068,8 @@ async function clearHistory() {
 
 // ==================== DOM Utilities ====================
 
-const TRUSTED_HELP_LINKS = new Set(['https://www.twitch.tv/drops/campaigns', 'https://t.me/BotFather']);
+const TRUSTED_HELP_LINKS = new Set(['https://www.twitch.tv/drops/campaigns',
+    'https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks', 'https://t.me/BotFather']);
 
 function tgHelpSetup(t) {
     const tg = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
@@ -3031,7 +3125,7 @@ function makeHelpList(tag, items) {
 
 function appendTrustedHelpContent(parent, text) {
     const source = String(text);
-    const linkPattern = /<a\b[^>]*\bhref=(["'])(https:\/\/www\.twitch\.tv\/drops\/campaigns|https:\/\/t\.me\/BotFather)\1[^>]*>(.*?)<\/a>/gi;
+    const linkPattern = /<a\b[^>]*\bhref=(["'])(https:\/\/support\.discord\.com\/hc\/en-us\/articles\/228383668-Intro-to-Webhooks|https:\/\/www\.twitch\.tv\/drops\/campaigns|https:\/\/t\.me\/BotFather)\1[^>]*>(.*?)<\/a>/gi;
     let lastIndex = 0;
     let match;
     let matched = false;

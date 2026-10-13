@@ -226,7 +226,31 @@
             "diagnostics_saving": "Gemmer diagnosedata…",
             "diagnostics_saved": "Diagnosedata gemt i {path}.",
             "diagnostics_error": "Kunne ikke gemme diagnosedata. Prøv igen.",
-            "diagnostics_busy": "En diagnosticering kører allerede eller er lige blevet gemt. Vent et par sekunder, og prøv igen."
+            "diagnostics_busy": "En diagnosticering kører allerede eller er lige blevet gemt. Vent et par sekunder, og prøv igen.",
+            "discord": {
+                "name": "Discord-underretninger",
+                "description": "Få besked på Discord, når du gør krav på drops.",
+                "webhook_url": "Discord-webhook-URL",
+                "webhook_url_hint": "Indsæt den fulde webhook-URL (den indeholder din hemmelige token).",
+                "setup_steps": [
+                    "Åbn din Discord-server, og gå til kanalindstillingerne (tandhjulsikonet ud for kanalnavnet)",
+                    "Gå til Integrationer → Webhooks",
+                    "Klik på Ny webhook, giv den et navn, og vælg tekstkanalen (se <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Introduktion til webhooks</a>)",
+                    "Klik på Kopiér webhook-URL - den ser sådan ud: https://discord.com/api/webhooks/ID/TOKEN",
+                    "Indsæt URL'en i feltet Discord-webhook-URL under Indstillinger, og klik på Gem indstillinger",
+                    "Klik på Test forbindelse for at bekræfte og modtage en testbesked"
+                ],
+                "success": "✓ Discord-forbindelsen lykkedes! Du modtager drop-beskeder.",
+                "saved": "✓ Indstillinger gemt!",
+                "error": "Kunne ikke oprette forbindelse til Discord. Tjek din webhook-URL.",
+                "missing_credentials": "Angiv en Discord-webhook-URL. Se instruktionerne under fanen Hjælp.",
+                "remove_webhook": "Fjern webhook",
+                "removed": "Webhook fjernet. Discord-notifikationer er deaktiveret.",
+                "credentials_help": "Lad URL-feltet være tomt for at bruge den gemte webhook. Fjern webhook deaktiverer notifikationer og sletter den gemte URL.",
+                "save_error": "Kunne ikke gemme Discord-indstillinger.",
+                "save_settings": "Gem indstillinger",
+                "test_connection": "Test forbindelse"
+            }
         },
         "help": {
             "about": "Om Twitch Drops Miner",

@@ -226,7 +226,31 @@
             "diagnostics_saving": "Tanılama verileri kaydediliyor…",
             "diagnostics_saved": "Tanılama verileri {path} konumuna kaydedildi.",
             "diagnostics_error": "Tanılama verileri kaydedilemedi. Tekrar deneyin.",
-            "diagnostics_busy": "Tanılama kaydı zaten sürüyor veya yeni tamamlandı. Birkaç saniye bekleyip tekrar deneyin."
+            "diagnostics_busy": "Tanılama kaydı zaten sürüyor veya yeni tamamlandı. Birkaç saniye bekleyip tekrar deneyin.",
+            "discord": {
+                "name": "Discord Bildirimleri",
+                "description": "Drop talep ettiğinde Discord'da bildirim al.",
+                "webhook_url": "Discord Webhook URL'si",
+                "webhook_url_hint": "Webhook URL'sinin tamamını yapıştır (gizli token'ını içerir).",
+                "setup_steps": [
+                    "Discord sunucunu aç ve kanal adının yanındaki dişli simgesine tıklayarak kanal ayarlarına git",
+                    "Entegrasyonlar → Webhook'lar bölümüne git",
+                    "Yeni webhook'a tıkla, bir ad ver ve yazı kanalını seç (bkz. <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Webhook'lara giriş</a>)",
+                    "Webhook URL'sini kopyala'ya tıkla - şuna benzer: https://discord.com/api/webhooks/ID/TOKEN",
+                    "URL'yi Ayarlar'daki Discord Webhook URL'si alanına yapıştır ve Ayarları kaydet'e tıkla",
+                    "Doğrulamak ve bir test bildirimi almak için Bağlantıyı test et'e tıkla"
+                ],
+                "success": "✓ Discord bağlantısı başarılı! Drop bildirimleri alacaksın.",
+                "saved": "✓ Ayarlar başarıyla kaydedildi!",
+                "error": "Discord'a bağlanılamadı. Webhook URL'ni kontrol et.",
+                "missing_credentials": "Bir Discord Webhook URL'si gir. Talimatlar için Yardım sekmesine bak.",
+                "remove_webhook": "Webhook’u kaldır",
+                "removed": "Webhook kaldırıldı. Discord bildirimleri devre dışı.",
+                "credentials_help": "Kayıtlı webhook’u kullanmak için URL’yi boş bırakın. Webhook’u kaldır, bildirimleri kapatır ve kayıtlı URL’yi siler.",
+                "save_error": "Discord ayarları kaydedilemedi.",
+                "save_settings": "Ayarları Kaydet",
+                "test_connection": "Bağlantıyı Test Et"
+            }
         },
         "help": {
             "about": "Twitch Drops Miner Hakkında",

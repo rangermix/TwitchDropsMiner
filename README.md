@@ -22,7 +22,7 @@ services operated for other users are outside its support scope.
 - Track campaigns and rewards, and ignore drops you do not want.
 - Source builds skip channels while Twitch reports an active ban, including temporary bans.
 - Sign in inside the dashboard; TDM saves and renews your session automatically.
-- Review claimed-drop history, export it to CSV, and receive Telegram notifications.
+- Review claimed-drop history, export it to CSV, and receive Telegram or Discord notifications.
 - Manage everything from a web dashboard with optional password protection.
 
 The redesigned dashboard's **Now Watching** card offers **Show thumbnail**, off on
@@ -183,7 +183,7 @@ same guides in [docs](docs/README.md):
 - [Login, migration, and recovery](docs/authentication.md)
 - [Games, campaigns, inventory, and history](docs/usage.md)
 - [Dashboard password and reverse proxies](docs/dashboard-access.md)
-- [Telegram notifications](docs/notifications.md)
+- [Telegram and Discord notifications](docs/notifications.md)
 - [Troubleshooting](docs/troubleshooting.md)
 
 ## Help and contributions

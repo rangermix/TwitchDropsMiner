@@ -226,7 +226,31 @@
             "diagnostics_saving": "診断データを保存しています…",
             "diagnostics_saved": "診断データを{path}に保存しました。",
             "diagnostics_error": "診断データを保存できませんでした。もう一度お試しください。",
-            "diagnostics_busy": "診断データの保存中、または保存直後です。数秒待ってからもう一度お試しください。"
+            "diagnostics_busy": "診断データの保存中、または保存直後です。数秒待ってからもう一度お試しください。",
+            "discord": {
+                "name": "Discord通知",
+                "description": "ドロップを受け取るとDiscordに通知が届きます。",
+                "webhook_url": "Discord Webhook URL",
+                "webhook_url_hint": "完全なWebhook URLを貼り付けてください（秘密のトークンを含みます）。",
+                "setup_steps": [
+                    "Discordサーバーを開き、チャンネル名の横の歯車アイコンからチャンネル設定へ進む",
+                    "「連携サービス」→「Webhooks」へ進む",
+                    "「新規Webhook」をクリックして名前を付け、テキストチャンネルを選択（<a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Webhook入門</a>）",
+                    "「Webhook URLをコピー」をクリック。例: https://discord.com/api/webhooks/ID/TOKEN",
+                    "設定のDiscord Webhook URL欄にURLを貼り付け、「設定を保存」をクリック",
+                    "「接続をテスト」をクリックして確認し、テスト通知を受け取る"
+                ],
+                "success": "✓ Discord接続に成功しました。ドロップ通知が届きます。",
+                "saved": "✓ 設定が正常に保存されました！",
+                "error": "Discordに接続できませんでした。Webhook URLを確認してください。",
+                "missing_credentials": "Discord Webhook URLを入力してください。設定方法は「ヘルプ」タブをご覧ください。",
+                "remove_webhook": "Webhookを削除",
+                "removed": "Webhookを削除しました。Discord通知は無効です。",
+                "credentials_help": "URLを空欄にすると保存済みのWebhookを使用します。「Webhookを削除」で通知を無効にし、保存済みURLを削除します。",
+                "save_error": "Discord設定を保存できませんでした。",
+                "save_settings": "設定を保存",
+                "test_connection": "接続をテスト"
+            }
         },
         "help": {
             "about": "Twitch Drops Minerについて",
