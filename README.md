@@ -24,6 +24,7 @@ services operated for other users are outside its support scope.
 - Sign in inside the dashboard; TDM saves and renews your session automatically.
 - Review claimed-drop history, export it to CSV, and receive Telegram or Discord notifications.
 - Manage everything from a web dashboard with optional password protection.
+- Set daily [mining hours](docs/usage.md#mining-hours) in the miner’s local timezone (source builds).
 
 The redesigned dashboard's **Now Watching** card offers **Show thumbnail**, off on
 each page load. When enabled, it shows a Twitch JPEG thumbnail, refreshed on channel

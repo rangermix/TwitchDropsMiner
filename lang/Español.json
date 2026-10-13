@@ -70,7 +70,8 @@
             "fetching_inventory": "Obteniendo inventario...",
             "fetching_campaigns": "Obteniendo campañas...",
             "adding_campaigns": "Agregando lista de campañas al inventario... {counter}",
-            "ready": "Listo"
+            "ready": "Listo",
+            "outside_hours": "Fuera del horario de minería"
         },
         "tabs": {
             "main": "Principal",
@@ -227,6 +228,13 @@
             "diagnostics_saved": "Datos de diagnóstico guardados en {path}.",
             "diagnostics_error": "No se pudieron guardar los datos de diagnóstico. Inténtalo de nuevo.",
             "diagnostics_busy": "Ya se está guardando un diagnóstico o se acaba de guardar. Espera unos segundos e inténtalo de nuevo.",
+            "mining_hours": "Horario de minería",
+            "mining_hours_help": "Usa la hora local del minero (Docker TZ). El intervalo puede cruzar medianoche; inicio y fin iguales significan todo el día. Fuera del intervalo, la visualización se pausa y se reanuda automáticamente.",
+            "mining_hours_always": "Todo el día (24/7)",
+            "mining_hours_range": "Rango de tiempo personalizado",
+            "mining_hours_start": "Inicio",
+            "mining_hours_end": "Fin",
+            "mining_hours_save_error": "No se pudo guardar el horario. Inténtalo de nuevo.",
             "discord": {
                 "name": "Notificaciones de Discord",
                 "description": "Recibe notificaciones en Discord cuando reclames drops.",

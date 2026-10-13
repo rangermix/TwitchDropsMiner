@@ -183,7 +183,7 @@ class WatchService:
         while True:
             channel: Channel = await self._twitch.watching_channel.get()
 
-            if not channel.online or channel.banned:
+            if not self._twitch.is_mining_time() or not channel.online or channel.banned:
                 # if the channel isn't online anymore, we stop watching it
                 self.stop_watching()
                 continue

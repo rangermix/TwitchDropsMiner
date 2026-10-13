@@ -70,7 +70,8 @@
             "fetching_inventory": "Henter beholdning...",
             "fetching_campaigns": "Henter kampagner...",
             "adding_campaigns": "Tilføjer kampagner til beholdning... {counter}",
-            "ready": "Klar"
+            "ready": "Klar",
+            "outside_hours": "Uden for minedriftstid"
         },
         "tabs": {
             "main": "Hoved",
@@ -227,6 +228,13 @@
             "diagnostics_saved": "Diagnosedata gemt i {path}.",
             "diagnostics_error": "Kunne ikke gemme diagnosedata. Prøv igen.",
             "diagnostics_busy": "En diagnosticering kører allerede eller er lige blevet gemt. Vent et par sekunder, og prøv igen.",
+            "mining_hours": "Minedriftstid",
+            "mining_hours_help": "Bruger minerens lokale tid (Docker TZ). Intervaller kan krydse midnat; ens start- og sluttid betyder hele dagen. Uden for intervallet sættes visning på pause og genoptages automatisk.",
+            "mining_hours_always": "Hele dagen (24/7)",
+            "mining_hours_range": "Brugerdefineret tidsinterval",
+            "mining_hours_start": "Start",
+            "mining_hours_end": "Slut",
+            "mining_hours_save_error": "Kunne ikke gemme minedriftstiden. Prøv igen.",
             "discord": {
                 "name": "Discord-underretninger",
                 "description": "Få besked på Discord, når du gør krav på drops.",

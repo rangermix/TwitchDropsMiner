@@ -16,7 +16,7 @@ function webhook(value) { document.getElementById('discord-webhook-url').value =
 
 
 def run_ui(script):
-    run_javascript(["saveDiscordSettings", "updateDiscordSettings", "updateSettingsUI"], SETUP +
+    run_javascript(["saveDiscordSettings", "updateDiscordSettings", "updateSettingsUI", "toggleMiningHoursRange"], SETUP +
                    "\n(async () => {\n" + script + r"""
 })().catch(error => { process.stderr.write(String(error)); process.exit(1); });
 """)

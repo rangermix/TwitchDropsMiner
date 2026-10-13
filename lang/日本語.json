@@ -70,7 +70,8 @@
             "fetching_inventory": "インベントリを取得中...",
             "fetching_campaigns": "キャンペーンを取得中...",
             "adding_campaigns": "キャンペーンをインベントリに追加中... {counter}",
-            "ready": "準備完了"
+            "ready": "準備完了",
+            "outside_hours": "マイニング時間外"
         },
         "tabs": {
             "main": "メイン",
@@ -227,6 +228,13 @@
             "diagnostics_saved": "診断データを{path}に保存しました。",
             "diagnostics_error": "診断データを保存できませんでした。もう一度お試しください。",
             "diagnostics_busy": "診断データの保存中、または保存直後です。数秒待ってからもう一度お試しください。",
+            "mining_hours": "マイニング時間",
+            "mining_hours_help": "マイナーの現地時刻（Docker TZ）を使用します。日付をまたぐ時間帯を指定できます。開始と終了が同じ場合は終日です。時間外は視聴を一時停止し、自動的に再開します。",
+            "mining_hours_always": "終日（24/7）",
+            "mining_hours_range": "時間帯を指定",
+            "mining_hours_start": "開始",
+            "mining_hours_end": "終了",
+            "mining_hours_save_error": "稼働時間を保存できませんでした。もう一度お試しください。",
             "discord": {
                 "name": "Discord通知",
                 "description": "ドロップを受け取るとDiscordに通知が届きます。",

@@ -529,6 +529,7 @@ class Channel:
     def _watch_current(self, stream: Stream) -> bool:
         return (
             not self.banned
+            and self._twitch.is_mining_time()
             and self._stream is not None
             and self._stream.broadcast_id == stream.broadcast_id
             and self._twitch.watching_channel.get_with_default(None) is self

@@ -20,6 +20,7 @@ def make_channel(status=204):
 
     selected = AwaitableValue()
     twitch = SimpleNamespace(
+        is_mining_time=lambda: True,
         gui=SimpleNamespace(channels=MagicMock()),
         request=request,
         _auth_state=SimpleNamespace(user_id=42),

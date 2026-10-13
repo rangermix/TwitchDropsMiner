@@ -70,7 +70,8 @@
             "fetching_inventory": "Recupero dell'inventario...",
             "fetching_campaigns": "Recupero delle campagne...",
             "adding_campaigns": "Aggiunta delle campagne all'inventario... {counter}",
-            "ready": "Pronto"
+            "ready": "Pronto",
+            "outside_hours": "Fuori dall'orario di mining"
         },
         "tabs": {
             "main": "Principale",
@@ -227,6 +228,13 @@
             "diagnostics_saved": "Dati diagnostici salvati in {path}.",
             "diagnostics_error": "Impossibile salvare i dati diagnostici. Riprova.",
             "diagnostics_busy": "Un salvataggio diagnostico è già in corso o è appena terminato. Attendi qualche secondo e riprova.",
+            "mining_hours": "Orario di mining",
+            "mining_hours_help": "Usa l’ora locale del miner (Docker TZ). L’intervallo può attraversare la mezzanotte; orari uguali indicano tutto il giorno. Fuori intervallo, la visione viene sospesa e riprende automaticamente.",
+            "mining_hours_always": "Tutto il giorno (24/7)",
+            "mining_hours_range": "Intervallo di tempo personalizzato",
+            "mining_hours_start": "Inizio",
+            "mining_hours_end": "Fine",
+            "mining_hours_save_error": "Impossibile salvare gli orari. Riprova.",
             "discord": {
                 "name": "Notifiche Discord",
                 "description": "Ricevi notifiche su Discord quando riscatti i drop.",

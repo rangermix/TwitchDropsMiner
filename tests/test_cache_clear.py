@@ -150,6 +150,7 @@ async def test_inventory_replacement_removes_stale_campaign_lookup_entries():
 
 def _make_refresh_test_client(state: State = State.IDLE) -> Twitch:
     twitch = object.__new__(Twitch)
+    twitch.settings = SimpleNamespace(mining_hours={"mode": "always"})
     twitch._state = state
     twitch._state_change = asyncio.Event()
     twitch._inventory_refresh_pending = False

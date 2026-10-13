@@ -80,6 +80,7 @@ class _Transport:
 
 def _make_channel(transport: _Transport, *, master_body: str | None = None) -> Channel:
     twitch = SimpleNamespace(
+        is_mining_time=lambda: True,
         gui=SimpleNamespace(channels=MagicMock()),
         request=transport.request,
         gql_request=AsyncMock(return_value={
@@ -369,6 +370,31 @@ async def test_stream_change_during_playlist_request_prevents_stale_heads(change
     assert await channel._send_watch_playlist() is False
 
     assert transport.heads == []
+
+
+@pytest.mark.asyncio
+async def test_closed_mining_window_sends_neither_playlist_nor_telemetry():
+    transport = _Transport()
+    channel = _make_channel(transport)
+    channel._twitch.is_mining_time = lambda: False
+
+    assert await channel.send_watch() is False
+    assert transport.requests == []
+    assert all(method != "POST" for method, _url in transport.requests)
+
+
+@pytest.mark.asyncio
+async def test_window_closing_during_head_stops_remaining_segments_and_telemetry():
+    transport = _Transport()
+    channel = _make_channel(transport)
+    first, second = "https://video.example/live/one.ts", "https://video.example/live/two.ts"
+    transport.add("GET", MEDIA, body=_playlist(first, second))
+    transport.add("HEAD", first, on_enter=lambda: setattr(channel._twitch, "is_mining_time", lambda: False))
+    transport.add("HEAD", second)
+
+    assert await channel.send_watch() is False
+    assert transport.heads == [first]
+    assert all(method != "POST" for method, _url in transport.requests)
 
 
 @pytest.mark.asyncio

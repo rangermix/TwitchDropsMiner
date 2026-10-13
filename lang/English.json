@@ -70,7 +70,8 @@
             "switching": "Switching the channel...",
             "fetching_inventory": "Fetching inventory...",
             "fetching_campaigns": "Fetching campaigns...",
-            "adding_campaigns": "Adding campaigns to inventory... {counter}"
+            "adding_campaigns": "Adding campaigns to inventory... {counter}",
+            "outside_hours": "Outside mining hours"
         },
         "tabs": {
             "main": "Main",
@@ -192,6 +193,13 @@
             "diagnostics_saved": "Diagnosis data saved to {path}.",
             "diagnostics_error": "Could not save diagnosis data. Try again.",
             "diagnostics_busy": "A diagnosis dump is already running or was just saved. Wait a few seconds and try again.",
+            "mining_hours": "Mining Hours",
+            "mining_hours_help": "Uses the miner’s local time (Docker TZ). Overnight ranges cross midnight; equal start and end times mean all day. Outside the window, watching pauses and resumes automatically.",
+            "mining_hours_always": "All day (24/7)",
+            "mining_hours_range": "Custom time range",
+            "mining_hours_start": "Start",
+            "mining_hours_end": "End",
+            "mining_hours_save_error": "Could not save mining hours. Please try again.",
             "discord": {
                 "name": "Discord Notifications",
                 "description": "Receive notifications on Discord when you claim drops.",

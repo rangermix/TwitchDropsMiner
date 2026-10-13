@@ -8,7 +8,7 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from src.config.settings import InventoryFilterSettings
+from src.config.settings import InventoryFilterSettings, MiningHoursSettings
 from src.i18n.translator import _
 from src.models.game import Game
 from src.services.discord_service import DiscordNotifier
@@ -21,6 +21,13 @@ logger = logging.getLogger("TwitchDrops")
 # Never echo the real credential through the unauthenticated web API/socket.
 TELEGRAM_TOKEN_MASK = "••••••••"
 DISCORD_WEBHOOK_MASK = "••••••••"
+
+
+def _format_mining_hours(value: Any) -> str:
+    """Return a console-friendly summary that hides times outside range mode."""
+    if isinstance(value, dict) and value.get("mode") == "range":
+        return f"{value.get('start')}-{value.get('end')}"
+    return "always"
 
 
 if TYPE_CHECKING:
@@ -100,6 +107,10 @@ class SettingsManager:
         Args:
             settings_data: Dictionary of settings to update
         """
+        previous_hours: dict[str, str] = getattr(self._settings, "mining_hours", {})
+        requested_hours = settings_data.get("mining_hours")
+        if requested_hours is not None:
+            requested_hours = MiningHoursSettings.normalize(requested_hours)
         previous_webhook = getattr(self._settings, "discord_webhook_url", "")
         new_webhook = previous_webhook
         if settings_data.get("discord_remove_webhook") is True:
@@ -113,6 +124,7 @@ class SettingsManager:
                 if not DiscordNotifier.is_valid_webhook(requested_webhook):
                     raise ValueError("invalid_discord_webhook")
                 new_webhook = requested_webhook
+
         should_trigger_update = False
         previous_allow_unlinked = getattr(self._settings, "allow_unlinked_campaigns", False)
         requested_allow_unlinked = settings_data.get("allow_unlinked_campaigns")
@@ -176,6 +188,12 @@ class SettingsManager:
         should_trigger_update |= self.check_and_update_setting(
             "mining_benefits", settings_data.get("mining_benefits"), True
         )
+        should_trigger_update |= self.check_and_update_setting(
+            "mining_hours",
+            requested_hours,
+            True,
+            log_formatter=_format_mining_hours,
+        )
 
         if override_changed and isinstance(requested_allow_unlinked, bool):
             self._settings.allow_unlinked_campaigns = requested_allow_unlinked
@@ -186,6 +204,7 @@ class SettingsManager:
             # A rejected save must not silently enable or disable live mining.
             self._settings.discord_webhook_url = previous_webhook
             self._settings.allow_unlinked_campaigns = previous_allow_unlinked
+            self._settings.mining_hours = previous_hours
             raise
         if new_webhook != previous_webhook:
             self._log_change(f"Setting changed: discord_webhook_url = {DISCORD_WEBHOOK_MASK}")
@@ -212,11 +231,14 @@ class SettingsManager:
         new_value: Any,
         should_trigger_update: bool = False,
         action: Callable[[Any], None] = lambda x: None,
+        log_formatter: Callable[[Any], str] | None = None,
     ):
         if new_value is None or getattr(self._settings, key, None) == new_value:
             return False
         setattr(self._settings, key, new_value)
-        log_value = TELEGRAM_TOKEN_MASK if key in {"telegram_bot_token", "discord_webhook_url"} else new_value
+        log_value = TELEGRAM_TOKEN_MASK if key in {"telegram_bot_token", "discord_webhook_url"} else (
+            log_formatter(new_value) if log_formatter else new_value
+        )
         self._log_change(f"Setting changed: {key} = {log_value}")
         action(new_value)
         return should_trigger_update

@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, StrictBool, field_validator
 
 from src.config.paths import DATA_DIR
-from src.config.settings import InventoryFilterSettings
+from src.config.settings import InventoryFilterSettings, MiningHoursSettings
 from src.version import __version__
 from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
 from src.web.diagnostics_api import DiagnosticsAPI
@@ -90,6 +90,12 @@ class SettingsUpdate(BaseModel):
     inventory_filters: dict | None = None
     inventory_list_view: bool | None = None
     mining_benefits: dict[str, bool] | None = None
+    mining_hours: dict | None = None
+
+    @field_validator("mining_hours")
+    @classmethod
+    def validate_mining_hours(cls, value: dict | None) -> dict | None:
+        return MiningHoursSettings.normalize(value) if value is not None else None
 
     @field_validator("inventory_filters")
     @classmethod

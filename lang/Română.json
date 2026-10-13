@@ -70,7 +70,8 @@
             "fetching_inventory": "Se precuperează inventarul...",
             "fetching_campaigns": "Se recuperează campaniile...",
             "adding_campaigns": "S-a adăugat lista de campanii la inventar... {counter}",
-            "ready": "Gata"
+            "ready": "Gata",
+            "outside_hours": "În afara orelor de minerit"
         },
         "tabs": {
             "main": "Principal",
@@ -227,6 +228,13 @@
             "diagnostics_saved": "Datele de diagnostic au fost salvate în {path}.",
             "diagnostics_error": "Datele de diagnostic nu au putut fi salvate. Încercați din nou.",
             "diagnostics_busy": "O salvare de diagnostic este deja în curs sau tocmai s-a încheiat. Așteptați câteva secunde și încercați din nou.",
+            "mining_hours": "Ore de minerit",
+            "mining_hours_help": "Folosește ora locală a minerului (Docker TZ). Intervalul poate trece peste miezul nopții; orele identice înseamnă toată ziua. În afara intervalului, vizionarea se oprește și se reia automat.",
+            "mining_hours_always": "Toată ziua (24/7)",
+            "mining_hours_range": "Interval de timp personalizat",
+            "mining_hours_start": "Început",
+            "mining_hours_end": "Sfârșit",
+            "mining_hours_save_error": "Nu s-au putut salva orele. Încercați din nou.",
             "discord": {
                 "name": "Notificări Discord",
                 "description": "Primește notificări pe Discord când revendici drop-uri.",

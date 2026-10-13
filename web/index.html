@@ -346,12 +346,40 @@
                 </section>
 
                 <section class="settings-section">
+                    <h2 id="settings-hours-header">Mining Hours</h2>
+                    <p id="settings-hours-help" class="help-text">Uses the miner’s local time (Docker TZ). Overnight ranges cross midnight;
+                        equal start and end times mean all day. Outside the window, watching pauses and resumes automatically.</p>
+                    <div class="benefits-filter filter-checkboxes">
+                        <label class="filter-checkbox">
+                            <input type="radio" name="mining-hours-mode" id="mining-hours-always" checked />
+                            <span id="settings-hours-always-label">All day (24/7)</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="radio" name="mining-hours-mode" id="mining-hours-range" />
+                            <span id="settings-hours-range-label">Custom time range</span>
+                        </label>
+                    </div>
+                    <div id="mining-hours-range-inputs" style="display: none">
+                        <label>
+                            <span id="settings-hours-start-label">Start:</span>
+                            <input type="time" id="mining-hours-start" value="08:00" required>
+                        </label>
+                        <label>
+                            <span id="settings-hours-end-label">End:</span>
+                            <input type="time" id="mining-hours-end" value="22:00" required>
+                        </label>
+                    </div>
+                    <p id="mining-hours-error" class="help-text" role="alert" hidden></p>
+                </section>
+
+                <section class="settings-section">
                     <label class="checkbox-label">
                         <input type="checkbox" id="allow-unlinked-campaigns" aria-describedby="allow-unlinked-warning" />
                         <span id="allow-unlinked-label">Allow mining campaigns reported as Not Linked</span>
                     </label>
                     <p id="allow-unlinked-warning" class="help-text account-link-warning" role="note">Warning: This bypasses only TDM's account-link check. It does not link accounts or guarantee Twitch progress, claims, or in-game rewards. TDM may show estimated minutes. Check Twitch's Drops inventory and link the correct game account to receive rewards.</p>
                     <p id="allow-unlinked-error" class="help-text" role="alert" hidden></p>
+
                 </section>
 
                 <section class="settings-section">

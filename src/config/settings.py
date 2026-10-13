@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Literal, TypedDict, cast
@@ -51,10 +52,34 @@ default_settings = {
         "EMOTE": True,
         "UNKNOWN": True,
     },
+    "mining_hours": {
+        "mode": "always",
+        "start": "08:00",
+        "end": "22:00",
+    },
     "proxy": "",
     "telegram_bot_token": "",
     "telegram_chat_id": "",
 }
+
+
+class MiningHoursSettings:
+    """Validate the complete daily schedule before it changes live policy."""
+
+    @staticmethod
+    def normalize(value: Any) -> dict[str, str]:
+        if (
+            not isinstance(value, dict)
+            or set(value) != {"mode", "start", "end"}
+            or value.get("mode") not in ("always", "range")
+            or any(
+                not isinstance(value.get(key), str)
+                or re.fullmatch(r"(?:[01][0-9]|2[0-3]):[0-5][0-9]", value[key]) is None
+                for key in ("start", "end")
+            )
+        ):
+            raise ValueError("Invalid mining hours")
+        return dict(value)
 
 
 class InventoryFilterSettings:
@@ -93,6 +118,7 @@ class Settings:
     inventory_list_view: bool
     minimum_refresh_interval_minutes: int
     mining_benefits: dict[str, bool]
+    mining_hours: dict[str, str]
     proxy: str
     telegram_bot_token: str
     telegram_chat_id: str
@@ -108,6 +134,8 @@ class Settings:
         settings["inventory_filters"] = InventoryFilterSettings.normalize(
             filters if isinstance(filters, dict) else {}
         )
+        if "mining_hours" in settings:
+            settings["mining_hours"] = MiningHoursSettings.normalize(settings["mining_hours"])
         merge_json(settings, default_settings)
         settings.pop("allow_helper_connection", None)
         for key, value in settings.items():
@@ -120,6 +148,7 @@ class Settings:
         )
 
     def save(self) -> None:
+        self.mining_hours = MiningHoursSettings.normalize(self.mining_hours)
         self.drop_name_blacklist = DropIgnorePolicy.normalize_keywords(
             self.drop_name_blacklist
         )

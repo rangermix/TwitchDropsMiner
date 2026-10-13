@@ -41,6 +41,7 @@ async def test_playlist_polling_preserves_minute_progress_cadence(current_sessio
         )}}}
 
     twitch = SimpleNamespace(
+        is_mining_time=lambda: True,
         watching_channel=selected,
         gui=SimpleNamespace(progress=SimpleNamespace(minute_almost_done=lambda: True)),
         gql_request=gql_request,
@@ -102,6 +103,7 @@ async def test_blocked_progress_query_is_drained_and_playlist_polling_resumes(mo
     campaign = MagicMock()
     campaign.bump_minutes.side_effect = lambda watched: bumps.append(clock[0])
     twitch = SimpleNamespace(
+        is_mining_time=lambda: True,
         watching_channel=selected,
         gui=SimpleNamespace(progress=SimpleNamespace(minute_almost_done=lambda: True)),
         gql_request=gql_request,

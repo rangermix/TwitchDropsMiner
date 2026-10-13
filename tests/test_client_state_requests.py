@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 from src.config import State
@@ -8,6 +9,8 @@ def _client(*, state: State, inventory_loaded: bool) -> Twitch:
     client = object.__new__(Twitch)
     client._state = state
     client._state_change = MagicMock()
+    client._schedule_changed = MagicMock()
+    client.settings = SimpleNamespace(mining_hours={"mode": "always"})
     client._games_update_pending = False
     client._inventory_loaded = inventory_loaded
     return client

@@ -70,7 +70,8 @@
             "fetching_inventory": "Mmengambil inventaris...",
             "fetching_campaigns": "Mengambil kampanye...",
             "adding_campaigns": "Menambahkan daftar kampanye ke inventaris... {counter}",
-            "ready": "Siap"
+            "ready": "Siap",
+            "outside_hours": "Di luar jam penambangan"
         },
         "tabs": {
             "main": "Utama",
@@ -227,6 +228,13 @@
             "diagnostics_saved": "Data diagnosis disimpan ke {path}.",
             "diagnostics_error": "Tidak dapat menyimpan data diagnosis. Coba lagi.",
             "diagnostics_busy": "Penyimpanan diagnosis sedang berlangsung atau baru selesai. Tunggu beberapa detik lalu coba lagi.",
+            "mining_hours": "Jam Penambangan",
+            "mining_hours_help": "Menggunakan waktu lokal miner (Docker TZ). Rentang dapat melewati tengah malam; waktu mulai dan selesai yang sama berarti sepanjang hari. Di luar rentang, tontonan dijeda dan dilanjutkan otomatis.",
+            "mining_hours_always": "Sepanjang hari (24/7)",
+            "mining_hours_range": "Rentang waktu khusus",
+            "mining_hours_start": "Mulai",
+            "mining_hours_end": "Selesai",
+            "mining_hours_save_error": "Gagal menyimpan jam mining. Coba lagi.",
             "discord": {
                 "name": "Notifikasi Discord",
                 "description": "Terima notifikasi di Discord saat kamu mengklaim drop.",

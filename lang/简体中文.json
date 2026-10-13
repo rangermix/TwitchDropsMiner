@@ -70,7 +70,8 @@
             "fetching_inventory": "获取库存中...",
             "fetching_campaigns": "获取掉宝活动...",
             "adding_campaigns": "将掉宝活动列表添加至库存... {counter}",
-            "ready": "就绪"
+            "ready": "就绪",
+            "outside_hours": "非开采时段"
         },
         "tabs": {
             "main": "主面板",
@@ -227,6 +228,13 @@
             "diagnostics_saved": "诊断数据已保存到 {path}。",
             "diagnostics_error": "无法保存诊断数据，请重试。",
             "diagnostics_busy": "诊断数据正在保存或刚刚保存完成，请稍等几秒后重试。",
+            "mining_hours": "开采时段",
+            "mining_hours_help": "使用运行矿工的设备当地时间（Docker TZ）。时段可以跨越午夜；开始和结束时间相同表示全天运行。时段外暂停观看，到时自动恢复。",
+            "mining_hours_always": "全天（24/7）",
+            "mining_hours_range": "自定义时间段",
+            "mining_hours_start": "开始",
+            "mining_hours_end": "结束",
+            "mining_hours_save_error": "无法保存运行时段，请重试。",
             "discord": {
                 "name": "Discord 通知",
                 "description": "领取掉落物时在 Discord 上接收通知。",

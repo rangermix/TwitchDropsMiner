@@ -305,6 +305,17 @@ lang/                # Translation JSON files (20 languages)
   actively watched channel remains visible while game settings are changing
 - Consecutive identical no-active-campaign console prompts are collapsed until another
   console message appears
+- Mining hours default to `always`; `range` uses the miner host's local time (Docker `TZ`),
+  inclusive start/exclusive end, supports overnight windows, and treats equal times as all day.
+  Validate complete `mode`/`start`/`end` objects before live changes or loading saved values;
+  failed persistence restores the previous schedule. The UI uses a dedicated save with
+  required time inputs and translated errors. Never silently default an invalid range.
+  The schedule task enforces closing and reopening, wakes on policy edits, resamples wall
+  time at least every minute, and is cancelled and awaited during authentication changes
+  and run exit. Gate watch selection, playlist/Spade freshness, and progress polling too.
+  Defer pending inventory/policy/cache requests while closed without setting a busy-loop
+  event; fetch fresh inventory on reopening. Existing websocket claims remain available.
+  Regressions live in `tests/test_mining_hours.py` and `tests/test_mining_hours_frontend.py`.
 - Telegram drop notifications use a bot token stored server-side. The web API/socket
   never echoes the stored token: `get_settings()` returns only a `telegram_configured`
   flag and a masked placeholder, console logs mask the value, and a submitted value equal

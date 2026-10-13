@@ -70,7 +70,8 @@
             "fetching_inventory": "Načítání inventáře...",
             "fetching_campaigns": "Načítání dropů...",
             "adding_campaigns": "Přidávám dropy... {counter}",
-            "ready": "Připraveno"
+            "ready": "Připraveno",
+            "outside_hours": "Mimo dobu těžby"
         },
         "tabs": {
             "main": "Hlavní",
@@ -227,6 +228,13 @@
             "diagnostics_saved": "Diagnostická data byla uložena do {path}.",
             "diagnostics_error": "Diagnostická data se nepodařilo uložit. Zkuste to znovu.",
             "diagnostics_busy": "Ukládání diagnostiky již probíhá nebo právě skončilo. Počkejte několik sekund a zkuste to znovu.",
+            "mining_hours": "Doba těžby",
+            "mining_hours_help": "Používá místní čas mineru (Docker TZ). Interval může přejít přes půlnoc; shodný začátek a konec znamená celý den. Mimo interval se sledování pozastaví a automaticky obnoví.",
+            "mining_hours_always": "Celý den (24/7)",
+            "mining_hours_range": "Vlastní časový rozsah",
+            "mining_hours_start": "Začátek",
+            "mining_hours_end": "Konec",
+            "mining_hours_save_error": "Čas těžby se nepodařilo uložit. Zkuste to znovu.",
             "discord": {
                 "name": "Notifikace Discord",
                 "description": "Dostávejte upozornění na Discordu, když obdržíte dropy.",

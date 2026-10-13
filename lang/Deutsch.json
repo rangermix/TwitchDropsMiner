@@ -70,7 +70,8 @@
             "fetching_inventory": "Lade Inventar...",
             "fetching_campaigns": "Lade Kampagnen...",
             "adding_campaigns": "Kampagnen dem Inventar hinzufügen... {counter}",
-            "ready": "Bereit"
+            "ready": "Bereit",
+            "outside_hours": "Außerhalb der Mining-Zeit"
         },
         "tabs": {
             "main": "Hauptseite",
@@ -227,6 +228,13 @@
             "diagnostics_saved": "Diagnosedaten unter {path} gespeichert.",
             "diagnostics_error": "Diagnosedaten konnten nicht gespeichert werden. Bitte erneut versuchen.",
             "diagnostics_busy": "Diagnosedaten werden bereits gespeichert oder wurden gerade gespeichert. Bitte einige Sekunden warten und erneut versuchen.",
+            "mining_hours": "Mining-Zeiten",
+            "mining_hours_help": "Verwendet die Ortszeit des Miners (Docker TZ). Zeiträume können Mitternacht überschreiten; gleiche Start- und Endzeiten bedeuten ganztägig. Außerhalb pausiert das Zuschauen und wird automatisch fortgesetzt.",
+            "mining_hours_always": "Den ganzen Tag (24/7)",
+            "mining_hours_range": "Benutzerdefinierter Zeitraum",
+            "mining_hours_start": "Start",
+            "mining_hours_end": "Ende",
+            "mining_hours_save_error": "Mining-Zeiten konnten nicht gespeichert werden. Bitte erneut versuchen.",
             "discord": {
                 "name": "Discord-Benachrichtigungen",
                 "description": "Erhalte Benachrichtigungen auf Discord, wenn du Drops einlöst.",

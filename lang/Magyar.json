@@ -70,7 +70,8 @@
             "switching": "Csatorna váltása...",
             "fetching_inventory": "Készlet lekérése...",
             "fetching_campaigns": "Kampányok lekérése...",
-            "adding_campaigns": "Kampányok hozzáadása a készlethez... {counter}"
+            "adding_campaigns": "Kampányok hozzáadása a készlethez... {counter}",
+            "outside_hours": "A bányászati időn kívül"
         },
         "tabs": {
             "main": "Kezdőlap",
@@ -192,6 +193,13 @@
             "diagnostics_saved": "Diagnosztikai adatok mentve ide: {path}.",
             "diagnostics_error": "Nem sikerült menteni a diagnosztikai adatokat. Próbálja újra.",
             "diagnostics_busy": "Egy diagnosztikai mentés már folyamatban van, vagy éppen befejeződött. Várjon néhány másodpercet, majd próbálja újra.",
+            "mining_hours": "Bányászati idő",
+            "mining_hours_help": "A bányász helyi idejét használja (Docker TZ). Az időszak átnyúlhat éjfélen; azonos kezdés és befejezés egész napot jelent. Az időszakon kívül a nézés szünetel, majd automatikusan folytatódik.",
+            "mining_hours_always": "Egész nap (24/7)",
+            "mining_hours_range": "Egyéni időtartomány",
+            "mining_hours_start": "Kezdés",
+            "mining_hours_end": "Vége",
+            "mining_hours_save_error": "A bányászati idő nem menthető. Próbáld újra.",
             "discord": {
                 "name": "Discord értesítések",
                 "description": "Értesítést kapsz Discordon, amikor lehozod a dropokat.",

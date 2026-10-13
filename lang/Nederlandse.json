@@ -70,7 +70,8 @@
             "fetching_inventory": "Ophalen van inventaris...",
             "fetching_campaigns": "Ophalen van de campagne...",
             "adding_campaigns": "De campagnelijst toevoegen aan de inventaris... {counter}",
-            "ready": "Klaar"
+            "ready": "Klaar",
+            "outside_hours": "Buiten de mining-uren"
         },
         "tabs": {
             "main": "Hoofd",
@@ -227,6 +228,13 @@
             "diagnostics_saved": "Diagnosegegevens opgeslagen in {path}.",
             "diagnostics_error": "Kan diagnosegegevens niet opslaan. Probeer het opnieuw.",
             "diagnostics_busy": "Een diagnose wordt al opgeslagen of is zojuist opgeslagen. Wacht enkele seconden en probeer het opnieuw.",
+            "mining_hours": "Mining-uren",
+            "mining_hours_help": "Gebruikt de lokale tijd van de miner (Docker TZ). Het tijdvak kan middernacht passeren; gelijke begin- en eindtijden betekenen de hele dag. Buiten het tijdvak pauzeert het kijken en hervat automatisch.",
+            "mining_hours_always": "De hele dag (24/7)",
+            "mining_hours_range": "Aangepast tijdsbereik",
+            "mining_hours_start": "Start",
+            "mining_hours_end": "Einde",
+            "mining_hours_save_error": "De miningtijden konden niet worden opgeslagen. Probeer opnieuw.",
             "discord": {
                 "name": "Discord-meldingen",
                 "description": "Ontvang meldingen op Discord wanneer je drops opent.",

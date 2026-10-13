@@ -70,7 +70,8 @@
             "fetching_inventory": "正在獲取庫存…",
             "fetching_campaigns": "正在獲取掉寶活動…",
             "adding_campaigns": "將掉寶活動列表新增至庫存… {counter}",
-            "ready": "就緒"
+            "ready": "就緒",
+            "outside_hours": "非開採時段"
         },
         "tabs": {
             "main": "主要",
@@ -227,6 +228,13 @@
             "diagnostics_saved": "診斷資料已儲存至 {path}。",
             "diagnostics_error": "無法儲存診斷資料，請重試。",
             "diagnostics_busy": "診斷資料正在儲存或剛剛儲存完成，請稍等幾秒後重試。",
+            "mining_hours": "開採時段",
+            "mining_hours_help": "使用執行礦工的裝置當地時間（Docker TZ）。時段可以跨越午夜；開始和結束時間相同表示全天執行。時段外暫停觀看，到時自動恢復。",
+            "mining_hours_always": "全天（24/7）",
+            "mining_hours_range": "自訂時間區間",
+            "mining_hours_start": "開始",
+            "mining_hours_end": "結束",
+            "mining_hours_save_error": "無法儲存執行時段，請重試。",
             "discord": {
                 "name": "Discord 通知",
                 "description": "領取掉落物時在 Discord 上接收通知。",

@@ -70,7 +70,8 @@
             "fetching_inventory": "Odświeżanie ekwipunku...",
             "fetching_campaigns": "Odświeżanie kampanii...",
             "adding_campaigns": "Dodawanie kampanii do ekwipunku... {counter}",
-            "ready": "Gotowy"
+            "ready": "Gotowy",
+            "outside_hours": "Poza godzinami zbierania"
         },
         "tabs": {
             "main": "Główna",
@@ -227,6 +228,13 @@
             "diagnostics_saved": "Dane diagnostyczne zapisano w {path}.",
             "diagnostics_error": "Nie udało się zapisać danych diagnostycznych. Spróbuj ponownie.",
             "diagnostics_busy": "Zapis danych diagnostycznych trwa lub właśnie się zakończył. Poczekaj kilka sekund i spróbuj ponownie.",
+            "mining_hours": "Godziny zbierania",
+            "mining_hours_help": "Używa czasu lokalnego minera (Docker TZ). Przedział może przechodzić przez północ; równe godziny oznaczają cały dzień. Poza przedziałem oglądanie zostaje wstrzymane i wznowione automatycznie.",
+            "mining_hours_always": "Cała doba (24/7)",
+            "mining_hours_range": "Własny zakres godzin",
+            "mining_hours_start": "Początek",
+            "mining_hours_end": "Koniec",
+            "mining_hours_save_error": "Nie udało się zapisać godzin. Spróbuj ponownie.",
             "discord": {
                 "name": "Powiadomienia Discord",
                 "description": "Otrzymuj powiadomienia na Discordzie, gdy odbierzesz dropy.",

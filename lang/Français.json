@@ -70,7 +70,8 @@
             "fetching_inventory": "Récupération de l'inventaire...",
             "fetching_campaigns": "Récupération des campagnes...",
             "adding_campaigns": "Ajout de la liste des campagnes à l'inventaire... {counter}",
-            "ready": "Prêt"
+            "ready": "Prêt",
+            "outside_hours": "Hors des heures de minage"
         },
         "tabs": {
             "main": "Principal",
@@ -227,6 +228,13 @@
             "diagnostics_saved": "Données de diagnostic enregistrées dans {path}.",
             "diagnostics_error": "Impossible d’enregistrer les données de diagnostic. Réessayez.",
             "diagnostics_busy": "Un diagnostic est déjà en cours ou vient d’être enregistré. Attendez quelques secondes et réessayez.",
+            "mining_hours": "Heures de minage",
+            "mining_hours_help": "Utilise l’heure locale du mineur (Docker TZ). La plage peut traverser minuit ; des heures identiques signifient toute la journée. Hors plage, le visionnage est suspendu puis reprend automatiquement.",
+            "mining_hours_always": "Toute la journée (24/7)",
+            "mining_hours_range": "Plage horaire personnalisée",
+            "mining_hours_start": "Début",
+            "mining_hours_end": "Fin",
+            "mining_hours_save_error": "Impossible d’enregistrer les horaires. Réessayez.",
             "discord": {
                 "name": "Notifications Discord",
                 "description": "Recevez des notifications sur Discord lorsque vous réclamez des drops.",

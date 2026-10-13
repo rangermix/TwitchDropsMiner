@@ -70,7 +70,8 @@
             "fetching_inventory": "Envanter getiriliyor...",
             "fetching_campaigns": "Kampanyalar getiriliyor...",
             "adding_campaigns": "Kampanyaları envantere ekle... {counter}",
-            "ready": "Hazır"
+            "ready": "Hazır",
+            "outside_hours": "Madencilik saatleri dışında"
         },
         "tabs": {
             "main": "Ana",
@@ -227,6 +228,13 @@
             "diagnostics_saved": "Tanılama verileri {path} konumuna kaydedildi.",
             "diagnostics_error": "Tanılama verileri kaydedilemedi. Tekrar deneyin.",
             "diagnostics_busy": "Tanılama kaydı zaten sürüyor veya yeni tamamlandı. Birkaç saniye bekleyip tekrar deneyin.",
+            "mining_hours": "Madencilik Saatleri",
+            "mining_hours_help": "Miner’ın yerel saatini kullanır (Docker TZ). Aralık gece yarısını aşabilir; aynı başlangıç ve bitiş tüm gün demektir. Aralık dışında izleme duraklar ve otomatik olarak devam eder.",
+            "mining_hours_always": "Tüm gün (7/24)",
+            "mining_hours_range": "Özel zaman aralığı",
+            "mining_hours_start": "Başlangıç",
+            "mining_hours_end": "Bitiş",
+            "mining_hours_save_error": "Madencilik saatleri kaydedilemedi. Tekrar deneyin.",
             "discord": {
                 "name": "Discord Bildirimleri",
                 "description": "Drop talep ettiğinde Discord'da bildirim al.",

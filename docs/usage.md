@@ -133,3 +133,27 @@ returned by Twitch. If progress or eligibility still looks wrong, follow
 [Troubleshooting](troubleshooting.md).
 
 [All guides](README.md) · [Telegram notifications](notifications.md)
+
+## Mining hours
+
+Source builds provide **Settings → Mining Hours**. **All day (24/7)** is the default.
+Choose **Custom time range** and enter start and end times to watch only during that
+window each day. The start is included and the end is excluded. A range such as
+22:00–06:00 crosses midnight; equal start and end times mean all day.
+
+Times use the local timezone of the device running TDM, not the dashboard browser.
+For Docker, configure `TZ` to your home internet connection’s timezone, as described
+in the [installation guide](installation.md). Clock or daylight-saving changes are
+rechecked at least once per minute; normal start/end boundaries are scheduled directly.
+
+Outside the window, the status shows **Outside mining hours** and watching stops.
+The miner stays signed in. Reloads, cache clearing, and mining-policy recalculations
+wait until the next window, when TDM fetches fresh inventory and resumes selection.
+Changing the hours takes effect immediately after a successful save. Blank or invalid
+times are rejected; save failures keep the previous schedule and show an error.
+Malformed saved schedules are rejected at startup rather than silently mining all day.
+
+This setting pauses watching, not Twitch reward claims: already earned rewards can
+still be claimed through existing notifications or work already underway. It does
+not guarantee Twitch-side progress. A versioned release is required before deploying
+these frontend changes to an existing installation.
