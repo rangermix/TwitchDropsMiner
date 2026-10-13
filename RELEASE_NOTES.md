@@ -1,3 +1,380 @@
+# Release Notes - v2.2.2
+
+This patch skips channels that Twitch reports as banned for your account and adds
+deidentified diagnosis files for bug reports, addressing
+[#165](https://github.com/rangermix/TwitchDropsMiner/issues/165).
+
+- Exclude both permanent and temporary bans from discovery and watching, including
+  manual selections. Temporary bans stop excluding the channel at their reported
+  expiry; otherwise a later check must confirm that the ban is gone.
+- Preserve confirmed bans through failed checks and **Clear All Cache**. Missing
+  ban information does not create a ban or change other campaign eligibility checks.
+- Add **Settings → Dump diagnosis data** in all 20 languages. Reproduce the problem,
+  then save miner state, runtime/browser details, progress, and recent sanitized
+  responses from the miner's operational APIs in the existing data volume at
+  `/app/data/diagnostics`.
+- Replace identities and free text with aliases and exclude credentials, headers,
+  cookies and browser profiles. Diagnosis files retain bounded recent evidence,
+  with ten files kept at up to 8 MiB each. Files are not uploaded automatically.
+- Keep Twitch-reported progress separate from local estimates in diagnosis data.
+
+Update to `rangermix/twitch-drops-miner:2.2.2`, preserving your existing data mount,
+settings, timezone and container options. Reload the dashboard after upgrading to
+load the new controls. See the
+[installation guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Installation)
+and [diagnosis guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Troubleshooting#save-diagnosis-data).
+Matching desktop helpers cover Windows x64, Linux x64, macOS arm64 and macOS x64;
+their archive checksums are listed in `SHA256SUMS`.
+
+# Release Notes - v2.2.1
+
+This patch fixes stalled Twitch Drop progress reported in
+[#163](https://github.com/rangermix/TwitchDropsMiner/issues/163).
+
+- Restore watch traffic by polling stream playlists and sending HEAD requests for
+  each new media segment. Stream audio and video are not downloaded.
+- Deduplicate successful segments, preserve state across ordinary stream metadata
+  updates, refresh expired playlist URLs, and stop requests when watching changes.
+- Bound network waits so a failed segment cannot stall the miner. Keep minute
+  telemetry and progress fallback on their existing cadence despite faster polling.
+- Handle malformed playlists safely without printing signed stream URLs or bodies.
+
+Update to `rangermix/twitch-drops-miner:2.2.1`, preserving your existing data mount,
+settings, timezone and container options. Valid saved logins remain usable. See the
+[installation and update guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Installation).
+The release also includes matching desktop helpers for Linux x64, Windows x64,
+macOS arm64 and macOS x64, with archive checksums in `SHA256SUMS`.
+
+# Release Notes - v2.2.0
+
+This minor release refreshes the dashboard and adds control over campaigns reported
+as Not Linked, alongside browser cleanup fixes and Docker dependency updates.
+
+## Refreshed dashboard
+
+- A more compact, responsive header groups navigation, account information and
+  connection controls across desktop, tablet and mobile screens. Account and renewal
+  messages retain their full text in tooltips when space is limited.
+- The watched-channel thumbnail is optional and **off on each page load**. Enable
+  it from Now Watching to see a static image; TDM does not play stream video or audio.
+- Updated controls and guidance are available in all 20 supported languages.
+
+## Account-link controls
+
+- Inventory now offers **All / Linked / Not Linked** filters. The selection is saved,
+  and the previous Not Linked checkbox preference migrates automatically.
+- Settings adds **Allow mining campaigns reported as Not Linked**, default **off**.
+  Enable it to attempt mining when you believe Twitch's reported link status is
+  incorrect or stale. Other campaign, channel, timing, prerequisite and ignore checks
+  still apply, and campaign cards keep the reported Linked/Not Linked label.
+- The warning explains that this option does not link accounts or guarantee Twitch
+  progress, claims or in-game rewards. TDM can show estimated minutes; check Twitch's
+  Drops inventory and link the correct game account for reward delivery.
+- Failed saves restore the confirmed override value, and unrelated settings saves
+  cannot silently undo a recent toggle.
+
+## Fixes and maintenance
+
+- Closing or disconnecting the embedded sign-in viewer no longer causes the cleanup
+  traceback addressed in [#159](https://github.com/rangermix/TwitchDropsMiner/pull/159).
+- Chromium cleanup uses Windows process APIs without requiring Unix-only signals.
+  Platform-specific persistence and lifecycle tests now pass on Windows, and Firefox
+  URL rejection tests tolerate scheduling delays while retaining their validation.
+- Docker builds refresh Alpine packages and Chromium and remove unused noVNC server
+  dependencies.
+
+## Updating
+
+Update to `rangermix/twitch-drops-miner:2.2.0` while preserving your existing `/app/data`
+mount, settings, timezone and container options. See the
+[installation and update guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Installation).
+Reload the dashboard after upgrading to load the new UI assets. If you use the desktop
+helper, download the matching **2.2.0** helper from this release.
+
+# Release Notes - v2.1.1
+
+An optional desktop helper provides another way to sign in when Twitch rejects the
+embedded browser, as reported in [#148](https://github.com/rangermix/TwitchDropsMiner/issues/148).
+The dashboard's embedded browser remains the default.
+
+## Desktop helper fallback
+
+- Select **Use desktop helper** on the sign-in screen, run the helper matching this
+  release, and enter your dashboard URL. There is no pairing-code or extra
+  dashboard-password step. Access stays open for ten minutes and accepts the first
+  helper to connect; **Return to embedded browser** cancels access.
+- Downloadable archives cover **Windows x64**, **Linux x64**, **macOS Apple silicon
+  (arm64)**, and **macOS Intel (x64)**. Extract the archive and run it on a computer
+  with native Chrome, Chromium, or Firefox 143+. `SHA256SUMS` lists the archive checksums.
+- Complete Twitch verification in the helper's browser, then close that browser
+  instance normally (quit it on macOS). Leave the helper open until it reports success.
+  TDM verifies the account and renewal before restoring the dashboard.
+- Cancelling, logging out, or restarting TDM closes helper access. Invalidated attempts
+  cannot install a delayed session. The helper is no longer needed after successful
+  login; renewal continues on the miner. Instructions and errors support all 20 languages.
+
+The helper changes where interactive sign-in happens; it does not guarantee that
+Twitch will accept every login. See the
+[login guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Authentication#desktop-helper-fallback)
+for downloads, browser selection, and recovery.
+
+## Updating
+
+Update to `rangermix/twitch-drops-miner:2.1.1` while preserving your existing data
+mount, settings, timezone, and container options. Working saved sessions remain usable;
+a new sign-in is needed only when the existing session cannot be restored or renewed.
+Helper downloads must match the miner release. The normal dashboard login and
+automatic renewal remain available without running a desktop helper.
+
+# Release Notes - v2.1.0
+
+Twitch sign-in now happens inside the TDM dashboard using Chromium included in the
+Docker image. The separate desktop login helper is retired.
+
+## Sign in from the dashboard
+
+- When Twitch login is needed, TDM displays its temporary container browser with
+  Twitch's sign-in page. Complete any email or two-factor verification, then select
+  **Finish sign in**. TDM verifies the session and returns to the normal dashboard.
+- Initial sign-in and automatic session renewal use the container's own browsers.
+  No desktop browser installation, helper download, pairing ticket, or additional
+  VNC port is required.
+- **Log out of Twitch** at the bottom of Settings replaces **Allow helper
+  connection**. Logging out clears the saved Twitch session and opens a fresh login
+  browser while preserving miner settings and dashboard password protection.
+- Login controls, instructions, and recovery messages are available in all 20
+  supported languages.
+
+## Private browser access
+
+- The browser viewer uses the dashboard's password protection and origin checks.
+  Password setup is also available before signing in to Twitch.
+- The interactive browser runs under a separate container user. TDM checks that
+  private data and logs are inaccessible to that user before starting the viewer.
+  Temporary browser profiles and display processes are removed after each attempt.
+- Browser retry, logout, container restart, and saved-session migration have
+  regression coverage. A saved session from v2.0 remains usable on upgrade.
+
+## Updating
+
+Update to `rangermix/twitch-drops-miner:2.1.0`, preserving your existing data volume.
+Set Docker's **TZ** to the timezone of your home internet connection; a mismatch can
+cause Twitch to reject browser login. Existing working sessions do not require a
+new sign-in.
+
+The standard Docker image includes Chromium and the display components. Its data
+and log mounts must enforce Linux directory permissions; a mount that ignores
+private permissions cannot open the login viewer. Docker named volumes are an
+alternative on such hosts. Source installations need the documented Linux browser
+environment. See the [login guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Authentication)
+and [dashboard access guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Dashboard-access).
+
+This replaces the desktop-helper path discussed in
+[#130](https://github.com/rangermix/TwitchDropsMiner/issues/130),
+[#129](https://github.com/rangermix/TwitchDropsMiner/issues/129), and
+[#135](https://github.com/rangermix/TwitchDropsMiner/issues/135).
+
+# Release Notes - v2.0.2
+
+The desktop login helper now supports native Firefox and Chromium alongside Chrome,
+with a consistent sign-in flow and translated explanations for helper errors.
+
+## Browser support and sign-in
+
+- Automatic selection searches **Chrome → Chromium → Firefox**, using the first
+  installed browser. It does not switch browsers after a launch or login failure.
+- Select a browser with `--browser chrome`, `--browser chromium` or
+  `--browser firefox`. Use `--chrome`, `--chromium` or `--firefox` to specify its
+  local executable. Firefox, including ESR, requires version **143 or newer**.
+- All three browsers open normally for sign-in. Complete Twitch login and any
+  email or two-factor verification, then close all windows of the helper's browser
+  instance. On macOS, quit that instance. **Keep the helper open:** it reopens the
+  same temporary profile to verify and send the session. Wait for its success message.
+- Firefox capture handles Twitch's URL fragments, avoiding a timeout that could
+  otherwise occur after the browser showed a signed-in campaign page.
+- The helper leaves everyday browser profiles untouched and removes its owned
+  temporary profile when finished. Firefox derivatives have not been validated;
+  Flatpak and Snap launchers remain unsupported.
+
+Firefox support addresses [#129](https://github.com/rangermix/TwitchDropsMiner/issues/129).
+Chromium/Firefox fallback also provides alternatives when Chrome is absent
+([#135](https://github.com/rangermix/TwitchDropsMiner/issues/135)).
+
+## Error explanations and recovery
+
+- Helper error codes now include explanations and known recovery steps in all
+  20 languages, covering browser discovery, login, capture, server verification,
+  uncertain results and cleanup.
+- Expired/invalid helper connections and a busy miner have distinct diagnostics.
+  Unknown or ambiguous upload results still use receipt recovery without sending
+  the session a second time; check TDM before retrying.
+- Guidance distinguishes the desktop login browser from Chromium on the miner
+  host. Improved explanations do not establish a fix for every server startup,
+  renewal or upload failure. See the
+  [error reference](https://github.com/rangermix/TwitchDropsMiner/wiki/Troubleshooting#helper-error-code-reference).
+
+## Updating
+
+Update the miner to `rangermix/twitch-drops-miner:2.0.2` and replace your desktop
+helper with the matching **2.0.2 executable**. Updating only the miner does not
+update the helper. Native archives cover Linux x64, Windows x64, macOS ARM64 and
+macOS x64; `SHA256SUMS` contains their checksums.
+
+Preserve your existing data volume. A working saved Twitch session does not need
+another login. Run the helper on your desktop or laptop even when TDM runs on a
+headless home server or NAS; the miner still uses its own headless Chromium for
+renewal. See the [login guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Authentication).
+
+# Release Notes - v2.0.1
+
+This patch improves login-helper cleanup and makes a server-browser startup failure
+actionable instead of reporting an unknown login result.
+
+## Login helper fixes
+
+- On Windows, temporary Chrome profiles containing read-only files can now be
+  removed. Cleanup stays within the helper's owned profile and preserves unrelated
+  files, symlink targets and junction targets.
+- If Chrome removes a temporary child during cleanup, the helper retries while the
+  profile still exists instead of incorrectly reporting successful deletion.
+- A confirmed failure to start Chromium on the miner host now reports
+  `SESSION_HELPER_SERVER_BROWSER`. Missing or ambiguous acknowledgements still use
+  result recovery without uploading credentials again. Persistent cleanup failures
+  remain visible.
+
+These address reproducible causes of the errors reported in
+[#128](https://github.com/rangermix/TwitchDropsMiner/issues/128); they do not establish
+that every reported login failure has the same cause.
+
+## Setup and recovery guidance
+
+- Clarifies native Chrome discovery on Linux and that Flatpak Chrome and Firefox
+  are not currently supported login-helper backends
+  ([#130](https://github.com/rangermix/TwitchDropsMiner/issues/130),
+  [#129](https://github.com/rangermix/TwitchDropsMiner/issues/129)).
+- Explains safe recovery for malformed `data/web_auth.json` dashboard-password
+  state ([#132](https://github.com/rangermix/TwitchDropsMiner/issues/132)). Startup
+  continues to fail closed; this release does not reset credentials automatically.
+- Explains that the dashboard's **Connected** indicator is its connection to TDM,
+  not confirmation of Twitch authentication, and lists useful login diagnostics.
+
+## Updating
+
+Update the miner to `rangermix/twitch-drops-miner:2.0.1` and download the matching
+**2.0.1 login helper** for your desktop OS and CPU from this release. The helper
+changes require replacing the helper executable; updating only Docker is not enough.
+Preserve the existing data volume. A working saved Twitch session does not require
+another login. Native downloads cover Windows x64, Linux x64, macOS ARM64 and macOS
+x64, with archive checksums in `SHA256SUMS`.
+
+# Release Notes - v2.0.0
+
+TDM now uses a desktop login helper for new Twitch logins and renews the session on
+the miner host. This is a major release because the previous device-code login and
+manual session-import interfaces have been replaced.
+
+## Upgrade from v1.x
+
+1. Stop TDM and back up its existing data directory privately. Keep the same
+   `/app/data` volume, including `cookies.jar`, settings, and drop history.
+2. Update to `rangermix/twitch-drops-miner:2.0.0` and recreate the container with the
+   same data mount. Include `--init --stop-timeout 30 --shm-size 256m`, or use the
+   updated Compose configuration.
+3. A working Android session is restored automatically. If you used Smart TV login
+   in v1.3.1/v1.3.2, your session expired, or TDM asks you to sign in, download the
+   **2.0.0 login helper** for your desktop from this release.
+4. Enable **Settings → Allow helper connection**, run the helper, enter your TDM
+   address, and sign into Twitch in its Chrome window. Wait for confirmed success.
+
+The helper sends the session directly, closes Chrome, and removes its temporary
+profile. TDM turns helper access off after acceptance and handles renewal itself;
+your desktop can be shut down. Reopen helper access and repeat the login only when
+TDM asks for a new session or you want to change accounts.
+
+## Compatibility changes
+
+- Fresh device-code authorization, manual JSON session uploads, and the old pairing
+  and standalone renewal endpoints are retired. `TDM_SESSION_IMPORT` is no longer
+  used. Remove old browser sidecars and remote-browser configuration.
+- The standard Docker image remains Alpine-based and now includes Chromium for
+  automatic renewal. Only the dashboard port is exposed; mining requests remain in
+  Python. The bundled browser increases the image size.
+- Source installations need `chromium` or `chromium-browser` on the miner host's
+  `PATH`. Run the source miner on Linux or macOS; on Windows, use Docker Desktop
+  with Linux containers. The login helper runs natively on Windows.
+- Google Chrome must be installed on the helper desktop. Native helper downloads
+  are provided for Windows x64, Linux x64, macOS Apple Silicon, and macOS Intel.
+
+## Other changes
+
+- Accepted helper sessions and renewal state survive restarts. Switching accounts
+  clears the previous account's active work and derived state.
+- Transient failures of known read-only Twitch queries are retried with bounded
+  delays; ambiguous mutations are not replayed.
+- The README is shorter, with detailed user guides maintained in `docs/` and the
+  [GitHub wiki](https://github.com/rangermix/TwitchDropsMiner/wiki).
+
+See [installation](https://github.com/rangermix/TwitchDropsMiner/wiki/Installation)
+and [login and recovery](https://github.com/rangermix/TwitchDropsMiner/wiki/Authentication)
+for full instructions. Authentication work is tracked in
+[#118](https://github.com/rangermix/TwitchDropsMiner/issues/118).
+
+# Release Notes - v1.3.2
+
+Fixes dashboard connections behind HTTPS reverse proxies with the optional
+`PUBLIC_BASE_URL=https://drops.example.com` environment setting. API writes and both
+Socket.IO transports validate against that public origin, and HTTPS public URLs set
+Secure session cookies even when the backend connection is HTTP or Host is rewritten.
+
+The README and Compose example document configuration and unchanged behavior when the
+setting is absent. Existing CSRF and session checks remain enforced. This setting does
+not enable forwarded-header trust or change client-IP rate limiting; trusting a proxy
+for client IPs remains a separate, explicitly scoped configuration.
+
+Addresses [#106](https://github.com/rangermix/TwitchDropsMiner/issues/106). The missing
+Twitch login prompt in that report followed a rejected live dashboard connection;
+Socket.IO does not require the `X-TDM-Request` header used for ordinary API writes.
+
+# Release Notes - v1.3.1
+
+Fixes the `KeyError: 'device_code'` crash during fresh Twitch login by using the
+Smart TV device authorization client. Existing users may need to authorize the
+miner once again at `twitch.tv/activate`; subsequent runs reuse the saved session.
+
+Channel pages continue to use the public Twitch website so the client change does
+not break watch-event endpoint discovery. Regression tests cover login, cookie
+migration and restoration, and beacon discovery through watch-event submission.
+
+Resolves [#109](https://github.com/rangermix/TwitchDropsMiner/issues/109) through
+[#110](https://github.com/rangermix/TwitchDropsMiner/pull/110), with thanks to
+[@3lb0z0](https://github.com/3lb0z0) for the client fix.
+
+# Release Notes - v1.3.0
+
+This update brings a massive quality-of-life boost to Twitch Drops Miner, introducing a new drop history tracker, Telegram notifications, and enhanced security features. We've also streamlined the UI to make managing your watch list easier and more reliable than ever.
+
+### 📈 New Features
+- **Drop History & CSV Export**: Never lose track of your loot! A new History tab records every claimed drop, complete with stats and the ability to export your data to CSV for easy spreadsheet viewing.
+- **Telegram Notifications**: Stay updated on the go—you can now receive instant alerts on Telegram whenever a new drop is successfully claimed.
+- **Dashboard Security**: Added an optional password protection layer for your dashboard to keep your settings and mining activity private.
+- **Manual Priority Ordering**: You can now manually reorder your "Games to Watch" list using an editable input field to ensure your favorite campaigns get the attention they deserve.
+
+### 🎮 UI & UX Improvements
+- **Smarter Game Management**: Adding games is now more intuitive with "smart resolution" that corrects casing automatically, plus new confirmation modals to prevent accidental changes.
+- **Selection Safety**: The "Select All" and "Deselect All" actions are now protected, preventing accidental data loss when managing your watch list.
+- **Enhanced Input**: Added support for the Enter key when adding games and improved visual styling for priority numbers.
+
+### 🐛 Bug Fixes
+- **Special Events Support**: Fixed an issue where Special Events and IRL campaigns weren't being mined correctly.
+- **Channel Logic**: Added "dependency-aware" ignore rules and replaced unwatchable fallback channels to ensure the miner stays focused on active, valid streams.
+- **Data Cleanup**: Added a "Clear All Cache" recovery action and fixed a bug where repeated "no-campaign" logs cluttered the console.
+- **Filtering & Inventory**: Resolved multiple issues regarding inventory synchronization and visibility, ensuring your progress is always accurately tracked.
+
+### 📚 Other Improvements
+- **Performance & Stability**: Updated CI workflows to Node 24 and improved internal data handling for the "wanted drop" queue.
+- **Localization**: Updated translation keys across all 20 supported languages to ensure the new features are accessible to our global community.
+- **Documentation**: Updated contribution guidelines and recognized our wonderful contributors for their hard work on these features!
+
 # Release Notes - v1.2.6
 
 This patch release makes inventory filtering more predictable and keeps version metadata synchronized across source and packaged installations.

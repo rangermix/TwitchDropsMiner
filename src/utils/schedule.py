@@ -42,7 +42,7 @@ def window_status(start: str, end: str, now: datetime) -> tuple[bool, float]:
     """
     start_min = parse_minutes(start)
     end_min = parse_minutes(end)
-    now_min = now.hour * 60 + now.minute + now.second / 60.0
+    now_min = now.hour * 60 + now.minute + (now.second + now.microsecond / 1_000_000) / 60.0
 
     if start_min == end_min:
         return True, 3600.0

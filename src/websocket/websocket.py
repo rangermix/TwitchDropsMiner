@@ -71,6 +71,7 @@ class Websocket:
         self._max_pong: float = self._next_ping + PING_TIMEOUT.total_seconds()
         # main task, responsible for receiving messages, sending them, and websocket ping
         self._handle_task: asyncio.Task[None] | None = None
+        self._callback_tasks: set[asyncio.Task[None]] = set()
         # topics stuff
         self.topics: dict[str, WebsocketTopic] = {}
         self._submitted: set[WebsocketTopic] = set()
@@ -123,8 +124,6 @@ class Websocket:
             remove: If True, clear topics and remove from GUI
         """
         async with self._state_lock:
-            if self._closed.is_set():
-                return
             self._closed.set()
             ws = self._ws.get_with_default(None)
             if ws is not None:
@@ -134,6 +133,10 @@ class Websocket:
                 with suppress(asyncio.TimeoutError, asyncio.CancelledError):
                     await asyncio.wait_for(self._handle_task, timeout=2)
                 self._handle_task = None
+            callbacks = tuple(self._callback_tasks)
+            for task in callbacks:
+                task.cancel()
+            await asyncio.gather(*callbacks, return_exceptions=True)
             if remove:
                 self.topics.clear()
                 self._topics_changed.set()
@@ -312,15 +315,28 @@ class Websocket:
             raw_message: aiohttp.WSMessage = await ws.receive(timeout=timeout)
             ws_logger.debug(f"Websocket[{self._idx}] received: {raw_message}")
             if raw_message.type is WSMsgType.TEXT:
-                message: JsonType = json.loads(raw_message.data)
+                try:
+                    message: JsonType = json.loads(raw_message.data)
+                except ValueError:
+                    if (diagnostics := getattr(self._twitch, "diagnostics", None)) is not None:
+                        diagnostics.record("twitch_websocket", outcome="decode")
+                    raise
+                if (diagnostics := getattr(self._twitch, "diagnostics", None)) is not None:
+                    diagnostics.record("twitch_websocket", message)
                 messages.append(message)
             elif raw_message.type is WSMsgType.CLOSE:
+                if (diagnostics := getattr(self._twitch, "diagnostics", None)) is not None:
+                    diagnostics.record("twitch_websocket", outcome="connection")
                 raise WebsocketClosed(received=True, raw_message=raw_message.data)
             elif raw_message.type is WSMsgType.CLOSED:
+                if (diagnostics := getattr(self._twitch, "diagnostics", None)) is not None:
+                    diagnostics.record("twitch_websocket", outcome="connection")
                 raise WebsocketClosed(received=False, raw_message=raw_message.data)
             elif raw_message.type is WSMsgType.CLOSING:
                 pass  # skip these
             elif raw_message.type is WSMsgType.ERROR:
+                if (diagnostics := getattr(self._twitch, "diagnostics", None)) is not None:
+                    diagnostics.record("twitch_websocket", outcome="connection")
                 ws_logger.error(
                     f"Websocket[{self._idx}] error: {format_traceback(raw_message.data)}"
                 )
@@ -337,9 +353,11 @@ class Websocket:
         """
         # request the assigned topic to process the response
         topic = self.topics.get(message["data"]["topic"])
-        if topic is not None:
+        if topic is not None and not self._closed.is_set():
             # use a task to not block the websocket
-            asyncio.create_task(topic(json.loads(message["data"]["message"])))
+            task = asyncio.create_task(topic(json.loads(message["data"]["message"])))
+            self._callback_tasks.add(task)
+            task.add_done_callback(self._callback_tasks.discard)
 
     async def _handle_recv(self):
         """Handle receiving and processing messages from the websocket."""
@@ -408,4 +426,5 @@ class Websocket:
         if message["type"] != "PING":
             message["nonce"] = create_nonce(CHARS_ASCII, 30)
         await ws.send_json(message, dumps=json_minify)
-        ws_logger.debug(f"Websocket[{self._idx}] sent: {message}")
+        # LISTEN/UNLISTEN contain OAuth credentials; never log their payloads.
+        ws_logger.debug("Websocket[%s] sent: %s", self._idx, message["type"])

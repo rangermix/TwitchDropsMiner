@@ -85,57 +85,163 @@ class TestIsMiningTime(unittest.TestCase):
 
 class TestMiningScheduleLoop(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        persisted = copy.deepcopy(default_settings)
-        with (
-            patch("src.config.settings.json_load", return_value=persisted),
-            patch("src.config.settings.json_save"),
-        ):
-            settings = Settings()
-        self.twitch = Twitch(settings)
-        self.twitch._state = State.IDLE
+        with patch("src.config.settings.json_load", return_value=copy.deepcopy(default_settings)):
+            self.twitch = Twitch(Settings())
+        self.twitch.gui = MagicMock()
+        self.twitch.gui.login.stop_avatar = AsyncMock()
+        self.twitch.websocket = MagicMock(start=AsyncMock(), stop=AsyncMock())
+        self.twitch.get_auth = AsyncMock(return_value=SimpleNamespace(user_id=42))
+        self.twitch._ensure_api_clients = MagicMock()
+        self.twitch.fetch_inventory = AsyncMock()
+        self.open = True
+        self.twitch.is_mining_time = MagicMock(side_effect=lambda: self.open)
 
-    async def test_non_range_mode_polls_without_refreshing(self):
-        self.twitch.settings.mining_hours = {"mode": "always", "start": "08:00", "end": "22:00"}
+    async def asyncTearDown(self):
+        await self.twitch._stop_mining_schedule()
+        for task in (self.twitch._run_task, self.twitch._watching_task):
+            if task is not None:
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
 
-        async def exit_on_sleep(_seconds):
-            self.twitch._state = State.EXIT
+    async def test_closing_boundary_drains_active_watch_and_reopening_refreshes(self):
+        entered, drained = asyncio.Event(), asyncio.Event()
+        async def watch():
+            entered.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                drained.set()
+        self.twitch._watch_service.watch_loop = watch
+        self.twitch._schedule_task = asyncio.create_task(self.twitch._mining_schedule_loop())
+        await asyncio.wait_for(entered.wait(), 1)
+        self.twitch.watching_channel.set(MagicMock())
+        self.twitch._state = State.CHANNEL_SWITCH
+        self.open = False
+        self.twitch._schedule_changed.set()
+        await asyncio.wait_for(drained.wait(), 1)
+        for _ in range(5):
+            await asyncio.sleep(0)
+        if self.twitch._schedule_task.done():
+            self.twitch._schedule_task.result()
+        self.assertFalse(self.twitch.watching_channel.has_value())
+        self.assertIsNone(self.twitch._watching_task)
+        self.assertEqual(self.twitch._state, State.IDLE)
+        self.assertFalse(self.twitch._inventory_refresh_pending)
+        entered.clear()
+        self.open = True
+        self.twitch.request_games_update()
+        await asyncio.wait_for(entered.wait(), 1)
+        self.assertTrue(self.twitch._inventory_refresh_pending)
 
-        with (
-            patch("src.core.client.asyncio.sleep", side_effect=exit_on_sleep),
-            patch.object(self.twitch, "request_inventory_refresh") as mock_refresh,
-        ):
-            await self.twitch._mining_schedule_loop()
-        mock_refresh.assert_not_called()
-
-    async def test_range_loop_requests_refresh_when_window_opens(self):
-        self.twitch.settings.mining_hours = {"mode": "range", "start": "08:00", "end": "22:00"}
-
-        def window_open():
-            self.twitch._state = State.EXIT
-            return True
-
-        with (
-            patch("src.core.client.window_status", return_value=(True, 0.01)),
-            patch.object(self.twitch, "is_mining_time", side_effect=window_open),
-            patch.object(self.twitch, "request_inventory_refresh") as mock_refresh,
-        ):
-            await self.twitch._mining_schedule_loop()
-        mock_refresh.assert_called_once()
-
-    async def test_range_loop_skips_refresh_when_boundary_was_closing_edge(self):
-        self.twitch.settings.mining_hours = {"mode": "range", "start": "08:00", "end": "22:00"}
-
-        def window_closed():
-            self.twitch._state = State.EXIT
+    async def test_paused_policy_and_cache_requests_stay_deferred_without_spinning(self):
+        self.open = False
+        self.twitch._inventory_loaded = True
+        evaluations = 0
+        def clock():
+            nonlocal evaluations
+            evaluations += 1
+            if evaluations > 100:
+                raise AssertionError("Paused state loop spun without yielding")
             return False
+        self.twitch.is_mining_time.side_effect = clock
+        self.twitch._run_task = asyncio.create_task(self.twitch._run())
+        for _ in range(5):
+            await asyncio.sleep(0)
+        self.twitch.request_games_update()
+        self.twitch.request_inventory_refresh(clear_cache=True)
+        for _ in range(10):
+            await asyncio.sleep(0)
+        self.assertFalse(self.twitch._run_task.done())
+        self.assertLess(evaluations, 100)
+        self.assertTrue(self.twitch._games_update_pending)
+        self.assertTrue(self.twitch._clear_cache_pending)
+        self.assertTrue(self.twitch._inventory_refresh_pending)
+        self.twitch.fetch_inventory.assert_not_called()
+        self.assertEqual(self.twitch._state, State.IDLE)
+        self.twitch.close()
+        await asyncio.wait_for(self.twitch._run_task, 1)
 
+    async def test_policy_edit_recomputes_deadline_and_caps_clock_resampling(self):
+        delays = []
+        async def wait_for(awaitable, timeout):
+            awaitable.close()
+            delays.append(timeout)
+            if len(delays) == 1:
+                self.twitch.settings.mining_hours = {"mode": "range", "start": "10:00", "end": "10:01"}
+            else:
+                self.twitch._state = State.EXIT
+        self.twitch._watch_service.watch_loop = AsyncMock()
         with (
-            patch("src.core.client.window_status", return_value=(True, 0.01)),
-            patch.object(self.twitch, "is_mining_time", side_effect=window_closed),
-            patch.object(self.twitch, "request_inventory_refresh") as mock_refresh,
+            patch("src.core.client.asyncio.wait_for", side_effect=wait_for),
+            patch("src.core.client.window_status", return_value=(True, 2.5)),
         ):
             await self.twitch._mining_schedule_loop()
-        mock_refresh.assert_not_called()
+        self.assertEqual(delays, [60.0, 2.5])
+
+    async def test_authentication_replacement_drains_schedule_before_install(self):
+        entered, drained = asyncio.Event(), asyncio.Event()
+        async def schedule():
+            entered.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                drained.set()
+        self.twitch._schedule_task = asyncio.create_task(schedule())
+        await entered.wait()
+        async with self.twitch.authentication_change():
+            self.assertTrue(drained.is_set())
+            self.assertIsNone(self.twitch._schedule_task)
+        self.assertFalse(self.twitch._changing_auth)
+
+    async def test_inflight_inventory_completion_after_close_does_not_start_watch(self):
+        fetching, finish, closed = asyncio.Event(), asyncio.Event(), asyncio.Event()
+        async def fetch():
+            fetching.set()
+            await finish.wait()
+        self.twitch.fetch_inventory = fetch
+        self.twitch._run_task = asyncio.create_task(self.twitch._run())
+        await asyncio.wait_for(fetching.wait(), 1)
+        self.open = False
+        self.twitch.gui.status.update.side_effect = lambda value: closed.set() if value == "Outside mining hours" else None
+        self.twitch._schedule_changed.set()
+        await asyncio.wait_for(closed.wait(), 1)
+        finish.set()
+        for _ in range(10):
+            await asyncio.sleep(0)
+        self.assertEqual(self.twitch._state, State.IDLE)
+        self.assertFalse(self.twitch.watching_channel.has_value())
+        self.twitch.gui.channels.set_watching.assert_not_called()
+
+    async def test_stopping_schedule_during_watch_cleanup_drains_both_tasks(self):
+        entered, cleaning, cleaned = asyncio.Event(), asyncio.Event(), asyncio.Event()
+        async def watch():
+            entered.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                cleaning.set()
+                try:
+                    await asyncio.Event().wait()
+                finally:
+                    cleaned.set()
+        self.twitch._watch_service.watch_loop = watch
+        self.twitch._schedule_task = asyncio.create_task(self.twitch._mining_schedule_loop())
+        await entered.wait()
+        watcher = self.twitch._watching_task
+        self.open = False
+        self.twitch._schedule_changed.set()
+        await cleaning.wait()
+        await self.twitch._stop_mining_schedule()
+        self.assertTrue(watcher.done())
+        self.assertTrue(cleaned.is_set())
+        self.assertIsNone(self.twitch._schedule_task)
+
+    async def test_watch_guard_rejects_manual_selection_outside_window(self):
+        self.open = False
+        channel = MagicMock()
+        self.twitch.watch(channel)
+        self.assertFalse(self.twitch.can_watch(channel))
+        self.assertFalse(self.twitch.watching_channel.has_value())
 
 
 class TestMiningHoursSettings(unittest.IsolatedAsyncioTestCase):
@@ -159,6 +265,44 @@ class TestMiningHoursSettings(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             saved_settings["mining_hours"], {"mode": "range", "start": "10:00", "end": "18:00"}
         )
+
+    def test_invalid_api_and_saved_schedules_are_rejected(self):
+        invalid = [
+            {}, {"mode": "range"},
+            {"mode": "range", "start": "24:00", "end": "12:00"},
+            {"mode": "range", "start": "12:99", "end": "12:00"},
+            {"mode": "range", "start": "", "end": "12:00"},
+            {"mode": "range", "start": 1200, "end": "12:00"},
+            {"mode": "bogus", "start": "12:00", "end": "12:00"},
+        ]
+        for value in invalid:
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    SettingsUpdate(mining_hours=value)
+                persisted = copy.deepcopy(default_settings)
+                persisted["mining_hours"] = value
+                with patch("src.config.settings.json_load", return_value=persisted), self.assertRaises(ValueError):
+                    Settings()
+
+    async def test_failed_save_keeps_previous_live_hours_and_does_not_wake(self):
+        settings = SimpleNamespace(**copy.deepcopy(default_settings))
+        settings.save = MagicMock(side_effect=OSError("disk full"))
+        callback = MagicMock()
+        broadcaster = AsyncMock()
+        manager = SettingsManager(broadcaster, settings, MagicMock(), on_change=callback)
+        with self.assertRaises(OSError):
+            manager.update_settings({"mining_hours": {"mode": "range", "start": "10:00", "end": "18:00"}})
+        self.assertEqual(settings.mining_hours, default_settings["mining_hours"])
+        callback.assert_not_called()
+        broadcaster.emit.assert_not_called()
+
+    async def test_invalid_schedule_does_not_mutate_other_settings(self):
+        settings = SimpleNamespace(**copy.deepcopy(default_settings), save=MagicMock())
+        manager = SettingsManager(AsyncMock(), settings, MagicMock())
+        with self.assertRaises(ValueError):
+            manager.update_settings({"dark_mode": True, "mining_hours": {"mode": "range"}})
+        self.assertFalse(settings.dark_mode)
+        settings.save.assert_not_called()
 
     async def test_settings_update_model_accepts_mining_hours(self):
         model = SettingsUpdate(mining_hours={"mode": "range", "start": "10:00", "end": "18:00"})

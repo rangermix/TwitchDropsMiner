@@ -61,7 +61,7 @@ class WebGUIManager:
             self._twitch.request_games_update()
 
         self.settings = SettingsManager(
-            self._broadcaster, twitch.settings, self.output, on_change=on_settings_change
+            self._broadcaster, twitch.settings, self.output, on_change=on_settings_change,
         )
 
         # Selected channel tracking (set by web client)
@@ -70,6 +70,13 @@ class WebGUIManager:
 
         # Start message
         logger.info("Web GUI Manager initialized")
+
+    def notify_session_change(self) -> None:
+        status = {**self._twitch.session_controller.status(),
+                  "browser": self._twitch.login_browser.status(),
+                  "helper": self._twitch.helper.status(),
+                  "logged_in": self._twitch._auth_state._logged_in.is_set()}
+        asyncio.create_task(self._broadcaster.emit("session_status", status))
 
     def set_socketio(self, sio: AsyncServer):
         """Set the Socket.IO instance for real-time communication.
