@@ -260,7 +260,7 @@ class TestDiscordMessageEscaping(unittest.IsolatedAsyncioTestCase):
     async def test_claim_notification_sends_with_twitch_purple_color(self):
         captured = await self._post_embed()
         embed = captured["payload"]["embeds"][0]
-        self.assertEqual(embed["color"], 9127187)
+        self.assertEqual(embed["color"], 0x9146FF)
         self.assertEqual(embed["title"], "🎁 Drop Claimed!")
         self.assertEqual(embed["footer"]["text"], "TwitchDropsMiner Bot")
 

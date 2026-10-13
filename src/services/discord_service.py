@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("TwitchDrops")
 
 # Twitch purple (#9146FF) as used in the browser interface.
-EMBED_COLOR = 9127187
+EMBED_COLOR = 0x9146FF
 
 # Discord markdown characters that need a backslash escape to render literally.
 _MARKDOWN_CHARS = "\\*_~|`[]()"
@@ -80,7 +80,7 @@ class DiscordNotifier:
         Send an embed notification when a drop is claimed.
 
         Args:
-            drop: The TimedDrop that was claimed
+            drop: The drop that was claimed
 
         Returns:
             True if notification was sent successfully, False otherwise
