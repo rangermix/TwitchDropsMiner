@@ -43,6 +43,7 @@ async def test_smartbox_watch_discovers_beacon_on_public_channel_page(inline_bea
         yield SimpleNamespace(status=status, text=AsyncMock(return_value=text))
 
     client = SimpleNamespace(
+        is_mining_time=lambda: True,
         _client_type=ClientType.SMARTBOX,
         request=request,
         _auth_state=SimpleNamespace(user_id=12345),
