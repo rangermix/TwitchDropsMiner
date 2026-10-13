@@ -234,7 +234,31 @@
             "mining_hours_range": "自訂時間區間",
             "mining_hours_start": "開始",
             "mining_hours_end": "結束",
-            "mining_hours_save_error": "無法儲存執行時段，請重試。"
+            "mining_hours_save_error": "無法儲存執行時段，請重試。",
+            "discord": {
+                "name": "Discord 通知",
+                "description": "領取掉落物時在 Discord 上接收通知。",
+                "webhook_url": "Discord Webhook 網址",
+                "webhook_url_hint": "貼上完整的 Webhook 網址（其中包含你的密鑰 Token）。",
+                "setup_steps": [
+                    "開啟你的 Discord 伺服器，進入頻道名稱旁齒輪圖示開啟的頻道設定",
+                    "進入「整合」→「Webhooks」",
+                    "點擊「新增 Webhook」、命名並選擇文字頻道（請參見 <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Webhook 入門</a>）",
+                    "點擊「複製 Webhook 網址」——格式類似：https://discord.com/api/webhooks/ID/TOKEN",
+                    "將網址貼到設定中的 Discord Webhook 網址欄位，然後點擊「儲存設定」",
+                    "點擊「測試連線」以驗證，並接收一則測試通知"
+                ],
+                "success": "✓ Discord 連線成功！你將收到掉落物通知。",
+                "saved": "✓ 設定已成功儲存！",
+                "error": "無法連線到 Discord。請檢查你的 Webhook 網址。",
+                "missing_credentials": "請輸入 Discord Webhook 網址。操作說明請見「說明」標籤頁。",
+                "remove_webhook": "移除 Webhook",
+                "removed": "已移除 Webhook，Discord 通知已停用。",
+                "credentials_help": "URL 留空可重用已儲存的 Webhook。「移除 Webhook」會停用通知並刪除已儲存的 URL。",
+                "save_error": "無法儲存 Discord 設定。",
+                "save_settings": "儲存設定",
+                "test_connection": "測試連線"
+            }
         },
         "help": {
             "about": "關於 Twitch Drops Miner",

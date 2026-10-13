@@ -214,6 +214,24 @@ class GUISettingsGeneral(TypedDict):
     dark_mode: str
 
 
+class GUIDiscordSettings(TypedDict):
+    name: str
+    description: str
+    webhook_url: str
+    webhook_url_hint: str
+    setup_steps: list[str]
+    success: str
+    saved: str
+    error: str
+    missing_credentials: str
+    remove_webhook: str
+    removed: str
+    credentials_help: str
+    save_error: str
+    save_settings: str
+    test_connection: str
+
+
 class GUITelegramSettings(TypedDict):
     name: str
     description: str
@@ -238,6 +256,7 @@ class GUISettings(TypedDict):
     allow_unlinked_campaigns_warning: str
     allow_unlinked_campaigns_save_error: str
     general: GUISettingsGeneral
+    discord: GUIDiscordSettings
     telegram: GUITelegramSettings
     mining_benefits: str
     mining_benefits_help: str

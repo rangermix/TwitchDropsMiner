@@ -234,7 +234,31 @@
             "mining_hours_range": "Intervallo di tempo personalizzato",
             "mining_hours_start": "Inizio",
             "mining_hours_end": "Fine",
-            "mining_hours_save_error": "Impossibile salvare gli orari. Riprova."
+            "mining_hours_save_error": "Impossibile salvare gli orari. Riprova.",
+            "discord": {
+                "name": "Notifiche Discord",
+                "description": "Ricevi notifiche su Discord quando riscatti i drop.",
+                "webhook_url": "URL Webhook di Discord",
+                "webhook_url_hint": "Incolla l'URL completo del webhook (include il tuo token segreto).",
+                "setup_steps": [
+                    "Apri il tuo server Discord e vai alle impostazioni del canale (icona ingranaggio accanto al nome del canale)",
+                    "Vai su Integrazioni → Webhooks",
+                    "Clicca su Nuovo webhook, dagli un nome e scegli il canale testuale (vedi <a href=\"https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks\" target=\"_blank\">Introduzione ai webhook</a>)",
+                    "Clicca su Copia URL webhook - ha questo aspetto: https://discord.com/api/webhooks/ID/TOKEN",
+                    "Incolla l'URL nel campo URL Webhook di Discord nelle Impostazioni e clicca su Salva impostazioni",
+                    "Clicca su Prova connessione per verificare e ricevere una notifica di prova"
+                ],
+                "success": "✓ Connessione a Discord riuscita! Riceverai le notifiche dei drop.",
+                "saved": "✓ Impostazioni salvate con successo!",
+                "error": "Connessione a Discord non riuscita. Controlla l'URL del webhook.",
+                "missing_credentials": "Inserisci un URL Webhook di Discord. Consulta le istruzioni nella scheda Aiuto.",
+                "remove_webhook": "Rimuovi webhook",
+                "removed": "Webhook rimosso. Le notifiche Discord sono disattivate.",
+                "credentials_help": "Lascia vuoto l’URL per riutilizzare il webhook salvato. Rimuovi webhook disattiva le notifiche ed elimina l’URL salvato.",
+                "save_error": "Impossibile salvare le impostazioni Discord.",
+                "save_settings": "Salva impostazioni",
+                "test_connection": "Prova Connessione"
+            }
         },
         "help": {
             "about": "Informazioni su Twitch Drops Miner",

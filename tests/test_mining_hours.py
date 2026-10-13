@@ -296,6 +296,37 @@ class TestMiningHoursSettings(unittest.IsolatedAsyncioTestCase):
         callback.assert_not_called()
         broadcaster.emit.assert_not_called()
 
+    async def test_combined_discord_and_hours_save_failure_restores_both_policies(self):
+        settings = SimpleNamespace(**copy.deepcopy(default_settings))
+        settings.discord_webhook_url = "https://discord.com/api/webhooks/111/old-secret"
+        settings.save = MagicMock(side_effect=OSError("disk full"))
+        callback, console = MagicMock(), MagicMock()
+        manager = SettingsManager(AsyncMock(), settings, console, on_change=callback)
+        with self.assertRaises(OSError):
+            manager.update_settings({
+                "mining_hours": {"mode": "range", "start": "10:00", "end": "18:00"},
+                "discord_webhook_url": "https://discord.com/api/webhooks/111/new-secret",
+            })
+        self.assertEqual(settings.mining_hours, default_settings["mining_hours"])
+        self.assertEqual(settings.discord_webhook_url, "https://discord.com/api/webhooks/111/old-secret")
+        self.assertNotIn("secret", str(console.print.call_args_list))
+        callback.assert_not_called()
+        manager._broadcaster.emit.assert_not_called()
+
+    async def test_invalid_discord_webhook_does_not_apply_valid_hours(self):
+        settings = SimpleNamespace(**copy.deepcopy(default_settings), save=MagicMock())
+        callback = MagicMock()
+        manager = SettingsManager(AsyncMock(), settings, MagicMock(), on_change=callback)
+        with self.assertRaises(ValueError):
+            manager.update_settings({
+                "mining_hours": {"mode": "range", "start": "10:00", "end": "18:00"},
+                "discord_webhook_url": "https://example.com/untrusted",
+            })
+        self.assertEqual(settings.mining_hours, default_settings["mining_hours"])
+        self.assertEqual(settings.discord_webhook_url, "")
+        settings.save.assert_not_called()
+        callback.assert_not_called()
+
     async def test_invalid_schedule_does_not_mutate_other_settings(self):
         settings = SimpleNamespace(**copy.deepcopy(default_settings), save=MagicMock())
         manager = SettingsManager(AsyncMock(), settings, MagicMock())

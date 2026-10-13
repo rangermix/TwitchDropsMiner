@@ -28,6 +28,7 @@ default_settings = {
     "allow_unlinked_campaigns": False,
     "connection_quality": 1,
     "dark_mode": False,
+    "discord_webhook_url": "",
     "drop_name_blacklist": [],
     "games_to_watch": [],
     "language": DEFAULT_LANG,
@@ -109,6 +110,7 @@ class Settings:
     allow_unlinked_campaigns: bool
     connection_quality: int
     dark_mode: bool
+    discord_webhook_url: str
     drop_name_blacklist: list[str]
     games_to_watch: list[str]
     language: str

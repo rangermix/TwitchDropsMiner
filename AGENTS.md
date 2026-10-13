@@ -326,6 +326,16 @@ lang/                # Translation JSON files (20 languages)
 - The Telegram form reuses the saved token when its input is blank. Clearing the chat ID
   and saving disables alerts. Test Connection waits for settings persistence before showing
   success; HTTP, network, and application save failures must remain visible as errors.
+- Discord alerts also originate in the shared `BaseDrop.claim()` transition and must
+  preserve Telegram, history and successful Twitch claims on notification failure.
+  `DiscordNotifier` accepts only `https://discord.com/api/webhooks/ID/TOKEN`, refuses
+  redirects, disables mentions, bounds transport to ten seconds, and never logs URLs,
+  response bodies or exception text. Diagnostics retain only status/outcome metadata.
+  Settings expose a mask/configured flag, reuse a blank URL, and use the explicit
+  `discord_remove_webhook` action to delete it and disable alerts. Validate before
+  mutation; restore the previous webhook on save failure. API validation errors must
+  not echo submitted settings. Test Connection reports success only after saving.
+  Preserve localized safe Help rendering and `tests/test_discord_*` coverage.
 - `tests/test_telegram_frontend.py`, `tests/test_telegram_api.py`, and
   `tests/test_telegram_integration.py` cover translated Help rendering, stored credentials,
   failed saves, disabling, all shared claim paths, and transport failures without sending

@@ -1,4 +1,4 @@
-# Telegram notifications
+# Telegram and Discord notifications
 
 TDM can send a Telegram alert when it successfully claims a drop. Notifications cover
 claims found through live events and through startup or later inventory checks.
@@ -32,5 +32,26 @@ Repeated events for an already claimed drop do not send duplicate alerts. Telegr
 delivery failures do not undo a successful Twitch claim, and failed notifications
 are not retried. Check the **History** tab or your Twitch inventory if an alert is
 missing; the absence of a Telegram message does not mean a claim failed.
+
+## Discord webhook setup
+
+1. In your Discord server, open the target channel's **Edit Channel → Integrations →
+   Webhooks** settings and create a webhook. You need permission to manage webhooks.
+2. Copy its URL and enter it in **Settings → Discord Notifications**. TDM accepts
+   `https://discord.com/api/webhooks/ID/TOKEN` URLs; extra query parameters, alternate
+   hosts and redirects are rejected. The URL contains a secret: keep it private.
+3. Select **Test Connection** to send one test message and save the URL, or **Save
+   Settings** to save without sending a message. A failed save remains an error even
+   when the test message was delivered.
+
+Leave the URL blank to reuse the saved webhook. The browser receives only a masked
+placeholder. **Remove Webhook** deletes the saved URL and disables Discord alerts;
+enter a new URL to enable them again. This does not delete the webhook in Discord.
+
+Discord alerts cover live-event, startup and inventory claims just like Telegram.
+Both providers can be enabled together. Failed deliveries do not undo Twitch claims
+and are not retried. Discord messages cannot ping users or roles. TDM's diagnostics
+include only the Discord response status or connection outcome, never the webhook
+URL or response body. Do not include the URL in support requests.
 
 [All guides](README.md) · [Using the dashboard](usage.md)
