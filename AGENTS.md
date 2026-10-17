@@ -273,8 +273,8 @@ lang/                # Translation JSON files (20 languages)
 **src/config/settings.py** - Application settings:
 
 - Games to watch list (auto-populated from available campaigns if empty)
-- `priority_list_only` defaults to true. Disable it to append other eligible games
-  to the runtime wanted queue without changing saved Games to Watch. Both modes use
+- Available from v2.3.0, `priority_list_only` defaults to true. Disable it to append
+  other eligible games to the runtime wanted queue without changing saved Games to Watch. Both modes use
   the same watch-drop, claim, expiry, mineability, benefit and campaign eligibility
   guards; omit empty campaigns and games. Fallback games sort by earliest remaining
   campaign end, then game name. Selected campaigns take precedence over fallback,

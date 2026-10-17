@@ -36,7 +36,7 @@ adding games to refresh the miner's selection.
 games. **Deselect All** asks for confirmation. You can cancel a confirmation with
 **Escape**. Your choices are saved for future runs.
 
-Source builds offer **Settings → General → Priority list only**, enabled by default.
+Version 2.3.0 adds **Settings → General → Priority list only**, enabled by default.
 Leave it enabled to mine only games in **Games to Watch**. Disable it to prefer
 those games, then mine other eligible games whenever no selected game can currently
 be progressed. Other games stay out of your saved list, so you can keep a short list
@@ -147,7 +147,7 @@ returned by Twitch. If progress or eligibility still looks wrong, follow
 
 ## Mining hours
 
-Source builds provide **Settings → Mining Hours**. **All day (24/7)** is the default.
+Version 2.3.0 adds **Settings → Mining Hours**. **All day (24/7)** is the default.
 Choose **Custom time range** and enter start and end times to watch only during that
 window each day. The start is included and the end is excluded. A range such as
 22:00–06:00 crosses midnight; equal start and end times mean all day.
@@ -166,5 +166,5 @@ Malformed saved schedules are rejected at startup rather than silently mining al
 
 This setting pauses watching, not Twitch reward claims: already earned rewards can
 still be claimed through existing notifications or work already underway. It does
-not guarantee Twitch-side progress. A versioned release is required before deploying
-these frontend changes to an existing installation.
+not guarantee Twitch-side progress. Reload the dashboard after upgrading to load the
+versioned frontend controls.
