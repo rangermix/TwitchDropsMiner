@@ -14,6 +14,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
+from src.auth.session_diagnostics import SessionDiagnostic
 from src.config import ClientType
 from src.exceptions import LoginException
 from src.i18n import _
@@ -22,9 +23,26 @@ from src.i18n import _
 class SessionError(LoginException):
     """Only a fixed diagnostic code may cross a credential-handling boundary."""
 
-    def __init__(self, code: str):
+    def __init__(self, code: str, *, stage: str | None = None, reason: str | None = None,
+                 operation: str | None = None, http_status: int | None = None,
+                 upstream_status: int | None = None):
         self.code = code
-        super().__init__(_.t["login"]["error_code"].format(error_code=f"SESSION_{code}"))
+        self.diagnostic = SessionDiagnostic.from_dict({
+            "code": code, "stage": stage, "reason": reason, "operation": operation,
+            "http_status": http_status, "upstream_status": upstream_status,
+        })
+        super().__init__(_.t["login"]["error_code"].format(
+            error_code=f"SESSION_{self.diagnostic.code}"))
+
+    def annotate(self, **context: Any) -> SessionError:
+        """Fill missing context while preserving error identity and retry subclasses."""
+        current = self.diagnostic.to_dict()
+        incoming = SessionDiagnostic.from_dict(context).to_dict()
+        for name in ("stage", "reason", "operation", "http_status", "upstream_status"):
+            if current[name] is None or current[name] == "unknown":
+                current[name] = incoming[name]
+        self.diagnostic = SessionDiagnostic.from_dict(current)
+        return self
 
 
 class PrivateSessionFile:

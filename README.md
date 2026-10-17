@@ -118,6 +118,8 @@ If Twitch rejects the embedded browser, select **Use desktop helper** and run th
 matching Windows, Linux, or macOS helper with your dashboard address. The first helper
 to connect is accepted during a ten-minute window; no pairing code is needed.
 See [desktop helper downloads and steps](docs/authentication.md#desktop-helper-fallback).
+For rejected helper logins, report the fixed error code and a redacted miner log;
+see [helper diagnostics](docs/troubleshooting.md#helper-login-error-codes).
 
 Keep session data directories private. On Windows, credential files inherit the
 directory's access permissions (ACLs); Unix file-mode numbers do not verify those

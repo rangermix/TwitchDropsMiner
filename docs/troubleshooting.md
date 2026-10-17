@@ -51,6 +51,60 @@ helper computer and that the access window is still open. `localhost` points to 
 helper computer itself. If the helper reports an unknown result, check the dashboard
 before trying again. Keep saved credentials and browser profiles private.
 
+## Helper login error codes
+
+Update both the miner and the helper to use the latest diagnostics. Known validation
+failures preserve their fixed `SESSION_*` code; unknown responses remain generic.
+`SESSION_CATALOG` means Twitch's inventory or campaign response failed validation.
+The miner log records only fixed error categories and field shapes, never response
+values or credentials. A catalog error does not by itself identify a browser rejection.
+Report the code and a timestamped, redacted log excerpt. Keep browser profiles, session
+files, cookies, tokens and passwords private.
+
+Source builds with the diagnostic update also print a `SESSION_DIAGNOSTIC` JSON line
+after the translated helper explanation. A matching diagnostic is available as
+`helper.diagnostic`, `browser.diagnostic` or `renewal_diagnostic` in `/api/session`.
+Published helpers need a release containing this update; updating only the miner does
+not update the helper executable on your computer.
+
+| Field | Meaning |
+| --- | --- |
+| `code` | Fixed failure code, without the displayed `SESSION_` prefix |
+| `stage` | The step that failed; see below |
+| `reason` | A recognized cause such as `integrity`, `timeout`, `tls`, `connection`, or `catalog_shape`; `unknown` means the available response does not establish a specific cause |
+| `operation` | `identity`, `Inventory`, `Campaigns`, or `catalog` when known |
+| `http_status` | The dashboard/helper protocol HTTP response status, when received |
+| `upstream_status` | Twitch's HTTP response status, when known; this is separate from the dashboard status |
+
+For example, `code=CATALOG`, `stage=captured_validation`, `reason=integrity`,
+`operation=Campaigns` identifies Twitch's integrity rejection while checking the
+original captured session. The same code at `issued_validation` means the independently
+issued server session failed. The original session is still not installed in either
+case. Other useful stages are:
+
+| Stage | What to check |
+| --- | --- |
+| `helper_configuration`, `helper_connect` | Dashboard URL, reachable miner, enabled helper window, matching versions |
+| `browser_start`, `browser_login`, `browser_capture`, `browser_cleanup` | Helper desktop browser startup, manual sign-in/closing its windows, capture, or cleanup |
+| `helper_admission`, `seed_validation` | Helper access or the captured context's format and freshness |
+| `server_issuance`, `renewal_issuance` | The miner's SDK/browser acquisition step |
+| `issued_validation`, `renewal_validation` | Twitch validation of the newly issued context |
+| `persistence` | Saving private session state; retain the existing data mount and check its permissions/free space |
+| `session_upload`, `helper_receipt` | Upload or receipt transport; check the dashboard before retrying an unknown result |
+
+The error code remains useful when `reason=unknown`; no arbitrary Twitch response or
+exception text is copied into the diagnosis. An unknown receipt result does not prove
+that the session was rejected or installed. TDM checks receipts and never repeats a
+credential upload automatically.
+
+Twitch's visible "browser not supported" page occurs during interactive sign-in and
+can precede any captured session. `browser.state=sign_in`, `browser.error=null`, and
+`session.state=waiting` therefore do not establish a capture or validation error.
+For a helper failure, include its fixed diagnostic line, miner/helper versions and
+attempt time. This separates browser-side symptoms from original-session validation,
+server issuance, reissued-session validation and transport/storage failures. It does
+not establish why Twitch rejected a browser or guarantee that a new login will work.
+
 ## Startup fails while reading web_auth.json
 
 A traceback from `WebAuth.__init__` ending in `JSONDecodeError` identifies malformed

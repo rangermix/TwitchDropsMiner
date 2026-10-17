@@ -1,19 +1,23 @@
 """Native login handoff: destination, admission, browser lifecycle and privacy."""
 
 import asyncio
+import json
 import stat
 import subprocess
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 from aiohttp import web
 
 from src.auth import login_helper
+from src.auth.helper_errors import HelperDiagnostics
 from src.auth.server_seed import SDKCookie, ServerSeed
 from src.auth.session_bundle import SessionBundle, SessionError
+from src.auth.session_diagnostics import SessionDiagnostic
 from src.config import ClientType
 
 
@@ -30,6 +34,11 @@ def test_native_entrypoint_explains_direct_connection_without_export_files():
 
 CLOCK = 1000
 CONNECTION = "A" * 43
+
+
+def diagnostic(code, **context):
+    return {"code": code, "stage": "issued_validation", "reason": "integrity",
+            "operation": "Campaigns", "http_status": 599, "upstream_status": 200, **context}
 
 
 def seed():
@@ -53,7 +62,8 @@ def accepted():
 
 
 @asynccontextmanager
-async def instance(connect=None, complete=None, *, connect_status=200, complete_status=200, headers=None, lose_ack=False, receipts=None, complete_text=None):
+async def instance(connect=None, complete=None, *, connect_status=200, complete_status=200, headers=None,
+                   lose_ack=False, receipts=None, complete_text=None, receipt_status=200, receipt_text=None):
     requests = []
     results = list(receipts or [accepted()])
 
@@ -61,8 +71,10 @@ async def instance(connect=None, complete=None, *, connect_status=200, complete_
         body = await request.json() if request.can_read_body else None
         requests.append((request.path, dict(request.headers), body))
         if request.path.endswith("result"):
+            if receipt_text is not None:
+                return web.Response(text=receipt_text, status=receipt_status)
             value = results.pop(0) if len(results) > 1 else results[0]
-            return web.json_response(value)
+            return web.json_response(value, status=receipt_status)
         if lose_ack and request.path.endswith("session"):
             request.transport.close()
             return web.Response()
@@ -416,6 +428,54 @@ async def test_unconfirmed_lost_ack_reports_unknown_without_reopening_admission(
     assert len(requests) == 4
     assert [row[0] for row in requests].count("/api/helper/connect") == 1
     assert [row[0] for row in requests].count("/api/helper/session") == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("code", [
+    "AUTH", "IDENTITY", "CATALOG", "ACCOUNT_MISMATCH", "REQUEST",
+    "EXPIRED", "SDK_EXPIRED", "SDK_ISSUANCE", "SDK_TIMEOUT", "FORMAT",
+    "REPLAY", "SDK_SEED", "SDK_COOKIE", "SDK_PAGE",
+])
+async def test_admission_preserves_known_validation_codes_without_reposting(code):
+    async with instance(complete={"detail": "session_" + code.lower()}, complete_status=400) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK) as client:
+            with pytest.raises(SessionError) as error:
+                await client.send(await client.connect(), seed())
+            assert error.value.code == code
+    assert [row[0] for row in requests] == ["/api/helper/connect", "/api/helper/session"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("detail", ["session_private-secret", "session_auth\nprivate-secret", ["session_auth"], {"private-secret": 1}, None])
+async def test_admission_never_echoes_unrecognized_remote_details(detail):
+    async with instance(complete={"detail": detail}, complete_status=400) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK) as client:
+            with pytest.raises(SessionError) as error:
+                await client.send(await client.connect(), seed())
+            assert error.value.code == "HELPER_REJECTED"
+            assert "private-secret" not in str(error.value)
+    assert len(requests) == 2
+
+
+@pytest.mark.asyncio
+async def test_validation_detail_on_connect_remains_generic():
+    async with instance(connect={"detail": "session_auth"}, connect_status=400) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK) as client:
+            with pytest.raises(SessionError) as error:
+                await client.connect()
+            assert error.value.code == "HELPER_REJECTED"
+    assert [row[0] for row in requests] == ["/api/helper/connect"]
+
+
+@pytest.mark.asyncio
+async def test_validation_detail_on_5xx_still_reconciles_without_reposting():
+    async with instance(complete={"detail": "session_auth"}, complete_status=500,
+                        receipts=[accepted()]) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK,
+                receipt_attempts=2, receipt_interval=0) as client:
+            assert await client.send(await client.connect(), seed()) == 123
+    assert [row[0] for row in requests] == [
+        "/api/helper/connect", "/api/helper/session", "/api/helper/result"]
 
 
 @pytest.mark.asyncio
@@ -794,3 +854,275 @@ except asyncio.CancelledError:
         if child.poll() is None:
             child.kill()
         child.communicate(timeout=5)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("code", sorted(HelperDiagnostics.SERVER_CODES - SessionDiagnostic.HTTP_STATUSES.keys()))
+async def test_all_fixed_server_upload_codes_have_guidance_and_no_repost(code):
+    async with instance(complete={"detail": "session_" + code.lower()}, complete_status=400) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK) as client:
+            with pytest.raises(SessionError) as error:
+                await client.send(await client.connect(), seed())
+    assert error.value.code == code
+    assert error.value.diagnostic.stage == "session_upload"
+    assert error.value.diagnostic.http_status == 400
+    assert code in HelperDiagnostics.KEYS
+    assert [row[0] for row in requests] == ["/api/helper/connect", "/api/helper/session"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status,server_code,client_code", [
+    (400, "CATALOG", "CATALOG"), (403, "HELPER_DISABLED", "HELPER_DISABLED"),
+    (401, "CONNECTION", "HELPER_EXPIRED"), (429, "BUSY", "HELPER_BUSY"),
+    (400, "STALE", "STALE"), (503, "BROWSER_START", "HELPER_SERVER_BROWSER"),
+])
+async def test_matching_server_diagnostic_preserves_safe_context_and_actual_http_status(status, server_code, client_code):
+    response = {"detail": "session_" + server_code.lower(), "diagnostic": diagnostic(server_code),
+                "private-response": "secret-cookie"}
+    async with instance(complete=response, complete_status=status) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK) as client:
+            with pytest.raises(SessionError) as error:
+                await client.send(await client.connect(), seed())
+    result = error.value.diagnostic.to_dict()
+    assert result == {**diagnostic(client_code), "http_status": status}
+    assert "secret-cookie" not in str(error.value) + json.dumps(result)
+    assert len(requests) == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("untrusted", [None, [], "secret-cookie", {"code": "AUTH"}, {"code": "CATALOG\nsecret-cookie"}])
+async def test_mismatching_or_malformed_diagnostic_never_relabels_server_rejection(untrusted):
+    async with instance(complete={"detail": "session_catalog", "diagnostic": untrusted}, complete_status=400) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK) as client:
+            with pytest.raises(SessionError) as error:
+                await client.send(await client.connect(), seed())
+    assert error.value.code == "HELPER_REJECTED"
+    assert error.value.diagnostic.stage == "session_upload"
+    assert error.value.diagnostic.http_status == 400
+    assert "secret-cookie" not in str(error.value) + json.dumps(error.value.diagnostic.to_dict())
+    assert len(requests) == 2
+
+
+@pytest.mark.asyncio
+async def test_matching_diagnostic_drops_arbitrary_context_values():
+    response = {"detail": "session_catalog", "diagnostic": diagnostic(
+        "CATALOG", stage="secret-profile", reason="secret-token", operation="private-account",
+        upstream_status=True, response="secret-response", headers={"authorization": "secret-cookie"},
+    )}
+    async with instance(complete=response, complete_status=400) as (address, _requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK) as client:
+            with pytest.raises(SessionError) as error:
+                await client.send(await client.connect(), seed())
+    result = error.value.diagnostic.to_dict()
+    assert result == {"code": "CATALOG", "stage": "session_upload", "reason": "http_error",
+                      "operation": "unknown", "http_status": 400, "upstream_status": None}
+    assert "secret" not in str(error.value) + json.dumps(result)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status,code", [(400, "CATALOG"), (400, "SAVE"), (503, "STOPPED")])
+async def test_receipt_reports_fixed_definitive_server_failure_without_reupload(status, code):
+    response = {"detail": "session_" + code.lower(), "diagnostic": diagnostic(code)}
+    async with instance(complete_text="gateway secret-cookie", complete_status=502,
+                        receipts=[response], receipt_status=status) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK,
+                receipt_attempts=2, receipt_interval=0) as client:
+            with pytest.raises(SessionError) as error:
+                await client.send(await client.connect(), seed())
+    assert error.value.code == code
+    assert error.value.diagnostic.stage == "issued_validation"
+    assert error.value.diagnostic.http_status == status
+    assert [row[0] for row in requests] == ["/api/helper/connect", "/api/helper/session", "/api/helper/result"]
+    assert "secret-cookie" not in str(error.value) + json.dumps(error.value.diagnostic.to_dict())
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status,detail", [(401, "session_connection"), (403, "session_helper_disabled"),
+                                           (429, "session_busy"), (400, "private-response"),
+                                           (503, "session_helper_failed"), (400, "session_delivery"),
+                                           (503, "session_unavailable"), (401, "session_catalog"),
+                                           (503, "session_catalog")])
+async def test_unavailable_receipt_is_unknown_and_keeps_last_safe_http_context(status, detail):
+    async with instance(complete_status=502, complete_text="private-response",
+                        receipts=[{"detail": detail}], receipt_status=status) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK,
+                receipt_attempts=2, receipt_interval=0) as client:
+            with pytest.raises(SessionError) as error:
+                await client.send(await client.connect(), seed())
+    assert error.value.code == "HELPER_RESULT_UNKNOWN"
+    assert error.value.diagnostic.stage == "helper_receipt"
+    assert error.value.diagnostic.http_status == status
+    assert "private-response" not in str(error.value) + json.dumps(error.value.diagnostic.to_dict())
+    assert [row[0] for row in requests].count("/api/helper/session") == 1
+    assert [row[0] for row in requests].count("/api/helper/result") == 2
+
+
+@pytest.mark.asyncio
+async def test_pending_receipt_retains_ambiguous_upload_diagnostic_without_claiming_failure():
+    response = {"detail": "session_helper_failed", "diagnostic": diagnostic(
+        "HELPER_FAILED", stage="server_issuance", reason="unexpected_exception", operation="unknown", upstream_status=None)}
+    async with instance(complete=response, complete_status=503, receipts=[{"state": "pending"}]) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK,
+                receipt_attempts=2, receipt_interval=0) as client:
+            with pytest.raises(SessionError) as error:
+                await client.send(await client.connect(), seed())
+    assert error.value.code == "HELPER_RESULT_UNKNOWN"
+    assert error.value.diagnostic.stage == "server_issuance"
+    assert error.value.diagnostic.reason == "unexpected_exception"
+    assert error.value.diagnostic.http_status == 503
+    assert [row[0] for row in requests].count("/api/helper/session") == 1
+
+
+@pytest.mark.asyncio
+async def test_malformed_receipt_preserves_last_safe_parse_failure():
+    async with instance(lose_ack=True, receipt_status=502, receipt_text="secret-cookie") as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK,
+                receipt_attempts=2, receipt_interval=0) as client:
+            with pytest.raises(SessionError) as error:
+                await client.send(await client.connect(), seed())
+    assert error.value.code == "HELPER_RESULT_UNKNOWN"
+    assert error.value.diagnostic.stage == "helper_receipt"
+    assert error.value.diagnostic.reason == "invalid_json"
+    assert error.value.diagnostic.http_status == 502
+    assert [row[0] for row in requests].count("/api/helper/session") == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("phase", ["browser_start", "browser_login", "browser_capture", "browser_cleanup"])
+async def test_unexpected_local_exception_identifies_phase_without_private_text(phase):
+    failure = RuntimeError("private-cookie secret-profile")
+
+    class Browser(FakeBrowser):
+        async def __aenter__(self):
+            if phase == "browser_start":
+                raise failure
+            return await super().__aenter__()
+
+        async def __aexit__(self, *args):
+            await super().__aexit__(*args)
+            if phase == "browser_cleanup":
+                raise failure
+
+    browser = Browser(authentication_error=failure if phase == "browser_login" else None)
+    exporter = Mock(capture_seed=AsyncMock(side_effect=failure if phase == "browser_capture" else None,
+                                         return_value=seed()))
+    async with instance() as (address, requests):
+        helper = login_helper.NativeLoginHelper(address, browser_factory=lambda: browser,
+            exporter_factory=lambda _address, **kwargs: exporter, clock=lambda: CLOCK)
+        with pytest.raises(SessionError) as error:
+            await helper.run()
+    assert error.value.code == "HELPER_FAILED"
+    assert error.value.diagnostic.stage == phase
+    assert error.value.diagnostic.reason == "unexpected_exception"
+    assert "private-cookie" not in str(error.value) + json.dumps(error.value.diagnostic.to_dict())
+    if phase != "browser_start":
+        assert browser.closed
+    assert len(requests) == (2 if phase == "browser_cleanup" else 1)
+
+
+@pytest.mark.asyncio
+async def test_known_capture_failure_keeps_phase_during_browser_cleanup():
+    browser = FakeBrowser()
+    exporter = Mock(capture_seed=AsyncMock(side_effect=SessionError("CAPTURE_TIMEOUT")))
+    async with instance() as (address, requests):
+        helper = login_helper.NativeLoginHelper(address, browser_factory=lambda: browser,
+            exporter_factory=lambda _address, **kwargs: exporter, clock=lambda: CLOCK)
+        with pytest.raises(SessionError) as error:
+            await helper.run()
+    assert error.value.code == "CAPTURE_TIMEOUT"
+    assert error.value.diagnostic.stage == "browser_capture"
+    assert error.value.diagnostic.reason == "timeout"
+    assert browser.closed and len(requests) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure,reason", [
+    (login_helper.aiohttp.ClientSSLError(None, OSError("secret-tls")), "tls"),
+    (login_helper.aiohttp.ClientConnectorDNSError(None, OSError("secret-host")), "dns"),
+    (TimeoutError("secret-endpoint"), "timeout"),
+    (OSError("secret-address"), "connection"),
+])
+async def test_helper_transport_failure_has_safe_reason_without_exception_text(failure, reason):
+    class Request:
+        async def __aenter__(self):
+            raise failure
+
+        async def __aexit__(self, *args):
+            pass
+
+    client = login_helper.HelperHTTP(login_helper.HelperDestination("http://localhost:8080"))
+    client.http = SimpleNamespace(request=lambda *args, **kwargs: Request())
+    with pytest.raises(SessionError) as error:
+        await client.connect()
+    assert error.value.code == "HELPER_NETWORK"
+    assert error.value.diagnostic.stage == "helper_connect"
+    assert error.value.diagnostic.reason == reason
+    assert error.value.diagnostic.http_status is None
+    assert "secret" not in str(error.value) + json.dumps(error.value.diagnostic.to_dict())
+
+
+@pytest.mark.asyncio
+async def test_response_limit_is_distinct_from_server_rejection():
+    async with instance(connect={"private-value": "secret-cookie" * 10000}) as (address, _requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address)) as client:
+            with pytest.raises(SessionError) as error:
+                await client.connect()
+    assert error.value.code == "HELPER_RESPONSE"
+    assert error.value.diagnostic.stage == "helper_connect"
+    assert error.value.diagnostic.reason == "response_limit"
+    assert error.value.diagnostic.http_status == 200
+    assert "secret-cookie" not in str(error.value) + json.dumps(error.value.diagnostic.to_dict())
+
+
+@pytest.mark.asyncio
+async def test_malformed_upload_error_keeps_status_and_parse_reason_without_receipt_replay():
+    async with instance(complete_text="secret-cookie", complete_status=400) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK) as client:
+            with pytest.raises(SessionError) as error:
+                await client.send(await client.connect(), seed())
+    assert error.value.code == "HELPER_REJECTED"
+    assert error.value.diagnostic.stage == "session_upload"
+    assert error.value.diagnostic.reason == "invalid_json"
+    assert error.value.diagnostic.http_status == 400
+    assert [row[0] for row in requests] == ["/api/helper/connect", "/api/helper/session"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status,detail,expected", [(503, "session_unavailable", "UNAVAILABLE"),
+                                                    (503, "session_stopped", "STOPPED"),
+                                                    (503, "session_helper_failed", "HELPER_FAILED"),
+                                                    (400, "session_format", "FORMAT")])
+async def test_connect_preserves_fixed_admission_errors_before_credentials(status, detail, expected):
+    async with instance(connect={"detail": detail}, connect_status=status) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address)) as client:
+            with pytest.raises(SessionError) as error:
+                await client.connect()
+    assert error.value.code == expected
+    assert error.value.diagnostic.stage == "helper_connect"
+    assert error.value.diagnostic.http_status == status
+    assert len(requests) == 1
+
+
+@pytest.mark.asyncio
+async def test_mismatched_receipt_diagnostic_remains_unknown_instead_of_definitive():
+    async with instance(complete_status=502, complete_text="secret-response",
+                        receipts=[{"detail": "session_catalog", "diagnostic": diagnostic("AUTH")}],
+                        receipt_status=400) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK,
+                receipt_attempts=2, receipt_interval=0) as client:
+            with pytest.raises(SessionError) as error:
+                await client.send(await client.connect(), seed())
+    assert error.value.code == "HELPER_RESULT_UNKNOWN"
+    assert error.value.diagnostic.stage == "helper_receipt"
+    assert error.value.diagnostic.reason == "http_error"
+    assert error.value.diagnostic.http_status == 400
+    assert [row[0] for row in requests].count("/api/helper/session") == 1
+
+
+@pytest.mark.asyncio
+async def test_wrong_status_validation_diagnostic_keeps_upload_ambiguous():
+    response = {"detail": "session_catalog", "diagnostic": diagnostic("CATALOG")}
+    async with instance(complete=response, complete_status=503, receipts=[accepted()]) as (address, requests):
+        async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK) as client:
+            assert await client.send(await client.connect(), seed()) == 123
+    assert [row[0] for row in requests] == ["/api/helper/connect", "/api/helper/session", "/api/helper/result"]

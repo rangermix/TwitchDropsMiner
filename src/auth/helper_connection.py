@@ -13,6 +13,7 @@ from typing import Any
 from src.auth.server_seed import ServerSeed
 from src.auth.session_bundle import SessionError
 from src.auth.session_controller import SessionController
+from src.auth.session_diagnostics import SessionDiagnostic
 
 
 class HelperConnections:
@@ -23,6 +24,7 @@ class HelperConnections:
         self.controller, self.clock, self.on_change = controller, clock, on_change
         self.state = "disabled"
         self.error: str | None = None
+        self.diagnostic: SessionDiagnostic | None = None
         self.attempt = 0
         self.expires_at: float | None = None
         self._ticket = ""
@@ -52,6 +54,7 @@ class HelperConnections:
         self._receipt = None
         self.expires_at = None
         self.state, self.error = ("error" if error else "disabled"), error
+        self.diagnostic = SessionDiagnostic(error, stage="helper_admission") if error else None
         if self._task is not None and self._task is not asyncio.current_task():
             self._task.cancel()
 
@@ -60,6 +63,7 @@ class HelperConnections:
             # Receipt expiry does not expire the independently persisted Twitch session.
             self._invalidate(error=None if self.state == "complete" else "HELPER_EXPIRED")
         return {"state": self.state, "expires_at": self.expires_at, "error": self.error,
+                "diagnostic": self.diagnostic.to_dict() if self.diagnostic else None,
                 "attempt": self.attempt}
 
     def enable(self, authorized: Callable[[], bool]) -> None:
@@ -72,6 +76,7 @@ class HelperConnections:
         self._generation = self.controller.session.status()["generation"]
         self.expires_at = self.clock() + self.CONNECTION_SECONDS
         self.state, self.error = "waiting", None
+        self.diagnostic = None
         self.on_change()
 
     def _check(self, token: str, *, attempt: int | None = None) -> None:
@@ -95,16 +100,27 @@ class HelperConnections:
         self._check(token)
         if self._receipt is not None:
             return self._receipt
-        if self.state == "error":
-            raise SessionError(self.error or "HELPER_FAILED")
+        if self.error is not None:
+            failure = SessionError(self.error or "HELPER_FAILED")
+            if self.diagnostic:
+                failure.diagnostic = self.diagnostic
+            raise failure
         return {"state": "pending"}
 
     async def accept(self, token: str, data: Any) -> dict[str, Any]:
         self._check(token)
         if self.state != "connected" or self._task is not None:
             raise SessionError("BUSY")
-        seed = ServerSeed.from_dict(data, now=self.clock())
+        try:
+            seed = ServerSeed.from_dict(data, now=self.clock())
+        except SessionError as error:
+            error.annotate(stage="seed_validation")
+            self.diagnostic = error.diagnostic
+            self.error = error.diagnostic.code
+            self.on_change()
+            raise
         self.state = "verifying"
+        self.error, self.diagnostic = None, None
         self._task = asyncio.current_task()
         attempt = self.attempt
 
@@ -120,11 +136,14 @@ class HelperConnections:
             # No await separates successful installation and the lost-ack receipt.
             self._receipt = {"success": True, "allow_helper_connection": False, "session": result}
             self.state, self.error = "complete", None
+            self.diagnostic = None
             self.on_change()
             return self._receipt
         except SessionError as error:
             if self.attempt == attempt:
-                self.state, self.error = "error", error.code
+                error.annotate(stage="helper_admission")
+                self.state, self.error = "error", error.diagnostic.code
+                self.diagnostic = error.diagnostic
                 self.on_change()
             raise
         except asyncio.CancelledError:
@@ -135,8 +154,10 @@ class HelperConnections:
         except Exception:
             if self.attempt == attempt:
                 self.state, self.error = "error", "HELPER_FAILED"
+                self.diagnostic = SessionDiagnostic("HELPER_FAILED", stage="helper_admission", reason="unexpected_exception")
                 self.on_change()
-            raise SessionError("HELPER_FAILED") from None
+            failure = SessionError("HELPER_FAILED", stage="helper_admission", reason="unexpected_exception")
+            raise failure from None
         finally:
             self._task = None
 

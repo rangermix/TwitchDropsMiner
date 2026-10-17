@@ -9,7 +9,7 @@ import pytest
 
 from src.auth import login_helper
 from src.auth.helper_errors import HelperDiagnostics
-from src.auth.session_bundle import SessionError
+from src.auth.session_bundle import SessionDiagnostic, SessionError
 from src.config import LANG_PATH
 from src.i18n import _
 from src.i18n.translator import HelperErrors, HelperMessages
@@ -25,6 +25,7 @@ def restore_language():
 
 
 def test_every_diagnostic_has_nonempty_translated_guidance_and_matching_schema():
+    assert set(HelperDiagnostics.KEYS) == SessionDiagnostic.CODES
     required = set(HelperDiagnostics.KEYS.values())
     assert required == set(HelperErrors.__annotations__)
     for path in LANG_PATH.glob("*.json"):
@@ -49,6 +50,37 @@ def test_unknown_error_text_is_never_printed(capsys):
     output = capsys.readouterr().err
     assert "SESSION_HELPER_FAILED" in output
     assert "private-cookie" not in output and "OAuth secret" not in output
+
+
+def test_error_object_prints_fixed_machine_diagnostic_with_translated_guidance(capsys):
+    login_helper.LoginHelperCLI.report_error(SessionError(
+        "CATALOG", stage="issued_validation", reason="integrity", operation="Campaigns",
+        http_status=400, upstream_status=200,
+    ))
+    lines = capsys.readouterr().err.splitlines()
+    assert len(lines) == 3
+    assert "SESSION_CATALOG" in lines[0]
+    assert lines[1] == HelperDiagnostics.describe("CATALOG")[1]
+    assert lines[2].startswith("SESSION_DIAGNOSTIC ")
+    assert json.loads(lines[2].removeprefix("SESSION_DIAGNOSTIC ")) == {
+        "code": "CATALOG", "stage": "issued_validation", "reason": "integrity",
+        "operation": "Campaigns", "http_status": 400, "upstream_status": 200,
+    }
+
+
+def test_error_object_never_prints_unknown_code_or_context(capsys):
+    login_helper.LoginHelperCLI.report_error(SessionError(
+        "private-cookie\nOAuth secret", stage="private-browser-path", reason="secret-token",
+        operation="private-identity", http_status=True, upstream_status=999999,
+    ))
+    output = capsys.readouterr().err
+    assert "SESSION_HELPER_FAILED" in output
+    for secret in ("private-cookie", "OAuth secret", "private-browser-path", "secret-token", "private-identity"):
+        assert secret not in output
+    diagnostic = json.loads(output.splitlines()[-1].removeprefix("SESSION_DIAGNOSTIC "))
+    assert diagnostic["code"] == "HELPER_FAILED"
+    assert diagnostic["stage"] == diagnostic["reason"] == diagnostic["operation"] == "unknown"
+    assert diagnostic["http_status"] is diagnostic["upstream_status"] is None
 
 
 @pytest.mark.parametrize("code", ["HELPER_RESULT_UNKNOWN", "HELPER_BROWSER_CLEANUP", "HELPER_PROFILE_CLEANUP", "HELPER_FAILED"])

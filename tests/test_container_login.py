@@ -92,6 +92,29 @@ async def test_login_finishes_verifies_and_cleans_before_dashboard(attempt):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("capture_failure", [SessionError("CAPTURE_TIMEOUT"), RuntimeError("private capture")])
+async def test_cleanup_failure_has_its_own_stage_after_capture_failure(attempt, monkeypatch, capture_failure):
+    login, desktop, browsers = attempt
+
+    async def fail_cleanup(browser, *_args):
+        browser.closed = True
+        raise OSError("private profile path")
+
+    monkeypatch.setattr(Browser, "__aexit__", fail_cleanup)
+    login.request_login()
+    await state(login, "sign_in")
+    browsers[0].capture.side_effect = capture_failure
+    await login.finish()
+    await state(login, "error")
+    diagnostic = login.status()["diagnostic"]
+    assert diagnostic["code"] == "BROWSER_FAILED"
+    assert diagnostic["stage"] == "browser_cleanup"
+    assert diagnostic["reason"] == "unexpected_exception"
+    assert "private" not in str(login.status())
+    assert desktop.closed and browsers[0].closed
+
+
+@pytest.mark.asyncio
 async def test_capture_failure_is_redacted_and_retry_uses_new_attempt(attempt):
     login, desktop, browsers = attempt
     login.request_login()
@@ -99,9 +122,15 @@ async def test_capture_failure_is_redacted_and_retry_uses_new_attempt(attempt):
     browsers[0].capture.side_effect = SessionError("LOGIN_MISSING")
     await login.finish()
     await state(login, "error")
-    assert login.status() == {"state": "error", "error": "LOGIN_MISSING", "attempt": 1}
+    status = login.status()
+    assert {key: status[key] for key in ("state", "error", "attempt")} == {
+        "state": "error", "error": "LOGIN_MISSING", "attempt": 1,
+    }
+    assert status["diagnostic"]["code"] == "LOGIN_MISSING"
+    assert status["diagnostic"]["stage"] == "browser_capture"
     assert browsers[0].closed and desktop.closed
     await login.retry()
+    assert login.status()["diagnostic"] is None
     await state(login, "sign_in")
     assert len(browsers) == 2 and login.attempt == 2
     await login.stop()

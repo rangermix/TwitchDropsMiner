@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from src.auth.session_diagnostics import SessionDiagnostic
 from src.i18n import _
 
 
@@ -25,7 +26,45 @@ class HelperDiagnostics:
         "SDK_COOKIE": "sdk", "SDK_PAGE": "sdk", "SDK_TIMEOUT": "sdk", "SDK_ISSUANCE": "sdk",
         "AUTH": "validation", "IDENTITY": "validation", "CATALOG": "validation",
         "ACCOUNT_MISMATCH": "account", "REQUEST": "twitch_network", "HELPER_FAILED": "failed",
+        "BROWSER_START": "server_browser", "BROWSER_STOP": "failed",
+        "BROWSER_CLOSE": "failed",
+        "BROWSER_FAILED": "browser", "BROWSER_ISOLATION": "server_browser",
+        "BROWSER_OWNER": "browser_owner", "BROWSER_STATE": "failed",
+        "BROWSER_UNAVAILABLE": "server_browser", "BUSY": "busy", "CONNECTION": "expired",
+        "FILE": "failed", "SAVE": "failed", "STALE": "session_expired",
+        "STOPPED": "failed", "HELPER_STATE": "failed", "HELPER_CANCELLED": "failed",
+        "LOGIN_MISSING": "login_missing", "LOGIN_TIMEOUT": "login_timeout",
+        "PAIRING": "session_invalid", "RESPONSE": "response",
+        "CONFIG": "failed", "DESTINATION": "destination", "DELIVERY": "failed", "UNAVAILABLE": "failed",
     }
+
+    # Fixed errors emitted by the server protocol, separate from local helper failures.
+    SERVER_CODES = frozenset({
+        "ACCOUNT_MISMATCH", "AUTH", "BROWSER_ADDRESS", "BROWSER_CLOSE", "BROWSER_FAILED",
+        "BROWSER_ISOLATION", "BROWSER_OWNER", "BROWSER_PROTOCOL", "BROWSER_START",
+        "BROWSER_STATE", "BROWSER_STOP", "BROWSER_UNAVAILABLE", "BUSY", "CAPTURE_LIMIT",
+        "CAPTURE_TIMEOUT", "CATALOG", "CONNECTION", "EXPIRED", "FILE", "FORMAT",
+        "HELPER_CANCELLED", "HELPER_DISABLED", "HELPER_EXPIRED", "HELPER_FAILED",
+        "HELPER_STATE", "IDENTITY", "LOGIN_MISSING", "LOGIN_TIMEOUT", "PAIRING", "REPLAY",
+        "REQUEST", "RESPONSE", "SAVE", "SDK_COOKIE", "SDK_EXPIRED", "SDK_ISSUANCE",
+        "SDK_PAGE", "SDK_SEED", "SDK_TIMEOUT", "STALE", "STOPPED",
+        "CONFIG", "DESTINATION", "DELIVERY", "UNAVAILABLE",
+    })
+
+    # Loss of receipt access is not evidence that the credential upload failed.
+    RECEIPT_FAILURES = SERVER_CODES - {
+        "CONNECTION", "HELPER_EXPIRED", "HELPER_DISABLED", "BUSY", "HELPER_STATE", "UNAVAILABLE",
+        "HELPER_FAILED", "DELIVERY",
+    }
+
+    CONNECT_CODES = frozenset({
+        "FORMAT", "CONNECTION", "HELPER_DISABLED", "BUSY", "HELPER_STATE", "HELPER_EXPIRED",
+        "STOPPED", "UNAVAILABLE", "HELPER_FAILED",
+    })
+
+    @staticmethod
+    def expected_status(code: str) -> int:
+        return SessionDiagnostic.HTTP_STATUSES.get(code, 400)
 
     @classmethod
     def describe(cls, code: str) -> tuple[str, str]:

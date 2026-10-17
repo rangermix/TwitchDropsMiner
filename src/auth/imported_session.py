@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 import re
 import secrets
 import time
@@ -24,6 +25,50 @@ from src.exceptions import ExitRequest, LoginException
 if TYPE_CHECKING:
     from src.diagnostics import Diagnostics
     from src.web.managers.login import LoginFormManager
+
+
+def catalog_diagnostic(results: Any) -> dict[str, Any]:
+    """Return bounded fixed labels only; never copy Twitch response values."""
+    missing = object()
+
+    def shape(value: Any) -> str:
+        if value is missing:
+            return "missing"
+        if value is None:
+            return "null"
+        if isinstance(value, dict):
+            return "object"
+        if isinstance(value, list):
+            return "list"
+        return "other"
+
+    def field(value: Any, name: str) -> Any:
+        return value.get(name, missing) if isinstance(value, dict) else missing
+
+    summary: dict[str, Any] = {"response": shape(results)}
+    known = {"PersistedQueryNotFound": "persisted_query_not_found",
+             "failed integrity check": "integrity", "service error": "service"}
+    for index, name in enumerate(("Inventory", "Campaigns")):
+        row = results[index] if isinstance(results, list) and len(results) > index else missing
+        errors = field(row, "errors")
+        categories: set[str] = set()
+        if isinstance(errors, list):
+            for error in errors:
+                message = field(error, "message")
+                categories.add(known.get(message, "other") if isinstance(message, str) else "other")
+        elif errors is not missing and errors is not None:
+            categories.add("malformed")
+        user = field(field(row, "data"), "currentUser")
+        info: dict[str, Any] = {"errors": sorted(categories), "currentUser": shape(user)}
+        if index == 0:
+            inventory = field(user, "inventory")
+            info.update(inventory=shape(inventory),
+                        gameEventDrops=shape(field(inventory, "gameEventDrops")),
+                        dropCampaignsInProgress=shape(field(inventory, "dropCampaignsInProgress")))
+        else:
+            info["dropCampaigns"] = shape(field(user, "dropCampaigns"))
+        summary[name] = info
+    return summary
 
 
 class _TransientRequest(SessionError):
@@ -58,9 +103,10 @@ class SessionTransport:
                 if response.status != 200 and self.diagnostics is not None:
                     self.diagnostics.record_http(method, url, response.status, operations=body)
                 if 500 <= response.status < 600:
-                    raise _TransientRequest()
+                    raise _TransientRequest().annotate(reason="http_error", upstream_status=response.status)
                 if response.status != 200:
-                    raise SessionError("AUTH" if response.status in (401, 403) else "REQUEST")
+                    raise SessionError("AUTH" if response.status in (401, 403) else "REQUEST",
+                                       reason="http_error", upstream_status=response.status)
                 payload = await response.json()
                 if self.diagnostics is not None:
                     self.diagnostics.record_http(method, url, response.status, payload=payload, operations=body)
@@ -68,21 +114,25 @@ class SessionTransport:
         except aiohttp.ClientSSLError:
             if self.diagnostics is not None:
                 self.diagnostics.record(self.diagnostics.endpoint(url, method), outcome="tls")
-            raise SessionError("REQUEST") from None
+            raise SessionError("REQUEST", reason="tls") from None
         except (aiohttp.ClientConnectionError, aiohttp.ClientPayloadError, TimeoutError) as error:
             if self.diagnostics is not None:
                 self.diagnostics.record(self.diagnostics.endpoint(url, method),
                                         outcome="timeout" if isinstance(error, TimeoutError) else "connection")
-            raise _TransientRequest() from None
+            raise _TransientRequest().annotate(reason="timeout" if isinstance(error, TimeoutError) else "connection") from None
         except (aiohttp.ClientError, ValueError):
             if self.diagnostics is not None:
                 self.diagnostics.record(self.diagnostics.endpoint(url, method), outcome="decode")
-            raise SessionError("REQUEST") from None
+            raise SessionError("REQUEST", reason="invalid_json") from None
 
     async def validate(self, bundle: SessionBundle, expected_user_id: int | None) -> BrowserIdentity:
-        identity = await self.request("GET", BrowserSession.VALIDATE_URL, headers={
-            "Authorization": bundle.headers["authorization"], "User-Agent": bundle.user_agent,
-        })
+        try:
+            identity = await self.request("GET", BrowserSession.VALIDATE_URL, headers={
+                "Authorization": bundle.headers["authorization"], "User-Agent": bundle.user_agent,
+            })
+        except SessionError as error:
+            error.annotate(operation="identity")
+            raise
         try:
             if not isinstance(identity, dict) or identity.get("client_id") != ClientType.WEB.CLIENT_ID:
                 raise ValueError
@@ -93,17 +143,31 @@ class SessionTransport:
             if user_id <= 0:
                 raise ValueError
         except (KeyError, TypeError, ValueError):
-            raise SessionError("IDENTITY") from None
+            raise SessionError("IDENTITY", reason="identity_shape", operation="identity") from None
         if expected_user_id is not None and user_id != expected_user_id:
-            raise SessionError("ACCOUNT_MISMATCH")
-        results = await self.request(
-            "POST", BrowserSession.GQL_URL, headers=bundle.request_headers(),
-            body=[GQL_OPERATIONS["Inventory"], GQL_OPERATIONS["Campaigns"]],
-        )
+            raise SessionError("ACCOUNT_MISMATCH", reason="account_mismatch", operation="identity")
+        try:
+            results = await self.request(
+                "POST", BrowserSession.GQL_URL, headers=bundle.request_headers(),
+                body=[GQL_OPERATIONS["Inventory"], GQL_OPERATIONS["Campaigns"]],
+            )
+        except SessionError as error:
+            error.annotate(operation="catalog")
+            raise
         try:
             BrowserSession.campaign_count(results)
         except LoginException:
-            raise SessionError("CATALOG") from None
+            summary = catalog_diagnostic(results)
+            logging.getLogger(__name__).warning("Catalog validation rejected: %s", summary)
+            reason, operation = "catalog_shape", "catalog"
+            for name in ("Inventory", "Campaigns"):
+                errors = summary[name]["errors"]
+                if errors:
+                    operation = name
+                    reason = next((code for code in ("integrity", "persisted_query_not_found", "service")
+                                   if code in errors), "unknown")
+                    break
+            raise SessionError("CATALOG", reason=reason, operation=operation) from None
         return BrowserIdentity(
             user_id, bundle.token, bundle.headers.get("x-device-id") or bundle.headers["device-id"],
             bundle.user_agent,
@@ -224,7 +288,11 @@ class ImportedSession:
             "logged_out": self.logged_out,
         }
         state.update(changes)
-        self._file.write(state)
+        try:
+            self._file.write(state)
+        except SessionError as error:
+            error.annotate(stage="persistence")
+            raise
 
     async def logout(self) -> None:
         """Persist logout before clearing memory, preventing legacy-cookie restoration."""
