@@ -22,6 +22,9 @@ class RefusingInstance(BaseHTTPRequestHandler):
         return 403, {"detail": "session_helper_disabled"}
 
     def do_POST(self) -> None:
+        if self.headers.get("Authorization") is not None:
+            self.send_error(401)
+            return
         body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
         self.requests.append((self.path, self.headers.get("X-TDM-Request", ""), body))
         status, payload = self.reply()
@@ -50,6 +53,7 @@ class PackagedSmoke:
         self.executable = executable.resolve(strict=True)
 
     def run(self) -> None:
+        RefusingInstance.requests.clear()
         server = ThreadingHTTPServer(("127.0.0.1", 0), RefusingInstance)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
@@ -58,7 +62,8 @@ class PackagedSmoke:
                 environment = {**os.environ, "PATH": "", "PYTHONPATH": "", "PYTHONHOME": ""}
                 environment.pop("VIRTUAL_ENV", None)
                 options = {"cwd": directory, "env": environment, "capture_output": True,
-                           "text": True, "encoding": "utf-8", "timeout": 60, "check": False}
+                           "text": True, "encoding": "utf-8", "timeout": 60, "check": False,
+                           "stdin": subprocess.DEVNULL}
                 help_result = subprocess.run([str(self.executable), "--help"], **options)
                 assert help_result.returncode == 0, help_result.stderr
                 assert "--tdm" in help_result.stdout and "--output" not in help_result.stdout
@@ -70,7 +75,6 @@ class PackagedSmoke:
                     f"http://127.0.0.1:{server.server_port}", "--no-pause"], **options)
                 assert refused.returncode == 1, refused.stdout + refused.stderr
                 assert "SESSION_HELPER_DISABLED" in refused.stderr
-                assert "Allow helper connection" in refused.stderr
                 assert RefusingInstance.requests == [("/api/helper/connect", "1", b"{}")]
                 assert list(Path(directory).iterdir()) == [], "Helper retained local files"
         finally:
@@ -97,7 +101,7 @@ class PackagedSmoke:
                 environment.pop("VIRTUAL_ENV", None)
                 result = subprocess.run([str(self.executable), "--tdm",
                     f"http://127.0.0.1:{server.server_port}", "--" + choice, str(executable), "--no-pause"],
-                    cwd=directory, env=environment, capture_output=True, text=True,
+                    cwd=directory, env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True,
                     encoding="utf-8", timeout=90, check=False)
                 assert result.returncode == 1, result.stdout + result.stderr
                 # The manual phase must time out without activating browser automation.

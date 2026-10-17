@@ -10,10 +10,13 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections import abc
+from time import time
 from typing import TYPE_CHECKING
 
+import aiohttp
+
 from src.config import GQL_OPERATIONS, MAX_INT
-from src.exceptions import GQLException, MinerException
+from src.exceptions import ExitRequest, GQLException, MinerException
 from src.models.channel import Channel
 from src.utils import chunk
 
@@ -46,6 +49,36 @@ class ChannelService:
             twitch: The Twitch client instance
         """
         self._twitch = twitch
+        self._banned_channels: dict[int, Channel] = {}
+        self._ban_refresh: asyncio.TimerHandle | None = None
+
+    @property
+    def banned_channels(self) -> list[Channel]:
+        return [channel for channel in self._banned_channels.values() if channel.banned]
+
+    def clear_bans(self) -> None:
+        """Release account-owned ban state and its expiry callback."""
+        if self._ban_refresh is not None:
+            self._ban_refresh.cancel()
+            self._ban_refresh = None
+        self._banned_channels.clear()
+
+    def _schedule_ban_refresh(self) -> None:
+        if self._ban_refresh is not None:
+            self._ban_refresh.cancel()
+            self._ban_refresh = None
+        expiries = [channel.ban_expires_at for channel in self.banned_channels
+                    if channel.ban_expires_at is not None]
+        if expiries:
+            self._ban_refresh = asyncio.get_running_loop().call_later(
+                max(0, min(expiries) - time()), self._ban_expired,
+            )
+
+    def _ban_expired(self) -> None:
+        self._ban_refresh = None
+        # Queue discovery through the existing safe state-machine transition.
+        self._twitch.request_games_update()
+        self._schedule_ban_refresh()
 
     def get_priority(self, channel: Channel) -> int:
         """
@@ -131,6 +164,59 @@ class ChannelService:
                 if stream_channel_data["node"]["broadcaster"] is not None
             ]
         return []
+
+    async def filter_banned_channels(
+        self, channels: abc.Iterable[Channel], *, retained_channels: abc.Iterable[Channel] = (),
+    ) -> list[Channel]:
+        """Filter discovery candidates and synchronize retained same-account objects."""
+        channel_list = list(channels)
+        by_id: dict[str, list[Channel]] = {}
+        for channel in (*channel_list, *retained_channels, *self.banned_channels):
+            by_id.setdefault(str(channel.id), []).append(channel)
+        if not by_id:
+            return []
+        # Reload can retain watched/manual objects after clearing the tracked list.
+        # A failed refresh must not lose a previously confirmed same-account ban.
+        for instances in by_id.values():
+            if (known := next((channel for channel in instances if channel.banned), None)):
+                for channel in instances:
+                    channel.inherit_ban(known)
+        unique_channels = [instances[0] for instances in by_id.values()]
+        tasks = [
+            asyncio.create_task(asyncio.wait_for(
+                self._twitch.gql_request([channel.ban_gql for channel in batch]), timeout=10,
+            ))
+            for batch in chunk(unique_channels, 20)
+        ]
+        try:
+            for task in asyncio.as_completed(tasks):
+                try:
+                    response = await task
+                except ExitRequest:
+                    raise
+                except (MinerException, aiohttp.ClientError, TimeoutError,
+                        KeyError, TypeError, IndexError, ValueError):
+                    # GQL/JSON normalization can fail before malformed optional
+                    # responses reach us. Never expose their bodies or exceptions.
+                    continue
+                rows = response if isinstance(response, list) else [response]
+                for row in rows:
+                    if not isinstance(row, dict):
+                        continue
+                    data = row.get("data")
+                    user = data.get("user") if isinstance(data, dict) else None
+                    if isinstance(user, dict) and isinstance(user.get("id"), str):
+                        for channel in by_id.get(user["id"], ()):
+                            channel.update_ban_status(row)
+        finally:
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+        self._banned_channels = {
+            instances[0].id: instances[0] for instances in by_id.values() if instances[0].banned
+        }
+        self._schedule_ban_refresh()
+        return [channel for channel in channel_list if not channel.banned]
 
     async def bulk_check_online(self, channels: abc.Iterable[Channel]) -> None:
         """

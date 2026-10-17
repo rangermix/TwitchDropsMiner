@@ -144,7 +144,9 @@ async def test_firefox_capture_filters_load_preflight_and_other_context_and_reus
 async def test_firefox_fragment_normalization_preserves_exact_endpoint_allowlist(side, url):
     remote = BiDiPeer(request_fragment=True, response_fragment=True, **{f"catalog_{side}_url": url})
     with pytest.raises(SessionError, match="CAPTURE_TIMEOUT" if side == "request" else "BROWSER_PROTOCOL"):
-        await FirefoxExporter("http://127.0.0.1:9222", remote, clock=lambda: 1000, timeout=.02).capture_seed()
+        # This tests URL rejection, not a 20ms scheduling deadline. Allow the
+        # response forwarder to validate malformed URLs on busy Windows runners.
+        await FirefoxExporter("http://127.0.0.1:9222", remote, clock=lambda: 1000, timeout=1).capture_seed()
     assert remote.commands[-1] == ("browsingContext.close", {"context": "tab-default"})
     assert not any(method == "network.getData" and params["request"] == "catalog" for method, params in remote.commands)
 
@@ -158,6 +160,27 @@ async def test_firefox_rejects_unverified_capture_and_closes_only_owned_tab(faul
         await FirefoxExporter("http://127.0.0.1:9222", remote, clock=lambda: 1000, timeout=.02).capture_seed()
     assert remote.commands[-1] == ("browsingContext.close", {"context": "tab-default"})
     assert not any(method == "browser.close" for method, _ in remote.commands)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("url", [
+    "https://gql.twitch.tv/gql%23origin=twilight",
+    "https://foreign.invalid/#https://gql.twitch.tv/gql",
+])
+async def test_malformed_response_is_rejected_after_delayed_navigation(monkeypatch, url):
+    remote = BiDiPeer(catalog_response_url=url)
+    command = remote.command
+
+    async def delayed_command(method, params=None, **kwargs):
+        if method == "browsingContext.navigate":
+            await asyncio.sleep(.05)  # Exceeds the previous fragile 20ms deadline.
+        return await command(method, params, **kwargs)
+
+    monkeypatch.setattr(remote, "command", delayed_command)
+    with pytest.raises(SessionError, match="BROWSER_PROTOCOL"):
+        await FirefoxExporter("http://127.0.0.1:9222", remote, clock=lambda: 1000, timeout=1).capture_seed()
+    assert remote.commands[-1] == ("browsingContext.close", {"context": "tab-default"})
+    assert not any(method == "network.getData" and params["request"] == "catalog" for method, params in remote.commands)
 
 
 @pytest.mark.asyncio

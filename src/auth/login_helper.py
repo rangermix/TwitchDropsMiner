@@ -249,7 +249,7 @@ class NativeChrome:
             yield cls.external_environment()
         finally:
             if reset is not None:
-                reset(str(sys._MEIPASS))
+                reset(getattr(sys, "_MEIPASS", None))
 
     @staticmethod
     def available_port() -> int:
@@ -729,7 +729,8 @@ class BrowserSelection:
 class NativeLoginHelper:
     """Admission precedes the browser; success follows proof and local cleanup."""
 
-    def __init__(self, destination: str, *, browser_factory: Callable[..., Any] = BrowserSelection.create,
+    def __init__(self, destination: str, *,
+                 browser_factory: Callable[..., Any] = BrowserSelection.create,
                  exporter_factory: Callable[..., Any] | None = None,
                  clock: Callable[[], float] = time.time, report: Callable[[str], None] = lambda _key: None):
         self.destination = HelperDestination(destination)
@@ -765,7 +766,7 @@ class LoginHelperCLI:
         """Translate ordinary POSIX termination into owned-resource cleanup."""
         loop, task = asyncio.get_running_loop(), asyncio.current_task()
         assert task is not None
-        handlers = {}
+        handlers: dict[signal.Signals, Any] = {}
         if sys.platform != "win32":
             for sig in (signal.SIGTERM, signal.SIGHUP):
                 handlers[sig] = signal.getsignal(sig)
@@ -805,8 +806,9 @@ class LoginHelperCLI:
             parser.error(words["browser_conflict"])
         result = 0
         try:
-            destination = args.tdm or input(words["destination_prompt"]).strip()
-            helper = NativeLoginHelper(destination, browser_factory=lambda: BrowserSelection.create(
+            destination = HelperDestination(args.tdm or input(words["destination_prompt"]).strip()).url
+            helper = NativeLoginHelper(destination,
+                browser_factory=lambda: BrowserSelection.create(
                 args.browser, chrome=args.chrome, chromium=args.chromium, firefox=args.firefox),
                 report=lambda key: print(words[key], flush=True))  # type: ignore[literal-required]
             print(words["destination"].format(url=helper.destination.url), flush=True)

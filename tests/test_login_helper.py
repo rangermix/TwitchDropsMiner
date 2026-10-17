@@ -117,10 +117,38 @@ async def test_protocol_uses_only_selected_instance_and_keeps_tickets_out_of_rep
             assert await client.send(ticket, seed()) == 123
     assert [row[0] for row in requests] == ["/api/helper/connect", "/api/helper/session"]
     assert requests[0][2] == {}
+    assert "Authorization" not in requests[0][1]
     assert requests[1][2] == seed().to_dict()
     assert requests[1][1]["Authorization"] == f"Bearer {CONNECTION}"
     assert all(row[1]["X-TDM-Request"] == "1" for row in requests)
     assert all("Cookie" not in row[1] for row in requests)
+
+
+@pytest.mark.asyncio
+async def test_admission_redirect_never_connects_to_another_destination():
+    async with instance() as (other, other_requests):
+        async with instance(connect_status=307, headers={"Location": other + "/api/helper/connect"}) as (address, _requests):
+            async with login_helper.HelperHTTP(login_helper.HelperDestination(address)) as client:
+                with pytest.raises(SessionError, match="HELPER_REDIRECT"):
+                    await client.connect()
+        assert other_requests == []
+
+
+@pytest.mark.asyncio
+async def test_native_cli_connects_with_only_url_and_no_terminal_input(tmp_path):
+    async with instance(connect={"detail": "session_helper_disabled"}, connect_status=403) as (address, requests):
+        result = await asyncio.to_thread(subprocess.run,
+            [sys.executable, str(Path(__file__).resolve().parents[1] / "login_helper.py"),
+             "--tdm", address, "--no-pause"],
+            cwd=tmp_path, stdin=subprocess.DEVNULL, capture_output=True, text=True,
+            encoding="utf-8", timeout=15, check=False)
+    assert result.returncode == 1
+    assert "SESSION_HELPER_DISABLED" in result.stderr
+    assert len(requests) == 1
+    assert requests[0][0] == "/api/helper/connect"
+    assert requests[0][2] == {}
+    assert "Authorization" not in requests[0][1]
+    assert list(tmp_path.iterdir()) == []
 
 
 @pytest.mark.asyncio
@@ -201,15 +229,24 @@ class FakeBrowser:
 
 
 @pytest.mark.asyncio
-async def test_disabled_admission_does_not_launch_a_browser():
+@pytest.mark.parametrize("status,response,code", [
+    (403, {"detail": "session_helper_disabled"}, "HELPER_DISABLED"),
+    (401, {"detail": "session_helper_expired"}, "HELPER_EXPIRED"),
+    (429, {"detail": "session_busy"}, "HELPER_BUSY"),
+    (200, {"version": 1, "connection": "invalid", "expires_at": 1600}, "HELPER_RESPONSE"),
+])
+async def test_rejected_admission_does_not_launch_a_browser(status, response, code):
     browser = FakeBrowser()
+    factory = Mock(return_value=browser)
     output = []
-    async with instance(connect={"detail": "session_helper_disabled"}, connect_status=403) as (address, requests):
-        helper = login_helper.NativeLoginHelper(address, browser_factory=lambda: browser, clock=lambda: CLOCK, report=output.append)
-        with pytest.raises(SessionError, match="HELPER_DISABLED"):
+    async with instance(connect=response, connect_status=status) as (address, requests):
+        helper = login_helper.NativeLoginHelper(address, browser_factory=factory, clock=lambda: CLOCK, report=output.append)
+        with pytest.raises(SessionError, match=code):
             await helper.run()
+        factory.assert_not_called()
         assert not browser.entered
         assert len(requests) == 1
+        assert output == ["connecting"]
 
 
 @pytest.mark.asyncio
@@ -538,8 +575,8 @@ async def test_login_wait_failure_closes_browser_and_does_not_capture():
     assert len(requests) == 1
 
 
-def test_legacy_module_cli_no_longer_exposes_file_exports():
-    result = subprocess.run([sys.executable, "-m", "src.auth.session_helper", "--help"],
+def test_native_module_cli_does_not_expose_file_exports():
+    result = subprocess.run([sys.executable, "-m", "src.auth.login_helper", "--help"],
         cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, encoding="utf-8", check=False)
     assert result.returncode == 0
     assert "--tdm" in result.stdout

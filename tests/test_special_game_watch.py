@@ -122,6 +122,17 @@ def test_special_campaign_still_requires_live_channel(twitch, game):
 
 
 @pytest.mark.parametrize("game", [SPECIAL_EVENTS, IRL])
+def test_special_campaign_does_not_bypass_confirmed_account_ban(twitch, game):
+    _campaign(twitch, game)
+    channel = _channel(twitch, drops_enabled=False)
+    channel.update_ban_status({"data": {"user": {
+        "id": str(channel.id), "self": {"banStatus": {"isPermanent": True}},
+    }}})
+
+    assert not WatchService(twitch).can_watch(channel)
+
+
+@pytest.mark.parametrize("game", [SPECIAL_EVENTS, IRL])
 @pytest.mark.parametrize("ignore_channel_status", [False, True])
 def test_special_campaign_rejects_channel_outside_acl(twitch, game, ignore_channel_status):
     campaign = _campaign(twitch, game)

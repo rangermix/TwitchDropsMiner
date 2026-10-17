@@ -1,10 +1,11 @@
 # Using the dashboard
 
-After TDM restores your session or accepts a [helper login](authentication.md), wait
+After TDM restores your session or accepts a [browser login](authentication.md), wait
 for it to discover campaigns. Choose the games and rewards you want, then leave the
 miner running while it selects eligible channels and tracks progress.
 
-Your Twitch account must be linked to the relevant game account. Check the campaign
+Link the correct game account to receive in-game rewards. TDM skips campaigns
+reported as Not Linked by default, except for Twitch badge/emote campaigns. Check the campaign
 on [Twitch Drops](https://www.twitch.tv/drops/campaigns) for eligibility and linking
 instructions. Avoid watching Twitch manually with the same account while TDM runs;
 simultaneous viewing can disrupt progress.
@@ -64,8 +65,10 @@ eligible participant can take over.
 ## Inventory and the wanted queue
 
 Inventory's **Active**, **Upcoming**, and **Expired** filters include campaigns with
-any selected status. **Not Linked** narrows those results to campaigns whose account
-link is missing. Fully claimed campaigns stay hidden until **Finished** is selected.
+any selected status. **Account link → All / Linked / Not Linked** narrows those
+results using Twitch-reported link status. All adds no link restriction; Linked and
+Not Linked select their respective states. This display filter does not change mining
+eligibility or the account-link override. Fully claimed campaigns stay hidden until **Finished** is selected.
 Use the benefit filters and game search to narrow the display further.
 
 Zero-minute subscription rewards are omitted from Inventory and the Wanted Drops
@@ -73,6 +76,21 @@ Queue because they cannot be earned by watching. The queue also omits individual
 expired rewards and rewards the miner cannot target. Upcoming and sequential rewards
 can remain visible, so a queued reward is not necessarily earnable immediately.
 Successful claims refresh the queue.
+
+## Account-link override
+
+In Settings, **Allow mining campaigns reported as Not Linked** is off by default.
+Enable it to attempt mining when Twitch reports a campaign as unlinked. Disabling
+it restores the default account-link requirement. Changes are saved and refresh
+game selection. The override leaves Twitch-reported link badges and Inventory
+filters unchanged; all other campaign, drop, channel, priority, and ignore rules
+still apply.
+
+This option does not connect accounts or guarantee Twitch progress, claims, or
+in-game rewards. TDM can display estimated minutes even without confirmed Twitch
+progress. Check your [Twitch Drops inventory](https://www.twitch.tv/drops/inventory)
+and link the correct game account to receive rewards. Do not unlink accounts just
+to troubleshoot a reported status disagreement.
 
 ## Ignore unwanted reward names
 
@@ -115,3 +133,27 @@ returned by Twitch. If progress or eligibility still looks wrong, follow
 [Troubleshooting](troubleshooting.md).
 
 [All guides](README.md) · [Telegram notifications](notifications.md)
+
+## Mining hours
+
+Source builds provide **Settings → Mining Hours**. **All day (24/7)** is the default.
+Choose **Custom time range** and enter start and end times to watch only during that
+window each day. The start is included and the end is excluded. A range such as
+22:00–06:00 crosses midnight; equal start and end times mean all day.
+
+Times use the local timezone of the device running TDM, not the dashboard browser.
+For Docker, configure `TZ` to your home internet connection’s timezone, as described
+in the [installation guide](installation.md). Clock or daylight-saving changes are
+rechecked at least once per minute; normal start/end boundaries are scheduled directly.
+
+Outside the window, the status shows **Outside mining hours** and watching stops.
+The miner stays signed in. Reloads, cache clearing, and mining-policy recalculations
+wait until the next window, when TDM fetches fresh inventory and resumes selection.
+Changing the hours takes effect immediately after a successful save. Blank or invalid
+times are rejected; save failures keep the previous schedule and show an error.
+Malformed saved schedules are rejected at startup rather than silently mining all day.
+
+This setting pauses watching, not Twitch reward claims: already earned rewards can
+still be claimed through existing notifications or work already underway. It does
+not guarantee Twitch-side progress. A versioned release is required before deploying
+these frontend changes to an existing installation.

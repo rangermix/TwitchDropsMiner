@@ -1,233 +1,155 @@
 # Twitch login
 
-New Twitch logins use the local TDM login helper. It opens Chrome, Chromium or Firefox on your
-desktop, lets you sign into Twitch, and sends the session directly to your chosen TDM
-instance. TDM saves and renews it automatically. Your desktop can be shut down after
-the helper confirms success; the miner itself must remain running.
-
-## Headless home server or NAS
-
-**Headless home servers are supported.** Run the miner and login helper on the
-machines below:
-
-| Machine | What runs there |
-| --- | --- |
-| Your home server or NAS | TDM mines drops and renews the session with temporary headless Chromium. No desktop or display is needed; the official Docker image includes Chromium. |
-| Your desktop or laptop | The login helper opens installed Chrome, Chromium or Firefox for you to sign in, then sends the session to the server's TDM address. |
-
-Choose the helper archive for your **desktop's operating system and CPU**, even if
-the server uses a different platform. For example, use the Windows helper on your
-Windows PC when TDM runs in Docker on a Linux NAS.
-
-The helper finds and launches the browser on the computer where you run it. `--tdm`
-selects the destination miner; it does not move the browser to that server. Use a local
-terminal on your desktop: commands entered in an SSH session to the server run on
-the server instead.
-
-## Existing installations
-
-Keep your existing data directory, including `cookies.jar`, when upgrading.
-
-- **Working Android session:** TDM restores it automatically; no fresh login is needed.
-- **Smart TV session from v1.3.1/v1.3.2, expired session, or signed out:** update TDM and
-  use a matching login helper.
-- **Older manually imported session:** use the helper when TDM asks for a new login
-  to enable automatic renewal.
-
-Manual JSON upload, device-code login, and the old exported session and pairing files
-are no longer used for fresh login. An accepted helper login takes precedence over
-preserved Android credentials, including after restart.
-
-## Download the helper
-
-Check your TDM version in the dashboard. For TDM 2.0.0 and later, choose the matching
-native helper archive under **Assets** on its
-[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases).
-
-| Your desktop | Archive suffix |
-| --- | --- |
-| Windows x64 | `windows-x64.tar.gz` |
-| macOS, Apple Silicon | `macos-arm64.tar.gz` |
-| macOS, Intel | `macos-x64.tar.gz` |
-| Linux x64, glibc (built on Ubuntu 22.04) | `linux-x64.tar.gz` |
-
-Extract `tdm-login-helper-<version>-<platform>.tar.gz`. The archive contains the
-executable and its license. The release's `SHA256SUMS` file lists checksums for the
-archives. Chrome, Chromium or Firefox 143+ must be installed on this desktop; the packaged helper does
-not require Python. The native binaries are unsigned.
-
-See [browser selection](#choose-a-browser) for supported installations and version guidance.
-
-The v1.x releases do not provide this helper flow. For an unreleased source
-installation, use the helper from the same source
-revision. You can download the `tdm-login-helper-release` artifact from that revision's
-successful [validation run](https://github.com/rangermix/TwitchDropsMiner/actions/workflows/validation.yml),
-unzip the artifact, and extract your platform's archive. Alternatively,
-[run the source helper](#run-the-helper-from-source). Do not use a new helper with an
-older TDM version that lacks the helper flow.
+TDM shows an interactive Chromium browser inside its dashboard by default when no valid
+Twitch session is available. It runs in the miner’s Docker container. An optional
+[desktop helper](#desktop-helper-fallback) lets you sign in on your own computer if
+Twitch rejects the embedded browser. Both paths use the dashboard port and the same
+server-side session verification and automatic renewal.
 
 ## Sign in
 
-1. Open your TDM dashboard. In **Settings**, enable **Allow helper connection**.
-   It is enabled by default on a new instance.
-2. On your desktop or laptop, run the extracted `tdm-login-helper`, or
-   `tdm-login-helper.exe` on Windows. Run it in your local desktop session, outside
-   the server's SSH session and TDM container.
-3. Enter the TDM address shown on the dashboard's **Main** tab, such as
-   `http://192.168.1.10:8080`. Use an address reachable from this desktop;
-   `localhost` works only when TDM runs on the same computer.
-4. Sign into Twitch in the browser window opened by the helper and complete any
-   Twitch verification there. Close all windows of that helper-opened browser
-   instance after login (on macOS, quit that instance from the browser menu).
-   Keep the helper open; the browser will reopen for verification. Wait for success.
+1. Open the TDM dashboard. If dashboard password protection is enabled, unlock it first.
+2. Sign in to Twitch in the browser shown there and complete email verification or
+   two-factor authentication as requested by Twitch.
+3. After Twitch confirms you are signed in, select **Finish sign in**. Closing the
+   Chromium window with its X button also finishes the interactive step.
+4. Wait while TDM verifies the account, campaign access and renewable session. The
+   normal dashboard appears automatically after verification and browser cleanup.
 
-You can also supply the address when starting the helper. From the folder containing
-the extracted executable, run this in **PowerShell on your Windows desktop**:
+An attempt lasts up to 15 minutes. **Retry** starts a new browser after failure, or
+reconnects a closed viewer. Do not close the browser before Twitch verification is done.
+Sessions and integrity proofs are checked locally against Twitch before acceptance.
 
-```powershell
-.\tdm-login-helper.exe --tdm http://192.168.1.10:8080
-```
+## Docker and timezone
 
-Or in a **local terminal on your macOS or Linux desktop**:
+Use the published `rangermix/twitch-drops-miner:2.1.1` image or build the current source.
+The image includes Chromium, Xvfb, a window manager and noVNC. It does not need a
+display on the home server or NAS. Only the dashboard port is published; VNC and
+browser control remain on container loopback addresses.
+
+Set `TZ` to match the timezone of your home internet connection, for example
+`TZ=Australia/Sydney`. A mismatched timezone can cause Twitch to reject the browser.
+Keep the host clock correct. If the miner uses a proxy, the interactive browser uses
+the container’s network; use consistent network routing for login and mining.
+
+## Desktop helper fallback
+
+The optional desktop helper is available in v2.1.1. It opens a temporary browser on
+your computer for Twitch sign-in, then sends the verified session to your miner.
+The embedded browser remains the default, and TDM still verifies the account and
+renewal on the miner server. Twitch can reject either browser; this fallback does
+not guarantee successful sign-in.
+
+Download the helper matching your **miner version** from the sign-in screen or its
+[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.1.1).
+Choose the platform of the computer where you will run the helper, which may differ
+from your miner server:
+
+| Computer | v2.1.1 archive |
+| --- | --- |
+| Windows x64 | `tdm-login-helper-2.1.1-windows-x64.tar.gz` |
+| Linux x64 | `tdm-login-helper-2.1.1-linux-x64.tar.gz` |
+| macOS Apple silicon (arm64) | `tdm-login-helper-2.1.1-macos-arm64.tar.gz` |
+| macOS Intel (x64) | `tdm-login-helper-2.1.1-macos-x64.tar.gz` |
+
+Extract the archive to a folder before running it. Install a native Chrome, Chromium,
+or Firefox 143+ browser on that computer; the helper does not include a browser.
+
+1. On the sign-in screen, choose **Use desktop helper**. This closes the embedded
+   browser and opens a ten-minute window for one desktop helper to connect.
+2. Within ten minutes, run `tdm-login-helper.exe` on Windows or `./tdm-login-helper`
+   from the extracted folder in a Linux/macOS terminal. Enter the dashboard address
+   shown by TDM, such as `http://192.168.1.10:8080`. The helper asks only for this URL;
+   there is no pairing code or dashboard-password prompt. `localhost` works only
+   when the helper and miner run on the same computer.
+3. Complete Twitch sign-in and verification in the helper-opened browser. Close all
+   windows of that browser instance normally after Twitch confirms the login; on
+   macOS, quit that instance. Keep the helper running while it reopens its temporary
+   profile, verifies the session, and sends it directly to the selected miner.
+4. Wait for the helper's success message and the normal dashboard. The helper and
+   desktop computer are no longer needed for automatic renewal.
+
+Only enable helper access when you are ready to connect from a trusted home network.
+The first helper that reaches the miner during that window is admitted; later
+connections are rejected. The connection expires after ten minutes and is revoked
+by cancellation, logout, or restarting TDM. **Return to embedded browser** revokes
+desktop access. If the helper fails before completing login, return to the embedded
+browser and select **Use desktop helper** again to open a new window.
+If the helper cannot determine whether its upload succeeded, check
+the dashboard before starting over; it does not repeat a credential upload automatically.
+
+For a source checkout, activate the project environment and run:
 
 ```bash
-./tdm-login-helper --tdm http://192.168.1.10:8080
+python login_helper.py --tdm http://192.168.1.10:8080
 ```
 
-Replace the example address with the same TDM root URL you can open from that
-desktop, including any custom port. The browser login window opens on that desktop.
+The helper connects using the dashboard address. `--browser chrome`,
+`--browser chromium`, or `--browser firefox` selects a browser; automatic selection
+tries them in that order. `--chrome`, `--chromium`, and `--firefox` accept an installed
+native executable path. Flatpak and Snap browser launchers are not supported. The source
+environment setup is in [CONTRIBUTING.md](../CONTRIBUTING.md#development-setup).
 
-The helper sends the session automatically; you do not export or upload a file.
-After successful acceptance, TDM saves the session and turns **Allow helper connection**
-off. The helper closes its browser window and deletes its temporary profile. It does
-not change your everyday browser profile.
+The release's `SHA256SUMS` file lists checksums for all four helper archives. Use the
+same dashboard address you normally trust, on your home network or over HTTPS with
+a valid certificate. Your everyday browser profiles are untouched; temporary helper
+profiles are removed when the helper finishes. Keep any profile left after a crash
+private, and never copy cookies or authentication files into the dashboard.
 
-If the helper reports that the result is unknown after a connection problem, check
-TDM's login status before trying again. A successful response may have been lost on
-the network. Reopen helper access only if another login is needed.
+## Existing installations
 
-## Choose a browser
+Keep the same private `data` directory across updates. Valid saved Android logins and
+accepted browser sessions are reused. The existing `imported-session.json` formats
+are read automatically; an accepted session or logout is saved in the new format.
+Expired or rejected credentials show the integrated sign in browser.
+Smart TV logins from v1.3.1/v1.3.2 require a new login.
 
-Chromium/Firefox selection, the shared close-and-reopen flow, and expanded error
-explanations require a helper built
-from this source revision or a later release containing these changes. The v2.0.0
-and v2.0.1 helper binaries support Chrome only. Updating the miner alone does not
-update a downloaded helper. For unreleased changes, follow the matching source or
-validation-artifact instructions above.
+Older imported sessions without renewal state remain usable until a new login is
+required. Sign in again to enable automatic renewal. Never delete the whole data
+directory to recover authentication.
 
-The default `--browser auto` looks for **Chrome → Chromium → Firefox**, using the
-first installed browser. It does not switch browsers after a launch or login failure.
-To select Firefox explicitly:
+## Log out and change account
 
-```powershell
-.\tdm-login-helper.exe --tdm http://192.168.1.10:8080 --browser firefox
-```
-
-On macOS or Linux use `./tdm-login-helper` instead. From source, use
-`python login_helper.py` with the same options. `--browser chrome` explicitly selects
-Chrome; `--browser chromium` selects Chromium. `--chrome /path/to/chrome`,
-`--chromium /path/to/chromium` or `--firefox /path/to/firefox` selects that browser
-and its local executable; explicit selections never fall back to another browser.
-Do not combine contradictory options.
-
-Firefox 143 or newer is required for network-response capture. Use a native installation
-on Windows, macOS or Linux. Discovery checks the usual application folders on Windows
-and macOS, and `google-chrome`, `google-chrome-stable`, `chromium`, `chromium-browser`,
-`firefox` and `firefox-esr` on Linux `PATH`. ESR must also meet the minimum version. Flatpak and Snap launchers are
-not supported; executable options do not accept shell commands such as `flatpak run`.
-Browser updates or Twitch changes can still affect authentication; changing browsers
-is not a guaranteed fix for Twitch validation failures.
-
-All three browsers use a separate temporary profile. The miner still uses its own headless
-Chromium for renewal, regardless of which desktop browser you choose.
-Sign-in runs without browser automation enabled. After you finish signing in
-and quit that helper-opened browser instance, the helper reopens its own temporary
-profile to verify and transfer the saved session. Leave the reopened window alone
-until the helper finishes. Closing the browser before login and any verification steps
-are complete does not establish a session. Do not close your everyday browser instance.
-For error meanings and known recovery steps, see the
-[helper error reference](troubleshooting.md#helper-error-code-reference).
-
-### Why a separate browser profile?
-
-The helper reads the temporary profile in which you just signed in. It does not read
-your everyday browser profile. Keeping its own profile lets it close and
-clean up its browser without touching your other tabs, saved passwords, or browsing data.
-An already-running browser also cannot simply be reopened under the helper's control
-using the same locked profile.
-
-A Twitch login cookie alone is not the complete renewable session sent to TDM.
-The helper also captures the matching browser/device context and fresh Twitch integrity
-proof, and verifies an accepted authenticated campaign response. TDM validates the
-account before accepting the session. A signed-in page can therefore
-appear before verification finishes. Existing-profile import is not currently supported.
-
-## Allow helper connection and account replacement
-
-Turn **Allow helper connection** on when you need to log in again or replace the
-account, then repeat the same steps. Turning it off blocks new connections and
-invalidates outstanding helper connections. It does not stop automatic renewal.
-
-The setting controls helper access independently of the optional dashboard password.
-Anyone who can reach the helper endpoints while it is enabled can attempt to install
-or replace the Twitch account. Enable it only when you intend to connect a helper.
-A helper connection cannot reveal existing credentials or unlock a protected dashboard.
-Use the configured HTTPS address when connecting across an untrusted network; see
-[Dashboard access](dashboard-access.md#reverse-proxy-and-https).
+At the bottom of **Settings**, select **Log out of Twitch** and confirm. TDM drains
+authenticated work, clears its saved session and legacy cookies, and opens a fresh
+Twitch sign in page. Games, drop history and other settings are preserved.
+This logs out this miner; it does not sign you out of your everyday Twitch browser.
+Logout persists across restarts, including when deleting an old cookie file fails.
+If logout reports a storage error, check the current session before retrying.
 
 ## Automatic renewal
 
-TDM normally renews the session about five minutes before the current authentication
-context expires. It uses saved state on the miner host and never needs to contact the
-original helper desktop. The current Docker build includes Chromium for this work;
-[source installations](installation.md#run-from-source) need it on the miner host's
-`PATH`.
+The miner renews the accepted context using a separate temporary headless Chromium
+browser and validates the same account before saving. Mining requests remain in
+Python; the interactive browser does not remain running after login.
+Transient failures are retried. Expired or revoked access may require a new sign in,
+which appears automatically when TDM can no longer use the saved session.
 
-Temporary renewal failures are retried automatically. Follow the dashboard's status:
-when it says a new helper login is required, enable helper access and sign in again.
-Twitch may revoke a session, or a long outage may outlast the credentials available
-for renewal. Twitch controls these lifetimes, so a successful login does not guarantee
-permanent access.
+The session and renewal state in `data/imported-session.json` are credentials. Keep
+the data mount private and back it up only while the miner is stopped. Run one miner
+per data directory. Graceful shutdown closes owned browser processes and removes
+their temporary profiles; an abrupt host crash cannot guarantee profile cleanup.
 
-Accepted helper credentials and renewal state are saved in
-`data/imported-session.json`. Preserve the data directory across restarts and container
-replacement. Keep it private, do not edit the credential file, and never attach it to
-an issue. Restarting with the saved data restores renewal even with helper access off.
+## Dashboard access and source installations
 
-The miner opens a temporary headless Chromium only when needed and closes it afterwards.
-No browser-control port needs to be exposed. Use the supplied Docker init and shutdown
-settings so cleanup can finish. Normal helper completion, errors, and graceful cancellation
-also remove its desktop profile; a forced kill or operating-system crash can prevent
-that cleanup.
+Expand **Dashboard password** on the sign in screen to configure protection before
+entering Twitch credentials. The same controls remain in Settings after sign in.
 
-## Run the helper from source
+The viewer and login actions use the dashboard’s access controls, including optional
+password protection, same-origin checks and session expiry. Protect access to the
+dashboard on shared networks. A reverse proxy must support WebSocket upgrades for
+`/api/session/vnc` as well as Socket.IO. See [Dashboard access](dashboard-access.md).
 
-Use the same source revision as TDM on your desktop, with Python 3.12 or newer,
-[uv](https://docs.astral.sh/uv/), and Chrome, Chromium or Firefox 143+ installed. These commands run
-only the login helper; the miner can be on another computer. Run them in a local
-terminal on your desktop, from the repository root. Create `env/` only on the first
-setup.
+Docker is recommended for new login. The container runs the interactive desktop as
+a separate unprivileged user, protects the miner’s data and logs with private directory
+permissions, and omits miner secrets from browser environment variables. If a bind
+mount cannot enforce private permissions, login fails with `BROWSER_ISOLATION`; use
+a Linux filesystem or a Docker named volume for data/logs.
 
-On Linux or macOS:
+A source installation using the embedded browser additionally needs Linux, a root miner process with a separate
+`tdm-browser` system user, `chromium`, `Xvfb`, `openbox`, `x11vnc` and `xdotool`, noVNC
+at `/usr/share/novnc`, and timezone data. The desktop helper is an alternative for
+interactive sign-in, but the miner host still needs Chromium for server-side
+verification and renewal. See [source installation](installation.md#run-from-source).
 
-```bash
-uv venv env --python 3.12
-source env/bin/activate
-uv sync --active --locked --python 3.12
-python login_helper.py --tdm http://192.168.1.10:8080
-```
-
-On Windows PowerShell:
-
-```powershell
-uv venv env --python 3.12
-. .\env\Scripts\Activate.ps1
-uv sync --active --locked --python 3.12
-python login_helper.py --tdm http://192.168.1.10:8080
-```
-
-Replace the example with your instance's root URL. `--browser` selects the browser;
-`--chrome`, `--chromium` and `--firefox` select local executables, and `--language` selects a translation.
-Without `--tdm`, the helper asks for the address interactively.
-
-[All guides](README.md) · [Next: Using the dashboard](usage.md)
+[All guides](README.md) · [Next: Games and drops](usage.md)

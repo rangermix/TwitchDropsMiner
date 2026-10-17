@@ -8,10 +8,11 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from src.config.settings import default_settings
+from src.config.settings import InventoryFilterSettings, MiningHoursSettings
 from src.i18n.translator import _
 from src.models.game import Game
-from src.utils import DropIgnorePolicy, merge_json
+from src.services.discord_service import DiscordNotifier
+from src.utils import DropIgnorePolicy
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -19,6 +20,14 @@ logger = logging.getLogger("TwitchDrops")
 # Value returned to web clients in place of the stored Telegram bot token.
 # Never echo the real credential through the unauthenticated web API/socket.
 TELEGRAM_TOKEN_MASK = "••••••••"
+DISCORD_WEBHOOK_MASK = "••••••••"
+
+
+def _format_mining_hours(value: Any) -> str:
+    """Return a console-friendly summary that hides times outside range mode."""
+    if isinstance(value, dict) and value.get("mode") == "range":
+        return f"{value.get('start')}-{value.get('end')}"
+    return "always"
 
 
 if TYPE_CHECKING:
@@ -40,13 +49,11 @@ class SettingsManager:
         settings: Settings,
         console: ConsoleOutputManager,
         on_change: Callable[[], None] | None = None,
-        on_helper_change: Callable[[bool], None] | None = None,
     ):
         self._broadcaster = broadcaster
         self._settings = settings
         self._console = console
         self._on_change = on_change
-        self._on_helper_change = on_helper_change
         self._available_games: list[str] = []
 
     def get_settings(self, legacy_show_not_linked: bool | None = None) -> dict[str, Any]:
@@ -55,7 +62,7 @@ class SettingsManager:
         Args:
             legacy_show_not_linked: Request-scoped value echoed only in the
                 immediate settings POST response for a legacy frontend. It is
-                never persisted, mapped to ``show_only_not_linked``, or returned
+                never persisted, mapped to ``link_status``, or returned
                 by a later GET/page reload.
 
         Returns:
@@ -63,6 +70,9 @@ class SettingsManager:
         """
         settings = vars(self._settings).copy()
         settings["games_available"] = self._available_games
+        configured_webhook = bool(settings.get("discord_webhook_url"))
+        settings["discord_configured"] = configured_webhook
+        settings["discord_webhook_url"] = DISCORD_WEBHOOK_MASK if configured_webhook else ""
         # Never expose the real Telegram bot token to web clients. The token
         # stays server-side; clients only see a configured flag and a mask.
         configured_token = bool(settings.get("telegram_bot_token"))
@@ -97,14 +107,31 @@ class SettingsManager:
         Args:
             settings_data: Dictionary of settings to update
         """
+        previous_hours: dict[str, str] = getattr(self._settings, "mining_hours", {})
+        requested_hours = settings_data.get("mining_hours")
+        if requested_hours is not None:
+            requested_hours = MiningHoursSettings.normalize(requested_hours)
+        previous_webhook = getattr(self._settings, "discord_webhook_url", "")
+        new_webhook = previous_webhook
+        if settings_data.get("discord_remove_webhook") is True:
+            new_webhook = ""
+        elif "discord_webhook_url" in settings_data:
+            requested_webhook = settings_data.get("discord_webhook_url")
+            if requested_webhook is not None and not isinstance(requested_webhook, str):
+                raise ValueError("invalid_discord_webhook")
+            requested_webhook = (requested_webhook or "").strip()
+            if requested_webhook and requested_webhook != DISCORD_WEBHOOK_MASK:
+                if not DiscordNotifier.is_valid_webhook(requested_webhook):
+                    raise ValueError("invalid_discord_webhook")
+                new_webhook = requested_webhook
+
         should_trigger_update = False
-        if "allow_helper_connection" in settings_data:
-            allowed = settings_data["allow_helper_connection"]
-            if type(allowed) is not bool:
-                raise ValueError("Invalid helper permission")
-            if self._on_helper_change is None:
-                raise ValueError("Helper permission unavailable")
-            self._on_helper_change(allowed)
+        previous_allow_unlinked = getattr(self._settings, "allow_unlinked_campaigns", False)
+        requested_allow_unlinked = settings_data.get("allow_unlinked_campaigns")
+        override_changed = (
+            isinstance(requested_allow_unlinked, bool)
+            and requested_allow_unlinked != previous_allow_unlinked
+        )
         should_trigger_update |= self.check_and_update_setting(
             "games_to_watch", settings_data.get("games_to_watch"), True
         )
@@ -161,8 +188,31 @@ class SettingsManager:
         should_trigger_update |= self.check_and_update_setting(
             "mining_benefits", settings_data.get("mining_benefits"), True
         )
+        should_trigger_update |= self.check_and_update_setting(
+            "mining_hours",
+            requested_hours,
+            True,
+            log_formatter=_format_mining_hours,
+        )
 
-        self._settings.save()
+        if override_changed and isinstance(requested_allow_unlinked, bool):
+            self._settings.allow_unlinked_campaigns = requested_allow_unlinked
+        self._settings.discord_webhook_url = new_webhook
+        try:
+            self._settings.save()
+        except Exception:
+            # A rejected save must not silently enable or disable live mining.
+            self._settings.discord_webhook_url = previous_webhook
+            self._settings.allow_unlinked_campaigns = previous_allow_unlinked
+            self._settings.mining_hours = previous_hours
+            raise
+        if new_webhook != previous_webhook:
+            self._log_change(f"Setting changed: discord_webhook_url = {DISCORD_WEBHOOK_MASK}")
+        if override_changed:
+            self._log_change(
+                f"Setting changed: allow_unlinked_campaigns = {requested_allow_unlinked}"
+            )
+            should_trigger_update = True
         response_settings = self.get_settings(legacy_show_not_linked)
         asyncio.create_task(self._broadcaster.emit("settings_updated", response_settings))
 
@@ -173,14 +223,7 @@ class SettingsManager:
 
     def _normalize_inventory_filters(self, updates: dict[str, Any]) -> dict[str, Any]:
         """Merge partial filter updates and discard legacy or unknown keys."""
-        current: dict[str, Any] = copy.deepcopy(dict(self._settings.inventory_filters))
-        current.pop("show_not_linked", None)
-        current.update(updates)
-        current.pop("show_not_linked", None)
-        template = default_settings["inventory_filters"]
-        assert isinstance(template, dict)
-        merge_json(current, template)
-        return current
+        return dict(InventoryFilterSettings.normalize(updates, self._settings.inventory_filters))
 
     def check_and_update_setting(
         self,
@@ -188,11 +231,14 @@ class SettingsManager:
         new_value: Any,
         should_trigger_update: bool = False,
         action: Callable[[Any], None] = lambda x: None,
+        log_formatter: Callable[[Any], str] | None = None,
     ):
         if new_value is None or getattr(self._settings, key, None) == new_value:
             return False
         setattr(self._settings, key, new_value)
-        log_value = TELEGRAM_TOKEN_MASK if key == "telegram_bot_token" else new_value
+        log_value = TELEGRAM_TOKEN_MASK if key in {"telegram_bot_token", "discord_webhook_url"} else (
+            log_formatter(new_value) if log_formatter else new_value
+        )
         self._log_change(f"Setting changed: {key} = {log_value}")
         action(new_value)
         return should_trigger_update

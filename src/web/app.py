@@ -14,11 +14,14 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, StrictBool
+from pydantic import BaseModel, StrictBool, field_validator
 
 from src.config.paths import DATA_DIR
+from src.config.settings import InventoryFilterSettings, MiningHoursSettings
 from src.version import __version__
 from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
+from src.web.diagnostics_api import DiagnosticsAPI
+from src.web.helper_api import HelperAPI
 from src.web.session_api import SessionAPI
 
 
@@ -44,7 +47,7 @@ socket_app = AuthMiddleware(socketio.ASGIApp(sio, app), web_auth)
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(request, exc):
-    if request.url.path.startswith("/api/auth/"):
+    if request.url.path.startswith(("/api/auth/", "/api/diagnostics", "/api/settings")):
         return JSONResponse({"detail": "invalid_request"}, status_code=422)
     return await request_validation_exception_handler(request, exc)
 
@@ -54,6 +57,8 @@ twitch_client: Twitch | None = None
 _server_instance: uvicorn.Server | None = None
 
 app.include_router(SessionAPI(web_auth, lambda: twitch_client).router)
+app.include_router(HelperAPI(web_auth, lambda: twitch_client).router)
+app.include_router(DiagnosticsAPI(lambda: twitch_client).router)
 
 
 def set_managers(gui: WebGUIManager, twitch: Twitch):
@@ -70,7 +75,7 @@ class ChannelSelectRequest(BaseModel):
 
 
 class SettingsUpdate(BaseModel):
-    allow_helper_connection: StrictBool | None = None
+    allow_unlinked_campaigns: StrictBool | None = None
     games_to_watch: list[str] | None = None
     drop_name_blacklist: list[str] | None = None
     dark_mode: bool | None = None
@@ -78,15 +83,38 @@ class SettingsUpdate(BaseModel):
     proxy: str | None = None
     connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
+    discord_webhook_url: str | None = None
+    discord_remove_webhook: StrictBool | None = None
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None
     inventory_filters: dict | None = None
     inventory_list_view: bool | None = None
     mining_benefits: dict[str, bool] | None = None
+    mining_hours: dict | None = None
+
+    @field_validator("mining_hours")
+    @classmethod
+    def validate_mining_hours(cls, value: dict | None) -> dict | None:
+        return MiningHoursSettings.normalize(value) if value is not None else None
+
+    @field_validator("inventory_filters")
+    @classmethod
+    def validate_link_status(cls, value: dict | None) -> dict | None:
+        if (
+            value is not None
+            and "link_status" in value
+            and value["link_status"] not in InventoryFilterSettings.LINK_STATUSES
+        ):
+            raise ValueError("Invalid account-link filter")
+        return value
 
 
 class ProxyVerifyRequest(BaseModel):
     proxy: str
+
+
+class DiscordTestRequest(BaseModel):
+    discord_webhook_url: str = ""
 
 
 class TelegramTestRequest(BaseModel):
@@ -218,7 +246,12 @@ async def update_settings(settings: SettingsUpdate):
         raise HTTPException(status_code=503, detail="GUI not initialized")
 
     settings_dict = settings.model_dump(exclude_unset=True)
-    updated_settings = gui_manager.settings.update_settings(settings_dict)
+    try:
+        updated_settings = gui_manager.settings.update_settings(settings_dict)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="invalid_settings") from None
+    except Exception:
+        raise HTTPException(status_code=500, detail="settings_save_failed") from None
     return {"success": True, "settings": updated_settings}
 
 
@@ -240,6 +273,8 @@ async def verify_proxy(request: ProxyVerifyRequest):
             aiohttp.ClientSession() as session,
             session.get("https://www.twitch.tv", proxy=proxy_url, timeout=10) as response,
         ):
+            if twitch_client is not None:
+                twitch_client.diagnostics.record_http("GET", "https://www.twitch.tv", response.status)
             # Just checking if we can connect and get a response
             if response.status < 500:
                 latency = round((time.time() - start_time) * 1000)
@@ -254,7 +289,31 @@ async def verify_proxy(request: ProxyVerifyRequest):
                     "message": f"Proxy reachable but returned {response.status}",
                 }
     except Exception as e:
+        if twitch_client is not None:
+            twitch_client.diagnostics.record("twitch_page", outcome="timeout" if isinstance(e, TimeoutError) else "connection")
         return {"success": False, "message": f"Connection failed: {str(e)}"}
+
+
+@app.post("/api/settings/test-discord")
+async def test_discord(request: DiscordTestRequest):
+    """Test a supplied or saved webhook without persisting or exposing its token."""
+    from src.services.discord_service import DiscordNotifier
+    from src.web.managers.settings import DISCORD_WEBHOOK_MASK
+
+    if gui_manager is None:
+        raise HTTPException(status_code=503, detail="not_initialized")
+    webhook_url = request.discord_webhook_url.strip()
+    if not webhook_url or webhook_url == DISCORD_WEBHOOK_MASK:
+        webhook_url = gui_manager.settings._settings.discord_webhook_url
+    if not DiscordNotifier.is_valid_webhook(webhook_url):
+        return {"success": False, "error": "invalid_discord_webhook"}
+    try:
+        result = await DiscordNotifier(
+            webhook_url, diagnostics=getattr(twitch_client, "diagnostics", None)
+        ).test_connection()
+        return {"success": result}
+    except Exception:
+        return {"success": False, "error": "discord_connection_failed"}
 
 
 @app.post("/api/settings/test-telegram")
@@ -286,7 +345,7 @@ async def test_telegram(request: TelegramTestRequest):
         return {"success": False, "message": "Bot token and chat ID are required"}
 
     try:
-        notifier = TelegramNotifier(bot_token, chat_id)
+        notifier = TelegramNotifier(bot_token, chat_id, diagnostics=getattr(twitch_client, "diagnostics", None))
         result = await notifier.test_connection()
 
         if result:
@@ -326,13 +385,24 @@ async def get_version():
         ):
             if response.status == 200:
                 data = await response.json()
+                if twitch_client is not None:
+                    twitch_client.diagnostics.record_http(
+                        "GET", "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest",
+                        response.status, payload=data,
+                    )
                 latest_version = data.get("tag_name", "").lstrip("v")
                 download_url = data.get("html_url")
 
                 # Compare versions (simple string comparison works for semantic versioning)
                 if latest_version and latest_version > current_version:
                     update_available = True
+            elif twitch_client is not None:
+                twitch_client.diagnostics.record_http(
+                    "GET", "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest", response.status,
+                )
     except Exception as e:
+        if twitch_client is not None:
+            twitch_client.diagnostics.record("github_version", outcome="timeout" if isinstance(e, TimeoutError) else "connection")
         logger.warning(f"Failed to check for updates: {str(e)}")
 
     return {
@@ -526,6 +596,9 @@ async def get_wanted_items(sid):
 # Mount static files (CSS, JS, images)
 # Web files are in project_root/web/, we're in project_root/src/web/
 web_dir = Path(__file__).parent.parent.parent / "web"
+novnc_dir = Path("/usr/share/novnc")
+if novnc_dir.exists():
+    app.mount("/static/novnc", StaticFiles(directory=novnc_dir), name="novnc")
 if web_dir.exists():
     static_dir = web_dir / "static"
     if static_dir.exists():

@@ -315,15 +315,28 @@ class Websocket:
             raw_message: aiohttp.WSMessage = await ws.receive(timeout=timeout)
             ws_logger.debug(f"Websocket[{self._idx}] received: {raw_message}")
             if raw_message.type is WSMsgType.TEXT:
-                message: JsonType = json.loads(raw_message.data)
+                try:
+                    message: JsonType = json.loads(raw_message.data)
+                except ValueError:
+                    if (diagnostics := getattr(self._twitch, "diagnostics", None)) is not None:
+                        diagnostics.record("twitch_websocket", outcome="decode")
+                    raise
+                if (diagnostics := getattr(self._twitch, "diagnostics", None)) is not None:
+                    diagnostics.record("twitch_websocket", message)
                 messages.append(message)
             elif raw_message.type is WSMsgType.CLOSE:
+                if (diagnostics := getattr(self._twitch, "diagnostics", None)) is not None:
+                    diagnostics.record("twitch_websocket", outcome="connection")
                 raise WebsocketClosed(received=True, raw_message=raw_message.data)
             elif raw_message.type is WSMsgType.CLOSED:
+                if (diagnostics := getattr(self._twitch, "diagnostics", None)) is not None:
+                    diagnostics.record("twitch_websocket", outcome="connection")
                 raise WebsocketClosed(received=False, raw_message=raw_message.data)
             elif raw_message.type is WSMsgType.CLOSING:
                 pass  # skip these
             elif raw_message.type is WSMsgType.ERROR:
+                if (diagnostics := getattr(self._twitch, "diagnostics", None)) is not None:
+                    diagnostics.record("twitch_websocket", outcome="connection")
                 ws_logger.error(
                     f"Websocket[{self._idx}] error: {format_traceback(raw_message.data)}"
                 )

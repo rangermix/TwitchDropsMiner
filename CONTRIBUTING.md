@@ -34,8 +34,9 @@ Twitch OAuth login, persistent local data, and Docker support.
 
 Read [README.md](./README.md) for setup and user behavior, and
 [AGENTS.md](./AGENTS.md) for architecture and detailed implementation constraints.
-The current scope excludes multiple accounts, channel-points mining, unlinked
-campaign mining, and a desktop GUI. Discuss proposed scope changes before implementing
+The current scope excludes multiple accounts, channel-points mining, and a desktop
+GUI. Campaigns reported as Not Linked are skipped by default; users may explicitly
+allow mining attempts without guaranteeing progress, claims, or reward delivery. Discuss proposed scope changes before implementing
 them; opening a feature request does not itself approve a change in scope.
 
 This is a hobby project for personal use on your own hardware and home network.
@@ -53,6 +54,13 @@ describes the same problem. Use one issue per distinct problem and a descriptive
 such as `Bug: queue keeps an expired reward` or `Feature: filter campaigns by game`.
 
 ### Bug reports
+
+Use the [bug-report form](https://github.com/rangermix/TwitchDropsMiner/issues/new?template=bug_report.yml).
+Its required fields collect the running application version, installation method,
+hosting environment, dashboard browser/device, reproduction steps, expected and actual
+behavior, redacted evidence, and troubleshooting results. Write `not applicable` for
+browser details when startup fails, or explain when logs/screenshots are unavailable.
+Other requests have a separate template; the chooser does not offer blank issues.
 
 Include enough information for someone else to reproduce the problem:
 
@@ -307,24 +315,18 @@ Release automation updates `src/version.py`, `pyproject.toml`, and `uv.lock` tog
 Do not publish releases, change workflow trust boundaries, or bypass required checks as
 part of an ordinary contribution.
 
-### Native helper releases
+### Versioned releases
 
-The existing **Create Version Release** workflow remains the versioned release entry
-point. Its release branch triggers Docker publication, then **GitHub Release** verifies
-the existing version tag and builds helpers from that exact commit. GitHub publication
-waits for Linux x64, Windows x64, macOS ARM64 and macOS x64 builds, their packaged Chrome/Firefox
-smoke checks, and archive validation. It uploads four versioned `.tar.gz` archives and
-`SHA256SUMS` to a draft, verifies their remote digests, then publishes. Failed uploads
-leave a draft that can be retried; a rerun refuses to modify an already-published release.
-Binaries are unsigned. Each archive contains only the executable and license.
-
-PR/main validation calls the same read-only native workflow and prepares the same asset
-set without publishing. Keep the publishing token out of build jobs, retain the exact-tag
-guard, and never substitute artifacts from a different run or revision. The release
-contract tests exercise missing/unsafe archives, checksums, source/tag mismatches,
-failed uploads, incomplete remote assets, draft recovery and published reruns.
-Merging a change does not publish a new version or satisfy the frontend cache-key bump;
-dispatch the version workflow only when the maintainer authorizes a versioned release.
+The **Create Version Release** workflow remains the authorized release entry point.
+**GitHub Release** verifies the existing tag and branch/package/lock/source versions
+against the dispatched commit, then builds matching native helper archives and creates or resumes a draft before
+publication. Only its final job has publishing permission. Published releases are
+immutable on rerun. Helper archives for Windows x64, Linux x64, macOS arm64 and macOS x64
+must pass build, smoke, archive-content and checksum validation before publication.
+Only the final publishing job uploads assets, checks their remote sizes/digests, and
+publishes. Read-only pull-request builds never publish or use release credentials.
+Merging does not publish a new version or satisfy the frontend cache-key bump;
+dispatch the version workflow only when the maintainer authorizes a release.
 
 ### Public documentation and private working notes
 
@@ -373,6 +375,14 @@ Removing previously tracked notes does not remove them from earlier Git commits.
 Read this guide and the applicable agent instructions before planning, editing, testing,
 or reviewing. Pass these requirements to any delegated implementation or review agent.
 The checklist is a completion requirement, not an optional suggestion.
+
+When taking on an issue or PR, first comment there to acknowledge that work is starting
+and briefly state the scope, before investigation, implementation, or review. Acknowledge
+both threads when working on both an issue and a PR. Before ending or pausing work,
+update each thread with the outcome, relevant evidence or validation, and any remaining
+action or request for information. This applies to every outcome, including resolved,
+closed, no change needed, blocked, or more information needed, even if no code changed
+or the issue or PR remains open.
 
 Inspect the current checkout and preserve existing user changes. Stay within the
 authorized task; a request to edit files does not by itself authorize publishing a PR,

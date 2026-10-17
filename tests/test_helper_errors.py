@@ -127,6 +127,7 @@ def test_cli_passes_browser_choice_to_admitted_factory(monkeypatch, args, expect
 @pytest.mark.asyncio
 @pytest.mark.parametrize("status,detail,code", [
     (401, "session_connection", "HELPER_EXPIRED"),
+    (401, "session_helper_expired", "HELPER_EXPIRED"),
     (429, "session_busy", "HELPER_BUSY"),
     (429, "arbitrary-private-text", "HELPER_REJECTED"),
 ])
@@ -145,3 +146,37 @@ async def test_misleading_5xx_detail_still_reconciles_without_reupload():
                 login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: 1000) as client):
         assert await client.send(await client.connect(), seed()) == 123
     assert [row[0] for row in requests] == ["/api/helper/connect", "/api/helper/session", "/api/helper/result"]
+
+
+def test_cli_url_only_never_prompts_for_input(monkeypatch, capsys):
+    helpers = []
+    monkeypatch.setattr(sys, "argv", ["login_helper.py", "--tdm", "http://localhost:8080", "--no-pause"])
+    monkeypatch.setattr("builtins.input", lambda _prompt: pytest.fail("URL-only CLI must not request input"))
+
+    async def run(helper):
+        helpers.append(helper)
+        assert helper.destination.url == "http://localhost:8080"
+
+    monkeypatch.setattr(login_helper.LoginHelperCLI, "run_cancellable", run)
+    with pytest.raises(SystemExit) as result:
+        login_helper.LoginHelperCLI.main()
+    assert result.value.code == 0 and len(helpers) == 1
+    output = capsys.readouterr()
+    assert "http://localhost:8080" in output.out
+    assert not output.err
+
+
+def test_cli_without_url_prompts_only_for_destination(monkeypatch):
+    prompts, destinations = [], []
+    monkeypatch.setattr(sys, "argv", ["login_helper.py", "--no-pause"])
+    monkeypatch.setattr("builtins.input", lambda prompt: prompts.append(prompt) or "http://localhost:8080")
+
+    async def run(helper):
+        destinations.append(helper.destination.url)
+
+    monkeypatch.setattr(login_helper.LoginHelperCLI, "run_cancellable", run)
+    with pytest.raises(SystemExit) as result:
+        login_helper.LoginHelperCLI.main()
+    assert result.value.code == 0
+    assert prompts == [_.t["helper"]["destination_prompt"]]
+    assert destinations == ["http://localhost:8080"]

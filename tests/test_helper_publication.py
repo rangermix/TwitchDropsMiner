@@ -2,9 +2,11 @@
 
 import copy
 import hashlib
+import io
 import importlib
 import json
 import subprocess
+import tarfile
 from pathlib import Path
 
 import pytest
@@ -53,13 +55,13 @@ class FakeGitHub:
             result = self.release
         else:
             result = copy.deepcopy(self.release)
-            if self.corrupt == "missing":
+            if self.corrupt == "missing" and result["assets"]:
                 result["assets"].pop()
-            elif self.corrupt == "digest":
+            elif self.corrupt == "digest" and result["assets"]:
                 result["assets"][0]["digest"] = "sha256:" + "0" * 64
             elif self.corrupt == "extra":
                 result["assets"].append({"name": "unexpected.zip"})
-            elif self.corrupt == "state":
+            elif self.corrupt == "state" and result["assets"]:
                 result["assets"][0]["state"] = "starter"
         return subprocess.CompletedProcess(args, 0, json.dumps(result), "")
 
@@ -71,13 +73,19 @@ class FakeGitHub:
 @pytest.fixture
 def publisher(monkeypatch, tmp_path):
     monkeypatch.syspath_prepend(str(ROOT / ".github/scripts"))
-    module = importlib.import_module("publish_helper_release")
+    module = importlib.import_module("publish_release")
     assets = tmp_path / "assets"
     assets.mkdir()
     manifest = []
     for platform in module.HelperRelease.PLATFORMS:
         path = assets / f"tdm-login-helper-1.4.0-rc.1-{platform}.tar.gz"
-        path.write_bytes(b"test archive " + platform.encode())
+        with tarfile.open(path, "w:gz") as archive:
+            executable = "tdm-login-helper.exe" if platform == "windows-x64" else "tdm-login-helper"
+            for name in (executable, "LICENSE"):
+                member = tarfile.TarInfo(name)
+                body = b"test archive " + platform.encode()
+                member.size, member.mode = len(body), 0o755
+                archive.addfile(member, io.BytesIO(body))
         manifest.append(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n")
     (assets / "SHA256SUMS").write_text("".join(manifest))
     notes = tmp_path / "notes.md"
@@ -85,7 +93,7 @@ def publisher(monkeypatch, tmp_path):
 
     def make(fake, *, prerelease=True):
         monkeypatch.setattr(module.subprocess, "run", fake.run)
-        return module.HelperPublisher("owner/repo", "1.4.0-rc.1", prerelease, assets, notes)
+        return module.ReleasePublisher("owner/repo", "1.4.0-rc.1", prerelease, notes, assets)
     return make, assets
 
 
@@ -146,3 +154,14 @@ def test_changed_local_archive_aborts_before_github_access(publisher):
     with pytest.raises(ValueError, match="checksum"):
         make(github).publish()
     assert not github.calls
+
+
+def test_unexpected_existing_draft_assets_are_never_overwritten(publisher):
+    make, _ = publisher
+    github = FakeGitHub(draft=True)
+    github.release["assets"] = [{"name": "unrelated.zip"}]
+    before = copy.deepcopy(github.release)
+    with pytest.raises(ValueError, match="asset"):
+        make(github).publish()
+    assert github.release == before
+    assert len(github.calls) == 1

@@ -49,18 +49,20 @@ echo '```' >> release_notes.md
 
 cat >> release_notes.md <<'EOF'
 
-### Native login helper
+### Twitch sign in
 
-Download the `tdm-login-helper-<version>-<platform>.tar.gz` asset matching your desktop:
-`windows-x64`, `macos-arm64` (Apple Silicon), `macos-x64` (Intel), or `linux-x64`.
-Extract the archive, run `tdm-login-helper` (`tdm-login-helper.exe` on Windows), enter
-your TDM address, and sign into Twitch in the browser it opens. Complete verification,
-then close all windows of that browser instance (on macOS, quit it). Keep the helper
-open; the browser reopens to verify and transfer the session. Wait for confirmed
-success. TDM then renews the session on your home server without the desktop remaining open.
-Install native Chrome, Chromium or Firefox 143+; automatic selection uses that order.
-Python is not required. Binaries are unsigned.
-`SHA256SUMS` contains checksums for all four archives.
+When login is needed, open TDM’s dashboard and sign in to Twitch in the browser shown
+there. Complete verification, select **Finish sign in**, and wait for the dashboard
+to return. The Docker image includes the browser and uses it by default.
+Set Docker’s `TZ` to the timezone of your home internet connection.
+Use **Log out of Twitch** at the bottom of Settings to change the miner’s account.
+
+If Twitch rejects the embedded browser, select **Use desktop helper** and download
+the Windows, Linux, or macOS helper from this same release. Extract and run it on
+your computer, then enter only the dashboard URL. The ten-minute access window
+accepts the first helper to connect; **Return to embedded browser** closes access.
+Complete Twitch sign-in, then close the helper's browser windows (quit that instance
+on macOS). Leave the helper open until it reports success.
 EOF
 
 echo "✅ Release notes written to release_notes.md"

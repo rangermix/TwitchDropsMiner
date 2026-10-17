@@ -11,6 +11,7 @@ import aiohttp
 
 
 if TYPE_CHECKING:
+    from src.diagnostics import Diagnostics
     from src.models.drop import BaseDrop, TimedDrop
 
 
@@ -23,7 +24,8 @@ TELEGRAM_API = "https://api.telegram.org/bot"
 class TelegramNotifier:
     """Service for sending drop claim notifications via Telegram."""
 
-    def __init__(self, bot_token: str | None = None, chat_id: str | None = None):
+    def __init__(self, bot_token: str | None = None, chat_id: str | None = None, *,
+                 diagnostics: Diagnostics | None = None):
         """
         Initialize Telegram notifier.
 
@@ -34,6 +36,7 @@ class TelegramNotifier:
         self.bot_token = bot_token
         self.chat_id = chat_id
         self.enabled = bool(bot_token and chat_id)
+        self.diagnostics = diagnostics
 
     async def notify_drop_claimed(self, drop: BaseDrop) -> bool:
         """
@@ -132,15 +135,27 @@ class TelegramNotifier:
 
             async with aiohttp.ClientSession() as session, session.post(url, json=data, timeout=aiohttp.ClientTimeout(total=10)) as response:
                 if response.status == 200:
+                    if self.diagnostics is not None:
+                        try:
+                            await self.diagnostics.capture_http("POST", url, response)
+                        except (aiohttp.ClientError, TimeoutError):
+                            self.diagnostics.record_http("POST", url, response.status)
                     logger.debug("Telegram notification sent successfully")
                     return True
                 else:
                     error_text = await response.text()
+                    if self.diagnostics is not None:
+                        self.diagnostics.record_http("POST", url, response.status,
+                                                     body=error_text[:self.diagnostics.MAX_BODY_BYTES + 1].encode("utf-8"))
                     logger.warning(f"Telegram API error {response.status}: {error_text}")
                     return False
         except asyncio.TimeoutError:
+            if self.diagnostics is not None:
+                self.diagnostics.record("telegram", outcome="timeout")
             logger.warning("Telegram notification timeout")
             return False
         except Exception as e:
+            if self.diagnostics is not None:
+                self.diagnostics.record("telegram", outcome="connection")
             logger.warning(f"Telegram notification error: {e}")
             return False

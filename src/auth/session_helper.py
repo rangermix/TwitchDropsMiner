@@ -1,4 +1,4 @@
-"""In-memory capture of verified browser context for the direct login helper."""
+"""In-memory capture of verified context from an owned browser."""
 
 from __future__ import annotations
 
@@ -368,9 +368,3 @@ class BrowserExporter:
                             return bundle, cookie
         except TimeoutError:
             raise SessionError("CAPTURE_TIMEOUT") from None
-
-
-if __name__ == "__main__":
-    from src.auth.login_helper import LoginHelperCLI
-
-    LoginHelperCLI.main()

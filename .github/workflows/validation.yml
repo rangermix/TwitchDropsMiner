@@ -15,12 +15,10 @@ env:
 
 jobs:
   native-helper:
-    name: Native login helper
+    name: Native helper builds and smoke tests
     uses: ./.github/workflows/login-helper.yml
     with:
       source-ref: ${{ github.sha }}
-    permissions:
-      contents: read
 
   lint:
     name: Code Quality (Ruff & Mypy)

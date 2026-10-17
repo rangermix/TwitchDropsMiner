@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import suppress
-from time import time
+from time import monotonic
 from typing import TYPE_CHECKING, NoReturn
 
 from src.config import CALL, GQL_OPERATIONS, WATCH_INTERVAL
@@ -56,6 +56,7 @@ class WatchService:
 
         A channel can be watched if:
         - The channel is online
+        - Twitch has not reported an active ban for the signed-in account
         - A campaign for a wanted game can be progressed on this channel
         - Drops are enabled, unless the campaign uses a special category
 
@@ -69,7 +70,7 @@ class WatchService:
             True if the channel can be watched, False otherwise
         """
         wanted_games = self._twitch.wanted_games
-        if not wanted_games or not channel.online:
+        if not wanted_games or not channel.online or channel.banned:
             return False
 
         return any(
@@ -164,47 +165,47 @@ class WatchService:
         Args:
             delay: Time in seconds to sleep
         """
-        self._twitch._watching_restart.clear()
         with suppress(asyncio.TimeoutError):
             await asyncio.wait_for(self._twitch._watching_restart.wait(), timeout=delay)
+        self._twitch._watching_restart.clear()
 
     @task_wrapper(critical=True)
     async def watch_loop(self) -> NoReturn:
         """
         Main watch loop that sends watch payloads and monitors drop progress.
 
-        This loop:
-        1. Waits for a channel to watch
-        2. Sends watch payload to the channel
-        3. Waits ~20 seconds for websocket progress update
-        4. If no update received, queries drop progress via GQL or estimates it
-        5. Sleeps until next watch interval (~20 seconds)
-        6. Repeats
-
-        The loop handles cases where Twitch temporarily stops reporting progress
-        by falling back to GQL queries or minute bumping.
+        Poll HLS within the rolling playlist window. Minute telemetry is throttled
+        by Channel, and the existing progress fallback keeps its minute cadence.
         """
-        interval: float = WATCH_INTERVAL.total_seconds()
+        interval = WATCH_INTERVAL.total_seconds()
+        next_progress = monotonic() + 20
 
         while True:
             channel: Channel = await self._twitch.watching_channel.get()
 
-            if not channel.online:
+            if not self._twitch.is_mining_time() or not channel.online or channel.banned:
                 # if the channel isn't online anymore, we stop watching it
                 self.stop_watching()
                 continue
 
-            # logger.log(CALL, f"Sending watch payload to: {channel.name}")
+            stream = channel._stream
+            started = monotonic()
             succeeded: bool = await channel.send_watch()
-            last_sent: float = time()
 
             if not succeeded:
                 logger.log(CALL, f"Watch requested failed for channel: {channel.name}")
 
-            # wait ~20 seconds for a progress update
-            await asyncio.sleep(20)
+            # A ten-second poll fits inside Twitch's rolling segment window.
+            await self.watch_sleep(max(0, 10 - (monotonic() - started)))
+            if stream is None or not channel._watch_current(stream):
+                continue
 
-            if self._twitch.gui.progress.minute_almost_done():
+            if (
+                succeeded
+                and monotonic() >= next_progress
+                and self._twitch.gui.progress.minute_almost_done()
+            ):
+                next_progress = monotonic() + interval
                 # If the previous update was more than ~60s ago, and the progress tracker
                 # isn't counting down anymore, that means Twitch has temporarily
                 # stopped reporting drop's progress. To ensure the timer keeps at least somewhat
@@ -214,14 +215,20 @@ class WatchService:
 
                 # Solution 1: use GQL to query for the currently mined drop status
                 try:
-                    context = await self._twitch.gql_request(
-                        GQL_OPERATIONS["CurrentDrop"].with_variables({"channelID": str(channel.id)})
+                    context = await asyncio.wait_for(
+                        self._twitch.gql_request(
+                            GQL_OPERATIONS["CurrentDrop"].with_variables({"channelID": str(channel.id)})
+                        ),
+                        timeout=5,
                     )
                     drop_data: JsonType | None = context["data"]["currentUser"][
                         "dropCurrentSession"
                     ]
-                except GQLException:
+                except (GQLException, TimeoutError):
                     drop_data = None
+
+                if not channel._watch_current(stream):
+                    continue
 
                 if drop_data is not None:
                     gql_drop: TimedDrop | None = self._twitch._drops.get(drop_data["dropID"])
@@ -252,5 +259,3 @@ class WatchService:
                         handled = True
                     else:
                         logger.log(CALL, "No active drop could be determined")
-
-            await self.watch_sleep(interval - min(time() - last_sent, interval))

@@ -10,7 +10,7 @@ and [Using the dashboard](usage.md).
 | Guide | What you will find |
 | --- | --- |
 | [Installation](installation.md) | Docker, Compose, source setup, persistent data, and upgrades |
-| [Twitch login](authentication.md) | Login helper downloads, existing sessions, account replacement, and automatic renewal |
+| [Twitch login](authentication.md) | Dashboard browser login, existing sessions, logout, and automatic renewal |
 | [Using the dashboard](usage.md) | Game priorities, campaigns, inventory, ignored rewards, and drop history |
 | [Dashboard access](dashboard-access.md) | Optional password protection, reverse proxies, and password recovery |
 | [Telegram notifications](notifications.md) | Bot setup, testing, saved credentials, and disabling alerts |
@@ -29,7 +29,9 @@ Support is best-effort and limited to that setup. VPS, cloud, other third-party
 hosting, and services operated for other users are outside the support scope.
 Continued compatibility with Twitch is not guaranteed.
 
-Your Twitch account must be linked to the relevant game account, and the reward must
+Link the correct game account to receive in-game rewards. TDM skips campaigns
+reported as Not Linked by default; the [optional override](usage.md#account-link-override)
+permits mining attempts without guaranteeing progress or delivery. The reward must
 be available to you and earned by watching. Review your
 [Twitch Drops campaigns](https://www.twitch.tv/drops/campaigns) before mining. Avoid
 watching Twitch manually with the same account while the miner is running, because

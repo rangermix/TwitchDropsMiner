@@ -28,7 +28,7 @@ class _AuthState:
     Manages authentication state including tokens, session, and login flow.
 
     This class handles:
-    - Helper-assisted fresh login and legacy saved-session restoration
+    - Integrated browser login and legacy saved-session restoration
     - Access token validation and management
     - Session and device ID management
     - Cookie persistence
@@ -157,11 +157,11 @@ class _AuthState:
         return self
 
     async def _validate(self):
-        """Restore accepted helper state or legacy Android cookies; fresh login uses the helper."""
+        """Restore a saved session; otherwise wait for the integrated browser."""
         if not hasattr(self, "session_id"):
             self.session_id = create_nonce(CHARS_HEX_LOWER, 16)
         browser = self._twitch._browser
-        if browser.status()["generation"] > 0 or self.browser_active:
+        if browser.status()["generation"] > 0 or browser.logged_out or self.browser_active:
             if browser.status()["state"] != "ready":
                 self._logged_in.clear()
             identity = await browser.authenticate(self._twitch.gui.login)

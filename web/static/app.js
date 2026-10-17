@@ -9,7 +9,8 @@ const state = {
     settings: {},
     currentDrop: null,
     countdownTimer: null,  // Track the active countdown timer
-    translations: {}  // Store current translations
+    translations: {},  // Store current translations
+    previewEnabled: false  // Explicit opt-in for this page only
 };
 
 // ==================== UI Utilities ====================
@@ -176,7 +177,7 @@ const socket = io({
 socket.on('connect', () => {
     console.log('Connected to server');
     state.connected = true;
-    globalThis.helperLoginPanel?.load();
+    globalThis.browserLoginPanel?.load();
     const connText = state.translations.gui?.websocket?.connected || 'Connected';
     document.getElementById('connection-indicator').textContent = '● ' + connText;
     document.getElementById('connection-indicator').className = 'connected';
@@ -315,8 +316,8 @@ socket.on('login_status', (data) => {
     updateLoginStatus(data);
 });
 
-socket.on('helper_status', (data) => {
-    globalThis.helperLoginPanel?.updateStatus(data);
+socket.on('session_status', (data) => {
+    globalThis.browserLoginPanel?.updateStatus(data);
 });
 
 socket.on('settings_updated', (data) => {
@@ -427,7 +428,57 @@ function channelMatchesGameFilter(channel, gamesToWatchSet) {
         Boolean(channel.game && gamesToWatchSet.has(channel.game.toLowerCase()));
 }
 
+function updateNowWatching() {
+    const card = document.getElementById('now-watching');
+    if (!card) return;
+    const channel = Object.values(state.channels).find(ch => ch.watching);
+    const t = state.translations.gui?.channels || {};
+    const img = document.getElementById('now-watching-img');
+    const preview = document.getElementById('now-watching-preview');
+    const button = document.getElementById('now-watching-toggle');
+    if (!channel) state.previewEnabled = false;
+    const enabled = state.previewEnabled && Boolean(channel?.login);
+    preview.hidden = !enabled;
+    button.disabled = !channel?.login;
+    button.setAttribute('aria-pressed', String(Boolean(enabled)));
+    button.textContent = enabled ? (t.hide_preview || 'Hide thumbnail') : (t.show_preview || 'Show thumbnail');
+    button.title = t.preview_help || 'Loads Twitch thumbnails and uses extra bandwidth. Off on each page load.';
+    document.getElementById('now-watching-title').textContent = t.now_watching || 'Now Watching';
+    document.getElementById('now-watching-live').textContent = t.online || 'Online';
+    document.getElementById('now-watching-off').textContent = t.preview_off || 'Thumbnail is off';
+    document.getElementById('now-watching-off').hidden = enabled;
+    if (!enabled) {
+        img.style.backgroundImage = '';
+        delete img.dataset.src;
+    }
+    if (!channel) {
+        card.classList.add('hidden');
+        return;
+    }
+    card.classList.remove('hidden');
+    if (enabled) {
+        const login = String(channel.login).toLowerCase();
+        // Only opted-in pages load thumbnails; channel events refresh at most once per minute.
+        const url = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${encodeURIComponent(login)}-440x248.jpg?t=${Math.floor(Date.now() / 60000)}`;
+        if (img.dataset.src !== url) {
+            img.dataset.src = url;
+            img.style.backgroundImage = `url("${url}")`;
+        }
+    }
+    const viewersText = state.translations.gui?.channels?.viewers || 'viewers';
+    const viewers = channel.viewers !== null && channel.viewers !== undefined
+        ? ` | ${Number(channel.viewers).toLocaleString()} ${viewersText}`
+        : '';
+    document.getElementById('now-watching-info').textContent = channel.name + viewers;
+}
+
+function toggleNowWatchingPreview() {
+    state.previewEnabled = !state.previewEnabled;
+    updateNowWatching();
+}
+
 function renderChannels() {
+    updateNowWatching();
     const container = document.getElementById('channels-list');
     container.innerHTML = '';
 
@@ -459,98 +510,88 @@ function renderChannels() {
         return;
     }
 
-    // Group channels by game
-    const gameGroups = {};
-    filteredChannels.forEach(channel => {
-        const gameName = channel.game || 'No Game';
-        const gameId = channel.game_id || 'no-game';
-        const gameIcon = channel.game_icon;
-
-        if (!gameGroups[gameId]) {
-            gameGroups[gameId] = {
-                name: gameName,
-                icon: gameIcon,
-                channels: []
-            };
-        }
-        gameGroups[gameId].channels.push(channel);
+    // Flat list: watching first, then online, then by viewers
+    const sortedChannels = [...filteredChannels].sort((a, b) => {
+        if (Boolean(a.watching) !== Boolean(b.watching)) return b.watching ? 1 : -1;
+        if (Boolean(a.online) !== Boolean(b.online)) return b.online ? 1 : -1;
+        return (b.viewers || 0) - (a.viewers || 0);
     });
 
-    // Sort games: prioritize games with watching channels, then by total viewers
-    const sortedGames = Object.entries(gameGroups).sort(([idA, groupA], [idB, groupB]) => {
-        const hasWatchingA = groupA.channels.some(ch => ch.watching);
-        const hasWatchingB = groupB.channels.some(ch => ch.watching);
+    const formatViewers = n => {
+        if (n >= 1e6) return `${+(n / 1e6).toFixed(2)}M`;
+        if (n >= 1e3) return `${+(n / 1e3).toFixed(2)}K`;
+        return String(n);
+    };
 
-        if (hasWatchingA !== hasWatchingB) return hasWatchingB ? 1 : -1;
+    sortedChannels.forEach(channel => {
+        const div = document.createElement('div');
+        div.className = 'channel-item';
+        if (channel.watching) div.classList.add('watching');
+        div.classList.add(channel.online ? 'online' : 'offline');
 
-        // Sum total viewers for each game
-        const totalViewersA = groupA.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
-        const totalViewersB = groupB.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
+        const name = String(channel.name || '?');
+        let hue = 0;
+        for (const ch of name) hue = (hue * 31 + ch.charCodeAt(0)) % 360;
+        const avatar = makeElement('span', { class: 'channel-avatar' }, name[0].toUpperCase());
+        avatar.style.background = `hsl(${hue}, 45%, 38%)`;
 
-        return totalViewersB - totalViewersA;
-    });
-
-    // Render each game group
-    sortedGames.forEach(([gameId, group]) => {
-        // Create game header
-        const gameHeader = document.createElement('div');
-        gameHeader.className = 'game-group-header';
-
-        const channelCount = group.channels.length;
-        const totalViewers = group.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
-
-        const channelText = channelCount === 1
-            ? (t.gui?.channels?.channel_count || 'channel')
-            : (t.gui?.channels?.channel_count_plural || 'channels');
-        const viewersText = t.gui?.channels?.viewers || 'viewers';
-
-        if (group.icon) {
-            gameHeader.appendChild(makeImageElement(group.icon.replace('{width}', '40').replace('{height}', '53'), group.name, 'game-icon'));
-        }
-        gameHeader.appendChild(makeElement('div', { class: 'game-group-info' }, null, el => {
-            el.appendChild(makeElement('div', { class: 'game-group-name' }, group.name));
-            el.appendChild(makeElement('div', { class: 'game-group-stats' }, `${channelCount} ${channelText} • ${totalViewers.toLocaleString()} ${viewersText}`));
-        }));
-
-        container.appendChild(gameHeader);
-
-        // Sort channels within game: watching first, then online, then by viewers
-        group.channels.sort((a, b) => {
-            if (a.watching !== b.watching) return b.watching ? 1 : -1;
-            if (a.online !== b.online) return b.online ? 1 : -1;
-            return (b.viewers || 0) - (a.viewers || 0);
+        const nameDiv = makeElement('div', { class: 'channel-name' }, name, el => {
+            if (channel.drops_enabled) {
+                el.appendChild(document.createTextNode(' '));
+                el.appendChild(makeElement('span', { class: 'channel-badge drops' }, 'DROPS'));
+            }
+            if (channel.acl_based) {
+                el.appendChild(document.createTextNode(' '));
+                el.appendChild(makeElement('span', { class: 'channel-badge acl' }, 'ACL'));
+            }
+        });
+        const stateDiv = makeElement('div', { class: 'channel-info' }, channel.online ? t.gui?.channels?.online : t.gui?.channels?.offline, el => {
+            if (channel.game) {
+                el.appendChild(makeElement('span', { class: 'channel-game' }, ` · ${channel.game}`));
+            }
+        });
+        const textDiv = makeElement('div', { class: 'channel-text' }, '', el => {
+            el.appendChild(nameDiv);
+            el.appendChild(stateDiv);
         });
 
-        // Render channels in this game
-        group.channels.forEach(channel => {
-            const div = document.createElement('div');
-            div.className = 'channel-item';
-            if (channel.watching) div.classList.add('watching');
-            if (channel.online) div.classList.add('online');
-            else div.classList.add('offline');
-
-            const nameDiv = makeElement('div', { class: 'channel-name' }, channel.name, el => {
-                if (channel.drops_enabled) {
-                    el.appendChild(document.createTextNode(' '));
-                    el.appendChild(makeElement('span', { class: 'channel-badge drops' }, 'DROPS'));
-                }
-                if (channel.acl_based) {
-                    el.appendChild(document.createTextNode(' '));
-                    el.appendChild(makeElement('span', { class: 'channel-badge acl' }, 'ACL'));
-                }
-            });
-            const infoDiv = makeElement('div', { class: 'channel-info' }, channel.viewers !== null ? channel.viewers.toLocaleString() + ' viewers' : 'Offline', el => {
-                if (channel.watching) {
-                    el.appendChild(document.createTextNode(' • '));
-                    el.appendChild(makeElement('strong', {}, 'WATCHING'));
-                }
-            });
-            div.replaceChildren(nameDiv, infoDiv);
-
-            div.onclick = () => selectChannel(channel.id);
-            container.appendChild(div);
+        const viewersDiv = makeElement('span', { class: 'channel-viewers' },
+            channel.viewers !== null && channel.viewers !== undefined ? formatViewers(channel.viewers) : '');
+        const link = makeElement('a', {
+            class: 'channel-ext',
+            href: channel.url,
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            title: name,
+            'aria-label': name,
         });
+        link.addEventListener('click', e => e.stopPropagation());
+
+        div.replaceChildren(avatar, textDiv, viewersDiv, link);
+        div.onclick = () => selectChannel(channel.id);
+        container.appendChild(div);
     });
+}
+
+function updateDropArt() {
+    const art = document.getElementById('drop-art');
+    if (!art) return;
+    const drop = state.currentDrop;
+    const campaign = drop && (state.campaigns[drop.campaign_id] ||
+        Object.values(state.campaigns).find(c => c.game_name === drop.game_name));
+    const raw = campaign?.game_box_art_url;
+    if (!raw) {
+        art.classList.add('hidden');
+        return;
+    }
+    const url = raw.replace('{width}', '285').replace('{height}', '380');
+    if (art.dataset.src !== url) {
+        art.dataset.src = url;
+        art.querySelector('.drop-art-bg').style.backgroundImage = `url("${url}")`;
+        art.querySelector('.drop-art-poster').src = url;
+    }
+    art.querySelector('.drop-art-poster').alt = drop.game_name || '';
+    art.classList.remove('hidden');
 }
 
 function updateDropProgress(data) {
@@ -567,6 +608,7 @@ function updateDropProgress(data) {
     document.getElementById('drop-info').style.display = 'block';
 
     document.getElementById('drop-name').textContent = data.drop_name;
+    updateDropArt();
 
     // Make campaign name clickable with link to Twitch
     const dropGameEl = document.getElementById('drop-game');
@@ -666,7 +708,7 @@ function getInventoryFilters() {
     // Get filter state from UI checkboxes and selected games array
     return {
         show_active: document.getElementById('filter-active')?.checked || false,
-        show_only_not_linked: document.getElementById('filter-not-linked')?.checked || false,
+        link_status: document.getElementById('filter-link-status')?.value || 'all',
         show_upcoming: document.getElementById('filter-upcoming')?.checked || false,
         show_expired: document.getElementById('filter-expired')?.checked || false,
         show_finished: document.getElementById('filter-finished')?.checked || false,
@@ -690,7 +732,8 @@ function campaignMatchesFilters(campaign, filters) {
     if (!filters.show_finished && isFinished) return false;
 
     // Link state narrows the status result instead of joining its OR group.
-    if (filters.show_only_not_linked && campaign.linked) return false;
+    if (filters.link_status === 'linked' && !campaign.linked) return false;
+    if (filters.link_status === 'not_linked' && campaign.linked) return false;
 
     // Active, upcoming, and expired remain OR-based status filters.
     const hasStatusFilters = filters.show_active || filters.show_upcoming || filters.show_expired;
@@ -750,7 +793,7 @@ function onInventoryFilterChange() {
 function clearInventoryFilters() {
     // Uncheck all filter checkboxes
     document.getElementById('filter-active').checked = false;
-    document.getElementById('filter-not-linked').checked = false;
+    document.getElementById('filter-link-status').value = 'all';
     document.getElementById('filter-upcoming').checked = false;
     document.getElementById('filter-expired').checked = false;
     document.getElementById('filter-finished').checked = false;
@@ -959,6 +1002,7 @@ function applyInventoryViewMode(listView) {
 }
 
 function renderInventory() {
+    updateDropArt();
     const container = document.getElementById('inventory-grid');
     container.innerHTML = '';
 
@@ -1140,18 +1184,41 @@ function updateLoginStatus(data) {
         statusEl.textContent = t.login?.status?.required || 'Login required';
         statusEl.style.color = 'var(--text-secondary)';
     }
-    globalThis.helperLoginPanel?.updateLogin(data);
+    statusEl.title = statusEl.textContent;
+    const avatarEl = document.getElementById('user-avatar');
+    if (avatarEl) {
+        const avatarUrl = data.avatar_url;
+        if (typeof avatarUrl === 'string' && avatarUrl.startsWith('https://')) {
+            avatarEl.textContent = '';
+            avatarEl.style.backgroundImage = `url("${avatarUrl}")`;
+        } else {
+            const displayName = data.username || data.user_name || data.name || '';
+            avatarEl.textContent = displayName ? String(displayName)[0].toUpperCase() : '';
+            avatarEl.style.backgroundImage = '';
+        }
+        avatarEl.classList.toggle('logged-in', Boolean(data.user_id));
+        avatarEl.classList.toggle('avatar-image', Boolean(data.user_id) && typeof avatarUrl === 'string' && avatarUrl.startsWith('https://'));
+    }
+    globalThis.browserLoginPanel?.updateLogin(data);
 }
 
-function updateSettingsUI(settings, syncHelperGate = false) {
+function updateSettingsUI(settings) {
     state.settings = settings;
-    // Only live settings events own the gate; unrelated HTTP replies may be stale.
-    if (syncHelperGate) globalThis.helperLoginPanel?.updateSettings(settings);
+    const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
+    if (allowUnlinked) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('inventory-list-view').checked = settings.inventory_list_view || false;
     applyInventoryViewMode(settings.inventory_list_view || false);
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
+
+    const miningHours = settings.mining_hours || { mode: 'always', start: '08:00', end: '22:00' };
+    const rangeMode = miningHours.mode === 'range';
+    document.getElementById('mining-hours-always').checked = !rangeMode;
+    document.getElementById('mining-hours-range').checked = rangeMode;
+    document.getElementById('mining-hours-start').value = miningHours.start || '08:00';
+    document.getElementById('mining-hours-end').value = miningHours.end || '22:00';
+    toggleMiningHoursRange(rangeMode);
 
     const dropBlacklist = document.getElementById('drop-name-blacklist');
     if (dropBlacklist) {
@@ -1169,6 +1236,13 @@ function updateSettingsUI(settings, syncHelperGate = false) {
     if (proxyIndicator) {
         proxyIndicator.style.display = proxyUrl ? 'inline-flex' : 'none';
         proxyIndicator.title = proxyUrl ? `Proxy active: ${proxyUrl}` : 'Proxy disabled';
+    }
+
+    const discordWebhookInput = document.getElementById('discord-webhook-url');
+    if (discordWebhookInput) {
+        discordWebhookInput.value = '';
+        discordWebhookInput.placeholder = settings.discord_configured
+            ? '••••••••' : 'https://discord.com/api/webhooks/ID/TOKEN';
     }
 
     // Populate Telegram fields if present in settings (the server never
@@ -1205,7 +1279,7 @@ function updateSettingsUI(settings, syncHelperGate = false) {
     // Restore inventory filters from settings
     if (settings.inventory_filters) {
         document.getElementById('filter-active').checked = settings.inventory_filters.show_active || false;
-        document.getElementById('filter-not-linked').checked = settings.inventory_filters.show_only_not_linked || false;
+        document.getElementById('filter-link-status').value = settings.inventory_filters.link_status || 'all';
         document.getElementById('filter-upcoming').checked = settings.inventory_filters.show_upcoming || false;
         document.getElementById('filter-expired').checked = settings.inventory_filters.show_expired || false;
         document.getElementById('filter-finished').checked = settings.inventory_filters.show_finished || false;
@@ -1692,6 +1766,68 @@ async function verifyProxy() {
     }
 }
 
+async function saveDiscordSettings(webhookUrl, removeWebhook = false) {
+    const dc = state.translations.gui?.settings?.discord || {};
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ discord_webhook_url: webhookUrl, discord_remove_webhook: removeWebhook })
+        });
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        if (data.success !== true || !data.settings) throw new Error();
+        updateSettingsUI(data.settings);
+    } catch (error) {
+        throw new Error(dc.save_error || 'Failed to save Discord settings.');
+    }
+}
+
+async function updateDiscordSettings(action) {
+    if (state.discordActionPending) return;
+    const input = document.getElementById('discord-webhook-url');
+    const result = document.getElementById('discord-test-result');
+    if (!result) return;
+    const dc = state.translations.gui?.settings?.discord || {};
+    const webhookUrl = input ? input.value.trim() : '';
+    result.style.display = 'block';
+    if (action !== 'remove' && !webhookUrl && !state.settings.discord_configured) {
+        result.className = 'verify-result error';
+        result.textContent = dc.missing_credentials || 'Please enter a Discord Webhook URL.';
+        return;
+    }
+    state.discordActionPending = true;
+    const controls = ['save-discord-btn', 'test-discord-btn', 'remove-discord-btn', 'discord-webhook-url']
+        .map(id => document.getElementById(id)).filter(Boolean);
+    controls.forEach(control => { control.disabled = true; });
+    result.className = 'verify-result loading';
+    result.textContent = `${action === 'test' ? (dc.test_connection || 'Test Connection') : (dc.save_settings || 'Save Settings')}…`;
+    let saving = false;
+    try {
+        if (action === 'test') {
+            const response = await fetch('/api/settings/test-discord', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ discord_webhook_url: webhookUrl })
+            });
+            if (!response.ok || (await response.json()).success !== true) throw new Error();
+        }
+        saving = true;
+        await saveDiscordSettings(action === 'remove' ? '' : webhookUrl, action === 'remove');
+        result.className = 'verify-result success';
+        result.textContent = action === 'test' ? (dc.success || 'Discord connection successful!')
+            : action === 'remove' ? (dc.removed || 'Webhook removed. Discord notifications are disabled.')
+            : (dc.saved || 'Settings saved successfully!');
+    } catch (error) {
+        result.className = 'verify-result error';
+        result.textContent = saving ? (dc.save_error || 'Failed to save Discord settings.')
+            : (dc.error || 'Failed to connect to Discord. Please check your Webhook URL.');
+    } finally {
+        state.discordActionPending = false;
+        controls.forEach(control => { control.disabled = false; });
+    }
+}
+
 async function testTelegramConnection() {
     const botTokenInput = document.getElementById('telegram-bot-token');
     const chatIdInput = document.getElementById('telegram-chat-id');
@@ -1811,6 +1947,56 @@ function parseDropNameBlacklist(value) {
         .filter(Boolean);
 }
 
+function toggleMiningHoursRange(enabled) {
+    const container = document.getElementById('mining-hours-range-inputs');
+    if (container) container.style.display = enabled ? '' : 'none';
+}
+
+async function onMiningHoursChange() {
+    const always = document.getElementById('mining-hours-always');
+    const range = document.getElementById('mining-hours-range');
+    const start = document.getElementById('mining-hours-start');
+    const end = document.getElementById('mining-hours-end');
+    const error = document.getElementById('mining-hours-error');
+    const controls = [always, range, start, end];
+    const previous = state.settings.mining_hours || { mode: 'always', start: '08:00', end: '22:00' };
+    error.hidden = true;
+    error.textContent = '';
+    toggleMiningHoursRange(range.checked);
+    if (range.checked && (!start.reportValidity() || !end.reportValidity())) return;
+    const requested = {
+        mode: range.checked ? 'range' : 'always',
+        start: start.value || previous.start,
+        end: end.value || previous.end
+    };
+    const message = state.translations.gui?.settings?.mining_hours_save_error ||
+        'Could not save mining hours. Please try again.';
+    controls.forEach(control => { control.disabled = true; });
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mining_hours: requested })
+        });
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        const saved = data.settings?.mining_hours;
+        if (data.success !== true || !saved ||
+            ['mode', 'start', 'end'].some(key => saved[key] !== requested[key])) throw new Error(message);
+        updateSettingsUI(data.settings);
+    } catch (failure) {
+        always.checked = previous.mode !== 'range';
+        range.checked = previous.mode === 'range';
+        start.value = previous.start;
+        end.value = previous.end;
+        toggleMiningHoursRange(range.checked);
+        error.textContent = message;
+        error.hidden = false;
+    } finally {
+        controls.forEach(control => { control.disabled = false; });
+    }
+}
+
 async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
@@ -1841,6 +2027,34 @@ async function saveSettings() {
         console.log('Settings saved automatically');
     } catch (error) {
         console.error('Failed to save settings:', error);
+    }
+}
+
+async function onUnlinkedMiningChange() {
+    const input = document.getElementById('allow-unlinked-campaigns');
+    const error = document.getElementById('allow-unlinked-error');
+    const requested = input.checked;
+    const message = state.translations.gui?.settings?.allow_unlinked_campaigns_save_error ||
+        'Could not save the account-link mining option. Please try again.';
+    input.disabled = true;
+    error.hidden = true;
+    error.textContent = '';
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ allow_unlinked_campaigns: requested })
+        });
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || data.settings?.allow_unlinked_campaigns !== requested) throw new Error(message);
+        updateSettingsUI(data.settings);
+    } catch (failure) {
+        input.checked = state.settings.allow_unlinked_campaigns === true;
+        error.textContent = message;
+        error.hidden = false;
+    } finally {
+        input.disabled = false;
     }
 }
 
@@ -1894,7 +2108,7 @@ async function fetchAndApplyTranslations() {
 }
 
 function applyTranslations(t) {
-    globalThis.helperLoginPanel?.render();
+    globalThis.browserLoginPanel?.render();
     translateHistory();
     // Update tab buttons
     const tabButtons = {
@@ -1964,6 +2178,12 @@ function applyTranslations(t) {
         if (generalHeader) generalHeader.textContent = t.gui.settings.general.name;
 
         const benefitsHeader = document.getElementById('settings-benefits-header');
+        const allowUnlinkedLabel = document.getElementById('allow-unlinked-label');
+        if (allowUnlinkedLabel) allowUnlinkedLabel.textContent = t.gui.settings.allow_unlinked_campaigns;
+        const allowUnlinkedWarning = document.getElementById('allow-unlinked-warning');
+        if (allowUnlinkedWarning) allowUnlinkedWarning.textContent = t.gui.settings.allow_unlinked_campaigns_warning;
+        const allowUnlinkedError = document.getElementById('allow-unlinked-error');
+        if (allowUnlinkedError && !allowUnlinkedError.hidden) allowUnlinkedError.textContent = t.gui.settings.allow_unlinked_campaigns_save_error;
         if (benefitsHeader && t.gui.settings.mining_benefits) benefitsHeader.textContent = t.gui.settings.mining_benefits;
 
         const dropBlacklistHeader = document.getElementById('settings-drop-blacklist-header');
@@ -2006,6 +2226,24 @@ function applyTranslations(t) {
         const benefitsHelp = document.getElementById('settings-benefits-help');
         if (benefitsHelp && t.gui.settings.mining_benefits_help) benefitsHelp.textContent = t.gui.settings.mining_benefits_help;
 
+        const hoursHeader = document.getElementById('settings-hours-header');
+        if (hoursHeader && t.gui.settings.mining_hours) hoursHeader.textContent = t.gui.settings.mining_hours;
+
+        const hoursHelp = document.getElementById('settings-hours-help');
+        if (hoursHelp && t.gui.settings.mining_hours_help) hoursHelp.textContent = t.gui.settings.mining_hours_help;
+
+        const hoursAlwaysLabel = document.getElementById('settings-hours-always-label');
+        if (hoursAlwaysLabel && t.gui.settings.mining_hours_always) hoursAlwaysLabel.textContent = t.gui.settings.mining_hours_always;
+
+        const hoursRangeLabel = document.getElementById('settings-hours-range-label');
+        if (hoursRangeLabel && t.gui.settings.mining_hours_range) hoursRangeLabel.textContent = t.gui.settings.mining_hours_range;
+
+        const hoursStartLabel = document.getElementById('settings-hours-start-label');
+        if (hoursStartLabel && t.gui.settings.mining_hours_start) hoursStartLabel.textContent = t.gui.settings.mining_hours_start + ' ';
+
+        const hoursEndLabel = document.getElementById('settings-hours-end-label');
+        if (hoursEndLabel && t.gui.settings.mining_hours_end) hoursEndLabel.textContent = t.gui.settings.mining_hours_end + ' ';
+
         const gamesHelp = document.getElementById('settings-games-help');
         if (gamesHelp) gamesHelp.textContent = t.gui.settings.games_help;
 
@@ -2029,6 +2267,22 @@ function applyTranslations(t) {
 
         const reloadBtn = document.getElementById('reload-btn');
         if (reloadBtn) reloadBtn.textContent = t.gui.settings.reload_campaigns;
+
+        const discordTrans = t.gui?.settings?.discord;
+        if (discordTrans) {
+            const labels = {
+                'settings-discord-header': 'name', 'settings-discord-help': 'description',
+                'settings-discord-webhook-url-label': 'webhook_url',
+                'settings-discord-webhook-url-hint': 'webhook_url_hint',
+                'settings-discord-credentials-help': 'credentials_help',
+                'save-discord-btn': 'save_settings', 'test-discord-btn': 'test_connection',
+                'remove-discord-btn': 'remove_webhook'
+            };
+            for (const [id, key] of Object.entries(labels)) {
+                const element = document.getElementById(id);
+                if (element) element.textContent = discordTrans[key];
+            }
+        }
 
         // Update Telegram Notifications section.
         const tgTrans = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
@@ -2069,6 +2323,10 @@ function applyTranslations(t) {
 
         const clearCacheHelp = document.getElementById('clear-cache-help');
         if (clearCacheHelp) clearCacheHelp.textContent = t.gui.settings.clear_all_cache_help;
+        const diagnosticsButton = document.getElementById('dump-diagnostics-btn');
+        if (diagnosticsButton) diagnosticsButton.textContent = t.gui.settings.dump_diagnostics;
+        const diagnosticsHelp = document.getElementById('diagnostics-help');
+        if (diagnosticsHelp) diagnosticsHelp.textContent = t.gui.settings.diagnostics_help;
 
         // Re-render games to watch with translated empty messages
         renderGamesToWatch();
@@ -2129,6 +2387,11 @@ function applyTranslations(t) {
                            makeElement('p', {}, tg.description),
                            makeHelpList('ol', tg.steps)]
                         : [];
+                })(),
+                ...(function () {
+                    const dc = t.gui?.settings?.discord;
+                    return dc ? [makeElement('h3', { id: 'help-discord-header' }, dc.name),
+                        makeElement('p', {}, dc.description), makeHelpList('ol', dc.setup_steps)] : [];
                 })(),
                 makeElement('div', { class: 'help-links' }, '', el =>
                     el.appendChild(makeElement('a', { href: 'https://github.com/rangermix/TwitchDropsMiner', target: '_blank', rel: 'noopener noreferrer' }, t.gui.help.github_repo || 'GitHub Repository'))
@@ -2192,7 +2455,11 @@ function applyTranslations(t) {
             if (el) el.textContent = text;
         };
         updateLabel('filter-active', f.active);
-        updateLabel('filter-not-linked', f.not_linked);
+        document.getElementById('filter-link-status-label').textContent = f.account_link;
+        const linkStatus = document.getElementById('filter-link-status');
+        linkStatus.querySelector('[value="all"]').textContent = f.all;
+        linkStatus.querySelector('[value="linked"]').textContent = f.linked;
+        linkStatus.querySelector('[value="not_linked"]').textContent = f.not_linked;
         updateLabel('filter-upcoming', f.upcoming);
         updateLabel('filter-expired', f.expired);
         updateLabel('filter-finished', f.finished);
@@ -2263,6 +2530,49 @@ async function clearAllCache() {
     await requestCampaignRefresh('/api/cache/clear', button, 'clear cache');
 }
 
+async function dumpDiagnostics() {
+    const button = document.getElementById('dump-diagnostics-btn');
+    const result = document.getElementById('diagnostics-result');
+    if (!button || !result || button.disabled) return;
+    const t = state.translations?.gui?.settings;
+    if (!t) return;
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    result.textContent = t.diagnostics_saving;
+    result.className = 'help-text';
+    const agent = navigator.userAgent || '';
+    const browser = /Edg\//.test(agent) ? 'Edge' : /Firefox\//.test(agent) ? 'Firefox'
+        : /Chrome\//.test(agent) ? 'Chrome' : /Safari\//.test(agent) ? 'Safari' : 'Other';
+    const platform = /Android/.test(agent) ? 'Android' : /iPhone|iPad/.test(agent) ? 'iOS'
+        : /Windows/.test(agent) ? 'Windows' : /Macintosh/.test(agent) ? 'macOS'
+        : /Linux/.test(agent) ? 'Linux' : 'Other';
+    try {
+        const response = await fetch('/api/diagnostics', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-TDM-Request': '1' },
+            body: JSON.stringify({ browser: {
+                width: Math.min(32000, Math.max(0, Math.round(window.innerWidth))),
+                height: Math.min(32000, Math.max(0, Math.round(window.innerHeight))),
+                browser, platform, tab: 'settings', online: Boolean(navigator.onLine),
+                socket_connected: Boolean(socket && socket.connected)
+            } })
+        });
+        const data = await response.json();
+        if (!response.ok || data.success !== true || typeof data.file !== 'string') {
+            result.textContent = response.status === 429 ? t.diagnostics_busy : t.diagnostics_error;
+            result.className = 'help-text error';
+            return;
+        }
+        result.textContent = t.diagnostics_saved.replace('{path}', `data/${data.file}`);
+        result.className = 'help-text success';
+    } catch (_) {
+        result.textContent = t.diagnostics_error;
+        result.className = 'help-text error';
+    } finally {
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+    }
+}
+
 
 // ==================== Tab Management ====================
 
@@ -2288,6 +2598,7 @@ function switchTab(tabName) {
 // ==================== Event Listeners ====================
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('now-watching-toggle').addEventListener('click', toggleNowWatchingPreview);
     // Fetch and display version information
     fetchAndDisplayVersion();
 
@@ -2318,7 +2629,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
     document.getElementById('minimum-refresh-interval').addEventListener('change', saveSettings);
+    ['mining-hours-always', 'mining-hours-range', 'mining-hours-start', 'mining-hours-end']
+        .forEach(id => document.getElementById(id).addEventListener('change', onMiningHoursChange));
     document.getElementById('drop-name-blacklist').addEventListener('change', saveSettings);
+    document.getElementById('allow-unlinked-campaigns').addEventListener('change', onUnlinkedMiningChange);
     // Proxy uses a manual "Set Proxy" button instead of auto-save
     document.getElementById('set-proxy-btn').addEventListener('click', () => {
         const proxyInput = document.getElementById('proxy-url');
@@ -2331,10 +2645,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
+    document.getElementById('test-discord-btn').addEventListener('click', () => updateDiscordSettings('test'));
+    document.getElementById('save-discord-btn').addEventListener('click', () => updateDiscordSettings('save'));
+    document.getElementById('remove-discord-btn').addEventListener('click', () => updateDiscordSettings('remove'));
     document.getElementById('test-telegram-btn').addEventListener('click', testTelegramConnection);
     document.getElementById('save-telegram-btn').addEventListener('click', handleSaveTelegramClick);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
     document.getElementById('clear-cache-btn').addEventListener('click', clearAllCache);
+    document.getElementById('dump-diagnostics-btn').addEventListener('click', dumpDiagnostics);
 
     // History tab
     document.getElementById('history-btn-filter')?.addEventListener('click', () => {
@@ -2366,7 +2684,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inventory filters
     document.getElementById('filter-active').addEventListener('change', onInventoryFilterChange);
-    document.getElementById('filter-not-linked').addEventListener('change', onInventoryFilterChange);
+    document.getElementById('filter-link-status').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-upcoming').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-expired').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-finished').addEventListener('change', onInventoryFilterChange);
@@ -2442,7 +2760,7 @@ function renderWantedItems(tree) {
         // Game Icon
         let iconUrl = gameGroup.game_icon;
         if (iconUrl) {
-            iconUrl = iconUrl.replace('{width}', '40').replace('{height}', '53');
+            iconUrl = iconUrl.replace('{width}', '144').replace('{height}', '192');
         }
 
         const headerChildren = [makeElement('span', { class: 'wanted-game-index' }, `#${index + 1}`)];
@@ -2828,7 +3146,8 @@ async function clearHistory() {
 
 // ==================== DOM Utilities ====================
 
-const TRUSTED_HELP_LINKS = new Set(['https://www.twitch.tv/drops/campaigns', 'https://t.me/BotFather']);
+const TRUSTED_HELP_LINKS = new Set(['https://www.twitch.tv/drops/campaigns',
+    'https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks', 'https://t.me/BotFather']);
 
 function tgHelpSetup(t) {
     const tg = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
@@ -2884,7 +3203,7 @@ function makeHelpList(tag, items) {
 
 function appendTrustedHelpContent(parent, text) {
     const source = String(text);
-    const linkPattern = /<a\b[^>]*\bhref=(["'])(https:\/\/www\.twitch\.tv\/drops\/campaigns|https:\/\/t\.me\/BotFather)\1[^>]*>(.*?)<\/a>/gi;
+    const linkPattern = /<a\b[^>]*\bhref=(["'])(https:\/\/support\.discord\.com\/hc\/en-us\/articles\/228383668-Intro-to-Webhooks|https:\/\/www\.twitch\.tv\/drops\/campaigns|https:\/\/t\.me\/BotFather)\1[^>]*>(.*?)<\/a>/gi;
     let lastIndex = 0;
     let match;
     let matched = false;

@@ -1,4 +1,4 @@
-"""Exercise discovery and watch submission together with the Smart TV client."""
+"""Exercise beacon discovery and auxiliary telemetry together with the Smart TV client."""
 
 import base64
 import json
@@ -43,15 +43,17 @@ async def test_smartbox_watch_discovers_beacon_on_public_channel_page(inline_bea
         yield SimpleNamespace(status=status, text=AsyncMock(return_value=text))
 
     client = SimpleNamespace(
+        is_mining_time=lambda: True,
         _client_type=ClientType.SMARTBOX,
         request=request,
         _auth_state=SimpleNamespace(user_id=12345),
         gui=SimpleNamespace(channels=MagicMock()),
     )
     channel = Channel(client, id=67890, login="example_channel")
+    client.watching_channel = SimpleNamespace(get_with_default=lambda default: channel)
     channel._stream = Stream(channel, id=24680, game=None, viewers=1, title="Test")
 
-    assert await channel.send_watch() is True
+    assert await channel._send_watch_spade() is True
     assert channel.url == "https://www.twitch.tv/example_channel"
     assert requests[0] == ("GET", str(channel.url))
     assert requests[-1] == ("POST", beacon)
@@ -60,5 +62,5 @@ async def test_smartbox_watch_discovers_beacon_on_public_channel_page(inline_bea
     assert events[0]["properties"]["channel_id"] == "67890"
 
     requests.clear()
-    assert await channel.send_watch() is True
+    assert await channel._send_watch_spade() is True
     assert requests == [("POST", beacon)]

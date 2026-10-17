@@ -76,6 +76,7 @@ UI_FUNCTIONS = [
     "saveTelegramSettings",
     "handleSaveTelegramClick",
     "updateSettingsUI",
+    "toggleMiningHoursRange",
 ]
 UI_SETUP = r"""
 const assert = require('node:assert/strict');

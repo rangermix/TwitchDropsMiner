@@ -4,6 +4,7 @@ import fnmatch
 import hashlib
 import io
 import os
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -107,7 +108,7 @@ def test_release_publisher_requires_all_native_builds_and_exact_source():
     publish = release["jobs"]["create-github-release"]
     assert set(publish["needs"]) == {"prepare-release", "build-helpers"}
     assert publish["permissions"] == {"contents": "write"}
-    release_step = next(step for step in publish["steps"] if "publish_helper_release.py" in step.get("run", ""))
+    release_step = next(step for step in publish["steps"] if "publish_release.py" in step.get("run", ""))
     assert release_step["env"]["GH_TOKEN"] == "${{ github.token }}"
     assert '--prerelease "$IS_PRERELEASE" --assets release-assets --notes release_notes.md' in release_step["run"]
     assert {item["platform"] for item in native["jobs"]["build"]["strategy"]["matrix"]["include"]} == set(PLATFORMS)
@@ -136,7 +137,14 @@ def test_release_tag_guard_rejects_missing_or_different_source(tmp_path, tag_sta
         git("tag", "v1.4.0")
     if tag_state == "different":
         git("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "--allow-empty", "-m", "second")
-    result = subprocess.run(["bash", "-eo", "pipefail", "-c", step["run"]], cwd=tmp_path,
+    bash = shutil.which("bash") or "bash"
+    if sys.platform == "win32":
+        # The System32 bash launcher enters WSL and loses this Windows test's
+        # environment. Select the Bash distributed with the Git used above.
+        git_bash = Path(shutil.which("git") or "git").parent.parent / "bin/bash.exe"
+        if git_bash.is_file():
+            bash = str(git_bash)
+    result = subprocess.run([bash, "-eo", "pipefail", "-c", step["run"]], cwd=tmp_path,
         env={**os.environ, "RELEASE_VERSION": "1.4.0", "GITHUB_OUTPUT": str(tmp_path / "output")},
         capture_output=True, text=True)
     assert (result.returncode == 0) == (tag_state == "matching"), result.stdout + result.stderr

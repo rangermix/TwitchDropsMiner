@@ -28,7 +28,11 @@ class SessionError(LoginException):
 
 
 class PrivateSessionFile:
-    """Atomic owner-only JSON storage; callers never log the stored object."""
+    """Atomic JSON storage with POSIX owner-only mode and inherited Windows ACLs.
+
+    Windows callers must use a directory whose ACL restricts credential access.
+    Callers never log the stored object.
+    """
 
     def __init__(self, path: Path):
         self.path = path

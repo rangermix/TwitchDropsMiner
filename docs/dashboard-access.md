@@ -8,13 +8,15 @@ Use it before making the dashboard accessible beyond your trusted home network.
 
 In **Settings → Dashboard password**, enter and confirm a password of 8–1024
 characters, then select **Enable password protection**. No username is needed.
+Before signing in to Twitch, expand **Dashboard password** below the login browser
+to access the same controls.
 Enabling protection immediately locks out other browsers; mining continues in the
 background.
 
 The password protects the dashboard, its ordinary API, and live updates. The login
 page, authentication status, and `/healthz` remain available without a password.
-The login helper has its own **Allow helper connection** setting; dashboard password
-protection does not close helper access. See [Twitch login](authentication.md#allow-helper-connection-and-account-replacement).
+The Twitch browser viewer and login actions use the same dashboard password
+protection. See [Twitch login](authentication.md#dashboard-access-and-source-installations).
 
 ## Sessions and password changes
 
@@ -35,7 +37,7 @@ page can be retried with **Log in** without reloading the page.
 ## Reverse proxy and HTTPS
 
 For remote access to a miner on your own home hardware, use HTTPS through your reverse
-proxy to protect passwords, cookies, and helper uploads. Configure the password on a
+proxy to protect passwords, cookies, and the login browser. Configure the password on a
 trusted network before exposing the dashboard.
 
 Set the miner's `PUBLIC_BASE_URL` environment variable to the exact root address you

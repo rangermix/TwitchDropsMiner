@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import os
 import stat
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
@@ -93,7 +94,9 @@ async def test_import_validates_before_private_save_and_preserves_android(tmp_pa
     assert "test-token" not in json.dumps(result)
     assert "test-integrity" not in json.dumps(result)
     assert cookie.read_bytes() == b"existing android credentials"
-    assert stat.S_IMODE(session.path.stat().st_mode) == 0o600
+    # Windows access is controlled by directory ACLs, not POSIX mode bits.
+    if os.name == "posix":
+        assert stat.S_IMODE(session.path.stat().st_mode) == 0o600
     identity = await session.authenticate(login())
     assert identity.user_id == 42 and identity.token == "test-token"
     assert service.request.await_count == 2
