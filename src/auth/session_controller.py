@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import shutil
@@ -57,11 +58,11 @@ class SessionController:
             yield
         except SessionError as error:
             error.annotate(stage=stage)
-            logging.getLogger(__name__).warning("SESSION_DIAGNOSTIC %s", error.diagnostic.to_dict())
+            logging.getLogger(__name__).warning("SESSION_DIAGNOSTIC %s", json.dumps(error.diagnostic.to_dict(), sort_keys=True))
             raise
         except Exception:
             failure = SessionError("HELPER_FAILED", stage=stage, reason="unexpected_exception")
-            logging.getLogger(__name__).warning("SESSION_DIAGNOSTIC %s", failure.diagnostic.to_dict())
+            logging.getLogger(__name__).warning("SESSION_DIAGNOSTIC %s", json.dumps(failure.diagnostic.to_dict(), sort_keys=True))
             raise failure from None
 
     @asynccontextmanager

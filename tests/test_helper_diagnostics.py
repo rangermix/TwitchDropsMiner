@@ -60,6 +60,10 @@ def test_issue148_catalog_failure_identifies_phase_and_fixed_reason(protocol, ph
     assert issuer.issue.await_count == (phase == "issued_validation")
     assert session.status()["state"] == "waiting" and session.seed() is None
     assert not session.path.exists()
+    logged = [json.loads(record.getMessage().split("SESSION_DIAGNOSTIC ", 1)[1])
+              for record in caplog.records if record.getMessage().startswith("SESSION_DIAGNOSTIC ")]
+    assert logged and logged[-1]["stage"] == phase
+    assert logged[-1]["reason"] == reason
     if reason == "unknown":
         assert message not in response.text + json.dumps(client.get("/api/session").json()) + caplog.text
 
