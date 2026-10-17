@@ -14,6 +14,13 @@ from .async_helpers import (
 # Backoff
 from .backoff import ExponentialBackoff
 
+# Drop ignore policy
+from .drop_ignore_policy import (
+    DropIgnoreEvaluation,
+    DropIgnorePolicy,
+    DropIgnoreReason,
+)
+
 # JSON utilities
 from .json_utils import (
     SERIALIZE_ENV,
@@ -26,6 +33,9 @@ from .json_utils import (
 
 # Rate limiting
 from .rate_limiter import RateLimiter
+
+# Schedule helpers
+from .schedule import parse_minutes, window_status
 
 # String utilities
 from .string_utils import (
@@ -61,6 +71,13 @@ __all__ = [
     "AwaitableValue",
     # Rate limiting
     "RateLimiter",
+    # Schedule helpers
+    "parse_minutes",
+    "window_status",
     # Backoff
     "ExponentialBackoff",
+    # Drop ignore policy
+    "DropIgnoreEvaluation",
+    "DropIgnorePolicy",
+    "DropIgnoreReason",
 ]

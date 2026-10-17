@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import suppress
-from time import time
+from time import monotonic
 from typing import TYPE_CHECKING, NoReturn
 
 from src.config import CALL, GQL_OPERATIONS, WATCH_INTERVAL
@@ -55,11 +55,13 @@ class WatchService:
         Determines if the given channel qualifies as a watching candidate.
 
         A channel can be watched if:
-        - There are wanted games configured
         - The channel is online
-        - Drops are enabled on the channel
-        - The channel is streaming a wanted game
-        - At least one campaign can be progressed on this channel
+        - Twitch has not reported an active ban for the signed-in account
+        - A campaign for a wanted game can be progressed on this channel
+        - Drops are enabled, unless the campaign uses a special category
+
+        Campaign eligibility enforces the game match, with a cross-category
+        exception for participating channels in special-category campaigns.
 
         Args:
             channel: The channel to evaluate
@@ -67,18 +69,18 @@ class WatchService:
         Returns:
             True if the channel can be watched, False otherwise
         """
-        if not self._twitch.wanted_games:
+        wanted_games = self._twitch.wanted_games
+        if not wanted_games or not channel.online or channel.banned:
             return False
 
-        # exit early if stream is offline or drops aren't enabled
-        if not channel.online or not channel.drops_enabled:
-            return False
-
-        # check if we can progress any campaign for the played game
-        if channel.game is None or channel.game not in self._twitch.wanted_games:
-            return False
-
-        return any(campaign.can_earn(channel) for campaign in self._twitch.inventory)
+        return any(
+            # Respect the user's selection using the campaign's category.
+            campaign.game in wanted_games
+            and campaign.can_earn(channel)
+            # Special campaigns may progress without the channel's drops flag.
+            and (campaign.game.is_special() or channel.drops_enabled)
+            for campaign in self._twitch.inventory
+        )
 
     def should_switch(self, channel: Channel) -> bool:
         """
@@ -86,6 +88,7 @@ class WatchService:
 
         A channel should be switched to if:
         - We're not currently watching anything
+        - The currently watched channel can no longer progress a wanted campaign
         - The channel's game has higher priority than the watching channel's game
         - The channel has the same game priority but is ACL-based and watching isn't
 
@@ -96,11 +99,11 @@ class WatchService:
             True if we should switch to this channel, False otherwise
         """
         watching_channel = self._twitch.watching_channel.get_with_default(None)
-        if watching_channel is None:
+        if watching_channel is None or not self.can_watch(watching_channel):
             return True
 
-        channel_order = self._twitch._channel_service.get_priority(channel)
-        watching_order = self._twitch._channel_service.get_priority(watching_channel)
+        channel_order = self._twitch._channel_service.get_mining_priority(channel)
+        watching_order = self._twitch._channel_service.get_mining_priority(watching_channel)
 
         return (
             # this channel's game is higher order than the watching one's
@@ -162,47 +165,47 @@ class WatchService:
         Args:
             delay: Time in seconds to sleep
         """
-        self._twitch._watching_restart.clear()
         with suppress(asyncio.TimeoutError):
             await asyncio.wait_for(self._twitch._watching_restart.wait(), timeout=delay)
+        self._twitch._watching_restart.clear()
 
     @task_wrapper(critical=True)
     async def watch_loop(self) -> NoReturn:
         """
         Main watch loop that sends watch payloads and monitors drop progress.
 
-        This loop:
-        1. Waits for a channel to watch
-        2. Sends watch payload to the channel
-        3. Waits ~20 seconds for websocket progress update
-        4. If no update received, queries drop progress via GQL or estimates it
-        5. Sleeps until next watch interval (~20 seconds)
-        6. Repeats
-
-        The loop handles cases where Twitch temporarily stops reporting progress
-        by falling back to GQL queries or minute bumping.
+        Poll HLS within the rolling playlist window. Minute telemetry is throttled
+        by Channel, and the existing progress fallback keeps its minute cadence.
         """
-        interval: float = WATCH_INTERVAL.total_seconds()
+        interval = WATCH_INTERVAL.total_seconds()
+        next_progress = monotonic() + 20
 
         while True:
             channel: Channel = await self._twitch.watching_channel.get()
 
-            if not channel.online:
+            if not self._twitch.is_mining_time() or not channel.online or channel.banned:
                 # if the channel isn't online anymore, we stop watching it
                 self.stop_watching()
                 continue
 
-            # logger.log(CALL, f"Sending watch payload to: {channel.name}")
+            stream = channel._stream
+            started = monotonic()
             succeeded: bool = await channel.send_watch()
-            last_sent: float = time()
 
             if not succeeded:
                 logger.log(CALL, f"Watch requested failed for channel: {channel.name}")
 
-            # wait ~20 seconds for a progress update
-            await asyncio.sleep(20)
+            # A ten-second poll fits inside Twitch's rolling segment window.
+            await self.watch_sleep(max(0, 10 - (monotonic() - started)))
+            if stream is None or not channel._watch_current(stream):
+                continue
 
-            if self._twitch.gui.progress.minute_almost_done():
+            if (
+                succeeded
+                and monotonic() >= next_progress
+                and self._twitch.gui.progress.minute_almost_done()
+            ):
+                next_progress = monotonic() + interval
                 # If the previous update was more than ~60s ago, and the progress tracker
                 # isn't counting down anymore, that means Twitch has temporarily
                 # stopped reporting drop's progress. To ensure the timer keeps at least somewhat
@@ -212,14 +215,20 @@ class WatchService:
 
                 # Solution 1: use GQL to query for the currently mined drop status
                 try:
-                    context = await self._twitch.gql_request(
-                        GQL_OPERATIONS["CurrentDrop"].with_variables({"channelID": str(channel.id)})
+                    context = await asyncio.wait_for(
+                        self._twitch.gql_request(
+                            GQL_OPERATIONS["CurrentDrop"].with_variables({"channelID": str(channel.id)})
+                        ),
+                        timeout=5,
                     )
                     drop_data: JsonType | None = context["data"]["currentUser"][
                         "dropCurrentSession"
                     ]
-                except GQLException:
+                except (GQLException, TimeoutError):
                     drop_data = None
+
+                if not channel._watch_current(stream):
+                    continue
 
                 if drop_data is not None:
                     gql_drop: TimedDrop | None = self._twitch._drops.get(drop_data["dropID"])
@@ -250,5 +259,3 @@ class WatchService:
                         handled = True
                     else:
                         logger.log(CALL, "No active drop could be determined")
-
-            await self.watch_sleep(interval - min(time() - last_sent, interval))

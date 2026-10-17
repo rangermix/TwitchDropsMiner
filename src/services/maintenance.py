@@ -93,4 +93,4 @@ class MaintenanceService:
 
         # this triggers a restart of this task every (up to) <timedelta> minutes
         logger.log(CALL, "Maintenance task requests a reload")
-        self._twitch.change_state(State.INVENTORY_FETCH)
+        self._twitch.request_inventory_refresh()

@@ -10,10 +10,13 @@ Run all test suites:
 
 ```bash
 # Run semver validation tests
-.github/scripts/test/test_validate_semver.sh
+bash .github/scripts/test/test_validate_semver.sh
 
 # Run GitHub Actions output tests
-.github/scripts/test/test_github_output.sh
+bash .github/scripts/test/test_github_output.sh
+
+# Run project-version consistency tests
+bash .github/scripts/test/test_extract_version.sh
 ```
 
 ### Test validate_semver.sh
@@ -106,6 +109,12 @@ Tests failed:       0
 
 - `0` - All tests passed
 - `1` - One or more tests failed
+
+### Test extract_version.sh
+
+`test_extract_version.sh` verifies matching file and release-branch versions, rejects
+drift in `src/version.py`, `pyproject.toml`, or `uv.lock`, and checks the GitHub Actions
+outputs used by the release workflows.
 
 ## Adding New Tests
 

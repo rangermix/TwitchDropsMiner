@@ -9,8 +9,94 @@ const state = {
     settings: {},
     currentDrop: null,
     countdownTimer: null,  // Track the active countdown timer
-    translations: {}  // Store current translations
+    translations: {},  // Store current translations
+    previewEnabled: false  // Explicit opt-in for this page only
 };
+
+// ==================== UI Utilities ====================
+
+function showToast(message, type = 'info') {
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    
+    toastContainer.appendChild(toast);
+    
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+    });
+
+    // Remove after 5 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+function showConfirmModal(message, onConfirm) {
+    if (document.querySelector('.modal-overlay')) return;
+    const previousFocus = document.activeElement;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    const modal = document.createElement('div');
+    modal.className = 'modal-box';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'confirmation-message');
+    const text = document.createElement('div');
+    text.id = 'confirmation-message';
+    text.className = 'modal-text';
+    text.textContent = message;
+    const btnContainer = document.createElement('div');
+    btnContainer.className = 'modal-buttons';
+    const t = state.translations;
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'secondary-btn';
+    cancelBtn.textContent = t.gui?.settings?.cancel_btn || 'Cancel';
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'primary-btn';
+    confirmBtn.textContent = t.gui?.settings?.confirm_btn || 'Confirm';
+    btnContainer.appendChild(cancelBtn);
+    btnContainer.appendChild(confirmBtn);
+    modal.appendChild(text);
+    modal.appendChild(btnContainer);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    cancelBtn.focus();
+    requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+        modal.style.transform = 'scale(1)';
+    });
+    let closed = false;
+    const close = (confirmed = false) => {
+        if (closed) return;
+        closed = true;
+        overlay.remove();
+        if (previousFocus?.isConnected) previousFocus.focus();
+        if (confirmed) onConfirm();
+    };
+    cancelBtn.onclick = () => close();
+    confirmBtn.onclick = () => close(true);
+    overlay.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            close();
+        } else if (event.key === 'Tab') {
+            event.preventDefault();
+            (document.activeElement === cancelBtn ? confirmBtn : cancelBtn).focus();
+        }
+    });
+}
 
 // ==================== Version Checking ====================
 
@@ -91,6 +177,7 @@ const socket = io({
 socket.on('connect', () => {
     console.log('Connected to server');
     state.connected = true;
+    globalThis.browserLoginPanel?.load();
     const connText = state.translations.gui?.websocket?.connected || 'Connected';
     document.getElementById('connection-indicator').textContent = '● ' + connText;
     document.getElementById('connection-indicator').className = 'connected';
@@ -140,7 +227,7 @@ socket.on('initial_state', (data) => {
         }
     }
 
-    if (data.settings) updateSettingsUI(data.settings);
+    if (data.settings) updateSettingsUI(data.settings, true);
     if (data.login) updateLoginStatus(data.login);
     if (data.manual_mode) updateManualModeUI(data.manual_mode);
     // Restore current drop progress if it exists
@@ -222,29 +309,19 @@ socket.on('inventory_batch_update', (data) => {
 });
 
 socket.on('drop_update', (data) => {
-    updateDrop(data.campaign_id, data.drop);
-});
-
-socket.on('login_required', () => {
-    showLoginForm();
-});
-
-socket.on('oauth_code_required', (data) => {
-    showOAuthCode(data.url, data.code);
+    updateDrop(data.campaign_id, data.drop, data.campaign, data.drops);
 });
 
 socket.on('login_status', (data) => {
     updateLoginStatus(data);
 });
 
-socket.on('login_clear', (data) => {
-    if (data.login) document.getElementById('username').value = '';
-    if (data.password) document.getElementById('password').value = '';
-    if (data.token) document.getElementById('2fa-token').value = '';
+socket.on('session_status', (data) => {
+    globalThis.browserLoginPanel?.updateStatus(data);
 });
 
 socket.on('settings_updated', (data) => {
-    updateSettingsUI(data);
+    updateSettingsUI(data, true);
 });
 
 socket.on('games_available', (data) => {
@@ -345,7 +422,63 @@ function clearWatchingChannel() {
     renderChannels();
 }
 
+function channelMatchesGameFilter(channel, gamesToWatchSet) {
+    return channel.watching ||
+        gamesToWatchSet.size === 0 ||
+        Boolean(channel.game && gamesToWatchSet.has(channel.game.toLowerCase()));
+}
+
+function updateNowWatching() {
+    const card = document.getElementById('now-watching');
+    if (!card) return;
+    const channel = Object.values(state.channels).find(ch => ch.watching);
+    const t = state.translations.gui?.channels || {};
+    const img = document.getElementById('now-watching-img');
+    const preview = document.getElementById('now-watching-preview');
+    const button = document.getElementById('now-watching-toggle');
+    if (!channel) state.previewEnabled = false;
+    const enabled = state.previewEnabled && Boolean(channel?.login);
+    preview.hidden = !enabled;
+    button.disabled = !channel?.login;
+    button.setAttribute('aria-pressed', String(Boolean(enabled)));
+    button.textContent = enabled ? (t.hide_preview || 'Hide thumbnail') : (t.show_preview || 'Show thumbnail');
+    button.title = t.preview_help || 'Loads Twitch thumbnails and uses extra bandwidth. Off on each page load.';
+    document.getElementById('now-watching-title').textContent = t.now_watching || 'Now Watching';
+    document.getElementById('now-watching-live').textContent = t.online || 'Online';
+    document.getElementById('now-watching-off').textContent = t.preview_off || 'Thumbnail is off';
+    document.getElementById('now-watching-off').hidden = enabled;
+    if (!enabled) {
+        img.style.backgroundImage = '';
+        delete img.dataset.src;
+    }
+    if (!channel) {
+        card.classList.add('hidden');
+        return;
+    }
+    card.classList.remove('hidden');
+    if (enabled) {
+        const login = String(channel.login).toLowerCase();
+        // Only opted-in pages load thumbnails; channel events refresh at most once per minute.
+        const url = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${encodeURIComponent(login)}-440x248.jpg?t=${Math.floor(Date.now() / 60000)}`;
+        if (img.dataset.src !== url) {
+            img.dataset.src = url;
+            img.style.backgroundImage = `url("${url}")`;
+        }
+    }
+    const viewersText = state.translations.gui?.channels?.viewers || 'viewers';
+    const viewers = channel.viewers !== null && channel.viewers !== undefined
+        ? ` | ${Number(channel.viewers).toLocaleString()} ${viewersText}`
+        : '';
+    document.getElementById('now-watching-info').textContent = channel.name + viewers;
+}
+
+function toggleNowWatchingPreview() {
+    state.previewEnabled = !state.previewEnabled;
+    updateNowWatching();
+}
+
 function renderChannels() {
+    updateNowWatching();
     const container = document.getElementById('channels-list');
     container.innerHTML = '';
 
@@ -361,13 +494,14 @@ function renderChannels() {
 
     // Get the games to watch list from settings
     const gamesToWatch = state.settings.games_to_watch || [];
-    const gamesToWatchSet = new Set(gamesToWatch);
+    const gamesToWatchSet = new Set(gamesToWatch.map(g => g.toLowerCase()));
 
-    // Filter channels to selected games unless all eligible campaigns are enabled.
-    const filteredChannels = channels.filter(channel => {
-        const gameName = channel.game;
-        return !state.settings.priority_list_only || gamesToWatch.length === 0 || (gameName && gamesToWatchSet.has(gameName));
-    });
+    // Only an explicit opt-in exposes fallback games. Keep the watched channel
+    // visible while a settings update changes the selected-game filter.
+    const filteredChannels = channels.filter(
+        channel => state.settings.priority_list_only === false ||
+            channelMatchesGameFilter(channel, gamesToWatchSet)
+    );
 
     if (filteredChannels.length === 0) {
         const emptyMsg = t.gui?.channels?.no_channels_for_games || 'No channels found for selected games...';
@@ -377,98 +511,88 @@ function renderChannels() {
         return;
     }
 
-    // Group channels by game
-    const gameGroups = {};
-    filteredChannels.forEach(channel => {
-        const gameName = channel.game || 'No Game';
-        const gameId = channel.game_id || 'no-game';
-        const gameIcon = channel.game_icon;
-
-        if (!gameGroups[gameId]) {
-            gameGroups[gameId] = {
-                name: gameName,
-                icon: gameIcon,
-                channels: []
-            };
-        }
-        gameGroups[gameId].channels.push(channel);
+    // Flat list: watching first, then online, then by viewers
+    const sortedChannels = [...filteredChannels].sort((a, b) => {
+        if (Boolean(a.watching) !== Boolean(b.watching)) return b.watching ? 1 : -1;
+        if (Boolean(a.online) !== Boolean(b.online)) return b.online ? 1 : -1;
+        return (b.viewers || 0) - (a.viewers || 0);
     });
 
-    // Sort games: prioritize games with watching channels, then by total viewers
-    const sortedGames = Object.entries(gameGroups).sort(([idA, groupA], [idB, groupB]) => {
-        const hasWatchingA = groupA.channels.some(ch => ch.watching);
-        const hasWatchingB = groupB.channels.some(ch => ch.watching);
+    const formatViewers = n => {
+        if (n >= 1e6) return `${+(n / 1e6).toFixed(2)}M`;
+        if (n >= 1e3) return `${+(n / 1e3).toFixed(2)}K`;
+        return String(n);
+    };
 
-        if (hasWatchingA !== hasWatchingB) return hasWatchingB ? 1 : -1;
+    sortedChannels.forEach(channel => {
+        const div = document.createElement('div');
+        div.className = 'channel-item';
+        if (channel.watching) div.classList.add('watching');
+        div.classList.add(channel.online ? 'online' : 'offline');
 
-        // Sum total viewers for each game
-        const totalViewersA = groupA.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
-        const totalViewersB = groupB.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
+        const name = String(channel.name || '?');
+        let hue = 0;
+        for (const ch of name) hue = (hue * 31 + ch.charCodeAt(0)) % 360;
+        const avatar = makeElement('span', { class: 'channel-avatar' }, name[0].toUpperCase());
+        avatar.style.background = `hsl(${hue}, 45%, 38%)`;
 
-        return totalViewersB - totalViewersA;
-    });
-
-    // Render each game group
-    sortedGames.forEach(([gameId, group]) => {
-        // Create game header
-        const gameHeader = document.createElement('div');
-        gameHeader.className = 'game-group-header';
-
-        const channelCount = group.channels.length;
-        const totalViewers = group.channels.reduce((sum, ch) => sum + (ch.viewers || 0), 0);
-
-        const channelText = channelCount === 1
-            ? (t.gui?.channels?.channel_count || 'channel')
-            : (t.gui?.channels?.channel_count_plural || 'channels');
-        const viewersText = t.gui?.channels?.viewers || 'viewers';
-
-        if (group.icon) {
-            gameHeader.appendChild(makeImageElement(group.icon.replace('{width}', '40').replace('{height}', '53'), group.name, 'game-icon'));
-        }
-        gameHeader.appendChild(makeElement('div', { class: 'game-group-info' }, null, el => {
-            el.appendChild(makeElement('div', { class: 'game-group-name' }, group.name));
-            el.appendChild(makeElement('div', { class: 'game-group-stats' }, `${channelCount} ${channelText} • ${totalViewers.toLocaleString()} ${viewersText}`));
-        }));
-
-        container.appendChild(gameHeader);
-
-        // Sort channels within game: watching first, then online, then by viewers
-        group.channels.sort((a, b) => {
-            if (a.watching !== b.watching) return b.watching ? 1 : -1;
-            if (a.online !== b.online) return b.online ? 1 : -1;
-            return (b.viewers || 0) - (a.viewers || 0);
+        const nameDiv = makeElement('div', { class: 'channel-name' }, name, el => {
+            if (channel.drops_enabled) {
+                el.appendChild(document.createTextNode(' '));
+                el.appendChild(makeElement('span', { class: 'channel-badge drops' }, 'DROPS'));
+            }
+            if (channel.acl_based) {
+                el.appendChild(document.createTextNode(' '));
+                el.appendChild(makeElement('span', { class: 'channel-badge acl' }, 'ACL'));
+            }
+        });
+        const stateDiv = makeElement('div', { class: 'channel-info' }, channel.online ? t.gui?.channels?.online : t.gui?.channels?.offline, el => {
+            if (channel.game) {
+                el.appendChild(makeElement('span', { class: 'channel-game' }, ` · ${channel.game}`));
+            }
+        });
+        const textDiv = makeElement('div', { class: 'channel-text' }, '', el => {
+            el.appendChild(nameDiv);
+            el.appendChild(stateDiv);
         });
 
-        // Render channels in this game
-        group.channels.forEach(channel => {
-            const div = document.createElement('div');
-            div.className = 'channel-item';
-            if (channel.watching) div.classList.add('watching');
-            if (channel.online) div.classList.add('online');
-            else div.classList.add('offline');
-
-            const nameDiv = makeElement('div', { class: 'channel-name' }, channel.name, el => {
-                if (channel.drops_enabled) {
-                    el.appendChild(document.createTextNode(' '));
-                    el.appendChild(makeElement('span', { class: 'channel-badge drops' }, 'DROPS'));
-                }
-                if (channel.acl_based) {
-                    el.appendChild(document.createTextNode(' '));
-                    el.appendChild(makeElement('span', { class: 'channel-badge acl' }, 'ACL'));
-                }
-            });
-            const infoDiv = makeElement('div', { class: 'channel-info' }, channel.viewers !== null ? channel.viewers.toLocaleString() + ' viewers' : 'Offline', el => {
-                if (channel.watching) {
-                    el.appendChild(document.createTextNode(' • '));
-                    el.appendChild(makeElement('strong', {}, 'WATCHING'));
-                }
-            });
-            div.replaceChildren(nameDiv, infoDiv);
-
-            div.onclick = () => selectChannel(channel.id);
-            container.appendChild(div);
+        const viewersDiv = makeElement('span', { class: 'channel-viewers' },
+            channel.viewers !== null && channel.viewers !== undefined ? formatViewers(channel.viewers) : '');
+        const link = makeElement('a', {
+            class: 'channel-ext',
+            href: channel.url,
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            title: name,
+            'aria-label': name,
         });
+        link.addEventListener('click', e => e.stopPropagation());
+
+        div.replaceChildren(avatar, textDiv, viewersDiv, link);
+        div.onclick = () => selectChannel(channel.id);
+        container.appendChild(div);
     });
+}
+
+function updateDropArt() {
+    const art = document.getElementById('drop-art');
+    if (!art) return;
+    const drop = state.currentDrop;
+    const campaign = drop && (state.campaigns[drop.campaign_id] ||
+        Object.values(state.campaigns).find(c => c.game_name === drop.game_name));
+    const raw = campaign?.game_box_art_url;
+    if (!raw) {
+        art.classList.add('hidden');
+        return;
+    }
+    const url = raw.replace('{width}', '285').replace('{height}', '380');
+    if (art.dataset.src !== url) {
+        art.dataset.src = url;
+        art.querySelector('.drop-art-bg').style.backgroundImage = `url("${url}")`;
+        art.querySelector('.drop-art-poster').src = url;
+    }
+    art.querySelector('.drop-art-poster').alt = drop.game_name || '';
+    art.classList.remove('hidden');
 }
 
 function updateDropProgress(data) {
@@ -485,6 +609,7 @@ function updateDropProgress(data) {
     document.getElementById('drop-info').style.display = 'block';
 
     document.getElementById('drop-name').textContent = data.drop_name;
+    updateDropArt();
 
     // Make campaign name clickable with link to Twitch
     const dropGameEl = document.getElementById('drop-game');
@@ -560,9 +685,16 @@ function clearInventory() {
     renderInventory();
 }
 
-function updateDrop(campaignId, dropData) {
-    if (state.campaigns[campaignId]) {
-        const drops = state.campaigns[campaignId].drops;
+function updateDrop(campaignId, dropData, campaignData = {}, dropsData = null) {
+    const campaign = state.campaigns[campaignId];
+    if (campaign) {
+        Object.assign(campaign, campaignData);
+        if (Array.isArray(dropsData)) {
+            campaign.drops = dropsData;
+            renderInventory();
+            return;
+        }
+        const drops = campaign.drops;
         const index = drops.findIndex(d => d.id === dropData.id);
         if (index !== -1) {
             drops[index] = dropData;
@@ -577,7 +709,7 @@ function getInventoryFilters() {
     // Get filter state from UI checkboxes and selected games array
     return {
         show_active: document.getElementById('filter-active')?.checked || false,
-        show_not_linked: document.getElementById('filter-not-linked')?.checked || false,
+        link_status: document.getElementById('filter-link-status')?.value || 'all',
         show_upcoming: document.getElementById('filter-upcoming')?.checked || false,
         show_expired: document.getElementById('filter-expired')?.checked || false,
         show_finished: document.getElementById('filter-finished')?.checked || false,
@@ -592,35 +724,26 @@ function getInventoryFilters() {
 
 
 function campaignMatchesFilters(campaign, filters) {
-    // Calculate "finished" status: all drops claimed
-    const isFinished = campaign.total_drops > 0 && campaign.claimed_drops === campaign.total_drops;
+    const isFinished = campaign.mining_finished ??
+        (campaign.total_drops > 0 && campaign.claimed_drops === campaign.total_drops);
 
-    // Check if any filter is enabled
     const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
-    const anyFilterEnabled = filters.show_active || filters.show_not_linked ||
-        filters.show_upcoming || filters.show_expired ||
-        filters.show_finished || hasGameFilter;
 
-    // If no filters enabled, show all campaigns
-    if (!anyFilterEnabled) {
-        return true;
-    }
+    // Finished campaigns are excluded unless the user explicitly includes them.
+    if (!filters.show_finished && isFinished) return false;
 
-    // Check status filters (OR logic - campaign matches if ANY checked filter applies)
-    let statusMatch = false;
+    // Link state narrows the status result instead of joining its OR group.
+    if (filters.link_status === 'linked' && !campaign.linked) return false;
+    if (filters.link_status === 'not_linked' && campaign.linked) return false;
 
-    if (filters.show_active && campaign.active) statusMatch = true;
-    if (filters.show_not_linked && !campaign.linked) statusMatch = true;
-    if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
-    if (filters.show_expired && campaign.expired) statusMatch = true;
-    if (filters.show_finished && isFinished) statusMatch = true;
+    // Active, upcoming, and expired remain OR-based status filters.
+    const hasStatusFilters = filters.show_active || filters.show_upcoming || filters.show_expired;
 
-    // If status filters are enabled but campaign doesn't match any, filter it out
-    const hasStatusFilters = filters.show_active || filters.show_not_linked ||
-        filters.show_upcoming || filters.show_expired ||
-        filters.show_finished;
-    if (hasStatusFilters && !statusMatch) {
-        return false;
+    if (hasStatusFilters) {
+        const statusMatch = (filters.show_active && campaign.active) ||
+            (filters.show_upcoming && campaign.upcoming) ||
+            (filters.show_expired && campaign.expired);
+        if (!statusMatch) return false;
     }
 
     // Check game name filter (AND logic with status filters, OR logic among selected games)
@@ -671,7 +794,7 @@ function onInventoryFilterChange() {
 function clearInventoryFilters() {
     // Uncheck all filter checkboxes
     document.getElementById('filter-active').checked = false;
-    document.getElementById('filter-not-linked').checked = false;
+    document.getElementById('filter-link-status').value = 'all';
     document.getElementById('filter-upcoming').checked = false;
     document.getElementById('filter-expired').checked = false;
     document.getElementById('filter-finished').checked = false;
@@ -880,6 +1003,7 @@ function applyInventoryViewMode(listView) {
 }
 
 function renderInventory() {
+    updateDropArt();
     const container = document.getElementById('inventory-grid');
     container.innerHTML = '';
 
@@ -919,12 +1043,34 @@ function renderInventory() {
         }
 
         const claimedText = t.gui?.inventory?.status?.claimed || 'Claimed';
+        const ignoredText = t.gui?.inventory?.status?.ignored || 'Ignored';
+        const skippedText = t.gui?.inventory?.status?.skipped || 'Skipped';
         const claimedCountText = t.gui?.inventory?.claimed_drops || 'claimed';
 
         // Build drops elements
         const dropsEl = makeElement('div', { class: 'campaign-drops' });
         campaign.drops.forEach(drop => {
-            const dropItem = makeElement('div', { class: `drop-item${drop.is_claimed ? ' claimed' : ''}${drop.can_claim ? ' active' : ''}` });
+            const policyClass = drop.is_ignored ? ' ignored' : (drop.is_skipped ? ' skipped' : '');
+            let policyStatus = '';
+            let policyReason = '';
+            if (drop.is_ignored) {
+                policyStatus = `⊘ ${ignoredText}`;
+                if (drop.ignored_reason === 'keyword') {
+                    const template = t.gui?.inventory?.ignored_keyword_reason || 'Ignored by keyword: {keyword}';
+                    policyReason = template.replace('{keyword}', drop.ignored_keyword || '');
+                } else if (drop.ignored_reason === 'precondition') {
+                    const template = t.gui?.inventory?.ignored_precondition_reason || 'Ignored because it depends on {drop}';
+                    policyReason = template.replace('{drop}', drop.ignored_precondition || '');
+                }
+            } else if (drop.is_skipped) {
+                policyStatus = `⊘ ${skippedText}`;
+                policyReason = t.gui?.inventory?.skipped_branch_reason || 'Skipped because no mineable reward depends on this drop.';
+            }
+
+            const dropItem = makeElement('div', {
+                class: `drop-item${drop.is_claimed ? ' claimed' : ''}${drop.can_claim ? ' active' : ''}${policyClass}`,
+                ...(policyReason ? { title: policyReason } : {}),
+            });
             dropItem.appendChild(
                 makeElement('div', { class: 'drop-item-header' }, '', el =>
                     el.appendChild(makeElement('div', { class: 'drop-item-info' }, '', el2 =>
@@ -952,6 +1098,8 @@ function renderInventory() {
             dropItem.appendChild(makeElement('div', {}, `${drop.current_minutes} / ${drop.required_minutes} minutes (${Math.round(drop.progress * 100)}%)`));
             if (drop.is_claimed) {
                 dropItem.appendChild(makeElement('div', {}, `✓ ${claimedText}`));
+            } else if (policyStatus) {
+                dropItem.appendChild(makeElement('div', { class: 'drop-policy-status' }, policyStatus));
             }
             dropsEl.appendChild(dropItem);
         });
@@ -990,7 +1138,16 @@ function renderInventory() {
 
         const campaignStatus = makeElement('div', { class: 'campaign-status' }, '', el => {
             el.appendChild(makeElement('span', {}, statusText));
-            el.appendChild(makeElement('span', {}, `${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}`));
+            let countText = `${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}`;
+            if (campaign.ignored_drops > 0) {
+                const ignoredCount = t.gui?.inventory?.ignored_drops || '{count} ignored';
+                countText += ` · ${ignoredCount.replace('{count}', campaign.ignored_drops)}`;
+            }
+            if (campaign.skipped_drops > 0) {
+                const skippedCount = t.gui?.inventory?.skipped_drops || '{count} skipped';
+                countText += ` · ${skippedCount.replace('{count}', campaign.skipped_drops)}`;
+            }
+            el.appendChild(makeElement('span', {}, countText));
         });
 
         const campaignInfo = makeElement('div', { class: 'campaign-info' });
@@ -1015,48 +1172,62 @@ function renderInventory() {
     });
 }
 
-function showLoginForm() {
-    document.getElementById('login-form').style.display = 'block';
-    document.getElementById('oauth-code-display').style.display = 'none';
-}
-
-function showOAuthCode(url, code) {
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('oauth-code-display').style.display = 'block';
-    document.getElementById('oauth-url').href = url;
-    document.getElementById('oauth-code').textContent = code;
-}
-
 function updateLoginStatus(data) {
+    state.login = data;
     const statusEl = document.getElementById('login-status');
     const t = state.translations;
     if (data.user_id) {
         const userIdLabel = t.gui?.login?.user_id_label || 'User ID:';
-        statusEl.textContent = `${data.status} (${userIdLabel} ${data.user_id})`;
-        statusEl.removeAttribute('translation-key');
+        const loggedIn = t.login?.status?.logged_in || 'Logged in';
+        statusEl.textContent = `${loggedIn} (${userIdLabel} ${data.user_id})`;
         statusEl.style.color = 'var(--success-color)';
-        document.getElementById('login-form').style.display = 'none';
-        document.getElementById('oauth-code-display').style.display = 'none';
     } else {
-        const loggedOut = t.gui?.login?.logged_out || 'Not logged in';
-        statusEl.textContent = data.status || loggedOut;
-        statusEl.setAttribute('translation-key', 'logged_out');
+        statusEl.textContent = t.login?.status?.required || 'Login required';
         statusEl.style.color = 'var(--text-secondary)';
-        // Check if OAuth is pending (for late-connecting clients)
-        if (data.oauth_pending) {
-            showOAuthCode(data.oauth_pending.url, data.oauth_pending.code);
-        }
     }
+    statusEl.title = statusEl.textContent;
+    const avatarEl = document.getElementById('user-avatar');
+    if (avatarEl) {
+        const avatarUrl = data.avatar_url;
+        if (typeof avatarUrl === 'string' && avatarUrl.startsWith('https://')) {
+            avatarEl.textContent = '';
+            avatarEl.style.backgroundImage = `url("${avatarUrl}")`;
+        } else {
+            const displayName = data.username || data.user_name || data.name || '';
+            avatarEl.textContent = displayName ? String(displayName)[0].toUpperCase() : '';
+            avatarEl.style.backgroundImage = '';
+        }
+        avatarEl.classList.toggle('logged-in', Boolean(data.user_id));
+        avatarEl.classList.toggle('avatar-image', Boolean(data.user_id) && typeof avatarUrl === 'string' && avatarUrl.startsWith('https://'));
+    }
+    globalThis.browserLoginPanel?.updateLogin(data);
 }
 
 function updateSettingsUI(settings) {
     state.settings = settings;
+    const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
+    if (allowUnlinked) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('inventory-list-view').checked = settings.inventory_list_view || false;
     document.getElementById('priority-list-only').checked = settings.priority_list_only !== false;
     applyInventoryViewMode(settings.inventory_list_view || false);
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
+
+    const miningHours = settings.mining_hours || { mode: 'always', start: '08:00', end: '22:00' };
+    const rangeMode = miningHours.mode === 'range';
+    document.getElementById('mining-hours-always').checked = !rangeMode;
+    document.getElementById('mining-hours-range').checked = rangeMode;
+    document.getElementById('mining-hours-start').value = miningHours.start || '08:00';
+    document.getElementById('mining-hours-end').value = miningHours.end || '22:00';
+    toggleMiningHoursRange(rangeMode);
+
+    const dropBlacklist = document.getElementById('drop-name-blacklist');
+    if (dropBlacklist) {
+        dropBlacklist.value = Array.isArray(settings.drop_name_blacklist)
+            ? settings.drop_name_blacklist.join('\n')
+            : '';
+    }
 
     // Update proxy settings and indicator
     const proxyUrl = settings.proxy || '';
@@ -1068,6 +1239,25 @@ function updateSettingsUI(settings) {
         proxyIndicator.style.display = proxyUrl ? 'inline-flex' : 'none';
         proxyIndicator.title = proxyUrl ? `Proxy active: ${proxyUrl}` : 'Proxy disabled';
     }
+
+    const discordWebhookInput = document.getElementById('discord-webhook-url');
+    if (discordWebhookInput) {
+        discordWebhookInput.value = '';
+        discordWebhookInput.placeholder = settings.discord_configured
+            ? '••••••••' : 'https://discord.com/api/webhooks/ID/TOKEN';
+    }
+
+    // Populate Telegram fields if present in settings (the server never
+    // echoes the stored bot token; it returns a mask placeholder instead).
+    const botTokenInput = document.getElementById('telegram-bot-token');
+    const chatIdInput = document.getElementById('telegram-chat-id');
+    if (botTokenInput) {
+        botTokenInput.value = '';
+        if (settings.telegram_configured) {
+            botTokenInput.placeholder = '••••••••';
+        }
+    }
+    if (chatIdInput) chatIdInput.value = settings.telegram_chat_id || '';
 
     // Update language dropdown if we have the current language
     if (settings.language) {
@@ -1091,7 +1281,7 @@ function updateSettingsUI(settings) {
     // Restore inventory filters from settings
     if (settings.inventory_filters) {
         document.getElementById('filter-active').checked = settings.inventory_filters.show_active || false;
-        document.getElementById('filter-not-linked').checked = settings.inventory_filters.show_not_linked || false;
+        document.getElementById('filter-link-status').value = settings.inventory_filters.link_status || 'all';
         document.getElementById('filter-upcoming').checked = settings.inventory_filters.show_upcoming || false;
         document.getElementById('filter-expired').checked = settings.inventory_filters.show_expired || false;
         document.getElementById('filter-finished').checked = settings.inventory_filters.show_finished || false;
@@ -1204,12 +1394,35 @@ function renderSelectedGames(games) {
         div.className = 'sortable-item';
         div.draggable = true;
         div.dataset.game = game;
+        const priorityInput = makeElement('input', {
+            type: 'number',
+            class: 'priority-input',
+            value: String(index + 1),
+            min: '1',
+            max: String(games.length),
+            'aria-label': (t.gui?.settings?.game_priority || 'Priority for {game}').replace('{game}', game)
+        });
+
         div.replaceChildren(
             makeElement('span', { class: 'drag-handle' }, '☰'),
-            makeElement('span', { class: 'priority-number' }, String(index + 1)),
+            priorityInput,
             makeElement('span', { class: 'game-name' }, game),
-            makeElement('button', { class: 'remove-btn' }, '✕'),
+            makeElement('button', {
+                class: 'remove-btn',
+                title: (t.gui?.settings?.remove_game || 'Remove {game}').replace('{game}', game),
+                'aria-label': (t.gui?.settings?.remove_game || 'Remove {game}').replace('{game}', game)
+            }, '✕')
         );
+
+        // Event listener for priority change
+        priorityInput.addEventListener('change', (e) => {
+            const priority = Number(e.target.value);
+            if (e.target.value.trim() && Number.isInteger(priority)) {
+                changeGamePriority(game, priority - 1);
+            } else {
+                e.target.value = String(index + 1); // Reset on invalid
+            }
+        });
 
         // Event listener for the delete button
         const removeBtn = div.querySelector('.remove-btn');
@@ -1334,6 +1547,25 @@ function toggleGameWatch(gameName, checked) {
     saveSettings();
 }
 
+function changeGamePriority(gameName, newIndex) {
+    if (!Number.isInteger(newIndex)) return;
+    const games = [...(state.settings.games_to_watch || [])];
+    const currentIndex = games.indexOf(gameName);
+
+    if (currentIndex > -1) {
+        games.splice(currentIndex, 1);
+
+        // Ensure newIndex is within bounds
+        newIndex = Math.max(0, Math.min(newIndex, games.length));
+        games.splice(newIndex, 0, gameName);
+
+        state.settings.games_to_watch = games;
+        renderGamesToWatch();
+        renderChannels();
+        saveSettings();
+    }
+}
+
 function removeGameFromWatch(gameName) {
     const games = state.settings.games_to_watch || [];
     const index = games.indexOf(gameName);
@@ -1347,48 +1579,103 @@ function removeGameFromWatch(gameName) {
 }
 
 function selectAllGames() {
-    state.settings.games_to_watch = Array.from(availableGames).sort();
+    const existing = state.settings.games_to_watch || [];
+    const selected = new Set(existing.map(game => game.toLowerCase()));
+    const newGames = Array.from(availableGames).sort().filter(game => {
+        const key = game.toLowerCase();
+        if (selected.has(key)) return false;
+        selected.add(key);
+        return true;
+    });
+    
+    state.settings.games_to_watch = [...existing, ...newGames];
     renderGamesToWatch();
     renderChannels();
     saveSettings();
 }
 
 function deselectAllGames() {
-    state.settings.games_to_watch = [];
-    renderGamesToWatch();
-    renderChannels();
-    saveSettings();
+    if (!state.settings.games_to_watch || state.settings.games_to_watch.length === 0) {
+        return;
+    }
+    
+    const t = state.translations;
+    const msg = t.gui?.settings?.deselect_all_warning || 'Are you sure you want to remove all games from your watch list?';
+    
+    showConfirmModal(msg, () => {
+        state.settings.games_to_watch = [];
+        renderGamesToWatch();
+        renderChannels();
+        saveSettings();
+    });
 }
 
 function addGameFromSearch() {
     const searchInput = document.getElementById('games-filter');
-    const gameName = searchInput.value.trim();
+    const searchLower = searchInput.value.trim().toLowerCase();
 
-    if (!gameName) {
+    if (!searchLower) {
+        return;
+    }
+
+    let gameToAdd = searchInput.value.trim();
+    let isManualAdd = true;
+    
+    // Find matching games from availableGames
+    const matches = Array.from(availableGames).filter(g => g.toLowerCase().includes(searchLower));
+    
+    // 1. Check for exact case-insensitive match
+    const exactMatch = matches.find(g => g.toLowerCase() === searchLower);
+    
+    if (exactMatch) {
+        gameToAdd = exactMatch;
+        isManualAdd = false;
+    } else if (matches.length === 1) {
+        // 2. Check for a single partial match
+        gameToAdd = matches[0];
+        isManualAdd = false;
+    } else if (matches.length > 1) {
+        // Multiple matches found and no exact match. Don't add to avoid ambiguity.
+        const t = state.translations;
+        const msg = t.gui?.settings?.multiple_games_found || 'Multiple games found for your search. Please be more specific.';
+        showToast(msg, 'warning');
         return;
     }
 
     const games = state.settings.games_to_watch || [];
     
-    // Check if already selected
-    if (games.includes(gameName)) {
+    // Check if already selected (case-insensitive)
+    if (games.some(g => g.toLowerCase() === gameToAdd.toLowerCase())) {
         searchInput.value = ''; // Clear input if already added
         renderGamesToWatch(); // Just re-render to clear any filtering state if needed
         return;
     }
 
-    // Add to selected games
-    games.push(gameName);
-    state.settings.games_to_watch = games;
+    const finishAdding = (gameName) => {
+        // Confirmation can outlive a settings update; append to the current list.
+        const current = state.settings.games_to_watch || [];
+        if (current.some(game => game.toLowerCase() === gameName.toLowerCase())) return;
+        state.settings.games_to_watch = [...current, gameName];
 
-    // Add to available games set so it shows up in lists
-    availableGames.add(gameName);
+        // Add to available games set so it shows up in lists
+        availableGames.add(gameName);
 
-    // Clear search and update UI
-    searchInput.value = '';
-    renderGamesToWatch();
-    renderChannels();
-    saveSettings();
+        // Clear search and update UI
+        searchInput.value = '';
+        renderGamesToWatch();
+        renderChannels();
+        saveSettings();
+    };
+
+    // Warn if adding manually
+    if (isManualAdd) {
+        const t = state.translations;
+        let msg = t.gui?.settings?.manual_game_warning || '\"{game}\" is not in the available campaign list. Add it to Games to Watch anyway?';
+        msg = msg.replace('{game}', gameToAdd);
+        showConfirmModal(msg, () => finishAdding(gameToAdd));
+    } else {
+        finishAdding(gameToAdd);
+    }
 }
 
 function flashTitle() {
@@ -1441,40 +1728,6 @@ async function exitManualMode() {
     }
 }
 
-async function submitLogin() {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const token = document.getElementById('2fa-token').value;
-
-    try {
-        await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, token })
-        });
-    } catch (error) {
-        console.error('Failed to submit login:', error);
-    }
-}
-
-async function confirmOAuth() {
-    // Signal that OAuth code has been entered
-    try {
-        await fetch('/api/oauth/confirm', {
-            method: 'POST'
-        });
-        // Hide the OAuth form and show waiting message
-        document.getElementById('oauth-code-display').style.display = 'none';
-        const t = state.translations;
-        const waitingAuth = t.gui?.login?.waiting_auth || 'Waiting for authentication...';
-        const loginStatus = document.getElementById('login-status');
-        loginStatus.textContent = waitingAuth;
-        loginStatus.setAttribute('translation-key', 'waiting_auth');
-    } catch (error) {
-        console.error('Failed to confirm OAuth:', error);
-    }
-}
-
 async function verifyProxy() {
     const proxyInput = document.getElementById('proxy-url');
     const proxyUrl = proxyInput ? proxyInput.value.trim() : '';
@@ -1515,16 +1768,249 @@ async function verifyProxy() {
     }
 }
 
+async function saveDiscordSettings(webhookUrl, removeWebhook = false) {
+    const dc = state.translations.gui?.settings?.discord || {};
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ discord_webhook_url: webhookUrl, discord_remove_webhook: removeWebhook })
+        });
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        if (data.success !== true || !data.settings) throw new Error();
+        updateSettingsUI(data.settings);
+    } catch (error) {
+        throw new Error(dc.save_error || 'Failed to save Discord settings.');
+    }
+}
+
+async function updateDiscordSettings(action) {
+    if (state.discordActionPending) return;
+    const input = document.getElementById('discord-webhook-url');
+    const result = document.getElementById('discord-test-result');
+    if (!result) return;
+    const dc = state.translations.gui?.settings?.discord || {};
+    const webhookUrl = input ? input.value.trim() : '';
+    result.style.display = 'block';
+    if (action !== 'remove' && !webhookUrl && !state.settings.discord_configured) {
+        result.className = 'verify-result error';
+        result.textContent = dc.missing_credentials || 'Please enter a Discord Webhook URL.';
+        return;
+    }
+    state.discordActionPending = true;
+    const controls = ['save-discord-btn', 'test-discord-btn', 'remove-discord-btn', 'discord-webhook-url']
+        .map(id => document.getElementById(id)).filter(Boolean);
+    controls.forEach(control => { control.disabled = true; });
+    result.className = 'verify-result loading';
+    result.textContent = `${action === 'test' ? (dc.test_connection || 'Test Connection') : (dc.save_settings || 'Save Settings')}…`;
+    let saving = false;
+    try {
+        if (action === 'test') {
+            const response = await fetch('/api/settings/test-discord', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ discord_webhook_url: webhookUrl })
+            });
+            if (!response.ok || (await response.json()).success !== true) throw new Error();
+        }
+        saving = true;
+        await saveDiscordSettings(action === 'remove' ? '' : webhookUrl, action === 'remove');
+        result.className = 'verify-result success';
+        result.textContent = action === 'test' ? (dc.success || 'Discord connection successful!')
+            : action === 'remove' ? (dc.removed || 'Webhook removed. Discord notifications are disabled.')
+            : (dc.saved || 'Settings saved successfully!');
+    } catch (error) {
+        result.className = 'verify-result error';
+        result.textContent = saving ? (dc.save_error || 'Failed to save Discord settings.')
+            : (dc.error || 'Failed to connect to Discord. Please check your Webhook URL.');
+    } finally {
+        state.discordActionPending = false;
+        controls.forEach(control => { control.disabled = false; });
+    }
+}
+
+async function testTelegramConnection() {
+    const botTokenInput = document.getElementById('telegram-bot-token');
+    const chatIdInput = document.getElementById('telegram-chat-id');
+    const resultDiv = document.getElementById('telegram-test-result');
+
+    if (!resultDiv) return;
+
+    const botToken = botTokenInput ? botTokenInput.value.trim() : '';
+    const chatId = chatIdInput ? chatIdInput.value.trim() : '';
+    const tg = state.translations.gui?.settings?.telegram || {};
+
+    // Reset display
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'verify-result loading';
+    resultDiv.textContent = `${tg.test_connection || 'Test Connection'}…`;
+
+    if ((!botToken && !state.settings.telegram_configured) || !chatId) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = tg.missing_credentials || 'Please enter a bot token and chat ID.';
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/settings/test-telegram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegram_bot_token: botToken, telegram_chat_id: chatId })
+        });
+
+        if (!response.ok) {
+            throw new Error(`${tg.error || 'Telegram connection failed.'} (HTTP ${response.status})`);
+        }
+        const data = await response.json();
+
+        if (data.success) {
+            // A successful test does not guarantee that settings were saved.
+            await saveTelegramSettings(botToken, chatId);
+            resultDiv.className = 'verify-result success';
+            resultDiv.textContent = tg.success || '✓ Telegram connection successful!';
+        } else {
+            resultDiv.className = 'verify-result error';
+            resultDiv.textContent = tg.error || 'Telegram connection failed.';
+        }
+    } catch (error) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = error.message || tg.error || 'Telegram connection failed.';
+    }
+}
+
+async function saveTelegramSettings(botToken, chatId) {
+    const settings = {
+        telegram_bot_token: botToken,
+        telegram_chat_id: chatId
+    };
+
+    const tg = state.translations.gui?.settings?.telegram || {};
+    const failureMessage = tg.save_error || 'Failed to save Telegram settings.';
+    let response;
+    let data;
+    try {
+        response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        data = await response.json();
+        if (!data.success || !data.settings) {
+            throw new Error(failureMessage);
+        }
+    } catch (error) {
+        const status = response && !response.ok ? ` (HTTP ${response.status})` : '';
+        throw new Error(`${failureMessage}${status}`);
+    }
+    updateSettingsUI(data.settings);
+}
+
+async function handleSaveTelegramClick() {
+    const botTokenInput = document.getElementById('telegram-bot-token');
+    const chatIdInput = document.getElementById('telegram-chat-id');
+    const resultDiv = document.getElementById('telegram-test-result');
+
+    if (!resultDiv) return;
+
+    const botToken = botTokenInput ? botTokenInput.value.trim() : '';
+    const chatId = chatIdInput ? chatIdInput.value.trim() : '';
+    const tg = state.translations.gui?.settings?.telegram || {};
+
+    // Reset display
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'verify-result loading';
+    resultDiv.textContent = `${tg.save_settings || 'Save Settings'}…`;
+
+    // A blank token keeps the stored credential. Clearing the chat ID disables alerts.
+    if (!state.settings.telegram_configured && (!botToken || !chatId)) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = tg.missing_credentials || 'Please enter a bot token and chat ID.';
+        return;
+    }
+
+    try {
+        await saveTelegramSettings(botToken, chatId);
+        resultDiv.className = 'verify-result success';
+        resultDiv.textContent = tg.saved || '✓ Settings saved successfully!';
+    } catch (error) {
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = error.message || tg.save_error || 'Failed to save Telegram settings.';
+    }
+}
+
+function parseDropNameBlacklist(value) {
+    return String(value || '')
+        .split(/\r?\n/)
+        .map(keyword => keyword.trim())
+        .filter(Boolean);
+}
+
+function toggleMiningHoursRange(enabled) {
+    const container = document.getElementById('mining-hours-range-inputs');
+    if (container) container.style.display = enabled ? '' : 'none';
+}
+
+async function onMiningHoursChange() {
+    const always = document.getElementById('mining-hours-always');
+    const range = document.getElementById('mining-hours-range');
+    const start = document.getElementById('mining-hours-start');
+    const end = document.getElementById('mining-hours-end');
+    const error = document.getElementById('mining-hours-error');
+    const controls = [always, range, start, end];
+    const previous = state.settings.mining_hours || { mode: 'always', start: '08:00', end: '22:00' };
+    error.hidden = true;
+    error.textContent = '';
+    toggleMiningHoursRange(range.checked);
+    if (range.checked && (!start.reportValidity() || !end.reportValidity())) return;
+    const requested = {
+        mode: range.checked ? 'range' : 'always',
+        start: start.value || previous.start,
+        end: end.value || previous.end
+    };
+    const message = state.translations.gui?.settings?.mining_hours_save_error ||
+        'Could not save mining hours. Please try again.';
+    controls.forEach(control => { control.disabled = true; });
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mining_hours: requested })
+        });
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        const saved = data.settings?.mining_hours;
+        if (data.success !== true || !saved ||
+            ['mode', 'start', 'end'].some(key => saved[key] !== requested[key])) throw new Error(message);
+        updateSettingsUI(data.settings);
+    } catch (failure) {
+        always.checked = previous.mode !== 'range';
+        range.checked = previous.mode === 'range';
+        start.value = previous.start;
+        end.value = previous.end;
+        toggleMiningHoursRange(range.checked);
+        error.textContent = message;
+        error.hidden = false;
+    } finally {
+        controls.forEach(control => { control.disabled = false; });
+    }
+}
+
 async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
         inventory_list_view: document.getElementById('inventory-list-view').checked,
-        priority_list_only: document.getElementById('priority-list-only').checked,
         language: document.getElementById('language').value,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
         proxy: state.settings.proxy || '',
         games_to_watch: state.settings.games_to_watch || [],
+        drop_name_blacklist: parseDropNameBlacklist(
+            document.getElementById('drop-name-blacklist')?.value
+        ),
         inventory_filters: getInventoryFilters(),
         mining_benefits: {
             "DIRECT_ENTITLEMENT": document.getElementById('mining-benefit-item')?.checked,
@@ -1543,6 +2029,60 @@ async function saveSettings() {
         console.log('Settings saved automatically');
     } catch (error) {
         console.error('Failed to save settings:', error);
+    }
+}
+
+async function onPriorityModeChange() {
+    const input = document.getElementById('priority-list-only');
+    if (input.disabled) return;
+    const requested = input.checked;
+    const message = state.translations.gui?.settings?.priority_list_only_save_error ||
+        'Could not save the game priority option. Please try again.';
+    input.disabled = true;
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ priority_list_only: requested })
+        });
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || data.settings?.priority_list_only !== requested) throw new Error(message);
+        updateSettingsUI(data.settings);
+    } catch (failure) {
+        input.checked = state.settings.priority_list_only !== false;
+        renderChannels();
+        showToast(message, 'error');
+    } finally {
+        input.disabled = false;
+    }
+}
+
+async function onUnlinkedMiningChange() {
+    const input = document.getElementById('allow-unlinked-campaigns');
+    const error = document.getElementById('allow-unlinked-error');
+    const requested = input.checked;
+    const message = state.translations.gui?.settings?.allow_unlinked_campaigns_save_error ||
+        'Could not save the account-link mining option. Please try again.';
+    input.disabled = true;
+    error.hidden = true;
+    error.textContent = '';
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ allow_unlinked_campaigns: requested })
+        });
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || data.settings?.allow_unlinked_campaigns !== requested) throw new Error(message);
+        updateSettingsUI(data.settings);
+    } catch (failure) {
+        input.checked = state.settings.allow_unlinked_campaigns === true;
+        error.textContent = message;
+        error.hidden = false;
+    } finally {
+        input.disabled = false;
     }
 }
 
@@ -1596,16 +2136,20 @@ async function fetchAndApplyTranslations() {
 }
 
 function applyTranslations(t) {
+    globalThis.browserLoginPanel?.render();
+    translateHistory();
     // Update tab buttons
     const tabButtons = {
         'main': document.querySelector('[data-tab="main"]'),
         'inventory': document.querySelector('[data-tab="inventory"]'),
+        'history': document.querySelector('[data-tab="history"]'),
         'settings': document.querySelector('[data-tab="settings"]'),
         'help': document.querySelector('[data-tab="help"]')
     };
 
     if (tabButtons.main && t.gui?.tabs) tabButtons.main.textContent = t.gui.tabs.main;
     if (tabButtons.inventory && t.gui?.tabs) tabButtons.inventory.textContent = t.gui.tabs.inventory;
+    if (tabButtons.history && t.gui?.tabs) tabButtons.history.textContent = t.gui.tabs.history;
     if (tabButtons.settings && t.gui?.tabs) tabButtons.settings.textContent = t.gui.tabs.settings;
     if (tabButtons.help && t.gui?.tabs) tabButtons.help.textContent = t.gui.tabs.help;
 
@@ -1615,38 +2159,7 @@ function applyTranslations(t) {
         const loginHeader = mainTab.querySelector('.login-panel h2');
         if (loginHeader) loginHeader.textContent = t.gui.login.name;
 
-        const loginStatus = document.getElementById('login-status');
-        if (loginStatus?.hasAttribute('translation-key')) loginStatus.textContent = t.login?.status?.[loginStatus.getAttribute('translation-key')];
-
-        // Update login form placeholders
-        const usernameInput = document.getElementById('username');
-        if (usernameInput) usernameInput.placeholder = t.gui.login.username;
-
-        const passwordInput = document.getElementById('password');
-        if (passwordInput) passwordInput.placeholder = t.gui.login.password;
-
-        const twofaInput = document.getElementById('2fa-token');
-        if (twofaInput) twofaInput.placeholder = t.gui.login.twofa_code;
-
-        const loginButton = document.getElementById('login-button');
-        if (loginButton) loginButton.textContent = t.gui.login.button;
-
-        // Update OAuth display text
-        const oauthDisplay = document.getElementById('oauth-code-display');
-        if (oauthDisplay) {
-            const oauthP = oauthDisplay.querySelector('p');
-            if (oauthP) {
-                const link = oauthP.querySelector('a');
-                if (link) {
-                    oauthP.textContent = t.gui.login.oauth_prompt + ' ';
-                    link.textContent = t.gui.login.oauth_activate;
-                    oauthP.appendChild(link);
-                }
-            }
-
-            const oauthConfirmBtn = document.getElementById('oauth-confirm');
-            if (oauthConfirmBtn) oauthConfirmBtn.textContent = t.gui.login.oauth_confirm;
-        }
+        if (state.login) updateLoginStatus(state.login);
     }
 
     // Update Progress section
@@ -1693,7 +2206,22 @@ function applyTranslations(t) {
         if (generalHeader) generalHeader.textContent = t.gui.settings.general.name;
 
         const benefitsHeader = document.getElementById('settings-benefits-header');
+        const allowUnlinkedLabel = document.getElementById('allow-unlinked-label');
+        if (allowUnlinkedLabel) allowUnlinkedLabel.textContent = t.gui.settings.allow_unlinked_campaigns;
+        const allowUnlinkedWarning = document.getElementById('allow-unlinked-warning');
+        if (allowUnlinkedWarning) allowUnlinkedWarning.textContent = t.gui.settings.allow_unlinked_campaigns_warning;
+        const allowUnlinkedError = document.getElementById('allow-unlinked-error');
+        if (allowUnlinkedError && !allowUnlinkedError.hidden) allowUnlinkedError.textContent = t.gui.settings.allow_unlinked_campaigns_save_error;
         if (benefitsHeader && t.gui.settings.mining_benefits) benefitsHeader.textContent = t.gui.settings.mining_benefits;
+
+        const dropBlacklistHeader = document.getElementById('settings-drop-blacklist-header');
+        if (dropBlacklistHeader) dropBlacklistHeader.textContent = t.gui.settings.drop_name_blacklist;
+
+        const dropBlacklistHelp = document.getElementById('settings-drop-blacklist-help');
+        if (dropBlacklistHelp) dropBlacklistHelp.textContent = t.gui.settings.drop_name_blacklist_help;
+
+        const dropBlacklistInput = document.getElementById('drop-name-blacklist');
+        if (dropBlacklistInput) dropBlacklistInput.placeholder = t.gui.settings.drop_name_blacklist_placeholder;
 
         const gamesHeader = document.getElementById('settings-games-header');
         if (gamesHeader) gamesHeader.textContent = t.gui.settings.games_to_watch;
@@ -1734,6 +2262,24 @@ function applyTranslations(t) {
         const benefitsHelp = document.getElementById('settings-benefits-help');
         if (benefitsHelp && t.gui.settings.mining_benefits_help) benefitsHelp.textContent = t.gui.settings.mining_benefits_help;
 
+        const hoursHeader = document.getElementById('settings-hours-header');
+        if (hoursHeader && t.gui.settings.mining_hours) hoursHeader.textContent = t.gui.settings.mining_hours;
+
+        const hoursHelp = document.getElementById('settings-hours-help');
+        if (hoursHelp && t.gui.settings.mining_hours_help) hoursHelp.textContent = t.gui.settings.mining_hours_help;
+
+        const hoursAlwaysLabel = document.getElementById('settings-hours-always-label');
+        if (hoursAlwaysLabel && t.gui.settings.mining_hours_always) hoursAlwaysLabel.textContent = t.gui.settings.mining_hours_always;
+
+        const hoursRangeLabel = document.getElementById('settings-hours-range-label');
+        if (hoursRangeLabel && t.gui.settings.mining_hours_range) hoursRangeLabel.textContent = t.gui.settings.mining_hours_range;
+
+        const hoursStartLabel = document.getElementById('settings-hours-start-label');
+        if (hoursStartLabel && t.gui.settings.mining_hours_start) hoursStartLabel.textContent = t.gui.settings.mining_hours_start + ' ';
+
+        const hoursEndLabel = document.getElementById('settings-hours-end-label');
+        if (hoursEndLabel && t.gui.settings.mining_hours_end) hoursEndLabel.textContent = t.gui.settings.mining_hours_end + ' ';
+
         const gamesHelp = document.getElementById('settings-games-help');
         if (gamesHelp) gamesHelp.textContent = t.gui.settings.games_help;
 
@@ -1758,6 +2304,66 @@ function applyTranslations(t) {
         const reloadBtn = document.getElementById('reload-btn');
         if (reloadBtn) reloadBtn.textContent = t.gui.settings.reload_campaigns;
 
+        const discordTrans = t.gui?.settings?.discord;
+        if (discordTrans) {
+            const labels = {
+                'settings-discord-header': 'name', 'settings-discord-help': 'description',
+                'settings-discord-webhook-url-label': 'webhook_url',
+                'settings-discord-webhook-url-hint': 'webhook_url_hint',
+                'settings-discord-credentials-help': 'credentials_help',
+                'save-discord-btn': 'save_settings', 'test-discord-btn': 'test_connection',
+                'remove-discord-btn': 'remove_webhook'
+            };
+            for (const [id, key] of Object.entries(labels)) {
+                const element = document.getElementById(id);
+                if (element) element.textContent = discordTrans[key];
+            }
+        }
+
+        // Update Telegram Notifications section.
+        const tgTrans = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
+        if (tgTrans) {
+            const telegramSection = settingsTab.querySelector('.settings-section:has(#telegram-bot-token)');
+            if (telegramSection) {
+                const heading = telegramSection.querySelector('h2');
+                if (heading) heading.textContent = tgTrans.name || heading.textContent;
+
+                const description = telegramSection.querySelector('.help-text');
+                if (description) description.textContent = tgTrans.description || description.textContent;
+
+                const botTokenLabel = document.getElementById('settings-telegram-bot-token-label');
+                if (botTokenLabel) botTokenLabel.textContent = tgTrans.bot_token || botTokenLabel.textContent;
+
+                const chatIdLabel = document.getElementById('settings-telegram-chat-id-label');
+                if (chatIdLabel) chatIdLabel.textContent = tgTrans.chat_id || chatIdLabel.textContent;
+
+                const yourUserId = document.getElementById('settings-telegram-your-user-id');
+                if (yourUserId) yourUserId.textContent = tgTrans.your_user_id || yourUserId.textContent;
+
+                const fromBotFather = document.getElementById('settings-telegram-get-from-botfather');
+                if (fromBotFather) fromBotFather.textContent = tgTrans.get_from_botfather || fromBotFather.textContent;
+
+                const saveTelegramBtn = document.getElementById('save-telegram-btn');
+                if (saveTelegramBtn) saveTelegramBtn.textContent = tgTrans.save_settings || saveTelegramBtn.textContent;
+
+                const testTelegramBtn = document.getElementById('test-telegram-btn');
+                if (testTelegramBtn) testTelegramBtn.textContent = tgTrans.test_connection || testTelegramBtn.textContent;
+
+                const credentialsHelp = document.getElementById('settings-telegram-credentials-help');
+                if (credentialsHelp) credentialsHelp.textContent = tgTrans.credentials_help || credentialsHelp.textContent;
+            }
+        }
+
+        const clearCacheBtn = document.getElementById('clear-cache-btn');
+        if (clearCacheBtn) clearCacheBtn.textContent = t.gui.settings.clear_all_cache;
+
+        const clearCacheHelp = document.getElementById('clear-cache-help');
+        if (clearCacheHelp) clearCacheHelp.textContent = t.gui.settings.clear_all_cache_help;
+        const diagnosticsButton = document.getElementById('dump-diagnostics-btn');
+        if (diagnosticsButton) diagnosticsButton.textContent = t.gui.settings.dump_diagnostics;
+        const diagnosticsHelp = document.getElementById('diagnostics-help');
+        if (diagnosticsHelp) diagnosticsHelp.textContent = t.gui.settings.diagnostics_help;
+
         // Re-render games to watch with translated empty messages
         renderGamesToWatch();
     }
@@ -1778,7 +2384,7 @@ function applyTranslations(t) {
         const notesHeader = document.getElementById('help-notes-header');
         if (notesHeader) notesHeader.textContent = t.gui.help.important_notes || 'Important Notes';
 
-        // Update list items and links (keeping innerHTML approach for lists as they are dynamic content blocks)
+        // Build translated lists and allowlisted links with DOM nodes.
         const helpContent = helpTab.querySelector('.help-content');
         if (helpContent) {
             const howToItems = t.gui.help.how_to_use_items || [
@@ -1810,6 +2416,19 @@ function applyTranslations(t) {
                 makeHelpList('ul', featuresItems),
                 makeElement('h3', { id: 'help-notes-header' }, t.gui.help.important_notes || 'Important Notes'),
                 makeHelpList('ul', notesItems),
+                ...(function () {
+                    const tg = tgHelpSetup(t);
+                    return tg
+                        ? [makeElement('h3', { id: 'help-telegram-header' }, tg.title),
+                           makeElement('p', {}, tg.description),
+                           makeHelpList('ol', tg.steps)]
+                        : [];
+                })(),
+                ...(function () {
+                    const dc = t.gui?.settings?.discord;
+                    return dc ? [makeElement('h3', { id: 'help-discord-header' }, dc.name),
+                        makeElement('p', {}, dc.description), makeHelpList('ol', dc.setup_steps)] : [];
+                })(),
                 makeElement('div', { class: 'help-links' }, '', el =>
                     el.appendChild(makeElement('a', { href: 'https://github.com/rangermix/TwitchDropsMiner', target: '_blank', rel: 'noopener noreferrer' }, t.gui.help.github_repo || 'GitHub Repository'))
                 ),
@@ -1872,7 +2491,11 @@ function applyTranslations(t) {
             if (el) el.textContent = text;
         };
         updateLabel('filter-active', f.active);
-        updateLabel('filter-not-linked', f.not_linked);
+        document.getElementById('filter-link-status-label').textContent = f.account_link;
+        const linkStatus = document.getElementById('filter-link-status');
+        linkStatus.querySelector('[value="all"]').textContent = f.all;
+        linkStatus.querySelector('[value="linked"]').textContent = f.linked;
+        linkStatus.querySelector('[value="not_linked"]').textContent = f.not_linked;
         updateLabel('filter-upcoming', f.upcoming);
         updateLabel('filter-expired', f.expired);
         updateLabel('filter-finished', f.finished);
@@ -1917,12 +2540,72 @@ function applyTranslations(t) {
     }
 }
 
-async function reloadCampaigns() {
+async function requestCampaignRefresh(endpoint, button, actionName) {
+    if (button) button.disabled = true;
+
     try {
-        await fetch('/api/reload', { method: 'POST' });
+        const response = await fetch(endpoint, { method: 'POST' });
+        if (!response.ok) {
+            throw new Error(`${actionName} failed with HTTP ${response.status}`);
+        }
         // Status will update via Socket.IO when backend starts operation
     } catch (error) {
-        console.error('Failed to reload:', error);
+        console.error(`Failed to ${actionName}:`, error);
+    } finally {
+        if (button) button.disabled = false;
+    }
+}
+
+async function reloadCampaigns() {
+    const button = document.getElementById('reload-btn');
+    await requestCampaignRefresh('/api/reload', button, 'reload campaigns');
+}
+
+async function clearAllCache() {
+    const button = document.getElementById('clear-cache-btn');
+    await requestCampaignRefresh('/api/cache/clear', button, 'clear cache');
+}
+
+async function dumpDiagnostics() {
+    const button = document.getElementById('dump-diagnostics-btn');
+    const result = document.getElementById('diagnostics-result');
+    if (!button || !result || button.disabled) return;
+    const t = state.translations?.gui?.settings;
+    if (!t) return;
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    result.textContent = t.diagnostics_saving;
+    result.className = 'help-text';
+    const agent = navigator.userAgent || '';
+    const browser = /Edg\//.test(agent) ? 'Edge' : /Firefox\//.test(agent) ? 'Firefox'
+        : /Chrome\//.test(agent) ? 'Chrome' : /Safari\//.test(agent) ? 'Safari' : 'Other';
+    const platform = /Android/.test(agent) ? 'Android' : /iPhone|iPad/.test(agent) ? 'iOS'
+        : /Windows/.test(agent) ? 'Windows' : /Macintosh/.test(agent) ? 'macOS'
+        : /Linux/.test(agent) ? 'Linux' : 'Other';
+    try {
+        const response = await fetch('/api/diagnostics', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-TDM-Request': '1' },
+            body: JSON.stringify({ browser: {
+                width: Math.min(32000, Math.max(0, Math.round(window.innerWidth))),
+                height: Math.min(32000, Math.max(0, Math.round(window.innerHeight))),
+                browser, platform, tab: 'settings', online: Boolean(navigator.onLine),
+                socket_connected: Boolean(socket && socket.connected)
+            } })
+        });
+        const data = await response.json();
+        if (!response.ok || data.success !== true || typeof data.file !== 'string') {
+            result.textContent = response.status === 429 ? t.diagnostics_busy : t.diagnostics_error;
+            result.className = 'help-text error';
+            return;
+        }
+        result.textContent = t.diagnostics_saved.replace('{path}', `data/${data.file}`);
+        result.className = 'help-text success';
+    } catch (_) {
+        result.textContent = t.diagnostics_error;
+        result.className = 'help-text error';
+    } finally {
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
     }
 }
 
@@ -1941,11 +2624,17 @@ function switchTab(tabName) {
     // Show selected tab
     document.getElementById(`${tabName}-tab`).classList.add('active');
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+    // Lazy-load history data each time the History tab is opened
+    if (tabName === 'history') {
+        loadHistory();
+    }
 }
 
 // ==================== Event Listeners ====================
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('now-watching-toggle').addEventListener('click', toggleNowWatchingPreview);
     // Fetch and display version information
     fetchAndDisplayVersion();
 
@@ -1955,10 +2644,6 @@ document.addEventListener('DOMContentLoaded', () => {
             switchTab(button.dataset.tab);
         });
     });
-
-    // Login form
-    document.getElementById('login-button').addEventListener('click', submitLogin);
-    document.getElementById('oauth-confirm').addEventListener('click', confirmOAuth);
 
     // Settings - auto-save on change
     document.getElementById('dark-mode').addEventListener('change', (e) => {
@@ -1977,14 +2662,14 @@ document.addEventListener('DOMContentLoaded', () => {
         applyInventoryViewMode(e.target.checked);
         saveSettings();
     });
-    document.getElementById('priority-list-only').addEventListener('change', (e) => {
-        state.settings.priority_list_only = e.target.checked;
-        renderChannels();
-        saveSettings();
-    });
+    document.getElementById('priority-list-only').addEventListener('change', onPriorityModeChange);
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
     document.getElementById('minimum-refresh-interval').addEventListener('change', saveSettings);
+    ['mining-hours-always', 'mining-hours-range', 'mining-hours-start', 'mining-hours-end']
+        .forEach(id => document.getElementById(id).addEventListener('change', onMiningHoursChange));
+    document.getElementById('drop-name-blacklist').addEventListener('change', saveSettings);
+    document.getElementById('allow-unlinked-campaigns').addEventListener('change', onUnlinkedMiningChange);
     // Proxy uses a manual "Set Proxy" button instead of auto-save
     document.getElementById('set-proxy-btn').addEventListener('click', () => {
         const proxyInput = document.getElementById('proxy-url');
@@ -1997,7 +2682,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
+    document.getElementById('test-discord-btn').addEventListener('click', () => updateDiscordSettings('test'));
+    document.getElementById('save-discord-btn').addEventListener('click', () => updateDiscordSettings('save'));
+    document.getElementById('remove-discord-btn').addEventListener('click', () => updateDiscordSettings('remove'));
+    document.getElementById('test-telegram-btn').addEventListener('click', testTelegramConnection);
+    document.getElementById('save-telegram-btn').addEventListener('click', handleSaveTelegramClick);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
+    document.getElementById('clear-cache-btn').addEventListener('click', clearAllCache);
+    document.getElementById('dump-diagnostics-btn').addEventListener('click', dumpDiagnostics);
+
+    // History tab
+    document.getElementById('history-btn-filter')?.addEventListener('click', () => {
+        historyCurrentPage = 0;
+        loadHistory();
+    });
+    document.getElementById('history-btn-export')?.addEventListener('click', exportHistoryCSV);
+    document.getElementById('history-btn-stats')?.addEventListener('click', toggleHistoryStats);
+    document.getElementById('history-btn-clear')?.addEventListener('click', clearHistory);
+    document.getElementById('history-filter-game')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            historyCurrentPage = 0;
+            loadHistory();
+        }
+    });
 
 
     // Games to watch management
@@ -2005,10 +2712,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('deselect-all-btn').addEventListener('click', deselectAllGames);
     document.getElementById('add-game-btn').addEventListener('click', addGameFromSearch);
     document.getElementById('games-filter').addEventListener('input', renderGamesToWatch);
+    document.getElementById('games-filter').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addGameFromSearch();
+        }
+    });
 
     // Inventory filters
     document.getElementById('filter-active').addEventListener('change', onInventoryFilterChange);
-    document.getElementById('filter-not-linked').addEventListener('change', onInventoryFilterChange);
+    document.getElementById('filter-link-status').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-upcoming').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-expired').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-finished').addEventListener('change', onInventoryFilterChange);
@@ -2084,7 +2797,7 @@ function renderWantedItems(tree) {
         // Game Icon
         let iconUrl = gameGroup.game_icon;
         if (iconUrl) {
-            iconUrl = iconUrl.replace('{width}', '40').replace('{height}', '53');
+            iconUrl = iconUrl.replace('{width}', '144').replace('{height}', '192');
         }
 
         const headerChildren = [makeElement('span', { class: 'wanted-game-index' }, `#${index + 1}`)];
@@ -2130,9 +2843,366 @@ function renderWantedItems(tree) {
     });
 }
 
+// ==================== Drop History ====================
+
+const HISTORY_PAGE_SIZE = 50;
+let historyAllEntries = [];
+let historyCurrentPage = 0;
+let historyStatsVisible = false;
+let historyTotal = null;
+let historyStatsData = null;
+let historyMessage = {key: 'loading', values: {}};
+let historyRequestId = 0;
+
+function historyText(key, values = {}) {
+    let text = state.translations.gui?.history?.[key] || key;
+    Object.entries(values).forEach(([name, value]) => {
+        text = text.replaceAll('{' + name + '}', String(value));
+    });
+    return text;
+}
+
+function translateHistory() {
+    document.querySelectorAll('[data-history-key]').forEach(element => {
+        element.textContent = historyText(element.dataset.historyKey);
+    });
+    document.querySelectorAll('[data-history-placeholder]').forEach(element => {
+        const label = historyText(element.dataset.historyPlaceholder);
+        element.placeholder = label;
+        element.setAttribute('aria-label', label);
+    });
+    if (historyTotal !== null) updateHistoryCount(historyTotal, historyAllEntries.length);
+    if (historyMessage) setHistoryTbodyMessage(historyMessage.key, historyMessage.values);
+    else renderHistoryPage(historyCurrentPage);
+    renderHistoryPagination();
+    if (historyStatsData) renderHistoryStats(historyStatsData);
+}
+
+async function loadHistory() {
+    const requestId = ++historyRequestId;
+    const game = document.getElementById('history-filter-game')?.value.trim() || '';
+    const since = document.getElementById('history-filter-since')?.value || '';
+
+    const params = new URLSearchParams();
+    if (game) params.set('game', game);
+    if (since) params.set('since', since);
+    params.set('limit', '5000');
+
+    try {
+        const res = await fetch(`/api/history?${params.toString()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (requestId !== historyRequestId) return;
+        historyAllEntries = data.entries || [];
+        historyTotal = data.total;
+        historyCurrentPage = Math.min(historyCurrentPage, Math.max(0, Math.ceil(historyAllEntries.length / HISTORY_PAGE_SIZE) - 1));
+        updateHistoryCount(data.total, historyAllEntries.length);
+        renderHistoryPage(historyCurrentPage);
+        renderHistoryPagination();
+    } catch (err) {
+        if (requestId !== historyRequestId) return;
+        historyAllEntries = [];
+        historyTotal = null;
+        const count = document.getElementById('history-count');
+        if (count) count.textContent = '';
+        renderHistoryPagination();
+        setHistoryTbodyMessage('load_error', {error: err.message});
+    }
+}
+
+function renderHistoryPage(page) {
+    const tbody = document.getElementById('history-tbody');
+    if (!tbody) return;
+
+    const start = page * HISTORY_PAGE_SIZE;
+    const slice = historyAllEntries.slice(start, start + HISTORY_PAGE_SIZE);
+
+    if (slice.length === 0) {
+        setHistoryTbodyMessage('empty');
+        return;
+    }
+
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+    historyMessage = null;
+    slice.forEach((entry, idx) => {
+        const tr = document.createElement('tr');
+        tr.style.cssText =
+            'border-bottom: 1px solid var(--border-color, #333);' +
+            (idx % 2 === 0
+                ? 'background: var(--bg-row-even, transparent);'
+                : 'background: var(--bg-row-odd, rgba(255,255,255,0.02));');
+
+        const claimedAt = new Date(entry.claimed_at);
+        const dateStr = isNaN(claimedAt) ? entry.claimed_at : claimedAt.toLocaleString();
+
+        appendHistoryCell(tr, dateStr, 'white-space:nowrap');
+        appendHistoryCell(tr, entry.game, 'font-weight:600');
+        appendHistoryCell(tr, entry.campaign);
+        appendHistoryCell(tr, entry.drop_name);
+        appendHistoryCell(
+            tr,
+            Array.isArray(entry.benefits) ? entry.benefits.join(', ') : entry.benefits,
+            'color:var(--text-muted,#888); font-size:0.85em'
+        );
+        appendHistoryCell(tr, String(entry.required_minutes), 'text-align:right');
+
+        tbody.appendChild(tr);
+    });
+}
+
+function appendHistoryCell(tr, text, extraStyle) {
+    const td = document.createElement('td');
+    td.style.cssText = 'padding: 8px 12px;' + (extraStyle || '');
+    td.textContent = text;
+    tr.appendChild(td);
+}
+
+function setHistoryTbodyMessage(key, values = {}) {
+    historyMessage = {key, values};
+    const tbody = document.getElementById('history-tbody');
+    if (!tbody) return;
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 6;
+    td.style.cssText = 'padding:24px; text-align:center; color:var(--text-muted,#888)';
+    td.textContent = historyText(key, values);
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+}
+
+function updateHistoryCount(total, returned) {
+    const el = document.getElementById('history-count');
+    if (!el) return;
+    el.textContent = returned < total
+        ? historyText('filtered_count', {shown: returned, total})
+        : historyText('count', {total});
+}
+
+function renderHistoryPagination() {
+    const container = document.getElementById('history-pagination');
+    if (!container) return;
+    while (container.firstChild) container.removeChild(container.firstChild);
+
+    const totalPages = Math.ceil(historyAllEntries.length / HISTORY_PAGE_SIZE);
+    if (totalPages <= 1) return;
+
+    if (historyCurrentPage > 0) {
+        container.appendChild(makeHistoryPageBtn(historyText('previous'), () => {
+            historyCurrentPage--;
+            renderHistoryPage(historyCurrentPage);
+            renderHistoryPagination();
+            scrollHistoryToTable();
+        }));
+    }
+
+    historyPageRange(historyCurrentPage, totalPages).forEach((p) => {
+        if (p === '…') {
+            const span = document.createElement('span');
+            span.textContent = '…';
+            span.style.padding = '5px 8px';
+            container.appendChild(span);
+        } else {
+            const btn = makeHistoryPageBtn(String(p + 1), () => {
+                historyCurrentPage = p;
+                renderHistoryPage(historyCurrentPage);
+                renderHistoryPagination();
+                scrollHistoryToTable();
+            });
+            if (p === historyCurrentPage) {
+                btn.style.background = 'var(--accent,#7287fd)';
+                btn.style.color = '#fff';
+            }
+            container.appendChild(btn);
+        }
+    });
+
+    if (historyCurrentPage < totalPages - 1) {
+        container.appendChild(makeHistoryPageBtn(historyText('next'), () => {
+            historyCurrentPage++;
+            renderHistoryPage(historyCurrentPage);
+            renderHistoryPagination();
+            scrollHistoryToTable();
+        }));
+    }
+}
+
+function makeHistoryPageBtn(label, onClick) {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    btn.style.cssText =
+        'padding:5px 12px; border-radius:6px; border:1px solid var(--border-color,#444);' +
+        'background:var(--bg-button,#313244); color:var(--text-primary,#cdd6f4); cursor:pointer;';
+    btn.addEventListener('click', onClick);
+    return btn;
+}
+
+function historyPageRange(current, total) {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i);
+
+    const pages = [];
+    if (current <= 3) {
+        pages.push(0, 1, 2, 3, 4, '…', total - 1);
+    } else if (current >= total - 4) {
+        pages.push(0, '…', total - 5, total - 4, total - 3, total - 2, total - 1);
+    } else {
+        pages.push(0, '…', current - 1, current, current + 1, '…', total - 1);
+    }
+    return pages;
+}
+
+function scrollHistoryToTable() {
+    document.getElementById('history-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function exportHistoryCSV() {
+    const game = document.getElementById('history-filter-game')?.value.trim() || '';
+    const since = document.getElementById('history-filter-since')?.value || '';
+
+    const params = new URLSearchParams();
+    if (game) params.set('game', game);
+    if (since) params.set('since', since);
+
+    const url = `/api/history/export.csv?${params.toString()}`;
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = game ? `drop_history_${game}.csv` : 'drop_history.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+async function toggleHistoryStats() {
+    const panel = document.getElementById('history-stats-panel');
+    if (!panel) return;
+
+    historyStatsVisible = !historyStatsVisible;
+    panel.style.display = historyStatsVisible ? 'block' : 'none';
+
+    if (!historyStatsVisible) return;
+
+    try {
+        const res = await fetch('/api/history/stats');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        historyStatsData = data;
+        document.getElementById('history-stats-error').textContent = '';
+        renderHistoryStats(data);
+    } catch (err) {
+        document.getElementById('history-stats-error').textContent = historyText('stats_error', {error: err.message});
+    }
+}
+
+function renderHistoryStats(data) {
+    const totalEl = document.getElementById('stats-total');
+    if (totalEl) totalEl.textContent = data.total_drops;
+
+    const gameEl = document.getElementById('stats-by-game');
+    if (gameEl) {
+        while (gameEl.firstChild) gameEl.removeChild(gameEl.firstChild);
+
+        const label = makeElement('div', {
+            style: 'font-size:0.75rem; color:var(--text-muted,#888); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;'
+        }, historyText('by_game'));
+        gameEl.appendChild(label);
+
+        Object.entries(data.by_game || {}).slice(0, 10).forEach(([game, count]) => {
+            const row = makeElement('div', {
+                style: 'display:flex; justify-content:space-between; gap:16px; padding:2px 0;'
+            });
+            row.appendChild(makeElement('span', {}, game));
+            row.appendChild(makeElement('span', {
+                style: 'font-weight:700; color:var(--accent,#7287fd)'
+            }, count));
+            gameEl.appendChild(row);
+        });
+    }
+
+    const monthEl = document.getElementById('stats-by-month');
+    if (monthEl) {
+        while (monthEl.firstChild) monthEl.removeChild(monthEl.firstChild);
+
+        const label = makeElement('div', {
+            style: 'font-size:0.75rem; color:var(--text-muted,#888); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;'
+        }, historyText('by_month'));
+        monthEl.appendChild(label);
+
+        Object.entries(data.by_month || {}).reverse().slice(0, 6).forEach(([month, count]) => {
+            const row = makeElement('div', {
+                style: 'display:flex; justify-content:space-between; gap:16px; padding:2px 0;'
+            });
+            row.appendChild(makeElement('span', {}, month));
+            row.appendChild(makeElement('span', {
+                style: 'font-weight:700; color:var(--accent,#7287fd)'
+            }, count));
+            monthEl.appendChild(row);
+        });
+    }
+}
+
+async function clearHistory() {
+    const confirmed = window.confirm(
+        historyText('clear_confirm')
+    );
+    if (!confirmed) return;
+
+    try {
+        const res = await fetch('/api/history', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ confirm: true }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        historyRequestId++;
+        historyAllEntries = [];
+        historyTotal = 0;
+        historyStatsData = {total_drops: 0, by_game: {}, by_month: {}};
+        historyCurrentPage = 0;
+        updateHistoryCount(0, 0);
+        setHistoryTbodyMessage('cleared');
+        renderHistoryPagination();
+
+        if (historyStatsVisible) {
+            const totalEl = document.getElementById('stats-total');
+            if (totalEl) totalEl.textContent = '0';
+
+            ['stats-by-game', 'stats-by-month'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) while (el.firstChild) el.removeChild(el.firstChild);
+            });
+        }
+    } catch (err) {
+        alert(historyText('clear_error', {error: err.message}));
+    }
+}
+
 // ==================== DOM Utilities ====================
 
-const TRUSTED_HELP_LINKS = new Set(['https://www.twitch.tv/drops/campaigns']);
+const TRUSTED_HELP_LINKS = new Set(['https://www.twitch.tv/drops/campaigns',
+    'https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks', 'https://t.me/BotFather']);
+
+function tgHelpSetup(t) {
+    const tg = (t.settings && t.settings.telegram) || (t.gui && t.gui.settings && t.gui.settings.telegram) || null;
+    if (!tg) return null;
+    return {
+        title: tg.name || 'Telegram Notifications',
+        description: tg.description || 'Receive instant notifications on Telegram when you claim drops. Setup instructions:',
+        steps: tg.setup_steps || [
+            'Go to @BotFather on Telegram',
+            'Create a new bot with /newbot command',
+            'Save the bot token you receive',
+            'Start your new bot by searching for it and clicking /start (or send any message)',
+            'Get your Chat ID by opening this URL in browser (replace TOKEN): https://api.telegram.org/botTOKEN/getUpdates',
+            'Find your user ID in the response - it is the number in "from": {"id": YOUR_ID}',
+            'Enter the token and Chat ID in Settings and click Test Connection'
+        ]
+    };
+}
 
 /**
  * @param {string} tag
@@ -2170,7 +3240,7 @@ function makeHelpList(tag, items) {
 
 function appendTrustedHelpContent(parent, text) {
     const source = String(text);
-    const linkPattern = /<a\b[^>]*\bhref=(["'])(https:\/\/www\.twitch\.tv\/drops\/campaigns)\1[^>]*>(.*?)<\/a>/gi;
+    const linkPattern = /<a\b[^>]*\bhref=(["'])(https:\/\/support\.discord\.com\/hc\/en-us\/articles\/228383668-Intro-to-Webhooks|https:\/\/www\.twitch\.tv\/drops\/campaigns|https:\/\/t\.me\/BotFather)\1[^>]*>(.*?)<\/a>/gi;
     let lastIndex = 0;
     let match;
     let matched = false;

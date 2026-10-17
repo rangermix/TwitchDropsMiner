@@ -26,6 +26,9 @@ jobs:
           token: ${{ secrets.PUBLISHER_TOKEN }}
           fetch-depth: 0
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+
       - name: Extract version
         id: extract
         run: .github/scripts/extract_version.sh

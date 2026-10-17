@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch Drops Miner — Login</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="stylesheet" href="/static/styles.css?v=__APP_VERSION__">
+    <link rel="stylesheet" href="/static/auth.css?v=__APP_VERSION__">
+    <script src="/static/auth.js?v=__APP_VERSION__" defer></script>
+</head>
+<body class="auth-page">
+    <main class="auth-card">
+        <h1>🎮 Twitch Drops Miner</h1>
+        <h2 data-auth-text="login_title">Unlock dashboard</h2>
+        <form id="web-auth-login" class="auth-form">
+            <label for="web-auth-password" data-auth-text="password">Password</label>
+            <input id="web-auth-password" name="password" type="password" autocomplete="current-password"
+                maxlength="1024" required autofocus>
+            <label class="auth-remember"><input id="web-auth-remember" type="checkbox">
+                <span data-auth-text="remember">Remember me for 30 days</span>
+            </label>
+            <button type="submit" data-auth-text="login" disabled>Log in</button>
+            <p id="web-auth-result" role="status" aria-live="polite"></p>
+        </form>
+    </main>
+</body>
+</html>

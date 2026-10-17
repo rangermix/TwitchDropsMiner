@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections import OrderedDict, abc, deque
+from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timedelta, timezone
 from functools import partial
 from time import time
@@ -12,12 +13,21 @@ import aiohttp
 
 from src.api import GQLClient, HTTPClient
 from src.auth import _AuthState
+from src.auth.container_login import ContainerLogin
+from src.auth.helper_connection import HelperConnections
+from src.auth.imported_session import ImportedSession, SessionTransport
+from src.auth.session_bundle import SessionError
+from src.auth.session_controller import SessionController
 from src.config import (
+    COOKIES_PATH,
     MAX_CHANNELS,
     ClientType,
     State,
     WebsocketTopic,
 )
+from src.config.paths import DATA_DIR
+from src.diagnostics import Diagnostics
+from src.drop_history import DropHistory
 from src.exceptions import (
     ExitRequest,
     RequestException,
@@ -33,6 +43,7 @@ from src.services.stream_selector import StreamSelector
 from src.services.watch_service import WatchService
 from src.utils import (
     AwaitableValue,
+    window_status,
 )
 from src.websocket import WebsocketPool
 
@@ -53,9 +64,14 @@ gql_logger = logging.getLogger("TwitchDrops.gql")
 class Twitch:
     def __init__(self, settings: Settings):
         self.settings: Settings = settings
+        self.diagnostics = Diagnostics(DATA_DIR)
         # State management
         self._state: State = State.IDLE
         self._state_change = asyncio.Event()
+        self._games_update_pending = False
+        self._inventory_loaded = False
+        self._inventory_refresh_pending = False
+        self._clear_cache_pending = False
         self.wanted_games: list[Game] = []
         self.inventory: list[DropsCampaign] = []
         self._drops: dict[str, TimedDrop] = {}
@@ -63,6 +79,13 @@ class Twitch:
         self._mnt_triggers: deque[datetime] = deque()
         # Client type and auth
         self._client_type: ClientInfo = ClientType.ANDROID_APP
+        self._browser = ImportedSession(
+            DATA_DIR / "imported-session.json", transport=SessionTransport(
+                lambda: self.settings.proxy or None, diagnostics=self.diagnostics,
+            ),
+            bound_user_id=lambda: getattr(self._auth_state, "user_id", None),
+            on_identity=lambda identity: self._auth_state.accept_imported_identity(identity),
+        )
         self._auth_state: _AuthState = _AuthState(self)
         # GUI (will be set by main.py)
         self.gui: WebGUIManager = None  # type: ignore[assignment]
@@ -73,6 +96,7 @@ class Twitch:
         self.channels: OrderedDict[int, Channel] = OrderedDict()
         self.watching_channel: AwaitableValue[Channel] = AwaitableValue()
         self._watching_task: asyncio.Task[None] | None = None
+        self._channel_tasks: set[asyncio.Task[Any]] = set()
         self._watching_restart = asyncio.Event()
         # Manual mode tracking
         self._manual_target_channel: Channel | None = None
@@ -81,6 +105,9 @@ class Twitch:
         self.websocket = WebsocketPool(self)
         # Maintenance task
         self._mnt_task: asyncio.Task[None] | None = None
+        # Mining-hours schedule task
+        self._schedule_task: asyncio.Task[None] | None = None
+        self._schedule_changed = asyncio.Event()
         # Services
         self._maintenance_service: MaintenanceService = MaintenanceService(self)
         self._channel_service: ChannelService = ChannelService(self)
@@ -88,11 +115,101 @@ class Twitch:
         self._inventory_service: InventoryService = InventoryService(self)
         self._watch_service: WatchService = WatchService(self)
         self._stream_selector: StreamSelector = StreamSelector()
+        # Drop history
+        self.drop_history: DropHistory = DropHistory(DATA_DIR)
+        self._run_task: asyncio.Task | None = None
+        self._resume_mining = asyncio.Event()
+        self._resume_mining.set()
+        self._changing_auth = False
+        self.session_controller = SessionController(
+            self._browser, activation=self.authentication_change,
+            on_change=self._session_changed,
+        )
+        self.login_browser = ContainerLogin(self.session_controller, on_change=self._session_changed)
+        self.helper = HelperConnections(self.session_controller, on_change=self._session_changed)
+        self._logout_lock = asyncio.Lock()
+
+    def _session_changed(self) -> None:
+        self.login_browser.session_changed()
+        self.helper.session_changed()
+        if self.gui is not None:
+            self.gui.notify_session_change()
+
+    def request_login(self) -> None:
+        if not self.helper.selected:
+            self.login_browser.request_login()
+
+    async def enable_helper(self, authorized) -> None:
+        async with self._logout_lock:
+            if self._auth_state._logged_in.is_set():
+                raise SessionError("HELPER_STATE")
+            await self.helper.cancel()
+            await self.login_browser.cancel()
+            self.helper.enable(authorized)
+
+    async def cancel_helper(self) -> None:
+        async with self._logout_lock:
+            await self.helper.cancel()
+            if not self._auth_state._logged_in.is_set() and self._browser.status()["state"] != "ready":
+                self.login_browser.request_login()
+
+    async def logout(self) -> None:
+        async with self._logout_lock:
+            await self.helper.cancel()
+            await self.login_browser.cancel()
+
+            async def clear_cookies() -> None:
+                session = await self.get_session()
+                session.cookie_jar.clear()
+                COOKIES_PATH.unlink(missing_ok=True)
+
+            try:
+                await self.session_controller.logout(clear_cookies)
+            finally:
+                # A persisted logout wins even if deleting legacy cookies failed.
+                if self._browser.logged_out:
+                    self.gui.login.update(_.t["login"]["status"]["logged_out"], None)
+                    self.login_browser.request_login()
+
+    @asynccontextmanager
+    async def authentication_change(self):
+        """Drain authenticated work before replacing its identity and derived state."""
+        self._changing_auth = True
+        self._resume_mining.clear()
+        try:
+            tasks = [task for task in (self._run_task, self._schedule_task, self._watching_task, self._mnt_task)
+                     if task is not None and task is not asyncio.current_task()]
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+            self._schedule_task = self._watching_task = self._mnt_task = None
+            await self.websocket.stop(clear_topics=True)
+            await self._stop_channel_tasks()
+            await self.gui.login.stop_avatar()
+            yield
+        finally:
+            self._auth_state.clear()
+            self._channel_service.clear_bans()
+            self.diagnostics.clear()
+            self._inventory_service.clear_cached_state()
+            self._inventory_loaded = False
+            if self._state is not State.EXIT:
+                self._state = State.IDLE
+            self._changing_auth = False
+            self._resume_mining.set()
+
+    async def _stop_channel_tasks(self) -> None:
+        """Drain online checks even after their pending display marker is cleared."""
+        tasks = tuple(self._channel_tasks)
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     def _ensure_api_clients(self) -> None:
         """Ensure API clients are initialized (called after GUI is set)."""
         if self._http_client is None:
-            self._http_client = HTTPClient(self.settings, self.gui, self, self._client_type)
+            self._http_client = HTTPClient(self.settings, self.gui, self, self._client_type,
+                                          diagnostics=self.diagnostics)
         if self._gql_client is None:
             self._gql_client = GQLClient(self._http_client, self._auth_state, self._client_type)
 
@@ -118,6 +235,11 @@ class Twitch:
 
     async def shutdown(self) -> None:
         start_time = time()
+        self._channel_service.clear_bans()
+        self.diagnostics.stop_logs()
+        await self.helper.stop()
+        await self.login_browser.stop()
+        await self.session_controller.stop()
         self.stop_watching()
         if self._watching_task is not None:
             self._watching_task.cancel()
@@ -125,8 +247,13 @@ class Twitch:
         if self._mnt_task is not None:
             self._mnt_task.cancel()
             self._mnt_task = None
+        await self._stop_mining_schedule()
         # stop websocket and close HTTP session
         await self.websocket.stop(clear_topics=True)
+        await self._stop_channel_tasks()
+        await self.gui.login.stop_avatar()
+        if self._browser is not None:
+            await self._browser.close()
         if self._http_client is not None:
             await self._http_client.close()
         self._drops.clear()
@@ -150,9 +277,103 @@ class Twitch:
             self._state = state
         self._state_change.set()
 
+    def request_games_update(self) -> bool:
+        """Queue a mining-policy recalculation without racing the active state step."""
+        if self._state is State.EXIT:
+            return False
+        self._games_update_pending = True
+        self._schedule_changed.set()
+        self._state_change.set()
+        return True
+
+    def _activate_pending_games_update(self) -> None:
+        """Prioritize a queued settings recalculation before the next wait."""
+        if (
+            self._games_update_pending
+            and self.is_mining_time()
+            and self._inventory_loaded
+            and self._state not in (State.INVENTORY_FETCH, State.EXIT)
+        ):
+            self._state = State.GAMES_UPDATE
+            self._state_change.set()
+
+    def request_inventory_refresh(self, *, clear_cache: bool = False) -> bool:
+        """Queue an inventory refresh without racing the active state-machine step.
+
+        Args:
+            clear_cache: Clear local derived miner state before fetching fresh data.
+
+        Returns:
+            ``True`` when the request was accepted, or ``False`` during shutdown.
+        """
+        if self._state is State.EXIT:
+            return False
+
+        self._inventory_refresh_pending = True
+        self._clear_cache_pending = self._clear_cache_pending or clear_cache
+        self._state_change.set()
+        return True
+
+    def _activate_pending_inventory_refresh(self) -> None:
+        """Prioritize a queued refresh over the next normal state transition."""
+        if (
+            self._inventory_refresh_pending
+            and self._state is not State.EXIT
+            and self.is_mining_time()
+        ):
+            self._state = State.INVENTORY_FETCH
+            self._state_change.set()
+
     def get_change_state_callable(self, state: State) -> abc.Callable[[], None]:
         """Return a callable that changes state when invoked (deferred call for GUI usage)."""
         return partial(self.change_state, state)
+
+    def is_mining_time(self) -> bool:
+        """Return whether the configured mining window includes the current local time."""
+        hours = getattr(self.settings, "mining_hours", None)
+        if not isinstance(hours, dict) or hours.get("mode") != "range":
+            return True
+        in_window, _ = window_status(
+            hours.get("start", ""), hours.get("end", ""), datetime.now()
+        )
+        return in_window
+
+    async def _stop_mining_schedule(self) -> None:
+        task, self._schedule_task = self._schedule_task, None
+        if task is not None:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+    async def _mining_schedule_loop(self) -> None:
+        """Enforce both boundaries, and recompute immediately after policy edits."""
+        was_open = self.is_mining_time()
+        while self._state is not State.EXIT:
+            self._schedule_changed.clear()
+            is_open = self.is_mining_time()
+            if not is_open:
+                # Clear selection before cancelling so stale playlist batches stop too.
+                self.stop_watching()
+                self.gui.progress.stop_timer()
+                task, self._watching_task = self._watching_task, None
+                if task is not None:
+                    task.cancel()
+                    await asyncio.gather(task, return_exceptions=True)
+                self.gui.status.update(_.t["gui"]["status"]["outside_hours"])
+                if was_open:
+                    self.change_state(State.IDLE)
+            else:
+                if self._watching_task is None:
+                    self._watching_task = asyncio.create_task(self._watch_service.watch_loop())
+                if not was_open:
+                    self.request_inventory_refresh()
+            was_open = is_open
+            hours = getattr(self.settings, "mining_hours", None)
+            delay = 60.0
+            if isinstance(hours, dict) and hours.get("mode") == "range":
+                _in_window, delay = window_status(hours.get("start", ""), hours.get("end", ""), datetime.now())
+            # Bound wall-clock/DST resampling; monotonic multi-hour sleeps go stale.
+            with suppress(TimeoutError):
+                await asyncio.wait_for(self._schedule_changed.wait(), timeout=max(0.01, min(delay, 60)))
 
     def close(self) -> None:
         """
@@ -160,10 +381,14 @@ class Twitch:
         usually by the console or application window being closed.
         """
         self.change_state(State.EXIT)
+        self._resume_mining.set()
+        self._schedule_changed.set()
+        if self._browser is not None:
+            self._browser.request_stop()
 
-    def print(self, message: str) -> None:
+    def print(self, message: str, *, collapse_key: str | None = None) -> None:
         """Print a message in the GUI."""
-        self.gui.print(message)
+        self.gui.print(message, collapse_key=collapse_key)
 
     def _remove_channel_topics(self, channels: abc.Iterable[Channel]) -> None:
         """Remove websocket topics for a list of channels."""
@@ -176,14 +401,33 @@ class Twitch:
 
     async def run(self) -> None:
         """Main entry point for the miner - handles exit requests."""
-        while True:
-            try:
-                await self._run()
-                break
-            except ExitRequest:
-                break
-            except aiohttp.ContentTypeError as exc:
-                raise RequestException(_.t["login"]["unexpected_content"]) from exc
+        self.diagnostics.start_logs()
+        self.session_controller.start()
+        try:
+            while self._state is not State.EXIT:
+                await self._resume_mining.wait()
+                if self._state is State.EXIT:  # type: ignore[comparison-overlap]  # State can change during the await.
+                    break
+                self._run_task = asyncio.create_task(self._run())
+                try:
+                    await self._run_task
+                    break
+                except asyncio.CancelledError:
+                    task = asyncio.current_task()
+                    if self._changing_auth and task is not None and not task.cancelling():  # type: ignore[attr-defined]  # Python 3.12 runtime.
+                        continue
+                    raise
+                except ExitRequest:
+                    break
+                except aiohttp.ContentTypeError as exc:
+                    raise RequestException(_.t["login"]["unexpected_content"]) from exc
+        finally:
+            await self._stop_mining_schedule()
+            self._channel_service.clear_bans()
+            self.diagnostics.stop_logs()
+            await self.login_browser.stop()
+            await self.helper.stop()
+            await self.session_controller.stop()
 
     async def _run(self) -> None:
         """
@@ -201,7 +445,9 @@ class Twitch:
         # NOTE: watch task is explicitly restarted on each new run
         if self._watching_task is not None:
             self._watching_task.cancel()
-        self._watching_task = asyncio.create_task(self._watch_service.watch_loop())
+        self._watching_task = (
+            asyncio.create_task(self._watch_service.watch_loop()) if self.is_mining_time() else None
+        )
         # Add default topics
         self.websocket.add_topics(
             [
@@ -216,25 +462,45 @@ class Twitch:
                 ),
             ]
         )
+        # Replace and drain the previous account/run's schedule before starting.
+        await self._stop_mining_schedule()
+        self._schedule_task = asyncio.create_task(self._mining_schedule_loop())
         full_cleanup: bool = False
         channels: Final[OrderedDict[int, Channel]] = self.channels
-        self.change_state(State.INVENTORY_FETCH)
+        self.request_inventory_refresh()
         while True:
+            self._activate_pending_inventory_refresh()
+            self._activate_pending_games_update()
+            if self._state not in (State.EXIT, State.IDLE) and not self.is_mining_time():
+                # Defer queued work until reopening without reactivating its event.
+                self.stop_watching()
+                self.change_state(State.IDLE)
             if self._state is State.IDLE:
-                self.gui.status.update(_.t["gui"]["status"]["idle"])
+                if self.is_mining_time():
+                    self.gui.status.update(_.t["gui"]["status"]["idle"])
+                else:
+                    self.gui.status.update(_.t["gui"]["status"]["outside_hours"])
                 self.stop_watching()
                 # clear the flag and wait until it's set again
                 self._state_change.clear()
             elif self._state is State.INVENTORY_FETCH:
+                self._inventory_refresh_pending = False
+                clear_cached_state = self._clear_cache_pending
+                self._clear_cache_pending = False
+                if clear_cached_state:
+                    self._inventory_service.clear_cached_state()
                 # ensure the websocket is running
                 await self.websocket.start()
                 await self.fetch_inventory()
+                self._inventory_loaded = True
                 self.gui.set_games({campaign.game for campaign in self.inventory})
                 # Broadcast unwanted items (based on settings)
                 self.gui.broadcast_wanted_items()
                 # Save state on every inventory fetch
                 self.change_state(State.GAMES_UPDATE)
             elif self._state is State.GAMES_UPDATE:
+                refresh_policy_ui = self._games_update_pending
+                self._games_update_pending = False
                 # claim drops from expired and active campaigns
                 logger.info("Checking for claimable drops")
                 logger.debug("Campaigns in inventory: %s", self.inventory)
@@ -297,6 +563,10 @@ class Twitch:
                             f"Manual mode: prioritizing game {self._manual_target_game.name}"
                         )
 
+                if refresh_policy_ui:
+                    self.gui.inv.refresh_campaigns(self.inventory)
+                    self.gui.broadcast_wanted_items()
+
                 full_cleanup = True
                 self.restart_watching()
                 self.change_state(State.CHANNELS_CLEANUP)
@@ -330,7 +600,10 @@ class Twitch:
                     self.change_state(State.CHANNELS_FETCH)
                 else:
                     # with no games available, we switch to IDLE after cleanup
-                    self.print(_.t["status"]["no_campaign"])
+                    self.print(
+                        _.t["status"]["no_campaign"],
+                        collapse_key="status.no_campaign",
+                    )
                     self.change_state(State.IDLE)
             elif self._state is State.CHANNELS_FETCH:
                 self.gui.status.update(_.t["gui"]["status"]["gathering"])
@@ -359,14 +632,27 @@ class Twitch:
                     # for every campaign without an ACL, for it's game,
                     # add a list of live channels with drops enabled
                     new_channels.update(await self.get_live_streams(game, drops_enabled=True))
+                # Filter account-specific bans before priority sorting and the tracking cap.
+                retained_channels = [channel for channel in (
+                    self.watching_channel.get_with_default(None), self._manual_target_channel,
+                ) if channel is not None]
+                unbanned_channels = await self._channel_service.filter_banned_channels(
+                    new_channels, retained_channels=retained_channels,
+                )
+                banned_channels = [channel for channel in (
+                    *new_channels, *retained_channels,
+                ) if channel.banned]
+                self._remove_channel_topics(set(banned_channels))
+                for channel in banned_channels:
+                    channel.remove()
                 # sort them descending by viewers, by priority and by game priority
                 # NOTE: Viewers sort also ensures ONLINE channels are sorted to the top
                 # NOTE: We can drop using the set now, because there's no more channels being added
                 ordered_channels: list[Channel] = sorted(
-                    new_channels, key=ChannelService.get_viewers_key, reverse=True
+                    unbanned_channels, key=ChannelService.get_viewers_key, reverse=True
                 )
                 ordered_channels.sort(key=lambda ch: ch.acl_based, reverse=True)
-                ordered_channels.sort(key=self._channel_service.get_priority)
+                ordered_channels.sort(key=self._channel_service.get_mining_priority)
                 # ensure that we won't end up with more channels than we can handle
                 # NOTE: we trim from the end because that's where the non-priority,
                 # offline (or online but low viewers) channels end up
@@ -426,6 +712,9 @@ class Twitch:
                     no_acl,
                     acl_channels,
                     new_channels,
+                    unbanned_channels,
+                    banned_channels,
+                    retained_channels,
                     to_add_topics,
                     ordered_channels,
                     watching_channel,
@@ -470,7 +759,7 @@ class Twitch:
                 # Auto-select best channel based on priority
                 else:
                     for channel in sorted(
-                        channels.values(), key=self._channel_service.get_priority
+                        channels.values(), key=self._channel_service.get_mining_priority
                     ):
                         if self.can_watch(channel) and self.should_switch(channel):
                             new_watching = channel
@@ -503,11 +792,16 @@ class Twitch:
                 self.gui.status.update(_.t["gui"]["status"]["exiting"])
                 # we've been requested to exit the application
                 break
+            # A request can arrive while a state performs asynchronous work or
+            # after that state clears the event. Re-apply it before waiting so
+            # the request cannot be overwritten by the state's normal transition.
+            self._activate_pending_inventory_refresh()
+            self._activate_pending_games_update()
             await self._state_change.wait()
 
     def can_watch(self, channel: Channel) -> bool:
         """Delegate to WatchService."""
-        return self._watch_service.can_watch(channel)
+        return self.is_mining_time() and self._watch_service.can_watch(channel)
 
     def should_switch(self, channel: Channel) -> bool:
         """Delegate to WatchService."""
@@ -515,7 +809,8 @@ class Twitch:
 
     def watch(self, channel: Channel, *, update_status: bool = True) -> None:
         """Delegate to WatchService."""
-        self._watch_service.watch(channel, update_status=update_status)
+        if self.is_mining_time():
+            self._watch_service.watch(channel, update_status=update_status)
 
     def stop_watching(self) -> None:
         """Delegate to WatchService."""
@@ -547,6 +842,24 @@ class Twitch:
         # Broadcast manual mode change to GUI
         self.gui.broadcast_manual_mode_change(self.get_manual_mode_info())
 
+    def clear_manual_mode(self, reason: str = "") -> bool:
+        """Clear manual targeting without changing the state machine.
+
+        Returns whether any manual target was present.
+        """
+        if self._manual_target_channel is None and self._manual_target_game is None:
+            return False
+
+        game_name = self._manual_target_game.name if self._manual_target_game else "Unknown"
+        logger.info(
+            f"Clearing manual mode for game: {game_name}. Reason: {reason or 'User requested'}"
+        )
+
+        self._manual_target_channel = None
+        self._manual_target_game = None
+        self.gui.broadcast_manual_mode_change(self.get_manual_mode_info())
+        return True
+
     def exit_manual_mode(self, reason: str = "") -> None:
         """
         Exit manual mode and return to automatic channel selection.
@@ -554,19 +867,8 @@ class Twitch:
         Args:
             reason: Optional reason for exiting manual mode (for logging)
         """
-        if not self.is_manual_mode():
+        if not self.clear_manual_mode(reason):
             return
-
-        game_name = self._manual_target_game.name if self._manual_target_game else "Unknown"
-        logger.info(
-            f"Exiting manual mode for game: {game_name}. Reason: {reason or 'User requested'}"
-        )
-
-        self._manual_target_channel = None
-        self._manual_target_game = None
-
-        # Broadcast manual mode change to GUI
-        self.gui.broadcast_manual_mode_change(self.get_manual_mode_info())
 
         # Trigger channel switch to select new channel automatically
         self.change_state(State.CHANNEL_SWITCH)
@@ -663,7 +965,7 @@ class Twitch:
 
         game_campaign_map: dict[str, list[tuple[DropsCampaign, list[str]]]] = defaultdict(list)
         for campaign in self.inventory:
-            if campaign.eligible and not campaign.finished:
+            if campaign.eligible and not campaign.mining_finished:
                 logger.info("eligible Campaign: %s - %s", campaign.name, campaign.game.name)
             if campaign.can_earn_within(next_hour):
                 channel_names = []

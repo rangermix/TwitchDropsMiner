@@ -33,9 +33,19 @@ class ChannelListManager:
             channel: The channel to display
             add: If True, emit channel_add event; otherwise emit channel_update
         """
-        channel_data = {
+        channel_data = self._channel_data(channel)
+        self._channels[channel.id] = channel_data
+        asyncio.create_task(
+            self._broadcaster.emit("channel_update" if not add else "channel_add", channel_data)
+        )
+
+    def _channel_data(self, channel: Channel) -> dict[str, Any]:
+        """Use the same public identity in incremental, batch and reconnect state."""
+        return {
             "id": channel.id,
             "name": channel.name,
+            "login": channel.login,
+            "url": channel.url,
             "game": channel.game.name if channel.game else None,
             "game_id": channel.game.id if channel.game else None,
             "game_icon": channel.game.box_art_url if channel.game else None,
@@ -45,10 +55,6 @@ class ChannelListManager:
             "acl_based": channel.acl_based,
             "watching": channel.id == self._watching_id,
         }
-        self._channels[channel.id] = channel_data
-        asyncio.create_task(
-            self._broadcaster.emit("channel_update" if not add else "channel_add", channel_data)
-        )
 
     def remove(self, channel: Channel):
         """Remove a channel from the display list.
@@ -116,18 +122,7 @@ class ChannelListManager:
         channels_data = []
 
         for channel in channels:
-            channel_data = {
-                "id": channel.id,
-                "name": channel.name,
-                "game": channel.game.name if channel.game else None,
-                "game_id": channel.game.id if channel.game else None,
-                "game_icon": channel.game.box_art_url if channel.game else None,
-                "viewers": channel.viewers,
-                "online": channel.online,
-                "drops_enabled": channel.drops_enabled,
-                "acl_based": channel.acl_based,
-                "watching": channel.id == self._watching_id,
-            }
+            channel_data = self._channel_data(channel)
             new_channels[channel.id] = channel_data
             channels_data.append(channel_data)
 

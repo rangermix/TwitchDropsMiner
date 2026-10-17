@@ -6,7 +6,6 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from src.config import State
 from src.models.game import Game
 from src.services.stream_selector import StreamSelector
 from src.web.managers.broadcaster import WebSocketBroadcaster
@@ -58,9 +57,11 @@ class WebGUIManager:
         self.login = LoginFormManager(self._broadcaster, self)
 
         # Callback to trigger game update when relevant settings change
-        on_settings_change = self._twitch.get_change_state_callable(State.GAMES_UPDATE)
+        def on_settings_change() -> None:
+            self._twitch.request_games_update()
+
         self.settings = SettingsManager(
-            self._broadcaster, twitch.settings, self.output, on_change=on_settings_change
+            self._broadcaster, twitch.settings, self.output, on_change=on_settings_change,
         )
 
         # Selected channel tracking (set by web client)
@@ -69,6 +70,13 @@ class WebGUIManager:
 
         # Start message
         logger.info("Web GUI Manager initialized")
+
+    def notify_session_change(self) -> None:
+        status = {**self._twitch.session_controller.status(),
+                  "browser": self._twitch.login_browser.status(),
+                  "helper": self._twitch.helper.status(),
+                  "logged_in": self._twitch._auth_state._logged_in.is_set()}
+        asyncio.create_task(self._broadcaster.emit("session_status", status))
 
     def set_socketio(self, sio: AsyncServer):
         """Set the Socket.IO instance for real-time communication.
@@ -81,13 +89,14 @@ class WebGUIManager:
         """
         self._broadcaster.set_socketio(sio)
 
-    def print(self, message: str):
+    def print(self, message: str, *, collapse_key: str | None = None) -> None:
         """Print message to console output.
 
         Args:
             message: Message to display in console
+            collapse_key: Suppress a consecutive identical keyed message
         """
-        self.output.print(message)
+        self.output.print(message, collapse_key=collapse_key)
 
     def set_games(self, games: set[Game]):
         """Set available games for settings panel.
@@ -140,6 +149,10 @@ class WebGUIManager:
         self._selected_channel_id = None  # Clear after reading
         return result
 
+    def clear_channel_selection(self) -> None:
+        """Discard a pending channel selection."""
+        self._selected_channel_id = None
+
     def apply_theme(self, dark_mode: bool):
         """Apply UI theme (handled client-side in web mode).
 
@@ -161,10 +174,17 @@ class WebGUIManager:
             self._twitch.settings, self._twitch.inventory
         )
 
-    def broadcast_wanted_items(self):
-        """Broadcast the list of wanted items to connected clients."""
+    async def broadcast_wanted_items_now(self) -> None:
+        """Broadcast wanted items and wait until the Socket.IO emit completes."""
         tree = self.get_wanted_game_tree()
-        asyncio.create_task(self._broadcaster.emit("wanted_items_update", tree))
+        try:
+            await self._broadcaster.emit("wanted_items_update", tree)
+        except Exception:
+            logger.exception("Failed to broadcast wanted items update")
+
+    def broadcast_wanted_items(self) -> None:
+        """Schedule a wanted-items broadcast using the stable synchronous API."""
+        asyncio.create_task(self.broadcast_wanted_items_now())
 
 
 # Type aliases for backwards compatibility with code that imports from gui

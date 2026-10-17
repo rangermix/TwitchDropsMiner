@@ -233,7 +233,7 @@ class MessageHandlerService:
             if campaign.can_earn(watching_channel):
                 self._twitch.restart_watching()
             else:
-                self._twitch.change_state(State.INVENTORY_FETCH)
+                self._twitch.request_inventory_refresh()
             return
 
         assert msg_type == "drop-progress"
@@ -266,7 +266,7 @@ class MessageHandlerService:
         if message["type"] == "create-notification":
             data: JsonType = message["data"]["notification"]
             if data["type"] == "user_drop_reward_reminder_notification":
-                self._twitch.change_state(State.INVENTORY_FETCH)
+                self._twitch.request_inventory_refresh()
                 await self._twitch.gql_request(
                     GQL_OPERATIONS["NotificationsDelete"].with_variables(
                         {"input": {"id": data["id"]}}

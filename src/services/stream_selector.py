@@ -6,19 +6,17 @@ from src.models.game import Game
 
 
 class StreamSelector:
-    def _campaign_has_wanted_drops(
-        self, campaign: DropsCampaign, mining_benefits: dict[str, bool], stamp: datetime
-    ) -> bool:
-        return campaign.can_earn_within(stamp) and campaign.has_wanted_unclaimed_benefits(
-            mining_benefits
-        )
-
     def _get_wanted_drops(
-        self, campaign: DropsCampaign, mining_benefits: dict[str, bool]
+        self, campaign: DropsCampaign, mining_benefits: dict[str, bool], now: datetime
     ) -> list[dict]:
         wanted_drops = []
         for drop in campaign.drops:
-            if drop.is_claimed:
+            if (
+                not drop.is_watch_drop
+                or drop.is_claimed
+                or drop.ends_at <= now
+                or not drop.is_mineable
+            ):
                 continue
 
             filtered_benefits = drop.get_wanted_unclaimed_benefits(mining_benefits)
@@ -32,9 +30,10 @@ class StreamSelector:
         wanted_games: list[dict],
         settings: Settings,
         campaigns: list[DropsCampaign],
+        now: datetime,
         stamp: datetime,
     ) -> None:
-        if settings.priority_list_only:
+        if getattr(settings, "priority_list_only", True) is not False:
             return
 
         selected_names = {game_name.lower() for game_name in settings.games_to_watch}
@@ -46,20 +45,22 @@ class StreamSelector:
 
         unlisted_campaigns: dict[int, dict] = {}
         for campaign in campaigns:
-            game = campaign.game
-            if game.name.lower() in selected_names or game.id in queued_ids:
+            campaign_game = campaign.game
+            if campaign_game.name.lower() in selected_names or campaign_game.id in queued_ids:
                 continue
-            if not self._campaign_has_wanted_drops(campaign, settings.mining_benefits, stamp):
+            if not campaign.can_earn_within(stamp):
                 continue
-            if game.id not in unlisted_campaigns:
-                unlisted_campaigns[game.id] = {
-                    "game_id": game.id,
-                    "game_name": game.name,
-                    "game_icon": game.box_art_url,
-                    "game_obj": game,
+            if not self._get_wanted_drops(campaign, settings.mining_benefits, now):
+                continue
+            if campaign_game.id not in unlisted_campaigns:
+                unlisted_campaigns[campaign_game.id] = {
+                    "game_id": campaign_game.id,
+                    "game_name": campaign_game.name,
+                    "game_icon": campaign_game.box_art_url,
+                    "game_obj": campaign_game,
                     "campaigns": [],
                 }
-            unlisted_campaigns[game.id]["campaigns"].append(campaign)
+            unlisted_campaigns[campaign_game.id]["campaigns"].append(campaign)
 
         fallback_games = sorted(
             unlisted_campaigns.values(),
@@ -68,29 +69,31 @@ class StreamSelector:
                 game["game_name"].lower(),
             ),
         )
-        for game in fallback_games:
-            game["campaigns"] = [
+        for fallback_game in fallback_games:
+            fallback_game["campaigns"] = [
                 {
                     "id": campaign.id,
                     "name": campaign.name,
                     "url": campaign.campaign_url,
-                    "drops": self._get_wanted_drops(campaign, settings.mining_benefits),
+                    "drops": self._get_wanted_drops(campaign, settings.mining_benefits, now),
                 }
-                for campaign in sorted(game["campaigns"], key=lambda campaign: campaign.ends_at)
+                for campaign in sorted(fallback_game["campaigns"], key=lambda campaign: campaign.ends_at)
             ]
-            wanted_games.append(game)
+            wanted_games.append(fallback_game)
 
     def _get_wanted_game_tree(
         self, settings: Settings, campaigns: list[DropsCampaign]
     ) -> list[dict]:
         """
         Get the hierarchical tree of wanted items (Games -> Campaigns -> Drops -> Benefits).
-        Ignoring 'can earn within' time constraint.
+        Include campaigns available within an hour, with selected games first.
         """
         wanted_games = []
+        queued_ids: set[int] = set()
         games_to_watch = settings.games_to_watch
         mining_benefits = settings.mining_benefits
-        next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
+        now = datetime.now(timezone.utc)
+        next_hour = now + timedelta(hours=1)
 
         for game_name in games_to_watch:
             wanted_campaigns = []
@@ -105,10 +108,10 @@ class StreamSelector:
                 if game_obj is None:
                     game_obj = campaign.game
 
-                if not self._campaign_has_wanted_drops(campaign, mining_benefits, next_hour):
+                if not campaign.can_earn_within(next_hour):
                     continue
 
-                wanted_drops = self._get_wanted_drops(campaign, mining_benefits)
+                wanted_drops = self._get_wanted_drops(campaign, mining_benefits, now)
 
                 if len(wanted_drops) > 0:
                     wanted_campaigns.append(
@@ -121,6 +124,10 @@ class StreamSelector:
                     )
 
             if len(wanted_campaigns) > 0:
+                if game_obj is not None:
+                    if game_obj.id in queued_ids:
+                        continue
+                    queued_ids.add(game_obj.id)
                 wanted_games.append(
                     {
                         "game_id": game_obj.id if game_obj else None,
@@ -131,7 +138,7 @@ class StreamSelector:
                     }
                 )
 
-        self._append_unlisted_games(wanted_games, settings, campaigns, next_hour)
+        self._append_unlisted_games(wanted_games, settings, campaigns, now, next_hour)
         return wanted_games
 
     def get_wanted_game_tree(

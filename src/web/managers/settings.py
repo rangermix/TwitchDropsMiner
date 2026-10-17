@@ -3,15 +3,31 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from src.config.settings import InventoryFilterSettings, MiningHoursSettings
 from src.i18n.translator import _
 from src.models.game import Game
+from src.services.discord_service import DiscordNotifier
+from src.utils import DropIgnorePolicy
 
 
 logger = logging.getLogger("TwitchDrops")
+
+# Value returned to web clients in place of the stored Telegram bot token.
+# Never echo the real credential through the unauthenticated web API/socket.
+TELEGRAM_TOKEN_MASK = "••••••••"
+DISCORD_WEBHOOK_MASK = "••••••••"
+
+
+def _format_mining_hours(value: Any) -> str:
+    """Return a console-friendly summary that hides times outside range mode."""
+    if isinstance(value, dict) and value.get("mode") == "range":
+        return f"{value.get('start')}-{value.get('end')}"
+    return "always"
 
 
 if TYPE_CHECKING:
@@ -40,13 +56,34 @@ class SettingsManager:
         self._on_change = on_change
         self._available_games: list[str] = []
 
-    def get_settings(self) -> dict[str, Any]:
+    def get_settings(self, legacy_show_not_linked: bool | None = None) -> dict[str, Any]:
         """Get current settings for display.
+
+        Args:
+            legacy_show_not_linked: Request-scoped value echoed only in the
+                immediate settings POST response for a legacy frontend. It is
+                never persisted, mapped to ``link_status``, or returned
+                by a later GET/page reload.
 
         Returns:
             Dictionary containing all user-configurable settings
         """
         settings = vars(self._settings).copy()
+        settings["games_available"] = self._available_games
+        configured_webhook = bool(settings.get("discord_webhook_url"))
+        settings["discord_configured"] = configured_webhook
+        settings["discord_webhook_url"] = DISCORD_WEBHOOK_MASK if configured_webhook else ""
+        # Never expose the real Telegram bot token to web clients. The token
+        # stays server-side; clients only see a configured flag and a mask.
+        configured_token = bool(settings.get("telegram_bot_token"))
+        settings["telegram_configured"] = configured_token
+        settings["telegram_bot_token"] = TELEGRAM_TOKEN_MASK if configured_token else ""
+        # TODO(remove in 1.3.x): Retain this POST-only echo long enough for stale
+        # pre-versioned frontends to age out; it never survives a page reload.
+        if legacy_show_not_linked is not None:
+            inventory_filters = copy.deepcopy(dict(self._settings.inventory_filters))
+            inventory_filters["show_not_linked"] = legacy_show_not_linked
+            settings["inventory_filters"] = inventory_filters
         return settings
 
     def get_languages(self) -> dict[str, Any]:
@@ -64,18 +101,53 @@ class SettingsManager:
         """Log setting change to both console and system logger."""
         self._console.print(message)
 
-    def update_settings(self, settings_data: dict[str, Any]):
+    def update_settings(self, settings_data: dict[str, Any]) -> dict[str, Any]:
         """Update settings from user input.
 
         Args:
             settings_data: Dictionary of settings to update
         """
+        previous_hours: dict[str, str] = getattr(self._settings, "mining_hours", {})
+        previous_priority_list_only = getattr(self._settings, "priority_list_only", True)
+        requested_priority_list_only = settings_data.get("priority_list_only")
+        priority_mode_changed = (
+            isinstance(requested_priority_list_only, bool)
+            and requested_priority_list_only != previous_priority_list_only
+        )
+        requested_hours = settings_data.get("mining_hours")
+        if requested_hours is not None:
+            requested_hours = MiningHoursSettings.normalize(requested_hours)
+        previous_webhook = getattr(self._settings, "discord_webhook_url", "")
+        new_webhook = previous_webhook
+        if settings_data.get("discord_remove_webhook") is True:
+            new_webhook = ""
+        elif "discord_webhook_url" in settings_data:
+            requested_webhook = settings_data.get("discord_webhook_url")
+            if requested_webhook is not None and not isinstance(requested_webhook, str):
+                raise ValueError("invalid_discord_webhook")
+            requested_webhook = (requested_webhook or "").strip()
+            if requested_webhook and requested_webhook != DISCORD_WEBHOOK_MASK:
+                if not DiscordNotifier.is_valid_webhook(requested_webhook):
+                    raise ValueError("invalid_discord_webhook")
+                new_webhook = requested_webhook
+
         should_trigger_update = False
+        previous_allow_unlinked = getattr(self._settings, "allow_unlinked_campaigns", False)
+        requested_allow_unlinked = settings_data.get("allow_unlinked_campaigns")
+        override_changed = (
+            isinstance(requested_allow_unlinked, bool)
+            and requested_allow_unlinked != previous_allow_unlinked
+        )
         should_trigger_update |= self.check_and_update_setting(
             "games_to_watch", settings_data.get("games_to_watch"), True
         )
+        drop_name_blacklist = settings_data.get("drop_name_blacklist")
+        if drop_name_blacklist is not None:
+            drop_name_blacklist = DropIgnorePolicy.normalize_keywords(
+                drop_name_blacklist
+            )
         should_trigger_update |= self.check_and_update_setting(
-            "priority_list_only", settings_data.get("priority_list_only"), True
+            "drop_name_blacklist", drop_name_blacklist, True
         )
         should_trigger_update |= self.check_and_update_setting(
             "dark_mode", settings_data.get("dark_mode")
@@ -98,21 +170,74 @@ class SettingsManager:
             "minimum_refresh_interval_minutes",
             settings_data.get("minimum_refresh_interval_minutes"),
         )
-        should_trigger_update |= self.check_and_update_setting(
-            "inventory_filters", settings_data.get("inventory_filters")
-        )
+        if "telegram_bot_token" in settings_data:
+            new_token = str(settings_data.get("telegram_bot_token") or "").strip()
+            if new_token and new_token != TELEGRAM_TOKEN_MASK:
+                self.check_and_update_setting(
+                    "telegram_bot_token", new_token
+                )
+        if "telegram_chat_id" in settings_data:
+            self.check_and_update_setting(
+                "telegram_chat_id", settings_data.get("telegram_chat_id") or ""
+            )
+        inventory_filters = settings_data.get("inventory_filters")
+        legacy_show_not_linked = None
+        if inventory_filters is not None:
+            legacy_value = inventory_filters.get("show_not_linked")
+            if isinstance(legacy_value, bool):
+                legacy_show_not_linked = legacy_value
+            inventory_filters = self._normalize_inventory_filters(inventory_filters)
+        should_trigger_update |= self.check_and_update_setting("inventory_filters", inventory_filters)
         should_trigger_update |= self.check_and_update_setting(
             "inventory_list_view", settings_data.get("inventory_list_view")
         )
         should_trigger_update |= self.check_and_update_setting(
             "mining_benefits", settings_data.get("mining_benefits"), True
         )
+        should_trigger_update |= self.check_and_update_setting(
+            "mining_hours",
+            requested_hours,
+            True,
+            log_formatter=_format_mining_hours,
+        )
 
-        self._settings.save()
-        asyncio.create_task(self._broadcaster.emit("settings_updated", self.get_settings()))
+        if override_changed and isinstance(requested_allow_unlinked, bool):
+            self._settings.allow_unlinked_campaigns = requested_allow_unlinked
+        if priority_mode_changed and isinstance(requested_priority_list_only, bool):
+            self._settings.priority_list_only = requested_priority_list_only
+        self._settings.discord_webhook_url = new_webhook
+        try:
+            self._settings.save()
+        except Exception:
+            # A rejected save must not silently enable or disable live mining.
+            self._settings.discord_webhook_url = previous_webhook
+            self._settings.allow_unlinked_campaigns = previous_allow_unlinked
+            self._settings.mining_hours = previous_hours
+            self._settings.priority_list_only = previous_priority_list_only
+            raise
+        if new_webhook != previous_webhook:
+            self._log_change(f"Setting changed: discord_webhook_url = {DISCORD_WEBHOOK_MASK}")
+        if override_changed:
+            self._log_change(
+                f"Setting changed: allow_unlinked_campaigns = {requested_allow_unlinked}"
+            )
+            should_trigger_update = True
+        if priority_mode_changed:
+            self._log_change(
+                f"Setting changed: priority_list_only = {requested_priority_list_only}"
+            )
+            should_trigger_update = True
+        response_settings = self.get_settings(legacy_show_not_linked)
+        asyncio.create_task(self._broadcaster.emit("settings_updated", response_settings))
 
         if should_trigger_update and self._on_change:
             self._on_change()
+
+        return response_settings
+
+    def _normalize_inventory_filters(self, updates: dict[str, Any]) -> dict[str, Any]:
+        """Merge partial filter updates and discard legacy or unknown keys."""
+        return dict(InventoryFilterSettings.normalize(updates, self._settings.inventory_filters))
 
     def check_and_update_setting(
         self,
@@ -120,11 +245,15 @@ class SettingsManager:
         new_value: Any,
         should_trigger_update: bool = False,
         action: Callable[[Any], None] = lambda x: None,
+        log_formatter: Callable[[Any], str] | None = None,
     ):
         if new_value is None or getattr(self._settings, key, None) == new_value:
             return False
         setattr(self._settings, key, new_value)
-        self._log_change(f"Setting changed: {key} = {new_value}")
+        log_value = TELEGRAM_TOKEN_MASK if key in {"telegram_bot_token", "discord_webhook_url"} else (
+            log_formatter(new_value) if log_formatter else new_value
+        )
+        self._log_change(f"Setting changed: {key} = {log_value}")
         action(new_value)
         return should_trigger_update
 

@@ -12,6 +12,9 @@ from src.config.operations import GQL_OPERATIONS
 from src.exceptions import GQLException
 from src.i18n import _
 from src.models.benefit import Benefit
+from src.services.discord_service import DiscordNotifier
+from src.services.telegram_service import TelegramNotifier
+from src.utils import DropIgnoreReason
 
 
 if TYPE_CHECKING:
@@ -77,7 +80,34 @@ class BaseDrop:
     @property
     def preconditions_met(self) -> bool:
         campaign = self.campaign
-        return all(campaign.timed_drops[pid].is_claimed for pid in self.precondition_drops)
+        return all(
+            (prerequisite := campaign.timed_drops.get(pid)) is not None
+            and prerequisite.is_claimed
+            for pid in self.precondition_drops
+        )
+
+    @property
+    def ignore_reason(self) -> DropIgnoreReason | None:
+        """Return why this unclaimed drop is ignored, if applicable."""
+        if self.is_claimed:
+            return None
+        return self.campaign.get_drop_ignore_reason(self.id)
+
+    @property
+    def is_directly_ignored(self) -> bool:
+        """Return whether this drop's name directly matches a configured keyword."""
+        reason = self.ignore_reason
+        return reason is not None and reason.kind == "keyword"
+
+    @property
+    def is_ignored(self) -> bool:
+        """Return whether this drop is ignored directly or by a blocked dependency."""
+        return self.ignore_reason is not None
+
+    @property
+    def is_mineable(self) -> bool:
+        """Return whether this drop still contributes to a useful reward branch."""
+        return not self.is_claimed and self.campaign.is_drop_mineable(self.id)
 
     def _on_state_changed(self) -> None:
         raise NotImplementedError
@@ -85,10 +115,8 @@ class BaseDrop:
     def _base_earn_conditions(self) -> bool:
         # define when a drop can be earned or not
         return (
-            self.preconditions_met  # preconditions are met
-            and not self.is_claimed  # isn't already claimed
-            # has at least one benefit, or participates in a preconditions chain
-            and (bool(self.benefits) or self.id in self.campaign.preconditions_chain())
+            self.is_mineable  # unclaimed and contributes to a nonignored reward branch
+            and self.preconditions_met  # preconditions are met
         )
 
     def _base_can_earn(self) -> bool:
@@ -142,14 +170,17 @@ class BaseDrop:
         return len(self.get_wanted_unclaimed_benefits(allowed_benefits)) > 0
 
     def get_wanted_unclaimed_benefits(self, allowed_benefits: dict[str, bool]) -> list[str]:
-        if self.is_claimed:
+        if self.is_claimed or not self.is_mineable:
             return []
         return [benefit.name for benefit in self.benefits if benefit.is_wanted(allowed_benefits)]
 
     async def claim(self) -> bool:
         result = await self._claim()
-        if result:
-            self.is_claimed = result
+        if result and not self.is_claimed:
+            self.is_claimed = True
+            # A mixed campaign can still earn unwanted rewards after its last
+            # wanted claim. Rebuild policy so fallback can take over promptly.
+            self._twitch.request_games_update()
             claim_text = (
                 f"{self.campaign.game.name}\n"
                 f"{self.rewards_text()} "
@@ -160,9 +191,34 @@ class BaseDrop:
             self._twitch.print(
                 _.t["status"]["claimed_drop"].format(drop=claim_text.replace("\n", " "))
             )
-        else:
+            await self._twitch.gui.broadcast_wanted_items_now()
+            await self._send_telegram_notification()
+            await self._send_discord_notification()
+        elif not result:
             logger.error(f"Drop claim has potentially failed! Drop ID: {self.id}")
         return result
+
+    async def _send_telegram_notification(self) -> None:
+        """Notify once per successful claim without affecting the claim result."""
+        try:
+            bot_token = self._twitch.settings.telegram_bot_token
+            chat_id = self._twitch.settings.telegram_chat_id
+            if bot_token and chat_id:
+                await TelegramNotifier(bot_token, chat_id, diagnostics=getattr(self._twitch, "diagnostics", None)).notify_drop_claimed(self)
+        except Exception as e:
+            logger.warning("Failed to send Telegram notification: %s", e)
+
+    async def _send_discord_notification(self) -> None:
+        """Notify on the shared claim transition; transport failures cannot undo it."""
+        try:
+            webhook_url = self._twitch.settings.discord_webhook_url
+            if webhook_url:
+                await DiscordNotifier(
+                    webhook_url, diagnostics=getattr(self._twitch, "diagnostics", None)
+                ).notify_drop_claimed(self)
+        except Exception:
+            # Exception messages may contain the URL's secret token.
+            logger.warning("Failed to send Discord notification")
 
     async def _claim(self) -> bool:
         """
@@ -228,32 +284,44 @@ class TimedDrop(BaseDrop):
         return self.real_current_minutes + self.extra_current_minutes
 
     @property
+    def is_watch_drop(self) -> bool:
+        """Return whether this drop can be earned by watching a stream."""
+        return self.required_minutes > 0
+
+    @property
     def remaining_minutes(self) -> int:
         return self.required_minutes - self.current_minutes
 
     @property
     def total_required_minutes(self) -> int:
-        return self.required_minutes + max(
-            (
-                self.campaign.timed_drops[pid].total_required_minutes
-                for pid in self.precondition_drops
-            ),
-            default=0,
-        )
+        return self._total_chain_minutes(remaining=False, visiting=frozenset())
 
     @property
     def total_remaining_minutes(self) -> int:
-        return self.remaining_minutes + max(
-            (
-                self.campaign.timed_drops[pid].total_remaining_minutes
-                for pid in self.precondition_drops
-            ),
-            default=0,
+        return self._total_chain_minutes(remaining=True, visiting=frozenset())
+
+    def _total_chain_minutes(
+        self, *, remaining: bool, visiting: frozenset[str]
+    ) -> int:
+        """Return the longest prerequisite chain without recursing through cycles."""
+        if self.id in visiting or remaining and self.is_claimed:
+            return 0
+
+        next_visiting = visiting | {self.id}
+        prerequisite_minutes = (
+            prerequisite._total_chain_minutes(
+                remaining=remaining, visiting=next_visiting
+            )
+            for prerequisite_id in self.precondition_drops
+            if (prerequisite := self.campaign.timed_drops.get(prerequisite_id))
+            is not None
         )
+        own_minutes = self.remaining_minutes if remaining else self.required_minutes
+        return own_minutes + max(prerequisite_minutes, default=0)
 
     @property
     def progress(self) -> float:
-        if self.current_minutes <= 0 or self.required_minutes <= 0:
+        if self.current_minutes <= 0 or not self.is_watch_drop:
             return 0.0
         elif self.current_minutes >= self.required_minutes:
             return 1.0
@@ -264,14 +332,14 @@ class TimedDrop(BaseDrop):
         import math
 
         now = datetime.now(timezone.utc)
-        if self.required_minutes > 0 and self.total_remaining_minutes > 0 and now < self.ends_at:
+        if self.is_watch_drop and self.total_remaining_minutes > 0 and now < self.ends_at:
             return ((self.ends_at - now).total_seconds() / 60) / self.total_remaining_minutes
         return math.inf
 
     def _base_earn_conditions(self) -> bool:
         return (
             super()._base_earn_conditions()
-            and self.required_minutes > 0
+            and self.is_watch_drop
             # NOTE: This may be a bad idea, as it invalidates the can_earn status
             # and provides no way to recover from this state until the next reload.
             and self.extra_current_minutes < MAX_EXTRA_MINUTES
@@ -299,10 +367,13 @@ class TimedDrop(BaseDrop):
         return False
 
     async def claim(self) -> bool:
+        was_claimed = self.is_claimed
         result = await super().claim()
         if result:
             self.real_current_minutes = self.required_minutes
             self.extra_current_minutes = 0
+            if not was_claimed:
+                self._twitch.drop_history.record(self, self.campaign)
         self._on_state_changed()
         return result
 

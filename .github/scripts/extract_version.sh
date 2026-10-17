@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Script: extract_version.sh
-# Description: Extracts and validates version from branch name and/or project files
+# Description: Extracts and validates the version from the branch and project metadata
 # Usage: extract_version.sh [branch_name]
 
 # Color codes for output
@@ -14,8 +14,8 @@ NC='\033[0m' # No Color
 usage() {
     echo "Usage: $0 [branch_name]"
     echo ""
-    echo "Mode 1 (with branch name): Validates version from branch matches src/version.py and pyproject.toml"
-    echo "Mode 2 (no branch name): Validates src/version.py and pyproject.toml versions match"
+    echo "Mode 1 (with branch name): Validates branch, src/version.py, pyproject.toml, and uv.lock"
+    echo "Mode 2 (no branch name): Validates all project version sources match"
     echo ""
     echo "Examples:"
     echo "  $0 release/1.2.3          # Validate branch version matches files"
@@ -42,16 +42,29 @@ fi
 VERSION_TOML=$(grep -oP '^version = "\K[^"]+' pyproject.toml)
 echo "pyproject.toml version: $VERSION_TOML"
 
+# Read the editable project version from uv.lock.
+if [ ! -f "uv.lock" ]; then
+    echo -e "${RED}Error: uv.lock not found${NC}"
+    exit 1
+fi
+VERSION_LOCK=$(grep -A2 '^name = "twitch-drops-miner"$' uv.lock | grep -m1 -oP '^version = "\K[^"]+' || true)
+if [ -z "$VERSION_LOCK" ]; then
+    echo -e "${RED}Error: Twitch Drops Miner version not found in uv.lock${NC}"
+    exit 1
+fi
+echo "uv.lock version: $VERSION_LOCK"
+
 # Check if branch name argument is provided
 if [ $# -eq 0 ]; then
     # Mode 2: No branch name - just validate files match
     echo ""
     echo "No branch name provided - validating file versions match..."
 
-    if [ "$VERSION_PY" != "$VERSION_TOML" ]; then
+    if [ "$VERSION_PY" != "$VERSION_TOML" ] || [ "$VERSION_PY" != "$VERSION_LOCK" ]; then
         echo -e "${RED}Error: Version mismatch between files:${NC}"
         echo -e "${RED}  src/version.py:   $VERSION_PY${NC}"
         echo -e "${RED}  pyproject.toml:   $VERSION_TOML${NC}"
+        echo -e "${RED}  uv.lock:          $VERSION_LOCK${NC}"
         exit 1
     fi
 
@@ -68,12 +81,15 @@ else
     echo "Branch version: $BRANCH_VERSION"
     echo ""
 
-    # Check all three versions match
-    if [ "$BRANCH_VERSION" != "$VERSION_PY" ] || [ "$BRANCH_VERSION" != "$VERSION_TOML" ]; then
+    # Check the branch and all project version sources match.
+    if [ "$BRANCH_VERSION" != "$VERSION_PY" ] || \
+       [ "$BRANCH_VERSION" != "$VERSION_TOML" ] || \
+       [ "$BRANCH_VERSION" != "$VERSION_LOCK" ]; then
         echo -e "${RED}Error: Version mismatch detected:${NC}"
         echo -e "${RED}  Branch:           $BRANCH_VERSION${NC}"
         echo -e "${RED}  src/version.py:   $VERSION_PY${NC}"
         echo -e "${RED}  pyproject.toml:   $VERSION_TOML${NC}"
+        echo -e "${RED}  uv.lock:          $VERSION_LOCK${NC}"
         exit 1
     fi
 

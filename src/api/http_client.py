@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from src.config import ClientInfo
     from src.config.settings import Settings
     from src.core.client import Twitch
+    from src.diagnostics import Diagnostics
     from src.web.gui_manager import WebGUIManager
 
 
@@ -49,6 +50,7 @@ class HTTPClient:
         gui: WebGUIManager,
         twitch: Twitch,
         client_type: ClientInfo,
+        *, diagnostics: Diagnostics | None = None,
     ):
         """
         Initialize the HTTP client.
@@ -69,6 +71,20 @@ class HTTPClient:
         self._twitch = twitch
         self._client_type = client_type
         self._session: aiohttp.ClientSession | None = None
+        self._browser_mode = False
+        self._diagnostics = diagnostics
+
+    def enable_browser_mode(self, client_type: ClientInfo) -> None:
+        """Use anonymous metadata HTTP alongside browser-owned authenticated GQL.
+
+        Preserve the Android cookie file exactly. It must never contain web
+        credentials, and its cookies must not be sent under the browser identity.
+        """
+        self._browser_mode = True
+        self._client_type = client_type
+        if self._session is not None:
+            self._session.cookie_jar.clear()
+            self._session.headers["User-Agent"] = client_type.USER_AGENT
 
     async def get_session(self) -> aiohttp.ClientSession:
         """
@@ -92,7 +108,7 @@ class HTTPClient:
         # Load cookies
         cookie_jar = aiohttp.CookieJar()
         try:
-            if COOKIES_PATH.exists():
+            if not self._browser_mode and COOKIES_PATH.exists():
                 cookie_jar.load(COOKIES_PATH)
         except Exception:
             # If loading cookies fails, clear the jar and continue
@@ -163,7 +179,7 @@ class HTTPClient:
         if self.settings.proxy and "proxy" not in kwargs:
             kwargs["proxy"] = self.settings.proxy
 
-        logger.debug(f"Request: ({method=}, {url=}, {kwargs=})")
+        logger.debug("Request: %s", method)
         session_timeout = timedelta(seconds=session.timeout.total or 0)
         backoff = ExponentialBackoff(maximum=3 * 60)
 
@@ -183,24 +199,34 @@ class HTTPClient:
                 response: aiohttp.ClientResponse | None = None
                 response = await session.request(method, url, **kwargs)
                 assert response is not None
-                logger.debug(f"Response: {response.status}: {response}")
+                logger.debug("Response status: %s", response.status)
 
                 if response.status < 500:
                     # Pre-read the response to avoid getting errors outside the context manager
-                    raw_response = await response.read()  # noqa: F841
+                    raw_response = await response.read()
+                    if self._diagnostics is not None:
+                        self._diagnostics.record_http(method, url, response.status,
+                                                      body=raw_response, operations=kwargs.get("json"))
                     yield response
                     return
 
+                if self._diagnostics is not None:
+                    self._diagnostics.record_http(method, url, response.status)
                 self.gui.print(_.t["error"]["site_down"].format(seconds=round(delay)))
             except aiohttp.ClientConnectorCertificateError:
                 # SSL verification failures should not be retried
+                if self._diagnostics is not None:
+                    self._diagnostics.record(self._diagnostics.endpoint(url, method), outcome="tls")
                 raise
             except (
                 aiohttp.ClientConnectionError,
                 asyncio.TimeoutError,
                 aiohttp.ClientPayloadError,
-            ):
+            ) as error:
                 # Connection problems, retry with backoff
+                if self._diagnostics is not None:
+                    self._diagnostics.record(self._diagnostics.endpoint(url, method),
+                                             outcome="timeout" if isinstance(error, TimeoutError) else "connection")
                 if backoff.steps > 1:
                     # Don't show quick retries to the user
                     self.gui.print(_.t["error"]["no_connection"].format(seconds=round(delay)))
@@ -228,6 +254,7 @@ class HTTPClient:
                 if not cookie:
                     del cookie_jar._cookies[cookie_key]
 
-            cookie_jar.save(COOKIES_PATH)
+            if not self._browser_mode:
+                cookie_jar.save(COOKIES_PATH)
             await self._session.close()
             self._session = None

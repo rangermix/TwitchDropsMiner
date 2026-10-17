@@ -28,13 +28,27 @@ class ConsoleOutputManager:
     def __init__(self, broadcaster: WebSocketBroadcaster, max_lines: int = 1000):
         self._broadcaster = broadcaster
         self._buffer: deque[str] = deque(maxlen=max_lines)
+        self._last_collapsible_message: tuple[str, str] | None = None
 
-    def print(self, message: str):
+    def print(self, message: str, *, collapse_key: str | None = None) -> None:
         """Print a message to the console output with timestamp.
 
         Args:
             message: The message to display
+            collapse_key: Suppress a consecutive identical keyed message
         """
+        collapsible_message = (
+            (collapse_key, message) if collapse_key is not None else None
+        )
+        if (
+            collapsible_message is not None
+            and collapsible_message == self._last_collapsible_message
+        ):
+            return
+
+        # Every emitted message starts a new sequence. Unkeyed messages reset
+        # collapsing without changing their existing duplicate behavior.
+        self._last_collapsible_message = collapsible_message
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         line = f"[{timestamp}] | {message}"
         self._buffer.append(line)

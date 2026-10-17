@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 from src.models.campaign import DropsCampaign
@@ -12,30 +12,10 @@ class TestWantedGamesFilter(unittest.TestCase):
         # Mock Settings
         self.settings = MagicMock()
         self.settings.games_to_watch = ["Game1", "Game2"]
-        self.settings.priority_list_only = True
         self.settings.mining_benefits = {
             "BADGE": True,
             "DIRECT_ENTITLEMENT": True,
         }  # both allowed by default
-
-    def _campaign(self, game_id, game_name, benefit_name, *, ends_in_hours=24):
-        campaign = MagicMock(spec=DropsCampaign)
-        campaign.game = Game({"id": game_id, "name": game_name})
-        campaign.can_earn_within.return_value = True
-        campaign.has_wanted_unclaimed_benefits.return_value = bool(benefit_name)
-        campaign.id = f"{game_id}-campaign"
-        campaign.name = f"{game_name} Campaign"
-        campaign.campaign_url = f"http://test.url/{game_id}"
-        campaign.ends_at = datetime.now(timezone.utc) + timedelta(hours=ends_in_hours)
-
-        drop = MagicMock()
-        drop.name = f"{game_name} Drop"
-        drop.is_claimed = False
-        drop.get_wanted_unclaimed_benefits.return_value = (
-            [benefit_name] if benefit_name else []
-        )
-        campaign.drops = [drop]
-        return campaign
 
     def test_filter_wanted_campaigns(self):
         # Setup Campaigns
@@ -50,6 +30,7 @@ class TestWantedGamesFilter(unittest.TestCase):
         d1 = MagicMock()
         d1.name = "Test Drop"
         d1.is_claimed = False
+        d1.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         d1.get_wanted_unclaimed_benefits.return_value = ["Benefit1"]
         c1.drops = [d1]
         c1.has_wanted_unclaimed_benefits.side_effect = (
@@ -62,6 +43,7 @@ class TestWantedGamesFilter(unittest.TestCase):
         c2.can_earn_within.return_value = True
         d2 = MagicMock()
         d2.is_claimed = False
+        d2.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         d2.get_wanted_unclaimed_benefits.return_value = []
         c2.drops = [d2]
         c2.has_wanted_unclaimed_benefits.side_effect = (
@@ -74,6 +56,7 @@ class TestWantedGamesFilter(unittest.TestCase):
         c3.can_earn_within.return_value = True
         d3 = MagicMock()
         d3.is_claimed = False
+        d3.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         d3.get_wanted_unclaimed_benefits.return_value = ["Benefit3"]
         c3.drops = [d3]
         c3.has_wanted_unclaimed_benefits.side_effect = (
@@ -90,6 +73,7 @@ class TestWantedGamesFilter(unittest.TestCase):
         d4 = MagicMock()
         d4.name = "Test Drop"
         d4.is_claimed = True
+        d4.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         d4.get_wanted_unclaimed_benefits.return_value = ["Benefit4"]
         c4.drops = [d4]
         c4.has_wanted_unclaimed_benefits.side_effect = (
@@ -106,6 +90,7 @@ class TestWantedGamesFilter(unittest.TestCase):
         d5 = MagicMock()
         d5.name = "Test Drop"
         d5.is_claimed = False
+        d5.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         d5.get_wanted_unclaimed_benefits.return_value = ["Benefit5"]
         c5.drops = [d5]
         c5.has_wanted_unclaimed_benefits.side_effect = (
@@ -118,24 +103,6 @@ class TestWantedGamesFilter(unittest.TestCase):
 
         self.assertEqual(len(wanted_games), 1)
         self.assertEqual(wanted_games[0].name, "Game1")
-
-    def test_priority_list_as_priority_appends_unlisted_games_after_priorities(self):
-        self.settings.games_to_watch = ["Priority Game"]
-        self.settings.priority_list_only = False
-
-        priority = self._campaign(1, "Priority Game", "Priority Benefit", ends_in_hours=48)
-        fallback_later = self._campaign(2, "Fallback Later", "Fallback Benefit", ends_in_hours=24)
-        fallback_earlier = self._campaign(3, "Fallback Earlier", "Fallback Benefit", ends_in_hours=2)
-
-        stream_selector = StreamSelector()
-        wanted_games = stream_selector.get_wanted_games(
-            self.settings, [fallback_later, priority, fallback_earlier]
-        )
-
-        self.assertEqual(
-            [game.name for game in wanted_games],
-            ["Priority Game", "Fallback Earlier", "Fallback Later"],
-        )
 
 
 if __name__ == "__main__":
