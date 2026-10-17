@@ -19,27 +19,27 @@ services operated for other users are outside its support scope.
 ![Twitch Drops Miner web dashboard](./screenshot.png)
 
 - Choose and prioritize games, or let TDM discover available campaigns.
-- Source builds can [mine other eligible games as fallback](docs/usage.md#choose-games-and-priorities)
+- [Mine other eligible games as fallback](docs/usage.md#choose-games-and-priorities)
   while preserving your saved priority list.
 - Track campaigns and rewards, and ignore drops you do not want.
-- Source builds skip channels while Twitch reports an active ban, including temporary bans.
+- Skip channels while Twitch reports an active ban, including temporary bans.
 - Sign in inside the dashboard; TDM saves and renews your session automatically.
 - Review claimed-drop history, export it to CSV, and receive Telegram or Discord notifications.
 - Manage everything from a web dashboard with optional password protection.
-- Set daily [mining hours](docs/usage.md#mining-hours) in the miner’s local timezone (source builds).
+- Set daily [mining hours](docs/usage.md#mining-hours) in the miner’s local timezone.
 
 The redesigned dashboard's **Now Watching** card offers **Show thumbnail**, off on
 each page load. When enabled, it shows a Twitch JPEG thumbnail, refreshed on channel
 updates at most once per minute. It does not play video or audio. The header adapts to
 longer translations, grouping account controls and navigation on smaller screens.
 Hover over shortened account or renewal text to read it in full. This dashboard change
-is available from source pending release.
+is included in the published releases.
 
 Inventory supports **All / Linked / Not Linked** account-link filters. Settings has a
 default-off option to mine campaigns reported as Not Linked; read its warning and
 check Twitch progress. See the [dashboard guide](docs/usage.md#account-link-override).
 
-Source builds also offer **Settings → Dump diagnosis data** for bug reports. It saves
+Use **Settings → Dump diagnosis data** for bug reports. It saves
 deidentified miner state and recent sanitized API responses in your data volume;
 see [diagnosis data](docs/troubleshooting.md#save-diagnosis-data).
 
@@ -53,13 +53,13 @@ With Docker installed, choose one setup below. Shell examples use Bash
 Pull and start the published image:
 
 ```bash
-docker pull rangermix/twitch-drops-miner:2.1.1
+docker pull rangermix/twitch-drops-miner:2.3.0
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.1.1
+  rangermix/twitch-drops-miner:2.3.0
 ```
 
 ### Docker Compose
@@ -70,7 +70,7 @@ inside it. Set `TZ` to your home internet connection's timezone:
 ```yaml
 services:
   twitch-drops-miner:
-    image: rangermix/twitch-drops-miner:2.1.1
+    image: rangermix/twitch-drops-miner:2.3.0
     container_name: twitch-drops-miner
     init: true
     stop_grace_period: 30s
