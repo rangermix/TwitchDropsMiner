@@ -178,6 +178,9 @@ class BaseDrop:
         result = await self._claim()
         if result and not self.is_claimed:
             self.is_claimed = True
+            # A mixed campaign can still earn unwanted rewards after its last
+            # wanted claim. Rebuild policy so fallback can take over promptly.
+            self._twitch.request_games_update()
             claim_text = (
                 f"{self.campaign.game.name}\n"
                 f"{self.rewards_text()} "

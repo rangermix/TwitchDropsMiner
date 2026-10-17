@@ -1,9 +1,14 @@
 import asyncio
 import copy
 import importlib
+import json
+import tempfile
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
+
+from fastapi import HTTPException
 
 from src.config.settings import Settings, default_settings
 from src.web.app import SettingsUpdate
@@ -20,11 +25,93 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
             "inventory_filters": {"show_upcoming": True},
             "mining_benefits": {"BADGE": True},
             "drop_name_blacklist": ["Mask", "Badge"],
+            "priority_list_only": False,
         }
         model = SettingsUpdate(**update_data)
         self.assertEqual(model.inventory_filters, update_data["inventory_filters"])
         self.assertEqual(model.mining_benefits, update_data["mining_benefits"])
         self.assertEqual(model.drop_name_blacklist, update_data["drop_name_blacklist"])
+        self.assertIs(model.priority_list_only, False)
+
+    def test_priority_list_defaults_migration_and_persistence_round_trip(self):
+        self.assertIs(default_settings["priority_list_only"], True)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            settings_path = Path(temp_dir) / "settings.json"
+            with patch("src.config.settings.SETTINGS_PATH", settings_path):
+                self.assertIs(Settings().priority_list_only, True)
+                settings_path.write_text(
+                    json.dumps({"games_to_watch": ["Keep selected game"]}),
+                    encoding="utf-8",
+                )
+                settings = Settings()
+                self.assertIs(settings.priority_list_only, True)
+                for strict in (False, True):
+                    with self.subTest(priority_list_only=strict):
+                        settings.priority_list_only = strict
+                        settings.save()
+                        reloaded = Settings()
+                        self.assertIs(reloaded.priority_list_only, strict)
+                        self.assertEqual(reloaded.games_to_watch, ["Keep selected game"])
+
+    async def test_priority_toggle_persists_and_refreshes_once_in_both_directions(self):
+        settings = SimpleNamespace(**copy.deepcopy(default_settings))
+        settings.games_to_watch = ["Keep selected game"]
+        settings.save = MagicMock()
+        broadcaster = AsyncMock()
+        callback = MagicMock()
+        manager = SettingsManager(broadcaster, settings, MagicMock(), on_change=callback)
+
+        for strict in (False, True):
+            with self.subTest(priority_list_only=strict):
+                callback.reset_mock()
+                settings.save.reset_mock()
+                broadcaster.emit.reset_mock()
+                with patch.object(web_app, "gui_manager", SimpleNamespace(settings=manager)):
+                    response = await web_app.update_settings(
+                        SettingsUpdate(priority_list_only=strict)
+                    )
+                    current_settings = await web_app.get_settings()
+                await asyncio.sleep(0)
+
+                self.assertTrue(response["success"])
+                self.assertIs(response["settings"]["priority_list_only"], strict)
+                self.assertIs(current_settings["priority_list_only"], strict)
+                self.assertIs(manager.get_settings()["priority_list_only"], strict)
+                self.assertEqual(settings.games_to_watch, ["Keep selected game"])
+                settings.save.assert_called_once_with()
+                callback.assert_called_once_with()
+                broadcaster.emit.assert_awaited_once_with(
+                    "settings_updated", response["settings"]
+                )
+
+        callback.reset_mock()
+        manager.update_settings({"priority_list_only": True})
+        await asyncio.sleep(0)
+        callback.assert_not_called()
+
+    async def test_failed_priority_toggle_save_retains_previous_live_policy(self):
+        settings = SimpleNamespace(**copy.deepcopy(default_settings))
+        settings.save = MagicMock(side_effect=OSError("write rejected"))
+        broadcaster = AsyncMock()
+        console = MagicMock()
+        callback = MagicMock()
+        manager = SettingsManager(broadcaster, settings, console, on_change=callback)
+
+        with (
+            patch.object(web_app, "gui_manager", SimpleNamespace(settings=manager)),
+            self.assertRaises(HTTPException) as raised,
+        ):
+            await web_app.update_settings(SettingsUpdate(priority_list_only=False))
+        await asyncio.sleep(0)
+
+        self.assertEqual(raised.exception.status_code, 500)
+        self.assertEqual(raised.exception.detail, "settings_save_failed")
+        self.assertIs(settings.priority_list_only, True)
+        self.assertIs(manager.get_settings()["priority_list_only"], True)
+        settings.save.assert_called_once_with()
+        callback.assert_not_called()
+        broadcaster.emit.assert_not_awaited()
+        console.print.assert_not_called()
 
     def test_settings_load_and_save_normalize_persisted_blacklist(self):
         persisted = copy.deepcopy(default_settings)

@@ -19,6 +19,8 @@ services operated for other users are outside its support scope.
 ![Twitch Drops Miner web dashboard](./screenshot.png)
 
 - Choose and prioritize games, or let TDM discover available campaigns.
+- Source builds can [mine other eligible games as fallback](docs/usage.md#choose-games-and-priorities)
+  while preserving your saved priority list.
 - Track campaigns and rewards, and ignore drops you do not want.
 - Source builds skip channels while Twitch reports an active ban, including temporary bans.
 - Sign in inside the dashboard; TDM saves and renews your session automatically.

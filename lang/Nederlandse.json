@@ -165,6 +165,8 @@
             "reload": "Herladen",
             "games_to_watch": "Games om te kijken",
             "games_help": "Selecteer games om te kijken. Volgorde is belangrijk - sleep om prioriteit te wijzigen (bovenaan = hoogste prioriteit).",
+            "priority_list_only": "Alleen prioriteitenlijst (mine alleen geselecteerde games)",
+            "priority_list_only_save_error": "De spelprioriteitsoptie kon niet worden opgeslagen. Probeer het opnieuw.",
             "search_games": "Zoek games...",
             "select_all": "Alles selecteren",
             "deselect_all": "Alles deselecteren",

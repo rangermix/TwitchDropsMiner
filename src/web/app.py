@@ -80,6 +80,7 @@ class SettingsUpdate(BaseModel):
     drop_name_blacklist: list[str] | None = None
     dark_mode: bool | None = None
     language: str | None = None
+    priority_list_only: bool | None = None
     proxy: str | None = None
     connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None

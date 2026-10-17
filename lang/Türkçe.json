@@ -165,6 +165,8 @@
             "reload": "Tekrar yükle",
             "games_to_watch": "İzlenecek Oyunlar",
             "games_help": "İzlenecek oyunları seçin. Sıralama önemlidir - önceliği yeniden sıralamak için sürükleyin (üst = en yüksek öncelik).",
+            "priority_list_only": "Yalnızca öncelik listesi (sadece seçili oyunları kaz)",
+            "priority_list_only_save_error": "Oyun önceliği seçeneği kaydedilemedi. Lütfen tekrar deneyin.",
             "search_games": "Oyun ara...",
             "select_all": "Tümünü seç",
             "deselect_all": "Tümünü kaldır",

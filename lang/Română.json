@@ -165,6 +165,8 @@
             "reload": "Reîncarcă",
             "games_to_watch": "Jocuri de urmărit",
             "games_help": "Selectați jocurile de urmărit. Ordinea contează - trageți pentru a reordona prioritatea (sus = prioritate maximă).",
+            "priority_list_only": "Doar lista de priorități (minează doar jocurile selectate)",
+            "priority_list_only_save_error": "Opțiunea de prioritate a jocurilor nu a putut fi salvată. Încercați din nou.",
             "search_games": "Căutați jocuri...",
             "select_all": "Selectați tot",
             "deselect_all": "Deselectați tot",

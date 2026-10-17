@@ -275,6 +275,8 @@ class GUISettings(TypedDict):
     diagnostics_busy: str
     games_to_watch: str
     games_help: str
+    priority_list_only: str
+    priority_list_only_save_error: str
     search_games: str
     add_game: str
     add_game_hint: str

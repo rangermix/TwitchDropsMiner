@@ -138,6 +138,8 @@
             "clear_all_cache_help": "Törli a helyi kampány-, csatorna- és származtatott bányászállapotot; megtartja a bejelentkezést és a beállításokat, majd újratölti az adatokat a Twitchről.",
             "games_to_watch": "Nézendő játékok",
             "games_help": "Válassza ki a nézendő játékokat. A sorrend számít - húzással módosítható a prioritás (felül = legmagasabb).",
+            "priority_list_only": "Csak a prioritási lista (csak a kiválasztott játékok gyűjtése)",
+            "priority_list_only_save_error": "Nem sikerült menteni a játékprioritás beállítását. Próbálja újra.",
             "search_games": "Játékok keresése...",
             "add_game": "Játék hozzáadása",
             "add_game_hint": " A játék kézi hozzáadásához kattintson a „Játék hozzáadása” gombra.",

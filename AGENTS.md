@@ -273,6 +273,20 @@ lang/                # Translation JSON files (20 languages)
 **src/config/settings.py** - Application settings:
 
 - Games to watch list (auto-populated from available campaigns if empty)
+- `priority_list_only` defaults to true. Disable it to append other eligible games
+  to the runtime wanted queue without changing saved Games to Watch. Both modes use
+  the same watch-drop, claim, expiry, mineability, benefit and campaign eligibility
+  guards; omit empty campaigns and games. Fallback games sort by earliest remaining
+  campaign end, then game name. Selected campaigns take precedence over fallback,
+  including Special Events/IRL ACL channels streaming another category. Use
+  `ChannelService.get_mining_priority()` for discovery and automatic switching;
+  preserve `get_priority()` and strict-mode streamed-category ordering. Failed
+  settings saves restore the previous mode and must not trigger policy refresh.
+- Successful unclaimed-to-claimed transitions request a queued games update so
+  claiming the last wanted reward also releases campaigns with unwanted rewards
+  remaining. Failed or repeated claims must not enqueue duplicate updates.
+- `tests/test_priority_fallback.py` and `tests/test_priority_fallback_frontend.py`
+  cover both modes and their boundaries.
 - Games can also be added manually from the web settings search box. Exact and
   unique partial matches resolve to available game names; ambiguous matches do not
   add a game. Confirmations support keyboard focus and Escape. Select All preserves

@@ -165,6 +165,8 @@
             "reload": "Muat Ulang",
             "games_to_watch": "Game untuk Ditonton",
             "games_help": "Pilih game untuk ditonton. Urutan penting - seret untuk mengatur ulang prioritas (atas = prioritas tertinggi).",
+            "priority_list_only": "Hanya daftar prioritas (menambang hanya game yang dipilih)",
+            "priority_list_only_save_error": "Opsi prioritas game tidak dapat disimpan. Silakan coba lagi.",
             "search_games": "Cari game...",
             "select_all": "Pilih Semua",
             "deselect_all": "Batalkan Semua",

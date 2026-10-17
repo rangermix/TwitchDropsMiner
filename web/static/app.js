@@ -496,10 +496,11 @@ function renderChannels() {
     const gamesToWatch = state.settings.games_to_watch || [];
     const gamesToWatchSet = new Set(gamesToWatch.map(g => g.toLowerCase()));
 
-    // The active channel remains visible while a settings update changes the
-    // game filter; all other channels must match the configured watch list.
+    // Only an explicit opt-in exposes fallback games. Keep the watched channel
+    // visible while a settings update changes the selected-game filter.
     const filteredChannels = channels.filter(
-        channel => channelMatchesGameFilter(channel, gamesToWatchSet)
+        channel => state.settings.priority_list_only === false ||
+            channelMatchesGameFilter(channel, gamesToWatchSet)
     );
 
     if (filteredChannels.length === 0) {
@@ -1208,6 +1209,7 @@ function updateSettingsUI(settings) {
     if (allowUnlinked) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('inventory-list-view').checked = settings.inventory_list_view || false;
+    document.getElementById('priority-list-only').checked = settings.priority_list_only !== false;
     applyInventoryViewMode(settings.inventory_list_view || false);
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
@@ -2030,6 +2032,32 @@ async function saveSettings() {
     }
 }
 
+async function onPriorityModeChange() {
+    const input = document.getElementById('priority-list-only');
+    if (input.disabled) return;
+    const requested = input.checked;
+    const message = state.translations.gui?.settings?.priority_list_only_save_error ||
+        'Could not save the game priority option. Please try again.';
+    input.disabled = true;
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ priority_list_only: requested })
+        });
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || data.settings?.priority_list_only !== requested) throw new Error(message);
+        updateSettingsUI(data.settings);
+    } catch (failure) {
+        input.checked = state.settings.priority_list_only !== false;
+        renderChannels();
+        showToast(message, 'error');
+    } finally {
+        input.disabled = false;
+    }
+}
+
 async function onUnlinkedMiningChange() {
     const input = document.getElementById('allow-unlinked-campaigns');
     const error = document.getElementById('allow-unlinked-error');
@@ -2207,6 +2235,14 @@ function applyTranslations(t) {
             darkModeLabel.textContent = '';
             darkModeLabel.appendChild(checkbox);
             darkModeLabel.appendChild(document.createTextNode(' ' + t.gui.settings.general.dark_mode));
+        }
+
+        const priorityListOnlyLabel = settingsTab.querySelector('label:has(#priority-list-only)');
+        if (priorityListOnlyLabel && t.gui.settings.priority_list_only) {
+            const checkbox = priorityListOnlyLabel.querySelector('input');
+            priorityListOnlyLabel.textContent = '';
+            priorityListOnlyLabel.appendChild(checkbox);
+            priorityListOnlyLabel.appendChild(document.createTextNode(' ' + t.gui.settings.priority_list_only));
         }
 
         const connQualityLabel = settingsTab.querySelector('label:has(#connection-quality)');
@@ -2626,6 +2662,7 @@ document.addEventListener('DOMContentLoaded', () => {
         applyInventoryViewMode(e.target.checked);
         saveSettings();
     });
+    document.getElementById('priority-list-only').addEventListener('change', onPriorityModeChange);
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
     document.getElementById('minimum-refresh-interval').addEventListener('change', saveSettings);

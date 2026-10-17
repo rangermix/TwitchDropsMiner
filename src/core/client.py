@@ -509,11 +509,12 @@ class Twitch:
                         for drop in campaign.drops:
                             if drop.can_claim:
                                 await drop.claim()
-                # figure out which games we want based on games_to_watch whitelist
+                # figure out which games we want based on selected priorities
                 self.wanted_games.clear()
                 games_to_watch: list[str] = self.settings.games_to_watch
                 next_hour: datetime = datetime.now(timezone.utc) + timedelta(hours=1)
                 logger.info("games_to_watch: %s", games_to_watch)
+                logger.info("priority_list_only: %s", self.settings.priority_list_only)
                 logger.info(
                     "inventory has %d eligible campaigns",
                     sum(1 for c in self.inventory if c.eligible),
@@ -525,7 +526,8 @@ class Twitch:
                     self._output_campaign_mapping(next_hour)
 
                 logger.info("Building wanted games list")
-                # Build wanted_games list preserving the order from games_to_watch
+                # Build wanted_games list preserving selected priority order,
+                # optionally appending all other eligible games as fallback.
                 self.wanted_games = self._stream_selector.get_wanted_games(
                     self.settings, self.inventory
                 )
@@ -650,7 +652,7 @@ class Twitch:
                     unbanned_channels, key=ChannelService.get_viewers_key, reverse=True
                 )
                 ordered_channels.sort(key=lambda ch: ch.acl_based, reverse=True)
-                ordered_channels.sort(key=self._channel_service.get_priority)
+                ordered_channels.sort(key=self._channel_service.get_mining_priority)
                 # ensure that we won't end up with more channels than we can handle
                 # NOTE: we trim from the end because that's where the non-priority,
                 # offline (or online but low viewers) channels end up
@@ -757,7 +759,7 @@ class Twitch:
                 # Auto-select best channel based on priority
                 else:
                     for channel in sorted(
-                        channels.values(), key=self._channel_service.get_priority
+                        channels.values(), key=self._channel_service.get_mining_priority
                     ):
                         if self.can_watch(channel) and self.should_switch(channel):
                             new_watching = channel

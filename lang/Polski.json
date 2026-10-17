@@ -165,6 +165,8 @@
             "reload": "Przeładuj",
             "games_to_watch": "Gry do oglądania",
             "games_help": "Wybierz gry do oglądania. Kolejność ma znaczenie - przeciągnij, aby zmienić priorytet (góra = najwyższy priorytet).",
+            "priority_list_only": "Tylko lista priorytetów (wydobywaj tylko wybrane gry)",
+            "priority_list_only_save_error": "Nie udało się zapisać opcji priorytetu gier. Spróbuj ponownie.",
             "search_games": "Szukaj gier...",
             "select_all": "Zaznacz wszystko",
             "deselect_all": "Odznacz wszystko",

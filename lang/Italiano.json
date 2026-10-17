@@ -165,6 +165,8 @@
             "reload": "Ricarica",
             "games_to_watch": "Giochi da guardare",
             "games_help": "Seleziona i giochi da guardare. L'ordine è importante - trascina per riordinare la priorità (in alto = priorità massima).",
+            "priority_list_only": "Solo lista priorità (mina solo i giochi selezionati)",
+            "priority_list_only_save_error": "Impossibile salvare l’opzione di priorità dei giochi. Riprova.",
             "search_games": "Cerca giochi...",
             "select_all": "Seleziona tutto",
             "deselect_all": "Deseleziona tutto",

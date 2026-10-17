@@ -108,6 +108,12 @@ class SettingsManager:
             settings_data: Dictionary of settings to update
         """
         previous_hours: dict[str, str] = getattr(self._settings, "mining_hours", {})
+        previous_priority_list_only = getattr(self._settings, "priority_list_only", True)
+        requested_priority_list_only = settings_data.get("priority_list_only")
+        priority_mode_changed = (
+            isinstance(requested_priority_list_only, bool)
+            and requested_priority_list_only != previous_priority_list_only
+        )
         requested_hours = settings_data.get("mining_hours")
         if requested_hours is not None:
             requested_hours = MiningHoursSettings.normalize(requested_hours)
@@ -197,6 +203,8 @@ class SettingsManager:
 
         if override_changed and isinstance(requested_allow_unlinked, bool):
             self._settings.allow_unlinked_campaigns = requested_allow_unlinked
+        if priority_mode_changed and isinstance(requested_priority_list_only, bool):
+            self._settings.priority_list_only = requested_priority_list_only
         self._settings.discord_webhook_url = new_webhook
         try:
             self._settings.save()
@@ -205,12 +213,18 @@ class SettingsManager:
             self._settings.discord_webhook_url = previous_webhook
             self._settings.allow_unlinked_campaigns = previous_allow_unlinked
             self._settings.mining_hours = previous_hours
+            self._settings.priority_list_only = previous_priority_list_only
             raise
         if new_webhook != previous_webhook:
             self._log_change(f"Setting changed: discord_webhook_url = {DISCORD_WEBHOOK_MASK}")
         if override_changed:
             self._log_change(
                 f"Setting changed: allow_unlinked_campaigns = {requested_allow_unlinked}"
+            )
+            should_trigger_update = True
+        if priority_mode_changed:
+            self._log_change(
+                f"Setting changed: priority_list_only = {requested_priority_list_only}"
             )
             should_trigger_update = True
         response_settings = self.get_settings(legacy_show_not_linked)

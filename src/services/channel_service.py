@@ -103,6 +103,23 @@ class ChannelService:
             return MAX_INT
         return self._twitch.wanted_games.index(game)
 
+    def get_mining_priority(self, channel: Channel) -> tuple[int, int]:
+        """Keep selected campaigns ahead of fallback games, including special ACLs."""
+        priority = self.get_priority(channel)
+        settings = getattr(self._twitch, "settings", None)
+        if settings is None or getattr(settings, "priority_list_only", True) is not False:
+            return (0, priority)
+
+        selected_names = {name.lower() for name in settings.games_to_watch}
+        selected_campaign = channel.online and not channel.banned and any(
+            campaign.game in self._twitch.wanted_games
+            and campaign.game.name.lower() in selected_names
+            and campaign.can_earn(channel)
+            and (campaign.game.is_special() or channel.drops_enabled)
+            for campaign in self._twitch.inventory
+        )
+        return (0 if selected_campaign else 1, priority)
+
     @staticmethod
     def get_viewers_key(channel: Channel) -> int:
         """

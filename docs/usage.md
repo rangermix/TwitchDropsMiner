@@ -36,6 +36,15 @@ adding games to refresh the miner's selection.
 games. **Deselect All** asks for confirmation. You can cancel a confirmation with
 **Escape**. Your choices are saved for future runs.
 
+Source builds offer **Settings → General → Priority list only**, enabled by default.
+Leave it enabled to mine only games in **Games to Watch**. Disable it to prefer
+those games, then mine other eligible games whenever no selected game can currently
+be progressed. Other games stay out of your saved list, so you can keep a short list
+of favorites. With an empty list, disabling this option allows all eligible games.
+Fallback games with campaigns ending soonest are preferred. Account linking, reward
+types, ignored names, mining hours and other eligibility rules still apply. Manual
+channel selection retains its existing behavior.
+
 **Mining Benefits** controls which reward types the miner targets: items, badges,
 emotes, and other rewards. These choices are separate from the display filters on
 the Inventory tab.
@@ -59,7 +68,9 @@ or lacks the drops-enabled flag. Channels must still be live and eligible. A cam
 without an enabled participating-channel list requires the usual matching category.
 
 Participants streaming categories outside Games to Watch have the lowest automatic
-priority. If the watched participant goes offline or becomes ineligible, another
+priority within their mining group. When fallback is enabled, eligible selected
+campaigns still take precedence over games outside your saved list. If the watched
+participant goes offline or becomes ineligible, another
 eligible participant can take over.
 
 ## Inventory and the wanted queue

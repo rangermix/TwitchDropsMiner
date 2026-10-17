@@ -138,6 +138,8 @@
             "clear_all_cache_help": "Clears local campaign, channel, and derived miner state; keeps your login and settings, then reloads from Twitch.",
             "games_to_watch": "Games to Watch",
             "games_help": "Select games to watch. Order matters - drag to reorder priority (top = highest priority).",
+            "priority_list_only": "Priority list only (mine selected games only)",
+            "priority_list_only_save_error": "Could not save the game priority option. Please try again.",
             "search_games": "Search games...",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",

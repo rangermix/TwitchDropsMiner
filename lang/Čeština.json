@@ -165,6 +165,8 @@
             "reload": "Obnovit",
             "games_to_watch": "Hry ke sledování",
             "games_help": "Vyberte hry ke sledování. Záleží na pořadí - přetáhněte pro změnu priority (nahoře = nejvyšší priorita).",
+            "priority_list_only": "Pouze seznam priorit (těžit pouze vybrané hry)",
+            "priority_list_only_save_error": "Nastavení priority her se nepodařilo uložit. Zkuste to znovu.",
             "search_games": "Hledat hry...",
             "select_all": "Vybrat vše",
             "deselect_all": "Zrušit výběr",
