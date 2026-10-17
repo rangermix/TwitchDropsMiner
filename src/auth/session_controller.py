@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import shutil
 import time
-from collections.abc import Awaitable, Callable
-from contextlib import AbstractAsyncContextManager, asynccontextmanager, nullcontext
+from collections.abc import Awaitable, Callable, Iterator
+from contextlib import AbstractAsyncContextManager, asynccontextmanager, contextmanager, nullcontext
 from typing import Any
 
 from src.auth.imported_session import ImportedSession
 from src.auth.server_renewal import OwnedChromium, SDKIssuer
 from src.auth.server_seed import ServerSeed
 from src.auth.session_bundle import SessionError
+from src.auth.session_diagnostics import SessionDiagnostic
 
 
 class SessionController:
@@ -40,12 +42,27 @@ class SessionController:
         self._epoch = 0
         self._force_renewal = False
         self._renewal_error: str | None = None
+        self._renewal_diagnostic: SessionDiagnostic | None = None
         self.session.on_renewal_needed = self.request_renewal
 
     def status(self) -> dict[str, Any]:
         return {"session": self.session.status(), "renewal_error": self._renewal_error,
+                "renewal_diagnostic": self._renewal_diagnostic.to_dict() if self._renewal_diagnostic else None,
                 "renewal_available": self.session.seed() is not None,
                 "renewal_requires_login": self._renewal_error in self.RELOGIN_ERRORS}
+
+    @contextmanager
+    def _phase(self, stage: str) -> Iterator[None]:
+        try:
+            yield
+        except SessionError as error:
+            error.annotate(stage=stage)
+            logging.getLogger(__name__).warning("SESSION_DIAGNOSTIC %s", error.diagnostic.to_dict())
+            raise
+        except Exception:
+            failure = SessionError("HELPER_FAILED", stage=stage, reason="unexpected_exception")
+            logging.getLogger(__name__).warning("SESSION_DIAGNOSTIC %s", failure.diagnostic.to_dict())
+            raise failure from None
 
     @asynccontextmanager
     async def _operation(self):
@@ -75,17 +92,22 @@ class SessionController:
 
         async with self._operation(), self._lock:
             current()
-            seed.bundle.require_fresh(self.clock())
-            seed.cookie.require_fresh(self.clock())
-            identity = await self.session._transport.validate(seed.bundle, None)
-            renewed = await self.issuer.issue(seed, initial=True)
+            with self._phase("seed_validation"):
+                seed.bundle.require_fresh(self.clock())
+                seed.cookie.require_fresh(self.clock())
+            with self._phase("captured_validation"):
+                identity = await self.session._transport.validate(seed.bundle, None)
+            with self._phase("server_issuance"):
+                renewed = await self.issuer.issue(seed, initial=True)
             current()
-            async with self.activation():
-                result = await self.session.install(
-                    renewed.bundle.to_dict(), expected_user_id=identity.user_id,
-                    sdk_cookie=renewed.cookie, replace=True, authorized=current,
-                )
+            with self._phase("issued_validation"):
+                async with self.activation():
+                    result = await self.session.install(
+                        renewed.bundle.to_dict(), expected_user_id=identity.user_id,
+                        sdk_cookie=renewed.cookie, replace=True, authorized=current,
+                    )
             self._renewal_error = None
+            self._renewal_diagnostic = None
             self._wake.set()
             self.on_change()
             return result
@@ -99,7 +121,8 @@ class SessionController:
                 raise SessionError("SDK_SEED")
             generation = self.session.status()["generation"]
             account = self.session.status()["user_id"]
-            renewed = await self.issuer.issue(seed)
+            with self._phase("renewal_issuance"):
+                renewed = await self.issuer.issue(seed)
 
             def current() -> bool:
                 self._current(epoch)
@@ -107,9 +130,11 @@ class SessionController:
                     raise SessionError("STALE")
                 return True
 
-            result = await self.session.install(renewed.bundle.to_dict(), sdk_cookie=renewed.cookie,
-                                                expected_user_id=account, authorized=current)
+            with self._phase("renewal_validation"):
+                result = await self.session.install(renewed.bundle.to_dict(), sdk_cookie=renewed.cookie,
+                                                    expected_user_id=account, authorized=current)
             self._renewal_error = None
+            self._renewal_diagnostic = None
             self.on_change()
             return result
 
@@ -124,6 +149,7 @@ class SessionController:
             await self.session.logout()
             await clear_cookies()
         self._renewal_error = None
+        self._renewal_diagnostic = None
         self._force_renewal = False
         self._wake.set()
         self.on_change()
@@ -169,7 +195,8 @@ class SessionController:
                 if self._stopping or (task is not None and task.cancelling()):  # type: ignore[attr-defined]  # Python 3.12 runtime.
                     raise
             except SessionError as error:
-                self._renewal_error = error.code
+                self._renewal_error = error.diagnostic.code
+                self._renewal_diagnostic = error.diagnostic
                 self.on_change()
                 if error.code in self.RELOGIN_ERRORS:
                     await self._wait()

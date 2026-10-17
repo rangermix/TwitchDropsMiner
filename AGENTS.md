@@ -362,6 +362,17 @@ progress to an ignored drop while the miner intentionally targets another reward
 - Helper admission preserves allowlisted validation codes without printing remote text.
   Catalog rejection logs contain only fixed error categories and field-shape labels.
   Preserve redaction, strict catalog validation, and lost-ack receipt reconciliation.
+  `SessionDiagnostic` owns fixed code/stage/reason/operation labels and separate dashboard
+  and upstream HTTP statuses. Keep `/api/helper/*`'s existing `detail` strings and add only
+  sanitized metadata; helper/browser/renewal status exposes the same diagnosis. Distinguish
+  captured-session validation, server issuance, issued-session validation and persistence.
+  Unknown upstream causes stay `unknown`; never expose arbitrary text, values or exception
+  messages. Generic/transport/5xx failures can have an unknown post-upload outcome; query
+  the receipt without repeating the upload. A newer attempt must clear older diagnostics.
+  Keep transient renewal retries and cancellation semantics. CLI diagnostics use the
+  invariant `SESSION_DIAGNOSTIC` machine marker with JSON; existing guidance stays translated.
+  Tests in `test_session_diagnostics.py` and `test_helper_diagnostics.py` cover redaction,
+  code completeness, admission phases, storage, cancellation and renewal errors.
 
 - `ImportedSession` owns validated WEB contexts and reads persisted formats 1/2/3.
   Accepted browser state takes precedence over valid saved Android cookies. Fresh,

@@ -31,6 +31,7 @@ from yarl import URL
 from src.auth.helper_errors import HelperDiagnostics
 from src.auth.server_seed import ServerSeed
 from src.auth.session_bundle import SessionBundle, SessionError
+from src.auth.session_diagnostics import SessionDiagnostic
 from src.auth.session_helper import BrowserExporter, DevToolsConnection
 from src.i18n import _
 
@@ -50,7 +51,7 @@ class HelperDestination:
                 raise ValueError
             self.url = str(url).rstrip("/")
         except (TypeError, ValueError, UnicodeError):
-            raise SessionError("HELPER_DESTINATION") from None
+            raise SessionError("HELPER_DESTINATION", stage="helper_configuration", reason="invalid_response") from None
 
 
 @dataclass(frozen=True)
@@ -78,59 +79,97 @@ class HelperHTTP:
     async def __aexit__(self, *_args: Any) -> None:
         await self.http.close()
 
+    @staticmethod
+    def _server_error(path: str, status: int, data: Any) -> SessionError:
+        """Trust only matching fixed protocol codes, never arbitrary remote text."""
+        detail = data.get("detail") if isinstance(data, dict) else None
+        known = next((code for code in HelperDiagnostics.SERVER_CODES
+                      if detail == "session_" + code.lower()), None)
+        # Retain the historical expired-ticket aliases without letting an
+        # unexpected status turn a gateway response into a definitive failure.
+        if (known is not None and status != HelperDiagnostics.expected_status(known)
+                and not (known == "HELPER_EXPIRED" and status in (401, 403))):
+            known = None
+        diagnostic = None
+        if known is not None and isinstance(data, dict) and "diagnostic" in data:
+            raw = data["diagnostic"]
+            if not isinstance(raw, dict) or raw.get("code") != known:
+                known = None
+            else:
+                diagnostic = SessionDiagnostic.from_dict(raw)
+        context = diagnostic or SessionDiagnostic()
+
+        def error(code: str) -> SessionError:
+            return SessionError(code, stage=context.stage, reason=context.reason,
+                                operation=context.operation, http_status=status,
+                                upstream_status=context.upstream_status)
+
+        if status == 503 and known == "BROWSER_START":
+            return error("HELPER_SERVER_BROWSER")
+        if path == "/api/helper/result" and known in HelperDiagnostics.RECEIPT_FAILURES:
+            assert known is not None
+            return error(known)
+        if path == "/api/helper/connect" and status >= 500 and known in HelperDiagnostics.CONNECT_CODES:
+            assert known is not None
+            return error(known)
+        if status >= 500:
+            return error("HELPER_NETWORK")
+        if status == 403 and known == "HELPER_DISABLED":
+            return error("HELPER_DISABLED")
+        if status in (401, 403) and (known in ("HELPER_EXPIRED", "CONNECTION")
+                                   or (detail == "session_helper_connection_invalid"
+                                       and isinstance(data, dict) and "diagnostic" not in data)):
+            return error("HELPER_EXPIRED")
+        if status == 429 and known == "BUSY":
+            return error("HELPER_BUSY")
+        if path == "/api/helper/connect" and known in HelperDiagnostics.CONNECT_CODES:
+            assert known is not None
+            return error(known)
+        if 400 <= status < 500 and path in ("/api/helper/session", "/api/helper/result") and known:
+            return error(known)
+        return SessionError("HELPER_REJECTED", http_status=status, reason="http_error")
+
     async def _request(self, method: str, path: str, *, ticket: HelperTicket | None = None,
                        payload: dict[str, Any] | None = None) -> dict[str, Any]:
         headers = {"Authorization": f"Bearer {ticket.connection}"} if ticket else {}
+        stage = {"/api/helper/connect": "helper_connect", "/api/helper/session": "session_upload",
+                 "/api/helper/result": "helper_receipt"}[path]
+        status = None
         try:
             async with self.http.request(method, self.destination.url + path, json=payload,
                     headers=headers, allow_redirects=False,
                     timeout=aiohttp.ClientTimeout(total=300 if path.endswith("/session") else 10, connect=10)) as response:
+                status = response.status
                 if 300 <= response.status < 400:
-                    raise SessionError("HELPER_REDIRECT")
+                    raise SessionError("HELPER_REDIRECT", reason="redirect")
                 raw = bytearray()
                 async for chunk in response.content.iter_chunked(8192):
                     raw.extend(chunk)
                     if len(raw) > SessionBundle.MAX_BYTES:
-                        raise SessionError("HELPER_RESPONSE")
+                        raise SessionError("HELPER_RESPONSE", reason="response_limit")
                 try:
                     data = json.loads(raw)
                 except (ValueError, UnicodeError, RecursionError):
                     if response.status >= 500:
-                        raise SessionError("HELPER_NETWORK") from None
+                        raise SessionError("HELPER_NETWORK", reason="invalid_json") from None
                     if 400 <= response.status < 500:
-                        raise SessionError("HELPER_REJECTED") from None
-                    raise SessionError("HELPER_RESPONSE") from None
+                        raise SessionError("HELPER_REJECTED", reason="invalid_json") from None
+                    raise SessionError("HELPER_RESPONSE", reason="invalid_json") from None
                 if response.status != 200:
-                    detail = data.get("detail") if isinstance(data, dict) else None
-                    # This fixed server error occurs before any session is installed.
-                    # Other 5xx replies can lose an acknowledgement after commit.
-                    if response.status == 503 and detail == "session_browser_start":
-                        raise SessionError("HELPER_SERVER_BROWSER")
-                    if response.status >= 500:
-                        raise SessionError("HELPER_NETWORK")
-                    if response.status == 403 and detail == "session_helper_disabled":
-                        raise SessionError("HELPER_DISABLED")
-                    if response.status in (401, 403) and detail in (
-                            "session_helper_expired", "session_helper_connection_invalid", "session_connection"):
-                        raise SessionError("HELPER_EXPIRED")
-                    if response.status == 429 and detail == "session_busy":
-                        raise SessionError("HELPER_BUSY")
-                    # Preserve only known pre-commit validation codes. Never echo
-                    # arbitrary remote text or reinterpret ambiguous 5xx replies.
-                    if response.status == 400 and path == "/api/helper/session":
-                        for code in (
-                            "AUTH", "IDENTITY", "CATALOG", "ACCOUNT_MISMATCH", "REQUEST",
-                            "EXPIRED", "SDK_EXPIRED", "SDK_ISSUANCE", "SDK_TIMEOUT",
-                            "FORMAT", "SDK_SEED", "SDK_COOKIE", "SDK_PAGE", "REPLAY",
-                        ):
-                            if detail == "session_" + code.lower():
-                                raise SessionError(code)
-                    raise SessionError("HELPER_REJECTED")
+                    raise self._server_error(path, response.status, data)
                 if not isinstance(data, dict):
-                    raise SessionError("HELPER_RESPONSE")
+                    raise SessionError("HELPER_RESPONSE", reason="invalid_response")
                 return data
-        except (aiohttp.ClientError, TimeoutError, OSError):
-            raise SessionError("HELPER_NETWORK") from None
+        except SessionError as error:
+            raise error.annotate(stage=stage, http_status=status, reason="http_error" if status != 200 else "invalid_response") from None
+        except aiohttp.ClientSSLError:
+            raise SessionError("HELPER_NETWORK", stage=stage, reason="tls", http_status=status) from None
+        except aiohttp.ClientConnectorDNSError:
+            raise SessionError("HELPER_NETWORK", stage=stage, reason="dns", http_status=status) from None
+        except TimeoutError:
+            raise SessionError("HELPER_NETWORK", stage=stage, reason="timeout", http_status=status) from None
+        except (aiohttp.ClientError, OSError):
+            raise SessionError("HELPER_NETWORK", stage=stage, reason="connection", http_status=status) from None
 
     async def connect(self) -> HelperTicket:
         data = await self._request("POST", "/api/helper/connect", payload={})
@@ -139,7 +178,7 @@ class HelperHTTP:
                 or not isinstance(token, str) or not re.fullmatch(r"[A-Za-z0-9_-]{43}", token)
                 or not isinstance(expiry, (int, float)) or isinstance(expiry, bool) or not math.isfinite(expiry)
                 or not self.clock() < expiry <= self.clock() + 660):
-            raise SessionError("HELPER_RESPONSE")
+            raise SessionError("HELPER_RESPONSE", stage="helper_connect", reason="invalid_response", http_status=200)
         return HelperTicket(token, float(expiry))
 
     def accepted(self, data: dict[str, Any]) -> int:
@@ -153,8 +192,9 @@ class HelperHTTP:
             raise SessionError("HELPER_RESPONSE")
         return state["user_id"]
 
-    async def receipt(self, ticket: HelperTicket) -> int:
+    async def receipt(self, ticket: HelperTicket, *, last_error: SessionError | None = None) -> int:
         """A lost POST acknowledgement must not cause a second credential upload."""
+        last = last_error or SessionError("HELPER_RESULT_UNKNOWN", stage="helper_receipt")
         for attempt in range(self.receipt_attempts):
             if attempt:
                 await asyncio.sleep(self.receipt_interval)
@@ -162,23 +202,38 @@ class HelperHTTP:
                 data = await self._request("GET", "/api/helper/result", ticket=ticket)
                 if data == {"state": "pending"}:
                     continue
-                return self.accepted(data)
-            except SessionError:
+                try:
+                    return self.accepted(data)
+                except SessionError as error:
+                    raise error.annotate(stage="helper_receipt", reason="invalid_response", http_status=200) from None
+            except SessionError as error:
+                if error.code in HelperDiagnostics.RECEIPT_FAILURES or error.code == "HELPER_SERVER_BROWSER":
+                    raise
+                last = error
                 continue
-        raise SessionError("HELPER_RESULT_UNKNOWN")
+        context = last.diagnostic
+        raise SessionError("HELPER_RESULT_UNKNOWN", stage=context.stage, reason=context.reason,
+                           operation=context.operation, http_status=context.http_status,
+                           upstream_status=context.upstream_status).annotate(stage="helper_receipt")
 
     async def send(self, ticket: HelperTicket, seed: ServerSeed) -> int:
         if ticket.expires_at <= self.clock():
-            raise SessionError("HELPER_EXPIRED")
-        seed.bundle.require_fresh(self.clock())
-        seed.cookie.require_fresh(self.clock())
+            raise SessionError("HELPER_EXPIRED", stage="session_upload")
+        try:
+            seed.bundle.require_fresh(self.clock())
+            seed.cookie.require_fresh(self.clock())
+        except SessionError as error:
+            raise error.annotate(stage="session_upload") from None
         try:
             data = await self._request("POST", "/api/helper/session", ticket=ticket, payload=seed.to_dict())
-            return self.accepted(data)
+            try:
+                return self.accepted(data)
+            except SessionError as error:
+                raise error.annotate(stage="session_upload", reason="invalid_response", http_status=200) from None
         except SessionError as error:
             if error.code not in ("HELPER_NETWORK", "HELPER_RESPONSE"):
                 raise
-            return await self.receipt(ticket)
+            return await self.receipt(ticket, last_error=error)
 
 
 class NativeChrome:
@@ -738,28 +793,62 @@ class NativeLoginHelper:
         self.clock, self.report = clock, report
 
     async def run(self) -> None:
-        self.report("connecting")
-        async with HelperHTTP(self.destination, clock=self.clock) as client:
-            ticket = await client.connect()
-            async with self.browser_factory() as browser:
-                self.report(getattr(browser, "LOGIN_MESSAGE", "login"))
-                await browser.wait_authenticated(timeout=max(1, ticket.expires_at - self.clock() - 15))
-                self.report("capturing")
-                timeout = min(120, max(1, ticket.expires_at - self.clock()))
-                exporter = (self.exporter_factory(browser.address, timeout=timeout) if self.exporter_factory
-                            else browser.exporter(timeout=timeout))
-                seed = await exporter.capture_seed()
-                self.report("sending")
-                await client.send(ticket, seed)
-        self.report("success")
+        phase = "helper_connect"
+        try:
+            self.report("connecting")
+            async with HelperHTTP(self.destination, clock=self.clock) as client:
+                ticket = await client.connect()
+                phase = "browser_start"
+                async with self.browser_factory() as browser:
+                    try:
+                        phase = "browser_login"
+                        self.report(getattr(browser, "LOGIN_MESSAGE", "login"))
+                        await browser.wait_authenticated(timeout=max(1, ticket.expires_at - self.clock() - 15))
+                        phase = "browser_capture"
+                        self.report("capturing")
+                        timeout = min(120, max(1, ticket.expires_at - self.clock()))
+                        exporter = (self.exporter_factory(browser.address, timeout=timeout) if self.exporter_factory
+                                    else browser.exporter(timeout=timeout))
+                        seed = await exporter.capture_seed()
+                        phase = "session_upload"
+                        self.report("sending")
+                        await client.send(ticket, seed)
+                    except SessionError as error:
+                        raise self._phase_error(error, phase) from None
+                    except Exception as error:
+                        raise self._unexpected_error(error, phase) from None
+                    finally:
+                        phase = "browser_cleanup"
+            self.report("success")
+        except SessionError as error:
+            raise self._phase_error(error, phase) from None
+        except Exception as error:
+            raise self._unexpected_error(error, phase) from None
+
+    @staticmethod
+    def _unexpected_error(error: Exception, phase: str) -> SessionError:
+        return SessionError("HELPER_FAILED", stage=phase,
+                            reason="timeout" if isinstance(error, TimeoutError) else "unexpected_exception")
+
+    @staticmethod
+    def _phase_error(error: SessionError, phase: str) -> SessionError:
+        if error.code in ("HELPER_BROWSER_CLEANUP", "HELPER_PROFILE_CLEANUP"):
+            phase = "browser_cleanup"
+        reason = {"HELPER_LOGIN_TIMEOUT": "timeout", "CAPTURE_TIMEOUT": "timeout",
+                  "SDK_TIMEOUT": "timeout", "CAPTURE_LIMIT": "response_limit"}.get(error.code)
+        return error.annotate(stage=phase, reason=reason)
 
 
 class LoginHelperCLI:
     @staticmethod
-    def report_error(code: str) -> None:
-        code, guidance = HelperDiagnostics.describe(code)
+    def report_error(error: str | SessionError) -> None:
+        code, guidance = HelperDiagnostics.describe(error.code if isinstance(error, SessionError) else error)
         print(_.t["login"]["error_code"].format(error_code=code), file=sys.stderr)
         print(guidance, file=sys.stderr)
+        if isinstance(error, SessionError):
+            diagnostic = error.diagnostic.to_dict()
+            diagnostic["code"] = code.removeprefix("SESSION_")
+            print("SESSION_DIAGNOSTIC " + json.dumps(diagnostic, sort_keys=True), file=sys.stderr)
 
     @staticmethod
     async def run_cancellable(helper: NativeLoginHelper) -> None:
@@ -815,13 +904,14 @@ class LoginHelperCLI:
             asyncio.run(LoginHelperCLI.run_cancellable(helper))
         except SessionError as error:
             # Codes originate in our validators; never print response bodies or exceptions.
-            LoginHelperCLI.report_error(error.code)
+            LoginHelperCLI.report_error(error)
             result = 1
         except (KeyboardInterrupt, EOFError, asyncio.CancelledError):
             print(words["cancelled"], file=sys.stderr)
             result = 130
         except Exception:
-            LoginHelperCLI.report_error("HELPER_FAILED")
+            LoginHelperCLI.report_error(SessionError("HELPER_FAILED", stage="helper_configuration",
+                                                    reason="unexpected_exception"))
             result = 1
         if result != 130 and getattr(sys, "frozen", False) and sys.stdin.isatty() and not args.no_pause:
             with suppress(KeyboardInterrupt, EOFError):
