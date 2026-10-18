@@ -71,6 +71,14 @@
             "fetching_inventory": "Fetching inventory...",
             "fetching_campaigns": "Fetching campaigns...",
             "adding_campaigns": "Adding campaigns to inventory... {counter}",
+            "paused": "Paused",
+            "pause": "Pause",
+            "resume": "Resume",
+            "paused_until": "Paused until {time}",
+            "pause_10m": "For 10 minutes",
+            "pause_1h": "For 1 hour",
+            "pause_tomorrow": "Until tomorrow",
+            "pause_indefinite": "Until I resume",
             "outside_hours": "Outside mining hours"
         },
         "tabs": {

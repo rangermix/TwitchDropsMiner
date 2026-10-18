@@ -71,6 +71,14 @@
             "fetching_campaigns": "キャンペーンを取得中...",
             "adding_campaigns": "キャンペーンをインベントリに追加中... {counter}",
             "ready": "準備完了",
+            "paused": "一時停止中",
+            "pause": "一時停止",
+            "resume": "再開",
+            "paused_until": "{time} まで一時停止中",
+            "pause_10m": "10分間",
+            "pause_1h": "1時間",
+            "pause_tomorrow": "明日まで",
+            "pause_indefinite": "再開するまで",
             "outside_hours": "マイニング時間外"
         },
         "tabs": {

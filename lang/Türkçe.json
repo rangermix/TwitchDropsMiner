@@ -71,6 +71,14 @@
             "fetching_campaigns": "Kampanyalar getiriliyor...",
             "adding_campaigns": "Kampanyaları envantere ekle... {counter}",
             "ready": "Hazır",
+            "paused": "Duraklatıldı",
+            "pause": "Duraklat",
+            "resume": "Devam et",
+            "paused_until": "{time} saatine kadar duraklatıldı",
+            "pause_10m": "10 dakika",
+            "pause_1h": "1 saat",
+            "pause_tomorrow": "Yarına kadar",
+            "pause_indefinite": "Ben devam ettirene kadar",
             "outside_hours": "Madencilik saatleri dışında"
         },
         "tabs": {

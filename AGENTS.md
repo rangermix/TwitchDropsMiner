@@ -319,6 +319,11 @@ lang/                # Translation JSON files (20 languages)
   actively watched channel remains visible while game settings are changing
 - Consecutive identical no-active-campaign console prompts are collapsed until another
   console message appears
+- The dashboard pause (`POST /api/pause`, `Twitch.set_paused`) is runtime-only and closes
+  the same `is_mining_time()` gate as mining hours, so every watch/refresh guard applies.
+  Durations are `10m`, `1h` (kept as UTC instants, so DST cannot stretch them), `tomorrow`
+  (next miner-local midnight) or none (until resumed);
+  the schedule loop ends timed pauses and wakes for them. Status shows Paused/Paused until.
 - Mining hours default to `always`; `range` uses the miner host's local time (Docker `TZ`),
   inclusive start/exclusive end, supports overnight windows, and treats equal times as all day.
   Validate complete `mode`/`start`/`end` objects before live changes or loading saved values;

@@ -71,6 +71,14 @@
             "fetching_campaigns": "Odświeżanie kampanii...",
             "adding_campaigns": "Dodawanie kampanii do ekwipunku... {counter}",
             "ready": "Gotowy",
+            "paused": "Wstrzymano",
+            "pause": "Wstrzymaj",
+            "resume": "Wznów",
+            "paused_until": "Wstrzymano do {time}",
+            "pause_10m": "Na 10 minut",
+            "pause_1h": "Na 1 godzinę",
+            "pause_tomorrow": "Do jutra",
+            "pause_indefinite": "Do czasu wznowienia",
             "outside_hours": "Poza godzinami zbierania"
         },
         "tabs": {

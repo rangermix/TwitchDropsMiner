@@ -71,6 +71,14 @@
             "fetching_inventory": "Készlet lekérése...",
             "fetching_campaigns": "Kampányok lekérése...",
             "adding_campaigns": "Kampányok hozzáadása a készlethez... {counter}",
+            "paused": "Szüneteltetve",
+            "pause": "Szüneteltetés",
+            "resume": "Folytatás",
+            "paused_until": "Szüneteltetve eddig: {time}",
+            "pause_10m": "10 percre",
+            "pause_1h": "1 órára",
+            "pause_tomorrow": "Holnapig",
+            "pause_indefinite": "Amíg nem folytatom",
             "outside_hours": "A bányászati időn kívül"
         },
         "tabs": {

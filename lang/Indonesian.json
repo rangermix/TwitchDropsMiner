@@ -71,6 +71,14 @@
             "fetching_campaigns": "Mengambil kampanye...",
             "adding_campaigns": "Menambahkan daftar kampanye ke inventaris... {counter}",
             "ready": "Siap",
+            "paused": "Dijeda",
+            "pause": "Jeda",
+            "resume": "Lanjutkan",
+            "paused_until": "Dijeda hingga {time}",
+            "pause_10m": "Selama 10 menit",
+            "pause_1h": "Selama 1 jam",
+            "pause_tomorrow": "Sampai besok",
+            "pause_indefinite": "Sampai saya lanjutkan",
             "outside_hours": "Di luar jam penambangan"
         },
         "tabs": {

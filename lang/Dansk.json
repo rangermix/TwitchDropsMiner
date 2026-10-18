@@ -71,6 +71,14 @@
             "fetching_campaigns": "Henter kampagner...",
             "adding_campaigns": "Tilføjer kampagner til beholdning... {counter}",
             "ready": "Klar",
+            "paused": "Sat på pause",
+            "pause": "Pause",
+            "resume": "Genoptag",
+            "paused_until": "Sat på pause til {time}",
+            "pause_10m": "I 10 minutter",
+            "pause_1h": "I 1 time",
+            "pause_tomorrow": "Indtil i morgen",
+            "pause_indefinite": "Indtil jeg genoptager",
             "outside_hours": "Uden for minedriftstid"
         },
         "tabs": {

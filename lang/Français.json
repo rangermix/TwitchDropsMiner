@@ -71,6 +71,14 @@
             "fetching_campaigns": "Récupération des campagnes...",
             "adding_campaigns": "Ajout de la liste des campagnes à l'inventaire... {counter}",
             "ready": "Prêt",
+            "paused": "En pause",
+            "pause": "Pause",
+            "resume": "Reprendre",
+            "paused_until": "En pause jusqu'à {time}",
+            "pause_10m": "Pendant 10 minutes",
+            "pause_1h": "Pendant 1 heure",
+            "pause_tomorrow": "Jusqu'à demain",
+            "pause_indefinite": "Jusqu'à ce que je reprenne",
             "outside_hours": "Hors des heures de minage"
         },
         "tabs": {

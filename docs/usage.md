@@ -168,3 +168,19 @@ This setting pauses watching, not Twitch reward claims: already earned rewards c
 still be claimed through existing notifications or work already underway. It does
 not guarantee Twitch-side progress. Reload the dashboard after upgrading to load the
 versioned frontend controls.
+
+## Pause mining
+
+Select **Pause** in the status bar and choose **For 10 minutes**, **For 1 hour**,
+**Until tomorrow**, or **Until I resume**. Watching stops right away and the status
+shows **Paused**, or **Paused until** the resume time. A timed pause resumes by itself;
+**Until tomorrow** ends at the next midnight in the miner's local time, like mining hours.
+Select **Resume** to continue early. Resuming fetches fresh inventory, and mining hours
+still apply afterwards.
+
+Use it while you watch Twitch with the same account, so the two do not compete.
+The pause is not saved: restarting TDM resumes mining. Automations can call
+`POST /api/pause` with `{"paused": true, "duration": "10m"}` (`"1h"`, `"tomorrow"`,
+or omit `duration` to pause until resumed) and `{"paused": false}` to resume; the
+request needs the `X-TDM-Request: 1` header and, with password protection, a
+dashboard session.

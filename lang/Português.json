@@ -71,6 +71,14 @@
             "fetching_campaigns": "Coletando campanhas...",
             "adding_campaigns": "Adicionando as campanhas para o sistema... {counter}",
             "ready": "Pronto",
+            "paused": "Pausado",
+            "pause": "Pausar",
+            "resume": "Retomar",
+            "paused_until": "Pausado até {time}",
+            "pause_10m": "Por 10 minutos",
+            "pause_1h": "Por 1 hora",
+            "pause_tomorrow": "Até amanhã",
+            "pause_indefinite": "Até eu retomar",
             "outside_hours": "Fora do horário de mineração"
         },
         "tabs": {

@@ -71,6 +71,14 @@
             "fetching_campaigns": "Ophalen van de campagne...",
             "adding_campaigns": "De campagnelijst toevoegen aan de inventaris... {counter}",
             "ready": "Klaar",
+            "paused": "Gepauzeerd",
+            "pause": "Pauzeren",
+            "resume": "Hervatten",
+            "paused_until": "Gepauzeerd tot {time}",
+            "pause_10m": "10 minuten",
+            "pause_1h": "1 uur",
+            "pause_tomorrow": "Tot morgen",
+            "pause_indefinite": "Tot ik hervat",
             "outside_hours": "Buiten de mining-uren"
         },
         "tabs": {

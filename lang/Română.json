@@ -71,6 +71,14 @@
             "fetching_campaigns": "Se recuperează campaniile...",
             "adding_campaigns": "S-a adăugat lista de campanii la inventar... {counter}",
             "ready": "Gata",
+            "paused": "În pauză",
+            "pause": "Pauză",
+            "resume": "Reia",
+            "paused_until": "În pauză până la {time}",
+            "pause_10m": "Timp de 10 minute",
+            "pause_1h": "Timp de 1 oră",
+            "pause_tomorrow": "Până mâine",
+            "pause_indefinite": "Până reiau",
             "outside_hours": "În afara orelor de minerit"
         },
         "tabs": {

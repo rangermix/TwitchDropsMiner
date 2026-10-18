@@ -71,6 +71,14 @@
             "fetching_campaigns": "...جلب الحملات",
             "adding_campaigns": "{counter} ...إضافة الحملات إلى الحقيبة",
             "ready": "جاهز",
+            "paused": "متوقف مؤقتًا",
+            "pause": "إيقاف مؤقت",
+            "resume": "استئناف",
+            "paused_until": "متوقف مؤقتًا حتى {time}",
+            "pause_10m": "لمدة 10 دقائق",
+            "pause_1h": "لمدة ساعة",
+            "pause_tomorrow": "حتى الغد",
+            "pause_indefinite": "حتى أستأنف",
             "outside_hours": "خارج ساعات التعدين"
         },
         "tabs": {

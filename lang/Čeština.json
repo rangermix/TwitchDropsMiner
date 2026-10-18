@@ -71,6 +71,14 @@
             "fetching_campaigns": "Načítání dropů...",
             "adding_campaigns": "Přidávám dropy... {counter}",
             "ready": "Připraveno",
+            "paused": "Pozastaveno",
+            "pause": "Pozastavit",
+            "resume": "Pokračovat",
+            "paused_until": "Pozastaveno do {time}",
+            "pause_10m": "Na 10 minut",
+            "pause_1h": "Na 1 hodinu",
+            "pause_tomorrow": "Do zítřka",
+            "pause_indefinite": "Dokud nepokračuji",
             "outside_hours": "Mimo dobu těžby"
         },
         "tabs": {

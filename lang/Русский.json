@@ -71,6 +71,14 @@
             "fetching_campaigns": "Получение кампаний...",
             "adding_campaigns": "Добавление кампаний в инвентарь... {counter}",
             "ready": "Готово",
+            "paused": "Приостановлено",
+            "pause": "Пауза",
+            "resume": "Продолжить",
+            "paused_until": "Приостановлено до {time}",
+            "pause_10m": "На 10 минут",
+            "pause_1h": "На 1 час",
+            "pause_tomorrow": "До завтра",
+            "pause_indefinite": "Пока я не продолжу",
             "outside_hours": "Вне времени майнинга"
         },
         "tabs": {

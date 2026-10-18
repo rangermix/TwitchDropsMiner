@@ -27,6 +27,8 @@ services operated for other users are outside its support scope.
 - Review claimed-drop history, export it to CSV, and receive Telegram or Discord notifications.
 - Manage everything from a web dashboard with optional password protection.
 - Set daily [mining hours](docs/usage.md#mining-hours) in the miner’s local timezone.
+- [Pause mining](docs/usage.md#pause-mining) for 10 minutes, an hour, until tomorrow,
+  or until you resume, for example while you watch Twitch yourself.
 
 The redesigned dashboard's **Now Watching** card offers **Show thumbnail**, off on
 each page load. When enabled, it shows a Twitch JPEG thumbnail, refreshed on channel

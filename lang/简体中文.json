@@ -71,6 +71,14 @@
             "fetching_campaigns": "获取掉宝活动...",
             "adding_campaigns": "将掉宝活动列表添加至库存... {counter}",
             "ready": "就绪",
+            "paused": "已暂停",
+            "pause": "暂停",
+            "resume": "继续",
+            "paused_until": "已暂停至 {time}",
+            "pause_10m": "10 分钟",
+            "pause_1h": "1 小时",
+            "pause_tomorrow": "直到明天",
+            "pause_indefinite": "直到我继续",
             "outside_hours": "非开采时段"
         },
         "tabs": {

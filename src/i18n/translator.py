@@ -54,6 +54,14 @@ class GUIStatus(TypedDict):
     fetching_inventory: str
     fetching_campaigns: str
     adding_campaigns: str
+    paused: str
+    pause: str
+    resume: str
+    paused_until: str
+    pause_10m: str
+    pause_1h: str
+    pause_tomorrow: str
+    pause_indefinite: str
     outside_hours: str
 
 
