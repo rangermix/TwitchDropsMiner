@@ -258,6 +258,10 @@ class GUISettings(TypedDict):
     general: GUISettingsGeneral
     discord: GUIDiscordSettings
     telegram: GUITelegramSettings
+    tab_mining: str
+    tab_games: str
+    tab_notifications: str
+    tab_account: str
     mining_benefits: str
     mining_benefits_help: str
     reload: str

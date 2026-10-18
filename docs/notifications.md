@@ -9,7 +9,7 @@ claims found through live events and through startup or later inventory checks.
    bot token private.
 2. Start a conversation with your new bot and send it a message.
 3. Find your chat ID using the Telegram setup instructions in TDM's **Help** tab.
-4. In **Settings → Telegram Notifications**, enter the bot token and chat ID.
+4. In **Settings → Notifications → Telegram Notifications**, enter the bot token and chat ID.
 5. Select **Test Connection**. A successful test sends a message and saves the
    settings. **Save Settings** saves without sending a test message.
 
@@ -37,7 +37,7 @@ missing; the absence of a Telegram message does not mean a claim failed.
 
 1. In your Discord server, open the target channel's **Edit Channel → Integrations →
    Webhooks** settings and create a webhook. You need permission to manage webhooks.
-2. Copy its URL and enter it in **Settings → Discord Notifications**. TDM accepts
+2. Copy its URL and enter it in **Settings → Notifications → Discord Notifications**. TDM accepts
    `https://discord.com/api/webhooks/ID/TOKEN` URLs; extra query parameters, alternate
    hosts and redirects are rejected. The URL contains a secret: keep it private.
 3. Select **Test Connection** to send one test message and save the URL, or **Save

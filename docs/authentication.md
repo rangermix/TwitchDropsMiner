@@ -110,7 +110,7 @@ directory to recover authentication.
 
 ## Log out and change account
 
-At the bottom of **Settings**, select **Log out of Twitch** and confirm. TDM drains
+At the bottom of **Settings → Account & Maintenance**, select **Log out of Twitch** and confirm. TDM drains
 authenticated work, clears its saved session and legacy cookies, and opens a fresh
 Twitch sign in page. Games, drop history and other settings are preserved.
 This logs out this miner; it does not sign you out of your everyday Twitch browser.

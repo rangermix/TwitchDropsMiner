@@ -6,7 +6,7 @@ Use it before making the dashboard accessible beyond your trusted home network.
 
 ## Enable a password
 
-In **Settings → Dashboard password**, enter and confirm a password of 8–1024
+In **Settings → Account & Maintenance → Dashboard password**, enter and confirm a password of 8–1024
 characters, then select **Enable password protection**. No username is needed.
 Before signing in to Twitch, expand **Dashboard password** below the login browser
 to access the same controls.

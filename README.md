@@ -39,7 +39,7 @@ Inventory supports **All / Linked / Not Linked** account-link filters. Settings 
 default-off option to mine campaigns reported as Not Linked; read its warning and
 check Twitch progress. See the [dashboard guide](docs/usage.md#account-link-override).
 
-Use **Settings → Dump diagnosis data** for bug reports. It saves
+Use **Settings → Account & Maintenance → Dump diagnosis data** for bug reports. It saves
 deidentified miner state and recent sanitized API responses in your data volume;
 see [diagnosis data](docs/troubleshooting.md#save-diagnosis-data).
 
@@ -113,7 +113,7 @@ keeps running until the attempt finishes or times out.
 Set Docker’s `TZ` to match your home internet connection’s timezone; change
 `Australia/Sydney` in the example as needed. Chromium and the temporary display are
 included in the image. Your everyday browser profile is separate.
-TDM renews the session automatically. **Settings → Log out of Twitch**, at the
+TDM renews the session automatically. **Settings → Account & Maintenance → Log out of Twitch**, at the
 bottom, clears this miner’s session and opens sign in again for account replacement.
 See [authentication](docs/authentication.md) and [troubleshooting](docs/troubleshooting.md).
 If Twitch rejects the embedded browser, select **Use desktop helper** and run the

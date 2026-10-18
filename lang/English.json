@@ -127,6 +127,10 @@
                 "name": "General",
                 "dark_mode": "Dark Mode"
             },
+            "tab_mining": "Mining",
+            "tab_games": "Games",
+            "tab_notifications": "Notifications",
+            "tab_account": "Account & Maintenance",
             "mining_benefits": "Mining Benefits",
             "mining_benefits_help": "Select which types of drops you want to mine.",
             "reload": "Reload Campaigns",

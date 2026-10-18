@@ -809,6 +809,9 @@ The application uses a web-based interface accessible via browser:
 **web/** - Frontend assets:
 
 - `index.html` - Single-page application layout with tabs (Main, Inventory, History, Settings, Help)
+  - Settings is split into sub-tabs (General, Mining, Games, Notifications, Account &
+    Maintenance): each `.settings-section` lives in exactly one `#settings-panel-*` with a
+    matching `[data-settings-tab]` button; `switchSettingsTab()` toggles `hidden`.
 - `static/app.js` - Socket.IO client, real-time UI updates, API calls, Inventory Filtering and Drop History logic
 - `static/styles.css` - Responsive design with dark mode support
 

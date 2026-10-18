@@ -2204,6 +2204,15 @@ function applyTranslations(t) {
         // Use IDs for robust selection
         const generalHeader = document.getElementById('settings-general-header');
         if (generalHeader) generalHeader.textContent = t.gui.settings.general.name;
+        const settingsTabLabels = {
+            general: t.gui.settings.general?.name, mining: t.gui.settings.tab_mining,
+            games: t.gui.settings.tab_games, notifications: t.gui.settings.tab_notifications,
+            account: t.gui.settings.tab_account
+        };
+        for (const [name, label] of Object.entries(settingsTabLabels)) {
+            const button = document.getElementById(`settings-tab-${name}`);
+            if (button && label) button.textContent = label;
+        }
 
         const benefitsHeader = document.getElementById('settings-benefits-header');
         const allowUnlinkedLabel = document.getElementById('allow-unlinked-label');
@@ -2631,6 +2640,17 @@ function switchTab(tabName) {
     }
 }
 
+function switchSettingsTab(name) {
+    document.querySelectorAll('[data-settings-tab]').forEach(button => {
+        const active = button.dataset.settingsTab === name;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', String(active));
+    });
+    document.querySelectorAll('.settings-panel').forEach(panel => {
+        panel.hidden = panel.id !== `settings-panel-${name}`;
+    });
+}
+
 // ==================== Event Listeners ====================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -2643,6 +2663,9 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', () => {
             switchTab(button.dataset.tab);
         });
+    });
+    document.querySelectorAll('[data-settings-tab]').forEach(button => {
+        button.addEventListener('click', () => switchSettingsTab(button.dataset.settingsTab));
     });
 
     // Settings - auto-save on change

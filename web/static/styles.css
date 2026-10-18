@@ -1065,6 +1065,33 @@ header h1 {
     max-width: 800px;
 }
 
+.settings-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.settings-tab-button {
+    padding: 8px 14px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.settings-tab-button:hover {
+    color: var(--text-primary);
+}
+
+.settings-tab-button.active {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+}
+
 .settings-section {
     background: var(--bg-panel);
     border: 1px solid var(--border-color);
@@ -1088,7 +1115,9 @@ header h1 {
 
 .settings-section select,
 .settings-section input[type="number"],
-.settings-section input[type="text"] {
+.settings-section input[type="text"],
+#discord-webhook-url,
+#telegram-bot-token {
     padding: 8px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
@@ -2344,6 +2373,27 @@ header h1 {
     margin: 14px auto 0;
     padding: 8px 14px;
     font-size: 12px;
+}
+
+/* Keep the footer at the window bottom so tabs of different heights don't move it. */
+#dashboard {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh; /* excludes mobile browser bars where supported */
+}
+
+#dashboard > .tab-content.active {
+    flex: 1 0 auto;
+}
+
+#dashboard > .footer {
+    width: 100%;
+}
+
+/* Flex items don't collapse margins, so drop the last section's own gap above the footer. */
+.settings-panel > .settings-section:last-child {
+    margin-bottom: 0;
 }
 
 .update-indicator {
