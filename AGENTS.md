@@ -802,6 +802,12 @@ protocol rejection; preserve rejection and target-cleanup assertions.
 - Docker validation and release workflows pin the Node-24-native Docker Buildx v4.3.0
   and Build Push v7.3.0 action commits. Update both workflows together when changing
   either action so validation and release builds use the same trusted versions.
+- Native helper and release artifact transfers pin Node-24-native Upload Artifact
+  v7.0.2 and Download Artifact v8.0.2 commits. Keep uploads zipped with hidden files
+  excluded, download extraction enabled and digest mismatches fatal. Preserve artifact
+  names, paths, same-run scope, tar permissions and checksum validation; do not add
+  cross-run credentials or broaden workflow permissions, triggers or publishing gates.
+  Tests: `tests/test_artifact_workflow_contracts.py`, `tests/test_helper_release.py`.
 - `.github/workflows/contributors.yml` credits the human author of each pull request
   merged into `main`, including linked pull request numbers in the alphabetically sorted
   Contributors table in `README.md`.
