@@ -1126,3 +1126,18 @@ async def test_wrong_status_validation_diagnostic_keeps_upload_ambiguous():
         async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK) as client:
             assert await client.send(await client.connect(), seed()) == 123
     assert [row[0] for row in requests] == ["/api/helper/connect", "/api/helper/session", "/api/helper/result"]
+
+
+def test_parse_netscape_cookies_extracts_twitch_auth_token(tmp_path):
+    cookies_txt = tmp_path / "cookies.txt"
+    cookies_txt.write_text(
+        "# Netscape HTTP Cookie File\n"
+        ".twitch.tv\tTRUE\t/\tTRUE\t1899999999\tauth-token\tmy-secret-token\n"
+        ".example.com\tTRUE\t/\tTRUE\t1899999999\tother\tignored\n",
+        encoding="utf-8",
+    )
+    parsed = login_helper.NativeChrome.parse_netscape_cookies(cookies_txt)
+    assert len(parsed) == 1
+    assert parsed[0]["name"] == "auth-token"
+    assert parsed[0]["value"] == "my-secret-token"
+    assert parsed[0]["domain"] == ".twitch.tv"

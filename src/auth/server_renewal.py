@@ -8,6 +8,7 @@ import base64
 import json
 import os
 import re
+import shutil
 import signal
 import tempfile
 import time
@@ -38,6 +39,18 @@ class OwnedChromium:
     def __init__(self, executable: str, *, no_sandbox: bool = False, startup_timeout: float = 20):
         self.executable, self.no_sandbox = executable, no_sandbox
         self.startup_timeout = startup_timeout
+
+    @staticmethod
+    def default_executable() -> str:
+        for name in ("chromium", "chromium-browser", "google-chrome", "google-chrome-stable", "chrome"):
+            if found := shutil.which(name):
+                return found
+        from src.auth.login_helper import NativeChrome, NativeChromium
+
+        for finder in (NativeChromium.find_chromium, NativeChrome.find_chrome):
+            with suppress(SessionError):
+                return str(finder())
+        return "chromium"
 
     async def wait_ready(self, process: asyncio.subprocess.Process, profile: Path) -> str:
         async with asyncio.timeout(self.startup_timeout):  # type: ignore[attr-defined]

@@ -243,15 +243,50 @@ class NativeChrome:
     LOGIN_MESSAGE = "login"
     LOGIN_MISSING_CODE = "HELPER_LOGIN_MISSING"
 
-    def __init__(self, executable: Path | None = None, *, startup_timeout: float = 30):
+    def __init__(self, executable: Path | None = None, *, startup_timeout: float = 30,
+                 cookies_file: Path | None = None):
         self.executable = executable
         self.startup_timeout = startup_timeout
+        self.cookies_file = cookies_file
         self.profile: Path | None = None
         self.process: subprocess.Popen | None = None
         self.address = ""
         self._closing: asyncio.Task[None] | None = None
-        self._capturing = False
+        self._capturing = cookies_file is not None
         self._verified = False
+
+    @staticmethod
+    def parse_netscape_cookies(path: Path) -> list[dict[str, Any]]:
+        try:
+            raw = path.read_text(encoding="utf-8")
+        except OSError:
+            raise SessionError("HELPER_LOGIN_MISSING") from None
+        cookies: list[dict[str, Any]] = []
+        for line in raw.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split("\t")
+            if len(parts) < 7:
+                continue
+            domain, _flag, cpath, secure, expires, name, value = parts[:7]
+            if domain not in (".twitch.tv", "twitch.tv", "www.twitch.tv", "passport.twitch.tv") and not domain.endswith(".twitch.tv"):
+                continue
+            cookie: dict[str, Any] = {
+                "name": name,
+                "value": value,
+                "domain": domain,
+                "path": cpath or "/",
+                "secure": secure.upper() == "TRUE",
+            }
+            with suppress(ValueError):
+                exp = int(expires)
+                if exp > 0:
+                    cookie["expires"] = float(exp)
+            cookies.append(cookie)
+        if not any(c.get("name") == "auth-token" and c.get("value") for c in cookies):
+            raise SessionError("HELPER_LOGIN_MISSING")
+        return cookies
 
     @staticmethod
     def find_chrome() -> Path:
@@ -446,10 +481,27 @@ class NativeChrome:
                 finally:
                     await protocol.close()
 
+    async def _inject_cookies(self) -> None:
+        if self.cookies_file is None:
+            return
+        cookies = self.parse_netscape_cookies(self.cookies_file)
+        if self.process is None or self.process.poll() is not None:
+            raise SessionError("HELPER_BROWSER")
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5), trust_env=False) as http:
+            endpoint = await self._browser_socket(http)
+            async with http.ws_connect(endpoint, timeout=aiohttp.ClientWSTimeout(ws_close=2)) as socket:
+                protocol = DevToolsConnection(socket)
+                try:
+                    self._require_owner(await protocol.command("SystemInfo.getProcessInfo", timeout=2))
+                    await protocol.command("Storage.setCookies", {"cookies": cookies}, timeout=5)
+                finally:
+                    await protocol.close()
+
     async def wait_authenticated(self, *, timeout: float) -> None:
         try:
             async with asyncio.timeout(timeout):  # type: ignore[attr-defined]
                 await self._restart_for_capture()
+                await self._inject_cookies()
                 await self._check_login()
         except TimeoutError:
             raise SessionError("HELPER_LOGIN_TIMEOUT") from None
@@ -580,8 +632,9 @@ class NativeFirefox(NativeChrome):
 
     LOGIN_MISSING_CODE = "HELPER_FIREFOX_LOGIN"
 
-    def __init__(self, executable: Path | None = None, *, startup_timeout: float = 30):
-        super().__init__(executable, startup_timeout=startup_timeout)
+    def __init__(self, executable: Path | None = None, *, startup_timeout: float = 30,
+                 cookies_file: Path | None = None):
+        super().__init__(executable, startup_timeout=startup_timeout, cookies_file=cookies_file)
         self.remote: DevToolsConnection | None = None
         self.http: aiohttp.ClientSession | None = None
 
@@ -763,7 +816,7 @@ class NativeFirefox(NativeChrome):
 class BrowserSelection:
     @staticmethod
     def create(choice: str = "auto", *, chrome: Path | None = None, chromium: Path | None = None,
-               firefox: Path | None = None) -> NativeChrome:
+               firefox: Path | None = None, cookies_file: Path | None = None) -> NativeChrome:
         browsers = (
             ("chrome", NativeChrome, chrome, NativeChrome.find_chrome, "HELPER_CHROME_MISSING"),
             ("chromium", NativeChromium, chromium, NativeChromium.find_chromium, "HELPER_CHROMIUM_MISSING"),
@@ -771,10 +824,11 @@ class BrowserSelection:
         )
         for name, browser, executable, _find, _missing in browsers:
             if executable is not None or choice == name:
-                return browser(executable)
+                return browser(executable, cookies_file=cookies_file)
         for _name, browser, _executable, find, missing in browsers:
             try:
-                return browser(find())
+                found = find()
+                return browser(found, cookies_file=cookies_file)
             except SessionError as error:
                 if error.code != missing:
                     raise
@@ -887,6 +941,7 @@ class LoginHelperCLI:
         paths.add_argument("--chrome", type=Path, help=words["chrome_help"])
         paths.add_argument("--chromium", type=Path, help=words["chromium_help"])
         paths.add_argument("--firefox", type=Path, help=words["firefox_help"])
+        parser.add_argument("--cookies", type=Path, help="Optional Netscape cookies.txt file to pre-seed Twitch session before capture")
         parser.add_argument("--language", choices=_.get_languages(), help=words["language_help"])
         parser.add_argument("--no-pause", action="store_true", help=words["no_pause_help"])
         args = parser.parse_args()
@@ -898,7 +953,8 @@ class LoginHelperCLI:
             destination = HelperDestination(args.tdm or input(words["destination_prompt"]).strip()).url
             helper = NativeLoginHelper(destination,
                 browser_factory=lambda: BrowserSelection.create(
-                args.browser, chrome=args.chrome, chromium=args.chromium, firefox=args.firefox),
+                args.browser, chrome=args.chrome, chromium=args.chromium, firefox=args.firefox,
+                cookies_file=args.cookies),
                 report=lambda key: print(words[key], flush=True))  # type: ignore[literal-required]
             print(words["destination"].format(url=helper.destination.url), flush=True)
             asyncio.run(LoginHelperCLI.run_cancellable(helper))
