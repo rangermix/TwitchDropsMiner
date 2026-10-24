@@ -264,7 +264,11 @@ class NativeChrome:
         cookies: list[dict[str, Any]] = []
         for line in raw.splitlines():
             line = line.strip()
-            if not line or line.startswith("#"):
+            http_only = False
+            if line.startswith("#HttpOnly_"):
+                line = line[len("#HttpOnly_"):]
+                http_only = True
+            elif not line or line.startswith("#"):
                 continue
             parts = line.split("\t")
             if len(parts) < 7:
@@ -279,6 +283,8 @@ class NativeChrome:
                 "path": cpath or "/",
                 "secure": secure.upper() == "TRUE",
             }
+            if http_only:
+                cookie["httpOnly"] = True
             with suppress(ValueError):
                 exp = int(expires)
                 if exp > 0:
@@ -772,6 +778,29 @@ class NativeFirefox(NativeChrome):
                 self._require_firefox_owner(await self.remote.command("session.new", {"capabilities": {}}, timeout=5))
                 return
         raise SessionError("HELPER_BROWSER")
+
+    async def _inject_cookies(self) -> None:
+        if self.cookies_file is None:
+            return
+        cookies = self.parse_netscape_cookies(self.cookies_file)
+        assert self.remote is not None
+        if self.process is None or self.process.poll() is not None:
+            raise SessionError("HELPER_BROWSER")
+        for cookie in cookies:
+            bidi_cookie: dict[str, Any] = {
+                "name": cookie["name"],
+                "value": {"type": "string", "value": cookie["value"]},
+                "domain": cookie["domain"],
+                "path": cookie.get("path", "/"),
+                "secure": bool(cookie.get("secure", False)),
+                "httpOnly": bool(cookie.get("httpOnly", False)),
+            }
+            if "expires" in cookie:
+                bidi_cookie["expiry"] = int(cookie["expires"])
+            await self.remote.command("storage.setCookie", {
+                "cookie": bidi_cookie,
+                "partition": {"type": "storageKey", "userContext": "default"},
+            }, timeout=5)
 
     async def _check_login(self) -> None:
         from src.auth.firefox_session import FirefoxPage

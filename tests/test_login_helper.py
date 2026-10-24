@@ -1128,16 +1128,22 @@ async def test_wrong_status_validation_diagnostic_keeps_upload_ambiguous():
     assert [row[0] for row in requests] == ["/api/helper/connect", "/api/helper/session", "/api/helper/result"]
 
 
-def test_parse_netscape_cookies_extracts_twitch_auth_token(tmp_path):
+def test_parse_netscape_cookies_extracts_twitch_auth_token_and_httponly(tmp_path):
     cookies_txt = tmp_path / "cookies.txt"
     cookies_txt.write_text(
         "# Netscape HTTP Cookie File\n"
-        ".twitch.tv\tTRUE\t/\tTRUE\t1899999999\tauth-token\tmy-secret-token\n"
+        "#HttpOnly_.twitch.tv\tTRUE\t/\tTRUE\t1899999999\tauth-token\tmy-secret-token\n"
+        "passport.twitch.tv\tFALSE\t/\tTRUE\t0\tlogin\tuser123\n"
         ".example.com\tTRUE\t/\tTRUE\t1899999999\tother\tignored\n",
         encoding="utf-8",
     )
     parsed = login_helper.NativeChrome.parse_netscape_cookies(cookies_txt)
-    assert len(parsed) == 1
+    assert len(parsed) == 2
     assert parsed[0]["name"] == "auth-token"
     assert parsed[0]["value"] == "my-secret-token"
     assert parsed[0]["domain"] == ".twitch.tv"
+    assert parsed[0]["httpOnly"] is True
+    assert parsed[0]["expires"] == 1899999999.0
+    assert parsed[1]["name"] == "login"
+    assert "httpOnly" not in parsed[1]
+    assert "expires" not in parsed[1]
