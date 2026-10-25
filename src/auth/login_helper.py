@@ -851,13 +851,14 @@ class BrowserSelection:
             ("chromium", NativeChromium, chromium, NativeChromium.find_chromium, "HELPER_CHROMIUM_MISSING"),
             ("firefox", NativeFirefox, firefox, NativeFirefox.find_firefox, "HELPER_FIREFOX_MISSING"),
         )
+        extra: dict[str, Any] = {"cookies_file": cookies_file} if cookies_file is not None else {}
         for name, browser, executable, _find, _missing in browsers:
             if executable is not None or choice == name:
-                return browser(executable, cookies_file=cookies_file)
+                return browser(executable, **extra)
         for _name, browser, _executable, find, missing in browsers:
             try:
                 found = find()
-                return browser(found, cookies_file=cookies_file)
+                return browser(found, **extra)
             except SessionError as error:
                 if error.code != missing:
                     raise
@@ -983,7 +984,7 @@ class LoginHelperCLI:
             helper = NativeLoginHelper(destination,
                 browser_factory=lambda: BrowserSelection.create(
                 args.browser, chrome=args.chrome, chromium=args.chromium, firefox=args.firefox,
-                cookies_file=args.cookies),
+                **({"cookies_file": args.cookies} if args.cookies is not None else {})),
                 report=lambda key: print(words[key], flush=True))  # type: ignore[literal-required]
             print(words["destination"].format(url=helper.destination.url), flush=True)
             asyncio.run(LoginHelperCLI.run_cancellable(helper))
