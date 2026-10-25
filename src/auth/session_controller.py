@@ -6,7 +6,6 @@ import asyncio
 import json
 import logging
 import os
-import shutil
 import time
 from collections.abc import Awaitable, Callable, Iterator
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, contextmanager, nullcontext
@@ -31,7 +30,7 @@ class SessionController:
                  on_change: Callable[[], None] = lambda: None):
         self.session, self.clock = session, clock
         self.issuer = issuer or SDKIssuer(OwnedChromium(
-            shutil.which("chromium") or shutil.which("chromium-browser") or "chromium",
+            OwnedChromium.default_executable(),
             no_sandbox=os.name == "posix" and os.geteuid() == 0,
         ), diagnostics=getattr(session._transport, "diagnostics", None))
         self.activation, self.on_change = activation, on_change

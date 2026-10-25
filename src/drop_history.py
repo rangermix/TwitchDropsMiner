@@ -69,6 +69,10 @@ class DropHistory:
     # Public API
     # ------------------------------------------------------------------
 
+    def has_drop(self, drop_id: str) -> bool:
+        """Return True if a drop with the given ID has already been recorded as claimed."""
+        return any(e["id"] == drop_id for e in self._entries)
+
     def record(self, drop: TimedDrop, campaign: DropsCampaign) -> None:
         """
         Persist a claimed drop to history.

@@ -509,3 +509,15 @@ async def test_expired_sdk_state_ends_loop_without_repeated_browser_attempts():
         await RenewalLoop(source, sender, sleep=sleep).run()
     sender.send.assert_not_awaited()
     sleep.assert_not_awaited()
+
+
+def test_default_executable_falls_back_to_native_chrome(monkeypatch, tmp_path):
+    from src.auth.login_helper import NativeChrome, NativeChromium
+    from src.auth.server_renewal import OwnedChromium
+
+    chrome_bin = tmp_path / "chrome.exe"
+    chrome_bin.write_text("binary")
+    monkeypatch.setattr("src.auth.server_renewal.shutil.which", lambda _name: None)
+    monkeypatch.setattr(NativeChromium, "find_chromium", staticmethod(lambda: (_ for _ in ()).throw(SessionError("HELPER_CHROMIUM_MISSING"))))
+    monkeypatch.setattr(NativeChrome, "find_chrome", staticmethod(lambda: chrome_bin))
+    assert OwnedChromium.default_executable() == str(chrome_bin)

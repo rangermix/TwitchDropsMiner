@@ -9,6 +9,7 @@ from dateutil.parser import isoparse
 
 from src.config.constants import MAX_EXTRA_MINUTES
 from src.config.operations import GQL_OPERATIONS
+from src.drop_history import DropHistory
 from src.exceptions import GQLException
 from src.i18n import _
 from src.models.benefit import Benefit
@@ -64,6 +65,13 @@ class BaseDrop:
                 ]
             )
             and all(self.starts_at <= dt < self.ends_at for dt in dts)
+        ):
+            self.is_claimed = True
+        if (
+            not self.is_claimed
+            and self.claim_id is not None
+            and isinstance(drop_history := getattr(self._twitch, "drop_history", None), DropHistory)
+            and drop_history.has_drop(self.id)
         ):
             self.is_claimed = True
         self.precondition_drops: list[str] = [d["id"] for d in (data["preconditionDrops"] or [])]

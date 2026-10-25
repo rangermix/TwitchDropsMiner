@@ -509,6 +509,8 @@ class Twitch:
                         for drop in campaign.drops:
                             if drop.can_claim:
                                 await drop.claim()
+                # Clear any games_update_pending set by drop.claim() above since we rebuild wanted_games right below
+                self._games_update_pending = False
                 # figure out which games we want based on selected priorities
                 self.wanted_games.clear()
                 games_to_watch: list[str] = self.settings.games_to_watch

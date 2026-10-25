@@ -61,7 +61,7 @@ class MessageHandlerService:
         channel: Channel | None = self._twitch.channels.get(channel_id)
 
         if channel is None:
-            logger.error(f"Stream state change for a non-existing channel: {channel_id}")
+            logger.debug(f"Stream state change for a non-existing channel: {channel_id}")
             return
 
         if msg_type == "viewcount":
@@ -104,7 +104,7 @@ class MessageHandlerService:
         channel: Channel | None = self._twitch.channels.get(channel_id)
 
         if channel is None:
-            logger.error(f"Broadcast settings update for a non-existing channel: {channel_id}")
+            logger.debug(f"Broadcast settings update for a non-existing channel: {channel_id}")
             return
 
         if message["old_game"] != message["game"]:
