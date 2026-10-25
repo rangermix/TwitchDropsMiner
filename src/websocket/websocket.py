@@ -422,9 +422,13 @@ class Websocket:
             message: JSON-serializable message dict
         """
         ws = self._ws.get_with_default(None)
-        assert ws is not None
+        if ws is None or getattr(ws, "closed", False):
+            raise WebsocketClosed(received=True)
         if message["type"] != "PING":
             message["nonce"] = create_nonce(CHARS_ASCII, 30)
-        await ws.send_json(message, dumps=json_minify)
+        try:
+            await ws.send_json(message, dumps=json_minify)
+        except (aiohttp.ClientConnectionError, ConnectionResetError, RuntimeError) as exc:
+            raise WebsocketClosed(received=True) from exc
         # LISTEN/UNLISTEN contain OAuth credentials; never log their payloads.
         ws_logger.debug("Websocket[%s] sent: %s", self._idx, message["type"])
