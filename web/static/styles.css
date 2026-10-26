@@ -1422,6 +1422,27 @@ header h1 {
     user-select: none;
 }
 
+.game-link-badge {
+    margin-left: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.game-link-badge.linked {
+    background: rgba(0, 200, 83, 0.15);
+    color: var(--success-color);
+    border: 1px solid rgba(0, 200, 83, 0.3);
+}
+
+.game-link-badge.not-linked {
+    background: rgba(255, 167, 38, 0.15);
+    color: var(--warning-color);
+    border: 1px solid rgba(255, 167, 38, 0.3);
+}
+
 /* Loading Overlay */
 .loading-overlay {
     position: fixed;

@@ -306,6 +306,7 @@ socket.on('inventory_batch_update', (data) => {
         state.campaigns[camp.id] = camp;
     });
     renderInventory();
+    renderGamesToWatch();
 });
 
 socket.on('drop_update', (data) => {
@@ -1360,23 +1361,75 @@ socket.on('games_available', (data) => {
     renderGamesToWatch();
 });
 
+// Account linking is per game, so a game counts as linked if any of its campaigns is.
+// Games without a known campaign are absent from the map (status unknown).
+function getGameLinkStatus() {
+    const status = new Map();
+    Object.values(state.campaigns).forEach(campaign => {
+        if (!campaign.game_name) return;
+        const key = campaign.game_name.toLowerCase();
+        status.set(key, status.get(key) === true || campaign.linked === true);
+    });
+    return status;
+}
+
+function makeGameLinkBadge(linkStatus, game) {
+    const linked = linkStatus.get(game.toLowerCase());
+    if (linked === undefined) return null;
+    const t = state.translations.gui?.settings;
+    return linked
+        ? makeElement('span', { class: 'game-link-badge linked', title: t?.game_linked_title || 'Account is linked' }, t?.game_linked || 'LINKED')
+        : makeElement('span', { class: 'game-link-badge not-linked', title: t?.game_not_linked_title || 'Account is not linked' }, t?.game_not_linked || 'NOT LINKED');
+}
+
+function selectLinkedGames() {
+    const linkStatus = getGameLinkStatus();
+    const existing = state.settings.games_to_watch || [];
+    const selected = new Set(existing.map(game => game.toLowerCase()));
+    const newGames = Array.from(availableGames).sort().filter(game => {
+        const key = game.toLowerCase();
+        if (selected.has(key) || linkStatus.get(key) !== true) return false;
+        selected.add(key);
+        return true;
+    });
+    if (newGames.length === 0) return;
+
+    state.settings.games_to_watch = [...existing, ...newGames];
+    renderGamesToWatch();
+    renderChannels();
+    saveSettings();
+}
+
 function renderGamesToWatch() {
     const selectedGames = state.settings.games_to_watch || [];
     const filterText = document.getElementById('games-filter')?.value.toLowerCase() || '';
+    const linkFilter = document.getElementById('games-link-filter')?.value || 'all';
+    const linkStatus = getGameLinkStatus();
 
     // Render selected games (sortable)
-    renderSelectedGames(selectedGames);
+    renderSelectedGames(selectedGames, linkStatus);
 
     // Render available games (checkboxes for unselected games)
     const unselectedGames = Array.from(availableGames)
         .filter(game => !selectedGames.includes(game))
         .filter(game => game.toLowerCase().includes(filterText))
-        .sort();
+        .filter(game => {
+            const linked = linkStatus.get(game.toLowerCase());
+            if (linkFilter === 'linked') return linked === true;
+            if (linkFilter === 'not_linked') return linked !== true;
+            return true;
+        })
+        // Linked games first, then the rest; alphabetical within each group
+        .sort((a, b) => {
+            const aLinked = linkStatus.get(a.toLowerCase()) === true;
+            const bLinked = linkStatus.get(b.toLowerCase()) === true;
+            return (bLinked - aLinked) || a.localeCompare(b);
+        });
 
-    renderAvailableGames(unselectedGames, filterText);
+    renderAvailableGames(unselectedGames, filterText, linkStatus);
 }
 
-function renderSelectedGames(games) {
+function renderSelectedGames(games, linkStatus = getGameLinkStatus()) {
     const container = document.getElementById('selected-games-list');
     if (!container) return;
 
@@ -1407,6 +1460,7 @@ function renderSelectedGames(games) {
             makeElement('span', { class: 'drag-handle' }, '☰'),
             priorityInput,
             makeElement('span', { class: 'game-name' }, game),
+            makeGameLinkBadge(linkStatus, game) ?? "",
             makeElement('button', {
                 class: 'remove-btn',
                 title: (t.gui?.settings?.remove_game || 'Remove {game}').replace('{game}', game),
@@ -1438,7 +1492,7 @@ function renderSelectedGames(games) {
     });
 }
 
-function renderAvailableGames(games, filterText) {
+function renderAvailableGames(games, filterText, linkStatus = getGameLinkStatus()) {
     const container = document.getElementById('available-games-list');
     if (!container) return;
 
@@ -1463,6 +1517,7 @@ function renderAvailableGames(games, filterText) {
         label.replaceChildren(
             makeElement('input', { type: 'checkbox', value: game }),
             makeElement('span', {}, game),
+            makeGameLinkBadge(linkStatus, game) ?? "",
         );
 
         const checkbox = label.querySelector('input[type="checkbox"]');
@@ -2286,6 +2341,17 @@ function applyTranslations(t) {
         const searchInput = document.getElementById('games-filter');
         if (searchInput) searchInput.placeholder = t.gui.settings.search_games;
 
+        const selectLinkedBtn = document.getElementById('select-linked-btn');
+        if (selectLinkedBtn && t.gui.settings.select_linked) selectLinkedBtn.textContent = t.gui.settings.select_linked;
+
+        const gamesLinkFilter = document.getElementById('games-link-filter');
+        if (gamesLinkFilter && t.gui.inventory?.filters) {
+            const f = t.gui.inventory.filters;
+            gamesLinkFilter.querySelector('[value="all"]').textContent = f.all;
+            gamesLinkFilter.querySelector('[value="linked"]').textContent = f.linked;
+            gamesLinkFilter.querySelector('[value="not_linked"]').textContent = f.not_linked;
+        }
+
         const selectAllBtn = document.getElementById('select-all-btn');
         if (selectAllBtn) selectAllBtn.textContent = t.gui.settings.select_all;
 
@@ -2708,6 +2774,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Games to watch management
+    document.getElementById('select-linked-btn').addEventListener('click', selectLinkedGames);
+    document.getElementById('games-link-filter').addEventListener('change', renderGamesToWatch);
     document.getElementById('select-all-btn').addEventListener('click', selectAllGames);
     document.getElementById('deselect-all-btn').addEventListener('click', deselectAllGames);
     document.getElementById('add-game-btn').addEventListener('click', addGameFromSearch);

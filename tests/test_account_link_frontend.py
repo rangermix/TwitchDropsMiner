@@ -137,3 +137,26 @@ function parseDropNameBlacklist() { return []; }
     assert.equal(input.checked, true);
 })().catch(error => { console.error(error); process.exitCode = 1; });
 """)
+
+
+def test_game_link_status_is_per_game_and_ignores_unknown_games():
+    run_javascript(
+        ["getGameLinkStatus", "makeGameLinkBadge"],
+        r"""
+const assert = require('node:assert/strict');
+const state = {
+    campaigns: {
+        a: {game_name: 'Rust', linked: true},
+        b: {game_name: 'rust', linked: false},
+        c: {game_name: 'Apex', linked: false},
+        d: {linked: true},
+    },
+    translations: {},
+};
+const status = getGameLinkStatus();
+assert.equal(status.get('rust'), true);
+assert.equal(status.get('apex'), false);
+assert.equal(status.size, 2);
+assert.equal(makeGameLinkBadge(status, 'Manual Game'), null);
+""",
+    )
