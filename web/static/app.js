@@ -1476,7 +1476,7 @@ function renderSelectedGames(games, linkStatus = getGameLinkStatus()) {
             makeElement('span', { class: 'drag-handle' }, '☰'),
             priorityInput,
             makeElement('span', { class: 'game-name' }, game),
-            makeGameLinkBadge(linkStatus, game) ?? "",
+            ...[makeGameLinkBadge(linkStatus, game)].filter(Boolean),
             makeElement('button', {
                 class: 'remove-btn',
                 title: (t.gui?.settings?.remove_game || 'Remove {game}').replace('{game}', game),
@@ -1535,7 +1535,7 @@ function renderAvailableGames(games, filterText, linkStatus = getGameLinkStatus(
         label.replaceChildren(
             makeElement('input', { type: 'checkbox', value: game }),
             makeElement('span', {}, game),
-            makeGameLinkBadge(linkStatus, game) ?? "",
+            ...[makeGameLinkBadge(linkStatus, game)].filter(Boolean),
         );
 
         const checkbox = label.querySelector('input[type="checkbox"]');

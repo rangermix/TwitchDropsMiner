@@ -58,6 +58,8 @@ function handleDragOver() {}
 function handleDrop() {}
 function handleDragEnd() {}
 function removeGameFromWatch() {}
+function getGameLinkStatus() { return new Map(); }
+function makeGameLinkBadge() { return null; }
 const changes = [];
 function changeGamePriority(...args) { changes.push(args); }
 renderSelectedGames(['Rust']);
