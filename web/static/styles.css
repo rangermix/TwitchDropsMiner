@@ -1423,7 +1423,7 @@ header h1 {
 }
 
 .game-link-badge {
-    margin-left: 10px;
+    margin-inline-start: 10px;
     padding: 2px 8px;
     border-radius: 4px;
     font-size: 11px;

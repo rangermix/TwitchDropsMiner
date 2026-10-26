@@ -160,3 +160,104 @@ assert.equal(status.size, 2);
 assert.equal(makeGameLinkBadge(status, 'Manual Game'), null);
 """,
     )
+
+
+GAMES_SETUP = r"""
+const assert = require('node:assert/strict');
+const makeElement = (tag, attrs = {}, text = null) => ({tag, attrs, text});
+let availableGames = new Set(['Zelda', 'Rust', 'Apex', 'Albion', 'Manual']);
+let renderedLinkSignature = null;
+const state = {
+    campaigns: {
+        a: {game_name: 'Rust', linked: true},
+        b: {game_name: 'Zelda', linked: true},
+        c: {game_name: 'Apex', linked: false},
+        d: {game_name: 'Albion', linked: false},
+    },
+    settings: {games_to_watch: ['Apex']},
+    translations: {},
+};
+const controls = {'games-filter': {value: ''}, 'games-link-filter': {value: 'all'}};
+globalThis.document = {getElementById: (id) => controls[id] || null};
+let selectedArgs = null;
+let availableArgs = null;
+const renderSelectedGames = (games) => { selectedArgs = games; };
+const renderAvailableGames = (games, text, status, filter) => { availableArgs = {games, filter}; };
+let renders = 0;
+const renderChannels = () => {};
+const saveSettings = () => { renders += 1000; };
+"""
+
+GAMES_FUNCTIONS = [
+    "getGameLinkStatus",
+    "linkStatusSignature",
+    "makeGameLinkBadge",
+    "selectLinkedGames",
+    "renderGamesToWatch",
+    "refreshGamesIfLinkStatusChanged",
+]
+
+
+def test_game_link_badge_text_and_class():
+    run_javascript(
+        GAMES_FUNCTIONS,
+        GAMES_SETUP + r"""
+const status = getGameLinkStatus();
+const linked = makeGameLinkBadge(status, 'rust');
+assert.equal(linked.attrs.class, 'game-link-badge linked');
+assert.equal(linked.text, 'LINKED');
+const unlinked = makeGameLinkBadge(status, 'Apex');
+assert.equal(unlinked.attrs.class, 'game-link-badge not-linked');
+assert.equal(unlinked.text, 'NOT LINKED');
+""",
+    )
+
+
+def test_available_games_sort_linked_first_and_filter_modes():
+    run_javascript(
+        GAMES_FUNCTIONS,
+        GAMES_SETUP + r"""
+renderGamesToWatch();
+assert.deepEqual(selectedArgs, ['Apex']);
+assert.deepEqual(availableArgs.games, ['Rust', 'Zelda', 'Albion', 'Manual']);
+controls['games-link-filter'].value = 'linked';
+renderGamesToWatch();
+assert.deepEqual(availableArgs.games, ['Rust', 'Zelda']);
+controls['games-link-filter'].value = 'not_linked';
+renderGamesToWatch();
+assert.deepEqual(availableArgs.games, ['Albion']);
+assert.equal(availableArgs.filter, 'not_linked');
+""",
+    )
+
+
+def test_select_linked_is_idempotent_and_keeps_existing_order():
+    run_javascript(
+        GAMES_FUNCTIONS,
+        GAMES_SETUP + r"""
+state.settings.games_to_watch = ['zelda', 'Apex'];
+selectLinkedGames();
+assert.deepEqual(state.settings.games_to_watch, ['zelda', 'Apex', 'Rust']);
+selectLinkedGames();
+assert.deepEqual(state.settings.games_to_watch, ['zelda', 'Apex', 'Rust']);
+""",
+    )
+
+
+def test_games_rerender_only_when_link_status_changes():
+    run_javascript(
+        GAMES_FUNCTIONS,
+        GAMES_SETUP + r"""
+renderGamesToWatch();
+availableArgs = null;
+refreshGamesIfLinkStatusChanged();
+assert.equal(availableArgs, null);
+state.campaigns.e = {game_name: 'Manual', linked: true};
+refreshGamesIfLinkStatusChanged();
+assert.notEqual(availableArgs, null);
+availableArgs = null;
+state.campaigns = {};
+refreshGamesIfLinkStatusChanged();
+assert.notEqual(availableArgs, null);
+""",
+    )

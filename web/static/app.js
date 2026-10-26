@@ -306,7 +306,7 @@ socket.on('inventory_batch_update', (data) => {
         state.campaigns[camp.id] = camp;
     });
     renderInventory();
-    renderGamesToWatch();
+    refreshGamesIfLinkStatusChanged();
 });
 
 socket.on('drop_update', (data) => {
@@ -679,11 +679,13 @@ function clearDropProgress() {
 function addCampaign(campaignData) {
     state.campaigns[campaignData.id] = campaignData;
     renderInventory();
+    refreshGamesIfLinkStatusChanged();
 }
 
 function clearInventory() {
     state.campaigns = {};
     renderInventory();
+    refreshGamesIfLinkStatusChanged();
 }
 
 function updateDrop(campaignId, dropData, campaignData = {}, dropsData = null) {
@@ -1373,6 +1375,19 @@ function getGameLinkStatus() {
     return status;
 }
 
+function linkStatusSignature(linkStatus) {
+    return Array.from(linkStatus.entries()).sort().join('|');
+}
+
+// Inventory updates arrive often while mining; rebuilding the lists would interrupt
+// a drag or a priority edit, so only re-render when a game's link status changed.
+let renderedLinkSignature = null;
+function refreshGamesIfLinkStatusChanged() {
+    if (linkStatusSignature(getGameLinkStatus()) !== renderedLinkSignature) {
+        renderGamesToWatch();
+    }
+}
+
 function makeGameLinkBadge(linkStatus, game) {
     const linked = linkStatus.get(game.toLowerCase());
     if (linked === undefined) return null;
@@ -1386,7 +1401,7 @@ function selectLinkedGames() {
     const linkStatus = getGameLinkStatus();
     const existing = state.settings.games_to_watch || [];
     const selected = new Set(existing.map(game => game.toLowerCase()));
-    const newGames = Array.from(availableGames).sort().filter(game => {
+    const newGames = Array.from(availableGames).sort((a, b) => a.localeCompare(b)).filter(game => {
         const key = game.toLowerCase();
         if (selected.has(key) || linkStatus.get(key) !== true) return false;
         selected.add(key);
@@ -1405,6 +1420,7 @@ function renderGamesToWatch() {
     const filterText = document.getElementById('games-filter')?.value.toLowerCase() || '';
     const linkFilter = document.getElementById('games-link-filter')?.value || 'all';
     const linkStatus = getGameLinkStatus();
+    renderedLinkSignature = linkStatusSignature(linkStatus);
 
     // Render selected games (sortable)
     renderSelectedGames(selectedGames, linkStatus);
@@ -1416,7 +1432,7 @@ function renderGamesToWatch() {
         .filter(game => {
             const linked = linkStatus.get(game.toLowerCase());
             if (linkFilter === 'linked') return linked === true;
-            if (linkFilter === 'not_linked') return linked !== true;
+            if (linkFilter === 'not_linked') return linked === false;
             return true;
         })
         // Linked games first, then the rest; alphabetical within each group
@@ -1426,7 +1442,7 @@ function renderGamesToWatch() {
             return (bLinked - aLinked) || a.localeCompare(b);
         });
 
-    renderAvailableGames(unselectedGames, filterText, linkStatus);
+    renderAvailableGames(unselectedGames, filterText, linkStatus, linkFilter);
 }
 
 function renderSelectedGames(games, linkStatus = getGameLinkStatus()) {
@@ -1492,7 +1508,7 @@ function renderSelectedGames(games, linkStatus = getGameLinkStatus()) {
     });
 }
 
-function renderAvailableGames(games, filterText, linkStatus = getGameLinkStatus()) {
+function renderAvailableGames(games, filterText, linkStatus = getGameLinkStatus(), linkFilter = 'all') {
     const container = document.getElementById('available-games-list');
     if (!container) return;
 
@@ -1500,9 +1516,11 @@ function renderAvailableGames(games, filterText, linkStatus = getGameLinkStatus(
     container.innerHTML = '';
 
     if (games.length === 0) {
-        if (filterText) {
+        if (filterText || linkFilter !== 'all') {
             const emptyMsg = t.gui?.settings?.no_games_match || 'No games match your search.';
-            const addHint = t.gui?.settings?.add_game_hint || ' Click "Add Game" to add it manually.';
+            const addHint = filterText
+                ? (t.gui?.settings?.add_game_hint || ' Click "Add Game" to add it manually.')
+                : '';
             container.replaceChildren(makeElement('p', { class: 'empty-message' }, `${emptyMsg}${addHint}`));
         } else {
             const emptyMsg = t.gui?.settings?.all_games_selected || 'All games are selected or no games available.';
@@ -2350,6 +2368,7 @@ function applyTranslations(t) {
             gamesLinkFilter.querySelector('[value="all"]').textContent = f.all;
             gamesLinkFilter.querySelector('[value="linked"]').textContent = f.linked;
             gamesLinkFilter.querySelector('[value="not_linked"]').textContent = f.not_linked;
+            if (f.account_link) gamesLinkFilter.setAttribute('aria-label', f.account_link);
         }
 
         const selectAllBtn = document.getElementById('select-all-btn');
