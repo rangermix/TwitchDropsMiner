@@ -355,7 +355,7 @@
         },
         "browser_login": {
             "title": "Autentificare în Twitch",
-            "instructions": "Autentifică-te mai jos și finalizează verificarea Twitch. Selectează „Finalizează autentificarea”; TDM verifică sesiunea și revine la panou.",
+            "instructions": "Conectează-te mai jos și finalizează verificarea Twitch. Browserul se închide automat, apoi TDM verifică sesiunea. Dacă rămâne deschis, selectează Finalizează conectarea.",
             "finish": "Finalizează autentificarea",
             "retry": "Reîncearcă",
             "starting": "Pornire browser…",
@@ -387,7 +387,15 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "Este acceptat primul asistent care se conectează. Revenirea la browserul integrat închide accesul asistentului."
+            "helper_access_help": "Este acceptat primul asistent care se conectează. Revenirea la browserul integrat închide accesul asistentului.",
+            "clipboard_title": "Copiază și lipește",
+            "clipboard_help": "Deschide bara stângă noVNC și alege Clipboard. Lipește textul, revino la câmpul Twitch și apasă Ctrl+V. Textul este șters după trimitere sau închidere.",
+            "clipboard_label": "Text din clipboard",
+            "clipboard_send": "Lipește în browserul Twitch",
+            "token_title": "Folosește o sesiune Twitch existentă",
+            "token_help": "Avansat: lipește doar valoarea cookie-ului auth-token din propriul browser conectat la Twitch. Protejeaz-o ca pe o parolă. TDM verifică contul și creează o dovadă nouă; tokenurile respinse sau expirate nu permit conectarea.",
+            "token_label": "auth-token Twitch",
+            "token_send": "Conectare cu token"
         }
     },
     "helper": {

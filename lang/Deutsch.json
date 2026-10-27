@@ -355,7 +355,7 @@
         },
         "browser_login": {
             "title": "Bei Twitch anmelden",
-            "instructions": "Melde dich unten an und bestätige Twitchs Verifizierung. Wähle danach „Anmeldung abschließen“. TDM prüft die Sitzung und zeigt wieder das Dashboard.",
+            "instructions": "Unten anmelden und die Twitch-Verifizierung abschließen. Der Browser schließt automatisch; TDM prüft die Sitzung. Bleibt er offen, Anmeldung abschließen wählen.",
             "finish": "Anmeldung abschließen",
             "retry": "Erneut versuchen",
             "starting": "Browser wird gestartet…",
@@ -387,7 +387,15 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "Der zuerst verbundene Helfer wird zugelassen. Die Rückkehr zum eingebetteten Browser schließt den Helferzugriff."
+            "helper_access_help": "Der zuerst verbundene Helfer wird zugelassen. Die Rückkehr zum eingebetteten Browser schließt den Helferzugriff.",
+            "clipboard_title": "Kopieren und einfügen",
+            "clipboard_help": "In der linken noVNC-Leiste die Zwischenablage öffnen. Text einfügen, zum Twitch-Feld wechseln und Strg+V drücken. Nach Senden oder Schließen wird der Text gelöscht.",
+            "clipboard_label": "Text der Zwischenablage",
+            "clipboard_send": "Im Twitch-Browser einfügen",
+            "token_title": "Vorhandene Twitch-Sitzung verwenden",
+            "token_help": "Erweitert: Nur den Wert des auth-token-Cookies aus dem eigenen angemeldeten Twitch-Browser einfügen. Wie ein Passwort schützen. TDM prüft das Konto und erstellt einen neuen Nachweis; abgelehnte oder abgelaufene Tokens erlauben keine Anmeldung.",
+            "token_label": "Twitch auth-token",
+            "token_send": "Mit Token anmelden"
         }
     },
     "helper": {

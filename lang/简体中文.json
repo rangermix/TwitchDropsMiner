@@ -355,7 +355,7 @@
         },
         "browser_login": {
             "title": "登录 Twitch",
-            "instructions": "在下方浏览器中登录并完成 Twitch 验证。完成后点击“完成登录”；TDM 验证会话后将返回仪表板。",
+            "instructions": "在下方登录并完成 Twitch 验证。登录后浏览器会自动关闭，随后 TDM 验证会话。如果浏览器仍然打开，请选择完成登录。",
             "finish": "完成登录",
             "retry": "重试",
             "starting": "正在启动浏览器…",
@@ -387,7 +387,15 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "仅接受第一个连接的助手。返回内嵌浏览器会关闭助手访问权限。"
+            "helper_access_help": "仅接受第一个连接的助手。返回内嵌浏览器会关闭助手访问权限。",
+            "clipboard_title": "复制和粘贴",
+            "clipboard_help": "打开 noVNC 左侧栏并选择剪贴板。粘贴文本，返回 Twitch 输入框后按 Ctrl+V。发送或关闭面板后会清空文本。",
+            "clipboard_label": "剪贴板文本",
+            "clipboard_send": "粘贴到 Twitch 浏览器",
+            "token_title": "使用现有 Twitch 会话",
+            "token_help": "高级选项：仅粘贴您本人已登录 Twitch 浏览器中的 auth-token Cookie 值。请像密码一样保护它。TDM 会验证账户并生成新凭证；被拒绝或已过期的令牌无法登录。",
+            "token_label": "Twitch auth-token",
+            "token_send": "使用令牌登录"
         }
     },
     "helper": {

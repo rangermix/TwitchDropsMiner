@@ -187,7 +187,7 @@ class AuthMiddleware:
             return await self.reject(scope, receive, send, 401, "authentication_required")
         # Bound auth payloads before Pydantic parses them; do not echo submitted secrets.
         if mutation and path.startswith(("/api/auth/", "/api/session/", "/api/helper/", "/api/diagnostics")):
-            limit = 4096 if path.startswith("/api/diagnostics") else 16384 if path.startswith("/api/auth/") else 65536
+            limit = 4096 if path.startswith("/api/diagnostics") or path == "/api/session/token" else 16384 if path.startswith("/api/auth/") else 65536
             body = b""
             while True:
                 message = await receive()
@@ -209,7 +209,7 @@ class AuthMiddleware:
                 headers = [(k, v) for k, v in message.get("headers", [])
                            if k.lower() != b"cache-control"]
                 headers.extend([(b"cache-control", b"no-store"),
-                                (b"x-frame-options", b"DENY"),
+                                (b"x-frame-options", b"SAMEORIGIN" if path == "/session-viewer" else b"DENY"),
                                 (b"referrer-policy", b"same-origin")])
                 message["headers"] = headers
             await send(message)

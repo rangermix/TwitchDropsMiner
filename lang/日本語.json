@@ -355,7 +355,7 @@
         },
         "browser_login": {
             "title": "Twitch にログイン",
-            "instructions": "下のブラウザーでログインし、Twitch の認証を完了してください。「ログインを完了」を選ぶと、TDM がセッションを検証してダッシュボードに戻ります。",
+            "instructions": "下でログインし、Twitch の認証を完了してください。ログイン後にブラウザーが自動で閉じ、TDM がセッションを確認します。閉じない場合は「ログインを完了」を選んでください。",
             "finish": "ログインを完了",
             "retry": "再試行",
             "starting": "ブラウザーを起動中…",
@@ -387,7 +387,15 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "最初に接続したヘルパーを受け付けます。内蔵ブラウザーに戻るとヘルパーへの接続許可が終了します。"
+            "helper_access_help": "最初に接続したヘルパーを受け付けます。内蔵ブラウザーに戻るとヘルパーへの接続許可が終了します。",
+            "clipboard_title": "コピーと貼り付け",
+            "clipboard_help": "noVNCの左サイドバーでクリップボードを開きます。テキストを貼り付け、Twitchの入力欄に戻ってCtrl+Vを押します。送信またはパネルを閉じるとテキストは消去されます。",
+            "clipboard_label": "クリップボードの文字",
+            "clipboard_send": "Twitch ブラウザーに貼り付け",
+            "token_title": "既存のTwitchセッションを使用",
+            "token_help": "上級者向け：ご自身のログイン済みTwitchブラウザーからauth-token Cookieの値だけを貼り付けてください。パスワードと同様に保護してください。TDMはアカウントを確認して新しい証明を生成します。拒否または期限切れのトークンではログインできません。",
+            "token_label": "Twitch auth-token",
+            "token_send": "トークンでログイン"
         }
     },
     "helper": {

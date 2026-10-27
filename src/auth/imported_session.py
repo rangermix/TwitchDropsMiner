@@ -125,10 +125,14 @@ class SessionTransport:
                 self.diagnostics.record(self.diagnostics.endpoint(url, method), outcome="decode")
             raise SessionError("REQUEST", reason="invalid_json") from None
 
-    async def validate(self, bundle: SessionBundle, expected_user_id: int | None) -> BrowserIdentity:
+    async def validate_token(self, token: str, expected_user_id: int | None = None, *,
+                             user_agent: str = ClientType.WEB.USER_AGENT) -> int:
+        """Validate OAuth account ownership without trusting any integrity proof."""
+        if not SessionBundle.valid_token(token):
+            raise SessionError("FORMAT", operation="identity")
         try:
             identity = await self.request("GET", BrowserSession.VALIDATE_URL, headers={
-                "Authorization": bundle.headers["authorization"], "User-Agent": bundle.user_agent,
+                "Authorization": f"OAuth {token}", "User-Agent": user_agent,
             })
         except SessionError as error:
             error.annotate(operation="identity")
@@ -146,6 +150,10 @@ class SessionTransport:
             raise SessionError("IDENTITY", reason="identity_shape", operation="identity") from None
         if expected_user_id is not None and user_id != expected_user_id:
             raise SessionError("ACCOUNT_MISMATCH", reason="account_mismatch", operation="identity")
+        return user_id
+
+    async def validate(self, bundle: SessionBundle, expected_user_id: int | None) -> BrowserIdentity:
+        user_id = await self.validate_token(bundle.token, expected_user_id, user_agent=bundle.user_agent)
         try:
             results = await self.request(
                 "POST", BrowserSession.GQL_URL, headers=bundle.request_headers(),

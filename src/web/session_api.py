@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import json
+import time
 from collections.abc import Callable
 from contextlib import suppress
 from typing import TYPE_CHECKING
@@ -10,7 +12,7 @@ from typing import TYPE_CHECKING
 from fastapi import APIRouter, HTTPException, Request, WebSocket
 from starlette.websockets import WebSocketDisconnect
 
-from src.auth.session_bundle import SessionError
+from src.auth.session_bundle import SessionBundle, SessionError
 
 
 if TYPE_CHECKING:
@@ -25,11 +27,14 @@ class SessionAPI:
     def __init__(self, auth: WebAuth, get_client: Callable[[], Twitch | None]):
         self.auth, self.get_client = auth, get_client
         self._viewers = 0
+        self._token_lock = asyncio.Lock()
+        self._token_after = 0.0
         self.router = APIRouter()
         self.router.add_api_route("/api/session", self.status, methods=["GET"])
         self.router.add_api_route("/api/session/finish", self.finish, methods=["POST"])
         self.router.add_api_route("/api/session/retry", self.retry, methods=["POST"])
         self.router.add_api_route("/api/session/logout", self.logout, methods=["POST"])
+        self.router.add_api_route("/api/session/token", self.accept_token, methods=["POST"])
         self.router.add_api_route("/api/session/helper/enable", self.enable_helper, methods=["POST"])
         self.router.add_api_route("/api/session/helper/cancel", self.cancel_helper, methods=["POST"])
         self.router.add_api_websocket_route("/api/session/vnc", self.viewer)
@@ -50,6 +55,29 @@ class SessionAPI:
         return {**client.session_controller.status(), "browser": client.login_browser.status(),
                 "helper": client.helper.status(),
                 "logged_in": client._auth_state._logged_in.is_set()}
+
+    async def accept_token(self, request: Request):
+        if self._token_lock.locked() or time.monotonic() < self._token_after:
+            raise HTTPException(429, "session_busy")
+        async with self._token_lock:
+            self._token_after = time.monotonic() + 10
+            raw = bytearray()
+            async for part in request.stream():
+                raw.extend(part)
+                if len(raw) > 4096:
+                    raise HTTPException(413, "session_request_limit")
+            try:
+                value = json.loads(raw)
+                if type(value) is not dict or set(value) != {"token"} or not SessionBundle.valid_token(value["token"]):
+                    raise ValueError
+            except (ValueError, TypeError, UnicodeError):
+                raise HTTPException(422, "session_format") from None
+            token = self.auth.token(request.scope)
+            try:
+                await self.client().accept_token(value["token"], lambda: self.auth.allowed(token))
+                return await self.status()
+            except SessionError as error:
+                raise self.failure(error) from None
 
     async def enable_helper(self, request: Request):
         try:
