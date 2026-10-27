@@ -353,7 +353,7 @@
         },
         "browser_login": {
             "title": "Zaloguj się do Twitcha",
-            "instructions": "Zaloguj się poniżej i ukończ weryfikację Twitcha. Wybierz „Zakończ logowanie”; TDM sprawdzi sesję i wróci do panelu.",
+            "instructions": "Zaloguj się poniżej i ukończ weryfikację Twitch. Przeglądarka zamknie się automatycznie, a TDM sprawdzi sesję. Jeśli pozostanie otwarta, wybierz Zakończ logowanie.",
             "finish": "Zakończ logowanie",
             "retry": "Ponów",
             "starting": "Uruchamianie przeglądarki…",
@@ -385,7 +385,15 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "Zaakceptowany zostanie pierwszy pomocnik, który się połączy. Powrót do wbudowanej przeglądarki zamyka dostęp pomocnika."
+            "helper_access_help": "Zaakceptowany zostanie pierwszy pomocnik, który się połączy. Powrót do wbudowanej przeglądarki zamyka dostęp pomocnika.",
+            "clipboard_title": "Kopiuj i wklej",
+            "clipboard_help": "Otwórz lewy panel noVNC i wybierz Schowek. Wklej tekst, wróć do pola Twitch i naciśnij Ctrl+V. Tekst jest usuwany po wysłaniu lub zamknięciu.",
+            "clipboard_label": "Tekst schowka",
+            "clipboard_send": "Wklej w przeglądarce Twitch",
+            "token_title": "Użyj istniejącej sesji Twitch",
+            "token_help": "Zaawansowane: wklej tylko wartość ciasteczka auth-token ze swojej przeglądarki zalogowanej do Twitch. Chroń ją jak hasło. TDM sprawdza konto i tworzy nowy dowód; odrzucony lub wygasły token nie pozwoli się zalogować.",
+            "token_label": "auth-token Twitch",
+            "token_send": "Zaloguj tokenem"
         }
     },
     "helper": {

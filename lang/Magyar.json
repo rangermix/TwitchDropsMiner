@@ -353,7 +353,7 @@
         },
         "browser_login": {
             "title": "Bejelentkezés a Twitchre",
-            "instructions": "Jelentkezz be lent, és végezd el a Twitch ellenőrzését. Válaszd a „Bejelentkezés befejezése” gombot; a TDM ellenőrzi a munkamenetet és visszatér a vezérlőpultra.",
+            "instructions": "Jelentkezzen be alább és végezze el a Twitch-ellenőrzést. A böngésző automatikusan bezárul, majd a TDM ellenőrzi a munkamenetet. Ha nyitva marad, válassza a bejelentkezés befejezését.",
             "finish": "Bejelentkezés befejezése",
             "retry": "Újrapróbálás",
             "starting": "Böngésző indítása…",
@@ -385,7 +385,15 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "Az első csatlakozó segéd kap hozzáférést. A beágyazott böngészőhöz visszatérve a segéd hozzáférése megszűnik."
+            "helper_access_help": "Az első csatlakozó segéd kap hozzáférést. A beágyazott böngészőhöz visszatérve a segéd hozzáférése megszűnik.",
+            "clipboard_title": "Másolás és beillesztés",
+            "clipboard_help": "Nyisd meg a noVNC bal oldalsávját, majd a Vágólapot. Illeszd be a szöveget, térj vissza a Twitch mezőhöz, és nyomj Ctrl+V-t. Küldés vagy bezárás után a szöveg törlődik.",
+            "clipboard_label": "Vágólap szövege",
+            "clipboard_send": "Beillesztés a Twitch böngészőbe",
+            "token_title": "Meglévő Twitch-munkamenet használata",
+            "token_help": "Haladó: csak a saját, Twitchbe bejelentkezett böngésződ auth-token sütijének értékét illeszd be. Védd jelszóként. A TDM ellenőrzi a fiókot és új igazolást készít; elutasított vagy lejárt tokennel nem lehet belépni.",
+            "token_label": "Twitch auth-token",
+            "token_send": "Belépés tokennel"
         }
     },
     "helper": {

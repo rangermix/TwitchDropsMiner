@@ -373,6 +373,33 @@ progress to an ignored drop while the miner intentionally targets another reward
 
 ### Authentication and integrated browser login
 
+- The temporary interactive Chromium profile disables password saving before startup.
+  Its bundled completion extension observes only Twitch login-cookie presence, closes
+  the owned profile's windows normally, and never exports cookie values. Treat this as
+  a completion hint: retain all capture/PID/account/catalog checks and manual Finish.
+  Grant cookie host access to both `*://twitch.tv/*` and `*://www.twitch.tv/*`
+  so root-domain events and non-Secure cookies' HTTP event URLs are visible. Keep
+  lookups on HTTPS and do not broaden access to subdomain wildcards or unrelated hosts.
+  Cookie scope and presence trigger completion regardless of its Secure attribute;
+  they are not proof of a valid session. Test domain-wide and host-only cookies in real
+  Chromium with synthetic data, including Secure and non-Secure domain cookies.
+  Disable extensions during capture. Clipboard transfers are explicit, bounded to
+  65,536 characters, page-local and cleared on send/panel close/viewer disconnect; remote
+  clipboard events are ignored unless the panel is open. Never log or persist them.
+  Keep preference-content and launch-argument tests portable: assert POSIX file modes
+  only on POSIX and mock UID lookup in argument-only tests; retain real Linux isolation tests.
+- SDK integrity issuance uses a separate header contract with a fresh 32-character
+  client request ID and canonical X-Device-Id, while renewed GraphQL contexts retain
+  the original allowlisted headers and never store that request ID. Keep downstream
+  catalog validation mandatory; mocked issuance does not prove Twitch accepts a proof.
+- `OwnedChromium` uses `xvfb-run` when available for server SDK issuance and renewal,
+  with a private authenticated display (1280×800) and ordinary 1200×760 browser window.
+  Docker includes `xvfb-run` and `xauth`. Never reuse the interactive VNC display or
+  disable X authentication. Keep profiles owner-only, CDP loopback-only and process-group
+  cleanup on failure/cancellation. Keep Xauthority inside the owned temporary profile
+  so forced shutdown removes it too. Hosts without the runner retain the headless fallback.
+  A valid integrity response alone does not prove account/catalog acceptance.
+
 - Helper admission preserves allowlisted validation codes without printing remote text.
   Catalog rejection logs contain only fixed error categories and field-shape labels.
   Preserve redaction, strict catalog validation, and lost-ack receipt reconciliation.
@@ -535,8 +562,22 @@ progress to an ignored drop while the miner intentionally targets another reward
   Its HTTP 204 response and a Watching label do not prove Twitch has credited progress.
   Keep fallback CurrentDrop queries and estimated-minute bumps on the existing minute
   cadence when changing playlist polling, including across restarts/channel events.
+- `WatchService.watch_loop` schedules progress queries with its monotonic deadline,
+  independently of the GUI's remaining-seconds value. That value represents total reward
+  time and does not count down on the server. Keep successful-watch, current-broadcast,
+  mining-hours and cancellation guards. The real `CampaignProgressManager` regression
+  covers positive remaining time, exact query cadence, failed watches and stale streams.
 - Twitch reports authoritative progress through User.Drops websocket events and GraphQL
   Inventory/CurrentDrop. Distinguish those readings from dashboard estimates and mocks.
+- `DropsCampaign.progress_revision` advances on every `TimedDrop.update_minutes()`
+  observation, including unchanged values, and before awaiting notification work on a
+  successful claim transition. Sibling progress shares this revision. CurrentDrop polling
+  snapshots drop identity and campaign revision before awaiting Twitch; discard replies
+  superseded by observations, claims or model replacement/removal without estimating a
+  minute. Snapshot the fallback campaign before the request too; null, errored or timed-out
+  replies may estimate only against that same campaign and unchanged revision. Fresh
+  polls can still correct progress downward. Keep this separate from estimated-minute
+  bumps. Regression coverage: `tests/test_stale_progress.py`.
   Playlist/transport, lifecycle, and controlled-clock regressions live in
   `tests/test_playlist_watch.py`, `tests/test_watch_transport.py`, and
   `tests/test_watch_poll_cadence.py`.
@@ -899,6 +940,17 @@ and confirmed local deletion. Date-only filters mean midnight UTC; aware timesta
 preserve their instant. CSV attachment names use UTF-8 percent encoding with an ASCII
 fallback. History text is defined in `gui.history` for every locale and rendered as text.
 Tests cover persistence, filtering, Unicode exports, offsets, and translated UI behavior.
+
+- Existing-session admission accepts only a bounded sole `token` field through
+  dashboard-authenticated, same-origin `POST /api/session/token`. Never echo inputs.
+  Validate WEB identity before fresh SDK bootstrap and revalidate account/catalog
+  before atomic installation; logout and dashboard revocation invalidate admission.
+  Expired SDK cookies are not reused: validate the saved OAuth identity and bootstrap
+  a new owned context. OAuth identity alone never marks a session ready.
+- Native noVNC lives in a same-origin owned iframe, fixed to `/api/session/vnc` with
+  reconnection disabled. Parent messages contain fixed viewer events only. Override
+  native clipboard logging, bound transfers, ignore remote text while the panel is
+  closed, and clear text on send/close/disconnect. Preserve attempt teardown.
 
 - `reward_priority` defaults to `[]` (disabled); enabled values must be an exact
   permutation of BADGE, EMOTE, DIRECT_ENTITLEMENT, UNKNOWN. `RewardPriority` owns
