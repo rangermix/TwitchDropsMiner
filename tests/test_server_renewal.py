@@ -82,6 +82,9 @@ async def sdk_peer(*, fault=None, sdk_started=None):
                 headers = params["arguments"][0]["value"]
                 assert "client-integrity" not in headers
                 assert headers["authorization"] == "OAuth test-token"
+                assert len(headers['client-request-id']) == 32
+                assert 'accept-language' not in headers
+                assert 'device-id' not in headers
                 if fault == "sdk_timeout":
                     result = {"result": {"value": {"failure": "sdk_timeout"}}}
                 else:
@@ -161,12 +164,33 @@ async def test_sdk_issuer_correlates_network_and_keeps_only_renewed_seed():
         assert renewed.bundle.headers["client-integrity"] == "private-new-integrity"
         assert renewed.bundle.expires_at == 5600
         assert renewed.bundle.user_agent == "Server Chromium"
+        assert 'client-request-id' not in renewed.bundle.headers
         assert renewed.cookie.value == "server-sdk-cookie"
         assert renewed.cookie.expires_at > seed.cookie.expires_at
         assert state == {"running": False, "exits": 1}
         assert closed == ["owned"]
         assert "Browser.close" not in [method for method, _ in commands]
         assert "private" not in repr(renewed)
+
+
+def test_integrity_headers_use_fresh_request_id_and_preserve_device_identity():
+    from src.auth.server_renewal import SDKAcquisition
+
+    data = seed_data()
+    headers = data['bundle']['headers']
+    device = headers.pop('x-device-id', headers.get('device-id', 'device'))
+    headers['device-id'] = device
+    headers['accept-language'] = 'fr-FR'
+    headers['client-session-id'] = 'session'
+    headers['client-version'] = 'version'
+    bundle = ServerSeed.from_dict(data, now=1000).bundle
+    first, second = SDKAcquisition.issuance_headers(bundle), SDKAcquisition.issuance_headers(bundle)
+    assert first['client-request-id'] != second['client-request-id']
+    assert first['x-device-id'] == device
+    assert first['client-session-id'] == 'session' and first['client-version'] == 'version'
+    assert set(first) == {'authorization', 'client-id', 'x-device-id', 'client-request-id',
+                          'client-session-id', 'client-version'}
+    assert bundle.headers['accept-language'] == 'fr-FR'
 
 
 @pytest.mark.asyncio

@@ -349,7 +349,7 @@
         },
         "browser_login": {
             "title": "Log ind på Twitch",
-            "instructions": "Log ind nedenfor, og fuldfør Twitch-bekræftelsen. Vælg derefter „Afslut login”; TDM kontrollerer sessionen og vender tilbage til oversigten.",
+            "instructions": "Log ind nedenfor og gennemfør Twitch-bekræftelsen. Browseren lukker automatisk, og TDM kontrollerer sessionen. Ellers vælg Afslut login.",
             "finish": "Afslut login",
             "retry": "Prøv igen",
             "starting": "Starter browser…",
@@ -381,7 +381,11 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "Den første hjælper, der opretter forbindelse, accepteres. Tilbagevenden til den indbyggede browser lukker hjælperadgangen."
+            "helper_access_help": "Den første hjælper, der opretter forbindelse, accepteres. Tilbagevenden til den indbyggede browser lukker hjælperadgangen.",
+            "clipboard_title": "Kopiér og indsæt",
+            "clipboard_help": "Indsæt tekst her og send den til det aktive Twitch-felt. Åbn panelet før du kopierer i Twitch, og kopiér derefter teksten nedenfor. Teksten slettes når panelet lukkes.",
+            "clipboard_label": "Udklipsholdertekst",
+            "clipboard_send": "Indsæt i Twitch-browser"
         }
     },
     "helper": {

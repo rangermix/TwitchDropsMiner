@@ -8,6 +8,7 @@ import base64
 import json
 import os
 import re
+import secrets
 import signal
 import tempfile
 import time
@@ -228,6 +229,17 @@ class SDKAcquisition:
         self.clock, self.timeout = clock, timeout
         self.diagnostics = diagnostics
 
+    @staticmethod
+    def issuance_headers(bundle: SessionBundle) -> dict[str, str]:
+        """Use the integrity endpoint's contract rather than GraphQL-only headers."""
+        return {
+            **{key: bundle.headers[key] for key in (
+                "authorization", "client-id", "client-session-id", "client-version",
+            ) if key in bundle.headers},
+            "x-device-id": bundle.headers.get("x-device-id") or bundle.headers["device-id"],
+            "client-request-id": secrets.token_hex(16),
+        }
+
     async def run(self, protocol: CaptureProtocol, bundle: SessionBundle,
                   cookie: SDKCookie | None = None, *, initial: bool = False) -> ServerSeed:
         try:
@@ -271,7 +283,7 @@ class SDKAcquisition:
         result = await protocol.command("Runtime.evaluate", {"expression": "navigator.userAgent", "returnByValue": True})
         user_agent = result["result"]["value"]
         result = await protocol.command("Runtime.evaluate", {"expression": "globalThis"})
-        headers = {key: value for key, value in original.headers.items() if key != "client-integrity"}
+        headers = self.issuance_headers(original)
         result = await protocol.command("Runtime.callFunctionOn", {
             "objectId": result["result"]["objectId"], "functionDeclaration": self.SCRIPT,
             "arguments": [{"value": headers}, {"value": self.SDK_URL}],
@@ -290,7 +302,7 @@ class SDKAcquisition:
             raise SessionError("SDK_ISSUANCE")
         bundle = SessionBundle.from_dict({
             "version": 1, "captured_at": self.clock(), "expires_at": data["expiration"] / 1000,
-            "user_agent": user_agent, "headers": {**headers, "client-integrity": data.get("token")},
+            "user_agent": user_agent, "headers": {**original.headers, "client-integrity": data.get("token")},
         }, now=self.clock())
         minimum_expiry = self.clock() + 30
         if previous_cookie is not None and not initial:

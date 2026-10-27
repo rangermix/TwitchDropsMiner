@@ -11,14 +11,27 @@ server-side session verification and automatic renewal.
 1. Open the TDM dashboard. If dashboard password protection is enabled, unlock it first.
 2. Sign in to Twitch in the browser shown there and complete email verification or
    two-factor authentication as requested by Twitch.
-3. After Twitch confirms you are signed in, select **Finish sign in**. Closing the
-   Chromium window with its X button also finishes the interactive step.
+3. The browser closes automatically after Twitch sets its login cookie. If it stays
+   open after you finish verification, select **Finish sign in** or close its X button.
 4. Wait while TDM verifies the account, campaign access and renewable session. The
    normal dashboard appears automatically after verification and browser cleanup.
 
 An attempt lasts up to 15 minutes. **Retry** starts a new browser after failure, or
 reconnects a closed viewer. Do not close the browser before Twitch verification is done.
 Sessions and integrity proofs are checked locally against Twitch before acceptance.
+
+The temporary browser has password saving disabled. Open **Copy and paste** to paste
+text into its focused field, or open the panel before copying text inside Twitch and
+then copy the resulting text from the panel. This works on home-network HTTP dashboards
+without requiring browser clipboard permission. Clipboard text is cleared after sending,
+when the panel closes, and when the viewer disconnects; it is never saved by TDM.
+
+`CATALOG` means Twitch rejected inventory or campaign validation. Safe container-log
+entries beginning with `SESSION_DIAGNOSTIC` distinguish the validation stage, operation
+and cause. For example, `issued_validation` with `Campaigns` and `integrity` means the
+server-issued proof was rejected after browser login. Retrying the Finish button cannot
+repair that proof. Keep the container clock/timezone and network routing consistent;
+report only the fixed diagnostic labels, never session files or complete logs.
 
 ## Docker and timezone
 

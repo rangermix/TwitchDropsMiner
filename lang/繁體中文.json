@@ -349,7 +349,7 @@
         },
         "browser_login": {
             "title": "登入 Twitch",
-            "instructions": "在下方瀏覽器中登入並完成 Twitch 驗證。完成後點選「完成登入」；TDM 驗證工作階段後將返回儀表板。",
+            "instructions": "在下方登入並完成 Twitch 驗證。登入後瀏覽器會自動關閉，接著 TDM 驗證工作階段。若瀏覽器仍開啟，請選擇完成登入。",
             "finish": "完成登入",
             "retry": "重試",
             "starting": "正在啟動瀏覽器…",
@@ -381,7 +381,11 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "僅接受第一個連線的助手。返回內嵌瀏覽器會關閉助手存取權限。"
+            "helper_access_help": "僅接受第一個連線的助手。返回內嵌瀏覽器會關閉助手存取權限。",
+            "clipboard_title": "複製與貼上",
+            "clipboard_help": "在此貼上文字，然後傳送到 Twitch 目前選取的欄位。如需從 Twitch 複製，請先開啟此面板，在 Twitch 內複製，再複製下方文字。關閉面板會清除文字。",
+            "clipboard_label": "剪貼簿文字",
+            "clipboard_send": "貼到 Twitch 瀏覽器"
         }
     },
     "helper": {

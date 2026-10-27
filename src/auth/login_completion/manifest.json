@@ -1,0 +1,8 @@
+{
+  "manifest_version": 3,
+  "name": "TDM login completion",
+  "version": "1.0",
+  "permissions": ["cookies"],
+  "host_permissions": ["https://www.twitch.tv/*"],
+  "background": {"service_worker": "completion.js"}
+}

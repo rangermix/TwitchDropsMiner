@@ -349,7 +349,7 @@
         },
         "browser_login": {
             "title": "Masuk ke Twitch",
-            "instructions": "Masuk di bawah dan selesaikan verifikasi Twitch. Pilih „Selesaikan masuk”; TDM memverifikasi sesi dan kembali ke dasbor.",
+            "instructions": "Masuk di bawah dan selesaikan verifikasi Twitch. Browser menutup otomatis lalu TDM memverifikasi sesi. Jika tetap terbuka, pilih Selesaikan masuk.",
             "finish": "Selesaikan masuk",
             "retry": "Coba lagi",
             "starting": "Memulai peramban…",
@@ -381,7 +381,11 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "Helper pertama yang terhubung akan diterima. Kembali ke browser bawaan akan menutup akses helper."
+            "helper_access_help": "Helper pertama yang terhubung akan diterima. Kembali ke browser bawaan akan menutup akses helper.",
+            "clipboard_title": "Salin dan tempel",
+            "clipboard_help": "Tempel teks di sini lalu kirim ke kolom Twitch yang aktif. Untuk menyalin dari Twitch, buka panel ini dahulu, salin di Twitch, lalu salin teks di bawah. Teks dihapus saat panel ditutup.",
+            "clipboard_label": "Teks papan klip",
+            "clipboard_send": "Tempel ke browser Twitch"
         }
     },
     "helper": {

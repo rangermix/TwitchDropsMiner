@@ -349,7 +349,7 @@
         },
         "browser_login": {
             "title": "Přihlásit se na Twitch",
-            "instructions": "Přihlaste se níže a dokončete ověření Twitch. Zvolte „Dokončit přihlášení“; TDM ověří relaci a vrátí se na přehled.",
+            "instructions": "Přihlaste se níže a dokončete ověření Twitch. Prohlížeč se automaticky zavře a TDM ověří relaci. Pokud zůstane otevřený, zvolte Dokončit přihlášení.",
             "finish": "Dokončit přihlášení",
             "retry": "Zkusit znovu",
             "starting": "Spouštění prohlížeče…",
@@ -381,7 +381,11 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "Přijat bude první připojený pomocník. Návrat do vestavěného prohlížeče uzavře přístup pomocníka."
+            "helper_access_help": "Přijat bude první připojený pomocník. Návrat do vestavěného prohlížeče uzavře přístup pomocníka.",
+            "clipboard_title": "Kopírovat a vložit",
+            "clipboard_help": "Vložte sem text a odešlete jej do aktivního pole Twitch. Pro kopírování z Twitch nejprve otevřete tento panel, zkopírujte text na Twitch a pak jej převezměte níže. Zavřením se text smaže.",
+            "clipboard_label": "Text schránky",
+            "clipboard_send": "Vložit do prohlížeče Twitch"
         }
     },
     "helper": {

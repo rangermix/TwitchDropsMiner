@@ -349,7 +349,7 @@
         },
         "browser_login": {
             "title": "登录 Twitch",
-            "instructions": "在下方浏览器中登录并完成 Twitch 验证。完成后点击“完成登录”；TDM 验证会话后将返回仪表板。",
+            "instructions": "在下方登录并完成 Twitch 验证。登录后浏览器会自动关闭，随后 TDM 验证会话。如果浏览器仍然打开，请选择完成登录。",
             "finish": "完成登录",
             "retry": "重试",
             "starting": "正在启动浏览器…",
@@ -381,7 +381,11 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "仅接受第一个连接的助手。返回内嵌浏览器会关闭助手访问权限。"
+            "helper_access_help": "仅接受第一个连接的助手。返回内嵌浏览器会关闭助手访问权限。",
+            "clipboard_title": "复制和粘贴",
+            "clipboard_help": "在此粘贴文本，然后发送到 Twitch 中当前选中的输入框。如需从 Twitch 复制，请先打开此面板，在 Twitch 内复制，再复制下方文本。关闭面板会清空文本。",
+            "clipboard_label": "剪贴板文本",
+            "clipboard_send": "粘贴到 Twitch 浏览器"
         }
     },
     "helper": {

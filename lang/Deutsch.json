@@ -349,7 +349,7 @@
         },
         "browser_login": {
             "title": "Bei Twitch anmelden",
-            "instructions": "Melde dich unten an und bestätige Twitchs Verifizierung. Wähle danach „Anmeldung abschließen“. TDM prüft die Sitzung und zeigt wieder das Dashboard.",
+            "instructions": "Unten anmelden und die Twitch-Verifizierung abschließen. Der Browser schließt automatisch; TDM prüft die Sitzung. Bleibt er offen, Anmeldung abschließen wählen.",
             "finish": "Anmeldung abschließen",
             "retry": "Erneut versuchen",
             "starting": "Browser wird gestartet…",
@@ -381,7 +381,11 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "Der zuerst verbundene Helfer wird zugelassen. Die Rückkehr zum eingebetteten Browser schließt den Helferzugriff."
+            "helper_access_help": "Der zuerst verbundene Helfer wird zugelassen. Die Rückkehr zum eingebetteten Browser schließt den Helferzugriff.",
+            "clipboard_title": "Kopieren und einfügen",
+            "clipboard_help": "Text hier einfügen und an das aktive Twitch-Feld senden. Zum Kopieren aus Twitch zuerst dieses Feld öffnen, dann dort kopieren und den Text unten übernehmen. Beim Schließen wird er gelöscht.",
+            "clipboard_label": "Text der Zwischenablage",
+            "clipboard_send": "Im Twitch-Browser einfügen"
         }
     },
     "helper": {

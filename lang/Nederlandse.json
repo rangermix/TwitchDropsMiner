@@ -349,7 +349,7 @@
         },
         "browser_login": {
             "title": "Aanmelden bij Twitch",
-            "instructions": "Meld je hieronder aan en voltooi de Twitch-verificatie. Kies daarna „Aanmelding voltooien”; TDM controleert de sessie en keert terug naar het dashboard.",
+            "instructions": "Meld je hieronder aan en voltooi de Twitch-verificatie. De browser sluit automatisch en TDM controleert je sessie. Blijft hij open, kies Aanmelden voltooien.",
             "finish": "Aanmelding voltooien",
             "retry": "Opnieuw proberen",
             "starting": "Browser wordt gestart…",
@@ -381,7 +381,11 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "De eerste hulp die verbinding maakt wordt toegelaten. Terugkeren naar de ingebouwde browser sluit de toegang voor de hulp."
+            "helper_access_help": "De eerste hulp die verbinding maakt wordt toegelaten. Terugkeren naar de ingebouwde browser sluit de toegang voor de hulp.",
+            "clipboard_title": "Kopiëren en plakken",
+            "clipboard_help": "Plak hier tekst en stuur die naar het actieve Twitch-veld. Open dit paneel voordat je in Twitch kopieert en kopieer daarna de tekst hieronder. Sluiten wist de tekst.",
+            "clipboard_label": "Klembordtekst",
+            "clipboard_send": "Plakken in Twitch-browser"
         }
     },
     "helper": {

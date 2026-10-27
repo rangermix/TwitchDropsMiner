@@ -349,7 +349,7 @@
         },
         "browser_login": {
             "title": "Iniciar sesión en Twitch",
-            "instructions": "Inicia sesión abajo y completa la verificación de Twitch. Selecciona «Finalizar inicio de sesión»; TDM verifica la sesión y vuelve al panel.",
+            "instructions": "Inicia sesión abajo y completa la verificación de Twitch. El navegador se cierra automáticamente y TDM verifica la sesión. Si sigue abierto, selecciona Finalizar inicio de sesión.",
             "finish": "Finalizar inicio de sesión",
             "retry": "Reintentar",
             "starting": "Iniciando navegador…",
@@ -381,7 +381,11 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "Se acepta el primer asistente que se conecte. Volver al navegador integrado cierra el acceso del asistente."
+            "helper_access_help": "Se acepta el primer asistente que se conecte. Volver al navegador integrado cierra el acceso del asistente.",
+            "clipboard_title": "Copiar y pegar",
+            "clipboard_help": "Pega texto aquí y envíalo al campo seleccionado de Twitch. Para copiar desde Twitch, abre este panel antes de copiar allí y copia el texto de abajo. Se borra al cerrar el panel.",
+            "clipboard_label": "Texto del portapapeles",
+            "clipboard_send": "Pegar en el navegador de Twitch"
         }
     },
     "helper": {

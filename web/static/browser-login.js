@@ -17,6 +17,7 @@ class BrowserLoginPanel {
         this.statusError = false;
         this.viewerError = false;
         this.viewer = null;
+        this.viewerConnected = false;
         this.viewerAttempt = null;
         this.viewerRevision = 0;
         this.actionRevision = 0;
@@ -25,6 +26,10 @@ class BrowserLoginPanel {
         this.element('twitch-logout').addEventListener('click', () => this.logout());
         this.element('twitch-helper-enable').addEventListener('click', () => this.action('helper/enable'));
         this.element('twitch-helper-cancel').addEventListener('click', () => this.action('helper/cancel'));
+        this.element('twitch-clipboard-send').addEventListener('click', () => this.pasteClipboard());
+        this.element('twitch-clipboard').addEventListener('toggle', () => {
+            if (!this.element('twitch-clipboard').open) this.element('twitch-clipboard-text').value = '';
+        });
         this.render();
     }
 
@@ -47,6 +52,8 @@ class BrowserLoginPanel {
             'twitch-helper-access-help': 'helper_access_help',
             'twitch-helper-windows': 'helper_windows', 'twitch-helper-linux': 'helper_linux',
             'twitch-helper-macos-arm': 'helper_macos_arm', 'twitch-helper-macos-intel': 'helper_macos_intel',
+            'twitch-clipboard-title': 'clipboard_title', 'twitch-clipboard-help': 'clipboard_help',
+            'twitch-clipboard-label': 'clipboard_label', 'twitch-clipboard-send': 'clipboard_send',
         })) this.element(id).textContent = t[key] || '';
         const browser = this.data?.browser;
         const helper = this.data?.helper;
@@ -86,6 +93,8 @@ class BrowserLoginPanel {
             : this.data?.renewal_available ? (t.renewal_ready || '') : '';
         this.element('twitch-renewal-status').title = this.element('twitch-renewal-status').textContent;
         this.element('twitch-vnc').hidden = helperActive || browser?.state !== 'sign_in';
+        this.element('twitch-clipboard').hidden = helperActive || browser?.state !== 'sign_in';
+        this.element('twitch-clipboard-send').disabled = !this.viewerConnected || this.viewerError;
         this.element('twitch-helper-panel').hidden = normal;
         if (helperActive) this.element('twitch-helper-panel').open = true;
         this.element('twitch-helper-enable').hidden = Boolean(helperActive);
@@ -151,6 +160,9 @@ class BrowserLoginPanel {
         this.viewerAttempt = null;
         const viewer = this.viewer;
         this.viewer = null;
+        this.viewerConnected = false;
+        this.element('twitch-clipboard-text').value = '';
+        this.element('twitch-clipboard').open = false;
         if (viewer) viewer.disconnect();
         this.element('twitch-vnc').replaceChildren();
     }
@@ -175,13 +187,31 @@ class BrowserLoginPanel {
             this.viewer = viewer;
             viewer.scaleViewport = true;
             viewer.resizeSession = false;
+            viewer.addEventListener('clipboard', event => {
+                if (revision !== this.viewerRevision || !this.element('twitch-clipboard').open) return;
+                const text = event.detail?.text;
+                if (typeof text === 'string' && text.length <= 65536) {
+                    this.element('twitch-clipboard-text').value = text;
+                }
+            });
+            viewer.addEventListener('connect', () => {
+                if (revision !== this.viewerRevision) return;
+                this.viewerConnected = true;
+                this.render();
+            });
             viewer.addEventListener('disconnect', () => {
                 if (revision !== this.viewerRevision) return;
+                this.element('twitch-clipboard-text').value = '';
+                this.element('twitch-clipboard').open = false;
+                this.viewerConnected = false;
                 this.viewerError = true;
                 this.render();
             });
             viewer.addEventListener('securityfailure', () => {
                 if (revision !== this.viewerRevision) return;
+                this.element('twitch-clipboard-text').value = '';
+                this.element('twitch-clipboard').open = false;
+                this.viewerConnected = false;
                 this.viewerError = true;
                 this.render();
             });
@@ -191,6 +221,20 @@ class BrowserLoginPanel {
                 this.render();
             }
         }
+    }
+
+    pasteClipboard() {
+        if (!this.viewer || !this.viewerConnected || this.viewerError || this.helperActive()
+            || this.data?.browser.state !== 'sign_in') return;
+        const field = this.element('twitch-clipboard-text');
+        const text = field.value;
+        field.value = '';
+        if (!text || text.length > 65536) return;
+        this.viewer.clipboardPasteFrom(text);
+        this.viewer.focus();
+        this.viewer.sendKey(0xffe3, 'ControlLeft', true);
+        this.viewer.sendKey(0x76, 'KeyV');
+        this.viewer.sendKey(0xffe3, 'ControlLeft', false);
     }
 
     async action(name) {

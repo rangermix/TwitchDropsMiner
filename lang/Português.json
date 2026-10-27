@@ -349,7 +349,7 @@
         },
         "browser_login": {
             "title": "Entrar no Twitch",
-            "instructions": "Entre abaixo e conclua a verificação do Twitch. Selecione «Concluir login»; o TDM verifica a sessão e volta ao painel.",
+            "instructions": "Entre abaixo e conclua a verificação do Twitch. O navegador fecha automaticamente e o TDM verifica a sessão. Se continuar aberto, selecione Concluir entrada.",
             "finish": "Concluir login",
             "retry": "Tentar novamente",
             "starting": "Iniciando navegador…",
@@ -381,7 +381,11 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "É aceite o primeiro assistente a ligar-se. Voltar ao navegador integrado fecha o acesso do assistente."
+            "helper_access_help": "É aceite o primeiro assistente a ligar-se. Voltar ao navegador integrado fecha o acesso do assistente.",
+            "clipboard_title": "Copiar e colar",
+            "clipboard_help": "Cole aqui e envie ao campo ativo do Twitch. Para copiar do Twitch, abra este painel antes de copiar e depois copie o texto abaixo. O texto é apagado ao fechar o painel.",
+            "clipboard_label": "Texto da área de transferência",
+            "clipboard_send": "Colar no navegador Twitch"
         }
     },
     "helper": {

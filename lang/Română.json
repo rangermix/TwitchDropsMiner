@@ -349,7 +349,7 @@
         },
         "browser_login": {
             "title": "Autentificare în Twitch",
-            "instructions": "Autentifică-te mai jos și finalizează verificarea Twitch. Selectează „Finalizează autentificarea”; TDM verifică sesiunea și revine la panou.",
+            "instructions": "Conectează-te mai jos și finalizează verificarea Twitch. Browserul se închide automat, apoi TDM verifică sesiunea. Dacă rămâne deschis, selectează Finalizează conectarea.",
             "finish": "Finalizează autentificarea",
             "retry": "Reîncearcă",
             "starting": "Pornire browser…",
@@ -381,7 +381,11 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "Este acceptat primul asistent care se conectează. Revenirea la browserul integrat închide accesul asistentului."
+            "helper_access_help": "Este acceptat primul asistent care se conectează. Revenirea la browserul integrat închide accesul asistentului.",
+            "clipboard_title": "Copiază și lipește",
+            "clipboard_help": "Lipește text aici și trimite-l în câmpul Twitch activ. Pentru a copia din Twitch, deschide întâi acest panou, copiază în Twitch, apoi copiază textul de mai jos. Textul se șterge la închidere.",
+            "clipboard_label": "Text din clipboard",
+            "clipboard_send": "Lipește în browserul Twitch"
         }
     },
     "helper": {

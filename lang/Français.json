@@ -349,7 +349,7 @@
         },
         "browser_login": {
             "title": "Se connecter à Twitch",
-            "instructions": "Connectez-vous ci-dessous et terminez la vérification Twitch. Sélectionnez ensuite « Terminer la connexion » ; TDM vérifie la session et revient au tableau de bord.",
+            "instructions": "Connectez-vous ci-dessous et terminez la vérification Twitch. Le navigateur se ferme automatiquement et TDM vérifie la session. Sinon, sélectionnez Terminer la connexion.",
             "finish": "Terminer la connexion",
             "retry": "Réessayer",
             "starting": "Démarrage du navigateur…",
@@ -381,7 +381,11 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "Le premier assistant qui se connecte est accepté. Revenir au navigateur intégré ferme l’accès de l’assistant."
+            "helper_access_help": "Le premier assistant qui se connecte est accepté. Revenir au navigateur intégré ferme l’accès de l’assistant.",
+            "clipboard_title": "Copier et coller",
+            "clipboard_help": "Collez le texte ici puis envoyez-le au champ Twitch actif. Pour copier depuis Twitch, ouvrez ce panneau avant de copier, puis copiez le texte ci-dessous. Il est effacé à la fermeture du panneau.",
+            "clipboard_label": "Texte du presse-papiers",
+            "clipboard_send": "Coller dans le navigateur Twitch"
         }
     },
     "helper": {

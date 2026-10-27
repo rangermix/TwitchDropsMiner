@@ -373,6 +373,18 @@ progress to an ignored drop while the miner intentionally targets another reward
 
 ### Authentication and integrated browser login
 
+- The temporary interactive Chromium profile disables password saving before startup.
+  Its bundled completion extension observes only Twitch login-cookie presence, closes
+  the owned profile's windows normally, and never exports cookie values. Treat this as
+  a completion hint: retain all capture/PID/account/catalog checks and manual Finish.
+  Disable extensions during capture. Clipboard transfers are explicit, bounded to
+  65,536 characters, page-local and cleared on send/panel close/viewer disconnect; remote
+  clipboard events are ignored unless the panel is open. Never log or persist them.
+- SDK integrity issuance uses a separate header contract with a fresh 32-character
+  client request ID and canonical X-Device-Id, while renewed GraphQL contexts retain
+  the original allowlisted headers and never store that request ID. Keep downstream
+  catalog validation mandatory; mocked issuance does not prove Twitch accepts a proof.
+
 - Helper admission preserves allowlisted validation codes without printing remote text.
   Catalog rejection logs contain only fixed error categories and field-shape labels.
   Preserve redaction, strict catalog validation, and lost-ack receipt reconciliation.
