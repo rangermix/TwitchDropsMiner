@@ -794,7 +794,7 @@ header h1 {
     /* Rows fit a two-line badge above the arrow and a four-line translated action, so heights stay equal. */
     .campaign-overview, .inventory-grid.list-view .campaign-overview {
         grid-template-columns: minmax(0, 1fr) 104px;
-        grid-template-rows: minmax(84px, auto) minmax(94px, auto);
+        grid-template-rows: minmax(84px, auto) minmax(96px, auto);
     }
     .campaign-overview .campaign-game { gap: 10px; }
     .campaign-overview .campaign-game .game-icon { width: 40px; height: 54px; }

@@ -2854,7 +2854,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Re-render when the column count changes (resizes, or the Inventory tab becoming visible).
     new ResizeObserver(() => {
         const grid = document.getElementById('inventory-grid');
-        if (grid.dataset.columns && String(inventoryColumnCount(grid)) !== grid.dataset.columns) renderInventory();
+        // Next frame: re-rendering inside the callback would trigger a ResizeObserver loop warning.
+        if (grid.dataset.columns && String(inventoryColumnCount(grid)) !== grid.dataset.columns) requestAnimationFrame(renderInventory);
     }).observe(document.getElementById('inventory-grid'));
     document.getElementById('inventory-view-cards').addEventListener('click', () => setInventoryViewMode(false));
     document.getElementById('inventory-view-list').addEventListener('click', () => setInventoryViewMode(true));
