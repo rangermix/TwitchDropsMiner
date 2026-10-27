@@ -183,6 +183,11 @@ class Twitch:
             await self.session_controller.accept_token(token, authorized=lambda: (
                 authorized() and self.login_browser.attempt == attempt
             ))
+        except asyncio.CancelledError:
+            if self.login_browser.attempt == attempt:
+                self.login_browser._needed = True
+                self.login_browser.change("error", "BROWSER_STATE")
+            raise
         except SessionError as error:
             if self.login_browser.attempt == attempt:
                 self.login_browser._needed = True

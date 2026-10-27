@@ -104,7 +104,8 @@ async def test_logout_clears_credentials_and_survives_legacy_cookie_deletion_fai
 
 
 @pytest.mark.asyncio
-async def test_logout_invalidates_and_drains_cancellation_resistant_login(controller):
+@pytest.mark.parametrize("method", ["capture", "token"])
+async def test_logout_invalidates_and_drains_cancellation_resistant_login(controller, method):
     control, session, clock, issuer = controller
     entered, cleanup, release = asyncio.Event(), asyncio.Event(), asyncio.Event()
     actual = issuer.issue.side_effect
@@ -119,7 +120,14 @@ async def test_logout_invalidates_and_drains_cancellation_resistant_login(contro
             return await actual(previous)
 
     issuer.issue.side_effect = issue
-    accepting = asyncio.create_task(control.accept(seed(), authorized=lambda: True))
+    if method == "token":
+        issuer.bootstrap = AsyncMock(side_effect=lambda token: issue(seed()))
+        # AsyncMock side effects must await the cancellation-resistant issuer.
+        async def bootstrap(token):
+            return await issue(seed())
+        issuer.bootstrap.side_effect = bootstrap
+    accepting = asyncio.create_task(control.accept_token("oauth-42", authorized=lambda: True)
+                                     if method == "token" else control.accept(seed(), authorized=lambda: True))
     await entered.wait()
     logout = asyncio.create_task(control.logout(AsyncMock()))
     await cleanup.wait()
@@ -226,3 +234,29 @@ async def test_token_bootstrap_installs_verified_same_account(controller):
     assert session.status()["state"] == "ready"
     assert session._transport.request.await_count == 3
     assert "oauth-42" not in json.dumps(control.status())
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('failure', ['identity', 'issuer', 'account', 'catalog', 'storage'])
+async def test_expired_seed_recovery_failure_preserves_previous_session(controller, monkeypatch, failure):
+    control, session, clock, issuer = controller
+    await control.accept(seed(), authorized=lambda: True)
+    before = session.path.read_bytes()
+    clock[0] = session.seed().cookie.expires_at + 1
+    issuer.bootstrap = AsyncMock(return_value=seed(clock[0], integrity='fresh-proof'))
+    if failure == 'identity':
+        session._transport.request.side_effect = [{'client_id': 'wrong'}]
+    elif failure == 'issuer':
+        issuer.bootstrap.side_effect = SessionError('SDK_ISSUANCE')
+    elif failure == 'account':
+        issuer.bootstrap.return_value = seed(clock[0], token='oauth-17')
+    elif failure == 'catalog':
+        session._transport.request.side_effect = [
+            {'client_id': ClientType.WEB.CLIENT_ID, 'user_id': '42'},
+            {'client_id': ClientType.WEB.CLIENT_ID, 'user_id': '42'}, {},
+        ]
+    else:
+        monkeypatch.setattr(session._file, 'write', lambda state: (_ for _ in ()).throw(SessionError('SAVE')))
+    with pytest.raises(SessionError):
+        await control.renew_once()
+    assert session.path.read_bytes() == before and session.status()['generation'] == 1

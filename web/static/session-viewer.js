@@ -11,9 +11,10 @@ UI.clipboardReceive = event => {
     if (typeof text === 'string' && text.length <= 65536) field().value = text;
 };
 UI.clipboardSend = () => {
+    if (!UI.connected) return;
     const text = field().value;
     clear();
-    if (UI.connected && text && text.length <= 65536) UI.rfb.clipboardPasteFrom(text);
+    if (text && text.length <= 65536) UI.rfb.clipboardPasteFrom(text);
 };
 for (const [method, event] of Object.entries({
     connectFinished: 'connect', disconnectFinished: 'disconnect', securityFailed: 'securityfailure',

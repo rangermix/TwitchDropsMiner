@@ -544,3 +544,21 @@ async def test_expired_sdk_state_ends_loop_without_repeated_browser_attempts():
         await RenewalLoop(source, sender, sleep=sleep).run()
     sender.send.assert_not_awaited()
     sleep.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('fault', [None, 'http_error', 'cache', 'mismatch', 'missing_cookie', 'expired_cookie'])
+async def test_fresh_token_bootstrap_requires_observed_proof_and_fresh_cookie(fault):
+    from src.auth.server_renewal import SDKIssuer
+    async with sdk_peer(fault=fault) as (browser, commands, closed, state):
+        issuer = SDKIssuer(browser, clock=lambda: 1000)
+        if fault is None:
+            result = await issuer.bootstrap('test-token')
+            assert result.bundle.token == 'test-token'
+            assert result.bundle.user_agent == 'Server Chromium'
+            assert result.cookie.expires_at > result.bundle.expires_at
+        else:
+            with pytest.raises(SessionError):
+                await issuer.bootstrap('test-token')
+        assert not any(method == 'Network.setCookies' for method, _ in commands)
+        assert not state['running'] and closed == ['owned']
