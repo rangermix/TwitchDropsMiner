@@ -1,9 +1,10 @@
 /* Only loaded in TDM's temporary interactive profile. Never export cookie values. */
+// Non-Secure cookie events use HTTP permission URLs; cookie lookups still use HTTPS.
 let finishing = false;
 function complete(cookie) {
     if (finishing || !cookie || cookie.name !== 'auth-token'
         || !['.twitch.tv', 'twitch.tv', 'www.twitch.tv'].includes(cookie.domain)
-        || !cookie.secure || !cookie.value) return;
+        || !cookie.value) return;
     finishing = true;
     // Let the sign-in response finish before normal window closure flushes storage.
     setTimeout(async () => {

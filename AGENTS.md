@@ -377,6 +377,12 @@ progress to an ignored drop while the miner intentionally targets another reward
   Its bundled completion extension observes only Twitch login-cookie presence, closes
   the owned profile's windows normally, and never exports cookie values. Treat this as
   a completion hint: retain all capture/PID/account/catalog checks and manual Finish.
+  Grant cookie host access to both `*://twitch.tv/*` and `*://www.twitch.tv/*`
+  so root-domain events and non-Secure cookies' HTTP event URLs are visible. Keep
+  lookups on HTTPS and do not broaden access to subdomain wildcards or unrelated hosts.
+  Cookie scope and presence trigger completion regardless of its Secure attribute;
+  they are not proof of a valid session. Test domain-wide and host-only cookies in real
+  Chromium with synthetic data, including Secure and non-Secure domain cookies.
   Disable extensions during capture. Clipboard transfers are explicit, bounded to
   65,536 characters, page-local and cleared on send/panel close/viewer disconnect; remote
   clipboard events are ignored unless the panel is open. Never log or persist them.

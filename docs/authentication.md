@@ -11,7 +11,8 @@ server-side session verification and automatic renewal.
 1. Open the TDM dashboard. If dashboard password protection is enabled, unlock it first.
 2. Sign in to Twitch in the browser shown there and complete email verification or
    two-factor authentication as requested by Twitch.
-3. The browser closes automatically after Twitch sets its login cookie. If it stays
+3. The browser closes automatically after Twitch sets its login cookie, whether scoped
+   to `www.twitch.tv` or `.twitch.tv`. If it stays
    open after you finish verification, select **Finish sign in** or close its X button.
 4. Wait while TDM verifies the account, campaign access and renewable session. The
    normal dashboard appears automatically after verification and browser cleanup.

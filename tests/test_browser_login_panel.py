@@ -310,23 +310,30 @@ assert.equal(el('twitch-helper-connection').hidden,true);
 
 
 @pytest.mark.skipif(NODE is None, reason="Node required")
-def test_completion_extension_closes_only_after_login_cookie_and_rechecks_presence():
+@pytest.mark.parametrize('secure', [False, True])
+def test_completion_extension_closes_only_after_login_cookie_and_rechecks_presence(secure):
     script = ROOT / "src/auth/login_completion/completion.js"
     body = r"""
 const assert=require('node:assert/strict');const vm=require('node:vm');const fs=require('node:fs');
 let listener;const timers=[];const closed=[];let current=null;
-const cookie={name:'auth-token',domain:'.twitch.tv',secure:true,value:'fake-private'};
+const cookie={name:'auth-token',domain:'.twitch.tv',secure:__SECURE__,value:'fake-private'};
 const chrome={cookies:{onChanged:{addListener(fn){listener=fn;}},get:async()=>current},
  windows:{getAll:async()=>[{id:7}],remove:async id=>closed.push(id)}};
 vm.runInNewContext(fs.readFileSync(process.argv[2],'utf8'),{chrome,setTimeout:fn=>timers.push(fn)});
 (async()=>{
  await Promise.resolve();
  listener({removed:true,cookie});listener({removed:false,cookie:{...cookie,domain:'other.test'}});
- listener({removed:false,cookie:{...cookie,secure:false}});assert.equal(timers.length,0);
+ listener({removed:false,cookie:{...cookie,value:''}});assert.equal(timers.length,0);
  listener({removed:false,cookie});listener({removed:false,cookie});assert.equal(timers.length,1);
  await timers.shift()();assert.deepEqual(closed,[],'removed login must not close browser');
  current=cookie;listener({removed:false,cookie});await timers.shift()();assert.deepEqual(closed,[7]);
 })().catch(e=>{console.error(e);process.exit(1)});
 """
-    result = subprocess.run([NODE, "-", str(script)], input=body, capture_output=True, text=True)
+    result = subprocess.run([NODE, "-", str(script)], input=body.replace('__SECURE__', json.dumps(secure)), capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
+
+
+def test_completion_extension_observes_twitch_domain_cookies_with_narrow_permissions():
+    manifest = json.loads((ROOT / 'src/auth/login_completion/manifest.json').read_text())
+    assert set(manifest['host_permissions']) == {'*://twitch.tv/*', '*://www.twitch.tv/*'}
+    assert manifest['permissions'] == ['cookies']

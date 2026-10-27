@@ -102,9 +102,9 @@ For source security rebuilds with refreshed base images and packages, see the
 
 1. Open the dashboard. When Twitch login is required, TDM shows its container browser
    and the Twitch sign in page automatically.
-2. Sign in and complete Twitch verification. The browser closes automatically after
-   login; **Finish sign in** remains available if it stays open. Password saving is
-   disabled. Expand **Copy and paste** to transfer text to or from the browser.
+2. Sign in and complete Twitch verification. The browser closes automatically a few
+   seconds after login; **Finish sign in** remains available if it stays open.
+   Password saving is disabled. Expand **Copy and paste** to transfer text to or from the browser.
 3. TDM verifies your account and campaign access, saves the session, and returns to
    the normal dashboard. Select your games there.
 
