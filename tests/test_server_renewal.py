@@ -82,6 +82,9 @@ async def sdk_peer(*, fault=None, sdk_started=None):
                 headers = params["arguments"][0]["value"]
                 assert "client-integrity" not in headers
                 assert headers["authorization"] == "OAuth test-token"
+                assert len(headers['client-request-id']) == 32
+                assert 'accept-language' not in headers
+                assert 'device-id' not in headers
                 if fault == "sdk_timeout":
                     result = {"result": {"value": {"failure": "sdk_timeout"}}}
                 else:
@@ -161,12 +164,33 @@ async def test_sdk_issuer_correlates_network_and_keeps_only_renewed_seed():
         assert renewed.bundle.headers["client-integrity"] == "private-new-integrity"
         assert renewed.bundle.expires_at == 5600
         assert renewed.bundle.user_agent == "Server Chromium"
+        assert 'client-request-id' not in renewed.bundle.headers
         assert renewed.cookie.value == "server-sdk-cookie"
         assert renewed.cookie.expires_at > seed.cookie.expires_at
         assert state == {"running": False, "exits": 1}
         assert closed == ["owned"]
         assert "Browser.close" not in [method for method, _ in commands]
         assert "private" not in repr(renewed)
+
+
+def test_integrity_headers_use_fresh_request_id_and_preserve_device_identity():
+    from src.auth.server_renewal import SDKAcquisition
+
+    data = seed_data()
+    headers = data['bundle']['headers']
+    device = headers.pop('x-device-id', headers.get('device-id', 'device'))
+    headers['device-id'] = device
+    headers['accept-language'] = 'fr-FR'
+    headers['client-session-id'] = 'session'
+    headers['client-version'] = 'version'
+    bundle = ServerSeed.from_dict(data, now=1000).bundle
+    first, second = SDKAcquisition.issuance_headers(bundle), SDKAcquisition.issuance_headers(bundle)
+    assert first['client-request-id'] != second['client-request-id']
+    assert first['x-device-id'] == device
+    assert first['client-session-id'] == 'session' and first['client-version'] == 'version'
+    assert set(first) == {'authorization', 'client-id', 'x-device-id', 'client-request-id',
+                          'client-session-id', 'client-version'}
+    assert bundle.headers['accept-language'] == 'fr-FR'
 
 
 @pytest.mark.asyncio
@@ -210,9 +234,12 @@ async def test_cancel_during_sdk_wait_closes_owned_target_and_browser():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("outcome", ["success", "failure", "cancel", "startup_timeout"])
-async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatch, outcome):
+@pytest.mark.parametrize("displayed", [False, True])
+async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatch, outcome, displayed):
     from src.auth.server_renewal import OwnedChromium
 
+    if displayed and os.name != 'posix':
+        pytest.skip('Private X display is POSIX only')
     calls, profiles, stopped = [], [], []
     async def wait():
         process.returncode = 0
@@ -228,12 +255,15 @@ async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatc
         calls.append((args, kwargs))
         profile = Path(next(arg.split("=", 1)[1] for arg in args if arg.startswith("--user-data-dir=")))
         profiles.append(profile)
+        if displayed:
+            (profile / 'Xauthority').write_text('synthetic authority')
         if os.name == "posix":
             assert profile.stat().st_mode & 0o077 == 0
         (profile / "DevToolsActivePort").write_text("54321\n/devtools/browser/test-id\n")
         return process
 
     monkeypatch.setattr(asyncio, "create_subprocess_exec", spawn)
+    monkeypatch.setattr("src.auth.server_renewal.shutil.which", lambda name: '/usr/bin/xvfb-run' if displayed else None)
     if os.name == "posix":
         monkeypatch.setattr("os.killpg", lambda pid, sig: stopped.append((pid, sig)))
     browser = OwnedChromium("test-chromium", no_sandbox=True)
@@ -254,7 +284,12 @@ async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatc
     process.wait.assert_awaited()
     assert all(not profile.exists() for profile in profiles)
     args, kwargs = calls[0]
-    assert "--headless=new" in args and "--remote-debugging-address=127.0.0.1" in args
+    assert ('--headless=new' in args) is not displayed
+    if displayed:
+        assert args[:7] == ('/usr/bin/xvfb-run', '-a', '-f', str(profiles[0] / 'Xauthority'),
+                           '-s', '-screen 0 1280x800x24 -nolisten tcp', 'test-chromium')
+        assert '--window-size=1200,760' in args
+    assert "--remote-debugging-address=127.0.0.1" in args
     assert "--remote-debugging-port=0" in args
     assert kwargs["stdout"] == kwargs["stderr"] == asyncio.subprocess.DEVNULL
     assert kwargs["start_new_session"] is (os.name == "posix")
@@ -509,3 +544,21 @@ async def test_expired_sdk_state_ends_loop_without_repeated_browser_attempts():
         await RenewalLoop(source, sender, sleep=sleep).run()
     sender.send.assert_not_awaited()
     sleep.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('fault', [None, 'http_error', 'cache', 'mismatch', 'missing_cookie', 'expired_cookie'])
+async def test_fresh_token_bootstrap_requires_observed_proof_and_fresh_cookie(fault):
+    from src.auth.server_renewal import SDKIssuer
+    async with sdk_peer(fault=fault) as (browser, commands, closed, state):
+        issuer = SDKIssuer(browser, clock=lambda: 1000)
+        if fault is None:
+            result = await issuer.bootstrap('test-token')
+            assert result.bundle.token == 'test-token'
+            assert result.bundle.user_agent == 'Server Chromium'
+            assert result.cookie.expires_at > result.bundle.expires_at
+        else:
+            with pytest.raises(SessionError):
+                await issuer.bootstrap('test-token')
+        assert not any(method == 'Network.setCookies' for method, _ in commands)
+        assert not state['running'] and closed == ['owned']

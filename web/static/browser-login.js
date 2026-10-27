@@ -1,8 +1,33 @@
+/* Native noVNC stays in an owned same-origin frame; messages carry only fixed events. */
+class NativeLoginViewer {
+    constructor(target) {
+        this.listeners = new Map();
+        this.frame = target.ownerDocument.createElement('iframe');
+        this.frame.title = document.getElementById('twitch-login-title').textContent;
+        this.frame.className = 'browser-login-frame';
+        this.receive = event => {
+            if (event.origin !== window.location.origin || event.source !== this.frame.contentWindow
+                || event.data?.type !== 'tdm-viewer'
+                || !['connect', 'disconnect', 'securityfailure'].includes(event.data.event)) return;
+            this.listeners.get(event.data.event)?.();
+        };
+        window.addEventListener('message', this.receive);
+        this.frame.src = '/session-viewer';
+        target.appendChild(this.frame);
+    }
+    addEventListener(name, listener) { this.listeners.set(name, listener); }
+    disconnect() {
+        window.removeEventListener('message', this.receive);
+        this.frame.src = 'about:blank';
+        this.frame.remove();
+        this.listeners.clear();
+    }
+}
 /* Twitch credentials stay in the login browser; the dashboard controls helper access. */
 class BrowserLoginPanel {
     constructor(doc = document, fetcher = fetch,
         translations = () => state.translations.gui?.browser_login || {},
-        viewerFactory = async () => (await import('/static/novnc/core/rfb.js')).default,
+        viewerFactory = async () => NativeLoginViewer,
         clock = () => Date.now() / 1000) {
         this.doc = doc;
         this.fetcher = fetcher;
@@ -17,9 +42,14 @@ class BrowserLoginPanel {
         this.statusError = false;
         this.viewerError = false;
         this.viewer = null;
+        this.viewerConnected = false;
         this.viewerAttempt = null;
         this.viewerRevision = 0;
         this.actionRevision = 0;
+        this.element('twitch-token-send').addEventListener('click', () => this.submitToken());
+        this.element('twitch-token-panel').addEventListener('toggle', () => {
+            if (!this.element('twitch-token-panel').open) this.element('twitch-token-input').value = '';
+        });
         this.element('twitch-login-finish').addEventListener('click', () => this.action('finish'));
         this.element('twitch-login-retry').addEventListener('click', () => this.retry());
         this.element('twitch-logout').addEventListener('click', () => this.logout());
@@ -47,6 +77,9 @@ class BrowserLoginPanel {
             'twitch-helper-access-help': 'helper_access_help',
             'twitch-helper-windows': 'helper_windows', 'twitch-helper-linux': 'helper_linux',
             'twitch-helper-macos-arm': 'helper_macos_arm', 'twitch-helper-macos-intel': 'helper_macos_intel',
+            'twitch-clipboard-help': 'clipboard_help',
+            'twitch-token-title': 'token_title', 'twitch-token-help': 'token_help',
+            'twitch-token-label': 'token_label', 'twitch-token-send': 'token_send',
         })) this.element(id).textContent = t[key] || '';
         const browser = this.data?.browser;
         const helper = this.data?.helper;
@@ -86,6 +119,10 @@ class BrowserLoginPanel {
             : this.data?.renewal_available ? (t.renewal_ready || '') : '';
         this.element('twitch-renewal-status').title = this.element('twitch-renewal-status').textContent;
         this.element('twitch-vnc').hidden = helperActive || browser?.state !== 'sign_in';
+        this.element('twitch-clipboard-help').hidden = helperActive || browser?.state !== 'sign_in';
+        this.element('twitch-token-panel').hidden = normal;
+        this.element('twitch-token-send').disabled = this.busy || this.statusError || browser?.state === 'verifying';
+        if (normal) { this.element('twitch-token-input').value = ''; this.element('twitch-token-panel').open = false; }
         this.element('twitch-helper-panel').hidden = normal;
         if (helperActive) this.element('twitch-helper-panel').open = true;
         this.element('twitch-helper-enable').hidden = Boolean(helperActive);
@@ -151,6 +188,7 @@ class BrowserLoginPanel {
         this.viewerAttempt = null;
         const viewer = this.viewer;
         this.viewer = null;
+        this.viewerConnected = false;
         if (viewer) viewer.disconnect();
         this.element('twitch-vnc').replaceChildren();
     }
@@ -175,13 +213,20 @@ class BrowserLoginPanel {
             this.viewer = viewer;
             viewer.scaleViewport = true;
             viewer.resizeSession = false;
+            viewer.addEventListener('connect', () => {
+                if (revision !== this.viewerRevision) return;
+                this.viewerConnected = true;
+                this.render();
+            });
             viewer.addEventListener('disconnect', () => {
                 if (revision !== this.viewerRevision) return;
+                this.viewerConnected = false;
                 this.viewerError = true;
                 this.render();
             });
             viewer.addEventListener('securityfailure', () => {
                 if (revision !== this.viewerRevision) return;
+                this.viewerConnected = false;
                 this.viewerError = true;
                 this.render();
             });
@@ -193,7 +238,15 @@ class BrowserLoginPanel {
         }
     }
 
-    async action(name) {
+    async submitToken() {
+        const input = this.element('twitch-token-input');
+        const token = input.value.trim();
+        input.value = '';
+        if (!token || this.busy) return;
+        await this.action('token', {token});
+    }
+
+    async action(name, body = null) {
         if (this.busy) return;
         const actionRevision = ++this.actionRevision;
         const revision = this.revision;
@@ -203,7 +256,8 @@ class BrowserLoginPanel {
         this.render();
         try {
             const response = await this.fetcher('/api/session/' + name, {
-                method: 'POST', headers: {'X-TDM-Request': '1'},
+                method: 'POST', headers: {'X-TDM-Request': '1', ...(body ? {'Content-Type': 'application/json'} : {})},
+                ...(body ? {body: JSON.stringify(body)} : {}),
             });
             if (!response.ok) throw new Error('action');
             const data = await response.json();

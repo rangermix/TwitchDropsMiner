@@ -200,20 +200,21 @@ class WatchService:
             if stream is None or not channel._watch_current(stream):
                 continue
 
-            if (
-                succeeded
-                and monotonic() >= next_progress
-                and self._twitch.gui.progress.minute_almost_done()
-            ):
+            # The dashboard stores total remaining time, not an expiring minute timer.
+            if succeeded and monotonic() >= next_progress:
                 next_progress = monotonic() + interval
-                # If the previous update was more than ~60s ago, and the progress tracker
-                # isn't counting down anymore, that means Twitch has temporarily
-                # stopped reporting drop's progress. To ensure the timer keeps at least somewhat
-                # accurate time, we can use GQL to query for the current drop,
-                # or even "pretend" mining as a last resort option.
+                # Reconcile with Twitch on a bounded cadence even if websocket updates stop.
                 handled: bool = False
 
                 # Solution 1: use GQL to query for the currently mined drop status
+                progress_snapshot = {
+                    drop_id: (drop, drop.campaign.progress_revision)
+                    for drop_id, drop in self._twitch._drops.items()
+                }
+                fallback_campaign = self._twitch._inventory_service.get_active_campaign(channel)
+                fallback_revision = (
+                    fallback_campaign.progress_revision if fallback_campaign is not None else None
+                )
                 try:
                     context = await asyncio.wait_for(
                         self._twitch.gql_request(
@@ -232,6 +233,17 @@ class WatchService:
 
                 if drop_data is not None:
                     gql_drop: TimedDrop | None = self._twitch._drops.get(drop_data["dropID"])
+                    previous = progress_snapshot.get(drop_data["dropID"])
+                    if (
+                        previous is not None and previous[0] is not gql_drop
+                        or gql_drop is not None and (
+                            previous is None
+                            or previous[1] != gql_drop.campaign.progress_revision
+                        )
+                    ):
+                        # A newer observation or inventory replaced this request's state.
+                        # Do not turn the discarded response into an estimated minute.
+                        continue
                     if gql_drop is not None and gql_drop.can_earn(channel):
                         gql_drop.update_minutes(drop_data["currentMinutesWatched"])
                         drop_text: str = (
@@ -246,6 +258,11 @@ class WatchService:
                 if not handled:
                     active_campaign = self._twitch._inventory_service.get_active_campaign(channel)
                     if active_campaign is not None:
+                        if (
+                            active_campaign is not fallback_campaign
+                            or active_campaign.progress_revision != fallback_revision
+                        ):
+                            continue
                         active_campaign.bump_minutes(channel)
                         # NOTE: This usually gets overwritten below
                         drop_text = f"Unknown drop ({active_campaign.game})"
