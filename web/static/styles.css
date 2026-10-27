@@ -659,12 +659,14 @@ header h1 {
 
 /* Inventory - card view (default) */
 .inventory-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(350px, 100%), 1fr));
+    --inventory-card-min: 350px; /* read by inventoryColumnCount() */
+    display: flex;
     gap: 20px;
-    align-items: start;
+    align-items: flex-start;
 }
-.inventory-grid > .empty-message { grid-column: 1 / -1; }
+.inventory-grid > .empty-message { flex: 1; }
+/* Each column stacks its own cards, so an opened card only moves the cards below it. */
+.inventory-column { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: inherit; }
 
 .campaign-card {
     background: var(--bg-panel);
@@ -788,17 +790,11 @@ header h1 {
     .inventory-grid.list-view .campaign-actions { grid-column: 2; grid-row: 2; }
 }
 @media (max-width: 480px) {
-    /* Narrow cards: names get the width; the badge and action share the second row. */
-    .campaign-overview, .inventory-grid.list-view .campaign-overview {
-        grid-template-columns: minmax(0, 1fr) 96px 32px;
-        grid-template-rows: minmax(78px, auto) minmax(44px, auto) auto;
-    }
-    .campaign-controls, .inventory-grid.list-view .campaign-controls { display: contents; }
-    .campaign-overview > .campaign-game, .inventory-grid.list-view .campaign-game { grid-column: 1 / 3; grid-row: 1; }
-    .campaign-toggle { grid-column: 3; grid-row: 1; align-self: center; }
-    .campaign-controls > .campaign-badge { grid-column: 1; grid-row: 2; justify-self: start; align-self: center; }
-    .campaign-date-range, .inventory-grid.list-view .campaign-date-range { grid-column: 1 / 4; grid-row: 3; }
-    .campaign-actions, .inventory-grid.list-view .campaign-actions { grid-column: 2 / 4; grid-row: 2; align-self: center; }
+    /* Narrow cards keep the badge top-right with the arrow under it; names use two lines. */
+    .campaign-overview, .inventory-grid.list-view .campaign-overview { grid-template-columns: minmax(0, 1fr) 104px; }
+    .campaign-overview .campaign-game { gap: 10px; }
+    .campaign-overview .campaign-game .game-icon { width: 40px; height: 54px; }
+    .campaign-controls > .campaign-badge { max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: center; }
     .campaign-game-name, .campaign-name-text {
         display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
         white-space: normal; overflow-wrap: anywhere; line-height: 1.3;
@@ -1734,7 +1730,7 @@ header h1 {
     }
 
     .inventory-grid {
-        grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+        --inventory-card-min: 280px;
         gap: 12px;
     }
 

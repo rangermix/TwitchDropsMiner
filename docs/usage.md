@@ -76,15 +76,14 @@ eligible participant can take over.
 ## Inventory and the wanted queue
 
 Select a campaign's overview or arrow to expand its rewards and progress. The arrow
-supports Enter and Space. Campaign names link directly to Twitch; long game and
-campaign names are shortened, with the full name shown on hover. The card and list
-buttons beside **Clear Filters** switch the Inventory layout and remember your choice.
-List view offers compact rows with artwork, names and dates. Opening a card does not
-move cards between columns. In card mode on wider screens the arrow sits below the linkage badge,
-with account/mining actions beside the dates; open campaigns
-stay open while progress updates arrive.
-On phone-width screens the arrow stays top-right, the badge and account/mining action
-share the next row, and game and campaign names can use two lines.
+supports Enter and Space. Campaign names link directly to Twitch; long game and campaign
+names are shortened, with the full name shown on hover. The card and list buttons beside
+**Clear Filters** switch the Inventory layout and remember your choice. List view offers
+compact rows with artwork, names and dates. Opening a card does not move cards between
+columns. In card mode the arrow sits below the linkage badge, with account/mining
+actions beside the dates; open campaigns stay open while progress updates arrive. Each
+column stacks its own cards, so opening a card only moves the cards below it. On
+phone-width screens game and campaign names can use two lines.
 
 For linked games not already selected, **Add to mining list** appends the game at
 the end of your saved priority list. Existing priorities and manual entries keep their

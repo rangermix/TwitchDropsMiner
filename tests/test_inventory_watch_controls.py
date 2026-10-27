@@ -30,7 +30,8 @@ class Element {
   const matches=part=>part.startsWith('.')?(node.className||'').split(' ').includes(part.slice(1)):node.tag===part;
   while(node){if(parts.some(matches))return node;node=node.parentElement;}return null;}
 }
-const body=new Element('body');const grid=new Element('div');grid.id='inventory-grid';grid.classList={toggle(name,on){this[name]=on;}};body.appendChild(grid);
+const body=new Element('body');const grid=new Element('div');grid.id='inventory-grid';grid.classList={toggle(name,on){this[name]=on;},contains(name){return this[name]===true;}};grid.dataset={};grid.clientWidth=0;body.appendChild(grid);
+function getComputedStyle(){return {getPropertyValue:name=>name==='--inventory-card-min'?'350px':'',columnGap:'20px'};}
 for(const id of ['inventory-view-cards','inventory-view-list'])body.appendChild(Object.assign(new Element('button'),{id}));
 for(const id of ['dark-mode','language','connection-quality','minimum-refresh-interval','drop-name-blacklist']) {
  const control=new Element('input');control.id=id;control.value=id==='connection-quality'?'1':id==='minimum-refresh-interval'?'30':'';
@@ -72,7 +73,7 @@ def run_inventory(body):
     functions = '\n'.join(extract_javascript_function(source, name) for name in (
         'makeElement', 'canAddInventoryGame', 'renderInventory', 'applyGameWatchEdit',
         'reconcileGameWatchSettings', 'queueSettingsWrite', 'parseDropNameBlacklist',
-        'applyInventoryViewMode', 'setInventoryViewMode'))
+        'applyInventoryViewMode', 'setInventoryViewMode', 'inventoryColumnCount'))
     functions += '\nasync ' + extract_javascript_function(source, 'addInventoryGame')
     functions += '\nasync ' + extract_javascript_function(source, 'saveSettings')
     result = subprocess.run([NODE, '-'], input=HARNESS + '\n' + functions + '\n(async()=>{\nreconcileGameWatchSettings(state.settings);\n' + body
@@ -304,9 +305,11 @@ assert.equal(JSON.parse(requests[1].options.body).inventory_list_view,false);
 def test_card_grid_keeps_columns_stable_and_titles_single_line():
     css = (ROOT / 'web/static/styles.css').read_text(encoding='utf-8')
     html = (ROOT / 'web/index.html').read_text(encoding='utf-8')
-    assert 'column-width' not in css.split('.inventory-grid {', 1)[1].split('}', 1)[0]
     grid_rule = css.split('.inventory-grid {', 1)[1].split('}', 1)[0]
-    assert 'display: grid' in grid_rule and 'align-items: start' in grid_rule
+    assert 'column-width' not in grid_rule and '--inventory-card-min: 350px' in grid_rule
+    assert 'display: flex' in grid_rule and 'align-items: flex-start' in grid_rule
+    column_rule = css.split('.inventory-column {', 1)[1].split('}', 1)[0]
+    assert 'flex-direction: column' in column_rule and 'min-width: 0' in column_rule
     list_rule = css.split('.inventory-grid.list-view {', 1)[1].split('}', 1)[0]
     assert 'align-items: stretch' in list_rule
     assert '.campaign-game-name, .campaign-name-text { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' in css
@@ -321,9 +324,26 @@ assert.equal(grid.classList['list-view'],true);assert.equal(requests.length,0);
 """)
 
 
-def test_narrow_cards_give_names_the_width_and_allow_two_lines():
+def test_narrow_cards_keep_badge_top_right_and_allow_two_line_names():
     css = (ROOT / 'web/static/styles.css').read_text(encoding='utf-8')
     narrow = css.split('@media (max-width: 480px) {\n    /* Narrow cards', 1)[1].split('\n}\n', 1)[0]
-    assert 'grid-template-columns: minmax(0, 1fr) 96px 32px' in narrow
-    assert '.campaign-controls, .inventory-grid.list-view .campaign-controls { display: contents; }' in narrow
-    assert '-webkit-line-clamp: 2' in narrow and 'white-space: normal' in narrow
+    assert 'grid-template-columns: minmax(0, 1fr) 104px' in narrow
+    assert 'display: contents' not in narrow  # badge and arrow stay together top-right
+    assert 'white-space: normal' in narrow.split('.campaign-badge {', 1)[1].split('}', 1)[0]
+    assert '-webkit-line-clamp: 2' in narrow
+
+
+def test_cards_fill_fixed_columns_so_opening_one_never_moves_others():
+    run_inventory(r"""
+state.campaigns=Object.fromEntries(['a','b','c','d','e'].map(id=>[id,campaign(id)]));
+grid.clientWidth=1240;renderInventory();
+const columns=()=>grid.children;const ids=column=>column.children.map(card=>card.children[0].children[0].children[1].children[1].id);
+assert.equal(columns().length,3);assert.equal(grid.dataset.columns,'3');
+const before=columns().map(ids);
+assert.deepEqual(before.map(column=>column.length),[2,2,1]);assert.deepEqual(before,[['inventory-campaign-a','inventory-campaign-d'],['inventory-campaign-b','inventory-campaign-e'],['inventory-campaign-c']]);
+toggle('a').events.click();renderInventory();
+assert.deepEqual(columns().map(ids),before);assert.equal(content('a').hidden,false);
+grid.clientWidth=700;applyInventoryViewMode(false);assert.equal(columns().length,1);
+grid.clientWidth=1240;applyInventoryViewMode(true);assert.equal(columns().length,1);
+applyInventoryViewMode(false);assert.equal(columns().length,3);
+""")

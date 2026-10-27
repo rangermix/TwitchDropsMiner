@@ -998,8 +998,19 @@ function handleGameSearchKeydown(event) {
     }
 }
 
+// Cards stay in fixed columns, so opening one only pushes down the cards below it.
+function inventoryColumnCount(container) {
+    if (container.classList.contains('list-view')) return 1;
+    const style = getComputedStyle(container);
+    const min = parseFloat(style.getPropertyValue('--inventory-card-min')) || 350;
+    const gap = parseFloat(style.columnGap) || 0;
+    return Math.max(1, Math.floor((container.clientWidth + gap) / (min + gap)));
+}
+
 function applyInventoryViewMode(listView) {
-    document.getElementById('inventory-grid').classList.toggle('list-view', listView);
+    const grid = document.getElementById('inventory-grid');
+    grid.classList.toggle('list-view', listView);
+    if (grid.dataset.columns && String(inventoryColumnCount(grid)) !== grid.dataset.columns) renderInventory();
     document.getElementById('inventory-view-cards')?.setAttribute('aria-pressed', String(!listView));
     document.getElementById('inventory-view-list')?.setAttribute('aria-pressed', String(listView));
 }
@@ -1153,7 +1164,12 @@ function renderInventory() {
         return;
     }
 
-    campaigns.forEach(campaign => {
+    const columnCount = inventoryColumnCount(container);
+    container.dataset.columns = String(columnCount);
+    const columns = Array.from({ length: columnCount }, () => makeElement('div', { class: 'inventory-column' }));
+    container.replaceChildren(...columns);
+
+    campaigns.forEach((campaign, index) => {
         const card = document.createElement('div');
         card.className = 'campaign-card';
         const expanded = expandedInventoryCampaigns.has(campaign.id);
@@ -1333,7 +1349,7 @@ function renderInventory() {
         });
         card.replaceChildren(overview, content);
 
-        container.appendChild(card);
+        columns[index % columnCount].appendChild(card);
     });
     if (focusedId) {
         const prefix = ['inventory-add-', 'inventory-link-', 'inventory-campaign-']
@@ -2835,6 +2851,11 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSettings();
     });
 
+    // Re-render when the column count changes (resizes, or the Inventory tab becoming visible).
+    new ResizeObserver(() => {
+        const grid = document.getElementById('inventory-grid');
+        if (grid.dataset.columns && String(inventoryColumnCount(grid)) !== grid.dataset.columns) renderInventory();
+    }).observe(document.getElementById('inventory-grid'));
     document.getElementById('inventory-view-cards').addEventListener('click', () => setInventoryViewMode(false));
     document.getElementById('inventory-view-list').addEventListener('click', () => setInventoryViewMode(true));
     document.getElementById('priority-list-only').addEventListener('change', onPriorityModeChange);
