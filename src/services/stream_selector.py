@@ -8,10 +8,14 @@ from src.models.game import Game
 
 class StreamSelector:
     def _get_wanted_drops(
-        self, campaign: DropsCampaign, mining_benefits: dict[str, bool], now: datetime
+        self, campaign: DropsCampaign, mining_benefits: dict[str, bool], now: datetime,
+        policy: RewardPriority | None = None
     ) -> list[dict]:
         wanted_drops = []
-        for drop in campaign.drops:
+        drops = list(campaign.drops)
+        if policy is not None and policy.enabled:
+            drops.sort(key=policy.eligible_drop_key)
+        for drop in drops:
             if (
                 not drop.is_watch_drop
                 or drop.is_claimed
@@ -51,7 +55,7 @@ class StreamSelector:
                 continue
             if not campaign.can_earn_within(stamp):
                 continue
-            if not self._get_wanted_drops(campaign, settings.mining_benefits, now):
+            if not self._get_wanted_drops(campaign, settings.mining_benefits, now, RewardPriority(settings)):
                 continue
             if campaign_game.id not in unlisted_campaigns:
                 unlisted_campaigns[campaign_game.id] = {
@@ -76,7 +80,7 @@ class StreamSelector:
                     "id": campaign.id,
                     "name": campaign.name,
                     "url": campaign.campaign_url,
-                    "drops": self._get_wanted_drops(campaign, settings.mining_benefits, now),
+                    "drops": self._get_wanted_drops(campaign, settings.mining_benefits, now, RewardPriority(settings)),
                 }
                 for campaign in sorted(fallback_game["campaigns"], key=lambda campaign: campaign.ends_at)
             ]
@@ -112,7 +116,7 @@ class StreamSelector:
                 if not campaign.can_earn_within(next_hour):
                     continue
 
-                wanted_drops = self._get_wanted_drops(campaign, mining_benefits, now)
+                wanted_drops = self._get_wanted_drops(campaign, mining_benefits, now, RewardPriority(settings))
 
                 if len(wanted_drops) > 0:
                     wanted_campaigns.append(
@@ -150,6 +154,9 @@ class StreamSelector:
                         min((policy.campaign_key(campaign) for campaign in eligible),
                             default=(len(policy.TYPES), float('inf'))))
             wanted_games.sort(key=key)
+            by_id = {campaign.id: campaign for campaign in campaigns}
+            for game in wanted_games:
+                game["campaigns"].sort(key=lambda entry: policy.campaign_key(by_id[entry["id"]]))
         return wanted_games
 
     def get_wanted_game_tree(

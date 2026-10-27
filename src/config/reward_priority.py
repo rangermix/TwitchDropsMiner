@@ -37,8 +37,11 @@ class RewardPriority:
                  if benefit.is_wanted(self.allowed)]
         return (min(ranks, default=len(self.TYPES)), drop.ends_at.timestamp())
 
+    def eligible_drop_key(self, drop: TimedDrop) -> tuple[int, float]:
+        return self.drop_key(drop) if drop.can_earn() else (len(self.TYPES), drop.ends_at.timestamp())
+
     def campaign_key(self, campaign: DropsCampaign) -> tuple[int, float]:
         now = datetime.now(timezone.utc)
         return min((self.drop_key(drop) for drop in campaign.mineable_watch_drops
-                    if not drop.is_claimed and drop.starts_at <= now < drop.ends_at),
+                    if not drop.is_claimed and drop.starts_at <= now < drop.ends_at and drop.can_earn()),
                    default=(len(self.TYPES), float("inf")))

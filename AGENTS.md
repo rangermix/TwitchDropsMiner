@@ -907,3 +907,8 @@ Tests cover persistence, filtering, Unicode exports, offsets, and translated UI 
   Saved game order is unchanged. Failed priority saves restore the prior policy and
   do not request a selection refresh. Cover selection and persistence boundaries in
   `test_reward_priority.py` and translated form behavior in its frontend companion.
+
+- Reward ranking uses currently earnable drops, including prerequisite guards. Keep
+  game, nested campaign and drop queue order consistent with channel and active-campaign
+  selection; selected Special Events/IRL campaigns still outrank fallback campaigns
+  sharing their live channel. Upcoming/sequential queue entries remain visible.

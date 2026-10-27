@@ -274,7 +274,9 @@ class InventoryService:
             policy = RewardPriority(self._twitch.settings)
             if policy.enabled:
                 campaigns = [campaign for campaign in campaigns if campaign.game in self._twitch.wanted_games]
-                campaigns.sort(key=policy.campaign_key)
+                selected = {name.lower() for name in self._twitch.settings.games_to_watch}
+                campaigns.sort(key=lambda campaign: (
+                    0 if campaign.game.name.lower() in selected else 1, policy.campaign_key(campaign)))
             if not campaigns:
                 return None
             return campaigns[0]

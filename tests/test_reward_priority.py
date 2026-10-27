@@ -109,3 +109,49 @@ async def test_priority_save_failure_rolls_back_and_success_requests_refresh():
     result = manager.update_settings({'reward_priority': ORDER})
     assert result['reward_priority'] == ORDER
     changed.assert_called_once()
+
+
+def test_locked_badge_does_not_preempt_earnable_emote_and_queue_keeps_sequence():
+    value = settings('Sequence', 'Emote', priority_list_only=True)
+    prerequisite = _drop('prerequisite')
+    badge = _drop('locked-badge', benefit_type='BADGE', precondition_drop_ids=['prerequisite'])
+    campaigns = [_campaign('sequence', 'Sequence', settings=value, drops=[badge, prerequisite]),
+                 _campaign('emote', 'Emote', game_id=2, settings=value, drops=[_drop('emote', benefit_type='EMOTE')])]
+    tree = StreamSelector().get_wanted_game_tree(value, campaigns)
+    assert [game['game_name'] for game in tree] == ['Emote', 'Sequence']
+    assert [drop['name'] for drop in tree[1]['campaigns'][0]['drops']] == ['prerequisite', 'locked-badge']
+    assert campaigns[0].first_drop.name == 'prerequisite'
+
+
+def test_same_game_campaign_and_drop_queue_match_type_order():
+    value = settings('Game', priority_list_only=True)
+    campaigns = [_campaign('item', 'Game', settings=value),
+                 _campaign('mixed', 'Game', settings=value, drops=[_drop('item'), _drop('badge', benefit_type='BADGE')])]
+    tree = StreamSelector().get_wanted_game_tree(value, campaigns)
+    assert [entry['id'] for entry in tree[0]['campaigns']] == ['mixed', 'item']
+    assert [entry['name'] for entry in tree[0]['campaigns'][0]['drops']] == ['badge', 'item']
+    assert campaigns[1].first_drop.name == 'badge'
+
+
+def test_selected_special_campaign_precedes_fallback_on_same_channel():
+    from src.services.inventory_service import InventoryService
+    value = settings('Special Events')
+    selected = _campaign('selected', 'Special Events', game_id=509663, settings=value, acl=[1])
+    fallback = _campaign('fallback', 'Regular', game_id=2, settings=value,
+                         drops=[_drop('badge', benefit_type='BADGE')])
+    twitch = SimpleNamespace(settings=value, inventory=[fallback, selected],
+                             wanted_games=[selected.game, fallback.game], gui=MagicMock())
+    channel = _channel(twitch, 1, {'id': '2', 'name': 'Regular'})
+    twitch.watching_channel = SimpleNamespace(get_with_default=lambda fallback: channel)
+    assert InventoryService(twitch).get_active_campaign(channel) is selected
+
+
+def test_mixed_benefit_drop_uses_best_enabled_type_without_reenabling_disabled_type():
+    value = settings('Game', priority_list_only=True)
+    item = _drop('item')
+    item['benefitEdges'] += _drop('badge', benefit_type='BADGE')['benefitEdges']
+    campaign = _campaign('mixed', 'Game', settings=value, drops=[item])
+    policy = RewardPriority(value)
+    assert policy.campaign_key(campaign)[0] == 0
+    value.mining_benefits['BADGE'] = False
+    assert RewardPriority(value).campaign_key(campaign)[0] == 2
