@@ -18,7 +18,7 @@ def drop(*images):
 
 @pytest.mark.parametrize('url', [None, '', 'http://static-cdn.jtvnw.net/x.png', 'https://localhost/x.png',
     'https://static-cdn.jtvnw.net.evil.test/x.png', 'https://user:password@static-cdn.jtvnw.net/x.png',
-    IMAGE+'?token=private', IMAGE+'#private', 'file:///tmp/private', 'data:image/png;base64,abcd',
+    IMAGE+'?token=private', IMAGE+'#private', IMAGE+'\x7f', IMAGE+'\x85', 'file:///tmp/private', 'data:image/png;base64,abcd',
     'https://static-cdn.jtvnw.net:444/x.png', 'https://static-cdn.jtvnw.net:invalid/x.png', IMAGE+'\n',
     'https://static-cdn.jtvnw.net/'+'a'*2100])
 def test_untrusted_or_sensitive_artwork_is_not_forwarded(url):

@@ -81,7 +81,9 @@ class DiscordNotifier:
         """Select public Twitch artwork; never forward credentials or signed URLs."""
         for benefit in drop.benefits:
             value = getattr(benefit, "image_url", None)
-            if not isinstance(value, str) or len(value) > 2048 or any(ord(char) < 33 for char in value):
+            if not isinstance(value, str) or len(value) > 2048 or any(
+                ord(char) < 33 or 127 <= ord(char) <= 159 for char in value
+            ):
                 continue
             try:
                 url = urlsplit(value)
