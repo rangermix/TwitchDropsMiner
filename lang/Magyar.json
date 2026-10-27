@@ -316,7 +316,11 @@
                 "account_link": "Fiók összekapcsolása",
                 "all": "Összes",
                 "linked": "Összekapcsolva"
-            }
+            },
+            "add_game": "Hozzáadás a nézendő játékokhoz",
+            "adding_game": "Hozzáadás…",
+            "add_game_error": "A nézendő játékokat nem sikerült menteni. Próbálja újra.",
+            "link_account": "Fiók összekapcsolása"
         },
         "history": {
             "title": "Dropelőzmények",

@@ -214,6 +214,19 @@ lang/                # Translation JSON files (20 languages)
 
 **src/web/app.py** - FastAPI application:
 
+- Inventory uses keyboard-operable campaign toggles with `aria-expanded`/`aria-controls`
+  and page-local expansion state preserved through progress/settings renders. List view
+  keeps compact artwork/title/date rows; card view and saved view preference remain.
+  Linked games absent from Games to Watch have a translated add action, appending to
+  the current priority order with case-insensitive duplicate protection. Save only the
+  games field and check HTTP/application results. Inventory additions and generic
+  Settings saves share an ordered queue with confirmed/draft watch lists and replayable
+  add/remove/reorder intentions, so unrelated autosaves cannot undo an addition and
+  failures retain later edits. Only initial loads/socket updates replace the watch list;
+  partial-save replies preserve it. Disable duplicate submissions and keep actions
+  outside the campaign toggle. Coverage:
+  `tests/test_inventory_watch_controls.py`. Asset changes need the release cache-key bump.
+
 - REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/session`, `/api/session/finish`, `/api/session/retry`, `/api/session/logout`, `/api/session/vnc`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`, `/api/history`, `/api/history/export.csv`, `/api/history/stats`
 - Socket.IO server for real-time bi-directional communication
 - Serves static web frontend from `web/` directory

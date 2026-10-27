@@ -687,16 +687,78 @@ header h1 {
 }
 
 .inventory-grid.list-view .campaign-card {
-    display: flex;
-    align-items: stretch;
+    display: block;
     margin-bottom: 0;
 }
 
 .inventory-grid.list-view .campaign-info {
-    flex: 0 0 320px;
+    flex: none;
     min-width: 0;
     background: var(--bg-secondary);
-    border-right: 1px solid var(--border-color);
+    border-right: none;
+}
+
+.campaign-overview { display: flex; flex-direction: column; min-width: 0; }
+.campaign-toggle {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 18px;
+    gap: 10px 16px;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    padding: 12px 16px;
+    border: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+.campaign-toggle:hover { background: var(--bg-secondary); }
+.campaign-toggle:focus-visible, .inventory-add-game:focus-visible, .campaign-actions a:focus-visible {
+    outline: 2px solid var(--accent-color); outline-offset: -3px;
+}
+.campaign-toggle .campaign-game { min-width: 0; font-size: 14px; }
+.campaign-titles { display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.campaign-subtitle { color: var(--text-secondary); font-size: 13px; font-weight: normal; }
+.campaign-date-range { display: flex; flex-direction: column; gap: 4px; grid-column: 1 / -1; color: var(--text-secondary); font-size: 12px; }
+.campaign-chevron {
+    grid-column: 2; grid-row: 1; justify-self: center; width: 9px; height: 9px;
+    border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+    transform: rotate(45deg); transition: transform .15s;
+}
+.campaign-toggle[aria-expanded="true"] .campaign-chevron { transform: rotate(225deg); }
+.campaign-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 0 16px 14px; }
+.campaign-actions .campaign-badge { position: static; cursor: default; white-space: nowrap; }
+.campaign-actions .link-account-btn { width: auto; margin: 0; text-decoration: none; }
+.inventory-add-game {
+    padding: 9px 12px; border: 1px solid var(--accent-color); border-radius: 5px;
+    background: transparent; color: var(--accent-color); font: inherit; font-size: 13px;
+    cursor: pointer; line-height: 1.4;
+}
+.inventory-add-game:hover { background: var(--bg-secondary); }
+.inventory-add-game:disabled { opacity: .6; cursor: wait; }
+.campaign-content { border-top: 1px solid var(--border-color); }
+.campaign-content .campaign-info { padding: 12px 16px 0; background: transparent; }
+.campaign-content .campaign-status, .campaign-content .campaign-timing { padding-inline: 0; }
+.campaign-content .campaign-name-link { color: var(--accent-color); }
+.inventory-grid.list-view .campaign-overview { flex-direction: row; align-items: center; }
+.inventory-grid.list-view .campaign-toggle { flex: 1; grid-template-columns: minmax(150px, 1fr) auto 18px; }
+.inventory-grid.list-view .campaign-date-range { grid-column: auto; }
+.inventory-grid.list-view .campaign-chevron { grid-column: auto; grid-row: auto; }
+.inventory-grid.list-view .campaign-actions { padding: 12px 16px 12px 0; max-width: 300px; flex-wrap: nowrap; }
+.inventory-drop-progress { height: 5px; background: var(--progress-bg); border-radius: 5px; overflow: hidden; margin: 12px 0 8px; }
+.inventory-drop-progress > span { display: block; height: 100%; background: var(--accent-color); }
+.claimed .inventory-drop-progress > span { background: var(--success-color); }
+@media (max-width: 900px) {
+    .inventory-grid.list-view .campaign-overview { flex-direction: column; align-items: stretch; }
+    .inventory-grid.list-view .campaign-actions { padding: 0 16px 14px 84px; max-width: none; flex-wrap: wrap; }
+}
+@media (max-width: 540px) {
+    .inventory-grid.list-view .campaign-toggle { grid-template-columns: minmax(0, 1fr) 18px; }
+    .inventory-grid.list-view .campaign-date-range { grid-column: 1 / -1; }
+    .inventory-grid.list-view .campaign-chevron { grid-column: 2; grid-row: 1; }
+    .inventory-grid.list-view .campaign-actions { padding-left: 16px; }
 }
 
 .campaign-header {
@@ -823,10 +885,17 @@ header h1 {
     flex: 1;
     min-width: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
     gap: 10px;
     align-content: start;
 }
+
+.campaign-content .benefits-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+}
+.campaign-content .benefit-info { flex-direction: column; align-items: flex-start; gap: 2px; overflow-wrap: anywhere; }
+.campaign-content .drop-item-header { overflow-wrap: anywhere; }
 
 
 .empty-message-small {

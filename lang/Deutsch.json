@@ -155,7 +155,11 @@
                 "account_link": "Kontoverknüpfung",
                 "all": "Alle",
                 "linked": "Verknüpft"
-            }
+            },
+            "add_game": "Zu Spiele zum Ansehen hinzufügen",
+            "adding_game": "Wird hinzugefügt…",
+            "add_game_error": "Spiele zum Ansehen konnten nicht gespeichert werden. Erneut versuchen.",
+            "link_account": "Konto verknüpfen"
         },
         "settings": {
             "general": {

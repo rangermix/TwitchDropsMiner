@@ -155,7 +155,11 @@
                 "account_link": "帳號連結",
                 "all": "全部",
                 "linked": "已連結"
-            }
+            },
+            "add_game": "新增至要觀看的遊戲",
+            "adding_game": "正在新增…",
+            "add_game_error": "無法儲存要觀看的遊戲，請重試。",
+            "link_account": "連結帳號"
         },
         "settings": {
             "general": {

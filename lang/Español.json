@@ -155,7 +155,11 @@
                 "account_link": "Vinculación de cuenta",
                 "all": "Todas",
                 "linked": "Vinculada"
-            }
+            },
+            "add_game": "Añadir a Juegos a ver",
+            "adding_game": "Añadiendo…",
+            "add_game_error": "No se pudo guardar Juegos a ver. Inténtalo de nuevo.",
+            "link_account": "Vincular cuenta"
         },
         "settings": {
             "general": {

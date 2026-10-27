@@ -155,7 +155,11 @@
                 "account_link": "Połączenie konta",
                 "all": "Wszystkie",
                 "linked": "Połączone"
-            }
+            },
+            "add_game": "Dodaj do oglądanych gier",
+            "adding_game": "Dodawanie…",
+            "add_game_error": "Nie udało się zapisać oglądanych gier. Spróbuj ponownie.",
+            "link_account": "Połącz konto"
         },
         "settings": {
             "general": {

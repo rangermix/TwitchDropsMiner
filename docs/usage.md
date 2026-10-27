@@ -75,6 +75,17 @@ eligible participant can take over.
 
 ## Inventory and the wanted queue
 
+Select a campaign header to expand its rewards, progress and account-link details.
+List view offers compact rows with artwork, game/campaign names and dates; the saved
+card/list preference is retained. Headers work with Enter and Space, and open campaigns
+stay open while progress updates arrive.
+
+For linked games not already selected, **Add to Games to Watch** appends the game at
+the end of your saved priority list. Existing priorities and manual entries keep their
+order. The button disappears after the settings save succeeds; a failed save shows an
+error and leaves the list unchanged. Linking and adding a game do not bypass reward
+eligibility or guarantee progress. Use Settings to reorder or remove selected games.
+
 Inventory's **Active**, **Upcoming**, and **Expired** filters include campaigns with
 any selected status. **Account link → All / Linked / Not Linked** narrows those
 results using Twitch-reported link status. All adds no link restriction; Linked and

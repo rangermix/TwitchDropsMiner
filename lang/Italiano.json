@@ -155,7 +155,11 @@
                 "account_link": "Collegamento account",
                 "all": "Tutte",
                 "linked": "Collegato"
-            }
+            },
+            "add_game": "Aggiungi ai giochi da guardare",
+            "adding_game": "Aggiunta…",
+            "add_game_error": "Impossibile salvare i giochi da guardare. Riprova.",
+            "link_account": "Collega account"
         },
         "settings": {
             "general": {

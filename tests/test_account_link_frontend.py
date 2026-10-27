@@ -120,7 +120,7 @@ function parseDropNameBlacklist() { return []; }
             return new Promise(resolve => {
                 completeAutosave = () => {
                     assert.equal(serverValue, true);
-                    resolve({ok: true});
+                    resolve({ok: true, json: async () => ({success: true, settings: {games_to_watch: []}})});
                 };
             });
         }

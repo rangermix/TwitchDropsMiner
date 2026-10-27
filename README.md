@@ -35,7 +35,8 @@ longer translations, grouping account controls and navigation on smaller screens
 Hover over shortened account or renewal text to read it in full. This dashboard change
 is included in the published releases.
 
-Inventory supports **All / Linked / Not Linked** account-link filters. Settings has a
+Inventory has expandable campaign rows and **Add to Games to Watch** for linked games
+not yet selected. It supports **All / Linked / Not Linked** account-link filters. Settings has a
 default-off option to mine campaigns reported as Not Linked; read its warning and
 check Twitch progress. See the [dashboard guide](docs/usage.md#account-link-override).
 

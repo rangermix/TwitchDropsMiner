@@ -155,7 +155,11 @@
                 "account_link": "Accountkoppeling",
                 "all": "Alle",
                 "linked": "Gekoppeld"
-            }
+            },
+            "add_game": "Toevoegen aan te bekijken spellen",
+            "adding_game": "Toevoegen…",
+            "add_game_error": "De te bekijken spellen konden niet worden opgeslagen. Probeer opnieuw.",
+            "link_account": "Account koppelen"
         },
         "settings": {
             "general": {

@@ -155,7 +155,11 @@
                 "account_link": "アカウント連携",
                 "all": "すべて",
                 "linked": "連携済み"
-            }
+            },
+            "add_game": "視聴するゲームに追加",
+            "adding_game": "追加中…",
+            "add_game_error": "視聴するゲームを保存できませんでした。もう一度お試しください。",
+            "link_account": "アカウントを連携"
         },
         "settings": {
             "general": {

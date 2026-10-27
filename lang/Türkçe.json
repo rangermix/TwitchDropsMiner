@@ -155,7 +155,11 @@
                 "account_link": "Hesap bağlantısı",
                 "all": "Tümü",
                 "linked": "Bağlı"
-            }
+            },
+            "add_game": "İzlenecek oyunlara ekle",
+            "adding_game": "Ekleniyor…",
+            "add_game_error": "İzlenecek oyunlar kaydedilemedi. Tekrar deneyin.",
+            "link_account": "Hesabı bağla"
         },
         "settings": {
             "general": {

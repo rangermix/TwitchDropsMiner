@@ -155,7 +155,11 @@
                 "account_link": "Kontoforbindelse",
                 "all": "Alle",
                 "linked": "Forbundet"
-            }
+            },
+            "add_game": "Føj til spil at se",
+            "adding_game": "Tilføjer…",
+            "add_game_error": "Kunne ikke gemme spil at se. Prøv igen.",
+            "link_account": "Tilknyt konto"
         },
         "settings": {
             "general": {

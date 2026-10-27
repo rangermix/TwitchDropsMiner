@@ -1002,10 +1002,128 @@ function applyInventoryViewMode(listView) {
     document.getElementById('inventory-grid').classList.toggle('list-view', listView);
 }
 
+const expandedInventoryCampaigns = new Set();
+let inventoryWatchSavePending = false;
+let inventoryWatchPendingGame = null;
+const gameWatchWrites = { confirmed: null, draft: null, pending: [], tail: Promise.resolve(), revision: 0 };
+
+function applyGameWatchEdit(edit, current) {
+    const key = name => name.toLowerCase();
+    const unique = games => {
+        const seen = new Set();
+        return games.filter(name => {
+            if (seen.has(key(name))) return false;
+            seen.add(key(name));
+            return true;
+        });
+    };
+    if (edit.append) return current.some(name => key(name) === key(edit.append))
+        ? [...current] : [...current, edit.append];
+    const known = new Set(edit.before.map(key));
+    const existing = new Set(current.map(key));
+    return unique([
+        ...edit.after.filter(name => known.has(key(name)) && existing.has(key(name))),
+        ...current.filter(name => !known.has(key(name))),
+        ...edit.after.filter(name => !known.has(key(name)))
+    ]);
+}
+
+function reconcileGameWatchSettings(settings) {
+    if (!Array.isArray(settings.games_to_watch)) return settings;
+    if (JSON.stringify(gameWatchWrites.confirmed) !== JSON.stringify(settings.games_to_watch)) gameWatchWrites.revision++;
+    gameWatchWrites.confirmed = [...settings.games_to_watch];
+    gameWatchWrites.draft = gameWatchWrites.pending.reduce(
+        (games, pending) => applyGameWatchEdit(pending, games), gameWatchWrites.confirmed);
+    return gameWatchWrites.pending.length && JSON.stringify(gameWatchWrites.draft) !== JSON.stringify(settings.games_to_watch)
+        ? { ...settings, games_to_watch: [...gameWatchWrites.draft] } : settings;
+}
+
+function queueSettingsWrite(settings, appendGame = null) {
+    if (gameWatchWrites.confirmed === null) {
+        gameWatchWrites.confirmed = [...(state.settings.games_to_watch || [])];
+        gameWatchWrites.draft = [...gameWatchWrites.confirmed];
+    }
+    const edit = { before: [...gameWatchWrites.draft],
+        after: [...(settings.games_to_watch || gameWatchWrites.draft)], append: appendGame };
+    gameWatchWrites.pending.push(edit);
+    const refresh = () => {
+        gameWatchWrites.draft = gameWatchWrites.pending.reduce(
+            (games, pending) => applyGameWatchEdit(pending, games), gameWatchWrites.confirmed);
+        if (JSON.stringify(state.settings.games_to_watch) !== JSON.stringify(gameWatchWrites.draft)) {
+            state.settings.games_to_watch = [...gameWatchWrites.draft];
+        }
+        renderGamesToWatch();
+        renderChannels();
+        renderInventory();
+    };
+    refresh();
+    const operation = gameWatchWrites.tail.then(async () => {
+        try {
+            const games = applyGameWatchEdit(edit, gameWatchWrites.confirmed);
+            const revision = gameWatchWrites.revision;
+            if (appendGame && gameWatchWrites.confirmed.some(name => name.toLowerCase() === appendGame.toLowerCase())) return;
+            const response = await fetch('/api/settings', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...settings, games_to_watch: games })
+            });
+            if (!response.ok) throw new Error('settings_save_failed');
+            const data = await response.json();
+            if (data.success !== true || !Array.isArray(data.settings?.games_to_watch)
+                || (appendGame && !data.settings.games_to_watch.includes(appendGame))) throw new Error('settings_save_failed');
+            if (gameWatchWrites.revision === revision
+                || JSON.stringify(gameWatchWrites.confirmed) === JSON.stringify(games)) {
+                gameWatchWrites.confirmed = [...data.settings.games_to_watch];
+            }
+            return data;
+        } finally {
+            gameWatchWrites.pending.splice(gameWatchWrites.pending.indexOf(edit), 1);
+            refresh();
+        }
+    });
+    gameWatchWrites.tail = operation.catch(() => {});
+    return operation;
+}
+
+function canAddInventoryGame(campaign) {
+    return campaign?.linked === true && typeof campaign.game_name === 'string'
+        && campaign.game_name.trim().length > 0
+        && Array.isArray(state.settings.games_to_watch)
+        && !state.settings.games_to_watch.some(
+            game => game.toLowerCase() === campaign.game_name.toLowerCase());
+}
+
+async function addInventoryGame(campaignId, button) {
+    const campaign = state.campaigns[campaignId];
+    if (inventoryWatchSavePending || !canAddInventoryGame(campaign)) return;
+    const hadFocus = document.activeElement === button;
+    inventoryWatchSavePending = true;
+    inventoryWatchPendingGame = campaign.game_name;
+    const t = state.translations.gui?.inventory || {};
+    document.querySelectorAll('.inventory-add-game').forEach(control => { control.disabled = true; });
+    button.textContent = t.adding_game || 'Adding…';
+    button.setAttribute('aria-busy', 'true');
+    try {
+        await queueSettingsWrite({}, campaign.game_name);
+    } catch (_) {
+        showToast(t.add_game_error || 'Could not save Games to Watch. Try again.', 'error');
+    } finally {
+        const restoreFocus = hadFocus && (document.activeElement === button || document.activeElement === document.body);
+        inventoryWatchSavePending = false;
+        inventoryWatchPendingGame = null;
+        renderInventory();
+        if (restoreFocus) {
+            const target = document.getElementById(`inventory-add-${encodeURIComponent(campaignId)}`)
+                || document.getElementById(`inventory-toggle-${encodeURIComponent(campaignId)}`);
+            target?.focus();
+        }
+    }
+}
+
 function renderInventory() {
     updateDropArt();
     const container = document.getElementById('inventory-grid');
-    container.innerHTML = '';
+    const focusedId = container.contains(document.activeElement) ? document.activeElement.id : null;
+    container.replaceChildren();
 
     const t = state.translations;
     const allCampaigns = Object.values(state.campaigns);
@@ -1028,6 +1146,8 @@ function renderInventory() {
     campaigns.forEach(campaign => {
         const card = document.createElement('div');
         card.className = 'campaign-card';
+        const expanded = expandedInventoryCampaigns.has(campaign.id);
+        const contentId = `inventory-rewards-${encodeURIComponent(campaign.id)}`;
 
         let statusClass = '';
         let statusText = '';
@@ -1088,13 +1208,23 @@ function renderInventory() {
                             el.appendChild(makeImageElement(benefit.image_url, benefit.name, 'benefit-icon'));
                             el.appendChild(makeElement('div', { class: 'benefit-info' }, '', el2 => {
                                 el2.appendChild(makeElement('span', { class: 'benefit-name' }, benefit.name));
-                                el2.appendChild(makeElement('span', { class: 'benefit-type' }, `(${benefit.type})`));
+                                const labels = t.gui?.inventory?.filters || {};
+                                const benefitLabel = { DIRECT_ENTITLEMENT: labels.item, BADGE: labels.badge,
+                                    EMOTE: labels.emote, UNKNOWN: labels.other }[benefit.type] || labels.other || 'Other';
+                                el2.appendChild(makeElement('span', { class: 'benefit-type' }, benefitLabel));
                             }));
                         })
                     );
                 });
             }
             dropItem.appendChild(benefitsList);
+            const percent = Number.isFinite(drop.progress) ? Math.max(0, Math.min(100, Math.round(drop.progress * 100))) : 0;
+            const progress = makeElement('div', { class: 'inventory-drop-progress', role: 'progressbar',
+                'aria-label': drop.name, 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': percent });
+            const fill = makeElement('span');
+            fill.style.width = `${percent}%`;
+            progress.appendChild(fill);
+            dropItem.appendChild(progress);
             dropItem.appendChild(makeElement('div', {}, `${drop.current_minutes} / ${drop.required_minutes} minutes (${Math.round(drop.progress * 100)}%)`));
             if (drop.is_claimed) {
                 dropItem.appendChild(makeElement('div', {}, `✓ ${claimedText}`));
@@ -1109,32 +1239,55 @@ function renderInventory() {
             el.appendChild(makeElement('span', { class: 'external-link-icon' }, '🔗'))
         );
 
-        // Linked/not linked badge
-        const linkStatusBadge = campaign.linked
-            ? makeElement('span', { class: 'campaign-badge linked', title: 'Account is linked' }, 'LINKED')
-            : makeElement('span', { class: 'campaign-badge not-linked', title: 'Click to link your account' }, 'NOT LINKED', el => {
-                el.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
-            });
+        const linkStatusBadge = makeElement('span', {
+            class: `campaign-badge ${campaign.linked ? 'linked' : 'not-linked'}`
+        }, campaign.linked ? (t.gui?.inventory?.filters?.linked || 'Linked')
+            : (t.gui?.inventory?.filters?.not_linked || 'Not Linked'));
 
-        // Link account button
-        const campaignGameDiv = makeElement('div', { class: 'campaign-game' }, '', el => {
+        const campaignGameDiv = makeElement('span', { class: 'campaign-game' }, '', el => {
             if (campaign.game_box_art_url) {
                 const iconUrl = campaign.game_box_art_url.replace('{width}', '52').replace('{height}', '70');
                 el.appendChild(makeImageElement(iconUrl, campaign.game_name, 'game-icon'));
             }
-            el.appendChild(makeElement('span', { class: 'campaign-game-name' }, campaign.game_name));
-            el.appendChild(linkStatusBadge);
+            const titles = makeElement('span', { class: 'campaign-titles' });
+            titles.appendChild(makeElement('strong', { class: 'campaign-game-name' }, campaign.game_name));
+            titles.appendChild(makeElement('span', { class: 'campaign-subtitle' }, campaign.name));
+            el.appendChild(titles);
         });
 
-        const campaignHeader = makeElement('div', { class: 'campaign-header' }, '', el => {
-            el.appendChild(campaignGameDiv);
-            el.appendChild(campaignNameLink);
-            if (!campaign.linked && campaign.link_url) {
-                el.appendChild(makeElement('button', { class: 'link-account-btn' }, 'Link Account', btn => {
-                    btn.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
-                }));
-            }
-        });
+        const overview = makeElement('div', { class: 'campaign-overview' });
+        const toggle = makeElement('button', { type: 'button', class: 'campaign-toggle',
+            id: `inventory-toggle-${encodeURIComponent(campaign.id)}`,
+            'aria-expanded': expanded, 'aria-controls': contentId });
+        toggle.appendChild(campaignGameDiv);
+        const dates = makeElement('span', { class: 'campaign-date-range' });
+        for (const [field, key, fallback] of [['starts_at', 'starts', 'Starts: {time}'], ['ends_at', 'ends', 'Ends: {time}']]) {
+            const date = new Date(campaign[field]);
+            if (!campaign[field] || Number.isNaN(date.getTime())) continue;
+            const label = t.gui?.inventory?.[key] || fallback;
+            dates.appendChild(makeElement('time', { datetime: campaign[field], title: label.replace('{time}', date.toLocaleString()) },
+                label.replace('{time}', date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }))));
+        }
+        toggle.appendChild(dates);
+        toggle.appendChild(makeElement('span', { class: 'campaign-chevron', 'aria-hidden': 'true' }));
+        overview.appendChild(toggle);
+        const actions = makeElement('div', { class: 'campaign-actions' });
+        actions.appendChild(linkStatusBadge);
+        if (canAddInventoryGame(campaign) || (campaign.linked === true && campaign.game_name === inventoryWatchPendingGame)) {
+            const add = makeElement('button', { type: 'button', class: 'inventory-add-game' },
+                campaign.game_name === inventoryWatchPendingGame ? (t.gui?.inventory?.adding_game || 'Adding…')
+                    : (t.gui?.inventory?.add_game || 'Add to Games to Watch'));
+            add.disabled = inventoryWatchSavePending;
+            add.id = `inventory-add-${encodeURIComponent(campaign.id)}`;
+            add.addEventListener('click', () => addInventoryGame(campaign.id, add));
+            actions.appendChild(add);
+        }
+        if (!campaign.linked && campaign.link_url) {
+            const link = makeElement('a', { href: campaign.link_url, target: '_blank', rel: 'noopener noreferrer', class: 'link-account-btn' },
+                t.gui?.inventory?.link_account || 'Link account');
+            actions.appendChild(link);
+        }
+        overview.appendChild(actions);
 
         const campaignStatus = makeElement('div', { class: 'campaign-status' }, '', el => {
             el.appendChild(makeElement('span', {}, statusText));
@@ -1151,7 +1304,7 @@ function renderInventory() {
         });
 
         const campaignInfo = makeElement('div', { class: 'campaign-info' });
-        campaignInfo.appendChild(campaignHeader);
+        campaignInfo.appendChild(campaignNameLink);
         campaignInfo.appendChild(campaignStatus);
 
         // Campaign timing
@@ -1166,10 +1319,27 @@ function renderInventory() {
             campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
         }
 
-        card.replaceChildren(campaignInfo, dropsEl);
+        const content = makeElement('div', { class: 'campaign-content', id: contentId });
+        content.hidden = !expanded;
+        content.appendChild(campaignInfo);
+        content.appendChild(dropsEl);
+        toggle.addEventListener('click', () => {
+            const open = toggle.getAttribute('aria-expanded') !== 'true';
+            if (open) expandedInventoryCampaigns.add(campaign.id);
+            else expandedInventoryCampaigns.delete(campaign.id);
+            toggle.setAttribute('aria-expanded', String(open));
+            content.hidden = !open;
+        });
+        card.replaceChildren(overview, content);
 
         container.appendChild(card);
     });
+    if (focusedId) {
+        const target = document.getElementById(focusedId)
+            || (focusedId.startsWith('inventory-add-')
+                ? document.getElementById(focusedId.replace('inventory-add-', 'inventory-toggle-')) : null);
+        target?.focus({ preventScroll: true });
+    }
 }
 
 function updateLoginStatus(data) {
@@ -1203,7 +1373,13 @@ function updateLoginStatus(data) {
     globalThis.browserLoginPanel?.updateLogin(data);
 }
 
-function updateSettingsUI(settings) {
+function updateSettingsUI(settings, authoritative = false) {
+    // Initial loads/socket updates own the watch list; unrelated partial-save replies do not.
+    if (!authoritative && Array.isArray(state.settings.games_to_watch)) {
+        settings = { ...settings, games_to_watch: state.settings.games_to_watch };
+    } else {
+        settings = reconcileGameWatchSettings(settings);
+    }
     state.settings = settings;
     const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
     if (allowUnlinked) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
@@ -2021,11 +2197,7 @@ async function saveSettings() {
     };
 
     try {
-        await fetch('/api/settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(settings)
-        });
+        await queueSettingsWrite(settings);
         console.log('Settings saved automatically');
     } catch (error) {
         console.error('Failed to save settings:', error);

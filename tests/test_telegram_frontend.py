@@ -15,7 +15,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def run_javascript(names: list[str], script: str) -> None:
     source = APP_JS.read_text(encoding="utf-8")
+    names = list(names)
     functions = []
+    if 'updateSettingsUI' in names or 'saveSettings' in names:
+        functions.append('const gameWatchWrites = {confirmed:null,draft:null,pending:[],tail:Promise.resolve(),revision:0};')
+        for dependency in ['applyGameWatchEdit', 'reconcileGameWatchSettings']:
+            if dependency not in names:
+                names.append(dependency)
+    if 'saveSettings' in names and 'queueSettingsWrite' not in names:
+        names.append('queueSettingsWrite')
     for name in names:
         function = extract_javascript_function(source, name)
         start = source.index(f"function {name}(")

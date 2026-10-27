@@ -316,7 +316,11 @@
                 "account_link": "Account link",
                 "all": "All",
                 "linked": "Linked"
-            }
+            },
+            "add_game": "Add to Games to Watch",
+            "adding_game": "Adding…",
+            "add_game_error": "Could not save Games to Watch. Try again.",
+            "link_account": "Link account"
         },
         "history": {
             "title": "Drop History",

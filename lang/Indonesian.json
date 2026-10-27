@@ -155,7 +155,11 @@
                 "account_link": "Tautan akun",
                 "all": "Semua",
                 "linked": "Tertaut"
-            }
+            },
+            "add_game": "Tambahkan ke game untuk ditonton",
+            "adding_game": "Menambahkan…",
+            "add_game_error": "Tidak dapat menyimpan game untuk ditonton. Coba lagi.",
+            "link_account": "Tautkan akun"
         },
         "settings": {
             "general": {

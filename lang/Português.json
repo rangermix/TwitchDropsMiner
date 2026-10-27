@@ -155,7 +155,11 @@
                 "account_link": "Vínculo da conta",
                 "all": "Todas",
                 "linked": "Vinculada"
-            }
+            },
+            "add_game": "Adicionar aos jogos para assistir",
+            "adding_game": "A adicionar…",
+            "add_game_error": "Não foi possível guardar os jogos para assistir. Tenta novamente.",
+            "link_account": "Vincular conta"
         },
         "settings": {
             "general": {

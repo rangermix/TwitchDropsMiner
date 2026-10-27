@@ -196,6 +196,10 @@ class GUIInvStatus(TypedDict):
 
 
 class GUIInventory(TypedDict):
+    add_game: str
+    adding_game: str
+    add_game_error: str
+    link_account: str
     no_campaigns: str
     status: GUIInvStatus
     starts: str

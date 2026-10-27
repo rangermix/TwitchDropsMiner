@@ -155,7 +155,11 @@
                 "account_link": "Liaison du compte",
                 "all": "Toutes",
                 "linked": "Lié"
-            }
+            },
+            "add_game": "Ajouter aux jeux à regarder",
+            "adding_game": "Ajout…",
+            "add_game_error": "Impossible d’enregistrer les jeux à regarder. Réessayez.",
+            "link_account": "Associer le compte"
         },
         "settings": {
             "general": {

@@ -155,7 +155,11 @@
                 "account_link": "Asocierea contului",
                 "all": "Toate",
                 "linked": "Asociat"
-            }
+            },
+            "add_game": "Adaugă la jocurile de urmărit",
+            "adding_game": "Se adaugă…",
+            "add_game_error": "Nu s-au putut salva jocurile de urmărit. Încearcă din nou.",
+            "link_account": "Asociază contul"
         },
         "settings": {
             "general": {

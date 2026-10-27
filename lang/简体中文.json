@@ -155,7 +155,11 @@
                 "account_link": "账号关联",
                 "all": "全部",
                 "linked": "已关联"
-            }
+            },
+            "add_game": "添加到要观看的游戏",
+            "adding_game": "正在添加…",
+            "add_game_error": "无法保存要观看的游戏，请重试。",
+            "link_account": "关联账号"
         },
         "settings": {
             "general": {

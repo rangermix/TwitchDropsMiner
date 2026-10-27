@@ -155,7 +155,11 @@
                 "account_link": "Propojení účtu",
                 "all": "Všechny",
                 "linked": "Propojeno"
-            }
+            },
+            "add_game": "Přidat mezi sledované hry",
+            "adding_game": "Přidávání…",
+            "add_game_error": "Sledované hry se nepodařilo uložit. Zkuste to znovu.",
+            "link_account": "Propojit účet"
         },
         "settings": {
             "general": {
