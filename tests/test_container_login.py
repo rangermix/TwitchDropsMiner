@@ -34,7 +34,8 @@ async def test_password_saving_disabled_before_interactive_browser_starts(tmp_pa
         preferences = json.loads((tmp_path / 'Default/Preferences').read_text())
         assert preferences['credentials_enable_service'] is False
         assert preferences['profile']['password_manager_enabled'] is False
-        assert (tmp_path / 'Default/Preferences').stat().st_mode & 0o777 == 0o600
+        if os.name == 'posix':
+            assert (tmp_path / 'Default/Preferences').stat().st_mode & 0o777 == 0o600
 
     browser.launch = launch
     async with browser:
@@ -46,6 +47,7 @@ async def test_completion_extension_only_loaded_during_interactive_login(tmp_pat
     launch = AsyncMock(return_value=SimpleNamespace(returncode=None))
     monkeypatch.setattr('asyncio.create_subprocess_exec', launch)
     monkeypatch.setattr('src.auth.container_login.loopback_port', lambda: 12345)
+    monkeypatch.setattr('src.auth.container_login.os.geteuid', lambda: 1000, raising=False)
     browser = LoginChromium({})
     browser.profile, browser.executable = tmp_path, 'chromium'
     browser.check_ready = AsyncMock()

@@ -386,6 +386,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   Disable extensions during capture. Clipboard transfers are explicit, bounded to
   65,536 characters, page-local and cleared on send/panel close/viewer disconnect; remote
   clipboard events are ignored unless the panel is open. Never log or persist them.
+  Keep preference-content and launch-argument tests portable: assert POSIX file modes
+  only on POSIX and mock UID lookup in argument-only tests; retain real Linux isolation tests.
 - SDK integrity issuance uses a separate header contract with a fresh 32-character
   client request ID and canonical X-Device-Id, while renewed GraphQL contexts retain
   the original allowlisted headers and never store that request ID. Keep downstream
