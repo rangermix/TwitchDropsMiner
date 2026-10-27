@@ -154,6 +154,10 @@ def test_settings_page_has_one_reward_types_section():
     assert 'id="reward-priority-order"' in html
     assert 'settings-benefits-header' not in html and 'reward-priority-save' not in html
     assert 'mining-benefit-' not in html  # checkboxes are rendered per row by renderRewardPriority()
+    css = Path('web/static/styles.css').read_text(encoding='utf-8')
+    # Must out-rank `.settings-section label { margin-bottom }` so rows stay compact.
+    rule = css.split('.reward-type-row .reward-type-label {', 1)[1].split('}', 1)[0]
+    assert 'margin: 0' in rule
 
 
 @pytest.mark.skipif(NODE is None, reason='Node required')
