@@ -319,3 +319,11 @@ def test_view_button_before_settings_load_applies_without_saving_defaults():
 state.settings={};setInventoryViewMode(true);await gameWatchWrites.tail;
 assert.equal(grid.classList['list-view'],true);assert.equal(requests.length,0);
 """)
+
+
+def test_narrow_cards_give_names_the_width_and_allow_two_lines():
+    css = (ROOT / 'web/static/styles.css').read_text(encoding='utf-8')
+    narrow = css.split('@media (max-width: 480px) {\n    /* Narrow cards', 1)[1].split('\n}\n', 1)[0]
+    assert 'grid-template-columns: minmax(0, 1fr) 96px 32px' in narrow
+    assert '.campaign-controls, .inventory-grid.list-view .campaign-controls { display: contents; }' in narrow
+    assert '-webkit-line-clamp: 2' in narrow and 'white-space: normal' in narrow

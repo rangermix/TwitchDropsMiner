@@ -981,3 +981,6 @@ Tests cover persistence, filtering, Unicode exports, offsets, and translated UI 
   full-text title. Card/list view buttons beside Clear Filters (translated
   `gui.inventory.card_view`/`list_view`, `aria-pressed`) replace the former Settings
   checkbox and persist `inventory_list_view` through the shared settings save queue.
+  At 480 CSS pixels and below, cards switch to fixed narrow columns: the arrow stays
+  top-right, the badge and action share the second row, dates span the card and names
+  may use two clamped lines, keeping equal card heights in all 20 locales.
