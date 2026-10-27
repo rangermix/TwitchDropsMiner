@@ -1326,6 +1326,15 @@ header h1 {
     cursor: grabbing;
 }
 
+/* Reward types: one list for mined types and their optional preferred order */
+.reward-type-list { margin: 12px 0 0; max-width: 480px; }
+.reward-type-label { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; margin: 0; cursor: pointer; }
+.reward-type-excluded { color: var(--text-secondary); font-size: 12px; white-space: nowrap; }
+.reward-type-row.excluded .reward-type-label span { color: var(--text-secondary); text-decoration: line-through; }
+.reward-type-list:not(.ordered) .sortable-item { cursor: default; }
+.reward-type-list:not(.ordered) .sortable-item:hover { border-color: var(--border-color); background: var(--bg-panel); }
+.reward-type-list:not(.ordered) .drag-handle, .reward-type-list:not(.ordered) .priority-input { display: none; }
+
 .priority-number {
     display: inline-flex;
     align-items: center;

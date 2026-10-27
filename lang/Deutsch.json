@@ -212,8 +212,6 @@
             "clear_all_cache_help": "Löscht lokale Kampagnen-, Kanal- und abgeleitete Miner-Daten; Anmeldung und Einstellungen bleiben erhalten, anschließend werden die Daten von Twitch neu geladen.",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",
-            "mining_benefits": "Mining-Vorteile",
-            "mining_benefits_help": "Wählen Sie, welche Arten von Drops Sie minen möchten.",
             "multiple_games_found": "Mehrere Spiele für deine Suche gefunden. Bitte sei spezifischer.",
             "manual_game_warning": "\"{game}\" steht nicht in der Liste verfügbarer Kampagnen. Trotzdem zu den anzusehenden Spielen hinzufügen?",
             "deselect_all_warning": "Bist du sicher, dass du alle Spiele aus deiner Beobachtungsliste entfernen möchtest?",
@@ -261,11 +259,12 @@
                 "save_settings": "Einstellungen speichern",
                 "test_connection": "Verbindung testen"
             },
-            "reward_priority_title": "Belohnungsprioritäten",
-            "reward_priority_enable": "Belohnungstypen bevorzugen",
-            "reward_priority_save": "Prioritäten speichern",
-            "reward_priority_error": "Eindeutige ganze Zahlen von 1 bis 4 verwenden. Speichern fehlgeschlagen; erneut versuchen.",
-            "reward_priority_help": "Kleinere Zahlen zuerst, danach frühere Ablaufzeiten. Ausgewählte Spiele bleiben vor zusätzlichen Spielen. Gegenstände sind Spiel- oder Publisher-Belohnungen; Abzeichen und Emotes gehören zum Twitch-Chat. Andere bedeutet einen unbekannten Twitch-Typ. Deaktivierte Typen bleiben ausgeschlossen."
+            "reward_priority_title": "Belohnungsarten",
+            "reward_priority_enable": "Belohnungsarten in dieser Reihenfolge bevorzugen",
+            "reward_priority_rank": "Position von {type}",
+            "reward_priority_not_mined": "Wird nicht gemint",
+            "reward_priority_error": "Die Belohnungsreihenfolge konnte nicht gespeichert werden. Bitte erneut versuchen.",
+            "reward_priority_help": "Entferne das Häkchen bei einer Art, um sie nicht mehr zu minen. Aktiviere die Reihenfolge und ziehe die Zeilen, um bestimmte Arten zu bevorzugen; bei Gleichstand entscheiden frühere Fristen, und ausgewählte Spiele bleiben vor Ausweichspielen. Spielbelohnungen stammen vom Spiel oder Publisher, Abzeichen und Emotes sind Twitch-Chat-Belohnungen, und Sonstiges ist eine Art, die Twitch nicht erkannt hat."
         },
         "help": {
             "about": "Über Twitch Drops Miner",

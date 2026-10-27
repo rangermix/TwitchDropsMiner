@@ -212,8 +212,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "すべてのキャッシュを消去",
             "clear_all_cache_help": "ローカルのキャンペーン、チャンネル、およびマイナーの派生状態を消去します。ログイン情報と設定は保持し、その後 Twitch から再読み込みします。",
-            "mining_benefits": "マイニング特典",
-            "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。",
             "multiple_games_found": "検索結果に複数のゲームが見つかりました。もう少し具体的に入力してください。",
             "manual_game_warning": "「{game}」は利用可能なキャンペーン一覧にありません。それでも視聴するゲームに追加しますか？",
             "deselect_all_warning": "監視リストからすべてのゲームを削除してもよろしいですか？",
@@ -261,11 +259,12 @@
                 "save_settings": "設定を保存",
                 "test_connection": "接続をテスト"
             },
-            "reward_priority_title": "報酬の優先順位",
-            "reward_priority_enable": "報酬タイプを優先する",
-            "reward_priority_save": "優先順位を保存",
-            "reward_priority_error": "1～4の異なる整数を指定してください。保存できませんでした。再試行してください。",
-            "reward_priority_help": "小さい数字を優先し、次に期限が近い報酬を優先します。選択したゲームは追加ゲームより優先されます。アイテムはゲームや配信元の報酬、バッジとエモートはTwitchチャットの報酬です。その他はTwitchから報告された不明なタイプです。無効なタイプは引き続き除外します。"
+            "reward_priority_title": "報酬の種類",
+            "reward_priority_enable": "この順序で報酬の種類を優先する",
+            "reward_priority_rank": "{type}の順位",
+            "reward_priority_not_mined": "マイニングしない",
+            "reward_priority_error": "報酬の順序を保存できませんでした。もう一度お試しください。",
+            "reward_priority_help": "チェックを外した種類はマイニングされません。順序を有効にして行をドラッグすると、特定の種類を優先できます。同順位では期限が早い報酬が先になり、選択したゲームは引き続き代替ゲームより優先されます。ゲーム報酬はゲームまたはパブリッシャーから、バッジとエモートはTwitchチャットの報酬で、「その他」はTwitchが識別できなかった種類です。"
         },
         "help": {
             "about": "Twitch Drops Minerについて",

@@ -232,5 +232,5 @@ or [buying the maintainer a coffee](https://buymeacoffee.com/rangermix).
 
 </details>
 
-Optional reward priorities in Settings prefer chosen reward types and earlier
-reward deadlines. [Mining settings](docs/mining-settings.md) explains the ordering.
+**Settings → Reward types** chooses which reward types to mine and, optionally, drag
+them into a preferred order; earlier reward deadlines break ties. [Mining settings](docs/mining-settings.md) explains the ordering.

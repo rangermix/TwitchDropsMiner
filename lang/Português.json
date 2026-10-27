@@ -212,8 +212,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "Limpar todo o cache",
             "clear_all_cache_help": "Limpa o estado local de campanhas, canais e dados derivados do minerador; mantém o login e as configurações e depois recarrega os dados da Twitch.",
-            "mining_benefits": "Benefícios de Mineração",
-            "mining_benefits_help": "Selecione quais tipos de drops você deseja minerar.",
             "multiple_games_found": "Vários jogos encontrados para sua pesquisa. Por favor, seja mais específico.",
             "manual_game_warning": "\"{game}\" não está na lista de campanhas disponíveis. Adicionar aos jogos para assistir mesmo assim?",
             "deselect_all_warning": "Tem certeza de que deseja remover todos os jogos da sua lista de observação?",
@@ -261,11 +259,12 @@
                 "save_settings": "Salvar configurações",
                 "test_connection": "Testar Conexão"
             },
-            "reward_priority_title": "Prioridades de recompensas",
-            "reward_priority_enable": "Priorizar tipos de recompensa",
-            "reward_priority_save": "Salvar prioridades",
-            "reward_priority_error": "Use números inteiros únicos de 1 a 4. Não foi possível salvar; tente novamente.",
-            "reward_priority_help": "Números menores primeiro, depois prazos mais próximos. Jogos selecionados ficam à frente dos adicionais. Itens são recompensas do jogo ou editora; emblemas e emotes são do chat Twitch. Outros indica um tipo desconhecido informado pela Twitch. Tipos desativados continuam excluídos."
+            "reward_priority_title": "Tipos de recompensa",
+            "reward_priority_enable": "Preferir tipos de recompensa nesta ordem",
+            "reward_priority_rank": "Posição de {type}",
+            "reward_priority_not_mined": "Não minerado",
+            "reward_priority_error": "Não foi possível salvar a ordem das recompensas. Tente novamente.",
+            "reward_priority_help": "Desmarque um tipo para deixar de minerá-lo. Ative a ordem e arraste as linhas para preferir certos tipos; em caso de empate, os prazos mais próximos vêm primeiro, e os jogos selecionados continuam à frente dos jogos alternativos. Recompensas de jogo vêm do jogo ou da editora, emblemas e emotes são recompensas do chat da Twitch, e Outra é um tipo que a Twitch não identificou."
         },
         "help": {
             "about": "Sobre o Twitch Drops Miner",

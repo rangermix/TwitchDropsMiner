@@ -45,8 +45,8 @@ Fallback games with campaigns ending soonest are preferred. Account linking, rew
 types, ignored names, mining hours and other eligibility rules still apply. Manual
 channel selection retains its existing behavior.
 
-**Mining Benefits** controls which reward types the miner targets: items, badges,
-emotes, and other rewards. These choices are separate from the display filters on
+**Reward types** controls which reward types the miner targets (game rewards, chat
+badges, chat emotes and other rewards) and, optionally, which types it prefers. These choices are separate from the display filters on
 the Inventory tab.
 
 ## Channels and manual selection

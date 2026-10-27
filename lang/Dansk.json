@@ -212,8 +212,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "Ryd hele cachen",
             "clear_all_cache_help": "Rydder lokal kampagne-, kanal- og afledt minerstatus; bevarer login og indstillinger og genindlæser derefter data fra Twitch.",
-            "mining_benefits": "Mining Fordele",
-            "mining_benefits_help": "Vælg hvilke typer drops du vil mine.",
             "multiple_games_found": "Flere spil fundet for din søgning. Vær venligst mere specifik.",
             "manual_game_warning": "\"{game}\" findes ikke på listen over tilgængelige kampagner. Vil du alligevel føje det til spil, der skal ses?",
             "deselect_all_warning": "Er du sikker på, at du vil fjerne alle spil fra din overvågningsliste?",
@@ -261,11 +259,12 @@
                 "save_settings": "Gem indstillinger",
                 "test_connection": "Test forbindelse"
             },
-            "reward_priority_title": "Belønningsprioriteter",
-            "reward_priority_enable": "Foretræk belønningstyper",
-            "reward_priority_save": "Gem prioriteter",
-            "reward_priority_error": "Brug forskellige heltal fra 1 til 4. Kunne ikke gemme; prøv igen.",
-            "reward_priority_help": "Lavere tal først, derefter tidligere udløb. Valgte spil går foran ekstra spil. Genstande er spil- eller udgiverbelønninger; badges og emotes er til Twitch-chat. Andre betyder en ukendt Twitch-type. Deaktiverede typer forbliver udelukket."
+            "reward_priority_title": "Belønningstyper",
+            "reward_priority_enable": "Foretræk belønningstyper i denne rækkefølge",
+            "reward_priority_rank": "Placering af {type}",
+            "reward_priority_not_mined": "Mines ikke",
+            "reward_priority_error": "Belønningsrækkefølgen kunne ikke gemmes. Prøv igen.",
+            "reward_priority_help": "Fjern fluebenet for en type for at stoppe med at mine den. Slå rækkefølge til, og træk rækkerne for at foretrække bestemte typer; ved lighed går tidligere deadlines forrest, og valgte spil kommer stadig før reservespil. Spilbelønninger kommer fra spillet eller udgiveren, badges og emotes er Twitch-chatbelønninger, og Andet er en type, Twitch ikke kunne identificere."
         },
         "help": {
             "about": "Om Twitch Drops Miner",

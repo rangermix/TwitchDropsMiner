@@ -212,8 +212,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "Svuota tutta la cache",
             "clear_all_cache_help": "Cancella lo stato locale di campagne, canali e i dati derivati del miner; mantiene l’accesso e le impostazioni, quindi ricarica i dati da Twitch.",
-            "mining_benefits": "Vantaggi Minatori",
-            "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare.",
             "multiple_games_found": "Più giochi trovati per la tua ricerca. Per favore, sii più specifico.",
             "manual_game_warning": "\"{game}\" non è nell’elenco delle campagne disponibili. Aggiungerlo comunque ai giochi da guardare?",
             "deselect_all_warning": "Sei sicuro di voler rimuovere tutti i giochi dalla tua lista di osservazione?",
@@ -261,11 +259,12 @@
                 "save_settings": "Salva impostazioni",
                 "test_connection": "Prova Connessione"
             },
-            "reward_priority_title": "Priorità ricompense",
-            "reward_priority_enable": "Preferisci tipi di ricompensa",
-            "reward_priority_save": "Salva priorità",
-            "reward_priority_error": "Usa numeri interi distinti da 1 a 4. Salvataggio fallito; riprova.",
-            "reward_priority_help": "Prima i numeri più bassi, poi le scadenze più vicine. I giochi selezionati precedono quelli aggiuntivi. Gli oggetti sono premi di gioco o dell’editore; distintivi ed emote sono per la chat Twitch. Altro indica un tipo Twitch sconosciuto. I tipi disattivati restano esclusi."
+            "reward_priority_title": "Tipi di ricompensa",
+            "reward_priority_enable": "Preferisci i tipi di ricompensa in questo ordine",
+            "reward_priority_rank": "Posizione di {type}",
+            "reward_priority_not_mined": "Non minato",
+            "reward_priority_error": "Impossibile salvare l'ordine delle ricompense. Riprova.",
+            "reward_priority_help": "Deseleziona un tipo per smettere di minarlo. Attiva l'ordine e trascina le righe per preferire alcuni tipi; a parità vengono prima le scadenze più vicine, e i giochi selezionati restano davanti ai giochi di riserva. Le ricompense di gioco provengono dal gioco o dall'editore, badge ed emote sono ricompense della chat di Twitch, e Altro è un tipo che Twitch non ha identificato."
         },
         "help": {
             "about": "Informazioni su Twitch Drops Miner",

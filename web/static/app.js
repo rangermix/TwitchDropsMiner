@@ -1208,6 +1208,10 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     if (!authoritative && !changedFields.includes('reward_priority') && Array.isArray(state.settings.reward_priority)) {
         settings = {...settings, reward_priority: state.settings.reward_priority};
     }
+    // Reward-type checkboxes update state optimistically; only authoritative updates replace them.
+    if (!authoritative && !changedFields.includes('mining_benefits') && state.settings.mining_benefits) {
+        settings = {...settings, mining_benefits: state.settings.mining_benefits};
+    }
     state.settings = settings;
     const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
     if (allowUnlinked) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
@@ -1303,14 +1307,8 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
         if (document.getElementById('filter-benefit-other')) document.getElementById('filter-benefit-other').checked = settings.inventory_filters.show_benefit_other !== false;
     }
 
-    // Restore mining benefit filters
+    // Reward types: mined checkboxes and optional preferred order
     if (typeof renderRewardPriority === 'function') renderRewardPriority(settings.reward_priority || []);
-    if (settings.mining_benefits) {
-        if (document.getElementById('mining-benefit-item')) document.getElementById('mining-benefit-item').checked = settings.mining_benefits.DIRECT_ENTITLEMENT;
-        if (document.getElementById('mining-benefit-badge')) document.getElementById('mining-benefit-badge').checked = settings.mining_benefits.BADGE;
-        if (document.getElementById('mining-benefit-emote')) document.getElementById('mining-benefit-emote').checked = settings.mining_benefits.EMOTE;
-        if (document.getElementById('mining-benefit-unknown')) document.getElementById('mining-benefit-unknown').checked = settings.mining_benefits.UNKNOWN;
-    }
 
 
     // Update games to watch lists
@@ -1492,7 +1490,8 @@ function handleDragOver(e) {
     e.dataTransfer.dropEffect = 'move';
 
     const target = e.target.closest('.sortable-item');
-    if (target && target !== draggedElement) {
+    // Rows only move within their own list (Mining list or reward types).
+    if (target && target !== draggedElement && target.parentNode === draggedElement?.parentNode) {
         const container = target.parentNode;
         const allItems = [...container.querySelectorAll('.sortable-item')];
         const draggedIndex = allItems.indexOf(draggedElement);
@@ -1957,45 +1956,82 @@ function parseDropNameBlacklist(value) {
 const rewardTypes = ['BADGE', 'EMOTE', 'DIRECT_ENTITLEMENT', 'UNKNOWN'];
 const rewardLabelKeys = {BADGE: 'badge', EMOTE: 'emote', DIRECT_ENTITLEMENT: 'item', UNKNOWN: 'other'};
 let rewardPrioritySaving = false;
+function displayedRewardOrder() {
+    const order = state.settings.reward_priority || [];
+    return order.length ? [...order] : [...rewardTypes];
+}
 function renderRewardPriority(order = state.settings.reward_priority || []) {
     const t = state.translations.gui?.settings || {};
     const labels = state.translations.gui?.inventory?.filters || {};
     const enabled = document.getElementById('reward-priority-enabled');
     if (!enabled) return;
     enabled.checked = order.length > 0;
+    enabled.disabled = rewardPrioritySaving;
     for (const [id, key] of Object.entries({'reward-priority-title': 'reward_priority_title',
-        'reward-priority-help': 'reward_priority_help', 'reward-priority-enable-label': 'reward_priority_enable',
-        'reward-priority-save': 'reward_priority_save'})) document.getElementById(id).textContent = t[key] || '';
+        'reward-priority-help': 'reward_priority_help', 'reward-priority-enable-label': 'reward_priority_enable'}))
+        document.getElementById(id).textContent = t[key] || '';
+    const benefits = state.settings.mining_benefits || {};
     const list = document.getElementById('reward-priority-order');
+    list.classList.toggle('ordered', enabled.checked);
     list.replaceChildren();
     for (const [index, type] of (order.length ? order : rewardTypes).entries()) {
-        const label = document.createElement('label');
-        const text = document.createElement('span');
-        text.textContent = labels[rewardLabelKeys[type]] || type;
-        const input = document.createElement('input');
-        input.type = 'number'; input.min = '1'; input.max = '4'; input.step = '1'; input.required = true;
-        input.value = String(index + 1); input.dataset.rewardType = type;
-        input.setAttribute('aria-label', text.textContent);
-        input.disabled = !enabled.checked || rewardPrioritySaving;
-        label.appendChild(text); label.appendChild(input); list.appendChild(label);
+        const name = labels[rewardLabelKeys[type]] || type;
+        const row = makeElement('div', { class: 'sortable-item reward-type-row' });
+        row.dataset.rewardType = type;
+        row.draggable = enabled.checked && !rewardPrioritySaving;
+        const rank = makeElement('input', { type: 'number', class: 'priority-input', id: `reward-rank-${type}`,
+            value: String(index + 1), min: '1', max: String(rewardTypes.length),
+            'aria-label': (t.reward_priority_rank || 'Position of {type}').replace('{type}', name) });
+        rank.disabled = !enabled.checked || rewardPrioritySaving;
+        rank.addEventListener('change', () => {
+            const position = Number(rank.value);
+            if (!rank.value.trim() || !Number.isInteger(position)) {
+                rank.value = String(index + 1); // Reset on invalid, like the Mining list
+                return;
+            }
+            const next = displayedRewardOrder().filter(item => item !== type);
+            next.splice(Math.max(0, Math.min(position - 1, next.length)), 0, type);
+            saveRewardPriority(next);
+        });
+        const checkbox = makeElement('input', { type: 'checkbox' });
+        checkbox.checked = benefits[type] === true;
+        checkbox.disabled = !state.settings.mining_benefits; // A save before load would store a partial set
+        const status = makeElement('span', { class: 'reward-type-excluded' },
+            checkbox.checked || checkbox.disabled ? '' : (t.reward_priority_not_mined || 'Not mined'));
+        checkbox.addEventListener('change', () => {
+            // Keep re-renders consistent while the generic settings save is queued.
+            state.settings.mining_benefits = { ...state.settings.mining_benefits, [type]: checkbox.checked };
+            status.textContent = checkbox.checked ? '' : (t.reward_priority_not_mined || 'Not mined');
+            row.classList.toggle('excluded', !checkbox.checked);
+            saveSettings();
+        });
+        const label = makeElement('label', { class: 'reward-type-label' });
+        label.appendChild(checkbox);
+        label.appendChild(makeElement('span', {}, name));
+        row.replaceChildren(makeElement('span', { class: 'drag-handle', 'aria-hidden': 'true' }, '☰'), rank, label, status);
+        row.classList.toggle('excluded', !checkbox.checked);
+        row.addEventListener('dragstart', handleDragStart);
+        row.addEventListener('dragover', handleDragOver);
+        row.addEventListener('drop', handleDrop);
+        row.addEventListener('dragend', event => {
+            event.target.classList.remove('dragging');
+            if (!list.classList.contains('ordered')) return;
+            saveRewardPriority([...list.children].map(item => item.dataset.rewardType));
+        });
+        list.appendChild(row);
     }
 }
-async function saveRewardPriority() {
+async function saveRewardPriority(order) {
     if (rewardPrioritySaving) return;
-    const error = document.getElementById('reward-priority-error');
-    const enabled = document.getElementById('reward-priority-enabled');
-    const fields = [...document.querySelectorAll('#reward-priority-order input')];
-    const message = state.translations.gui?.settings?.reward_priority_error || '';
-    error.hidden = true;
-    const values = fields.map(field => Number(field.value));
-    if (enabled.checked && (fields.some(field => !field.value.trim() || !field.reportValidity())
-        || new Set(values).size !== 4 || values.some(value => !Number.isInteger(value) || value < 1 || value > 4))) {
-        error.textContent = message; error.hidden = false; return;
+    if (JSON.stringify(order) === JSON.stringify(state.settings.reward_priority || [])) {
+        renderRewardPriority();
+        return;
     }
-    const order = enabled.checked ? fields.slice().sort((a,b) => Number(a.value)-Number(b.value)).map(field=>field.dataset.rewardType) : [];
+    const error = document.getElementById('reward-priority-error');
+    error.hidden = true;
+    const focused = document.activeElement?.id;
     rewardPrioritySaving = true;
-    const controls = [enabled, document.getElementById('reward-priority-save'), ...fields];
-    controls.forEach(control=>{control.disabled=true;});
+    renderRewardPriority(order);
     try {
         const response = await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'},
             body:JSON.stringify({reward_priority:order})});
@@ -2004,11 +2040,12 @@ async function saveRewardPriority() {
         if (data.success !== true || JSON.stringify(data.settings?.reward_priority) !== JSON.stringify(order)) throw new Error();
         updateSettingsUI(data.settings, false, ['reward_priority']);
     } catch (_) {
-        renderRewardPriority(); error.textContent=message; error.hidden=false;
+        error.textContent = state.translations.gui?.settings?.reward_priority_error || '';
+        error.hidden = false;
     } finally {
-        rewardPrioritySaving=false;
-        enabled.disabled=false;document.getElementById('reward-priority-save').disabled=false;
-        document.querySelectorAll('#reward-priority-order input').forEach(input=>{input.disabled=!enabled.checked;});
+        rewardPrioritySaving = false;
+        renderRewardPriority();
+        if (focused) document.getElementById(focused)?.focus();
     }
 }
 
@@ -2075,12 +2112,8 @@ async function saveSettings() {
             document.getElementById('drop-name-blacklist')?.value
         ),
         inventory_filters: getInventoryFilters(),
-        mining_benefits: {
-            "DIRECT_ENTITLEMENT": document.getElementById('mining-benefit-item')?.checked,
-            "BADGE": document.getElementById('mining-benefit-badge')?.checked,
-            "EMOTE": document.getElementById('mining-benefit-emote')?.checked,
-            "UNKNOWN": document.getElementById('mining-benefit-unknown')?.checked
-        }
+        // Omitted until settings load, so an early save cannot overwrite the saved types.
+        mining_benefits: state.settings.mining_benefits,
     };
 
     try {
@@ -2268,7 +2301,6 @@ function applyTranslations(t) {
         const generalHeader = document.getElementById('settings-general-header');
         if (generalHeader) generalHeader.textContent = t.gui.settings.general.name;
 
-        const benefitsHeader = document.getElementById('settings-benefits-header');
         const allowUnlinkedLabel = document.getElementById('allow-unlinked-label');
         if (allowUnlinkedLabel) allowUnlinkedLabel.textContent = t.gui.settings.allow_unlinked_campaigns;
         const allowUnlinkedWarning = document.getElementById('allow-unlinked-warning');
@@ -2276,7 +2308,6 @@ function applyTranslations(t) {
         const allowUnlinkedError = document.getElementById('allow-unlinked-error');
         if (allowUnlinkedError && !allowUnlinkedError.hidden) allowUnlinkedError.textContent = t.gui.settings.allow_unlinked_campaigns_save_error;
         if (typeof renderRewardPriority === 'function') renderRewardPriority();
-        if (benefitsHeader && t.gui.settings.mining_benefits) benefitsHeader.textContent = t.gui.settings.mining_benefits;
 
         const dropBlacklistHeader = document.getElementById('settings-drop-blacklist-header');
         if (dropBlacklistHeader) dropBlacklistHeader.textContent = t.gui.settings.drop_name_blacklist;
@@ -2323,8 +2354,6 @@ function applyTranslations(t) {
             refreshLabel.appendChild(input);
         }
 
-        const benefitsHelp = document.getElementById('settings-benefits-help');
-        if (benefitsHelp && t.gui.settings.mining_benefits_help) benefitsHelp.textContent = t.gui.settings.mining_benefits_help;
 
         const hoursHeader = document.getElementById('settings-hours-header');
         if (hoursHeader && t.gui.settings.mining_hours) hoursHeader.textContent = t.gui.settings.mining_hours;
@@ -2574,12 +2603,6 @@ function applyTranslations(t) {
         const searchInput = document.getElementById('games-filter');
         if (searchInput) searchInput.placeholder = f.search_placeholder;
 
-        // Update Mining Benefit Labels in Settings (re-using inventory filter keys)
-        // IDs: mining-benefit-item, mining-benefit-badge, mining-benefit-emote, mining-benefit-unknown
-        updateLabel('mining-benefit-item', f.item);
-        updateLabel('mining-benefit-badge', f.badge);
-        updateLabel('mining-benefit-emote', f.emote);
-        updateLabel('mining-benefit-unknown', f.other);
     }
 
     // Update header elements
@@ -2726,10 +2749,8 @@ document.addEventListener('DOMContentLoaded', () => {
         applyInventoryViewMode(e.target.checked);
         saveSettings();
     });
-    document.getElementById('reward-priority-save').addEventListener('click', saveRewardPriority);
-    document.getElementById('reward-priority-enabled').addEventListener('change', event => {
-        document.querySelectorAll('#reward-priority-order input').forEach(input => {input.disabled=!event.target.checked;});
-    });
+    document.getElementById('reward-priority-enabled').addEventListener('change', event =>
+        saveRewardPriority(event.target.checked ? displayedRewardOrder() : []));
     document.getElementById('priority-list-only').addEventListener('change', onPriorityModeChange);
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
@@ -2799,12 +2820,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filter-benefit-emote').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-benefit-other').addEventListener('change', onInventoryFilterChange);
     document.getElementById('clear-filters-btn').addEventListener('click', clearInventoryFilters);
-
-    // Mining benefit settings
-    document.getElementById('mining-benefit-item').addEventListener('change', saveSettings);
-    document.getElementById('mining-benefit-badge').addEventListener('change', saveSettings);
-    document.getElementById('mining-benefit-emote').addEventListener('change', saveSettings);
-    document.getElementById('mining-benefit-unknown').addEventListener('change', saveSettings);
 
 
     // Inventory game search dropdown

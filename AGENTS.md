@@ -907,6 +907,14 @@ Tests cover persistence, filtering, Unicode exports, offsets, and translated UI 
   Saved game order is unchanged. Failed priority saves restore the prior policy and
   do not request a selection refresh. Cover selection and persistence boundaries in
   `test_reward_priority.py` and translated form behavior in its frontend companion.
+  The Settings UI is one **Reward types** list (`renderRewardPriority()`): each row
+  holds its `mining_benefits` checkbox (optimistic `state.settings` update; `saveSettings()`
+  sends that state, never DOM-derived defaults) and, when ordering is enabled, the
+  Mining-list drag handle plus a position number input as the keyboard/touch
+  alternative. Ordering and benefit changes autosave; there is no Save button. Unticked
+  types stay listed as not mined. Non-authoritative replies keep local
+  `mining_benefits`/`reward_priority`. Shared drag handlers only move rows within their
+  own list.
 
 - Reward ranking uses currently earnable drops, including prerequisite guards. Keep
   game, nested campaign and drop queue order consistent with channel and active-campaign

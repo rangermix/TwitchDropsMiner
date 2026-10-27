@@ -254,7 +254,8 @@ class GUITelegramSettings(TypedDict):
 class GUISettings(TypedDict):
     reward_priority_title: str
     reward_priority_enable: str
-    reward_priority_save: str
+    reward_priority_rank: str
+    reward_priority_not_mined: str
     reward_priority_error: str
     reward_priority_help: str
     allow_unlinked_campaigns: str
@@ -263,8 +264,6 @@ class GUISettings(TypedDict):
     general: GUISettingsGeneral
     discord: GUIDiscordSettings
     telegram: GUITelegramSettings
-    mining_benefits: str
-    mining_benefits_help: str
     reload: str
     reload_campaigns: str
     drop_name_blacklist: str
