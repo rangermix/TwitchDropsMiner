@@ -540,6 +540,11 @@ progress to an ignored drop while the miner intentionally targets another reward
   Its HTTP 204 response and a Watching label do not prove Twitch has credited progress.
   Keep fallback CurrentDrop queries and estimated-minute bumps on the existing minute
   cadence when changing playlist polling, including across restarts/channel events.
+- `WatchService.watch_loop` schedules progress queries with its monotonic deadline,
+  independently of the GUI's remaining-seconds value. That value represents total reward
+  time and does not count down on the server. Keep successful-watch, current-broadcast,
+  mining-hours and cancellation guards. The real `CampaignProgressManager` regression
+  covers positive remaining time, exact query cadence, failed watches and stale streams.
 - Twitch reports authoritative progress through User.Drops websocket events and GraphQL
   Inventory/CurrentDrop. Distinguish those readings from dashboard estimates and mocks.
   Playlist/transport, lifecycle, and controlled-clock regressions live in
