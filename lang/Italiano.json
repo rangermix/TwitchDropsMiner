@@ -383,9 +383,13 @@
             "helper_macos_intel": "macOS (Intel)",
             "helper_access_help": "Viene accettato il primo assistente che si collega. Tornare al browser integrato chiude l’accesso dell’assistente.",
             "clipboard_title": "Copia e incolla",
-            "clipboard_help": "Incolla qui e invia al campo Twitch attivo. Per copiare da Twitch, apri prima questo pannello, copia in Twitch e poi copia il testo qui sotto. Il testo viene cancellato alla chiusura.",
+            "clipboard_help": "Apri la barra sinistra noVNC e scegli Appunti. Incolla il testo, torna al campo Twitch e premi Ctrl+V. Il testo viene cancellato dopo l’invio o la chiusura.",
             "clipboard_label": "Testo degli appunti",
-            "clipboard_send": "Incolla nel browser Twitch"
+            "clipboard_send": "Incolla nel browser Twitch",
+            "token_title": "Usa una sessione Twitch esistente",
+            "token_help": "Avanzato: incolla solo il valore del cookie auth-token del tuo browser connesso a Twitch. Proteggilo come una password. TDM verifica l’account e crea una nuova prova; un token rifiutato o scaduto non consente l’accesso.",
+            "token_label": "auth-token di Twitch",
+            "token_send": "Accedi con token"
         }
     },
     "helper": {

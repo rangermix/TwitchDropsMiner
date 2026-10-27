@@ -66,6 +66,10 @@ class GUITabs(TypedDict):
 
 
 class GUIBrowserLogin(TypedDict):
+    token_title: str
+    token_help: str
+    token_label: str
+    token_send: str
     clipboard_title: str
     clipboard_help: str
     clipboard_label: str

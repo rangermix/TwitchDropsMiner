@@ -383,9 +383,13 @@
             "helper_macos_intel": "macOS (Intel)",
             "helper_access_help": "Přijat bude první připojený pomocník. Návrat do vestavěného prohlížeče uzavře přístup pomocníka.",
             "clipboard_title": "Kopírovat a vložit",
-            "clipboard_help": "Vložte sem text a odešlete jej do aktivního pole Twitch. Pro kopírování z Twitch nejprve otevřete tento panel, zkopírujte text na Twitch a pak jej převezměte níže. Zavřením se text smaže.",
+            "clipboard_help": "Otevřete levý panel noVNC a zvolte Schránka. Vložte text, vraťte se do pole Twitch a stiskněte Ctrl+V. Text se po odeslání nebo zavření vymaže.",
             "clipboard_label": "Text schránky",
-            "clipboard_send": "Vložit do prohlížeče Twitch"
+            "clipboard_send": "Vložit do prohlížeče Twitch",
+            "token_title": "Použít existující relaci Twitch",
+            "token_help": "Pokročilé: vložte pouze hodnotu cookie auth-token z vlastního prohlížeče přihlášeného k Twitch. Chraňte ji jako heslo. TDM ověří účet a vytvoří nový důkaz; odmítnutý nebo prošlý token přihlášení neumožní.",
+            "token_label": "Twitch auth-token",
+            "token_send": "Přihlásit tokenem"
         }
     },
     "helper": {

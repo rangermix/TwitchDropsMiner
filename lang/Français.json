@@ -383,9 +383,13 @@
             "helper_macos_intel": "macOS (Intel)",
             "helper_access_help": "Le premier assistant qui se connecte est accepté. Revenir au navigateur intégré ferme l’accès de l’assistant.",
             "clipboard_title": "Copier et coller",
-            "clipboard_help": "Collez le texte ici puis envoyez-le au champ Twitch actif. Pour copier depuis Twitch, ouvrez ce panneau avant de copier, puis copiez le texte ci-dessous. Il est effacé à la fermeture du panneau.",
+            "clipboard_help": "Ouvrez la barre de gauche noVNC et choisissez Presse-papiers. Collez le texte, revenez au champ Twitch puis appuyez sur Ctrl+V. Le texte est effacé après envoi ou fermeture.",
             "clipboard_label": "Texte du presse-papiers",
-            "clipboard_send": "Coller dans le navigateur Twitch"
+            "clipboard_send": "Coller dans le navigateur Twitch",
+            "token_title": "Utiliser une session Twitch existante",
+            "token_help": "Avancé : collez uniquement la valeur du cookie auth-token de votre propre navigateur connecté à Twitch. Protégez-la comme un mot de passe. TDM vérifie le compte et crée une nouvelle preuve ; un jeton refusé ou expiré ne permet pas la connexion.",
+            "token_label": "auth-token Twitch",
+            "token_send": "Se connecter avec le jeton"
         }
     },
     "helper": {

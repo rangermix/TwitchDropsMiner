@@ -383,9 +383,13 @@
             "helper_macos_intel": "macOS (Intel)",
             "helper_access_help": "Den første hjælper, der opretter forbindelse, accepteres. Tilbagevenden til den indbyggede browser lukker hjælperadgangen.",
             "clipboard_title": "Kopiér og indsæt",
-            "clipboard_help": "Indsæt tekst her og send den til det aktive Twitch-felt. Åbn panelet før du kopierer i Twitch, og kopiér derefter teksten nedenfor. Teksten slettes når panelet lukkes.",
+            "clipboard_help": "Åbn venstre noVNC-sidepanel og vælg Udklipsholder. Indsæt tekst, gå tilbage til Twitch-feltet og tryk Ctrl+V. Teksten slettes efter afsendelse eller lukning.",
             "clipboard_label": "Udklipsholdertekst",
-            "clipboard_send": "Indsæt i Twitch-browser"
+            "clipboard_send": "Indsæt i Twitch-browser",
+            "token_title": "Brug en eksisterende Twitch-session",
+            "token_help": "Avanceret: indsæt kun auth-token-cookiens værdi fra din egen browser, hvor du er logget ind på Twitch. Beskyt den som en adgangskode. TDM validerer kontoen og opretter et nyt bevis; afviste eller udløbne tokens giver ikke adgang.",
+            "token_label": "Twitch auth-token",
+            "token_send": "Log ind med token"
         }
     },
     "helper": {

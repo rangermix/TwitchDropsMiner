@@ -924,3 +924,14 @@ and confirmed local deletion. Date-only filters mean midnight UTC; aware timesta
 preserve their instant. CSV attachment names use UTF-8 percent encoding with an ASCII
 fallback. History text is defined in `gui.history` for every locale and rendered as text.
 Tests cover persistence, filtering, Unicode exports, offsets, and translated UI behavior.
+
+- Existing-session admission accepts only a bounded sole `token` field through
+  dashboard-authenticated, same-origin `POST /api/session/token`. Never echo inputs.
+  Validate WEB identity before fresh SDK bootstrap and revalidate account/catalog
+  before atomic installation; logout and dashboard revocation invalidate admission.
+  Expired SDK cookies are not reused: validate the saved OAuth identity and bootstrap
+  a new owned context. OAuth identity alone never marks a session ready.
+- Native noVNC lives in a same-origin owned iframe, fixed to `/api/session/vnc` with
+  reconnection disabled. Parent messages contain fixed viewer events only. Override
+  native clipboard logging, bound transfers, ignore remote text while the panel is
+  closed, and clear text on send/close/disconnect. Preserve attempt teardown.

@@ -233,3 +233,6 @@ or [buying the maintainer a coffee](https://buymeacoffee.com/rangermix).
 <!-- contributors:end -->
 
 </details>
+
+The sign-in page also offers an advanced existing-session token option. See the
+[authentication guide](docs/authentication.md) for clipboard controls and recovery.

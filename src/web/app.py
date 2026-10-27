@@ -23,6 +23,7 @@ from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
 from src.web.diagnostics_api import DiagnosticsAPI
 from src.web.helper_api import HelperAPI
 from src.web.session_api import SessionAPI
+from src.web.session_viewer import SessionViewer
 
 
 if TYPE_CHECKING:
@@ -598,7 +599,9 @@ async def get_wanted_items(sid):
 # Web files are in project_root/web/, we're in project_root/src/web/
 web_dir = Path(__file__).parent.parent.parent / "web"
 novnc_dir = Path("/usr/share/novnc")
+app.add_api_route("/session-viewer", SessionViewer(novnc_dir).page, methods=["GET"])
 if novnc_dir.exists():
+    app.mount(SessionViewer.ASSET_PATH, StaticFiles(directory=novnc_dir), name="novnc-login")
     app.mount("/static/novnc", StaticFiles(directory=novnc_dir), name="novnc")
 if web_dir.exists():
     static_dir = web_dir / "static"

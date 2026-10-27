@@ -95,6 +95,10 @@ class SessionBundle:
         "client-session-id", "x-device-id", "device-id", "accept-language",
     })
 
+    @staticmethod
+    def valid_token(value: Any) -> bool:
+        return isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,512}", value) is not None
+
     @classmethod
     def from_json(cls, raw: bytes, *, now: float | None = None) -> SessionBundle:
         try:

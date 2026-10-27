@@ -23,12 +23,13 @@
         </div>
         <p id="twitch-login-error" role="status" aria-live="polite"></p>
         <div id="twitch-vnc" class="browser-login-viewer" hidden></div>
-        <details id="twitch-clipboard" class="browser-login-access" hidden>
-            <summary id="twitch-clipboard-title">Copy and paste</summary>
-            <p id="twitch-clipboard-help"></p>
-            <label id="twitch-clipboard-label" for="twitch-clipboard-text"></label>
-            <textarea id="twitch-clipboard-text" rows="3" maxlength="65536" autocomplete="off" spellcheck="false"></textarea>
-            <button id="twitch-clipboard-send" type="button" class="action-button">Paste into Twitch browser</button>
+        <p id="twitch-clipboard-help"></p>
+        <details id="twitch-token-panel" class="browser-login-access">
+            <summary id="twitch-token-title">Use an existing Twitch session</summary>
+            <p id="twitch-token-help"></p>
+            <label id="twitch-token-label" for="twitch-token-input"></label>
+            <input id="twitch-token-input" type="password" maxlength="512" autocomplete="off" spellcheck="false">
+            <button id="twitch-token-send" type="button" class="action-button"></button>
         </details>
         <details id="twitch-helper-panel" class="browser-login-access">
             <summary id="twitch-helper-title">Use desktop helper</summary>

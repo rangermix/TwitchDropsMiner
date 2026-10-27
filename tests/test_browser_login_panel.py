@@ -121,31 +121,17 @@ assert.equal(el('dashboard-access-controls').parentElement,el('dashboard-access-
 
 
 @pytest.mark.skipif(NODE is None, reason="Node required")
-def test_clipboard_is_explicit_bounded_and_cleared_on_disconnect():
+def test_manual_token_is_cleared_before_request_and_on_panel_close():
     run_panel(r"""
 panel.updateStatus(status('sign_in'));await tick();
-const viewer=viewers[0];const sent=[];
-viewer.clipboardPasteFrom=text=>sent.push(text);viewer.focus=()=>{};viewer.sendKey=()=>{};
-el('twitch-clipboard-text').value='waiting';panel.pasteClipboard();
-assert.equal(el('twitch-clipboard-text').value,'waiting');assert.equal(sent.length,0);
-assert.equal(el('twitch-clipboard-send').disabled,true);
-el('twitch-clipboard-text').value='';viewer.events.connect();
-assert.equal(el('twitch-clipboard-send').disabled,false);
-viewer.events.clipboard({detail:{text:'private'}});
-assert.equal(el('twitch-clipboard-text').value,'');
-el('twitch-clipboard').open=true;
-viewer.events.clipboard({detail:{text:'<b>literal</b>'}});
-assert.equal(el('twitch-clipboard-text').value,'<b>literal</b>');
-panel.pasteClipboard();
-assert.deepEqual(sent,['<b>literal</b>']);assert.equal(el('twitch-clipboard-text').value,'');
-el('twitch-clipboard-text').value='private';viewer.events.disconnect();
-assert.equal(el('twitch-clipboard-text').value,'');assert.equal(el('twitch-clipboard').open,false);
-panel.viewerError=false;viewer.events.connect();
-el('twitch-clipboard-text').value='x'.repeat(65537);panel.pasteClipboard();
-assert.equal(sent.length,1);assert.equal(el('twitch-clipboard-text').value,'');
-el('twitch-clipboard-text').value='private';panel.updateStatus(status('verifying'));await tick();
-assert.equal(el('twitch-clipboard-text').value,'');assert.equal(el('twitch-clipboard').open,false);
-viewer.events.clipboard({detail:{text:'stale'}});assert.equal(el('twitch-clipboard-text').value,'');
+el('twitch-token-input').value='synthetic-token';
+const pending=panel.submitToken();
+assert.equal(el('twitch-token-input').value,'');
+await pending;
+assert.equal(calls[0].url,'/api/session/token');
+assert.deepEqual(JSON.parse(calls[0].options.body),{token:'synthetic-token'});
+el('twitch-token-input').value='private';el('twitch-token-panel').open=false;
+el('twitch-token-panel').listeners.toggle();assert.equal(el('twitch-token-input').value,'');
 """)
 
 

@@ -383,9 +383,13 @@
             "helper_macos_intel": "macOS (Intel)",
             "helper_access_help": "De eerste hulp die verbinding maakt wordt toegelaten. Terugkeren naar de ingebouwde browser sluit de toegang voor de hulp.",
             "clipboard_title": "Kopiëren en plakken",
-            "clipboard_help": "Plak hier tekst en stuur die naar het actieve Twitch-veld. Open dit paneel voordat je in Twitch kopieert en kopieer daarna de tekst hieronder. Sluiten wist de tekst.",
+            "clipboard_help": "Open de linker noVNC-zijbalk en kies Klembord. Plak tekst, ga terug naar het Twitch-veld en druk op Ctrl+V. Tekst wordt na verzenden of sluiten gewist.",
             "clipboard_label": "Klembordtekst",
-            "clipboard_send": "Plakken in Twitch-browser"
+            "clipboard_send": "Plakken in Twitch-browser",
+            "token_title": "Bestaande Twitch-sessie gebruiken",
+            "token_help": "Geavanceerd: plak alleen de auth-token-cookiewaarde uit je eigen aangemelde Twitch-browser. Bescherm deze als een wachtwoord. TDM controleert het account en maakt nieuw bewijs; geweigerde of verlopen tokens geven geen toegang.",
+            "token_label": "Twitch auth-token",
+            "token_send": "Aanmelden met token"
         }
     },
     "helper": {

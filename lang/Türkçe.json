@@ -383,9 +383,13 @@
             "helper_macos_intel": "macOS (Intel)",
             "helper_access_help": "İlk bağlanan yardımcı kabul edilir. Gömülü tarayıcıya dönmek yardımcı erişimini kapatır.",
             "clipboard_title": "Kopyala ve yapıştır",
-            "clipboard_help": "Metni buraya yapıştırıp etkin Twitch alanına gönderin. Twitch’ten kopyalamak için önce bu paneli açın, Twitch’te kopyalayın ve aşağıdaki metni alın. Panel kapanınca metin silinir.",
+            "clipboard_help": "Sol noVNC kenar çubuğunu açıp Pano’yu seçin. Metni yapıştırın, Twitch alanına dönüp Ctrl+V tuşlarına basın. Gönderme veya kapatma sonrası metin silinir.",
             "clipboard_label": "Pano metni",
-            "clipboard_send": "Twitch tarayıcısına yapıştır"
+            "clipboard_send": "Twitch tarayıcısına yapıştır",
+            "token_title": "Mevcut Twitch oturumunu kullan",
+            "token_help": "Gelişmiş: yalnızca kendi Twitch oturumunuzun açık olduğu tarayıcıdaki auth-token çerezinin değerini yapıştırın. Parola gibi koruyun. TDM hesabı doğrulayıp yeni kanıt oluşturur; reddedilen veya süresi dolan token giriş sağlayamaz.",
+            "token_label": "Twitch auth-token",
+            "token_send": "Token ile giriş yap"
         }
     },
     "helper": {

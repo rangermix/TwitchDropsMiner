@@ -383,9 +383,13 @@
             "helper_macos_intel": "macOS (Intel)",
             "helper_access_help": "最初に接続したヘルパーを受け付けます。内蔵ブラウザーに戻るとヘルパーへの接続許可が終了します。",
             "clipboard_title": "コピーと貼り付け",
-            "clipboard_help": "ここに文字を貼り付け、Twitch の選択中の入力欄に送信します。Twitch からコピーする場合は先にこのパネルを開き、Twitch 内でコピーしてから下の文字をコピーしてください。パネルを閉じると消去されます。",
+            "clipboard_help": "noVNCの左サイドバーでクリップボードを開きます。テキストを貼り付け、Twitchの入力欄に戻ってCtrl+Vを押します。送信またはパネルを閉じるとテキストは消去されます。",
             "clipboard_label": "クリップボードの文字",
-            "clipboard_send": "Twitch ブラウザーに貼り付け"
+            "clipboard_send": "Twitch ブラウザーに貼り付け",
+            "token_title": "既存のTwitchセッションを使用",
+            "token_help": "上級者向け：ご自身のログイン済みTwitchブラウザーからauth-token Cookieの値だけを貼り付けてください。パスワードと同様に保護してください。TDMはアカウントを確認して新しい証明を生成します。拒否または期限切れのトークンではログインできません。",
+            "token_label": "Twitch auth-token",
+            "token_send": "トークンでログイン"
         }
     },
     "helper": {

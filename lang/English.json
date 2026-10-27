@@ -383,9 +383,13 @@
             "helper_macos_intel": "macOS (Intel)",
             "helper_access_help": "The first helper to connect is accepted. Returning to the embedded browser closes helper access.",
             "clipboard_title": "Copy and paste",
-            "clipboard_help": "Paste text here, then send it to the focused Twitch field. To copy out, open this panel before copying inside Twitch, then copy the text below. Text is cleared when the panel closes.",
+            "clipboard_help": "Open the left noVNC sidebar and select Clipboard. Paste text there, return to the Twitch field, then press Ctrl+V. Clipboard text is cleared after sending or closing.",
             "clipboard_label": "Clipboard text",
-            "clipboard_send": "Paste into Twitch browser"
+            "clipboard_send": "Paste into Twitch browser",
+            "token_title": "Use an existing Twitch session",
+            "token_help": "Advanced: paste only the auth-token cookie value from your own signed-in Twitch browser. Treat it like a password. TDM validates the account and creates fresh server proof; a rejected or expired token cannot sign in.",
+            "token_label": "Twitch auth-token",
+            "token_send": "Sign in with token"
         }
     },
     "helper": {

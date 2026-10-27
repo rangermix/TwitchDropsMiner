@@ -173,3 +173,22 @@ interactive sign-in, but the miner host still needs Chromium for server-side
 verification and renewal. See [source installation](installation.md#run-from-source).
 
 [All guides](README.md) · [Next: Games and drops](usage.md)
+
+### Clipboard and existing-session sign in
+
+The embedded viewer includes the native noVNC sidebar. Open its Clipboard panel,
+paste text, return to the Twitch field, and press Ctrl+V. Clipboard content is
+limited to 65,536 characters and cleared after sending, closing, or disconnecting.
+
+For an existing login on your own computer, expand **Use an existing Twitch session**.
+In your browser's developer tools, open Storage/Application → Cookies → Twitch and
+copy only the `auth-token` value. Paste it into the password-style field and select
+**Sign in with token**. This is an advanced alternative: treat that value as a
+password and never send it to anyone. TDM validates the WEB account, creates fresh
+server proof, and validates its account and campaign catalog before saving. Rejected
+or expired tokens cannot sign in. The old device-code flow used a different Twitch
+client and is not restored by this option.
+
+After downtime, an expired SDK seed can be recreated using a still-valid saved OAuth
+identity. Account and catalog validation remain mandatory. Network errors or Twitch
+rejection can still require retrying or signing in again.

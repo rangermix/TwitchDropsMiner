@@ -383,9 +383,13 @@
             "helper_macos_intel": "macOS (Intel)",
             "helper_access_help": "Zaakceptowany zostanie pierwszy pomocnik, który się połączy. Powrót do wbudowanej przeglądarki zamyka dostęp pomocnika.",
             "clipboard_title": "Kopiuj i wklej",
-            "clipboard_help": "Wklej tekst tutaj i wyślij do aktywnego pola Twitch. Aby kopiować z Twitch, najpierw otwórz ten panel, skopiuj tekst w Twitch, a potem skopiuj tekst poniżej. Zamknięcie panelu usuwa tekst.",
+            "clipboard_help": "Otwórz lewy panel noVNC i wybierz Schowek. Wklej tekst, wróć do pola Twitch i naciśnij Ctrl+V. Tekst jest usuwany po wysłaniu lub zamknięciu.",
             "clipboard_label": "Tekst schowka",
-            "clipboard_send": "Wklej w przeglądarce Twitch"
+            "clipboard_send": "Wklej w przeglądarce Twitch",
+            "token_title": "Użyj istniejącej sesji Twitch",
+            "token_help": "Zaawansowane: wklej tylko wartość ciasteczka auth-token ze swojej przeglądarki zalogowanej do Twitch. Chroń ją jak hasło. TDM sprawdza konto i tworzy nowy dowód; odrzucony lub wygasły token nie pozwoli się zalogować.",
+            "token_label": "auth-token Twitch",
+            "token_send": "Zaloguj tokenem"
         }
     },
     "helper": {

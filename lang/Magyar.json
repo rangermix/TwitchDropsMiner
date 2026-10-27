@@ -383,9 +383,13 @@
             "helper_macos_intel": "macOS (Intel)",
             "helper_access_help": "Az első csatlakozó segéd kap hozzáférést. A beágyazott böngészőhöz visszatérve a segéd hozzáférése megszűnik.",
             "clipboard_title": "Másolás és beillesztés",
-            "clipboard_help": "Illessze ide a szöveget, majd küldje az aktív Twitch-mezőbe. A Twitchből másoláshoz előbb nyissa meg ezt a panelt, másoljon a Twitchen, majd másolja ki az alábbi szöveget. Bezáráskor törlődik.",
+            "clipboard_help": "Nyisd meg a noVNC bal oldalsávját, majd a Vágólapot. Illeszd be a szöveget, térj vissza a Twitch mezőhöz, és nyomj Ctrl+V-t. Küldés vagy bezárás után a szöveg törlődik.",
             "clipboard_label": "Vágólap szövege",
-            "clipboard_send": "Beillesztés a Twitch böngészőbe"
+            "clipboard_send": "Beillesztés a Twitch böngészőbe",
+            "token_title": "Meglévő Twitch-munkamenet használata",
+            "token_help": "Haladó: csak a saját, Twitchbe bejelentkezett böngésződ auth-token sütijének értékét illeszd be. Védd jelszóként. A TDM ellenőrzi a fiókot és új igazolást készít; elutasított vagy lejárt tokennel nem lehet belépni.",
+            "token_label": "Twitch auth-token",
+            "token_send": "Belépés tokennel"
         }
     },
     "helper": {

@@ -13,9 +13,11 @@ import shutil
 import signal
 import tempfile
 import time
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable, Mapping
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, suppress
+from dataclasses import dataclass, field
 from pathlib import Path
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Protocol
 
 from src.auth.browser_session import BrowserSession
@@ -24,6 +26,7 @@ from src.auth.server_seed import SDKCookie, ServerSeed
 from src.auth.session_bundle import PrivateSessionFile, SessionBundle, SessionError
 from src.auth.session_helper import BrowserExporter, CaptureProtocol
 from src.auth.session_renewal import RenewalConnection, RenewalLoop, RenewalSender
+from src.config import ClientType
 
 
 if TYPE_CHECKING:
@@ -32,6 +35,21 @@ if TYPE_CHECKING:
 
 class BrowserOwner(Protocol):
     def start(self) -> AbstractAsyncContextManager[str]: ...
+
+
+@dataclass(frozen=True)
+class SDKBootstrap:
+    """Identity-validated OAuth input, with no invented proof or expiry."""
+
+    headers: Mapping[str, str] = field(repr=False)
+
+    @classmethod
+    def from_token(cls, token: str) -> SDKBootstrap:
+        if not SessionBundle.valid_token(token):
+            raise SessionError("FORMAT")
+        return cls(MappingProxyType({"authorization": f"OAuth {token}",
+            "client-id": ClientType.WEB.CLIENT_ID, "x-device-id": secrets.token_hex(16),
+            "client-session-id": secrets.token_hex(16)}))
 
 
 class OwnedChromium:
@@ -241,7 +259,7 @@ class SDKAcquisition:
         self.diagnostics = diagnostics
 
     @staticmethod
-    def issuance_headers(bundle: SessionBundle) -> dict[str, str]:
+    def issuance_headers(bundle: SessionBundle | SDKBootstrap) -> dict[str, str]:
         """Use the integrity endpoint's contract rather than GraphQL-only headers."""
         return {
             **{key: bundle.headers[key] for key in (
@@ -251,7 +269,7 @@ class SDKAcquisition:
             "client-request-id": secrets.token_hex(16),
         }
 
-    async def run(self, protocol: CaptureProtocol, bundle: SessionBundle,
+    async def run(self, protocol: CaptureProtocol, bundle: SessionBundle | SDKBootstrap,
                   cookie: SDKCookie | None = None, *, initial: bool = False) -> ServerSeed:
         try:
             async with asyncio.timeout(self.timeout):  # type: ignore[attr-defined]
@@ -276,7 +294,7 @@ class SDKAcquisition:
 
     async def acquire(
         self, protocol: CaptureProtocol, exchange: SDKExchange,
-        original: SessionBundle, previous_cookie: SDKCookie | None,
+        original: SessionBundle | SDKBootstrap, previous_cookie: SDKCookie | None,
         *, initial: bool = False,
     ) -> ServerSeed:
         await protocol.command("Network.enable")
@@ -316,9 +334,9 @@ class SDKAcquisition:
             "user_agent": user_agent, "headers": {**original.headers, "client-integrity": data.get("token")},
         }, now=self.clock())
         minimum_expiry = self.clock() + 30
-        if previous_cookie is not None and not initial:
+        if previous_cookie is not None and not initial and isinstance(original, SessionBundle):
             minimum_expiry = max(minimum_expiry, original.expires_at)
-        if (bundle.headers["client-integrity"] == original.headers["client-integrity"]
+        if (bundle.headers["client-integrity"] == original.headers.get("client-integrity")
                 or bundle.expires_at <= minimum_expiry):
             raise SessionError("REPLAY")
         result = await protocol.command("Network.getCookies", {"urls": [SDKCookie.URL]})
@@ -344,6 +362,14 @@ class SDKIssuer:
         ):
             return await SDKAcquisition(clock=self.clock, timeout=self.timeout, diagnostics=self.diagnostics).run(
                 protocol, seed.bundle, seed.cookie, initial=initial,
+            )
+
+    async def bootstrap(self, token: str) -> ServerSeed:
+        context = SDKBootstrap.from_token(token)
+        async with (self.browser.start() as address,
+                    BrowserExporter(address).target(extra_events=SDKAcquisition.EVENTS) as protocol):
+            return await SDKAcquisition(clock=self.clock, timeout=self.timeout, diagnostics=self.diagnostics).run(
+                protocol, context, initial=True,
             )
 
 
