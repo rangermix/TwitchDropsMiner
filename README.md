@@ -59,13 +59,13 @@ With Docker installed, choose one setup below. Shell examples use Bash
 Pull and start the published image:
 
 ```bash
-docker pull rangermix/twitch-drops-miner:2.3.0
+docker pull rangermix/twitch-drops-miner:2.3.1
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.3.0
+  rangermix/twitch-drops-miner:2.3.1
 ```
 
 ### Docker Compose
@@ -76,7 +76,7 @@ inside it. Set `TZ` to your home internet connection's timezone:
 ```yaml
 services:
   twitch-drops-miner:
-    image: rangermix/twitch-drops-miner:2.3.0
+    image: rangermix/twitch-drops-miner:2.3.1
     container_name: twitch-drops-miner
     init: true
     stop_grace_period: 30s
@@ -108,8 +108,9 @@ For source security rebuilds with refreshed base images and packages, see the
 
 1. Open the dashboard. When Twitch login is required, TDM shows its container browser
    and the Twitch sign in page automatically.
-2. Sign in and complete any Twitch verification inside that browser. Select **Finish
-   sign in** (or close the Chromium window) after Twitch confirms you are signed in.
+2. Sign in and complete Twitch verification. The browser closes automatically a few
+   seconds after login; **Finish sign in** remains available if it stays open.
+   Password saving is disabled. Expand **Copy and paste** to transfer text to or from the browser.
 3. TDM verifies your account and campaign access, saves the session, and returns to
    the normal dashboard. Select your games there.
 
@@ -119,7 +120,8 @@ keeps running until the attempt finishes or times out.
 Set Docker’s `TZ` to match your home internet connection’s timezone; change
 `Australia/Sydney` in the example as needed. Chromium and the temporary display are
 included in the image. Your everyday browser profile is separate.
-TDM renews the session automatically. **Settings → Log out of Twitch**, at the
+TDM renews the session automatically using a private verification browser, separate
+from the sign-in viewer. **Settings → Log out of Twitch**, at the
 bottom, clears this miner’s session and opens sign in again for account replacement.
 See [authentication](docs/authentication.md) and [troubleshooting](docs/troubleshooting.md).
 If Twitch rejects the embedded browser, select **Use desktop helper** and run the
@@ -238,3 +240,6 @@ or [buying the maintainer a coffee](https://buymeacoffee.com/rangermix).
 <!-- contributors:end -->
 
 </details>
+
+The sign-in page also offers an advanced existing-session token option. See the
+[authentication guide](docs/authentication.md) for clipboard controls and recovery.

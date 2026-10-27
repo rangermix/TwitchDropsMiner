@@ -349,7 +349,7 @@
         },
         "browser_login": {
             "title": "Sign in to Twitch",
-            "instructions": "Sign in below and complete Twitch verification. Select Finish sign in when done; TDM verifies the session and returns to the dashboard.",
+            "instructions": "Sign in below and complete Twitch verification. The browser closes automatically after login; TDM then verifies your session. If it stays open, select Finish sign in.",
             "finish": "Finish sign in",
             "retry": "Retry",
             "starting": "Starting browser…",
@@ -381,7 +381,15 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "The first helper to connect is accepted. Returning to the embedded browser closes helper access."
+            "helper_access_help": "The first helper to connect is accepted. Returning to the embedded browser closes helper access.",
+            "clipboard_title": "Copy and paste",
+            "clipboard_help": "Open the left noVNC sidebar and select Clipboard. Paste text there, return to the Twitch field, then press Ctrl+V. Clipboard text is cleared after sending or closing.",
+            "clipboard_label": "Clipboard text",
+            "clipboard_send": "Paste into Twitch browser",
+            "token_title": "Use an existing Twitch session",
+            "token_help": "Advanced: paste only the auth-token cookie value from your own signed-in Twitch browser. Treat it like a password. TDM validates the account and creates fresh server proof; a rejected or expired token cannot sign in.",
+            "token_label": "Twitch auth-token",
+            "token_send": "Sign in with token"
         }
     },
     "helper": {
