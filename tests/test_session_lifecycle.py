@@ -186,3 +186,31 @@ async def test_late_helper_cancel_does_not_reopen_login_for_authenticated_accoun
     await client.cancel_helper()
     client.login_browser.cancel.assert_not_awaited()
     client.login_browser.request_login.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('newer_attempt', [False, True])
+async def test_cancelled_token_signin_is_retryable_unless_logout_replaced_attempt(tmp_path, monkeypatch, newer_attempt):
+    client = miner(tmp_path, monkeypatch)
+    client.helper.cancel = AsyncMock()
+    entered = asyncio.Event()
+    async def accept(*args, **kwargs):
+        entered.set()
+        await asyncio.Event().wait()
+    client.session_controller.accept_token = accept
+    task = asyncio.create_task(client.accept_token('synthetic', lambda: True))
+    await entered.wait()
+    assert client.login_browser.state == 'verifying'
+    if newer_attempt:
+        await client.login_browser.cancel()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    if newer_attempt:
+        assert client.login_browser.state == 'idle' and not client.login_browser._needed
+    else:
+        assert client.login_browser.state == 'error' and client.login_browser._needed
+        # Retry remains offered; no real browser is started by this regression.
+        client.login_browser.request_login = MagicMock()
+        await client.login_browser.retry()
+        client.login_browser.request_login.assert_called_once()
