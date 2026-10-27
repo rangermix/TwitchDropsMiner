@@ -1191,15 +1191,10 @@ function renderInventory() {
                 class: `drop-item${drop.is_claimed ? ' claimed' : ''}${drop.can_claim ? ' active' : ''}${policyClass}`,
                 ...(policyReason ? { title: policyReason } : {}),
             });
-            dropItem.appendChild(
-                makeElement('div', { class: 'drop-item-header' }, '', el =>
-                    el.appendChild(makeElement('div', { class: 'drop-item-info' }, '', el2 =>
-                        el2.appendChild(makeElement('div', {}, '', el3 =>
-                            el3.appendChild(makeElement('strong', {}, drop.name))
-                        ))
-                    ))
-                )
-            );
+            if (drop.name !== campaign.name) {
+                dropItem.appendChild(makeElement('div', { class: 'drop-item-header' }, null, header =>
+                    header.appendChild(makeElement('strong', { class: 'drop-item-info' }, drop.name))));
+            }
             const benefitsList = makeElement('div', { class: 'benefits-list' });
             if (drop.benefits && drop.benefits.length > 0) {
                 drop.benefits.forEach(benefit => {
@@ -1235,7 +1230,7 @@ function renderInventory() {
         });
 
         // Campaign name link
-        const campaignNameLink = makeElement('a', { href: campaign.campaign_url, target: '_blank', rel: 'noopener noreferrer', class: 'campaign-name-link' }, campaign.name, el =>
+        const campaignNameLink = makeElement('a', { id: `inventory-campaign-${encodeURIComponent(campaign.id)}`, href: campaign.campaign_url, target: '_blank', rel: 'noopener noreferrer', class: 'campaign-name-link' }, campaign.name, el =>
             el.appendChild(makeElement('span', { class: 'external-link-icon' }, '🔗'))
         );
 
@@ -1251,7 +1246,8 @@ function renderInventory() {
             }
             const titles = makeElement('span', { class: 'campaign-titles' });
             titles.appendChild(makeElement('strong', { class: 'campaign-game-name' }, campaign.game_name));
-            titles.appendChild(makeElement('span', { class: 'campaign-subtitle' }, campaign.name));
+            campaignNameLink.className += ' campaign-subtitle';
+            titles.appendChild(campaignNameLink);
             el.appendChild(titles);
         });
 
@@ -1259,7 +1255,8 @@ function renderInventory() {
         const toggle = makeElement('button', { type: 'button', class: 'campaign-toggle',
             id: `inventory-toggle-${encodeURIComponent(campaign.id)}`,
             'aria-expanded': expanded, 'aria-controls': contentId });
-        toggle.appendChild(campaignGameDiv);
+        toggle.setAttribute('aria-label', `${campaign.game_name} — ${campaign.name}`);
+        overview.appendChild(campaignGameDiv);
         const dates = makeElement('span', { class: 'campaign-date-range' });
         for (const [field, key, fallback] of [['starts_at', 'starts', 'Starts: {time}'], ['ends_at', 'ends', 'Ends: {time}']]) {
             const date = new Date(campaign[field]);
@@ -1268,11 +1265,13 @@ function renderInventory() {
             dates.appendChild(makeElement('time', { datetime: campaign[field], title: label.replace('{time}', date.toLocaleString()) },
                 label.replace('{time}', date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }))));
         }
-        toggle.appendChild(dates);
+        overview.appendChild(dates);
         toggle.appendChild(makeElement('span', { class: 'campaign-chevron', 'aria-hidden': 'true' }));
-        overview.appendChild(toggle);
+        const controls = makeElement('div', { class: 'campaign-controls' });
+        controls.appendChild(linkStatusBadge);
+        controls.appendChild(toggle);
+        overview.appendChild(controls);
         const actions = makeElement('div', { class: 'campaign-actions' });
-        overview.appendChild(linkStatusBadge);
         if (canAddInventoryGame(campaign) || (campaign.linked === true && campaign.game_name === inventoryWatchPendingGame)) {
             const add = makeElement('button', { type: 'button', class: 'inventory-add-game' },
                 campaign.game_name === inventoryWatchPendingGame ? (t.gui?.inventory?.adding_game || 'Adding…')
@@ -1283,7 +1282,7 @@ function renderInventory() {
             actions.appendChild(add);
         }
         if (!campaign.linked && campaign.link_url) {
-            const link = makeElement('a', { href: campaign.link_url, target: '_blank', rel: 'noopener noreferrer', class: 'link-account-btn' },
+            const link = makeElement('a', { id: `inventory-link-${encodeURIComponent(campaign.id)}`, href: campaign.link_url, target: '_blank', rel: 'noopener noreferrer', class: 'link-account-btn' },
                 t.gui?.inventory?.link_account || 'Link account');
             actions.appendChild(link);
         }
@@ -1304,20 +1303,7 @@ function renderInventory() {
         });
 
         const campaignInfo = makeElement('div', { class: 'campaign-info' });
-        campaignInfo.appendChild(campaignNameLink);
         campaignInfo.appendChild(campaignStatus);
-
-        // Campaign timing
-        if (campaign.active && campaign.ends_at) {
-            const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
-            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
-        } else if (campaign.upcoming && campaign.starts_at) {
-            const startsLabel = t.gui?.inventory?.starts || 'Starts: {time}';
-            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, startsLabel.replace('{time}', new Date(campaign.starts_at).toLocaleString())));
-        } else if (campaign.expired && campaign.ends_at) {
-            const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
-            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
-        }
 
         const content = makeElement('div', { class: 'campaign-content', id: contentId });
         content.hidden = !expanded;
@@ -1335,9 +1321,10 @@ function renderInventory() {
         container.appendChild(card);
     });
     if (focusedId) {
+        const prefix = ['inventory-add-', 'inventory-link-', 'inventory-campaign-']
+            .find(value => focusedId.startsWith(value));
         const target = document.getElementById(focusedId)
-            || (focusedId.startsWith('inventory-add-')
-                ? document.getElementById(focusedId.replace('inventory-add-', 'inventory-toggle-')) : null);
+            || (prefix ? document.getElementById('inventory-toggle-' + focusedId.slice(prefix.length)) : null);
         target?.focus({ preventScroll: true });
     }
 }

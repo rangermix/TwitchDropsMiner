@@ -918,3 +918,9 @@ Tests cover persistence, filtering, Unicode exports, offsets, and translated UI 
   from overlapping. Link account and Add to mining list share outline styling. Visible
   Mining list naming preserves the `games_to_watch` API/persistence key. Reward labels
   describe game rewards, Twitch chat badges/emotes and unrecognized Other rewards.
+
+- Inventory campaign names/dates appear once in the overview; equal campaign/drop
+  headings are not repeated. The native disclosure button has an accessible campaign
+  name and sits below the static linkage badge in card mode. Actions share the dates
+  row. Reserve equal overview geometry for linked/unlinked/no-action campaigns; never
+  animate or imply clickability on the linkage status badge.

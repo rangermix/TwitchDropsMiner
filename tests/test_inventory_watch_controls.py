@@ -227,6 +227,36 @@ state.campaigns={one:campaign('one',{linked:false})};renderInventory();
 const overview=document.querySelectorAll('.campaign-overview')[0];
 const badge=document.querySelectorAll('.campaign-badge')[0];
 const actions=document.querySelectorAll('.campaign-actions')[0];
-assert.equal(badge.parentElement,overview);assert.equal(actions.contains(badge),false);
+assert.equal(badge.parentElement.parentElement,overview);assert.equal(actions.contains(badge),false);
 assert.equal(document.querySelectorAll('.link-account-btn').length,1);
+""")
+
+
+def test_campaign_metadata_appears_once_and_disclosure_remains_accessible():
+    run_inventory(r"""
+state.campaigns={one:campaign()};renderInventory();
+assert.equal(walk(grid).filter(node=>node._text==='Quadra Paintjobs').length,1);
+assert.equal(document.querySelectorAll('.campaign-date-range').length,1);
+assert.equal(document.querySelectorAll('.campaign-timing').length,0);
+assert.equal(document.querySelectorAll('.drop-item-header').length,0);
+assert.equal(document.querySelectorAll('.campaign-name-link')[0].attrs.href,'https://www.twitch.tv/drops/campaigns');
+assert.equal(toggle('one').getAttribute('aria-label'),'Cyberpunk 2077 — Quadra Paintjobs');
+assert.ok(toggle('one').parentElement.contains(document.querySelectorAll('.campaign-badge')[0]));
+assert.equal(content('one').hidden,true);toggle('one').events.click();assert.equal(content('one').hidden,false);
+state.campaigns.one.drops[0].name='A distinct reward';renderInventory();
+assert.equal(document.querySelectorAll('.drop-item-header').length,1);
+assert.ok(grid.textContent.includes('A distinct reward'));
+""")
+
+
+
+def test_campaign_and_link_account_focus_survive_progress_and_link_changes():
+    run_inventory(r"""
+state.campaigns={one:campaign('one',{linked:false})};renderInventory();
+const campaignLink=()=>document.getElementById('inventory-campaign-one');
+const accountLink=()=>document.getElementById('inventory-link-one');
+campaignLink().focus();state.campaigns.one.drops[0].current_minutes=11;renderInventory();
+assert.equal(document.activeElement,campaignLink());
+accountLink().focus();renderInventory();assert.equal(document.activeElement,accountLink());
+state.campaigns.one.linked=true;renderInventory();assert.equal(document.activeElement,toggle('one'));
 """)

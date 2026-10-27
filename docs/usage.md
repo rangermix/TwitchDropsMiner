@@ -75,9 +75,11 @@ eligible participant can take over.
 
 ## Inventory and the wanted queue
 
-Select a campaign header to expand its rewards, progress and account-link details.
+Select the campaign arrow to expand its rewards and progress. The arrow supports
+Enter and Space. Campaign names link directly to Twitch.
 List view offers compact rows with artwork, game/campaign names and dates; the saved
-card/list preference is retained. Headers work with Enter and Space, and open campaigns
+card/list preference is retained. In card mode the arrow sits below the linkage badge,
+with account/mining actions beside the dates; open campaigns
 stay open while progress updates arrive.
 
 For linked games not already selected, **Add to mining list** appends the game at
