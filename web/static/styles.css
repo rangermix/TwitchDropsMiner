@@ -791,7 +791,11 @@ header h1 {
 }
 @media (max-width: 480px) {
     /* Narrow cards keep the badge top-right with the arrow under it; names use two lines. */
-    .campaign-overview, .inventory-grid.list-view .campaign-overview { grid-template-columns: minmax(0, 1fr) 104px; }
+    /* Rows fit a two-line badge above the arrow and a four-line translated action, so heights stay equal. */
+    .campaign-overview, .inventory-grid.list-view .campaign-overview {
+        grid-template-columns: minmax(0, 1fr) 104px;
+        grid-template-rows: minmax(84px, auto) minmax(94px, auto);
+    }
     .campaign-overview .campaign-game { gap: 10px; }
     .campaign-overview .campaign-game .game-icon { width: 40px; height: 54px; }
     .campaign-controls > .campaign-badge { max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: center; }

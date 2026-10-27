@@ -328,6 +328,7 @@ def test_narrow_cards_keep_badge_top_right_and_allow_two_line_names():
     css = (ROOT / 'web/static/styles.css').read_text(encoding='utf-8')
     narrow = css.split('@media (max-width: 480px) {\n    /* Narrow cards', 1)[1].split('\n}\n', 1)[0]
     assert 'grid-template-columns: minmax(0, 1fr) 104px' in narrow
+    assert 'grid-template-rows: minmax(84px, auto) minmax(94px, auto)' in narrow
     assert 'display: contents' not in narrow  # badge and arrow stay together top-right
     assert 'white-space: normal' in narrow.split('.campaign-badge {', 1)[1].split('}', 1)[0]
     assert '-webkit-line-clamp: 2' in narrow
