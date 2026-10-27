@@ -93,7 +93,7 @@ class StreamSelector:
         Get the hierarchical tree of wanted items (Games -> Campaigns -> Drops -> Benefits).
         Include campaigns available within an hour, with selected games first.
         """
-        wanted_games = []
+        wanted_games: list[dict] = []
         queued_ids: set[int] = set()
         games_to_watch = settings.games_to_watch
         mining_benefits = settings.mining_benefits
