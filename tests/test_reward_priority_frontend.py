@@ -50,3 +50,41 @@ def test_priority_translations_exist_in_all_locales():
         for key in GUISettings.__annotations__:
             if key.startswith('reward_priority_'):
                 assert settings[key], (path, key)
+
+
+@pytest.mark.skipif(NODE is None, reason='Node required')
+def test_delayed_priority_mode_reply_cannot_reset_completed_reward_policy():
+    run_javascript(['updateSettingsUI', 'toggleMiningHoursRange', 'onPriorityModeChange',
+                    'renderRewardPriority', 'saveRewardPriority'], DOM + r"""
+const elements={};const body=new Element('body');body.classList.remove=()=>{};
+const document={body,getElementById:id=>elements[id]??=(new Element('div')),
+ createElement:tag=>{const el=new Element(tag);el.dataset={};el.reportValidity=()=>true;return el;},
+ querySelectorAll:()=>document.getElementById('reward-priority-order').children.map(label=>label.children[1])};
+const rewardTypes=['BADGE','EMOTE','DIRECT_ENTITLEMENT','UNKNOWN'];
+const rewardLabelKeys={BADGE:'badge',EMOTE:'emote',DIRECT_ENTITLEMENT:'item',UNKNOWN:'other'};
+let rewardPrioritySaving=false;
+const state={settings:{games_to_watch:['Game'],reward_priority:[]},translations:{gui:{settings:{},inventory:{filters:{}}}}};
+let availableGames=new Set(),selectedInventoryGames=[];
+function applyInventoryViewMode(){}function renderGamesToWatch(){}function renderChannels(){}
+function renderInventory(){}function updateGameTagsDisplay(){}function showToast(){}
+let release;let backend={...state.settings};
+async function fetch(url,options){const request=JSON.parse(options.body);
+ if('priority_list_only' in request){backend={...backend,...request};const stale={...backend};
+  return await new Promise(resolve=>{release=()=>resolve({ok:true,json:async()=>({success:true,settings:stale})});});}
+ backend={...backend,...request};return {ok:true,json:async()=>({success:true,settings:{...backend}})};
+}
+(async()=>{
+updateSettingsUI({...state.settings},true);
+document.getElementById('priority-list-only').checked=false;
+const delayed=onPriorityModeChange();await Promise.resolve();
+document.getElementById('reward-priority-enabled').checked=true;
+await saveRewardPriority();
+updateSettingsUI({...backend},true); // authoritative socket broadcast
+release();await delayed;
+assert.deepEqual(backend.reward_priority,rewardTypes);
+assert.deepEqual(state.settings.reward_priority,rewardTypes);
+assert.equal(document.getElementById('reward-priority-enabled').checked,true);
+assert.deepEqual(document.querySelectorAll().map(input=>input.dataset.rewardType),rewardTypes);
+assert.equal(state.settings.priority_list_only,false);
+})().catch(e=>{console.error(e);process.exit(1)});
+""")

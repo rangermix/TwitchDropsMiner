@@ -1203,7 +1203,11 @@ function updateLoginStatus(data) {
     globalThis.browserLoginPanel?.updateLogin(data);
 }
 
-function updateSettingsUI(settings) {
+function updateSettingsUI(settings, authoritative = false, changedFields = []) {
+    // Unrelated saves may return snapshots older than a completed priority write.
+    if (!authoritative && !changedFields.includes('reward_priority') && Array.isArray(state.settings.reward_priority)) {
+        settings = {...settings, reward_priority: state.settings.reward_priority};
+    }
     state.settings = settings;
     const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
     if (allowUnlinked) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
@@ -1998,7 +2002,7 @@ async function saveRewardPriority() {
         if (!response.ok) throw new Error();
         const data = await response.json();
         if (data.success !== true || JSON.stringify(data.settings?.reward_priority) !== JSON.stringify(order)) throw new Error();
-        updateSettingsUI(data.settings);
+        updateSettingsUI(data.settings, false, ['reward_priority']);
     } catch (_) {
         renderRewardPriority(); error.textContent=message; error.hidden=false;
     } finally {
