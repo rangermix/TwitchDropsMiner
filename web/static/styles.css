@@ -194,6 +194,7 @@ header h1 {
 
 .button-group {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 8px;
 }
