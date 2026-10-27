@@ -219,3 +219,14 @@ await Promise.all([first,second]);
 assert.equal(requests.length,1);assert.deepEqual(state.settings.games_to_watch,['B','A','C']);
 assert.equal(buttons().length,0);
 """)
+
+
+def test_link_badge_is_separate_from_actions_at_overview_top_right():
+    run_inventory(r"""
+state.campaigns={one:campaign('one',{linked:false})};renderInventory();
+const overview=document.querySelectorAll('.campaign-overview')[0];
+const badge=document.querySelectorAll('.campaign-badge')[0];
+const actions=document.querySelectorAll('.campaign-actions')[0];
+assert.equal(badge.parentElement,overview);assert.equal(actions.contains(badge),false);
+assert.equal(document.querySelectorAll('.link-account-btn').length,1);
+""")

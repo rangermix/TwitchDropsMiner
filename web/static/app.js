@@ -1105,7 +1105,7 @@ async function addInventoryGame(campaignId, button) {
     try {
         await queueSettingsWrite({}, campaign.game_name);
     } catch (_) {
-        showToast(t.add_game_error || 'Could not save Games to Watch. Try again.', 'error');
+        showToast(t.add_game_error || 'Could not save mining list. Try again.', 'error');
     } finally {
         const restoreFocus = hadFocus && (document.activeElement === button || document.activeElement === document.body);
         inventoryWatchSavePending = false;
@@ -1272,11 +1272,11 @@ function renderInventory() {
         toggle.appendChild(makeElement('span', { class: 'campaign-chevron', 'aria-hidden': 'true' }));
         overview.appendChild(toggle);
         const actions = makeElement('div', { class: 'campaign-actions' });
-        actions.appendChild(linkStatusBadge);
+        overview.appendChild(linkStatusBadge);
         if (canAddInventoryGame(campaign) || (campaign.linked === true && campaign.game_name === inventoryWatchPendingGame)) {
             const add = makeElement('button', { type: 'button', class: 'inventory-add-game' },
                 campaign.game_name === inventoryWatchPendingGame ? (t.gui?.inventory?.adding_game || 'Adding…')
-                    : (t.gui?.inventory?.add_game || 'Add to Games to Watch'));
+                    : (t.gui?.inventory?.add_game || 'Add to mining list'));
             add.disabled = inventoryWatchSavePending;
             add.id = `inventory-add-${encodeURIComponent(campaign.id)}`;
             add.addEventListener('click', () => addInventoryGame(campaign.id, add));
@@ -1526,7 +1526,7 @@ function updateManualModeUI(manualModeInfo) {
     }
 }
 
-// ==================== Games to Watch Management ====================
+// ==================== mining list Management ====================
 
 let availableGames = new Set(); // All games from campaigns
 let draggedElement = null;
@@ -1846,7 +1846,7 @@ function addGameFromSearch() {
     // Warn if adding manually
     if (isManualAdd) {
         const t = state.translations;
-        let msg = t.gui?.settings?.manual_game_warning || '\"{game}\" is not in the available campaign list. Add it to Games to Watch anyway?';
+        let msg = t.gui?.settings?.manual_game_warning || '\"{game}\" is not in the available campaign list. Add it to mining list anyway?';
         msg = msg.replace('{game}', gameToAdd);
         showConfirmModal(msg, () => finishAdding(gameToAdd));
     } else {

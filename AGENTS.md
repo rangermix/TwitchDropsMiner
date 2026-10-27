@@ -217,7 +217,7 @@ lang/                # Translation JSON files (20 languages)
 - Inventory uses keyboard-operable campaign toggles with `aria-expanded`/`aria-controls`
   and page-local expansion state preserved through progress/settings renders. List view
   keeps compact artwork/title/date rows; card view and saved view preference remain.
-  Linked games absent from Games to Watch have a translated add action, appending to
+  Linked games absent from Mining list have a translated add action, appending to
   the current priority order with case-insensitive duplicate protection. Save only the
   games field and check HTTP/application results. Inventory additions and generic
   Settings saves share an ordered queue with confirmed/draft watch lists and replayable
@@ -287,7 +287,7 @@ lang/                # Translation JSON files (20 languages)
 
 - Games to watch list (auto-populated from available campaigns if empty)
 - Available from v2.3.0, `priority_list_only` defaults to true. Disable it to append
-  other eligible games to the runtime wanted queue without changing saved Games to Watch. Both modes use
+  other eligible games to the runtime wanted queue without changing saved Mining list. Both modes use
   the same watch-drop, claim, expiry, mineability, benefit and campaign eligibility
   guards; omit empty campaigns and games. Fallback games sort by earliest remaining
   campaign end, then game name. Selected campaigns take precedence over fallback,
@@ -304,7 +304,7 @@ lang/                # Translation JSON files (20 languages)
   unique partial matches resolve to available game names; ambiguous matches do not
   add a game. Confirmations support keyboard focus and Escape. Select All preserves
   priority order and manual entries, and manual confirmation uses current settings.
-- Games to Watch supports drag ordering and editable integer priority numbers. Clamp valid
+- Mining list supports drag ordering and editable integer priority numbers. Clamp valid
   ranks to the list bounds; reject blank/fractional values without changing settings.
   Keep priority and remove-control labels translated and accessible. Regression tests in
   `tests/test_game_priority.py` cover order, bounds, invalid inputs, and persistence calls.
@@ -323,7 +323,7 @@ lang/                # Translation JSON files (20 languages)
   checkbox before merging defaults. The older `show_not_linked` key stays ignored.
 - `allow_unlinked_campaigns` defaults false. Only explicit boolean true bypasses the
   campaign account-link gate; preserve raw `linked` metadata, badge/emote eligibility,
-  timing, ACL/category, Games to Watch, prerequisites, claims, and ignore checks.
+  timing, ACL/category, Mining list, prerequisites, claims, and ignore checks.
   Changes trigger game selection refresh. Keep the warning and save-failure feedback
   translated and safely rendered. Estimated minutes do not prove Twitch progress.
 - Zero-minute subscription rewards are omitted from Inventory and Wanted Drops Queue;
@@ -737,7 +737,7 @@ and asset cache key before deployment.
 
 `tests/test_special_game_watch.py` covers Special Events and IRL across streamed categories,
 missing category/drops flags, offline and nonparticipating channels, disabled or absent ACLs,
-Games to Watch selection, campaign/drop eligibility, active-campaign selection, and fallback
+Mining list selection, campaign/drop eligibility, active-campaign selection, and fallback
 priority and failover. It uses mocked Twitch state and does not verify live Twitch progress.
 
 Session persistence tests retain POSIX 0600/0700 assertions only on POSIX; Windows
@@ -912,3 +912,9 @@ and confirmed local deletion. Date-only filters mean midnight UTC; aware timesta
 preserve their instant. CSV attachment names use UTF-8 percent encoding with an ASCII
 fallback. History text is defined in `gui.history` for every locale and rendered as text.
 Tests cover persistence, filtering, Unicode exports, offsets, and translated UI behavior.
+
+- Inventory overview places linkage badges in a reserved top-right grid cell, outside
+  the disclosure button and action group. Keep long translated labels and game names
+  from overlapping. Link account and Add to mining list share outline styling. Visible
+  Mining list naming preserves the `games_to_watch` API/persistence key. Reward labels
+  describe game rewards, Twitch chat badges/emotes and unrecognized Other rewards.

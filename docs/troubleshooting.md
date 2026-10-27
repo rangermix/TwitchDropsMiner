@@ -151,7 +151,7 @@ Check the campaign on Twitch and work through these conditions:
    campaign.
 2. The campaign and individual reward are active, and the reward is earned by
    watching rather than by subscribing or making a purchase.
-3. The game is in **Games to Watch**, and its reward type is enabled in **Mining Benefits**.
+3. The game is in **Mining list**, and its reward type is enabled in **Mining Benefits**.
 4. Your ignored keywords do not exclude the reward or one of its prerequisites.
 5. An eligible participating channel is live. Some campaigns work only on a fixed
    list of channels.
@@ -161,7 +161,7 @@ Higher-priority games may take precedence. If **Manual Mode** is active, use
 **Return to Auto Mode** to follow your normal game priorities. Upcoming or sequential
 rewards in the queue may need to wait for their start time or earlier rewards.
 
-For **Special Events** or **IRL**, keep the campaign's category in Games to Watch;
+For **Special Events** or **IRL**, keep the campaign's category in Mining list;
 its participating channels may be streaming another category. See
 [channel selection](usage.md#special-events-and-irl-campaigns).
 
