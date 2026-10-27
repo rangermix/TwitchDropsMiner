@@ -46,6 +46,9 @@ Use **Settings → Dump diagnosis data** for bug reports. It saves
 deidentified miner state and recent sanitized API responses in your data volume;
 see [diagnosis data](docs/troubleshooting.md#save-diagnosis-data).
 
+Source builds check active Drop progress about once a minute while successfully watching,
+including when a reward still has substantial watch time remaining.
+
 ## Quick start
 
 With Docker installed, choose one setup below. Shell examples use Bash

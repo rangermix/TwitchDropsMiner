@@ -200,17 +200,10 @@ class WatchService:
             if stream is None or not channel._watch_current(stream):
                 continue
 
-            if (
-                succeeded
-                and monotonic() >= next_progress
-                and self._twitch.gui.progress.minute_almost_done()
-            ):
+            # The dashboard stores total remaining time, not an expiring minute timer.
+            if succeeded and monotonic() >= next_progress:
                 next_progress = monotonic() + interval
-                # If the previous update was more than ~60s ago, and the progress tracker
-                # isn't counting down anymore, that means Twitch has temporarily
-                # stopped reporting drop's progress. To ensure the timer keeps at least somewhat
-                # accurate time, we can use GQL to query for the current drop,
-                # or even "pretend" mining as a last resort option.
+                # Reconcile with Twitch on a bounded cadence even if websocket updates stop.
                 handled: bool = False
 
                 # Solution 1: use GQL to query for the currently mined drop status
