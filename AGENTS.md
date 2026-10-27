@@ -977,11 +977,12 @@ Tests cover persistence, filtering, Unicode exports, offsets, and translated UI 
   animate or imply clickability on the linkage status badge. Clicking non-interactive
   overview space toggles the card; links and buttons keep their own actions. Card mode
   deals cards round-robin into fixed column stacks (`inventoryColumnCount()` uses the
-  grid width and `--inventory-card-min`; re-rendered on resize, one column in list view),
-  so opening a card only moves cards below it and never reflows others between columns.
-  Game/campaign names stay single-line with ellipsis and a full-text title. Card/list view buttons beside Clear Filters (translated
+  grid width and `--inventory-card-min`; re-rendered on resize, one column in list
+  view), so opening a card only moves cards below it and never reflows others between
+  columns. Game/campaign names stay single-line with ellipsis and a full-text title.
+  Card/list view buttons beside Clear Filters (translated
   `gui.inventory.card_view`/`list_view`, `aria-pressed`) replace the former Settings
-  checkbox and persist `inventory_list_view` through the shared settings save queue.
-  At 480 CSS pixels and below the same layout keeps the badge top-right with the arrow
+  checkbox and persist `inventory_list_view` through the shared settings save queue. At
+  480 CSS pixels and below the same layout keeps the badge top-right with the arrow
   under it, using a 104px control column, smaller artwork, wrapping badges and names
   clamped to two lines.
