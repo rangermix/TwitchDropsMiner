@@ -903,5 +903,5 @@ preserve their instant. CSV attachment names use UTF-8 percent encoding with an 
 fallback. History text is defined in `gui.history` for every locale and rendered as text.
 Tests cover persistence, filtering, Unicode exports, offsets, and translated UI behavior.
 
-- Settings notification button groups wrap at narrow widths so translated controls
+- Settings notification and game action button groups wrap at narrow widths so translated controls
   remain inside the viewport, including German at 320 CSS pixels.

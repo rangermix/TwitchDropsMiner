@@ -1273,6 +1273,7 @@ header h1 {
 
 .filter-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
 }
 
