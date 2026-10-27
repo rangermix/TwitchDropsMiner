@@ -159,7 +159,9 @@
             "add_game": "إضافة إلى قائمة التعدين",
             "adding_game": "جارٍ الإضافة…",
             "add_game_error": "تعذر حفظ قائمة التعدين. حاول مجددًا.",
-            "link_account": "ربط الحساب"
+            "link_account": "ربط الحساب",
+            "card_view": "عرض البطاقات",
+            "list_view": "عرض القائمة"
         },
         "settings": {
             "general": {

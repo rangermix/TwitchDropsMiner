@@ -159,7 +159,9 @@
             "add_game": "Tambahkan ke daftar mining",
             "adding_game": "Menambahkan…",
             "add_game_error": "Daftar mining tidak dapat disimpan. Coba lagi.",
-            "link_account": "Tautkan akun"
+            "link_account": "Tautkan akun",
+            "card_view": "Tampilan kartu",
+            "list_view": "Tampilan daftar"
         },
         "settings": {
             "general": {

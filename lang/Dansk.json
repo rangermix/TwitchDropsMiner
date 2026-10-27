@@ -159,7 +159,9 @@
             "add_game": "Føj til miningliste",
             "adding_game": "Tilføjer…",
             "add_game_error": "Kunne ikke gemme mininglisten. Prøv igen.",
-            "link_account": "Tilknyt konto"
+            "link_account": "Tilknyt konto",
+            "card_view": "Kortvisning",
+            "list_view": "Listevisning"
         },
         "settings": {
             "general": {

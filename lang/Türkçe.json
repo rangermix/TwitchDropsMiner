@@ -159,7 +159,9 @@
             "add_game": "Madencilik listesine ekle",
             "adding_game": "Ekleniyor…",
             "add_game_error": "Madencilik listesi kaydedilemedi. Tekrar deneyin.",
-            "link_account": "Hesabı bağla"
+            "link_account": "Hesabı bağla",
+            "card_view": "Kart görünümü",
+            "list_view": "Liste görünümü"
         },
         "settings": {
             "general": {

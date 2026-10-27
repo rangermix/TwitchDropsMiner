@@ -159,7 +159,9 @@
             "add_game": "Aan mininglijst toevoegen",
             "adding_game": "Toevoegen…",
             "add_game_error": "Kan de mininglijst niet opslaan. Probeer opnieuw.",
-            "link_account": "Account koppelen"
+            "link_account": "Account koppelen",
+            "card_view": "Kaartweergave",
+            "list_view": "Lijstweergave"
         },
         "settings": {
             "general": {

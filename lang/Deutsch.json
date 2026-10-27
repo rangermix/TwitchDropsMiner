@@ -159,7 +159,9 @@
             "add_game": "Zur Mining-Liste hinzufügen",
             "adding_game": "Wird hinzugefügt…",
             "add_game_error": "Mining-Liste konnte nicht gespeichert werden. Erneut versuchen.",
-            "link_account": "Konto verknüpfen"
+            "link_account": "Konto verknüpfen",
+            "card_view": "Kartenansicht",
+            "list_view": "Listenansicht"
         },
         "settings": {
             "general": {

@@ -159,7 +159,9 @@
             "add_game": "Adicionar à lista de mineração",
             "adding_game": "A adicionar…",
             "add_game_error": "Não foi possível salvar a lista de mineração. Tente novamente.",
-            "link_account": "Vincular conta"
+            "link_account": "Vincular conta",
+            "card_view": "Visualização em cartões",
+            "list_view": "Visualização em lista"
         },
         "settings": {
             "general": {

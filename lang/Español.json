@@ -159,7 +159,9 @@
             "add_game": "Añadir a la lista de minado",
             "adding_game": "Añadiendo…",
             "add_game_error": "No se pudo guardar la lista de minado. Inténtalo de nuevo.",
-            "link_account": "Vincular cuenta"
+            "link_account": "Vincular cuenta",
+            "card_view": "Vista de tarjetas",
+            "list_view": "Vista de lista"
         },
         "settings": {
             "general": {

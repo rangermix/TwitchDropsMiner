@@ -159,7 +159,9 @@
             "add_game": "マイニングリストに追加",
             "adding_game": "追加中…",
             "add_game_error": "マイニングリストを保存できませんでした。再試行してください。",
-            "link_account": "アカウントを連携"
+            "link_account": "アカウントを連携",
+            "card_view": "カード表示",
+            "list_view": "リスト表示"
         },
         "settings": {
             "general": {

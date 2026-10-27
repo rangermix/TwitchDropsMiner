@@ -200,6 +200,8 @@ class GUIInventory(TypedDict):
     adding_game: str
     add_game_error: str
     link_account: str
+    card_view: str
+    list_view: str
     no_campaigns: str
     status: GUIInvStatus
     starts: str

@@ -159,7 +159,9 @@
             "add_game": "添加到挖掘列表",
             "adding_game": "正在添加…",
             "add_game_error": "无法保存挖掘列表，请重试。",
-            "link_account": "关联账号"
+            "link_account": "关联账号",
+            "card_view": "卡片视图",
+            "list_view": "列表视图"
         },
         "settings": {
             "general": {

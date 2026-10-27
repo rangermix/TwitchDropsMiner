@@ -159,7 +159,9 @@
             "add_game": "Ajouter à la liste de minage",
             "adding_game": "Ajout…",
             "add_game_error": "Impossible d’enregistrer la liste de minage. Réessayez.",
-            "link_account": "Associer le compte"
+            "link_account": "Associer le compte",
+            "card_view": "Vue en cartes",
+            "list_view": "Vue en liste"
         },
         "settings": {
             "general": {

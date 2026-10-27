@@ -923,4 +923,10 @@ Tests cover persistence, filtering, Unicode exports, offsets, and translated UI 
   headings are not repeated. The native disclosure button has an accessible campaign
   name and sits below the static linkage badge in card mode. Actions share the dates
   row. Reserve equal overview geometry for linked/unlinked/no-action campaigns; never
-  animate or imply clickability on the linkage status badge.
+  animate or imply clickability on the linkage status badge. Clicking non-interactive
+  overview space toggles the card; links and buttons keep their own actions. Card mode
+  uses a top-aligned CSS grid (not multi-column), so opening one card never reflows
+  others between columns. Game/campaign names stay single-line with ellipsis and a
+  full-text title. Card/list view buttons beside Clear Filters (translated
+  `gui.inventory.card_view`/`list_view`, `aria-pressed`) replace the former Settings
+  checkbox and persist `inventory_list_view` through the shared settings save queue.

@@ -159,7 +159,9 @@
             "add_game": "Dodaj do listy wydobywania",
             "adding_game": "Dodawanie…",
             "add_game_error": "Nie można zapisać listy wydobywania. Spróbuj ponownie.",
-            "link_account": "Połącz konto"
+            "link_account": "Połącz konto",
+            "card_view": "Widok kart",
+            "list_view": "Widok listy"
         },
         "settings": {
             "general": {

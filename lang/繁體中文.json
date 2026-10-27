@@ -159,7 +159,9 @@
             "add_game": "加入挖掘清單",
             "adding_game": "正在新增…",
             "add_game_error": "無法儲存挖掘清單，請重試。",
-            "link_account": "連結帳號"
+            "link_account": "連結帳號",
+            "card_view": "卡片檢視",
+            "list_view": "清單檢視"
         },
         "settings": {
             "general": {

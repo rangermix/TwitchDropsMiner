@@ -159,7 +159,9 @@
             "add_game": "Adaugă în lista de minare",
             "adding_game": "Se adaugă…",
             "add_game_error": "Lista de minare nu a putut fi salvată. Încearcă din nou.",
-            "link_account": "Asociază contul"
+            "link_account": "Asociază contul",
+            "card_view": "Vizualizare carduri",
+            "list_view": "Vizualizare listă"
         },
         "settings": {
             "general": {

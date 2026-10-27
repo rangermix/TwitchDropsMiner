@@ -159,7 +159,9 @@
             "add_game": "Přidat do seznamu těžby",
             "adding_game": "Přidávání…",
             "add_game_error": "Seznam těžby nelze uložit. Zkuste to znovu.",
-            "link_account": "Propojit účet"
+            "link_account": "Propojit účet",
+            "card_view": "Zobrazení karet",
+            "list_view": "Zobrazení seznamu"
         },
         "settings": {
             "general": {

@@ -226,6 +226,12 @@
                             </div>
                         </div>
                         <button id="clear-filters-btn" class="small-btn">Clear Filters</button>
+                        <div class="inventory-view-toggle">
+                            <button type="button" id="inventory-view-cards" class="inventory-view-btn" aria-pressed="true"
+                                aria-label="Card view" title="Card view"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg></button>
+                            <button type="button" id="inventory-view-list" class="inventory-view-btn" aria-pressed="false"
+                                aria-label="List view" title="List view"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="2" width="14" height="3" rx="1"/><rect x="1" y="7" width="14" height="3" rx="1"/><rect x="1" y="12" width="14" height="3" rx="1"/></svg></button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -260,10 +266,6 @@
                     <h2 id="settings-general-header">General</h2>
                     <label>
                         <input type="checkbox" id="dark-mode"> Dark Mode
-                    </label>
-                    <label>
-                        <input type="checkbox" id="inventory-list-view"> Inventory List View (horizontal rows
-                        instead of cards)
                     </label>
                     <label>
                         <input type="checkbox" id="priority-list-only" checked> Priority list only (mine selected games only)

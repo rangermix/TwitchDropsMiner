@@ -159,7 +159,9 @@
             "add_game": "Aggiungi alla lista di mining",
             "adding_game": "Aggiunta…",
             "add_game_error": "Impossibile salvare la lista di mining. Riprova.",
-            "link_account": "Collega account"
+            "link_account": "Collega account",
+            "card_view": "Vista a schede",
+            "list_view": "Vista a elenco"
         },
         "settings": {
             "general": {

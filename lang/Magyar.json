@@ -320,7 +320,9 @@
             "add_game": "Hozzáadás a bányászati listához",
             "adding_game": "Hozzáadás…",
             "add_game_error": "A bányászati lista nem menthető. Próbáld újra.",
-            "link_account": "Fiók összekapcsolása"
+            "link_account": "Fiók összekapcsolása",
+            "card_view": "Kártyanézet",
+            "list_view": "Listanézet"
         },
         "history": {
             "title": "Dropelőzmények",

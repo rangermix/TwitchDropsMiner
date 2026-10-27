@@ -659,9 +659,12 @@ header h1 {
 
 /* Inventory - card view (default) */
 .inventory-grid {
-    column-width: 350px;
-    column-gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(350px, 100%), 1fr));
+    gap: 20px;
+    align-items: start;
 }
+.inventory-grid > .empty-message { grid-column: 1 / -1; }
 
 .campaign-card {
     background: var(--bg-panel);
@@ -669,8 +672,6 @@ header h1 {
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    break-inside: avoid;
-    margin-bottom: 20px;
 }
 
 .campaign-info {
@@ -684,11 +685,11 @@ header h1 {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    align-items: stretch;
 }
 
 .inventory-grid.list-view .campaign-card {
     display: block;
-    margin-bottom: 0;
 }
 
 .inventory-grid.list-view .campaign-info {
@@ -728,7 +729,22 @@ header h1 {
 .campaign-toggle:focus-visible, .inventory-add-game:focus-visible, .campaign-actions a:focus-visible {
     outline: 2px solid var(--accent-color); outline-offset: -3px;
 }
-.campaign-titles { display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.campaign-titles { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.campaign-game-name, .campaign-name-text { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.campaign-titles > .campaign-name-link { max-width: 100%; }
+.campaign-name-link .external-link-icon { flex-shrink: 0; }
+.campaign-overview { cursor: pointer; }
+.campaign-overview:hover:not(:has(a:hover, button:hover, .campaign-badge:hover)) .campaign-toggle { background: var(--bg-secondary); }
+.inventory-view-toggle { display: flex; gap: 4px; }
+.inventory-view-btn {
+    display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0;
+    border: 1px solid var(--border-color); border-radius: 5px; background: transparent;
+    color: var(--text-secondary); cursor: pointer;
+}
+.inventory-view-btn svg { width: 16px; height: 16px; fill: currentColor; }
+.inventory-view-btn:hover { background: var(--bg-secondary); }
+.inventory-view-btn[aria-pressed="true"] { border-color: var(--accent-color); color: var(--accent-color); }
+.inventory-view-btn:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
 .campaign-subtitle { color: var(--text-secondary); font-size: 13px; font-weight: normal; }
 .campaign-date-range { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow-wrap: anywhere; color: var(--text-secondary); font-size: 12px; }
 .campaign-chevron {
@@ -1701,8 +1717,8 @@ header h1 {
     }
 
     .inventory-grid {
-        column-width: 280px;
-        column-gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+        gap: 12px;
     }
 
     .help-content {
@@ -1734,13 +1750,6 @@ header h1 {
 
     .tab-button {
         flex: 1 1 40%;
-    }
-
-    /* column-width switches to single-column below this anyway since no card
-       fits two 280px columns at this viewport, but drop the min width so a
-       narrower phone doesn't get a horizontal scrollbar from the column box. */
-    .inventory-grid {
-        column-width: auto;
     }
 
     .filter-separator {

@@ -25,9 +25,14 @@ class Element {
  addEventListener(type,callback){this.events[type]=callback;}
  contains(target){return this===target || this.children.some(child=>child.contains(target));}
  focus(){if(!this.disabled)document.activeElement=this;}
+ click(){this.events.click?.({target:this});}
+ closest(selector){const parts=selector.split(',').map(part=>part.trim());let node=this;
+  const matches=part=>part.startsWith('.')?(node.className||'').split(' ').includes(part.slice(1)):node.tag===part;
+  while(node){if(parts.some(matches))return node;node=node.parentElement;}return null;}
 }
-const body=new Element('body');const grid=new Element('div');grid.id='inventory-grid';body.appendChild(grid);
-for(const id of ['dark-mode','inventory-list-view','language','connection-quality','minimum-refresh-interval','drop-name-blacklist']) {
+const body=new Element('body');const grid=new Element('div');grid.id='inventory-grid';grid.classList={toggle(name,on){this[name]=on;}};body.appendChild(grid);
+for(const id of ['inventory-view-cards','inventory-view-list'])body.appendChild(Object.assign(new Element('button'),{id}));
+for(const id of ['dark-mode','language','connection-quality','minimum-refresh-interval','drop-name-blacklist']) {
  const control=new Element('input');control.id=id;control.value=id==='connection-quality'?'1':id==='minimum-refresh-interval'?'30':'';
  body.appendChild(control);
 }
@@ -44,6 +49,7 @@ const toasts=[];const requests=[];
 let responder=async()=>({ok:true,json:async()=>({success:true,settings:{games_to_watch:['First','Manual','Cyberpunk 2077']}})});
 async function fetch(url,options){requests.push({url,options});return responder();}
 function showToast(...args){toasts.push(args);}
+let selectionText='';function getSelection(){return {toString:()=>selectionText};}
 function updateDropArt(){}
 function getInventoryFilters(){return {};}
 function campaignMatchesFilters(){return true;}
@@ -65,7 +71,8 @@ def run_inventory(body):
     source = APP_JS.read_text(encoding='utf-8')
     functions = '\n'.join(extract_javascript_function(source, name) for name in (
         'makeElement', 'canAddInventoryGame', 'renderInventory', 'applyGameWatchEdit',
-        'reconcileGameWatchSettings', 'queueSettingsWrite', 'parseDropNameBlacklist'))
+        'reconcileGameWatchSettings', 'queueSettingsWrite', 'parseDropNameBlacklist',
+        'applyInventoryViewMode', 'setInventoryViewMode'))
     functions += '\nasync ' + extract_javascript_function(source, 'addInventoryGame')
     functions += '\nasync ' + extract_javascript_function(source, 'saveSettings')
     result = subprocess.run([NODE, '-'], input=HARNESS + '\n' + functions + '\n(async()=>{\nreconcileGameWatchSettings(state.settings);\n' + body
@@ -259,4 +266,56 @@ campaignLink().focus();state.campaigns.one.drops[0].current_minutes=11;renderInv
 assert.equal(document.activeElement,campaignLink());
 accountLink().focus();renderInventory();assert.equal(document.activeElement,accountLink());
 state.campaigns.one.linked=true;renderInventory();assert.equal(document.activeElement,toggle('one'));
+""")
+
+
+def test_whole_overview_toggles_card_but_links_and_actions_do_not():
+    run_inventory(r"""
+state.campaigns={one:campaign('one',{linked:false})};renderInventory();
+const overview=document.querySelectorAll('.campaign-overview')[0];
+const title=document.querySelectorAll('.campaign-game-name')[0];
+overview.events.click({target:title});assert.equal(content('one').hidden,false);
+assert.equal(toggle('one').getAttribute('aria-expanded'),'true');
+for(const target of [document.getElementById('inventory-link-one'),document.querySelectorAll('.campaign-name-text')[0],toggle('one')]) {
+ overview.events.click({target});assert.equal(content('one').hidden,false);
+}
+overview.events.click({target:document.querySelectorAll('.campaign-badge')[0]});assert.equal(content('one').hidden,false);
+selectionText='14 Oct';overview.events.click({target:title});assert.equal(content('one').hidden,false);selectionText='';
+overview.events.click({target:document.querySelectorAll('.campaign-date-range')[0]});assert.equal(content('one').hidden,true);
+assert.equal(title.attrs.title,'Cyberpunk 2077');
+assert.equal(document.querySelectorAll('.campaign-name-link')[0].attrs.title,'Quadra Paintjobs');
+""")
+
+
+def test_inventory_view_buttons_switch_and_persist_mode_once():
+    run_inventory(r"""
+const cards=document.getElementById('inventory-view-cards');const list=document.getElementById('inventory-view-list');
+setInventoryViewMode(true);await gameWatchWrites.tail;
+assert.equal(grid.classList['list-view'],true);
+assert.equal(list.getAttribute('aria-pressed'),'true');assert.equal(cards.getAttribute('aria-pressed'),'false');
+assert.equal(requests.length,1);assert.equal(JSON.parse(requests[0].options.body).inventory_list_view,true);
+setInventoryViewMode(true);await gameWatchWrites.tail;assert.equal(requests.length,1);
+setInventoryViewMode(false);await gameWatchWrites.tail;
+assert.equal(grid.classList['list-view'],false);assert.equal(cards.getAttribute('aria-pressed'),'true');
+assert.equal(JSON.parse(requests[1].options.body).inventory_list_view,false);
+""")
+
+
+def test_card_grid_keeps_columns_stable_and_titles_single_line():
+    css = (ROOT / 'web/static/styles.css').read_text(encoding='utf-8')
+    html = (ROOT / 'web/index.html').read_text(encoding='utf-8')
+    assert 'column-width' not in css.split('.inventory-grid {', 1)[1].split('}', 1)[0]
+    grid_rule = css.split('.inventory-grid {', 1)[1].split('}', 1)[0]
+    assert 'display: grid' in grid_rule and 'align-items: start' in grid_rule
+    list_rule = css.split('.inventory-grid.list-view {', 1)[1].split('}', 1)[0]
+    assert 'align-items: stretch' in list_rule
+    assert '.campaign-game-name, .campaign-name-text { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' in css
+    assert 'id="inventory-list-view"' not in html
+    assert 'id="inventory-view-cards"' in html and 'id="inventory-view-list"' in html
+
+
+def test_view_button_before_settings_load_applies_without_saving_defaults():
+    run_inventory(r"""
+state.settings={};setInventoryViewMode(true);await gameWatchWrites.tail;
+assert.equal(grid.classList['list-view'],true);assert.equal(requests.length,0);
 """)

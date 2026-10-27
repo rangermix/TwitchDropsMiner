@@ -320,7 +320,9 @@
             "add_game": "Add to mining list",
             "adding_game": "Adding…",
             "add_game_error": "Could not save the mining list. Try again.",
-            "link_account": "Link account"
+            "link_account": "Link account",
+            "card_view": "Card view",
+            "list_view": "List view"
         },
         "history": {
             "title": "Drop History",

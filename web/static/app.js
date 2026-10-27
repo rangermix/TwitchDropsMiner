@@ -1000,6 +1000,16 @@ function handleGameSearchKeydown(event) {
 
 function applyInventoryViewMode(listView) {
     document.getElementById('inventory-grid').classList.toggle('list-view', listView);
+    document.getElementById('inventory-view-cards')?.setAttribute('aria-pressed', String(!listView));
+    document.getElementById('inventory-view-list')?.setAttribute('aria-pressed', String(listView));
+}
+
+function setInventoryViewMode(listView) {
+    if ((state.settings.inventory_list_view === true) === listView) return;
+    state.settings.inventory_list_view = listView;
+    applyInventoryViewMode(listView);
+    // Saving before the first settings load would persist empty defaults (e.g. the Mining list).
+    if (Array.isArray(state.settings.games_to_watch)) saveSettings();
 }
 
 const expandedInventoryCampaigns = new Set();
@@ -1230,9 +1240,10 @@ function renderInventory() {
         });
 
         // Campaign name link
-        const campaignNameLink = makeElement('a', { id: `inventory-campaign-${encodeURIComponent(campaign.id)}`, href: campaign.campaign_url, target: '_blank', rel: 'noopener noreferrer', class: 'campaign-name-link' }, campaign.name, el =>
-            el.appendChild(makeElement('span', { class: 'external-link-icon' }, '🔗'))
-        );
+        const campaignNameLink = makeElement('a', { id: `inventory-campaign-${encodeURIComponent(campaign.id)}`, href: campaign.campaign_url, target: '_blank', rel: 'noopener noreferrer', class: 'campaign-name-link', title: campaign.name }, '', el => {
+            el.appendChild(makeElement('span', { class: 'campaign-name-text' }, campaign.name));
+            el.appendChild(makeElement('span', { class: 'external-link-icon' }, '🔗'));
+        });
 
         const linkStatusBadge = makeElement('span', {
             class: `campaign-badge ${campaign.linked ? 'linked' : 'not-linked'}`
@@ -1245,7 +1256,7 @@ function renderInventory() {
                 el.appendChild(makeImageElement(iconUrl, campaign.game_name, 'game-icon'));
             }
             const titles = makeElement('span', { class: 'campaign-titles' });
-            titles.appendChild(makeElement('strong', { class: 'campaign-game-name' }, campaign.game_name));
+            titles.appendChild(makeElement('strong', { class: 'campaign-game-name', title: campaign.game_name }, campaign.game_name));
             campaignNameLink.className += ' campaign-subtitle';
             titles.appendChild(campaignNameLink);
             el.appendChild(titles);
@@ -1316,6 +1327,10 @@ function renderInventory() {
             toggle.setAttribute('aria-expanded', String(open));
             content.hidden = !open;
         });
+        // The whole overview opens the card; its links and buttons keep their own actions.
+        overview.addEventListener('click', event => {
+            if (!event.target.closest('a, button, .campaign-badge') && !getSelection()?.toString()) toggle.click();
+        });
         card.replaceChildren(overview, content);
 
         container.appendChild(card);
@@ -1371,7 +1386,6 @@ function updateSettingsUI(settings, authoritative = false) {
     const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
     if (allowUnlinked) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
-    document.getElementById('inventory-list-view').checked = settings.inventory_list_view || false;
     document.getElementById('priority-list-only').checked = settings.priority_list_only !== false;
     applyInventoryViewMode(settings.inventory_list_view || false);
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
@@ -2165,7 +2179,7 @@ async function onMiningHoursChange() {
 async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
-        inventory_list_view: document.getElementById('inventory-list-view').checked,
+        inventory_list_view: state.settings.inventory_list_view === true,
         language: document.getElementById('language').value,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
@@ -2665,6 +2679,11 @@ function applyTranslations(t) {
 
         const clearBtn = document.getElementById('clear-filters-btn');
         if (clearBtn) clearBtn.textContent = f.clear;
+        for (const [id, key] of [['inventory-view-cards', 'card_view'], ['inventory-view-list', 'list_view']]) {
+            const label = t.gui?.inventory?.[key];
+            if (label) document.getElementById(id)?.setAttribute('aria-label', label);
+            if (label) document.getElementById(id)?.setAttribute('title', label);
+        }
 
         const searchInput = document.getElementById('games-filter');
         if (searchInput) searchInput.placeholder = f.search_placeholder;
@@ -2816,11 +2835,8 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSettings();
     });
 
-    document.getElementById('inventory-list-view').addEventListener('change', (e) => {
-        // Apply the view mode immediately for instant feedback
-        applyInventoryViewMode(e.target.checked);
-        saveSettings();
-    });
+    document.getElementById('inventory-view-cards').addEventListener('click', () => setInventoryViewMode(false));
+    document.getElementById('inventory-view-list').addEventListener('click', () => setInventoryViewMode(true));
     document.getElementById('priority-list-only').addEventListener('change', onPriorityModeChange);
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
