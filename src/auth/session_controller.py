@@ -123,7 +123,12 @@ class SessionController:
             generation = self.session.status()["generation"]
             account = self.session.status()["user_id"]
             with self._phase("renewal_issuance"):
-                renewed = await self.issuer.issue(seed)
+                if seed.cookie.expires_at <= self.clock():
+                    await self.session._transport.validate_token(seed.bundle.token, account,
+                                                                user_agent=seed.bundle.user_agent)
+                    renewed = await self.issuer.bootstrap(seed.bundle.token)
+                else:
+                    renewed = await self.issuer.issue(seed)
 
             def current() -> bool:
                 self._current(epoch)
@@ -136,6 +141,35 @@ class SessionController:
                                                     expected_user_id=account, authorized=current)
             self._renewal_error = None
             self._renewal_diagnostic = None
+            self.on_change()
+            return result
+
+    async def accept_token(self, token: str, *, authorized: Callable[[], bool]) -> dict[str, Any]:
+        """Bootstrap proof from an explicitly supplied WEB OAuth token, never trust OAuth alone."""
+        epoch = self._epoch
+
+        def current() -> bool:
+            self._current(epoch)
+            if not authorized():
+                raise SessionError("STALE")
+            return True
+
+        async with self._operation(), self._lock:
+            current()
+            with self._phase("captured_validation"):
+                account = await self.session._transport.validate_token(token)
+            current()
+            with self._phase("server_issuance"):
+                renewed = await self.issuer.bootstrap(token)
+            current()
+            with self._phase("issued_validation"):
+                async with self.activation():
+                    result = await self.session.install(
+                        renewed.bundle.to_dict(), expected_user_id=account,
+                        sdk_cookie=renewed.cookie, replace=True, authorized=current,
+                    )
+            self._renewal_error = self._renewal_diagnostic = None
+            self._wake.set()
             self.on_change()
             return result
 

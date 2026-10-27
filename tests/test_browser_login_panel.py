@@ -121,6 +121,21 @@ assert.equal(el('dashboard-access-controls').parentElement,el('dashboard-access-
 
 
 @pytest.mark.skipif(NODE is None, reason="Node required")
+def test_manual_token_is_cleared_before_request_and_on_panel_close():
+    run_panel(r"""
+panel.updateStatus(status('sign_in'));await tick();
+el('twitch-token-input').value='synthetic-token';
+const pending=panel.submitToken();
+assert.equal(el('twitch-token-input').value,'');
+await pending;
+assert.equal(calls[0].url,'/api/session/token');
+assert.deepEqual(JSON.parse(calls[0].options.body),{token:'synthetic-token'});
+el('twitch-token-input').value='private';el('twitch-token-panel').open=false;
+el('twitch-token-panel').listeners.toggle();assert.equal(el('twitch-token-input').value,'');
+""")
+
+
+@pytest.mark.skipif(NODE is None, reason="Node required")
 def test_logout_confirm_and_errors_do_not_replay_action():
     run_panel(r"""
 panel.updateStatus(status('idle',true));confirmed=false;
@@ -278,3 +293,33 @@ assert.equal(el('twitch-login-error').textContent,'Request failed');
 assert.equal(el('twitch-helper-enable').disabled,false);
 assert.equal(el('twitch-helper-connection').hidden,true);
 """)
+
+
+@pytest.mark.skipif(NODE is None, reason="Node required")
+@pytest.mark.parametrize('secure', [False, True])
+def test_completion_extension_closes_only_after_login_cookie_and_rechecks_presence(secure):
+    script = ROOT / "src/auth/login_completion/completion.js"
+    body = r"""
+const assert=require('node:assert/strict');const vm=require('node:vm');const fs=require('node:fs');
+let listener;const timers=[];const closed=[];let current=null;
+const cookie={name:'auth-token',domain:'.twitch.tv',secure:__SECURE__,value:'fake-private'};
+const chrome={cookies:{onChanged:{addListener(fn){listener=fn;}},get:async()=>current},
+ windows:{getAll:async()=>[{id:7}],remove:async id=>closed.push(id)}};
+vm.runInNewContext(fs.readFileSync(process.argv[2],'utf8'),{chrome,setTimeout:fn=>timers.push(fn)});
+(async()=>{
+ await Promise.resolve();
+ listener({removed:true,cookie});listener({removed:false,cookie:{...cookie,domain:'other.test'}});
+ listener({removed:false,cookie:{...cookie,value:''}});assert.equal(timers.length,0);
+ listener({removed:false,cookie});listener({removed:false,cookie});assert.equal(timers.length,1);
+ await timers.shift()();assert.deepEqual(closed,[],'removed login must not close browser');
+ current=cookie;listener({removed:false,cookie});await timers.shift()();assert.deepEqual(closed,[7]);
+})().catch(e=>{console.error(e);process.exit(1)});
+"""
+    result = subprocess.run([NODE, "-", str(script)], input=body.replace('__SECURE__', json.dumps(secure)), capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
+def test_completion_extension_observes_twitch_domain_cookies_with_narrow_permissions():
+    manifest = json.loads((ROOT / 'src/auth/login_completion/manifest.json').read_text())
+    assert set(manifest['host_permissions']) == {'*://twitch.tv/*', '*://www.twitch.tv/*'}
+    assert manifest['permissions'] == ['cookies']

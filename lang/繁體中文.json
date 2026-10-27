@@ -357,7 +357,7 @@
         },
         "browser_login": {
             "title": "登入 Twitch",
-            "instructions": "在下方瀏覽器中登入並完成 Twitch 驗證。完成後點選「完成登入」；TDM 驗證工作階段後將返回儀表板。",
+            "instructions": "在下方登入並完成 Twitch 驗證。登入後瀏覽器會自動關閉，接著 TDM 驗證工作階段。若瀏覽器仍開啟，請選擇完成登入。",
             "finish": "完成登入",
             "retry": "重試",
             "starting": "正在啟動瀏覽器…",
@@ -389,7 +389,15 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "僅接受第一個連線的助手。返回內嵌瀏覽器會關閉助手存取權限。"
+            "helper_access_help": "僅接受第一個連線的助手。返回內嵌瀏覽器會關閉助手存取權限。",
+            "clipboard_title": "複製與貼上",
+            "clipboard_help": "開啟 noVNC 左側欄並選擇剪貼簿。貼上文字，返回 Twitch 輸入框後按 Ctrl+V。傳送或關閉面板後會清空文字。",
+            "clipboard_label": "剪貼簿文字",
+            "clipboard_send": "貼到 Twitch 瀏覽器",
+            "token_title": "使用現有 Twitch 工作階段",
+            "token_help": "進階選項：僅貼上您本人已登入 Twitch 瀏覽器中的 auth-token Cookie 值。請像密碼一樣保護它。TDM 會驗證帳戶並產生新憑證；遭拒或已過期的權杖無法登入。",
+            "token_label": "Twitch auth-token",
+            "token_send": "使用權杖登入"
         }
     },
     "helper": {

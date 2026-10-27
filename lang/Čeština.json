@@ -357,7 +357,7 @@
         },
         "browser_login": {
             "title": "Přihlásit se na Twitch",
-            "instructions": "Přihlaste se níže a dokončete ověření Twitch. Zvolte „Dokončit přihlášení“; TDM ověří relaci a vrátí se na přehled.",
+            "instructions": "Přihlaste se níže a dokončete ověření Twitch. Prohlížeč se automaticky zavře a TDM ověří relaci. Pokud zůstane otevřený, zvolte Dokončit přihlášení.",
             "finish": "Dokončit přihlášení",
             "retry": "Zkusit znovu",
             "starting": "Spouštění prohlížeče…",
@@ -389,7 +389,15 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "Přijat bude první připojený pomocník. Návrat do vestavěného prohlížeče uzavře přístup pomocníka."
+            "helper_access_help": "Přijat bude první připojený pomocník. Návrat do vestavěného prohlížeče uzavře přístup pomocníka.",
+            "clipboard_title": "Kopírovat a vložit",
+            "clipboard_help": "Otevřete levý panel noVNC a zvolte Schránka. Vložte text, vraťte se do pole Twitch a stiskněte Ctrl+V. Text se po odeslání nebo zavření vymaže.",
+            "clipboard_label": "Text schránky",
+            "clipboard_send": "Vložit do prohlížeče Twitch",
+            "token_title": "Použít existující relaci Twitch",
+            "token_help": "Pokročilé: vložte pouze hodnotu cookie auth-token z vlastního prohlížeče přihlášeného k Twitch. Chraňte ji jako heslo. TDM ověří účet a vytvoří nový důkaz; odmítnutý nebo prošlý token přihlášení neumožní.",
+            "token_label": "Twitch auth-token",
+            "token_send": "Přihlásit tokenem"
         }
     },
     "helper": {

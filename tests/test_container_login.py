@@ -1,6 +1,7 @@
 """Browser ownership, state transitions, retry and resource cleanup."""
 
 import asyncio
+import json
 import os
 import shutil
 import subprocess
@@ -14,6 +15,46 @@ import pytest
 from src.auth.container_login import BrowserIsolation, ContainerDesktop, ContainerLogin, LoginChromium
 from src.auth.session_bundle import SessionError
 from tests.test_session_controller import seed
+
+
+@pytest.mark.asyncio
+async def test_password_saving_disabled_before_interactive_browser_starts(tmp_path, monkeypatch):
+    class Isolation:
+        def directory(self, prefix):
+            return tmp_path
+
+        def own(self, path):
+            pass
+
+    monkeypatch.setattr('src.auth.container_login.BrowserIsolation', Isolation)
+    browser = LoginChromium({})
+    browser.executable = 'chromium'
+
+    async def launch():
+        preferences = json.loads((tmp_path / 'Default/Preferences').read_text())
+        assert preferences['credentials_enable_service'] is False
+        assert preferences['profile']['password_manager_enabled'] is False
+        if os.name == 'posix':
+            assert (tmp_path / 'Default/Preferences').stat().st_mode & 0o777 == 0o600
+
+    browser.launch = launch
+    async with browser:
+        pass
+
+
+@pytest.mark.asyncio
+async def test_completion_extension_only_loaded_during_interactive_login(tmp_path, monkeypatch):
+    launch = AsyncMock(return_value=SimpleNamespace(returncode=None))
+    monkeypatch.setattr('asyncio.create_subprocess_exec', launch)
+    monkeypatch.setattr('src.auth.container_login.loopback_port', lambda: 12345)
+    monkeypatch.setattr('src.auth.container_login.os.geteuid', lambda: 1000, raising=False)
+    browser = LoginChromium({})
+    browser.profile, browser.executable = tmp_path, 'chromium'
+    browser.check_ready = AsyncMock()
+    await browser.launch()
+    assert any(arg.startswith('--load-extension=') for arg in launch.call_args.args)
+    await browser.launch(capture=True)
+    assert not any(arg.startswith('--load-extension=') for arg in launch.call_args.args)
 
 
 class Desktop:

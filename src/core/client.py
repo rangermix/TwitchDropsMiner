@@ -181,6 +181,32 @@ class Twitch:
                     self.gui.login.update(_.t["login"]["status"]["logged_out"], None)
                     self.login_browser.request_login()
 
+    async def accept_token(self, token: str, authorized) -> None:
+        async with self._logout_lock:
+            if self._auth_state._logged_in.is_set() or self._browser.status()["state"] == "ready":
+                raise SessionError("BROWSER_STATE")
+            await self.helper.cancel()
+            await self.login_browser.cancel()
+            attempt = self.login_browser.attempt
+            self.login_browser.change("verifying")
+        try:
+            await self.session_controller.accept_token(token, authorized=lambda: (
+                authorized() and self.login_browser.attempt == attempt
+            ))
+        except asyncio.CancelledError:
+            if self.login_browser.attempt == attempt:
+                self.login_browser._needed = True
+                self.login_browser.change("error", "BROWSER_STATE")
+            raise
+        except SessionError as error:
+            if self.login_browser.attempt == attempt:
+                self.login_browser._needed = True
+                self.login_browser.change("error", error.code, diagnostic=error.diagnostic)
+            raise
+        else:
+            if self.login_browser.attempt == attempt:
+                self.login_browser.change("idle")
+
     @asynccontextmanager
     async def authentication_change(self):
         """Drain authenticated work before replacing its identity and derived state."""

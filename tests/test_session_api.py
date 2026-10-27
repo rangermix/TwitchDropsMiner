@@ -29,6 +29,8 @@ def api(tmp_path, monkeypatch):
         login_browser=SimpleNamespace(status=lambda: {"state": "starting", "attempt": 1, "error": None},
                                       finish=AsyncMock(), retry=AsyncMock(), state="starting", desktop=None),
         logout=AsyncMock(), _auth_state=SimpleNamespace(_logged_in=MagicMock(is_set=lambda: False)))
+    monkeypatch.setattr(web.session_api, "_token_after", 0.0)
+    monkeypatch.setattr(web.session_api, "_token_lock", asyncio.Lock())
     monkeypatch.setattr(web, "twitch_client", miner)
     with TestClient(web.socket_app, headers={"X-TDM-Request": "1"}) as client:
         yield client, miner
@@ -175,3 +177,30 @@ async def test_public_proxy_origin_is_required_even_when_dashboard_auth_is_disab
         socket.close.assert_awaited_once_with(code=1008)
         calls.append(socket.close.await_count)
     assert calls == [1, 1, 1]
+
+
+def test_token_action_is_same_origin_bounded_and_does_not_echo_input(api):
+    client, miner = api
+    miner.accept_token = AsyncMock()
+    assert client.post("/api/session/token", json={"token": "private-value"},
+                       headers={"Origin": "https://evil.test"}).status_code == 403
+    response = client.post("/api/session/token", json={"token": "private value", "unexpected": True})
+    assert response.status_code == 422 and "private" not in response.text
+    miner.accept_token.assert_not_awaited()
+
+
+def test_valid_token_action_rechecks_dashboard_authorization(api):
+    client, miner = api
+    miner.accept_token = AsyncMock()
+    response = client.post("/api/session/token", json={"token": "synthetic-token"})
+    assert response.status_code == 200 and "synthetic-token" not in response.text
+    args = miner.accept_token.await_args.args
+    assert args[0] == "synthetic-token" and args[1]() is True
+    assert client.post("/api/session/token", json={"token": "another"}).status_code == 429
+
+
+def test_token_body_limit_and_dashboard_auth(api):
+    client, miner = api
+    assert client.post("/api/session/token", content=b"x" * 4097).status_code == 413
+    enable_dashboard_auth(client)
+    assert client.post("/api/session/token", json={"token": "synthetic"}).status_code == 401

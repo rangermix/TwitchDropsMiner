@@ -23,6 +23,7 @@ from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
 from src.web.diagnostics_api import DiagnosticsAPI
 from src.web.helper_api import HelperAPI
 from src.web.session_api import SessionAPI
+from src.web.session_viewer import SessionViewer
 
 
 if TYPE_CHECKING:
@@ -56,7 +57,8 @@ gui_manager: WebGUIManager | None = None
 twitch_client: Twitch | None = None
 _server_instance: uvicorn.Server | None = None
 
-app.include_router(SessionAPI(web_auth, lambda: twitch_client).router)
+session_api = SessionAPI(web_auth, lambda: twitch_client)
+app.include_router(session_api.router)
 app.include_router(HelperAPI(web_auth, lambda: twitch_client).router)
 app.include_router(DiagnosticsAPI(lambda: twitch_client).router)
 
@@ -615,7 +617,9 @@ async def get_wanted_items(sid):
 # Web files are in project_root/web/, we're in project_root/src/web/
 web_dir = Path(__file__).parent.parent.parent / "web"
 novnc_dir = Path("/usr/share/novnc")
+app.add_api_route("/session-viewer", SessionViewer(novnc_dir).page, methods=["GET"])
 if novnc_dir.exists():
+    app.mount(SessionViewer.ASSET_PATH, StaticFiles(directory=novnc_dir), name="novnc-login")
     app.mount("/static/novnc", StaticFiles(directory=novnc_dir), name="novnc")
 if web_dir.exists():
     static_dir = web_dir / "static"
