@@ -9,6 +9,7 @@ import json
 import os
 import re
 import secrets
+import shutil
 import signal
 import tempfile
 import time
@@ -96,13 +97,23 @@ class OwnedChromium:
         with tempfile.TemporaryDirectory(prefix="tdm-renew-") as directory:
             profile = Path(directory)
             args = [
-                self.executable, "--headless=new", f"--user-data-dir={profile}",
+                self.executable, f"--user-data-dir={profile}",
                 "--remote-debugging-address=127.0.0.1", "--remote-debugging-port=0",
                 "--no-first-run", "--no-default-browser-check", "--disable-dev-shm-usage",
                 "--disable-blink-features=AutomationControlled", "about:blank",
             ]
             if self.no_sandbox:
                 args.insert(1, "--no-sandbox")
+            display_runner = shutil.which("xvfb-run") if os.name == "posix" else None
+            if display_runner:
+                # Keep SDK issuance in a normal browser, matching interactive login.
+                # Keep Xauthority in the owned profile so forced cleanup removes it too.
+                # Never share the interactive VNC display.
+                args.append("--window-size=1200,760")
+                args = [display_runner, "-a", "-f", str(profile / "Xauthority"),
+                        "-s", "-screen 0 1280x800x24 -nolisten tcp", *args]
+            else:
+                args.insert(1, "--headless=new")
             try:
                 process = await asyncio.create_subprocess_exec(
                     *args, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,

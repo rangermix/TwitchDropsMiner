@@ -114,7 +114,8 @@ keeps running until the attempt finishes or times out.
 Set Docker’s `TZ` to match your home internet connection’s timezone; change
 `Australia/Sydney` in the example as needed. Chromium and the temporary display are
 included in the image. Your everyday browser profile is separate.
-TDM renews the session automatically. **Settings → Log out of Twitch**, at the
+TDM renews the session automatically using a private verification browser, separate
+from the sign-in viewer. **Settings → Log out of Twitch**, at the
 bottom, clears this miner’s session and opens sign in again for account replacement.
 See [authentication](docs/authentication.md) and [troubleshooting](docs/troubleshooting.md).
 If Twitch rejects the embedded browser, select **Use desktop helper** and run the

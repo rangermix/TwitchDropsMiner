@@ -384,6 +384,13 @@ progress to an ignored drop while the miner intentionally targets another reward
   client request ID and canonical X-Device-Id, while renewed GraphQL contexts retain
   the original allowlisted headers and never store that request ID. Keep downstream
   catalog validation mandatory; mocked issuance does not prove Twitch accepts a proof.
+- `OwnedChromium` uses `xvfb-run` when available for server SDK issuance and renewal,
+  with a private authenticated display (1280×800) and ordinary 1200×760 browser window.
+  Docker includes `xvfb-run` and `xauth`. Never reuse the interactive VNC display or
+  disable X authentication. Keep profiles owner-only, CDP loopback-only and process-group
+  cleanup on failure/cancellation. Keep Xauthority inside the owned temporary profile
+  so forced shutdown removes it too. Hosts without the runner retain the headless fallback.
+  A valid integrity response alone does not prove account/catalog acceptance.
 
 - Helper admission preserves allowlisted validation codes without printing remote text.
   Catalog rejection logs contain only fixed error categories and field-shape labels.

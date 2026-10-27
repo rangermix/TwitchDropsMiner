@@ -33,6 +33,12 @@ server-issued proof was rejected after browser login. Retrying the Finish button
 repair that proof. Keep the container clock/timezone and network routing consistent;
 report only the fixed diagnostic labels, never session files or complete logs.
 
+Docker builds from current source run the server verification/renewal browser on its own private
+virtual display, separate from the sign-in viewer. Older headless renewal builds can
+fail campaign integrity validation even after a successful browser login. Updating to
+a build containing this correction can recover an existing renewable session without
+another sign-in; TDM still verifies the account and campaign access before accepting it.
+
 ## Docker and timezone
 
 Use the published `rangermix/twitch-drops-miner:2.1.1` image or build the current source.

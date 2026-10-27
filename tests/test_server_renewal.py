@@ -234,9 +234,12 @@ async def test_cancel_during_sdk_wait_closes_owned_target_and_browser():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("outcome", ["success", "failure", "cancel", "startup_timeout"])
-async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatch, outcome):
+@pytest.mark.parametrize("displayed", [False, True])
+async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatch, outcome, displayed):
     from src.auth.server_renewal import OwnedChromium
 
+    if displayed and os.name != 'posix':
+        pytest.skip('Private X display is POSIX only')
     calls, profiles, stopped = [], [], []
     async def wait():
         process.returncode = 0
@@ -252,12 +255,15 @@ async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatc
         calls.append((args, kwargs))
         profile = Path(next(arg.split("=", 1)[1] for arg in args if arg.startswith("--user-data-dir=")))
         profiles.append(profile)
+        if displayed:
+            (profile / 'Xauthority').write_text('synthetic authority')
         if os.name == "posix":
             assert profile.stat().st_mode & 0o077 == 0
         (profile / "DevToolsActivePort").write_text("54321\n/devtools/browser/test-id\n")
         return process
 
     monkeypatch.setattr(asyncio, "create_subprocess_exec", spawn)
+    monkeypatch.setattr("src.auth.server_renewal.shutil.which", lambda name: '/usr/bin/xvfb-run' if displayed else None)
     if os.name == "posix":
         monkeypatch.setattr("os.killpg", lambda pid, sig: stopped.append((pid, sig)))
     browser = OwnedChromium("test-chromium", no_sandbox=True)
@@ -278,7 +284,12 @@ async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatc
     process.wait.assert_awaited()
     assert all(not profile.exists() for profile in profiles)
     args, kwargs = calls[0]
-    assert "--headless=new" in args and "--remote-debugging-address=127.0.0.1" in args
+    assert ('--headless=new' in args) is not displayed
+    if displayed:
+        assert args[:7] == ('/usr/bin/xvfb-run', '-a', '-f', str(profiles[0] / 'Xauthority'),
+                           '-s', '-screen 0 1280x800x24 -nolisten tcp', 'test-chromium')
+        assert '--window-size=1200,760' in args
+    assert "--remote-debugging-address=127.0.0.1" in args
     assert "--remote-debugging-port=0" in args
     assert kwargs["stdout"] == kwargs["stderr"] == asyncio.subprocess.DEVNULL
     assert kwargs["start_new_session"] is (os.name == "posix")
