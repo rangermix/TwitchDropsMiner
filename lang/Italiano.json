@@ -260,7 +260,12 @@
                 "save_error": "Impossibile salvare le impostazioni Discord.",
                 "save_settings": "Salva impostazioni",
                 "test_connection": "Prova Connessione"
-            }
+            },
+            "reward_priority_title": "Priorità ricompense",
+            "reward_priority_enable": "Preferisci tipi di ricompensa",
+            "reward_priority_save": "Salva priorità",
+            "reward_priority_error": "Usa numeri interi distinti da 1 a 4. Salvataggio fallito; riprova.",
+            "reward_priority_help": "Prima i numeri più bassi, poi le scadenze più vicine. I giochi selezionati precedono quelli aggiuntivi. Gli oggetti sono premi di gioco o dell’editore; distintivi ed emote sono per la chat Twitch. Altro indica un tipo Twitch sconosciuto. I tipi disattivati restano esclusi."
         },
         "help": {
             "about": "Informazioni su Twitch Drops Miner",

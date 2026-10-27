@@ -260,7 +260,12 @@
                 "save_error": "無法儲存 Discord 設定。",
                 "save_settings": "儲存設定",
                 "test_connection": "測試連線"
-            }
+            },
+            "reward_priority_title": "獎勵優先順序",
+            "reward_priority_enable": "優先考慮獎勵類型",
+            "reward_priority_save": "儲存優先順序",
+            "reward_priority_error": "請使用 1–4 中不重複的整數。無法儲存，請重試。",
+            "reward_priority_help": "數字越小越優先，其次優先即將到期的獎勵。所選遊戲始終優先於額外遊戲。物品是遊戲或發行商獎勵；徽章和表情用於 Twitch 聊天。其他表示 Twitch 回報的未知獎勵類型。已停用類型仍會排除。"
         },
         "help": {
             "about": "關於 Twitch Drops Miner",

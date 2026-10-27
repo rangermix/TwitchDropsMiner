@@ -260,7 +260,12 @@
                 "save_error": "Discord-Einstellungen konnten nicht gespeichert werden.",
                 "save_settings": "Einstellungen speichern",
                 "test_connection": "Verbindung testen"
-            }
+            },
+            "reward_priority_title": "Belohnungsprioritäten",
+            "reward_priority_enable": "Belohnungstypen bevorzugen",
+            "reward_priority_save": "Prioritäten speichern",
+            "reward_priority_error": "Eindeutige ganze Zahlen von 1 bis 4 verwenden. Speichern fehlgeschlagen; erneut versuchen.",
+            "reward_priority_help": "Kleinere Zahlen zuerst, danach frühere Ablaufzeiten. Ausgewählte Spiele bleiben vor zusätzlichen Spielen. Gegenstände sind Spiel- oder Publisher-Belohnungen; Abzeichen und Emotes gehören zum Twitch-Chat. Andere bedeutet einen unbekannten Twitch-Typ. Deaktivierte Typen bleiben ausgeschlossen."
         },
         "help": {
             "about": "Über Twitch Drops Miner",

@@ -225,7 +225,12 @@
                 "save_error": "Failed to save Discord settings.",
                 "save_settings": "Save Settings",
                 "test_connection": "Test Connection"
-            }
+            },
+            "reward_priority_title": "Reward priorities",
+            "reward_priority_enable": "Prefer reward types",
+            "reward_priority_save": "Save priorities",
+            "reward_priority_error": "Use unique whole numbers 1–4. Could not save priorities; try again.",
+            "reward_priority_help": "Lower numbers come first, then earlier reward deadlines. Selected games stay ahead of fallback games. Items are game or publisher rewards; badges and emotes are Twitch chat rewards. Other means Twitch reported an unrecognized reward type. Disabled types remain excluded."
         },
         "help": {
             "about": "About Twitch Drops Miner",

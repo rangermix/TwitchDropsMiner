@@ -899,3 +899,11 @@ and confirmed local deletion. Date-only filters mean midnight UTC; aware timesta
 preserve their instant. CSV attachment names use UTF-8 percent encoding with an ASCII
 fallback. History text is defined in `gui.history` for every locale and rendered as text.
 Tests cover persistence, filtering, Unicode exports, offsets, and translated UI behavior.
+
+- `reward_priority` defaults to `[]` (disabled); enabled values must be an exact
+  permutation of BADGE, EMOTE, DIRECT_ENTITLEMENT, UNKNOWN. `RewardPriority` owns
+  normalization and shared type/deadline ranking. Preserve selected-game precedence
+  over fallback games and all campaign/drop eligibility and mining-benefit filters.
+  Saved game order is unchanged. Failed priority saves restore the prior policy and
+  do not request a selection refresh. Cover selection and persistence boundaries in
+  `test_reward_priority.py` and translated form behavior in its frontend companion.

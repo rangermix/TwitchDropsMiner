@@ -252,6 +252,11 @@ class GUITelegramSettings(TypedDict):
 
 
 class GUISettings(TypedDict):
+    reward_priority_title: str
+    reward_priority_enable: str
+    reward_priority_save: str
+    reward_priority_error: str
+    reward_priority_help: str
     allow_unlinked_campaigns: str
     allow_unlinked_campaigns_warning: str
     allow_unlinked_campaigns_save_error: str

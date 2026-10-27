@@ -260,7 +260,12 @@
                 "save_error": "Discord ayarları kaydedilemedi.",
                 "save_settings": "Ayarları Kaydet",
                 "test_connection": "Bağlantıyı Test Et"
-            }
+            },
+            "reward_priority_title": "Ödül öncelikleri",
+            "reward_priority_enable": "Ödül türlerine öncelik ver",
+            "reward_priority_save": "Öncelikleri kaydet",
+            "reward_priority_error": "1–4 arasında benzersiz tam sayılar kullanın. Kaydedilemedi; tekrar deneyin.",
+            "reward_priority_help": "Önce küçük sayılar, sonra erken bitiş süreleri. Seçili oyunlar ek oyunlardan önce gelir. Eşyalar oyun veya yayıncı ödülleridir; rozet ve ifadeler Twitch sohbeti içindir. Diğer, bilinmeyen Twitch türüdür. Devre dışı türler hariç kalır."
         },
         "help": {
             "about": "Twitch Drops Miner Hakkında",

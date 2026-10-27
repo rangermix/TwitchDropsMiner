@@ -17,6 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, StrictBool, field_validator
 
 from src.config.paths import DATA_DIR
+from src.config.reward_priority import RewardPriority
 from src.config.settings import InventoryFilterSettings, MiningHoursSettings
 from src.version import __version__
 from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
@@ -81,6 +82,7 @@ class SettingsUpdate(BaseModel):
     dark_mode: bool | None = None
     language: str | None = None
     priority_list_only: bool | None = None
+    reward_priority: list[str] | None = None
     proxy: str | None = None
     connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
@@ -92,6 +94,11 @@ class SettingsUpdate(BaseModel):
     inventory_list_view: bool | None = None
     mining_benefits: dict[str, bool] | None = None
     mining_hours: dict | None = None
+
+    @field_validator("reward_priority")
+    @classmethod
+    def validate_reward_priority(cls, value: list[str] | None) -> list[str] | None:
+        return RewardPriority.normalize(value) if value is not None else None
 
     @field_validator("mining_hours")
     @classmethod

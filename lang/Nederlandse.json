@@ -260,7 +260,12 @@
                 "save_error": "Discord-instellingen konden niet worden opgeslagen.",
                 "save_settings": "Instellingen opslaan",
                 "test_connection": "Verbinding testen"
-            }
+            },
+            "reward_priority_title": "Beloningsprioriteiten",
+            "reward_priority_enable": "Beloningstypen voorrang geven",
+            "reward_priority_save": "Prioriteiten opslaan",
+            "reward_priority_error": "Gebruik unieke gehele getallen 1–4. Opslaan mislukt; probeer opnieuw.",
+            "reward_priority_help": "Lagere getallen eerst, daarna eerdere vervaldata. Geselecteerde spellen gaan voor extra spellen. Items zijn spel- of uitgeversbeloningen; badges en emotes zijn voor Twitch-chat. Overige betekent een onbekend Twitch-type. Uitgeschakelde typen blijven uitgesloten."
         },
         "help": {
             "about": "Over Twitch Drops Miner",

@@ -260,7 +260,12 @@
                 "save_error": "Kunne ikke gemme Discord-indstillinger.",
                 "save_settings": "Gem indstillinger",
                 "test_connection": "Test forbindelse"
-            }
+            },
+            "reward_priority_title": "Belønningsprioriteter",
+            "reward_priority_enable": "Foretræk belønningstyper",
+            "reward_priority_save": "Gem prioriteter",
+            "reward_priority_error": "Brug forskellige heltal fra 1 til 4. Kunne ikke gemme; prøv igen.",
+            "reward_priority_help": "Lavere tal først, derefter tidligere udløb. Valgte spil går foran ekstra spil. Genstande er spil- eller udgiverbelønninger; badges og emotes er til Twitch-chat. Andre betyder en ukendt Twitch-type. Deaktiverede typer forbliver udelukket."
         },
         "help": {
             "about": "Om Twitch Drops Miner",

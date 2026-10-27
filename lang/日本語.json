@@ -260,7 +260,12 @@
                 "save_error": "Discord設定を保存できませんでした。",
                 "save_settings": "設定を保存",
                 "test_connection": "接続をテスト"
-            }
+            },
+            "reward_priority_title": "報酬の優先順位",
+            "reward_priority_enable": "報酬タイプを優先する",
+            "reward_priority_save": "優先順位を保存",
+            "reward_priority_error": "1～4の異なる整数を指定してください。保存できませんでした。再試行してください。",
+            "reward_priority_help": "小さい数字を優先し、次に期限が近い報酬を優先します。選択したゲームは追加ゲームより優先されます。アイテムはゲームや配信元の報酬、バッジとエモートはTwitchチャットの報酬です。その他はTwitchから報告された不明なタイプです。無効なタイプは引き続き除外します。"
         },
         "help": {
             "about": "Twitch Drops Minerについて",

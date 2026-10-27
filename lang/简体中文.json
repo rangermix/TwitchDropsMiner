@@ -260,7 +260,12 @@
                 "save_error": "无法保存 Discord 设置。",
                 "save_settings": "保存设置",
                 "test_connection": "测试连接"
-            }
+            },
+            "reward_priority_title": "奖励优先级",
+            "reward_priority_enable": "优先考虑奖励类型",
+            "reward_priority_save": "保存优先级",
+            "reward_priority_error": "请使用 1–4 中不重复的整数。无法保存，请重试。",
+            "reward_priority_help": "数字越小越优先，其次优先即将到期的奖励。所选游戏始终优先于额外游戏。物品是游戏或发行商奖励；徽章和表情用于 Twitch 聊天。其他表示 Twitch 报告的未知奖励类型。已禁用类型仍被排除。"
         },
         "help": {
             "about": "关于 Twitch 掉宝矿工",

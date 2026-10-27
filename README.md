@@ -231,3 +231,6 @@ or [buying the maintainer a coffee](https://buymeacoffee.com/rangermix).
 <!-- contributors:end -->
 
 </details>
+
+Optional reward priorities in Settings prefer chosen reward types and earlier
+reward deadlines. [Mining settings](docs/mining-settings.md) explains the ordering.

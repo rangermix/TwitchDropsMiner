@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
+from src.config.reward_priority import RewardPriority
 from src.config.settings import Settings
 from src.models.campaign import DropsCampaign
 from src.models.game import Game
@@ -139,6 +140,16 @@ class StreamSelector:
                 )
 
         self._append_unlisted_games(wanted_games, settings, campaigns, now, next_hour)
+        policy = RewardPriority(settings)
+        if policy.enabled:
+            selected = {name.lower() for name in settings.games_to_watch}
+            def key(game):
+                eligible = [campaign for campaign in campaigns
+                            if campaign.game == game['game_obj'] and campaign.can_earn_within(next_hour)]
+                return (0 if game['game_name'].lower() in selected else 1,
+                        min((policy.campaign_key(campaign) for campaign in eligible),
+                            default=(len(policy.TYPES), float('inf'))))
+            wanted_games.sort(key=key)
         return wanted_games
 
     def get_wanted_game_tree(

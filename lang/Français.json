@@ -260,7 +260,12 @@
                 "save_error": "Impossible d’enregistrer les paramètres Discord.",
                 "save_settings": "Enregistrer les paramètres",
                 "test_connection": "Tester la connexion"
-            }
+            },
+            "reward_priority_title": "Priorités des récompenses",
+            "reward_priority_enable": "Privilégier les types de récompense",
+            "reward_priority_save": "Enregistrer les priorités",
+            "reward_priority_error": "Utilisez des entiers distincts de 1 à 4. Échec de l’enregistrement ; réessayez.",
+            "reward_priority_help": "Les petits nombres passent en premier, puis les échéances proches. Les jeux sélectionnés restent prioritaires. Les objets sont des récompenses de jeu ou d’éditeur ; badges et émoticônes sont destinés au chat Twitch. Autres désigne un type Twitch inconnu. Les types désactivés restent exclus."
         },
         "help": {
             "about": "À propos de Twitch Drops Miner",

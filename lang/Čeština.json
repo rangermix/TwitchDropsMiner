@@ -260,7 +260,12 @@
                 "save_error": "Nastavení Discord se nepodařilo uložit.",
                 "save_settings": "Uložit nastavení",
                 "test_connection": "Testovat připojení"
-            }
+            },
+            "reward_priority_title": "Priority odměn",
+            "reward_priority_enable": "Upřednostnit typy odměn",
+            "reward_priority_save": "Uložit priority",
+            "reward_priority_error": "Použijte různá celá čísla 1–4. Uložení selhalo; zkuste to znovu.",
+            "reward_priority_help": "Nejprve nižší čísla, pak bližší konec platnosti. Vybrané hry mají přednost před dalšími. Předměty jsou odměny hry či vydavatele; odznaky a emotikony patří chatu Twitch. Ostatní znamená neznámý typ Twitch. Vypnuté typy zůstávají vyloučené."
         },
         "help": {
             "about": "O Twitch Drops Miner",

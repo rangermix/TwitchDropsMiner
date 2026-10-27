@@ -260,7 +260,12 @@
                 "save_error": "Gagal menyimpan pengaturan Discord.",
                 "save_settings": "Simpan Pengaturan",
                 "test_connection": "Uji Koneksi"
-            }
+            },
+            "reward_priority_title": "Prioritas hadiah",
+            "reward_priority_enable": "Utamakan jenis hadiah",
+            "reward_priority_save": "Simpan prioritas",
+            "reward_priority_error": "Gunakan bilangan bulat unik 1–4. Gagal menyimpan; coba lagi.",
+            "reward_priority_help": "Angka kecil lebih dahulu, lalu batas waktu terdekat. Game pilihan mendahului game tambahan. Item adalah hadiah game atau penerbit; lencana dan emote untuk chat Twitch. Lainnya berarti jenis Twitch yang tidak dikenal. Jenis nonaktif tetap dikecualikan."
         },
         "help": {
             "about": "Tentang Twitch Drops Miner",

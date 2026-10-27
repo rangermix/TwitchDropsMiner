@@ -260,7 +260,12 @@
                 "save_error": "Nie udało się zapisać ustawień Discord.",
                 "save_settings": "Zapisz ustawienia",
                 "test_connection": "Testuj połączenie"
-            }
+            },
+            "reward_priority_title": "Priorytety nagród",
+            "reward_priority_enable": "Preferuj typy nagród",
+            "reward_priority_save": "Zapisz priorytety",
+            "reward_priority_error": "Użyj różnych liczb całkowitych 1–4. Zapis nie powiódł się; spróbuj ponownie.",
+            "reward_priority_help": "Najpierw niższe liczby, potem bliższe terminy. Wybrane gry mają pierwszeństwo przed dodatkowymi. Przedmioty to nagrody gry lub wydawcy; odznaki i emotikony są do czatu Twitch. Inne oznacza nieznany typ Twitch. Wyłączone typy pozostają wykluczone."
         },
         "help": {
             "about": "O Twitch Drops Miner",

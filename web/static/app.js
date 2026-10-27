@@ -1300,6 +1300,7 @@ function updateSettingsUI(settings) {
     }
 
     // Restore mining benefit filters
+    if (typeof renderRewardPriority === 'function') renderRewardPriority(settings.reward_priority || []);
     if (settings.mining_benefits) {
         if (document.getElementById('mining-benefit-item')) document.getElementById('mining-benefit-item').checked = settings.mining_benefits.DIRECT_ENTITLEMENT;
         if (document.getElementById('mining-benefit-badge')) document.getElementById('mining-benefit-badge').checked = settings.mining_benefits.BADGE;
@@ -1949,6 +1950,64 @@ function parseDropNameBlacklist(value) {
         .filter(Boolean);
 }
 
+const rewardTypes = ['BADGE', 'EMOTE', 'DIRECT_ENTITLEMENT', 'UNKNOWN'];
+const rewardLabelKeys = {BADGE: 'badge', EMOTE: 'emote', DIRECT_ENTITLEMENT: 'item', UNKNOWN: 'other'};
+let rewardPrioritySaving = false;
+function renderRewardPriority(order = state.settings.reward_priority || []) {
+    const t = state.translations.gui?.settings || {};
+    const labels = state.translations.gui?.inventory?.filters || {};
+    const enabled = document.getElementById('reward-priority-enabled');
+    if (!enabled) return;
+    enabled.checked = order.length > 0;
+    for (const [id, key] of Object.entries({'reward-priority-title': 'reward_priority_title',
+        'reward-priority-help': 'reward_priority_help', 'reward-priority-enable-label': 'reward_priority_enable',
+        'reward-priority-save': 'reward_priority_save'})) document.getElementById(id).textContent = t[key] || '';
+    const list = document.getElementById('reward-priority-order');
+    list.replaceChildren();
+    for (const [index, type] of (order.length ? order : rewardTypes).entries()) {
+        const label = document.createElement('label');
+        const text = document.createElement('span');
+        text.textContent = labels[rewardLabelKeys[type]] || type;
+        const input = document.createElement('input');
+        input.type = 'number'; input.min = '1'; input.max = '4'; input.step = '1'; input.required = true;
+        input.value = String(index + 1); input.dataset.rewardType = type;
+        input.setAttribute('aria-label', text.textContent);
+        input.disabled = !enabled.checked || rewardPrioritySaving;
+        label.appendChild(text); label.appendChild(input); list.appendChild(label);
+    }
+}
+async function saveRewardPriority() {
+    if (rewardPrioritySaving) return;
+    const error = document.getElementById('reward-priority-error');
+    const enabled = document.getElementById('reward-priority-enabled');
+    const fields = [...document.querySelectorAll('#reward-priority-order input')];
+    const message = state.translations.gui?.settings?.reward_priority_error || '';
+    error.hidden = true;
+    const values = fields.map(field => Number(field.value));
+    if (enabled.checked && (fields.some(field => !field.value.trim() || !field.reportValidity())
+        || new Set(values).size !== 4 || values.some(value => !Number.isInteger(value) || value < 1 || value > 4))) {
+        error.textContent = message; error.hidden = false; return;
+    }
+    const order = enabled.checked ? fields.slice().sort((a,b) => Number(a.value)-Number(b.value)).map(field=>field.dataset.rewardType) : [];
+    rewardPrioritySaving = true;
+    const controls = [enabled, document.getElementById('reward-priority-save'), ...fields];
+    controls.forEach(control=>{control.disabled=true;});
+    try {
+        const response = await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({reward_priority:order})});
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        if (data.success !== true || JSON.stringify(data.settings?.reward_priority) !== JSON.stringify(order)) throw new Error();
+        updateSettingsUI(data.settings);
+    } catch (_) {
+        renderRewardPriority(); error.textContent=message; error.hidden=false;
+    } finally {
+        rewardPrioritySaving=false;
+        enabled.disabled=false;document.getElementById('reward-priority-save').disabled=false;
+        document.querySelectorAll('#reward-priority-order input').forEach(input=>{input.disabled=!enabled.checked;});
+    }
+}
+
 function toggleMiningHoursRange(enabled) {
     const container = document.getElementById('mining-hours-range-inputs');
     if (container) container.style.display = enabled ? '' : 'none';
@@ -2212,6 +2271,7 @@ function applyTranslations(t) {
         if (allowUnlinkedWarning) allowUnlinkedWarning.textContent = t.gui.settings.allow_unlinked_campaigns_warning;
         const allowUnlinkedError = document.getElementById('allow-unlinked-error');
         if (allowUnlinkedError && !allowUnlinkedError.hidden) allowUnlinkedError.textContent = t.gui.settings.allow_unlinked_campaigns_save_error;
+        if (typeof renderRewardPriority === 'function') renderRewardPriority();
         if (benefitsHeader && t.gui.settings.mining_benefits) benefitsHeader.textContent = t.gui.settings.mining_benefits;
 
         const dropBlacklistHeader = document.getElementById('settings-drop-blacklist-header');
@@ -2661,6 +2721,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Apply the view mode immediately for instant feedback
         applyInventoryViewMode(e.target.checked);
         saveSettings();
+    });
+    document.getElementById('reward-priority-save').addEventListener('click', saveRewardPriority);
+    document.getElementById('reward-priority-enabled').addEventListener('change', event => {
+        document.querySelectorAll('#reward-priority-order input').forEach(input => {input.disabled=!event.target.checked;});
     });
     document.getElementById('priority-list-only').addEventListener('change', onPriorityModeChange);
     document.getElementById('language').addEventListener('change', saveSettings);

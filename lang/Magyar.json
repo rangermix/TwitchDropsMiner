@@ -225,7 +225,12 @@
                 "save_error": "A Discord-beállítások mentése sikertelen.",
                 "save_settings": "Beállítások mentése",
                 "test_connection": "Kapcsolat tesztelése"
-            }
+            },
+            "reward_priority_title": "Jutalomprioritások",
+            "reward_priority_enable": "Jutalomtípusok előnyben",
+            "reward_priority_save": "Prioritások mentése",
+            "reward_priority_error": "Különböző egész számokat adj meg 1–4 között. Sikertelen mentés; próbáld újra.",
+            "reward_priority_help": "Előbb a kisebb számok, majd a közelebbi lejáratok. A kiválasztott játékok megelőzik a továbbiakat. A tárgyak játék- vagy kiadói jutalmak; a jelvények és emotikonok a Twitch-chathez tartoznak. Az Egyéb ismeretlen Twitch-típust jelent. A kikapcsolt típusok kimaradnak."
         },
         "help": {
             "about": "A Twitch Drops Miner-ről",

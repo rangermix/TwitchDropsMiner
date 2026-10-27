@@ -260,7 +260,12 @@
                 "save_error": "Não foi possível salvar as configurações do Discord.",
                 "save_settings": "Salvar configurações",
                 "test_connection": "Testar Conexão"
-            }
+            },
+            "reward_priority_title": "Prioridades de recompensas",
+            "reward_priority_enable": "Priorizar tipos de recompensa",
+            "reward_priority_save": "Salvar prioridades",
+            "reward_priority_error": "Use números inteiros únicos de 1 a 4. Não foi possível salvar; tente novamente.",
+            "reward_priority_help": "Números menores primeiro, depois prazos mais próximos. Jogos selecionados ficam à frente dos adicionais. Itens são recompensas do jogo ou editora; emblemas e emotes são do chat Twitch. Outros indica um tipo desconhecido informado pela Twitch. Tipos desativados continuam excluídos."
         },
         "help": {
             "about": "Sobre o Twitch Drops Miner",
