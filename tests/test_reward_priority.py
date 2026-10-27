@@ -155,3 +155,17 @@ def test_mixed_benefit_drop_uses_best_enabled_type_without_reenabling_disabled_t
     assert policy.campaign_key(campaign)[0] == 0
     value.mining_benefits['BADGE'] = False
     assert RewardPriority(value).campaign_key(campaign)[0] == 2
+
+
+def test_active_campaign_tie_uses_game_order_before_remaining_minutes():
+    from src.services.inventory_service import InventoryService
+    value = settings('Special Events', 'Regular')
+    special = _campaign('special', 'Special Events', game_id=509663, settings=value, acl=[1],
+                        drops=[_drop('long', required_minutes=120)])
+    regular = _campaign('regular', 'Regular', game_id=2, settings=value,
+                        drops=[_drop('short', required_minutes=15)])
+    twitch = SimpleNamespace(settings=value, inventory=[regular, special],
+                             wanted_games=[special.game, regular.game], gui=MagicMock())
+    channel = _channel(twitch, 1, {'id': '2', 'name': 'Regular'})
+    twitch.watching_channel = SimpleNamespace(get_with_default=lambda fallback: channel)
+    assert InventoryService(twitch).get_active_campaign(channel) is special

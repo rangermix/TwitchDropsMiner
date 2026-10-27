@@ -276,7 +276,8 @@ class InventoryService:
                 campaigns = [campaign for campaign in campaigns if campaign.game in self._twitch.wanted_games]
                 selected = {name.lower() for name in self._twitch.settings.games_to_watch}
                 campaigns.sort(key=lambda campaign: (
-                    0 if campaign.game.name.lower() in selected else 1, policy.campaign_key(campaign)))
+                    0 if campaign.game.name.lower() in selected else 1, policy.campaign_key(campaign),
+                    self._twitch.wanted_games.index(campaign.game), campaign.remaining_minutes))
             if not campaigns:
                 return None
             return campaigns[0]
