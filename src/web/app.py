@@ -57,7 +57,8 @@ gui_manager: WebGUIManager | None = None
 twitch_client: Twitch | None = None
 _server_instance: uvicorn.Server | None = None
 
-app.include_router(SessionAPI(web_auth, lambda: twitch_client).router)
+session_api = SessionAPI(web_auth, lambda: twitch_client)
+app.include_router(session_api.router)
 app.include_router(HelperAPI(web_auth, lambda: twitch_client).router)
 app.include_router(DiagnosticsAPI(lambda: twitch_client).router)
 

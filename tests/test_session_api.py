@@ -29,9 +29,8 @@ def api(tmp_path, monkeypatch):
         login_browser=SimpleNamespace(status=lambda: {"state": "starting", "attempt": 1, "error": None},
                                       finish=AsyncMock(), retry=AsyncMock(), state="starting", desktop=None),
         logout=AsyncMock(), _auth_state=SimpleNamespace(_logged_in=MagicMock(is_set=lambda: False)))
-    for route in web.app.routes:
-        if getattr(route, "path", None) == "/api/session/token":
-            monkeypatch.setattr(route.endpoint.__self__, "_token_after", 0.0)
+    monkeypatch.setattr(web.session_api, "_token_after", 0.0)
+    monkeypatch.setattr(web.session_api, "_token_lock", asyncio.Lock())
     monkeypatch.setattr(web, "twitch_client", miner)
     with TestClient(web.socket_app, headers={"X-TDM-Request": "1"}) as client:
         yield client, miner
