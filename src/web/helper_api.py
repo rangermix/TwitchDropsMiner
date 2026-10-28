@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections import deque
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
 class HelperAPI:
     def __init__(self, auth: WebAuth, get_client: Callable[[], Twitch | None]):
         self.auth, self.get_client = auth, get_client
+        self.attempts: deque[tuple[float, str]] = deque()
         self.router = APIRouter()
         self.router.add_api_route("/api/helper/connect", self.connect, methods=["POST"])
         self.router.add_api_route("/api/helper/session", self.install, methods=["POST"])
@@ -52,7 +54,7 @@ class HelperAPI:
         })
 
     async def connect(self, request: Request):
-        self.auth.limit(request)
+        self.auth.limit(request, self.attempts)
         try:
             helper = self.helper()
             if await request.json() != {}:

@@ -27,7 +27,7 @@ class TestProxySettings(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(self.mock_settings.proxy, proxy_url)
         self.mock_console.print.assert_called_with(
-            "Setting changed: proxy = http://user:pass@localhost:8080"
+            "Setting changed: proxy = http://user:••••••••@localhost:8080"
         )
 
         # Test clearing a proxy

@@ -179,6 +179,8 @@ class GUIWanted(TypedDict):
 
 class GUIInvFilters(TypedDict):
     account_link: str
+    status_heading: str
+    rewards_heading: str
     all: str
     linked: str
     active: str
@@ -204,6 +206,12 @@ class GUIInvStatus(TypedDict):
 
 
 class GUIInventory(TypedDict):
+    add_game: str
+    adding_game: str
+    add_game_error: str
+    link_account: str
+    card_view: str
+    list_view: str
     no_campaigns: str
     status: GUIInvStatus
     starts: str
@@ -260,18 +268,22 @@ class GUITelegramSettings(TypedDict):
 
 
 class GUISettings(TypedDict):
+    reward_priority_title: str
+    reward_priority_enable: str
+    reward_priority_rank: str
+    reward_priority_not_mined: str
+    reward_priority_error: str
+    reward_priority_help: str
     allow_unlinked_campaigns: str
     allow_unlinked_campaigns_warning: str
     allow_unlinked_campaigns_save_error: str
     general: GUISettingsGeneral
-    discord: GUIDiscordSettings
-    telegram: GUITelegramSettings
     tab_mining: str
     tab_games: str
     tab_notifications: str
     tab_account: str
-    mining_benefits: str
-    mining_benefits_help: str
+    discord: GUIDiscordSettings
+    telegram: GUITelegramSettings
     reload: str
     reload_campaigns: str
     drop_name_blacklist: str
@@ -292,6 +304,11 @@ class GUISettings(TypedDict):
     search_games: str
     add_game: str
     add_game_hint: str
+    select_linked: str
+    game_linked: str
+    game_not_linked: str
+    game_linked_title: str
+    game_not_linked_title: str
     select_all: str
     deselect_all: str
     deselect_all_warning: str
@@ -316,6 +333,7 @@ class GUISettings(TypedDict):
     mining_hours_start: str
     mining_hours_end: str
     mining_hours_save_error: str
+    proxy_save_error: str
 
 
 class GUIHelp(TypedDict):

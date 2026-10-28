@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from ipaddress import IPv4Address
+from ipaddress import IPv4Address, ip_address
 from urllib.parse import urlsplit
 
 from pydantic import AnyHttpUrl
@@ -11,8 +11,44 @@ from starlette.requests import HTTPConnection
 
 
 class DashboardOrigin:
-    def __init__(self, public_base_url: str = ""):
+    # Names a public website cannot make a browser resolve: DNS rebinding needs a public name.
+    LOCAL_SUFFIXES = (".localhost", ".local", ".home.arpa", ".internal")
+
+    def __init__(self, public_base_url: str = "", allowed_hosts: str = ""):
         self.public_origin = self._parse(public_base_url) if public_base_url else None
+        self.allowed_hosts = self._parse_hosts(allowed_hosts)
+        if self.public_origin is not None:
+            self.allowed_hosts |= {(urlsplit(self.public_origin).hostname or "").removesuffix(".")}
+
+    @staticmethod
+    def _parse_hosts(value: str) -> frozenset[str]:
+        hosts = set()
+        for item in value.split(","):
+            host = item.strip().lower().removesuffix(".")
+            if not host:
+                continue
+            if not re.fullmatch(r"[a-z0-9_-]+(?:\.[a-z0-9_-]+)*", host):
+                raise ValueError("ALLOWED_HOSTS must be comma-separated host names without schemes or ports")
+            hosts.add(host)
+        return frozenset(hosts)
+
+    def trusted_host(self, connection: HTTPConnection) -> bool:
+        """Reject DNS-rebinding requests whose Host is an arbitrary public name."""
+        match = re.fullmatch(
+            r"(?:\[(?P<ipv6>[0-9a-f:.]+)\]|(?P<name>[a-z0-9_-]+(?:\.[a-z0-9_-]+)*\.?))(?::[0-9]{1,5})?",
+            connection.headers.get("host", "").lower(),
+        )
+        if match is None:
+            return False
+        try:
+            ip_address(match["ipv6"] or match["name"])
+            return True
+        except ValueError:
+            if match["ipv6"]:
+                return False
+        name = match["name"].removesuffix(".")
+        return ("." not in name or name == "localhost"
+                or name.endswith(self.LOCAL_SUFFIXES) or name in self.allowed_hosts)
 
     @staticmethod
     def _parse(value: str) -> str:

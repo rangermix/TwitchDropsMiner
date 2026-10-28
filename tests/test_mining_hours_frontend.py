@@ -13,6 +13,7 @@ pytestmark = pytest.mark.skipif(NODE is None, reason="Node.js is required for fr
 def test_schedule_saves_validate_times_and_recover_from_failed_persistence():
     source = APP_JS.read_text(encoding="utf-8")
     script = "\n".join([
+        extract_javascript_function(source, "reportSettingsError"),
         extract_javascript_function(source, "toggleMiningHoursRange"),
         "async " + extract_javascript_function(source, "onMiningHoursChange"),
     ]) + r"""
@@ -80,17 +81,24 @@ function updateSettingsUI(settings) { state.settings = settings; }
 
 def test_other_settings_saves_do_not_overwrite_a_schedule_save_in_flight():
     source = APP_JS.read_text(encoding="utf-8")
-    script = "async " + extract_javascript_function(source, "saveSettings") + r"""
+    script = '\n'.join(extract_javascript_function(source, name) for name in (
+        'applyGameWatchEdit', 'reconcileGameWatchSettings', 'queueSettingsWrite'))
+    script += "\nasync " + extract_javascript_function(source, "saveSettings") + r"""
 const assert = require('node:assert/strict');
+const gameWatchWrites={confirmed:null,draft:null,pending:[],tail:Promise.resolve(),revision:0};
 const state = {settings: {mining_hours: {mode:'always',start:'08:00',end:'22:00'}}};
 const document = { getElementById: id => ({checked:false,value:'1'}) };
 function parseDropNameBlacklist() { return []; }
 function getInventoryFilters() { return {}; }
+function renderGamesToWatch(){} function renderChannels(){} function renderInventory(){}
+let calls=0;
 async function fetch(url, options) {
+    calls++;
     const settings = JSON.parse(options.body);
     assert.equal(Object.hasOwn(settings, 'mining_hours'), false);
+    return {ok:true,json:async()=>({success:true,settings:{games_to_watch:[]}})};
 }
-saveSettings().catch(error => { console.error(error); process.exitCode = 1; });
+saveSettings().then(()=>assert.equal(calls,1)).catch(error => { console.error(error); process.exitCode = 1; });
 """
     result = subprocess.run([NODE, "-"], input=script, text=True, capture_output=True)
     assert result.returncode == 0, result.stderr

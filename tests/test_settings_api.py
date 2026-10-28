@@ -297,5 +297,114 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         mock_callback.assert_called_once()
 
 
+    async def test_rejected_update_writes_prints_and_saves_nothing(self):
+        valid_fields = {
+            "games_to_watch": ["Changed game"],
+            "reward_priority": ["BADGE", "EMOTE", "DIRECT_ENTITLEMENT", "UNKNOWN"],
+            "drop_name_blacklist": ["Changed"],
+            "dark_mode": True,
+            "language": "Deutsch",
+            "connection_quality": 6,
+            "proxy": "http://127.0.0.1:3128",
+            "telegram_bot_token": "changed-token",
+            "telegram_chat_id": "42",
+            "inventory_list_view": True,
+            "mining_benefits": {"BADGE": False},
+            "allow_unlinked_campaigns": True,
+            "priority_list_only": False,
+        }
+        invalid_fields = (
+            ("reward_priority", ["BADGE"]),
+            ("reward_priority", ["BADGE", "BADGE", "DIRECT_ENTITLEMENT", "UNKNOWN"]),
+            ("inventory_filters", ["not", "an", "object"]),
+            ("inventory_filters", {"link_status": "invalid"}),
+            ("mining_hours", {"mode": "range", "start": "25:00", "end": "08:00"}),
+            ("discord_webhook_url", "https://example.com/not-discord"),
+            ("language", "Klingon"),
+        )
+        for key, value in invalid_fields:
+            with self.subTest(invalid=key, value=value):
+                settings = SimpleNamespace(**copy.deepcopy(default_settings))
+                settings.save = MagicMock()
+                before = copy.deepcopy({k: v for k, v in vars(settings).items() if k != "save"})
+                broadcaster = AsyncMock()
+                console = MagicMock()
+                callback = MagicMock()
+                manager = SettingsManager(broadcaster, settings, console, on_change=callback)
+
+                with (
+                    patch("src.web.managers.settings._.set_language") as set_language,
+                    self.assertRaises(ValueError),
+                ):
+                    manager.update_settings({**valid_fields, key: value})
+                await asyncio.sleep(0)
+
+                after = {k: v for k, v in vars(settings).items() if k != "save"}
+                self.assertEqual(after, before)
+                console.print.assert_not_called()
+                settings.save.assert_not_called()
+                set_language.assert_not_called()
+                callback.assert_not_called()
+                broadcaster.emit.assert_not_called()
+
+    async def test_failed_save_restores_every_field_and_defers_effects(self):
+        settings = SimpleNamespace(**copy.deepcopy(default_settings))
+        settings.save = MagicMock(side_effect=OSError("disk full"))
+        before = copy.deepcopy({k: v for k, v in vars(settings).items() if k != "save"})
+        broadcaster = AsyncMock()
+        console = MagicMock()
+        callback = MagicMock()
+        manager = SettingsManager(broadcaster, settings, console, on_change=callback)
+        language = manager.get_languages()["current"]
+        other_language = next(
+            name for name in manager.get_languages()["available"] if name != language
+        )
+
+        with self.assertRaises(OSError):
+            manager.update_settings({
+                "games_to_watch": ["Changed game"],
+                "reward_priority": ["BADGE", "EMOTE", "DIRECT_ENTITLEMENT", "UNKNOWN"],
+                "drop_name_blacklist": ["Changed"],
+                "dark_mode": True,
+                "language": other_language,
+                "connection_quality": 6,
+                "proxy": "http://127.0.0.1:3128",
+                "minimum_refresh_interval_minutes": 45,
+                "telegram_bot_token": "changed-token",
+                "telegram_chat_id": "42",
+                "inventory_filters": {"link_status": "linked"},
+                "inventory_list_view": True,
+                "mining_benefits": {"BADGE": False},
+                "mining_hours": {"mode": "range", "start": "08:00", "end": "17:00"},
+                "discord_webhook_url": "https://discord.com/api/webhooks/1/token",
+                "allow_unlinked_campaigns": True,
+                "priority_list_only": False,
+            })
+        await asyncio.sleep(0)
+
+        settings.save.assert_called_once()
+        after = {k: v for k, v in vars(settings).items() if k != "save"}
+        self.assertEqual(after, before)
+        self.assertEqual(manager.get_languages()["current"], language)
+        console.print.assert_not_called()
+        callback.assert_not_called()
+        broadcaster.emit.assert_not_called()
+
+        # A later unrelated save must persist none of the rejected changes.
+        settings.save = MagicMock()
+        manager.update_settings({"dark_mode": False})
+        self.assertEqual(
+            {k: v for k, v in vars(settings).items() if k != "save"}, before
+        )
+
+        # Deferred effects still run once a save succeeds.
+        with patch("src.web.managers.settings._.set_language") as set_language:
+            manager.update_settings({"language": other_language})
+        await asyncio.sleep(0)
+        set_language.assert_called_once_with(other_language)
+        broadcaster.emit.assert_any_call("language_changed", {"language": other_language})
+        console.print.assert_called_once_with(f"Setting changed: language = {other_language}")
+
+
 if __name__ == "__main__":
     unittest.main()

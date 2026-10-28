@@ -11,6 +11,7 @@ import re
 import secrets
 import shutil
 import signal
+import sys
 import tempfile
 import time
 from collections.abc import AsyncIterator, Callable, Mapping
@@ -24,7 +25,7 @@ from src.auth.browser_session import BrowserSession
 from src.auth.imported_session import SessionTransport
 from src.auth.server_seed import SDKCookie, ServerSeed
 from src.auth.session_bundle import PrivateSessionFile, SessionBundle, SessionError
-from src.auth.session_helper import BrowserExporter, CaptureProtocol
+from src.auth.session_helper import BrowserExporter, CaptureProtocol, DevToolsPipe
 from src.auth.session_renewal import RenewalConnection, RenewalLoop, RenewalSender
 from src.config import ClientType
 
@@ -33,8 +34,12 @@ if TYPE_CHECKING:
     from src.diagnostics import Diagnostics
 
 
+class BrowserTargets(Protocol):
+    def target(self, *, extra_events: frozenset[str] = frozenset()) -> AbstractAsyncContextManager[CaptureProtocol]: ...
+
+
 class BrowserOwner(Protocol):
-    def start(self) -> AbstractAsyncContextManager[str]: ...
+    def start(self) -> AbstractAsyncContextManager[BrowserTargets]: ...
 
 
 @dataclass(frozen=True)
@@ -54,6 +59,18 @@ class SDKBootstrap:
 
 class OwnedChromium:
     """Own a temporary profile and process group; never attach to a user's browser."""
+
+    # Chromium reads commands on fd 3 and writes replies on fd 4. subprocess keeps
+    # inherited descriptor numbers, so remap them here and exec in place: the PID,
+    # process group and cleanup stay Chromium's own.
+    LAUNCHER = (
+        "import fcntl,os,sys\n"
+        "fds=[int(fd) for fd in sys.argv[1:3]]\n"
+        "high=[fcntl.fcntl(fd,fcntl.F_DUPFD,5) for fd in fds]\n"
+        "[os.dup2(fd,target) for fd,target in zip(high,(3,4))]\n"
+        "[os.close(fd) for fd in {*fds,*high}-{3,4}]\n"
+        "os.execvp(sys.argv[3],sys.argv[3:])\n"
+    )
 
     def __init__(self, executable: str, *, no_sandbox: bool = False, startup_timeout: float = 20):
         self.executable, self.no_sandbox = executable, no_sandbox
@@ -109,14 +126,36 @@ class OwnedChromium:
         if interrupted:
             raise asyncio.CancelledError
 
+    async def wait_pipe(self, pipe: DevToolsPipe) -> None:
+        await pipe.browser.command("Browser.getVersion", timeout=self.startup_timeout)
+
     @asynccontextmanager
-    async def start(self) -> AsyncIterator[str]:
+    async def process(self, args: list[str], profile: Path, **options: Any) -> AsyncIterator[asyncio.subprocess.Process]:
         process = None
+        try:
+            process = await asyncio.create_subprocess_exec(
+                *args, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+                start_new_session=os.name == "posix",
+                env={**os.environ, "XDG_CONFIG_HOME": str(profile / "config"),
+                     "XDG_CACHE_HOME": str(profile / "cache")},
+                **options,
+            )
+            yield process
+        except OSError:
+            raise SessionError("BROWSER_START") from None
+        finally:
+            if process is not None:
+                await self.finish_stop(process)
+
+    @asynccontextmanager
+    async def start(self) -> AsyncIterator[BrowserTargets]:
         with tempfile.TemporaryDirectory(prefix="tdm-renew-") as directory:
             profile = Path(directory)
             args = [
                 self.executable, f"--user-data-dir={profile}",
-                "--remote-debugging-address=127.0.0.1", "--remote-debugging-port=0",
+                # pass_fds is POSIX-only; Windows keeps the owned loopback port.
+                *(["--remote-debugging-pipe"] if os.name == "posix" else
+                  ["--remote-debugging-address=127.0.0.1", "--remote-debugging-port=0"]),
                 "--no-first-run", "--no-default-browser-check", "--disable-dev-shm-usage",
                 "--disable-blink-features=AutomationControlled", "about:blank",
             ]
@@ -126,29 +165,38 @@ class OwnedChromium:
             if display_runner:
                 # Keep SDK issuance in a normal browser, matching interactive login.
                 # Keep Xauthority in the owned profile so forced cleanup removes it too.
-                # Never share the interactive VNC display.
+                # Never share the interactive VNC display. xvfb-run leaves fds 3/4 alone.
                 args.append("--window-size=1200,760")
                 args = [display_runner, "-a", "-f", str(profile / "Xauthority"),
                         "-s", "-screen 0 1280x800x24 -nolisten tcp", *args]
             else:
                 args.insert(1, "--headless=new")
+            if os.name != "posix":
+                async with self.process(args, profile) as process:
+                    try:
+                        address = await self.wait_ready(process, profile)
+                    except (OSError, ValueError, TimeoutError):
+                        raise SessionError("BROWSER_START") from None
+                    yield BrowserExporter(address)
+                return
+            child_in, parent_out = os.pipe()
+            parent_in, child_out = os.pipe()
+            owned = [child_in, child_out, parent_in, parent_out]
             try:
-                process = await asyncio.create_subprocess_exec(
-                    *args, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
-                    start_new_session=os.name == "posix",
-                    env={**os.environ, "XDG_CONFIG_HOME": str(profile / "config"),
-                         "XDG_CACHE_HOME": str(profile / "cache")},
-                )
-                try:
-                    address = await self.wait_ready(process, profile)
-                except (OSError, ValueError, TimeoutError):
-                    raise SessionError("BROWSER_START") from None
-                yield address
-            except OSError:
-                raise SessionError("BROWSER_START") from None
+                launcher = [sys.executable, "-I", "-S", "-c", self.LAUNCHER, str(child_in), str(child_out)]
+                async with self.process([*launcher, *args], profile, pass_fds=(child_in, child_out)):
+                    for fd in (child_in, child_out):
+                        os.close(fd)
+                    owned = []  # DevToolsPipe.open owns the parent ends from here.
+                    async with DevToolsPipe.open(parent_out, parent_in) as pipe:
+                        try:
+                            await self.wait_pipe(pipe)
+                        except (SessionError, TimeoutError):
+                            raise SessionError("BROWSER_START") from None
+                        yield pipe
             finally:
-                if process is not None:
-                    await self.finish_stop(process)
+                for fd in owned:
+                    os.close(fd)
 
 
 class SDKExchange:
@@ -357,8 +405,8 @@ class SDKIssuer:
     async def issue(self, seed: ServerSeed, *, initial: bool = False) -> ServerSeed:
         seed.cookie.require_fresh(self.clock())
         async with (
-            self.browser.start() as address,
-            BrowserExporter(address).target(extra_events=SDKAcquisition.EVENTS) as protocol,
+            self.browser.start() as browser,
+            browser.target(extra_events=SDKAcquisition.EVENTS) as protocol,
         ):
             return await SDKAcquisition(clock=self.clock, timeout=self.timeout, diagnostics=self.diagnostics).run(
                 protocol, seed.bundle, seed.cookie, initial=initial,
@@ -366,8 +414,8 @@ class SDKIssuer:
 
     async def bootstrap(self, token: str) -> ServerSeed:
         context = SDKBootstrap.from_token(token)
-        async with (self.browser.start() as address,
-                    BrowserExporter(address).target(extra_events=SDKAcquisition.EVENTS) as protocol):
+        async with (self.browser.start() as browser,
+                    browser.target(extra_events=SDKAcquisition.EVENTS) as protocol):
             return await SDKAcquisition(clock=self.clock, timeout=self.timeout, diagnostics=self.diagnostics).run(
                 protocol, context, initial=True,
             )

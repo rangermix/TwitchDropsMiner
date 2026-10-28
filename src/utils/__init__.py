@@ -42,9 +42,11 @@ from .string_utils import (
     CHARS_ASCII,
     CHARS_HEX_LOWER,
     CHARS_HEX_UPPER,
+    PASSWORD_MASK,
     chunk,
     create_nonce,
     deduplicate,
+    mask_url_password,
 )
 
 
@@ -53,9 +55,11 @@ __all__ = [
     "CHARS_ASCII",
     "CHARS_HEX_LOWER",
     "CHARS_HEX_UPPER",
+    "PASSWORD_MASK",
     "create_nonce",
     "chunk",
     "deduplicate",
+    "mask_url_password",
     # JSON utilities
     "json_minify",
     "isonow",

@@ -45,7 +45,9 @@ another sign-in; TDM still verifies the account and campaign access before accep
 Use the published `rangermix/twitch-drops-miner:2.3.2` image or build the current source.
 The image includes Chromium, Xvfb, a window manager and noVNC. It does not need a
 display on the home server or NAS. Only the dashboard port is published; VNC and
-browser control remain on container loopback addresses.
+login-browser control remain on container loopback addresses. Current source builds
+control the session-renewal browser over a private pipe; the published 2.3.2 image
+uses a loopback control port.
 
 Set `TZ` to match the timezone of your home internet connection, for example
 `TZ=Australia/Sydney`. A mismatched timezone can cause Twitch to reject the browser.
@@ -81,7 +83,10 @@ or Firefox 143+ browser on that computer; the helper does not include a browser.
    from the extracted folder in a Linux/macOS terminal. Enter the dashboard address
    shown by TDM, such as `http://192.168.1.10:8080`. The helper asks only for this URL;
    there is no pairing code or dashboard-password prompt. `localhost` works only
-   when the helper and miner run on the same computer.
+   when the helper and miner run on the same computer. A dotted host name such as
+   `nas.lan` is rejected unless it is an
+   [allowed host name](dashboard-access.md#allowed-host-names); use the IP address
+   or add the name to `ALLOWED_HOSTS`.
 3. Complete Twitch sign-in and verification in the helper-opened browser. Close all
    windows of that browser instance normally after Twitch confirms the login; on
    macOS, quit that instance. Keep the helper running while it reopens its temporary
@@ -139,9 +144,10 @@ If logout reports a storage error, check the current session before retrying.
 
 ## Automatic renewal
 
-The miner renews the accepted context using a separate temporary headless Chromium
-browser and validates the same account before saving. Mining requests remain in
-Python; the interactive browser does not remain running after login.
+The miner renews the accepted context using a separate temporary Chromium browser,
+with a private virtual display when available and a headless fallback otherwise.
+It validates the same account before saving. Mining requests remain in Python;
+the interactive browser does not remain running after login.
 Transient failures are retried. Expired or revoked access may require a new sign in,
 which appears automatically when TDM can no longer use the saved session.
 

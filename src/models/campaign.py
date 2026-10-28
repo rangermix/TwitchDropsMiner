@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from dateutil.parser import isoparse
 
 from src.config.constants import State
+from src.config.reward_priority import RewardPriority
 from src.models.channel import Channel
 from src.models.drop import TimedDrop
 from src.models.game import Game
@@ -200,6 +201,9 @@ class DropsCampaign:
             (drop for drop in self.watch_drops if drop.can_earn()),
             key=lambda d: d.remaining_minutes,
         )
+        policy = RewardPriority(self._twitch.settings)
+        if policy.enabled:
+            drops.sort(key=policy.drop_key)
         return drops[0] if drops else None
 
     def _update_real_minutes(self, delta: int) -> None:
