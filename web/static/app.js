@@ -10,7 +10,11 @@ const state = {
     currentDrop: null,
     countdownTimer: null,  // Track the active countdown timer
     translations: {},  // Store current translations
-    previewEnabled: false  // Explicit opt-in for this page only
+    previewEnabled: false,  // Explicit opt-in for this page only
+    paused: false,
+    pauseRevision: 0,
+    pauseServerRevision: null,
+    pauseEpoch: 0
 };
 
 // ==================== UI Utilities ====================
@@ -240,6 +244,7 @@ socket.on('initial_state', (data) => {
     if (data.settings) updateSettingsUI(data.settings, true);
     if (data.login) updateLoginStatus(data.login);
     if (data.manual_mode) updateManualModeUI(data.manual_mode);
+    updatePauseUI(data.pause === undefined ? false : data.pause?.paused, data.pause?.revision, true);
     // Restore current drop progress if it exists
     if (data.current_drop) {
         updateDropProgress(data.current_drop);
@@ -368,6 +373,10 @@ socket.on('attention_required', (data) => {
 
 socket.on('manual_mode_update', (data) => {
     updateManualModeUI(data);
+});
+
+socket.on('paused_update', (data) => {
+    updatePauseUI(data.paused, data.revision);
 });
 
 socket.on('language_changed', (data) => {
@@ -2000,6 +2009,124 @@ async function selectChannel(channelId) {
     }
 }
 
+function setPauseMenuOpen(open) {
+    document.getElementById('pause-menu').hidden = !open;
+    if (!state.paused) document.getElementById('pause-btn').setAttribute('aria-expanded', String(open));
+}
+
+function isPauseRevision(revision) {
+    return Number.isSafeInteger(revision) && revision >= 0;
+}
+
+function updatePauseUI(paused, revision, initial = false) {
+    if (typeof paused !== 'boolean' || (revision !== undefined && !isPauseRevision(revision))) return;
+    if (initial) {
+        state.pauseEpoch = (state.pauseEpoch || 0) + 1;
+        state.pauseServerRevision = null;
+    }
+    if (isPauseRevision(revision)) {
+        if (state.pauseServerRevision != null && revision <= state.pauseServerRevision) return;
+        state.pauseServerRevision = revision;
+    } else if (state.pauseServerRevision != null) {
+        return;
+    }
+    state.pauseRevision = (state.pauseRevision || 0) + 1;
+    state.paused = paused;
+    const button = document.getElementById('pause-btn');
+    const t = state.translations.gui?.status || {};
+    button.textContent = paused ? (t.resume || 'Resume') : `${t.pause || 'Pause'} ▾`;
+    button.classList.toggle('paused', paused);
+    setPauseMenuOpen(false);
+    // Resume acts directly, so it is not a menu button.
+    for (const [name, value] of [['aria-haspopup', 'menu'], ['aria-controls', 'pause-menu']]) {
+        if (paused) button.removeAttribute(name);
+        else button.setAttribute(name, value);
+    }
+    if (paused) button.removeAttribute('aria-expanded');
+}
+
+// Resume immediately when paused; otherwise open the duration menu.
+function onPauseButton() {
+    if (state.paused) {
+        requestPause(false);
+        return;
+    }
+    const menu = document.getElementById('pause-menu');
+    setPauseMenuOpen(menu.hidden);
+    if (!menu.hidden) menu.querySelector('[role="menuitem"]').focus();
+}
+
+function onPauseKeydown(event) {
+    const button = document.getElementById('pause-btn');
+    const menu = document.getElementById('pause-menu');
+    if (button.disabled || state.paused) return;
+    if (event.key === 'Escape' || event.key === 'Tab') {
+        if (!menu.hidden) {
+            if (event.key === 'Escape') event.preventDefault();
+            setPauseMenuOpen(false);
+            button.focus();
+        }
+        return;
+    }
+    const fromButton = event.target === button;
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)
+        || (fromButton && !['ArrowDown', 'ArrowUp'].includes(event.key))) return;
+    event.preventDefault();
+    setPauseMenuOpen(true);
+    const items = [...menu.querySelectorAll('[role="menuitem"]')];
+    let index = items.indexOf(document.activeElement);
+    if (event.key === 'Home' || (fromButton && event.key === 'ArrowDown')) index = 0;
+    else if (event.key === 'End' || (fromButton && event.key === 'ArrowUp')) index = items.length - 1;
+    else index = (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+    items[index]?.focus();
+}
+
+async function requestPause(paused, duration = null) {
+    const button = document.getElementById('pause-btn');
+    if (button.disabled) return;
+    const menu = document.getElementById('pause-menu');
+    const restoreFocus = document.activeElement === button || menu.contains(document.activeElement);
+    const localRevision = state.pauseRevision || 0;
+    const epoch = state.pauseEpoch || 0;
+    // Close first so menu items can't resubmit while the request is in flight.
+    setPauseMenuOpen(false);
+    button.disabled = true;
+    let focusMoved = false;
+    const onFocus = event => { if (event.target !== button) focusMoved = true; };
+    const onPointer = () => { focusMoved = true; };
+    const onKey = event => { if (event.key === 'Tab') focusMoved = true; };
+    document.addEventListener('focusin', onFocus, true);
+    document.addEventListener('pointerdown', onPointer, true);
+    document.addEventListener('keydown', onKey, true);
+    try {
+        const response = await fetch('/api/pause', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paused, duration })
+        });
+        if (!response.ok) throw new Error();
+        const result = await response.json();
+        if ((state.pauseEpoch || 0) !== epoch) return;
+        if (result?.success !== true || typeof result.paused !== 'boolean'
+            || (result.revision !== undefined && !isPauseRevision(result.revision))) throw new Error();
+        if (isPauseRevision(result.revision) || (state.pauseRevision || 0) === localRevision) {
+            updatePauseUI(result.paused, result.revision);
+        }
+    } catch {
+        if ((state.pauseEpoch || 0) === epoch) {
+            const message = state.translations.gui?.status?.pause_error || 'Failed to change pause state. Please try again.';
+            addConsoleLine(message);
+            showToast(message, 'error');
+        }
+    } finally {
+        document.removeEventListener('focusin', onFocus, true);
+        document.removeEventListener('pointerdown', onPointer, true);
+        document.removeEventListener('keydown', onKey, true);
+        button.disabled = false;
+        if (restoreFocus && !focusMoved) button.focus();
+    }
+}
+
 async function exitManualMode() {
     try {
         const response = await fetch('/api/mode/exit-manual', {
@@ -2969,6 +3096,14 @@ function applyTranslations(t) {
         const languageLabel = document.querySelector('.language-selector span');
         if (languageLabel) languageLabel.textContent = t.gui.header.language;
 
+        const pauseBtn = document.getElementById('pause-btn');
+        if (pauseBtn && t.gui.status) {
+            pauseBtn.textContent = state.paused ? t.gui.status.resume : `${t.gui.status.pause} ▾`;
+            document.querySelectorAll('[data-pause-duration]').forEach(item => {
+                item.textContent = t.gui.status[item.dataset.pauseKey];
+            });
+        }
+
         const statusText = document.getElementById('status-text');
         if (statusText && statusText.textContent === 'Initializing...') {
             statusText.textContent = t.gui.header.initializing;
@@ -3247,6 +3382,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (exitManualBtn) {
         exitManualBtn.addEventListener('click', exitManualMode);
     }
+    document.getElementById('pause-btn').addEventListener('click', onPauseButton);
+    document.getElementById('pause-btn').addEventListener('keydown', onPauseKeydown);
+    document.getElementById('pause-menu').addEventListener('keydown', onPauseKeydown);
+    document.querySelectorAll('[data-pause-duration]').forEach(item => {
+        item.addEventListener('click', () => requestPause(true, item.dataset.pauseDuration || null));
+    });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.pause-control')) setPauseMenuOpen(false);
+    });
 
     // Fetch and populate available languages
     fetchAndPopulateLanguages();

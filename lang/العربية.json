@@ -4,6 +4,7 @@
     "status": {
         "terminated": "تم إنهاء التطبيق. \n أغلق النافذة للخروج من التطبيق.",
         "watching": "{channel} :يتم حالياَ مشاهدة",
+        "mining_resumed": "تم استئناف جمع المكافآت",
         "goes_online": "...اصبح نشط ، تبديل {channel}",
         "goes_offline": "...اصبح غير نشط ، تبديل {channel}",
         "claimed_drop": "{drop} :تم الحصول على",
@@ -71,6 +72,15 @@
             "fetching_campaigns": "...جلب الحملات",
             "adding_campaigns": "{counter} ...إضافة الحملات إلى الحقيبة",
             "ready": "جاهز",
+            "paused": "متوقف مؤقتًا",
+            "pause": "إيقاف مؤقت",
+            "resume": "استئناف",
+            "paused_until": "متوقف مؤقتًا حتى {time}",
+            "pause_10m": "لمدة 10 دقائق",
+            "pause_1h": "لمدة ساعة",
+            "pause_tomorrow": "حتى الغد",
+            "pause_indefinite": "حتى أستأنف",
+            "pause_error": "تعذّر تغيير حالة الإيقاف المؤقت. يُرجى المحاولة مجددًا.",
             "outside_hours": "خارج ساعات التعدين"
         },
         "tabs": {

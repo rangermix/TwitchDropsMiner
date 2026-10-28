@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nAnwendung gestoppt.\nFenster schließen, um die Anwendung zu beenden",
         "watching": "{channel} wird zugesehen",
+        "mining_resumed": "Farmen fortgesetzt",
         "goes_online": "{channel} ist ONLINE gegangen, wechseln...",
         "goes_offline": "{channel} ist OFFLINE gegangen, wechseln...",
         "claimed_drop": "Drop abgeholt: {drop}",
@@ -71,6 +72,15 @@
             "fetching_campaigns": "Lade Kampagnen...",
             "adding_campaigns": "Kampagnen dem Inventar hinzufügen... {counter}",
             "ready": "Bereit",
+            "paused": "Pausiert",
+            "pause": "Pausieren",
+            "resume": "Fortsetzen",
+            "paused_until": "Pausiert bis {time}",
+            "pause_10m": "Für 10 Minuten",
+            "pause_1h": "Für 1 Stunde",
+            "pause_tomorrow": "Bis morgen",
+            "pause_indefinite": "Bis ich fortsetze",
+            "pause_error": "Pausenstatus konnte nicht geändert werden. Bitte erneut versuchen.",
             "outside_hours": "Außerhalb der Mining-Zeit"
         },
         "tabs": {

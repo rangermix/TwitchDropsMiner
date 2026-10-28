@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nLa aplicación se ha detenido.\nPor favor, cierre la aplicación.",
         "watching": "Mirando el canal: {channel}",
+        "mining_resumed": "Recolección reanudada",
         "goes_online": "El canal {channel} se ha conectado, cambiando...",
         "goes_offline": "El canal {channel} se ha desconectado, cambiando...",
         "claimed_drop": "Drop reclamado: {drop}",
@@ -71,6 +72,15 @@
             "fetching_campaigns": "Obteniendo campañas...",
             "adding_campaigns": "Agregando lista de campañas al inventario... {counter}",
             "ready": "Listo",
+            "paused": "En pausa",
+            "pause": "Pausar",
+            "resume": "Reanudar",
+            "paused_until": "En pausa hasta las {time}",
+            "pause_10m": "Durante 10 minutos",
+            "pause_1h": "Durante 1 hora",
+            "pause_tomorrow": "Hasta mañana",
+            "pause_indefinite": "Hasta que reanude",
+            "pause_error": "No se pudo cambiar el estado de pausa. Inténtalo de nuevo.",
             "outside_hours": "Fuera del horario de minería"
         },
         "tabs": {

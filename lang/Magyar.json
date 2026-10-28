@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nAlkalmazás leállítva.\nZárja be az ablakot a kilépéshez.",
         "watching": "Nézés: {channel}",
+        "mining_resumed": "Bányászat folytatva",
         "goes_online": "{channel} online lesz, váltás...",
         "goes_offline": "{channel} offline lett, váltás...",
         "claimed_drop": "Átvett jutalom: {drop}",
@@ -71,6 +72,15 @@
             "fetching_inventory": "Készlet lekérése...",
             "fetching_campaigns": "Kampányok lekérése...",
             "adding_campaigns": "Kampányok hozzáadása a készlethez... {counter}",
+            "paused": "Szüneteltetve",
+            "pause": "Szüneteltetés",
+            "resume": "Folytatás",
+            "paused_until": "Szüneteltetve eddig: {time}",
+            "pause_10m": "10 percre",
+            "pause_1h": "1 órára",
+            "pause_tomorrow": "Holnapig",
+            "pause_indefinite": "Amíg nem folytatom",
+            "pause_error": "Nem sikerült módosítani a szüneteltetés állapotát. Próbáld újra.",
             "outside_hours": "A bányászati időn kívül"
         },
         "tabs": {

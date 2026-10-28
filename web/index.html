@@ -102,6 +102,15 @@
             <span id="auto-mode-badge" class="mode-badge" title="Automatic mode - following game priority">
                 🤖 AUTO
             </span>
+            <div class="pause-control">
+                <button id="pause-btn" class="secondary-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="pause-menu">Pause ▾</button>
+                <div id="pause-menu" class="pause-menu" role="menu" hidden>
+                    <button type="button" role="menuitem" tabindex="-1" data-pause-duration="10m" data-pause-key="pause_10m">For 10 minutes</button>
+                    <button type="button" role="menuitem" tabindex="-1" data-pause-duration="1h" data-pause-key="pause_1h">For 1 hour</button>
+                    <button type="button" role="menuitem" tabindex="-1" data-pause-duration="tomorrow" data-pause-key="pause_tomorrow">Until tomorrow</button>
+                    <button type="button" role="menuitem" tabindex="-1" data-pause-duration="" data-pause-key="pause_indefinite">Until I resume</button>
+                </div>
+            </div>
             <span id="proxy-indicator" class="proxy-badge" style="display: none;" title="Proxy connection active">
                 🔒 PROXY
             </span>
