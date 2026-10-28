@@ -447,6 +447,20 @@ progress to an ignored drop while the miner intentionally targets another reward
 - The renewal worker rotates SDK state, normally five minutes before expiry, with
   bounded retries and same-account/freshness validation. Mining GraphQL stays in
   Python. Preserve safe-read retry rules; never replay ambiguous mutations.
+- On POSIX, `OwnedChromium` (renewal/SDK issuance, run as root) uses
+  `--remote-debugging-pipe` and never opens a DevTools TCP port: CDP has no
+  authentication, and the `tdm-browser` login UID shares loopback. A small exec
+  launcher remaps the pipe to fds 3/4 so PID and process-group cleanup are unchanged;
+  it then execs the private `xvfb-run` wrapper when present, which passes fds 3/4
+  through to Chromium untouched (verified in the Alpine image). Xvfb and the wrapper
+  also inherit copies, so a Chromium crash reaches EOF once the wrapper cleans up.
+  `DevToolsPipe` multiplexes flattened `Target.attachToTarget` sessions with
+  NUL-delimited messages, bounds each session's backlog to 16 MiB by bytes (one read
+  can carry hundreds of small events), and closes its target and fds on every exit.
+  Windows keeps the loopback port (no `pass_fds`). The login capture Chromium keeps
+  its port because it runs as `tdm-browser` with a profile that UID already owns.
+  `tests/test_server_renewal.py` checks launch arguments and descriptors, and, with a
+  local Chromium on Linux, that the browser process group opens no TCP listener.
 - `SessionAPI` exposes sanitized status and finish/retry/logout actions, plus optional
   desktop-helper enable/cancel actions guarded by dashboard authentication and CSRF.
   There is no general session upload/export or renewal HTTP route. The binary
