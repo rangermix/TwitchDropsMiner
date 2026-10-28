@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import hmac
 import json
+import logging
 import os
 import re
 import secrets
@@ -27,6 +28,8 @@ from src.version import __version__
 from src.web.origin import DashboardOrigin
 
 
+logger = logging.getLogger("TwitchDrops")
+
 class PasswordRequest(BaseModel):
     password: SecretStr
     remember: bool = False
@@ -44,8 +47,8 @@ class WebAuth:
     SESSION_SECONDS = 30 * 24 * 60 * 60
     MAX_SESSIONS = 128
 
-    def __init__(self, path: Path, public_base_url: str = ""):
-        self.origin = DashboardOrigin(public_base_url)
+    def __init__(self, path: Path, public_base_url: str = "", allowed_hosts: str = ""):
+        self.origin = DashboardOrigin(public_base_url, allowed_hosts)
         self.path = path
         self.password_hash = ""
         self.sessions: dict[str, float] = {}
@@ -112,15 +115,17 @@ class WebAuth:
             Path(name).unlink(missing_ok=True)
         self.password_hash, self.sessions = password_hash, sessions
 
-    def limit(self, request: Request) -> None:
+    def limit(self, request: Request, attempts: deque[tuple[float, str]] | None = None) -> None:
+        # Unauthenticated routes pass their own bucket so they cannot exhaust password logins.
+        attempts = self.attempts if attempts is None else attempts
         now = time.monotonic()
         peer = request.client.host if request.client else "unknown"
-        while self.attempts and self.attempts[0][0] <= now - 60:
-            self.attempts.popleft()
+        while attempts and attempts[0][0] <= now - 60:
+            attempts.popleft()
         # A global ceiling also bounds memory and concurrent hashing under IP rotation.
-        if len(self.attempts) >= 30 or sum(ip == peer for _, ip in self.attempts) >= 5:
+        if len(attempts) >= 30 or sum(ip == peer for _, ip in attempts) >= 5:
             raise HTTPException(429, "rate_limited", headers={"Retry-After": "60"})
-        self.attempts.append((now, peer))
+        attempts.append((now, peer))
 
     async def verify(self, password: str) -> None:
         if not 1 <= len(password) <= 1024:
@@ -157,6 +162,12 @@ class AuthMiddleware:
 
     PUBLIC = {"/login", "/healthz", "/api/auth/status", "/api/auth/login",
               "/static/auth.js", "/static/auth.css", "/static/styles.css", "/static/favicon.png"}
+    host_warned_at = float("-inf")
+    # The noVNC viewer is a fixed same-origin page and keeps its upstream asset policy.
+    CSP = (b"default-src 'self'; script-src 'self' https://cdn.socket.io; "
+           b"style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; "
+           b"frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; "
+           b"frame-ancestors 'none'")
     HELPER_NATIVE = frozenset({("POST", "/api/helper/connect"), ("POST", "/api/helper/session"),
                               ("GET", "/api/helper/result")})
 
@@ -168,6 +179,13 @@ class AuthMiddleware:
             return await self.app(scope, receive, send)
         scope["tdm_auth_checked"] = True
         connection = HTTPConnection(scope)
+        # /healthz reveals only liveness, so monitors may use any host name.
+        if scope["path"] != "/healthz" and not self.auth.origin.trusted_host(connection):
+            if time.monotonic() - AuthMiddleware.host_warned_at >= 60:
+                AuthMiddleware.host_warned_at = time.monotonic()
+                logger.warning("Rejected a dashboard request for an unrecognized host name; "
+                               "set PUBLIC_BASE_URL or ALLOWED_HOSTS to allow it")
+            return await self.reject(scope, receive, send, 403, "invalid_host")
         path = scope["path"]
         socket = scope["type"] == "websocket" or path.startswith("/socket.io")
         mutation = scope.get("method", "GET") not in ("GET", "HEAD", "OPTIONS")
@@ -205,12 +223,15 @@ class AuthMiddleware:
             receive = buffered_receive
 
         async def private_send(message):
-            if message["type"] == "http.response.start" and not path.startswith("/static/"):
-                headers = [(k, v) for k, v in message.get("headers", [])
-                           if k.lower() != b"cache-control"]
-                headers.extend([(b"cache-control", b"no-store"),
-                                (b"x-frame-options", b"SAMEORIGIN" if path == "/session-viewer" else b"DENY"),
-                                (b"referrer-policy", b"same-origin")])
+            if message["type"] == "http.response.start":
+                headers = [*message.get("headers", []), (b"x-content-type-options", b"nosniff")]
+                if not path.startswith("/static/"):
+                    headers = [(k, v) for k, v in headers if k.lower() != b"cache-control"]
+                    headers.extend([(b"cache-control", b"no-store"),
+                                    (b"x-frame-options", b"SAMEORIGIN" if path == "/session-viewer" else b"DENY"),
+                                    (b"referrer-policy", b"same-origin")])
+                    if path != "/session-viewer":
+                        headers.append((b"content-security-policy", self.CSP))
                 message["headers"] = headers
             await send(message)
 

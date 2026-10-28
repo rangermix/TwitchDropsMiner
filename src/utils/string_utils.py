@@ -6,6 +6,7 @@ import random
 import string
 from collections import OrderedDict, abc
 from typing import TypeVar
+from urllib.parse import urlsplit, urlunsplit
 
 
 # Character sets for nonce generation
@@ -13,7 +14,22 @@ CHARS_ASCII = string.ascii_letters + string.digits
 CHARS_HEX_LOWER = string.digits + "abcdef"
 CHARS_HEX_UPPER = string.digits + "ABCDEF"
 
+PASSWORD_MASK = "••••••••"
+
 _T = TypeVar("_T")
+
+
+def mask_url_password(url: str) -> str:
+    """Hide a URL's password, such as a proxy credential, for display and logs."""
+    try:
+        parts = urlsplit(url)
+        if parts.password is None:
+            return url
+        user = parts.netloc.rpartition("@")[0].partition(":")[0]
+        host = parts.netloc.rpartition("@")[2]
+        return urlunsplit(parts._replace(netloc=f"{user}:{PASSWORD_MASK}@{host}"))
+    except ValueError:
+        return PASSWORD_MASK
 
 
 def create_nonce(chars: str, length: int) -> str:

@@ -20,6 +20,7 @@ if __name__ == "__main__":
     from src.core.client import Twitch
     from src.exceptions import CaptchaRequired
     from src.i18n import _
+    from src.utils import mask_url_password
     from src.version import __version__
 
     logger = logging.getLogger("TwitchDrops")
@@ -62,7 +63,7 @@ if __name__ == "__main__":
         logger.info(f"Version: {__version__}")
         logger.info(f"Python version: {sys.version}")
         logger.info(f"Platform: {sys.platform}")
-        logger.info(f"Proxy: {settings.proxy}")
+        logger.info(f"Proxy: {mask_url_password(settings.proxy)}")
         logger.info(f"Language: {settings.language}")
         logger.info(
             f"Minimum refresh interval: {settings.minimum_refresh_interval_minutes} minutes"
