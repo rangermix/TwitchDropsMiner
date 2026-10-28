@@ -2267,7 +2267,7 @@ function renderRewardPriority(order = state.settings.reward_priority || []) {
             }
             const next = displayedRewardOrder().filter(item => item !== type);
             next.splice(Math.max(0, Math.min(position - 1, next.length)), 0, type);
-            saveRewardPriority(next);
+            setTimeout(() => saveRewardPriority(next), 0);
         });
         const checkbox = makeElement('input', { type: 'checkbox', id: `reward-mined-${type}` });
         checkbox.checked = benefits[type] === true;
