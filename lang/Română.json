@@ -242,6 +242,7 @@
             "mining_hours_start": "Început",
             "mining_hours_end": "Sfârșit",
             "mining_hours_save_error": "Nu s-au putut salva orele. Încercați din nou.",
+            "proxy_save_error": "Proxy-ul nu a putut fi salvat. Introdu din nou parola și încearcă din nou.",
             "discord": {
                 "name": "Notificări Discord",
                 "description": "Primește notificări pe Discord când revendici drop-uri.",

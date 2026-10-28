@@ -207,6 +207,7 @@
             "mining_hours_start": "Kezdés",
             "mining_hours_end": "Vége",
             "mining_hours_save_error": "A bányászati idő nem menthető. Próbáld újra.",
+            "proxy_save_error": "A proxy mentése nem sikerült. Add meg újra a jelszavát, és próbáld újra.",
             "discord": {
                 "name": "Discord értesítések",
                 "description": "Értesítést kapsz Discordon, amikor lehozod a dropokat.",

@@ -242,6 +242,7 @@
             "mining_hours_start": "Start",
             "mining_hours_end": "Slut",
             "mining_hours_save_error": "Kunne ikke gemme minedriftstiden. Prøv igen.",
+            "proxy_save_error": "Proxyen kunne ikke gemmes. Indtast adgangskoden igen, og prøv igen.",
             "discord": {
                 "name": "Discord-underretninger",
                 "description": "Få besked på Discord, når du gør krav på drops.",

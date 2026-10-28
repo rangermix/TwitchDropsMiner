@@ -356,6 +356,16 @@ lang/                # Translation JSON files (20 languages)
   never echoes the stored token: `get_settings()` returns only a `telegram_configured`
   flag and a masked placeholder, console logs mask the value, and a submitted value equal
   to the mask (or empty) leaves the stored credential untouched.
+- `mask_url_password()` (`src/utils`) replaces a proxy URL's password with a mask in
+  `get_settings()`, console change logs, the startup log and websocket connect logs.
+  `SettingsManager.resolve_proxy()` restores the stored URL only when the exact masked
+  form is submitted (settings saves and verify-proxy); any other value containing the
+  mask is rejected before any other setting changes, so the stored password never
+  reaches another host and the mask is never saved as a password. Set Proxy
+  (`saveProxy()`) saves only `proxy`, checks the reply and restores the previous value
+  with translated `gui.settings.proxy_save_error`; generic autosaves never send `proxy`.
+  Coverage: `tests/test_proxy_frontend.py`. Verify-proxy and Test Telegram return fixed failure text;
+  Telegram logs only exception class names because aiohttp errors can embed the bot URL.
 - Telegram alerts originate in the shared `BaseDrop.claim()` successful unclaimed-to-claimed
   transition, covering websocket, startup, and inventory-refresh claims without duplicate
   alerts for repeated events. Telegram failures must not change a successful Twitch claim.
@@ -553,6 +563,20 @@ progress to an ignored drop while the miner intentionally targets another reward
   set and delete. Preserve CSRF, Fetch Metadata, session/revocation, and rate-limit checks.
   `tests/test_web_public_url.py` covers both Socket.IO transports, production environment
   wiring, cookie lifecycles, hostile origins, and separate proxy-IP trust.
+- `DashboardOrigin.trusted_host()` blocks DNS rebinding before any other check, for HTTP
+  and websockets, with fixed `403 invalid_host` (only liveness-only `/healthz` is exempt;
+  the rejection warning is logged at most once a minute). Accept only IP literals, `localhost`,
+  `*.localhost`, single-label names, `.local`/`.home.arpa`/`.internal`, the
+  `PUBLIC_BASE_URL` host and the optional comma-separated `ALLOWED_HOSTS` names (no
+  schemes, ports or wildcards; invalid values stop startup without echo). Remove one
+  trailing DNS dot from both configured and request hosts for this check, while preserving
+  browser origin serialization and its strict origin checks. Never derive
+  trust from the Host header alone. Private responses other than `/session-viewer`
+  carry a CSP (`script-src 'self' https://cdn.socket.io`, `frame-ancestors 'none'`);
+  every response, static files included, carries `nosniff`. The CDN Socket.IO script
+  keeps its SRI hash. `HelperAPI` keeps its own
+  rate-limit bucket so helper probes cannot exhaust password logins. Regression
+  coverage: `tests/test_security_hardening.py`.
 - Default cookies are HttpOnly, SameSite=Strict session cookies. Remember me adds a fixed
   30-day Max-Age; server sessions also expire after 30 days and survive restarts. Logout
   revokes the current session; password changes require the current password and revoke
@@ -840,7 +864,8 @@ protocol rejection; preserve rejection and target-cleanup assertions.
   outside Git, the Docker build context, and the wiki publication surface.
 - `.github/workflows/version-release.yml` is the release entry point. It must provision
   `uv`, update `src/version.py`, `pyproject.toml`, and `uv.lock` together, and validate all
-  three before creating a release branch or tag.
+  three before creating a release branch or tag. Release notes read `GEMINI_API_KEY`
+  from the step environment and send it as a header, never as an argument or URL.
   Preserve existing data-volume/session migration instructions. Prepare versioned
   frontend cache keys through the authorized release workflow before deployment.
 - `.github/workflows/github-release.yml` verifies the existing tag against the

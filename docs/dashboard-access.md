@@ -31,8 +31,31 @@ protection. See [Twitch login](authentication.md#dashboard-access-and-source-ins
   the password and sessions. The dashboard becomes accessible without a password again.
 
 Login attempts are limited to five per minute per client IP and 30 per minute overall.
-After too many attempts, wait before retrying. A temporary request error on the login
+Desktop helper connection attempts have a separate limit, so they cannot use up
+password logins. After too many attempts, wait before retrying. A temporary request error on the login
 page can be retried with **Log in** without reloading the page.
+
+## Allowed host names
+
+To block DNS-rebinding attacks from websites you visit, the dashboard answers only
+requests addressed to a host name that a public website cannot take over:
+
+- IP addresses, such as `http://192.168.1.10:8080` or `http://[::1]:8080`
+- `localhost` and names ending in `.localhost`
+- single-label names, such as `http://nas:8080` or a Compose service name
+- names ending in `.local`, `.home.arpa`, or `.internal`
+- the host in `PUBLIC_BASE_URL`, when it is set
+
+Any other name, such as `nas.lan` or `drops.example.com` without `PUBLIC_BASE_URL`,
+receives `403` with `invalid_host`. Add those names to `ALLOWED_HOSTS` as a
+comma-separated list of host names, without schemes or ports:
+
+```text
+ALLOWED_HOSTS=nas.lan,miner.example.org
+```
+
+Only list names that you control and that resolve to your miner. Wildcards are not
+accepted. `/healthz` answers on any host name, so uptime monitors keep working.
 
 ## Reverse proxy and HTTPS
 
@@ -67,7 +90,8 @@ Host header. This setting does not supply TLS or enable hosting under a URL subp
 ### Forwarded headers and client addresses
 
 Leaving `PUBLIC_BASE_URL` unset or empty uses the address and scheme seen in each
-request. In that configuration, preserve the original Host header and configure
+request. In that configuration, preserve the original Host header, add a public host
+name to [`ALLOWED_HOSTS`](#allowed-host-names), and configure
 Uvicorn to trust forwarded protocol and client-IP headers only from your proxy.
 Set `FORWARDED_ALLOW_IPS` to its exact IP or a dedicated proxy subnet; do not use `*`
 as a default.

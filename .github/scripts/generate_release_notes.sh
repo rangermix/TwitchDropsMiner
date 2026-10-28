@@ -2,11 +2,12 @@
 set -e
 
 # Script to auto-generate release notes using Gemini AI
-# Usage: ./generate_release_notes.sh -v <version> -k <gemini_api_key> [-p]
+# Usage: GEMINI_API_KEY=<key> ./generate_release_notes.sh -v <version> [-p]
 # -p: production mode (default is dry run)
+# -k <key> is still accepted locally, but the environment keeps the key out of process lists.
 
 VERSION=""
-GEMINI_API_KEY=""
+GEMINI_API_KEY="${GEMINI_API_KEY:-}"
 GEMINI_MODEL="gemini-3.1-flash-lite-preview"
 DRY_RUN="true"
 
@@ -17,7 +18,7 @@ while getopts 'v:k:p' flag; do
     p) DRY_RUN="false" ;;
     *)
        echo "❌ Error: Unknown option -${flag}"
-       echo "Usage: $0 -v <version> -k <gemini_api_key> [-p]"
+       echo "Usage: GEMINI_API_KEY=<key> $0 -v <version> [-p]"
        echo "  -p: production mode (default is dry run)"
        exit 1 ;;
   esac
@@ -25,13 +26,13 @@ done
 
 if [ -z "$VERSION" ]; then
   echo "❌ Error: Version argument required"
-  echo "Usage: $0 -v <version> -k <gemini_api_key> [-p]"
+  echo "Usage: GEMINI_API_KEY=<key> $0 -v <version> [-p]"
   exit 1
 fi
 
 if [ -z "$GEMINI_API_KEY" ]; then
-  echo "❌ Error: GEMINI_API_KEY argument required"
-  echo "Usage: $0 -v <version> -k <gemini_api_key> [-p]"
+  echo "❌ Error: GEMINI_API_KEY environment variable required"
+  echo "Usage: GEMINI_API_KEY=<key> $0 -v <version> [-p]"
   exit 1
 fi
 
@@ -129,7 +130,8 @@ $COMMITS"
 # Call Gemini API
 echo "Calling Gemini API..."
 RESPONSE=$(curl -s -X POST \
-  "https://generativelanguage.googleapis.com/v1beta/models/$GEMINI_MODEL:generateContent?key=$GEMINI_API_KEY" \
+  "https://generativelanguage.googleapis.com/v1beta/models/$GEMINI_MODEL:generateContent" \
+  -H @<(printf 'x-goog-api-key: %s\n' "$GEMINI_API_KEY") \
   -H "Content-Type: application/json" \
   -d "{
     \"contents\": [{

@@ -317,6 +317,7 @@ class GUISettings(TypedDict):
     mining_hours_start: str
     mining_hours_end: str
     mining_hours_save_error: str
+    proxy_save_error: str
 
 
 class GUIHelp(TypedDict):
