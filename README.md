@@ -27,9 +27,9 @@ services operated for other users are outside its support scope.
 - Review claimed-drop history, export it to CSV, and receive Telegram or Discord notifications.
   Discord claim alerts include reward artwork when available.
 - Manage everything from a web dashboard with optional password protection.
+- Set daily [mining hours](docs/usage.md#mining-hours) in the miner’s local timezone.
 
 Invalid settings or a failed save keep your previous settings unchanged.
-- Set daily [mining hours](docs/usage.md#mining-hours) in the miner’s local timezone.
 
 The redesigned dashboard's **Now Watching** card offers **Show thumbnail**, off on
 each page load. When enabled, it shows a Twitch JPEG thumbnail, refreshed on channel
@@ -241,7 +241,7 @@ or [buying the maintainer a coffee](https://buymeacoffee.com/rangermix).
 <!-- contributors:start -->
 | Contributor | Merged pull requests |
 | --- | --- |
-| [@0zLloen](https://github.com/0zLloen) | [#152](https://github.com/rangermix/TwitchDropsMiner/pull/152) · [#185](https://github.com/rangermix/TwitchDropsMiner/pull/185) · [#191](https://github.com/rangermix/TwitchDropsMiner/pull/191) · [#188](https://github.com/rangermix/TwitchDropsMiner/pull/188) · [#192](https://github.com/rangermix/TwitchDropsMiner/pull/192) |
+| [@0zLloen](https://github.com/0zLloen) | [#152](https://github.com/rangermix/TwitchDropsMiner/pull/152) · [#185](https://github.com/rangermix/TwitchDropsMiner/pull/185) · [#191](https://github.com/rangermix/TwitchDropsMiner/pull/191) · [#188](https://github.com/rangermix/TwitchDropsMiner/pull/188) · [#192](https://github.com/rangermix/TwitchDropsMiner/pull/192) · [#193](https://github.com/rangermix/TwitchDropsMiner/pull/193) |
 | [@3lb0z0](https://github.com/3lb0z0) | [#110](https://github.com/rangermix/TwitchDropsMiner/pull/110) |
 | [@andreluisfc](https://github.com/andreluisfc) | [#76](https://github.com/rangermix/TwitchDropsMiner/pull/76) |
 | [@birdhimself](https://github.com/birdhimself) | [#41](https://github.com/rangermix/TwitchDropsMiner/pull/41) |
