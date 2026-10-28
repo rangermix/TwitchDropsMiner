@@ -29,8 +29,8 @@ position unchanged.
 
 Search for a game and press **Enter** or select **Add Game**. An exact name or unique
 partial match selects an available game. If several names match, use a more specific
-search. You can also confirm adding a manually entered name. Select **Reload** after
-adding games to refresh the miner's selection.
+search. You can also confirm adding a manually entered name. Select **Reload Campaigns**
+beside **Add Game** after adding games to refresh the miner's selection.
 
 **Select All** keeps your existing priority order and manual entries, then adds missing
 games. **Deselect All** asks for confirmation. You can cancel a confirmation with
@@ -150,7 +150,8 @@ not change your Twitch account or take away rewards.
 
 ## Refreshing and clearing cache
 
-Use **Reload** after changing the games you want or when you need to refresh campaign
+Use **Reload Campaigns** (in the Inventory filter bar or beside the Mining list's **Add
+Game** button) after changing the games you want or when you need to refresh campaign
 selection. **Settings → Clear All Cache** discards derived campaign and channel data,
 then reloads it from Twitch. It preserves Twitch login, settings, and dashboard
 password protection.

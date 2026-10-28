@@ -2490,8 +2490,10 @@ function applyTranslations(t) {
         const availableGamesHeader = settingsTab.querySelector('.available-games h3');
         if (availableGamesHeader) availableGamesHeader.textContent = t.gui.settings.available_games;
 
-        const reloadBtn = document.getElementById('reload-btn');
-        if (reloadBtn) reloadBtn.textContent = t.gui.settings.reload_campaigns;
+        for (const id of ['inventory-reload-label', 'games-reload-label']) {
+            const label = document.getElementById(id);
+            if (label) label.textContent = t.gui.settings.reload_campaigns;
+        }
 
         const discordTrans = t.gui?.settings?.discord;
         if (discordTrans) {
@@ -2681,6 +2683,10 @@ function applyTranslations(t) {
         };
         updateLabel('filter-active', f.active);
         document.getElementById('filter-link-status-label').textContent = f.account_link;
+        for (const [id, text] of [['filter-status-heading', f.status_heading], ['filter-rewards-heading', f.rewards_heading]]) {
+            const heading = document.getElementById(id);
+            if (heading && text) heading.textContent = text;
+        }
         const linkStatus = document.getElementById('filter-link-status');
         linkStatus.querySelector('[value="all"]').textContent = f.all;
         linkStatus.querySelector('[value="linked"]').textContent = f.linked;
@@ -2750,9 +2756,20 @@ async function requestCampaignRefresh(endpoint, button, actionName) {
     }
 }
 
+// Inventory and the Mining list share one reload; every reload button waits for it.
+function reloadButtons() {
+    return [...document.querySelectorAll('.reload-campaigns-btn')];
+}
+
 async function reloadCampaigns() {
-    const button = document.getElementById('reload-btn');
-    await requestCampaignRefresh('/api/reload', button, 'reload campaigns');
+    const buttons = reloadButtons();
+    if (buttons.some(button => button.disabled)) return;
+    buttons.forEach(button => { button.disabled = true; button.setAttribute('aria-busy', 'true'); });
+    try {
+        await requestCampaignRefresh('/api/reload', null, 'reload campaigns');
+    } finally {
+        buttons.forEach(button => { button.disabled = false; button.removeAttribute('aria-busy'); });
+    }
 }
 
 async function clearAllCache() {
@@ -2884,7 +2901,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('remove-discord-btn').addEventListener('click', () => updateDiscordSettings('remove'));
     document.getElementById('test-telegram-btn').addEventListener('click', testTelegramConnection);
     document.getElementById('save-telegram-btn').addEventListener('click', handleSaveTelegramClick);
-    document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
+    reloadButtons().forEach(button => button.addEventListener('click', reloadCampaigns));
     document.getElementById('clear-cache-btn').addEventListener('click', clearAllCache);
     document.getElementById('dump-diagnostics-btn').addEventListener('click', dumpDiagnostics);
 

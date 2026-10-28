@@ -153,6 +153,8 @@
                 "clear": "フィルター解除",
                 "search_placeholder": "ゲームを検索...",
                 "account_link": "アカウント連携",
+                "status_heading": "ステータス",
+                "rewards_heading": "報酬",
                 "all": "すべて",
                 "linked": "連携済み"
             },

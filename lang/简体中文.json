@@ -153,6 +153,8 @@
                 "clear": "清除过滤器",
                 "search_placeholder": "搜索游戏...",
                 "account_link": "账号关联",
+                "status_heading": "状态",
+                "rewards_heading": "奖励",
                 "all": "全部",
                 "linked": "已关联"
             },

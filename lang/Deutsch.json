@@ -153,6 +153,8 @@
                 "clear": "Filter löschen",
                 "search_placeholder": "Spiele suchen...",
                 "account_link": "Kontoverknüpfung",
+                "status_heading": "Status",
+                "rewards_heading": "Belohnungen",
                 "all": "Alle",
                 "linked": "Verknüpft"
             },

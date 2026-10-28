@@ -348,3 +348,21 @@ grid.clientWidth=700;applyInventoryViewMode(false);assert.equal(columns().length
 grid.clientWidth=1240;applyInventoryViewMode(true);assert.equal(columns().length,1);
 applyInventoryViewMode(false);assert.equal(columns().length,3);
 """)
+
+
+def test_filter_bar_groups_chips_under_translated_headings():
+    html = (ROOT / 'web/index.html').read_text(encoding='utf-8')
+    bar = html[html.index('<div class="inventory-filters">'):html.index('<div class="inventory-grid"')]
+    assert bar.index('id="inventory-game-search"') < bar.index('class="filter-checkboxes"')
+    for heading, ids in (('filter-status-heading', ['filter-active', 'filter-upcoming', 'filter-expired', 'filter-finished']),
+                         ('filter-rewards-heading', ['filter-benefit-item', 'filter-benefit-badge', 'filter-benefit-emote', 'filter-benefit-other'])):
+        group = bar.split(f'aria-labelledby="{heading}"', 1)[1].split('</div>', 1)[0]
+        assert all(f'id="{control}"' in group for control in ids)
+    assert 'filter-separator' not in bar
+    css = (ROOT / 'web/static/styles.css').read_text(encoding='utf-8')
+    # Chips keep the native checkbox focusable and only restyle the Inventory bar.
+    assert '.inventory-filters .filter-checkbox:has(input:focus-visible)' in css
+    assert 'opacity: 0;' in css.split('.inventory-filters .filter-checkbox input[type="checkbox"] {', 1)[1].split('}', 1)[0]
+    for path in (ROOT / 'lang').glob('*.json'):
+        filters = json.loads(path.read_text(encoding='utf-8'))['gui']['inventory']['filters']
+        assert filters['status_heading'].strip() and filters['rewards_heading'].strip(), path

@@ -20,21 +20,23 @@ def _extract_async_function(source: str, name: str) -> str:
     return f"async {function_source}"
 
 
-def test_clear_cache_button_is_next_to_reload_and_explains_preserved_state():
+def test_clear_cache_stays_in_settings_and_reload_lives_with_inventory_and_mining_list():
     html = INDEX_HTML.read_text(encoding="utf-8")
     actions = re.search(
         r'<div\s+class="settings-actions">(?P<body>.*?)</div>', html, re.DOTALL
     )
 
     assert actions is not None
-    assert re.findall(r'<button\b[^>]*\bid="([^"]+)"', actions.group("body"))[:2] == [
-        "reload-btn",
-        "clear-cache-btn",
-    ]
+    assert re.findall(r'<button\b[^>]*\bid="([^"]+)"', actions.group("body"))[0] == "clear-cache-btn"
+    assert "reload" not in actions.group("body")
     assert re.search(
         r'<button\b[^>]*\bid="clear-cache-btn"[^>]*\btype="button"',
         actions.group("body"),
     )
+    inventory = html[html.index('<div id="inventory-tab"'):html.index('<div class="inventory-grid"')]
+    games = html[html.index('id="settings-games-header"'):html.index('id="selected-games-list"')]
+    for section, button_id in ((inventory, "inventory-reload-btn"), (games, "games-reload-btn")):
+        assert re.search(rf'<button type="button" id="{button_id}" class="[^"]*\breload-campaigns-btn\b', section)
 
     help_text = re.search(
         r'<p\b[^>]*\bid="clear-cache-help"[^>]*>(?P<body>.*?)</p>',
@@ -117,3 +119,36 @@ console.error = (...args) => errors.push(args.map(String).join(' '));
     assert len(result["errors"]) == 1
     assert "Failed to clear cache" in result["errors"][0]
     assert "HTTP 409" in result["errors"][0]
+
+
+@pytest.mark.skipif(NODE is None, reason="Node.js is required for frontend tests")
+def test_reload_buttons_share_one_request_and_all_wait_for_it():
+    assert NODE is not None
+    app_source = APP_JS.read_text(encoding="utf-8")
+    script = "\n".join([
+        _extract_async_function(app_source, "requestCampaignRefresh"),
+        extract_javascript_function(app_source, "reloadButtons"),
+        _extract_async_function(app_source, "reloadCampaigns"),
+    ]) + r"""
+const make = () => ({ disabled: false, attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, removeAttribute(k) { delete this.attrs[k]; } });
+const buttons = [make(), make()];
+global.document = { querySelectorAll(selector) {
+    if (selector !== '.reload-campaigns-btn') throw new Error(selector);
+    return buttons;
+} };
+const calls = [];
+let release;
+global.fetch = async url => { calls.push({ url, busy: buttons.map(b => [b.disabled, b.attrs['aria-busy']]) });
+    await new Promise(resolve => { release = resolve; }); return { ok: false, status: 503 }; };
+console.error = () => {};
+(async () => {
+    const first = reloadCampaigns();
+    await reloadCampaigns();
+    release(); await first;
+    process.stdout.write(JSON.stringify({ calls, after: buttons.map(b => [b.disabled, 'aria-busy' in b.attrs]) }));
+})().catch(error => { process.stderr.write(String(error)); process.exit(1); });
+"""
+    completed = subprocess.run([NODE, "-"], check=True, capture_output=True, input=script, text=True)
+    result = json.loads(completed.stdout)
+    assert result["calls"] == [{"url": "/api/reload", "busy": [[True, "true"], [True, "true"]]}]
+    assert result["after"] == [[False, False], [False, False]]

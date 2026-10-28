@@ -314,6 +314,8 @@
                 "clear": "Clear Filters",
                 "search_placeholder": "Type to search games...",
                 "account_link": "Account link",
+                "status_heading": "Status",
+                "rewards_heading": "Rewards",
                 "all": "All",
                 "linked": "Linked"
             },

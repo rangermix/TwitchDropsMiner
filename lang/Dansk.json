@@ -153,6 +153,8 @@
                 "clear": "Ryd filtre",
                 "search_placeholder": "Søg efter spil...",
                 "account_link": "Kontoforbindelse",
+                "status_heading": "Status",
+                "rewards_heading": "Belønninger",
                 "all": "Alle",
                 "linked": "Forbundet"
             },

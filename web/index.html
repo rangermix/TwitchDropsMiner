@@ -177,51 +177,6 @@
         <div id="inventory-tab" class="tab-content">
             <div class="inventory-filters">
                 <div class="filter-controls">
-                    <div class="filter-checkboxes">
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-active" />
-                            <span>Active</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <span id="filter-link-status-label">Account link</span>
-                            <select id="filter-link-status" aria-labelledby="filter-link-status-label">
-                                <option value="all">All</option>
-                                <option value="linked">Linked</option>
-                                <option value="not_linked">Not Linked</option>
-                            </select>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-upcoming" checked />
-                            <span>Upcoming</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-expired" />
-                            <span>Expired</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-finished" />
-                            <span>Finished</span>
-                        </label>
-                        <div class="filter-separator"
-                            style="width: 1px; height: 24px; background: var(--border-color); margin: 0 10px;">
-                        </div>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-benefit-item" checked />
-                            <span>Item</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-benefit-badge" checked />
-                            <span>Badge</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-benefit-emote" checked />
-                            <span>Emote</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-benefit-other" checked />
-                            <span>Other</span>
-                        </label>
-                    </div>
                     <div class="filter-search">
                         <div class="game-dropdown-container">
                             <div class="game-tags-display" id="selected-game-tags">
@@ -233,12 +188,63 @@
                                 <!-- Dropdown options will appear here -->
                             </div>
                         </div>
-                        <button id="clear-filters-btn" class="small-btn">Clear Filters</button>
-                        <div class="inventory-view-toggle">
-                            <button type="button" id="inventory-view-cards" class="inventory-view-btn" aria-pressed="true"
-                                aria-label="Card view" title="Card view"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg></button>
-                            <button type="button" id="inventory-view-list" class="inventory-view-btn" aria-pressed="false"
-                                aria-label="List view" title="List view"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="2" width="14" height="3" rx="1"/><rect x="1" y="7" width="14" height="3" rx="1"/><rect x="1" y="12" width="14" height="3" rx="1"/></svg></button>
+                        <div class="filter-toolbar-actions">
+                            <button type="button" id="inventory-reload-btn" class="small-btn reload-campaigns-btn"><span class="reload-icon" aria-hidden="true">⟳</span><span class="reload-label" id="inventory-reload-label">Reload Campaigns</span></button>
+                            <button id="clear-filters-btn" class="small-btn">Clear Filters</button>
+                            <div class="inventory-view-toggle">
+                                <button type="button" id="inventory-view-cards" class="inventory-view-btn" aria-pressed="true"
+                                    aria-label="Card view" title="Card view"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg></button>
+                                <button type="button" id="inventory-view-list" class="inventory-view-btn" aria-pressed="false"
+                                    aria-label="List view" title="List view"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="2" width="14" height="3" rx="1"/><rect x="1" y="7" width="14" height="3" rx="1"/><rect x="1" y="12" width="14" height="3" rx="1"/></svg></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="filter-checkboxes">
+                        <div class="filter-group" role="group" aria-labelledby="filter-status-heading">
+                            <span class="filter-group-label" id="filter-status-heading">Status</span>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="filter-active" />
+                                <span>Active</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="filter-upcoming" checked />
+                                <span>Upcoming</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="filter-expired" />
+                                <span>Expired</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="filter-finished" />
+                                <span>Finished</span>
+                            </label>
+                        </div>
+                        <div class="filter-group" role="group" aria-labelledby="filter-rewards-heading">
+                            <span class="filter-group-label" id="filter-rewards-heading">Rewards</span>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="filter-benefit-item" checked />
+                                <span>Game reward</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="filter-benefit-badge" checked />
+                                <span>Chat badge</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="filter-benefit-emote" checked />
+                                <span>Chat emote</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="filter-benefit-other" checked />
+                                <span>Other reward</span>
+                            </label>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-group-label" id="filter-link-status-label" for="filter-link-status">Account link</label>
+                            <select id="filter-link-status" aria-labelledby="filter-link-status-label">
+                                <option value="all">All</option>
+                                <option value="linked">Linked</option>
+                                <option value="not_linked">Not Linked</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -415,6 +421,7 @@
                             <button id="select-all-btn" class="small-btn">Select All</button>
                             <button id="deselect-all-btn" class="small-btn">Deselect All</button>
                             <button id="add-game-btn" class="small-btn">Add Game</button>
+                            <button type="button" id="games-reload-btn" class="small-btn reload-campaigns-btn"><span class="reload-icon" aria-hidden="true">⟳</span><span class="reload-label" id="games-reload-label">Reload Campaigns</span></button>
                         </div>
                     </div>
 
@@ -434,7 +441,6 @@
                 <section class="settings-section">
                     <h2 id="settings-actions-header">Actions</h2>
                     <div class="settings-actions">
-                        <button id="reload-btn" class="action-button" type="button">Reload</button>
                         <button id="clear-cache-btn" class="action-button" type="button">Clear All Cache</button>
                         <button id="dump-diagnostics-btn" class="action-button" type="button" aria-describedby="diagnostics-help">Dump diagnosis data</button>
                     </div>

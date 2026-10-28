@@ -316,6 +316,11 @@ lang/                # Translation JSON files (20 languages)
 - Drop-name ignore list (`drop_name_blacklist`), empty by default. Entries are literal,
   case-insensitive substrings entered one per line; whitespace and blanks are removed and
   duplicates are casefolded while preserving the first spelling/order.
+- Inventory filter bar: search, **Reload Campaigns**, Clear Filters and view buttons on
+  top; translated Status and Rewards groups of chip toggles (native checkboxes kept
+  focusable, styles scoped to `.inventory-filters`) and the Account link select below.
+  **Reload Campaigns** lives there and beside the Mining list's Add Game button, not in
+  Settings → Actions; both `.reload-campaigns-btn` buttons share one `/api/reload` request.
 - Inventory filters (Status, Benefit Type, Game Search); Active/Upcoming/Expired use
   OR semantics; All / Linked / Not Linked narrows the result using Twitch-reported
   linkage, independently of mining eligibility. Finished opts claimed campaigns in.

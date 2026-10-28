@@ -179,6 +179,8 @@ class GUIWanted(TypedDict):
 
 class GUIInvFilters(TypedDict):
     account_link: str
+    status_heading: str
+    rewards_heading: str
     all: str
     linked: str
     active: str
