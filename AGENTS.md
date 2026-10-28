@@ -316,7 +316,7 @@ lang/                # Translation JSON files (20 languages)
   ranks to the list bounds; reject blank/fractional values without changing settings.
   Keep priority and remove-control labels translated and accessible. Regression tests in
   `tests/test_game_priority.py` cover order, bounds, invalid inputs, and persistence calls.
-- Games to Watch shows account-link status per game. Linking belongs to the game account,
+- Mining list shows account-link status per game. Linking belongs to the game account,
   so `getGameLinkStatus()` treats a game as linked when any campaign for it reports
   `linked: true` (case-insensitive by `game_name`); games without a known campaign have
   no badge and count as unknown, not unlinked. Available Games sort linked first, the
