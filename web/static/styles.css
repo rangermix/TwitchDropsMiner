@@ -2840,3 +2840,38 @@ header h1 {
     font-size: 14px;
 }
 .browser-helper-downloads a { color: var(--accent-color); }
+
+/* Games tab: stretch both game lists down to the footer instead of stopping at 400px.
+   Desktop only; stacked lists on narrow screens keep their fixed heights. */
+@media (min-width: 1025px) {
+    #settings-tab.active:has(#settings-panel-games:not([hidden])),
+    .settings-container:has(#settings-panel-games:not([hidden])),
+    #settings-panel-games:not([hidden]),
+    #settings-panel-games > .settings-section,
+    #settings-panel-games .selected-games,
+    #settings-panel-games .available-games {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .settings-container:has(#settings-panel-games:not([hidden])),
+    #settings-panel-games:not([hidden]),
+    #settings-panel-games > .settings-section,
+    #settings-panel-games .selected-games,
+    #settings-panel-games .available-games {
+        flex: 1 1 0;
+    }
+
+    #settings-panel-games .games-container {
+        flex: 1 1 0;
+        min-height: 300px;
+        grid-template-rows: minmax(0, 1fr);
+    }
+
+    #settings-panel-games .sortable-list,
+    #settings-panel-games .checkbox-list {
+        flex: 1 1 0;
+        min-height: 0;
+        max-height: none;
+    }
+}

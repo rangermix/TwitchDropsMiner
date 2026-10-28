@@ -871,6 +871,7 @@ The application uses a web-based interface accessible via browser:
   - Settings is split into sub-tabs (General, Mining, Games, Notifications, Account &
     Maintenance): each `.settings-section` lives in exactly one `#settings-panel-*` with a
     matching `[data-settings-tab]` button; `switchSettingsTab()` toggles `hidden`.
+    Above 1024 CSS pixels the Games panel's two lists stretch to the footer (300px minimum).
 - `static/app.js` - Socket.IO client, real-time UI updates, API calls, Inventory Filtering and Drop History logic
 - `static/styles.css` - Responsive design with dark mode support
 
