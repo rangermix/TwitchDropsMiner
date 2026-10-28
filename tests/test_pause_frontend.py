@@ -2,6 +2,7 @@
 
 import json
 import subprocess
+from html.parser import HTMLParser
 
 import pytest
 
@@ -78,6 +79,7 @@ def run_pause(body: str) -> None:
     source = APP_JS.read_text(encoding="utf-8")
     functions = "\n".join([
         extract_javascript_function(source, "isPauseRevision") if "function isPauseRevision(" in source else "",
+        extract_javascript_function(source, "isPauseInstance") if "function isPauseInstance(" in source else "",
         extract_javascript_function(source, "setPauseMenuOpen"),
         extract_javascript_function(source, "updatePauseUI"),
         extract_javascript_function(source, "onPauseButton"),
@@ -157,6 +159,29 @@ def test_pause_menu_key_handler_is_wired_to_button_and_menu():
     source = APP_JS.read_text(encoding="utf-8")
     assert "document.getElementById('pause-btn').addEventListener('keydown', onPauseKeydown)" in source
     assert "document.getElementById('pause-menu').addEventListener('keydown', onPauseKeydown)" in source
+
+
+def test_pause_menu_is_named_by_its_translated_button_and_items_use_arrow_focus():
+    class Controls(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.by_id = {}
+            self.items = []
+
+        def handle_starttag(self, tag, attrs):
+            attributes = dict(attrs)
+            if attributes.get("id") in {"pause-btn", "pause-menu"}:
+                self.by_id[attributes["id"]] = attributes
+            if attributes.get("data-pause-duration") is not None:
+                self.items.append(attributes)
+
+    controls = Controls()
+    controls.feed((APP_JS.parents[1] / "index.html").read_text(encoding="utf-8"))
+    menu = controls.by_id["pause-menu"]
+    assert menu["role"] == "menu"
+    assert menu["aria-labelledby"] == controls.by_id["pause-btn"]["id"]
+    assert len(controls.items) == 4
+    assert all(item["role"] == "menuitem" and item["tabindex"] == "-1" for item in controls.items)
 
 
 @pytest.mark.parametrize("latest", [False, True])
@@ -287,6 +312,67 @@ await requestPause(true, '10m');
 handlers.paused_update({paused: false, revision: 1});
 assert.equal(state.paused, true);
 assert.equal(button.textContent, 'Riprendi');
+""")
+
+
+def test_same_server_initial_snapshot_cannot_undo_a_newer_http_reply():
+    run_pause(r"""
+const instance = 'a'.repeat(32);
+handlers.initial_state({pause: {paused: false, revision: 0, instance_id: instance}}); button.focus();
+fetchResponse = () => ({ok: true, json: async () => ({success: true, paused: true, revision: 2, instance_id: instance})});
+await requestPause(true, '10m');
+handlers.initial_state({pause: {paused: false, revision: 1, instance_id: instance}});
+assert.equal(state.paused, true);
+assert.equal(button.textContent, 'Riprendi');
+handlers.initial_state({pause: {paused: false, revision: 0, instance_id: 'b'.repeat(32)}});
+assert.equal(state.paused, false);
+assert.equal(button.textContent, 'Pausa ▾');
+""")
+
+
+@pytest.mark.parametrize("initial_first", [False, True])
+def test_same_server_initial_snapshot_does_not_invalidate_pending_newer_reply(initial_first):
+    run_pause("const initialFirst=" + json.dumps(initial_first) + ";" + r"""
+const instance = 'a'.repeat(32);
+if (initialFirst) handlers.initial_state({pause: {paused: false, revision: 0, instance_id: instance}});
+button.focus();
+let release; fetchResponse = () => new Promise(resolve => { release = resolve; });
+const pending = requestPause(true, '10m');
+handlers.initial_state({pause: {paused: false, revision: 1, instance_id: instance}});
+release({ok: true, json: async () => ({success: true, paused: true, revision: 2, instance_id: instance})});
+await pending;
+assert.equal(state.paused, true);
+assert.equal(button.textContent, 'Riprendi');
+""")
+
+
+@pytest.mark.parametrize("fail", [False, True])
+def test_new_server_initial_snapshot_invalidates_old_instance_request(fail):
+    run_pause("const fail=" + json.dumps(fail) + ";" + r"""
+const instanceA = 'a'.repeat(32), instanceB = 'b'.repeat(32);
+handlers.initial_state({pause: {paused: false, revision: 9, instance_id: instanceA}}); button.focus();
+let release; fetchResponse = () => new Promise(resolve => { release = resolve; });
+const pending = requestPause(true, '10m');
+handlers.initial_state({pause: {paused: false, revision: 0, instance_id: instanceB}});
+release({ok: !fail, json: async () => ({success: true, paused: true, revision: 10, instance_id: instanceA})});
+await pending;
+assert.equal(state.paused, false);
+assert.equal(button.textContent, 'Pausa ▾');
+assert.deepEqual(lines, []); assert.deepEqual(toasts, []);
+handlers.paused_update({paused: true, revision: 1, instance_id: instanceB});
+assert.equal(state.paused, true);
+handlers.paused_update({paused: false, revision: 11, instance_id: instanceA});
+assert.equal(state.paused, true);
+""")
+
+
+@pytest.mark.parametrize("instance", [None, "", 42, "secret-hostname", "a" * 33])
+def test_malformed_instance_id_cannot_override_confirmed_pause(instance):
+    run_pause("const invalid=" + json.dumps(instance) + ";" + r"""
+const valid = 'a'.repeat(32);
+handlers.initial_state({pause: {paused: true, revision: 1, instance_id: valid}});
+handlers.initial_state({pause: {paused: false, revision: 2, instance_id: invalid}});
+assert.equal(state.paused, true);
 """)
 
 

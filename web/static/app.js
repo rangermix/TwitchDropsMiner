@@ -14,6 +14,7 @@ const state = {
     paused: false,
     pauseRevision: 0,
     pauseServerRevision: null,
+    pauseInstance: null,
     pauseEpoch: 0
 };
 
@@ -244,7 +245,7 @@ socket.on('initial_state', (data) => {
     if (data.settings) updateSettingsUI(data.settings, true);
     if (data.login) updateLoginStatus(data.login);
     if (data.manual_mode) updateManualModeUI(data.manual_mode);
-    updatePauseUI(data.pause === undefined ? false : data.pause?.paused, data.pause?.revision, true);
+    updatePauseUI(data.pause === undefined ? false : data.pause?.paused, data.pause?.revision, true, data.pause?.instance_id);
     // Restore current drop progress if it exists
     if (data.current_drop) {
         updateDropProgress(data.current_drop);
@@ -376,7 +377,7 @@ socket.on('manual_mode_update', (data) => {
 });
 
 socket.on('paused_update', (data) => {
-    updatePauseUI(data.paused, data.revision);
+    updatePauseUI(data.paused, data.revision, false, data.instance_id);
 });
 
 socket.on('language_changed', (data) => {
@@ -2018,11 +2019,28 @@ function isPauseRevision(revision) {
     return Number.isSafeInteger(revision) && revision >= 0;
 }
 
-function updatePauseUI(paused, revision, initial = false) {
-    if (typeof paused !== 'boolean' || (revision !== undefined && !isPauseRevision(revision))) return;
-    if (initial) {
+function isPauseInstance(instance) {
+    return typeof instance === 'string' && /^[a-f0-9]{32}$/.test(instance);
+}
+
+function updatePauseUI(paused, revision, initial = false, instance) {
+    if (typeof paused !== 'boolean' || (revision !== undefined && !isPauseRevision(revision))
+        || (instance !== undefined && (!isPauseInstance(instance) || !isPauseRevision(revision)))) return;
+    if (instance !== undefined) {
+        if (state.pauseInstance !== instance) {
+            if (state.pauseInstance != null) {
+                if (!initial) return;
+                state.pauseEpoch = (state.pauseEpoch || 0) + 1;
+            }
+            state.pauseServerRevision = null;
+            state.pauseInstance = instance;
+        }
+    } else if (initial) {
         state.pauseEpoch = (state.pauseEpoch || 0) + 1;
         state.pauseServerRevision = null;
+        state.pauseInstance = null;
+    } else if (state.pauseInstance != null) {
+        return;
     }
     if (isPauseRevision(revision)) {
         if (state.pauseServerRevision != null && revision <= state.pauseServerRevision) return;
@@ -2108,9 +2126,11 @@ async function requestPause(paused, duration = null) {
         const result = await response.json();
         if ((state.pauseEpoch || 0) !== epoch) return;
         if (result?.success !== true || typeof result.paused !== 'boolean'
-            || (result.revision !== undefined && !isPauseRevision(result.revision))) throw new Error();
+            || (result.revision !== undefined && !isPauseRevision(result.revision))
+            || (result.instance_id !== undefined && (!isPauseInstance(result.instance_id)
+                || !isPauseRevision(result.revision)))) throw new Error();
         if (isPauseRevision(result.revision) || (state.pauseRevision || 0) === localRevision) {
-            updatePauseUI(result.paused, result.revision);
+            updatePauseUI(result.paused, result.revision, false, result.instance_id);
         }
     } catch {
         if ((state.pauseEpoch || 0) === epoch) {

@@ -42,7 +42,9 @@ class TestPauseGate(unittest.TestCase):
         self.assertEqual(
             [c.args[0]["paused"] for c in twitch.gui.broadcast_paused.call_args_list], [True, False]
         )
-        self.assertEqual(twitch.pause_info(), {"paused": False, "resume_at": None, "revision": 2})
+        self.assertEqual(twitch.pause_info(), {
+            "paused": False, "resume_at": None, "revision": 2, "instance_id": twitch._pause_instance_id,
+        })
         self.assertEqual(
             [c.args[0]["revision"] for c in twitch.gui.broadcast_paused.call_args_list], [1, 2]
         )
@@ -114,6 +116,19 @@ class TestPauseGate(unittest.TestCase):
         resume_at = datetime.fromisoformat(twitch.pause_info()["resume_at"])
         self.assertIsNotNone(resume_at.tzinfo)
         self.assertEqual(resume_at, twitch._resume_at)
+
+    def test_pause_instance_is_random_runtime_only_and_stable_across_updates(self):
+        twitch = make_twitch()
+        instance = twitch.pause_info()["instance_id"]
+        self.assertRegex(instance, r"^[a-f0-9]{32}$")
+        self.assertNotEqual(make_twitch().pause_info()["instance_id"], instance)
+        self.assertNotIn("instance_id", vars(twitch.settings))
+        self.assertNotIn("_pause_instance_id", vars(twitch.settings))
+        twitch.set_paused(True, "10m")
+        self.assertEqual(twitch.pause_info()["instance_id"], instance)
+        self.assertEqual(twitch.gui.broadcast_paused.call_args.args[0]["instance_id"], instance)
+        twitch.set_paused(False)
+        self.assertEqual(twitch.pause_info()["instance_id"], instance)
 
     def test_closed_status_names_the_reason(self):
         twitch = make_twitch()
@@ -237,8 +252,9 @@ class TestPauseSchedule(unittest.IsolatedAsyncioTestCase):
         twitch._paused, twitch._resume_at = True, datetime.now(timezone.utc)
         twitch._schedule_task = asyncio.create_task(twitch._mining_schedule_loop())
         await asyncio.wait_for(entered.wait(), 1)
-        self.assertEqual(twitch.pause_info(), {"paused": False, "resume_at": None, "revision": 1})
-        twitch.gui.broadcast_paused.assert_called_once_with({"paused": False, "resume_at": None, "revision": 1})
+        expected = {"paused": False, "resume_at": None, "revision": 1, "instance_id": twitch._pause_instance_id}
+        self.assertEqual(twitch.pause_info(), expected)
+        twitch.gui.broadcast_paused.assert_called_once_with(expected)
 
     async def test_schedule_wakes_for_a_pause_ending_before_the_next_sample(self):
         self.twitch = twitch = make_twitch()
@@ -333,6 +349,7 @@ class TestPauseApi(unittest.IsolatedAsyncioTestCase):
                 result = await web_app.update_paused(web_app.PauseRequest(paused=True, duration="1h"))
             self.assertTrue(result["success"] and result["paused"])
             self.assertEqual(result["resume_at"], twitch.pause_info()["resume_at"])
+            self.assertEqual(result["instance_id"], twitch.pause_info()["instance_id"])
         finally:
             clock.stop()
 

@@ -376,9 +376,12 @@ lang/                # Translation JSON files (20 languages)
   Status shows Paused/Paused until. Restarting clears the pause; already-earned reward
   claims remain available, and mining hours still apply when a pause ends.
   Increment the server pause revision only for state changes and send it in API/socket
-  state. Ignore older replies/broadcasts; an initial-state snapshot resets revision
-  tracking and invalidates pending replies from the previous connection. Retain the
-  fallback for servers without revisions. Show only translated, fixed pause errors,
+  state with a random, runtime-only instance ID created once per Twitch client, never
+  derived from account data. Ignore older replies/broadcasts, including delayed initial
+  snapshots from the same instance. A new instance's initial snapshot resets revision
+  tracking and invalidates pending replies from the previous instance. Validate present
+  instance IDs before mutation and retain the fallback for older servers without IDs
+  or revisions. Show only translated, fixed pause errors,
   never remote response or exception text. Preserve deliberate focus moves while a
   pause request is pending. Arrow keys, Home and End navigate the duration menu;
   Escape restores the button and Tab closes the menu without trapping focus.

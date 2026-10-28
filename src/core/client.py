@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from functools import partial
 from time import monotonic, time
 from typing import TYPE_CHECKING, Any, Final, Literal
+from uuid import uuid4
 
 import aiohttp
 
@@ -75,6 +76,7 @@ class Twitch:
 
     def __init__(self, settings: Settings):
         self.settings: Settings = settings
+        self._pause_instance_id = uuid4().hex
         self.diagnostics = Diagnostics(DATA_DIR)
         # State management
         self._state: State = State.IDLE
@@ -381,7 +383,10 @@ class Twitch:
         """Pause state for the dashboard; resume_at is an ISO time with offset."""
         resume_time = self._pause_resume_time()
         resume_at = resume_time.astimezone().isoformat() if resume_time else None
-        return {"paused": self._paused, "resume_at": resume_at, "revision": self._pause_revision}
+        return {
+            "paused": self._paused, "resume_at": resume_at,
+            "revision": self._pause_revision, "instance_id": self._pause_instance_id,
+        }
 
     def _pause_seconds_remaining(self) -> float | None:
         if not self._paused:

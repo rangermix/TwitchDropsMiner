@@ -32,6 +32,7 @@ services operated for other users are outside its support scope.
   or until you resume, for example while you watch Twitch yourself. Fixed durations
   use elapsed time; tomorrow means the miner's next local midnight. Restarting TDM
   clears the pause, and already-earned rewards can still be claimed while paused.
+  Reconnecting to the same running miner keeps its latest pause state.
 
 Invalid settings or a failed save keep your previous settings unchanged.
 
