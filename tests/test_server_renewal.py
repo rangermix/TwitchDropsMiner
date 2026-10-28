@@ -453,6 +453,30 @@ async def test_pipe_routes_bursts_ignores_other_sessions_and_fails_on_browser_ex
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("detach", [
+    {"method": "Target.detachedFromTarget", "params": {"sessionId": "S1"}},
+    {"method": "Inspector.detached", "params": {}, "sessionId": "S1"},
+])
+async def test_pipe_rejects_new_commands_after_page_detach(detach):
+    from src.auth.session_helper import DevToolsConnection, DevToolsPipe
+
+    reader = asyncio.StreamReader()
+    writer = SimpleNamespace(write=Mock(), drain=AsyncMock())
+    pipe = DevToolsPipe(reader, writer)
+    page = DevToolsConnection(pipe._session("S1"), ids=pipe._ids)
+    try:
+        reader.feed_data(json.dumps(detach).encode() + b"\0")
+        assert await asyncio.wait_for(page.events.get(), 1) is None
+        with pytest.raises(SessionError, match="BROWSER_PROTOCOL"):
+            await asyncio.wait_for(page.command("Runtime.evaluate", timeout=30), 1)
+        writer.write.assert_not_called()
+        assert not page._pending
+    finally:
+        await page.close()
+        await pipe.close()
+
+
+@pytest.mark.asyncio
 @pytest.mark.skipif(os.name != "posix", reason="Chromium's debugging pipe requires POSIX descriptor passing")
 async def test_pipe_ends_detached_page_sessions_and_shares_command_ids():
     from src.auth.session_helper import DevToolsConnection, DevToolsPipe

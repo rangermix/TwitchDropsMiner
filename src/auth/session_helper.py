@@ -114,6 +114,8 @@ class DevToolsConnection:
             self.events.put_nowait(None)
 
     async def command(self, method: str, params: dict[str, Any] | None = None, *, timeout: float = 30) -> Any:
+        if self._reader.done():
+            raise SessionError("BROWSER_PROTOCOL")
         sequence = next(self._ids)
         future = asyncio.get_running_loop().create_future()
         self._pending[sequence] = future

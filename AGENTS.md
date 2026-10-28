@@ -7,6 +7,15 @@ This file is the canonical harness for AI agents working in this repository.
 `CLAUDE.md` and `GEMINI.md` are relative symbolic links to `AGENTS.md` so every agent
 reads the same guidance. Maintain all shared and agent-specific instructions here.
 
+## Communication
+
+- Use simple, minimal, clear language in all communication.
+- Do not post an issue or PR comment just because you inspected or reviewed it.
+  Comment only to request additional information or report an actual state change,
+  such as starting work, merging a PR, or shipping a fix in a release.
+- When changes are required, list clear action items. Use bullet points when more
+  than one change is required.
+
 ## Mandatory Contribution Workflow
 
 Every coding agent MUST read [CONTRIBUTING.md](./CONTRIBUTING.md) before planning,
@@ -21,14 +30,6 @@ It is the repository's contribution policy, not optional background reading.
   or PR. Never claim completion of checks that did not run or approval not received.
 - Do not declare a PR ready to merge while required checks or review are missing or
   blocking findings remain. Document the gap and keep an incomplete PR in draft.
-- When taking on an issue or PR, first post a comment there acknowledging that work
-  is starting and briefly stating the scope, before investigation, implementation,
-  or review. If both an issue and a PR are being worked on, acknowledge both.
-- Before ending or pausing work, update every issue or PR being worked on with the
-  outcome, relevant evidence or validation, and any remaining action or request for
-  information. Post this update for every outcome, including resolved, closed,
-  no change needed, blocked, or more information needed, even when no code changed
-  or the issue or PR remains open.
 - Visual dashboard changes require current screenshots in the PR description, with
   personal information hidden as described in CONTRIBUTING.md. Prefer rendering them
   from mock or sample data; never use screenshots of a real account without masking.
@@ -459,6 +460,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   `DevToolsPipe` multiplexes flattened `Target.attachToTarget` sessions with
   NUL-delimited messages, bounds each session's backlog to 16 MiB by bytes (one read
   can carry hundreds of small events), and closes its target and fds on every exit.
+  Once a protocol reader ends, new commands must fail with `BROWSER_PROTOCOL`
+  before sending, including after target detachment.
   Windows keeps the loopback port (no `pass_fds`). The login capture Chromium keeps
   its port because it runs as `tdm-browser` with a profile that UID already owns.
   `tests/test_server_renewal.py` checks launch arguments and descriptors, and, with a
