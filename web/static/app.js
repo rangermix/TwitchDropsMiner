@@ -1376,7 +1376,9 @@ function getGameLinkStatus() {
 }
 
 function linkStatusSignature(linkStatus) {
-    return Array.from(linkStatus.entries()).sort().join('|');
+    const shown = new Set([...availableGames, ...(state.settings.games_to_watch || [])]
+        .map(game => game.toLowerCase()));
+    return Array.from(linkStatus.entries()).filter(([game]) => shown.has(game)).sort().join('|');
 }
 
 // Inventory updates arrive often while mining; rebuilding the lists would interrupt
@@ -1426,8 +1428,9 @@ function renderGamesToWatch() {
     renderSelectedGames(selectedGames, linkStatus);
 
     // Render available games (checkboxes for unselected games)
+    const selectedKeys = new Set(selectedGames.map(game => game.toLowerCase()));
     const unselectedGames = Array.from(availableGames)
-        .filter(game => !selectedGames.includes(game))
+        .filter(game => !selectedKeys.has(game.toLowerCase()))
         .filter(game => game.toLowerCase().includes(filterText))
         .filter(game => {
             const linked = linkStatus.get(game.toLowerCase());

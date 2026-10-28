@@ -41,8 +41,8 @@ default-off option to mine campaigns reported as Not Linked; read its warning an
 check Twitch progress. See the [dashboard guide](docs/usage.md#account-link-override).
 
 **Settings → Games to Watch** marks each game as **LINKED** or **NOT LINKED** from your
-inventory, lists linked games first, can filter by link status, and offers **Select
-Linked** to add every linked game at once. See
+inventory, lists linked games first in **Available Games**, can filter by link status,
+and offers **Select Linked** to add every linked game at once. See
 [Choose games and priorities](docs/usage.md#choose-games-and-priorities).
 
 Source builds ignore progress-poll responses superseded by newer campaign observations

@@ -183,9 +183,9 @@ let selectedArgs = null;
 let availableArgs = null;
 const renderSelectedGames = (games) => { selectedArgs = games; };
 const renderAvailableGames = (games, text, status, filter) => { availableArgs = {games, filter}; };
-let renders = 0;
+let saves = 0;
 const renderChannels = () => {};
-const saveSettings = () => { renders += 1000; };
+const saveSettings = () => { saves += 1; };
 """
 
 GAMES_FUNCTIONS = [
@@ -238,8 +238,10 @@ def test_select_linked_is_idempotent_and_keeps_existing_order():
 state.settings.games_to_watch = ['zelda', 'Apex'];
 selectLinkedGames();
 assert.deepEqual(state.settings.games_to_watch, ['zelda', 'Apex', 'Rust']);
+assert.equal(saves, 1);
 selectLinkedGames();
 assert.deepEqual(state.settings.games_to_watch, ['zelda', 'Apex', 'Rust']);
+assert.equal(saves, 1);
 """,
     )
 
@@ -259,5 +261,35 @@ availableArgs = null;
 state.campaigns = {};
 refreshGamesIfLinkStatusChanged();
 assert.notEqual(availableArgs, null);
+""",
+    )
+
+
+def test_available_games_hide_selected_games_regardless_of_case():
+    run_javascript(
+        GAMES_FUNCTIONS,
+        GAMES_SETUP + r"""
+state.settings.games_to_watch = ['zelda', 'APEX'];
+renderGamesToWatch();
+assert.deepEqual(availableArgs.games, ['Rust', 'Albion', 'Manual']);
+""",
+    )
+
+
+def test_inventory_changes_refresh_games_list():
+    run_javascript(
+        GAMES_FUNCTIONS + ["addCampaign", "clearInventory"],
+        GAMES_SETUP + r"""
+let inventoryRenders = 0;
+const renderInventory = () => { inventoryRenders += 1; };
+renderGamesToWatch();
+availableArgs = null;
+addCampaign({id: 'z', game_name: 'Manual', linked: true});
+assert.equal(inventoryRenders, 1);
+assert.deepEqual(availableArgs.games.slice(0, 3), ['Manual', 'Rust', 'Zelda']);
+availableArgs = null;
+clearInventory();
+assert.equal(inventoryRenders, 2);
+assert.deepEqual(availableArgs.games, ['Albion', 'Manual', 'Rust', 'Zelda']);
 """,
     )
