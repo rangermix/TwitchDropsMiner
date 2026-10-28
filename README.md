@@ -247,7 +247,9 @@ or [buying the maintainer a coffee](https://buymeacoffee.com/rangermix).
 </details>
 
 **Settings → Reward types** chooses which reward types to mine and, optionally, drag
-them into a preferred order; earlier reward deadlines break ties. [Mining settings](docs/mining-settings.md) explains the ordering.
+them into a preferred order; earlier reward deadlines break ties. Position fields also
+support keyboard editing; saving keeps your focus unless you move elsewhere.
+[Mining settings](docs/mining-settings.md) explains the ordering.
 
 The sign-in page also offers an advanced existing-session token option. See the
 [authentication guide](docs/authentication.md) for clipboard controls and recovery.

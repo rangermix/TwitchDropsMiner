@@ -984,7 +984,9 @@ Tests cover persistence, filtering, Unicode exports, offsets, and translated UI 
   alternative. Ordering and benefit changes autosave; there is no Save button. Unticked
   types stay listed as not mined. Non-authoritative replies keep local
   `mining_benefits`/`reward_priority`. Shared drag handlers only move rows within their
-  own list.
+  own list. Priority saves restore the replaced control's focus only if the user has
+  not navigated elsewhere while waiting; track focus, pointer and Tab events through
+  success and failure, remove listeners, and never focus a disabled rank input.
 
 - Reward ranking uses currently earnable drops, including prerequisite guards. Keep
   game, nested campaign and drop queue order consistent with channel and active-campaign

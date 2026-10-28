@@ -27,7 +27,8 @@ class Node {
  set textContent(value){this._text=String(value);this.children=[];}
  get textContent(){return this._text+this.children.map(child=>child.textContent).join('');}
  appendChild(child){child.parentNode=this;this.children.push(child);return child;}
- replaceChildren(...children){this.children=[];this._text='';children.forEach(child=>this.appendChild(child));}
+ replaceChildren(...children){if(walk(this).includes(document.activeElement))document.activeElement=document.body;
+  this.children=[];this._text='';children.forEach(child=>this.appendChild(child));}
  insertBefore(child,before){this.children=this.children.filter(item=>item!==child);child.parentNode=this;
   const index=before?this.children.indexOf(before):-1;index<0?this.children.push(child):this.children.splice(index,0,child);}
  get nextSibling(){const siblings=this.parentNode.children;return siblings[siblings.indexOf(this)+1]||null;}
@@ -37,13 +38,17 @@ class Node {
  querySelector(selector){return this.querySelectorAll(selector)[0]||null;}
  querySelectorAll(selector){const all=this.children.flatMap(child=>[child,...child.querySelectorAll(selector)]);
   return all.filter(node=>node.classes.has(selector.slice(1)));}
- focus(){document.activeElement=this;}
+ focus(){if(this.disabled)return;document.activeElement=this;document.dispatchEvent({type:'focusin',target:this});}
 }
 const root=new Node('root');
 for(const id of ['reward-priority-enabled','reward-priority-title','reward-priority-help','reward-priority-enable-label',
  'reward-priority-order','reward-priority-error']) root.appendChild(Object.assign(new Node('div'),{id}));
 const walk=node=>[node,...node.children.flatMap(walk)];
-const document={activeElement:null,createElement:tag=>new Node(tag),getElementById:id=>walk(root).find(node=>node.id===id)||null};
+const document={body:root,activeElement:root,listeners:new Map(),
+ addEventListener(type,callback){if(!this.listeners.has(type))this.listeners.set(type,new Set());this.listeners.get(type).add(callback);},
+ removeEventListener(type,callback){this.listeners.get(type)?.delete(callback);},
+ dispatchEvent(event){this.listeners.get(event.type)?.forEach(callback=>callback(event));},
+ createElement:tag=>new Node(tag),getElementById:id=>walk(root).find(node=>node.id===id)||null};
 const rewardTypes=['BADGE','EMOTE','DIRECT_ENTITLEMENT','UNKNOWN'];
 const rewardLabelKeys={BADGE:'badge',EMOTE:'emote',DIRECT_ENTITLEMENT:'item',UNKNOWN:'other'};
 let rewardPrioritySaving=false;let draggedElement=null;
@@ -120,6 +125,52 @@ assert.equal(document.activeElement,rank('BADGE'));assert.equal(rank('BADGE').va
 const last=['EMOTE','DIRECT_ENTITLEMENT','UNKNOWN','BADGE'];ok(last);
 rank('BADGE').value='99';rank('BADGE').events.change();await new Promise(resolve=>setTimeout(resolve));
 assert.deepEqual(calls.at(-1),{reward_priority:last});
+""")
+
+
+@pytest.mark.skipif(NODE is None, reason='Node required')
+@pytest.mark.parametrize('success', [True, False])
+@pytest.mark.parametrize('movement', ['unchanged', 'elsewhere', 'removed_control', 'pointer', 'tab'])
+def test_delayed_reward_save_respects_focus_navigation(success, movement):
+    run_rewards(f'const success={json.dumps(success)}, movement={json.dumps(movement)};\n' + r"""
+state.settings.reward_priority=[...rewardTypes];renderRewardPriority();
+document.getElementById('reward-rank-BADGE').focus();
+const moved=['EMOTE','BADGE','DIRECT_ENTITLEMENT','UNKNOWN'];
+let finish;
+fetch=()=>new Promise(resolve=>{finish=()=>resolve({ok:success,
+ json:async()=>({success:true,settings:{reward_priority:moved}})});});
+const saving=saveRewardPriority(moved);
+assert.equal(document.activeElement,document.body); // Rendering removed the original input.
+const elsewhere=Object.assign(new Node('button'),{id:'different-control'});root.appendChild(elsewhere);
+if(movement==='elsewhere')elsewhere.focus();
+if(movement==='removed_control'){
+ rows()[0].querySelector('.reward-type-label').children[0].focus();
+ renderRewardPriority(moved); // A socket update can remove the user's newly focused control.
+}
+if(movement==='pointer')document.dispatchEvent({type:'pointerdown',target:document.body});
+if(movement==='tab')document.dispatchEvent({type:'keydown',key:'Tab'});
+finish();await saving;
+assert.deepEqual(state.settings.reward_priority,success?moved:rewardTypes);
+assert.equal(document.getElementById('reward-priority-error').hidden,success);
+const expected=movement==='unchanged'?document.getElementById('reward-rank-BADGE'):
+ movement==='elsewhere'?elsewhere:document.body;
+assert.ok(document.activeElement===expected,'Saving must respect deliberate focus navigation');
+assert.ok([...document.listeners.values()].every(listeners=>listeners.size===0));
+""")
+
+
+@pytest.mark.skipif(NODE is None, reason='Node required')
+def test_failed_reward_save_does_not_focus_a_now_disabled_rank():
+    run_rewards(r"""
+state.settings.reward_priority=[...rewardTypes];renderRewardPriority();
+document.getElementById('reward-rank-BADGE').focus();
+let finish;fetch=()=>new Promise(resolve=>{finish=()=>resolve({ok:false});});
+const saving=saveRewardPriority(['EMOTE','BADGE','DIRECT_ENTITLEMENT','UNKNOWN']);
+state.settings.reward_priority=[]; // Another dashboard disabled ordering while this request was pending.
+finish();await saving;
+assert.equal(document.getElementById('reward-rank-BADGE').disabled,true);
+assert.equal(document.activeElement,document.body);
+assert.ok([...document.listeners.values()].every(listeners=>listeners.size===0));
 """)
 
 

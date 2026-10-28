@@ -2032,6 +2032,14 @@ async function saveRewardPriority(order) {
     const focused = document.activeElement?.id;
     rewardPrioritySaving = true;
     renderRewardPriority(order);
+    let restoreFocus = Boolean(focused);
+    const focusEvents = ['focusin', 'pointerdown', 'keydown'];
+    const onFocusMove = event => {
+        if (event.type !== 'keydown' || event.key === 'Tab') restoreFocus = false;
+    };
+    if (focused) {
+        for (const type of focusEvents) document.addEventListener(type, onFocusMove, true);
+    }
     try {
         const response = await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'},
             body:JSON.stringify({reward_priority:order})});
@@ -2043,9 +2051,13 @@ async function saveRewardPriority(order) {
         error.textContent = state.translations.gui?.settings?.reward_priority_error || '';
         error.hidden = false;
     } finally {
+        if (focused) {
+            for (const type of focusEvents) document.removeEventListener(type, onFocusMove, true);
+        }
         rewardPrioritySaving = false;
         renderRewardPriority();
-        if (focused) document.getElementById(focused)?.focus();
+        const control = restoreFocus ? document.getElementById(focused) : null;
+        if (control && !control.disabled) control.focus();
     }
 }
 
