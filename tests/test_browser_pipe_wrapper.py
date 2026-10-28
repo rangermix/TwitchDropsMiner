@@ -66,6 +66,7 @@ async def test_partial_descriptor_duplication_failure_closes_all_owned_fds(tmp_p
     with pytest.raises(SessionError, match="BROWSER_START") as caught:
         async with OwnedChromium("not-launched").start():
             pytest.fail("descriptor allocation failure must not start a browser")
+    assert calls == failure
     assert "private" not in str(caught.value)
     assert set(os.listdir("/dev/fd")) == before
     assert not list(tmp_path.glob("tdm-renew-*"))
