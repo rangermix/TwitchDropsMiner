@@ -225,8 +225,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "Șterge tot cache-ul",
             "clear_all_cache_help": "Șterge starea locală a campaniilor, canalelor și datele derivate ale minerului; păstrează autentificarea și setările, apoi reîncarcă datele de pe Twitch.",
-            "mining_benefits": "Beneficii Minerit",
-            "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați.",
             "multiple_games_found": "Au fost găsite mai multe jocuri pentru căutarea dvs. Vă rugăm să fiți mai specific.",
             "manual_game_warning": "„{game}” nu se află în lista campaniilor disponibile. Îl adaugi totuși la jocurile de urmărit?",
             "deselect_all_warning": "Sunteți sigur că doriți să eliminați toate jocurile din lista dvs. de urmărire?",
@@ -274,7 +272,13 @@
                 "save_error": "Setările Discord nu au putut fi salvate.",
                 "save_settings": "Salvați setările",
                 "test_connection": "Testare Conexiune"
-            }
+            },
+            "reward_priority_title": "Tipuri de recompense",
+            "reward_priority_enable": "Preferă tipurile de recompense în această ordine",
+            "reward_priority_rank": "Poziția pentru {type}",
+            "reward_priority_not_mined": "Nu se minează",
+            "reward_priority_error": "Ordinea recompenselor nu a putut fi salvată. Încearcă din nou.",
+            "reward_priority_help": "Debifează un tip pentru a nu-l mai mina. Activează ordinea și trage rândurile pentru a prefera anumite tipuri; la egalitate, termenele mai apropiate au prioritate, iar jocurile selectate rămân înaintea jocurilor de rezervă. Recompensele de joc provin de la joc sau editor, insignele și emote-urile sunt recompense de chat Twitch, iar Altele este un tip pe care Twitch nu l-a identificat."
         },
         "help": {
             "about": "Despre Twitch Drops Miner",

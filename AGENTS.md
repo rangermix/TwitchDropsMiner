@@ -1075,3 +1075,37 @@ Tests cover persistence, filtering, Unicode exports, offsets, and translated UI 
   480 CSS pixels and below the same layout keeps the badge top-right with the arrow
   under it, using a 104px control column, smaller artwork, wrapping badges and names
   clamped to two lines.
+
+- Keep the public reward-type and ordering guide in `docs/usage.md#reward-types`,
+  within the existing eight-guide wiki publication surface.
+- `reward_priority` defaults to `[]` (disabled); enabled values must be an exact
+  permutation of BADGE, EMOTE, DIRECT_ENTITLEMENT, UNKNOWN. `RewardPriority` owns
+  normalization and shared type/deadline ranking. Preserve selected-game precedence
+  over fallback games and all campaign/drop eligibility and mining-benefit filters.
+  Saved game order is unchanged. Failed priority saves restore the prior policy and
+  do not request a selection refresh. SettingsManager validates reward priority before
+  any field changes and includes it in the full settings rollback snapshot.
+  Cover selection and persistence boundaries in
+  `test_reward_priority.py` and translated form behavior in its frontend companion.
+  The Settings UI is one **Reward types** list (`renderRewardPriority()`): each row
+  holds its `mining_benefits` checkbox (optimistic `state.settings` update; `saveSettings()`
+  sends that state, never DOM-derived defaults) and, when ordering is enabled, the
+  Mining-list drag handle plus a position number input as the keyboard/touch
+  alternative. Ordering and benefit changes autosave; there is no Save button. Unticked
+  types stay listed as not mined. Non-authoritative replies keep local
+  `mining_benefits`/`reward_priority`. Shared drag handlers only move rows within their
+  own list. Priority saves restore the replaced control's focus only if the user has
+  not navigated elsewhere while waiting; track focus, pointer and Tab events through
+  success and failure, remove listeners, and never focus a disabled rank input.
+  Give reward checkboxes stable IDs and preserve the currently focused list control
+  across synchronous re-renders, including a checkbox reached with Tab during a save.
+  Game priority inputs, remove buttons and available-game checkboxes also use stable
+  IDs so settings replies preserve the user's current game-list focus. Leave focus
+  outside the lists untouched.
+  Defer rank-change saves to the next task so a blur-triggered change cannot remove
+  the browser's pending Tab target before native focus navigation completes.
+
+- Reward ranking uses currently earnable drops, including prerequisite guards. Keep
+  game, nested campaign and drop queue order consistent with channel and active-campaign
+  selection; selected Special Events/IRL campaigns still outrank fallback campaigns
+  sharing their live channel. Upcoming/sequential queue entries remain visible.

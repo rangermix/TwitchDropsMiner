@@ -225,8 +225,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "Hapus Semua Cache",
             "clear_all_cache_help": "Menghapus status kampanye, channel, dan data turunan miner lokal; mempertahankan login dan pengaturan, lalu memuat ulang data dari Twitch.",
-            "mining_benefits": "Manfaat Penambangan",
-            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang.",
             "multiple_games_found": "Beberapa game ditemukan untuk pencarian Anda. Harap lebih spesifik.",
             "manual_game_warning": "\"{game}\" tidak ada dalam daftar kampanye yang tersedia. Tetap tambahkan ke game untuk ditonton?",
             "deselect_all_warning": "Apakah Anda yakin ingin menghapus semua game dari daftar pantauan Anda?",
@@ -274,7 +272,13 @@
                 "save_error": "Gagal menyimpan pengaturan Discord.",
                 "save_settings": "Simpan Pengaturan",
                 "test_connection": "Uji Koneksi"
-            }
+            },
+            "reward_priority_title": "Jenis hadiah",
+            "reward_priority_enable": "Utamakan jenis hadiah sesuai urutan ini",
+            "reward_priority_rank": "Posisi {type}",
+            "reward_priority_not_mined": "Tidak ditambang",
+            "reward_priority_error": "Gagal menyimpan urutan hadiah. Coba lagi.",
+            "reward_priority_help": "Hapus centang suatu jenis untuk berhenti menambangnya. Aktifkan urutan dan seret baris untuk mengutamakan jenis tertentu; jika setara, tenggat yang lebih awal didahulukan, dan game yang dipilih tetap di depan game cadangan. Hadiah game berasal dari game atau penerbit, lencana dan emote adalah hadiah chat Twitch, dan Lainnya adalah jenis yang tidak dikenali Twitch."
         },
         "help": {
             "about": "Tentang Twitch Drops Miner",

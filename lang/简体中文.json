@@ -225,8 +225,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "清除所有缓存",
             "clear_all_cache_help": "清除本地活动、频道和挖矿器派生状态；保留登录信息和设置，然后从 Twitch 重新加载。",
-            "mining_benefits": "挖掘奖励",
-            "mining_benefits_help": "选择您想要获取的掉落类型。",
             "multiple_games_found": "您的搜索找到了多个游戏。请更具体一些。",
             "manual_game_warning": "可用活动列表中没有“{game}”。仍要将其添加到挖掘列表列表吗？",
             "deselect_all_warning": "您确定要从观看列表中移除所有游戏吗？",
@@ -274,7 +272,13 @@
                 "save_error": "无法保存 Discord 设置。",
                 "save_settings": "保存设置",
                 "test_connection": "测试连接"
-            }
+            },
+            "reward_priority_title": "奖励类型",
+            "reward_priority_enable": "按此顺序优先奖励类型",
+            "reward_priority_rank": "{type}的位置",
+            "reward_priority_not_mined": "不挖取",
+            "reward_priority_error": "无法保存奖励顺序，请重试。",
+            "reward_priority_help": "取消勾选某个类型即可停止挖取它。开启排序并拖动各行可优先某些类型；相同时截止时间更早的优先，已选游戏仍排在备选游戏之前。游戏奖励来自游戏或发行商，徽章和表情是 Twitch 聊天奖励，“其他”是 Twitch 无法识别的类型。"
         },
         "help": {
             "about": "关于 Twitch 掉宝矿工",

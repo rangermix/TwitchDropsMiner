@@ -225,8 +225,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "清除所有快取",
             "clear_all_cache_help": "清除本機活動、頻道和挖礦器衍生狀態；保留登入資訊和設定，然後從 Twitch 重新載入。",
-            "mining_benefits": "挖掘獎勵",
-            "mining_benefits_help": "選擇您想要獲取的掉落類型。",
             "multiple_games_found": "您的搜尋找到了多個遊戲。請更具體一些。",
             "manual_game_warning": "可用活動清單中沒有「{game}」。仍要將其加入挖掘清單清單嗎？",
             "deselect_all_warning": "您確定要從觀看清單中移除所有遊戲嗎？",
@@ -274,7 +272,13 @@
                 "save_error": "無法儲存 Discord 設定。",
                 "save_settings": "儲存設定",
                 "test_connection": "測試連線"
-            }
+            },
+            "reward_priority_title": "獎勵類型",
+            "reward_priority_enable": "依此順序優先獎勵類型",
+            "reward_priority_rank": "{type}的位置",
+            "reward_priority_not_mined": "不挖取",
+            "reward_priority_error": "無法儲存獎勵順序，請再試一次。",
+            "reward_priority_help": "取消勾選某個類型即可停止挖取。開啟排序並拖曳各列可優先特定類型；相同時截止時間較早者優先，已選遊戲仍排在備用遊戲之前。遊戲獎勵來自遊戲或發行商，徽章和表情符號是 Twitch 聊天獎勵，「其他」是 Twitch 無法辨識的類型。"
         },
         "help": {
             "about": "關於 Twitch Drops Miner",

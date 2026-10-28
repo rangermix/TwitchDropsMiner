@@ -8,6 +8,7 @@ from typing import Any, Literal, TypedDict, cast
 from yarl import URL
 
 from src.config import DEFAULT_LANG, SETTINGS_PATH
+from src.config.reward_priority import RewardPriority
 from src.utils import DropIgnorePolicy, json_load, json_save, merge_json
 
 
@@ -33,6 +34,7 @@ default_settings = {
     "games_to_watch": [],
     "language": DEFAULT_LANG,
     "priority_list_only": True,
+    "reward_priority": [],
     "inventory_filters": {
         "game_name_search": [],
         "show_active": False,
@@ -124,6 +126,7 @@ class Settings:
     drop_name_blacklist: list[str]
     games_to_watch: list[str]
     language: str
+    reward_priority: list[str]
     priority_list_only: bool
     inventory_filters: InventoryFilters
     inventory_list_view: bool
@@ -147,6 +150,7 @@ class Settings:
         )
         if "mining_hours" in settings:
             settings["mining_hours"] = MiningHoursSettings.normalize(settings["mining_hours"])
+        settings["reward_priority"] = RewardPriority.normalize(settings.get("reward_priority", []))
         merge_json(settings, default_settings)
         settings.pop("allow_helper_connection", None)
         for key, value in settings.items():
@@ -159,6 +163,7 @@ class Settings:
         )
 
     def save(self) -> None:
+        self.reward_priority = RewardPriority.normalize(self.reward_priority)
         self.mining_hours = MiningHoursSettings.normalize(self.mining_hours)
         self.drop_name_blacklist = DropIgnorePolicy.normalize_keywords(
             self.drop_name_blacklist

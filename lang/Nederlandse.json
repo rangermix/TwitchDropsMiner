@@ -225,8 +225,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "Volledige cache wissen",
             "clear_all_cache_help": "Wist de lokale campagne-, kanaal- en afgeleide minerstatus; behoudt je aanmelding en instellingen en laadt daarna opnieuw vanaf Twitch.",
-            "mining_benefits": "Mining Voordelen",
-            "mining_benefits_help": "Selecteer welke soorten drops je wilt minen.",
             "multiple_games_found": "Meerdere spellen gevonden voor je zoekopdracht. Wees alsjeblieft specifieker.",
             "manual_game_warning": "\"{game}\" staat niet in de lijst met beschikbare campagnes. Toch toevoegen aan de te bekijken spellen?",
             "deselect_all_warning": "Weet je zeker dat je alle spellen uit je volglijst wilt verwijderen?",
@@ -274,7 +272,13 @@
                 "save_error": "Discord-instellingen konden niet worden opgeslagen.",
                 "save_settings": "Instellingen opslaan",
                 "test_connection": "Verbinding testen"
-            }
+            },
+            "reward_priority_title": "Beloningstypen",
+            "reward_priority_enable": "Beloningstypen in deze volgorde verkiezen",
+            "reward_priority_rank": "Positie van {type}",
+            "reward_priority_not_mined": "Wordt niet gemined",
+            "reward_priority_error": "De beloningsvolgorde kon niet worden opgeslagen. Probeer het opnieuw.",
+            "reward_priority_help": "Vink een type uit om het niet meer te minen. Zet de volgorde aan en sleep de rijen om bepaalde typen te verkiezen; bij gelijkspel gaan eerdere deadlines voor, en geselecteerde games blijven vóór reservegames. Gamebeloningen komen van de game of uitgever, badges en emotes zijn Twitch-chatbeloningen, en Overig is een type dat Twitch niet herkende."
         },
         "help": {
             "about": "Over Twitch Drops Miner",

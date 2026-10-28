@@ -54,9 +54,29 @@ Fallback games with campaigns ending soonest are preferred. Account linking, rew
 types, ignored names, mining hours and other eligibility rules still apply. Manual
 channel selection retains its existing behavior.
 
-**Mining Benefits** controls which reward types the miner targets: items, badges,
-emotes, and other rewards. These choices are separate from the display filters on
-the Inventory tab.
+## Reward types
+
+**Settings → Reward types** lists the four reward types. Untick a type to stop mining
+it. These mining choices are separate from the Inventory tab's display filters.
+
+Ordering is optional and disabled by default. Enable **Prefer reward types in this
+order**, then drag the rows or enter a position number, as in the Mining list. Changes
+save immediately. Higher rows come first among currently earnable rewards; a reward
+locked behind prerequisites does not yet receive its preferred type rank. Within the
+same type, earlier reward deadlines come first, followed by the existing game order.
+Selected games always take precedence over additional fallback games. The queue uses
+the same order while keeping upcoming and sequential rewards visible. This does not
+reorder your saved game list.
+
+An unticked type stays in the list, marked as not mined. Ordering does not re-enable
+a disabled type or bypass account linking, campaign times, prerequisites, ignored
+rewards or participating-channel requirements. Twitch may progress multiple rewards
+simultaneously; this setting selects the preferred channel and campaign.
+
+- **Game reward:** game or publisher rewards (Twitch calls these `DIRECT_ENTITLEMENT`).
+- **Chat badge:** badges for Twitch chat.
+- **Chat emote:** emotes for Twitch chat.
+- **Other reward:** a type reported by Twitch that this version does not recognize.
 
 ## Channels and manual selection
 
