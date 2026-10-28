@@ -992,6 +992,8 @@ Tests cover persistence, filtering, Unicode exports, offsets, and translated UI 
   Game priority inputs, remove buttons and available-game checkboxes also use stable
   IDs so settings replies preserve the user's current game-list focus. Leave focus
   outside the lists untouched.
+  Defer rank-change saves to the next task so a blur-triggered change cannot remove
+  the browser's pending Tab target before native focus navigation completes.
 
 - Reward ranking uses currently earnable drops, including prerequisite guards. Keep
   game, nested campaign and drop queue order consistent with channel and active-campaign

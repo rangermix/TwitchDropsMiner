@@ -182,6 +182,30 @@ assert.ok(document.activeElement===elsewhere,'Renders must not move focus from o
 
 @pytest.mark.skipif(NODE is None, reason='Node required')
 @pytest.mark.parametrize('success', [True, False])
+def test_rank_change_leaves_native_tab_target_until_focus_navigation_completes(success):
+    run_rewards(f'const success={json.dumps(success)};\n' + r"""
+state.settings.reward_priority=[...rewardTypes];renderRewardPriority();
+const rank=document.getElementById('reward-rank-BADGE');rank.focus();rank.value='2';
+const checkbox=document.getElementById('reward-mined-BADGE');
+const actualSave=saveRewardPriority;let saving,finish;
+saveRewardPriority=order=>{saving=actualSave(order);return saving;};
+fetch=()=>new Promise(resolve=>{finish=()=>resolve({ok:success,
+ json:async()=>({success:true,settings:{reward_priority:['EMOTE','BADGE','DIRECT_ENTITLEMENT','UNKNOWN']}})});});
+rank.events.change();
+assert.equal(saving,undefined,'A blur-triggered change must finish native focus navigation before saving');
+assert.ok(document.getElementById('reward-mined-BADGE')===checkbox,'The pending Tab target must remain connected');
+checkbox.focus(); // Browser default Tab navigation follows the change handler.
+await new Promise(resolve=>setTimeout(resolve));
+assert.ok(saving,'Save starts in the following task');
+assert.ok(document.activeElement===document.getElementById('reward-mined-BADGE'));
+finish();await saving;
+assert.ok(document.activeElement===document.getElementById('reward-mined-BADGE'));
+assert.equal(document.getElementById('reward-priority-error').hidden,success);
+""")
+
+
+@pytest.mark.skipif(NODE is None, reason='Node required')
+@pytest.mark.parametrize('success', [True, False])
 @pytest.mark.parametrize('control', ['priority', 'remove', 'available'])
 def test_delayed_reward_save_keeps_focus_in_the_game_list(success, control):
     actual_dom = REWARD_DOM.replace(
