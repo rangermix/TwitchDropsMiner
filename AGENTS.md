@@ -29,6 +29,13 @@ It is the repository's contribution policy, not optional background reading.
   information. Post this update for every outcome, including resolved, closed,
   no change needed, blocked, or more information needed, even when no code changed
   or the issue or PR remains open.
+- Visual dashboard changes require current screenshots in the PR description, with
+  personal information hidden as described in CONTRIBUTING.md. Prefer rendering them
+  from mock or sample data; never use screenshots of a real account without masking.
+  "Before" images come from the base branch without any PR change. If you cannot attach
+  images, host already-redacted images on a separate screenshots-only branch of your
+  fork (never the topic branch; pushed images cannot be reliably removed), or state that
+  screenshots are pending, keep the PR in draft and ask the user to attach them.
 
 ## Development Guidelines
 
