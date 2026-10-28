@@ -39,8 +39,10 @@ def public_client(tmp_path, monkeypatch):
     monkeypatch.setattr(web, "twitch_client", None)
 
     @contextmanager
-    def create(url=PUBLIC, base_url="http://backend:8080", origin=PUBLIC, trusted_hosts="127.0.0.1"):
-        monkeypatch.setattr(auth, "origin", DashboardOrigin(url))
+    def create(url=PUBLIC, base_url="http://backend:8080", origin=PUBLIC, trusted_hosts="127.0.0.1",
+               allowed_hosts="drops.example.com"):
+        # Without PUBLIC_BASE_URL, a public proxy host name must be listed in ALLOWED_HOSTS.
+        monkeypatch.setattr(auth, "origin", DashboardOrigin(url, allowed_hosts))
         proxy = ProxyHeadersMiddleware(web.socket_app, trusted_hosts=trusted_hosts)
         with TestClient(proxy, base_url=base_url, client=("172.19.0.9", 1234),
                         headers={"Origin": origin, "X-TDM-Request": "1"}) as browser:

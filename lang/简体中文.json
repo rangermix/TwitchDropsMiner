@@ -237,6 +237,7 @@
             "mining_hours_start": "开始",
             "mining_hours_end": "结束",
             "mining_hours_save_error": "无法保存运行时段，请重试。",
+            "proxy_save_error": "无法保存代理。请重新输入密码后重试。",
             "discord": {
                 "name": "Discord 通知",
                 "description": "领取掉落物时在 Discord 上接收通知。",

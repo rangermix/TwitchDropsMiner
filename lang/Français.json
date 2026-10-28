@@ -237,6 +237,7 @@
             "mining_hours_start": "Début",
             "mining_hours_end": "Fin",
             "mining_hours_save_error": "Impossible d’enregistrer les horaires. Réessayez.",
+            "proxy_save_error": "Impossible d’enregistrer le proxy. Saisissez à nouveau son mot de passe et réessayez.",
             "discord": {
                 "name": "Notifications Discord",
                 "description": "Recevez des notifications sur Discord lorsque vous réclamez des drops.",

@@ -202,6 +202,7 @@
             "mining_hours_start": "Start",
             "mining_hours_end": "End",
             "mining_hours_save_error": "Could not save mining hours. Please try again.",
+            "proxy_save_error": "Could not save the proxy. Re-enter its password and try again.",
             "discord": {
                 "name": "Discord Notifications",
                 "description": "Receive notifications on Discord when you claim drops.",

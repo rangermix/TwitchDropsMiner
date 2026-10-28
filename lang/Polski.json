@@ -237,6 +237,7 @@
             "mining_hours_start": "Początek",
             "mining_hours_end": "Koniec",
             "mining_hours_save_error": "Nie udało się zapisać godzin. Spróbuj ponownie.",
+            "proxy_save_error": "Nie udało się zapisać proxy. Wprowadź ponownie hasło i spróbuj jeszcze raz.",
             "discord": {
                 "name": "Powiadomienia Discord",
                 "description": "Otrzymuj powiadomienia na Discordzie, gdy odbierzesz dropy.",

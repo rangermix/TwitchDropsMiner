@@ -99,7 +99,8 @@ docker compose pull && docker compose up -d
 ```
 
 For either setup, open <http://localhost:8080>, or `http://YOUR-SERVER:8080` from
-another device on your home network. Keep the `data` directory when updating.
+another device on your home network. Host names not covered by the
+[allowed host names](docs/dashboard-access.md#allowed-host-names) need `ALLOWED_HOSTS`. Keep the `data` directory when updating.
 For Compose management, source builds, and switching an existing installation to
 Compose, see the [installation guide](docs/installation.md#docker-compose).
 For source security rebuilds with refreshed base images and packages, see the

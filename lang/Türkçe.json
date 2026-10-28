@@ -237,6 +237,7 @@
             "mining_hours_start": "Başlangıç",
             "mining_hours_end": "Bitiş",
             "mining_hours_save_error": "Madencilik saatleri kaydedilemedi. Tekrar deneyin.",
+            "proxy_save_error": "Proxy kaydedilemedi. Parolasını yeniden girip tekrar deneyin.",
             "discord": {
                 "name": "Discord Bildirimleri",
                 "description": "Drop talep ettiğinde Discord'da bildirim al.",

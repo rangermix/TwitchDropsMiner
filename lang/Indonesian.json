@@ -237,6 +237,7 @@
             "mining_hours_start": "Mulai",
             "mining_hours_end": "Selesai",
             "mining_hours_save_error": "Gagal menyimpan jam mining. Coba lagi.",
+            "proxy_save_error": "Proxy tidak dapat disimpan. Masukkan ulang kata sandinya, lalu coba lagi.",
             "discord": {
                 "name": "Notifikasi Discord",
                 "description": "Terima notifikasi di Discord saat kamu mengklaim drop.",

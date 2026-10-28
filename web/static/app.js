@@ -2006,7 +2006,6 @@ async function saveSettings() {
         language: document.getElementById('language').value,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
-        proxy: state.settings.proxy || '',
         games_to_watch: state.settings.games_to_watch || [],
         drop_name_blacklist: parseDropNameBlacklist(
             document.getElementById('drop-name-blacklist')?.value
@@ -2029,6 +2028,37 @@ async function saveSettings() {
         console.log('Settings saved automatically');
     } catch (error) {
         console.error('Failed to save settings:', error);
+    }
+}
+
+/* The proxy saves alone: a rejected value must not block or partially apply autosaves. */
+async function saveProxy() {
+    const button = document.getElementById('set-proxy-btn');
+    const proxyInput = document.getElementById('proxy-url');
+    const resultDiv = document.getElementById('proxy-verify-result');
+    const newValue = proxyInput ? proxyInput.value.trim() : '';
+    if (button.disabled || newValue === (state.settings.proxy || '')) return;
+    const message = state.translations.gui?.settings?.proxy_save_error ||
+        'Could not save the proxy. Re-enter its password and try again.';
+    button.disabled = true;
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ proxy: newValue })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.success !== true) throw new Error('proxy_save_failed');
+        state.settings.proxy = data.settings?.proxy ?? newValue;
+        if (proxyInput) proxyInput.value = state.settings.proxy;
+        resultDiv.style.display = 'none';
+    } catch (error) {
+        if (proxyInput) proxyInput.value = state.settings.proxy || '';
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = message;
+        resultDiv.style.display = 'block';
+    } finally {
+        button.disabled = false;
     }
 }
 
@@ -2671,16 +2701,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('drop-name-blacklist').addEventListener('change', saveSettings);
     document.getElementById('allow-unlinked-campaigns').addEventListener('change', onUnlinkedMiningChange);
     // Proxy uses a manual "Set Proxy" button instead of auto-save
-    document.getElementById('set-proxy-btn').addEventListener('click', () => {
-        const proxyInput = document.getElementById('proxy-url');
-        const newValue = proxyInput ? proxyInput.value : '';
-
-        // Only save if changed
-        if (newValue !== (state.settings.proxy || '')) {
-            state.settings.proxy = newValue;
-            saveSettings();
-        }
-    });
+    document.getElementById('set-proxy-btn').addEventListener('click', saveProxy);
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
     document.getElementById('test-discord-btn').addEventListener('click', () => updateDiscordSettings('test'));
     document.getElementById('save-discord-btn').addEventListener('click', () => updateDiscordSettings('save'));

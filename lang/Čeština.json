@@ -237,6 +237,7 @@
             "mining_hours_start": "Začátek",
             "mining_hours_end": "Konec",
             "mining_hours_save_error": "Čas těžby se nepodařilo uložit. Zkuste to znovu.",
+            "proxy_save_error": "Proxy se nepodařilo uložit. Zadejte znovu heslo a zkuste to znovu.",
             "discord": {
                 "name": "Notifikace Discord",
                 "description": "Dostávejte upozornění na Discordu, když obdržíte dropy.",
