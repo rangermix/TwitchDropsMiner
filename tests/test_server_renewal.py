@@ -7,6 +7,7 @@ import time
 import os
 import shutil
 import signal
+import subprocess
 import sys
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
@@ -534,10 +535,23 @@ CHROMIUM = next(filter(None, map(shutil.which, ("chromium", "chromium-browser", 
 # first launch on a fresh CI runner can exceed the production startup timeout.
 
 
+@pytest.fixture(scope="module")
+def warm_chromium(tmp_path_factory):
+    """Absorb a fresh runner's slow first Xvfb/Chromium start before the timed tests."""
+    profile = tmp_path_factory.mktemp("warm-chromium")
+    command = [CHROMIUM, "--headless=new", "--no-sandbox", f"--user-data-dir={profile}",
+               "--no-first-run", "--dump-dom", "about:blank"]
+    if runner := shutil.which("xvfb-run"):
+        command = [runner, "-a", *command]
+    # Only a warm-up: the tests themselves still fail if the owned browser cannot start.
+    with suppress(OSError, subprocess.TimeoutExpired):
+        subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=180)
+
+
 @pytest.mark.asyncio
 @pytest.mark.skipif(CHROMIUM is None or not os.path.exists("/proc/net/tcp"),
                     reason="requires Linux and a local Chromium")
-async def test_real_owned_chromium_opens_no_tcp_listener(monkeypatch):
+async def test_real_owned_chromium_opens_no_tcp_listener(monkeypatch, warm_chromium):
     from src.auth.server_renewal import OwnedChromium
 
     processes = []
@@ -570,7 +584,7 @@ async def test_real_owned_chromium_opens_no_tcp_listener(monkeypatch):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(CHROMIUM is None or os.name != "posix", reason="requires POSIX and a local Chromium")
-async def test_real_chromium_closed_target_fails_page_commands_fast():
+async def test_real_chromium_closed_target_fails_page_commands_fast(warm_chromium):
     from src.auth.server_renewal import OwnedChromium
 
     async with OwnedChromium(CHROMIUM, no_sandbox=True, startup_timeout=60).start() as browser, browser.target() as page:
