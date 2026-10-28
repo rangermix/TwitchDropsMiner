@@ -12,7 +12,7 @@ from src.config.settings import InventoryFilterSettings, MiningHoursSettings
 from src.i18n.translator import _
 from src.models.game import Game
 from src.services.discord_service import DiscordNotifier
-from src.utils import DropIgnorePolicy
+from src.utils import PASSWORD_MASK, DropIgnorePolicy, mask_url_password
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -78,6 +78,7 @@ class SettingsManager:
         configured_token = bool(settings.get("telegram_bot_token"))
         settings["telegram_configured"] = configured_token
         settings["telegram_bot_token"] = TELEGRAM_TOKEN_MASK if configured_token else ""
+        settings["proxy"] = mask_url_password(settings.get("proxy") or "")
         # TODO(remove in 1.3.x): Retain this POST-only echo long enough for stale
         # pre-versioned frontends to age out; it never survives a page reload.
         if legacy_show_not_linked is not None:
@@ -85,6 +86,19 @@ class SettingsManager:
             inventory_filters["show_not_linked"] = legacy_show_not_linked
             settings["inventory_filters"] = inventory_filters
         return settings
+
+    def resolve_proxy(self, submitted: str) -> str:
+        """Return the stored proxy when a client submits its masked form unchanged.
+
+        An edited URL that still carries the mask must not reuse the stored password,
+        which could then reach another host, nor save the mask itself as a password.
+        """
+        stored = getattr(self._settings, "proxy", "") or ""
+        if stored and submitted == mask_url_password(stored):
+            return stored
+        if PASSWORD_MASK in submitted:
+            raise ValueError("proxy_password_required")
+        return submitted
 
     def get_languages(self) -> dict[str, Any]:
         """Get available languages and current selection.
@@ -130,6 +144,11 @@ class SettingsManager:
                 if not DiscordNotifier.is_valid_webhook(requested_webhook):
                     raise ValueError("invalid_discord_webhook")
                 new_webhook = requested_webhook
+        # Validate before mutating anything, so a rejected proxy leaves no partial update.
+        new_proxy = None
+        if "proxy" in settings_data:
+            proxy_value = settings_data["proxy"]
+            new_proxy = self.resolve_proxy(str(proxy_value).strip()) if proxy_value else ""
 
         should_trigger_update = False
         previous_allow_unlinked = getattr(self._settings, "allow_unlinked_campaigns", False)
@@ -158,13 +177,13 @@ class SettingsManager:
         should_trigger_update |= self.check_and_update_setting(
             "connection_quality", settings_data.get("connection_quality")
         )
-        if "proxy" in settings_data:
-            proxy_value = settings_data["proxy"]
+        if new_proxy is not None:
             should_trigger_update |= self.check_and_update_setting(
                 "proxy",
-                str(proxy_value).strip() if proxy_value else "",
+                new_proxy,
                 True,
                 lambda proxy: self._log_change("Proxy cleared") if proxy == "" else None,
+                mask_url_password,
             )
         should_trigger_update |= self.check_and_update_setting(
             "minimum_refresh_interval_minutes",

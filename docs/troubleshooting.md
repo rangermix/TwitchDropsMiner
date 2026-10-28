@@ -177,6 +177,13 @@ preserves confirmed bans when a subsequent check fails, until expiry or a confir
 no-ban response. This does not override campaign eligibility or establish that Twitch
 will award progress.
 
+## The dashboard shows `invalid_host`
+
+The browser address uses a host name the dashboard does not trust. Use the miner's
+IP address, set `PUBLIC_BASE_URL` for a reverse proxy, or add the name to
+`ALLOWED_HOSTS`. If your proxy sends its own upstream name as the Host header, add that
+name too. See [allowed host names](dashboard-access.md#allowed-host-names).
+
 ## Dashboard writes or live updates fail behind a proxy
 
 A page loading successfully does not mean its live connection or settings writes use

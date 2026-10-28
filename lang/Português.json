@@ -242,6 +242,7 @@
             "mining_hours_start": "Início",
             "mining_hours_end": "Fim",
             "mining_hours_save_error": "Não foi possível guardar o horário. Tente novamente.",
+            "proxy_save_error": "Não foi possível salvar o proxy. Digite a senha novamente e tente outra vez.",
             "discord": {
                 "name": "Notificações do Discord",
                 "description": "Receba notificações no Discord quando reclamar drops.",

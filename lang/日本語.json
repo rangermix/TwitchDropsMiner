@@ -242,6 +242,7 @@
             "mining_hours_start": "開始",
             "mining_hours_end": "終了",
             "mining_hours_save_error": "稼働時間を保存できませんでした。もう一度お試しください。",
+            "proxy_save_error": "プロキシを保存できませんでした。パスワードを再入力して、もう一度お試しください。",
             "discord": {
                 "name": "Discord通知",
                 "description": "ドロップを受け取るとDiscordに通知が届きます。",

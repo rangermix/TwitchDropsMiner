@@ -242,6 +242,7 @@
             "mining_hours_start": "Start",
             "mining_hours_end": "Ende",
             "mining_hours_save_error": "Mining-Zeiten konnten nicht gespeichert werden. Bitte erneut versuchen.",
+            "proxy_save_error": "Der Proxy konnte nicht gespeichert werden. Gib das Passwort erneut ein und versuche es noch einmal.",
             "discord": {
                 "name": "Discord-Benachrichtigungen",
                 "description": "Erhalte Benachrichtigungen auf Discord, wenn du Drops einlöst.",
