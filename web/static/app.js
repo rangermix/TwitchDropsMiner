@@ -1364,6 +1364,7 @@ socket.on('games_available', (data) => {
 });
 
 function renderGamesToWatch() {
+    const focused = document.activeElement?.id;
     const selectedGames = state.settings.games_to_watch || [];
     const filterText = document.getElementById('games-filter')?.value.toLowerCase() || '';
 
@@ -1377,6 +1378,8 @@ function renderGamesToWatch() {
         .sort();
 
     renderAvailableGames(unselectedGames, filterText);
+    const control = focused && document.activeElement?.id !== focused ? document.getElementById(focused) : null;
+    if (control && !control.disabled) control.focus();
 }
 
 function renderSelectedGames(games) {
@@ -1399,6 +1402,7 @@ function renderSelectedGames(games) {
         div.dataset.game = game;
         const priorityInput = makeElement('input', {
             type: 'number',
+            id: `game-priority-${encodeURIComponent(game)}`,
             class: 'priority-input',
             value: String(index + 1),
             min: '1',
@@ -1412,6 +1416,7 @@ function renderSelectedGames(games) {
             makeElement('span', { class: 'game-name' }, game),
             makeElement('button', {
                 class: 'remove-btn',
+                id: `game-remove-${encodeURIComponent(game)}`,
                 title: (t.gui?.settings?.remove_game || 'Remove {game}').replace('{game}', game),
                 'aria-label': (t.gui?.settings?.remove_game || 'Remove {game}').replace('{game}', game)
             }, '✕')
@@ -1464,7 +1469,7 @@ function renderAvailableGames(games, filterText) {
         const label = document.createElement('label');
         label.className = 'game-checkbox';
         label.replaceChildren(
-            makeElement('input', { type: 'checkbox', value: game }),
+            makeElement('input', { type: 'checkbox', value: game, id: `game-available-${encodeURIComponent(game)}` }),
             makeElement('span', {}, game),
         );
 
@@ -1972,6 +1977,8 @@ function renderRewardPriority(order = state.settings.reward_priority || []) {
         document.getElementById(id).textContent = t[key] || '';
     const benefits = state.settings.mining_benefits || {};
     const list = document.getElementById('reward-priority-order');
+    const focused = document.activeElement?.closest('.reward-type-row')?.parentNode === list
+        ? document.activeElement.id : null;
     list.classList.toggle('ordered', enabled.checked);
     list.replaceChildren();
     for (const [index, type] of (order.length ? order : rewardTypes).entries()) {
@@ -1993,7 +2000,7 @@ function renderRewardPriority(order = state.settings.reward_priority || []) {
             next.splice(Math.max(0, Math.min(position - 1, next.length)), 0, type);
             saveRewardPriority(next);
         });
-        const checkbox = makeElement('input', { type: 'checkbox' });
+        const checkbox = makeElement('input', { type: 'checkbox', id: `reward-mined-${type}` });
         checkbox.checked = benefits[type] === true;
         checkbox.disabled = !state.settings.mining_benefits; // A save before load would store a partial set
         const status = makeElement('span', { class: 'reward-type-excluded' },
@@ -2020,6 +2027,8 @@ function renderRewardPriority(order = state.settings.reward_priority || []) {
         });
         list.appendChild(row);
     }
+    const control = focused ? document.getElementById(focused) : null;
+    if (control && !control.disabled) control.focus();
 }
 async function saveRewardPriority(order) {
     if (rewardPrioritySaving) return;
