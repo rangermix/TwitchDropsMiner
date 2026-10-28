@@ -6,7 +6,7 @@ from collections import OrderedDict, abc, deque
 from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timedelta, timezone
 from functools import partial
-from time import time
+from time import monotonic, time
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 import aiohttp
@@ -64,9 +64,10 @@ gql_logger = logging.getLogger("TwitchDrops.gql")
 class Twitch:
     # User pause from the dashboard; runtime only, so a restart resumes mining.
     _paused: bool = False
-    # Aware (UTC) instant at which a timed pause ends, so DST and clock steps
-    # don't stretch it; None pauses until resumed.
+    # Calendar pauses use a UTC instant; fixed durations use elapsed time.
     _resume_at: datetime | None = None
+    _pause_deadline: float | None = None
+    _pause_revision: int = 0
     PAUSE_DURATIONS: Final[dict[str, timedelta]] = {
         "10m": timedelta(minutes=10),
         "1h": timedelta(hours=1),
@@ -378,8 +379,24 @@ class Twitch:
 
     def pause_info(self) -> dict[str, Any]:
         """Pause state for the dashboard; resume_at is an ISO time with offset."""
-        resume_at = self._resume_at.astimezone().isoformat() if self._resume_at else None
-        return {"paused": self._paused, "resume_at": resume_at}
+        resume_time = self._pause_resume_time()
+        resume_at = resume_time.astimezone().isoformat() if resume_time else None
+        return {"paused": self._paused, "resume_at": resume_at, "revision": self._pause_revision}
+
+    def _pause_seconds_remaining(self) -> float | None:
+        if not self._paused:
+            return None
+        if self._pause_deadline is not None:
+            return self._pause_deadline - monotonic()
+        if self._resume_at is not None:
+            return (self._resume_at - datetime.now(timezone.utc)).total_seconds()
+        return None
+
+    def _pause_resume_time(self) -> datetime | None:
+        if self._pause_deadline is not None:
+            remaining = self._pause_seconds_remaining()
+            return datetime.now(timezone.utc) + timedelta(seconds=max(0.0, remaining or 0.0))
+        return self._resume_at
 
     def set_paused(self, paused: bool, duration: str | None = None) -> None:
         """Pause for a duration ("10m", "1h", "tomorrow" = next local midnight) or until resumed.
@@ -387,20 +404,24 @@ class Twitch:
         The schedule loop stops or restarts watching and ends timed pauses.
         """
         resume_at: datetime | None = None
+        deadline: float | None = None
         if paused and duration == "tomorrow":
             midnight = datetime.combine(datetime.now().date() + timedelta(days=1), datetime.min.time())
             resume_at = midnight.astimezone(timezone.utc)
         elif paused and duration is not None:
-            resume_at = datetime.now(timezone.utc) + self.PAUSE_DURATIONS[duration]
-        if paused == self._paused and resume_at == self._resume_at:
+            interval = self.PAUSE_DURATIONS[duration]
+            resume_at = datetime.now(timezone.utc) + interval
+            deadline = monotonic() + interval.total_seconds()
+        if paused == self._paused and resume_at == self._resume_at and deadline == self._pause_deadline:
             return
-        self._paused, self._resume_at = paused, resume_at
+        self._paused, self._resume_at, self._pause_deadline = paused, resume_at, deadline
+        self._pause_revision += 1
         if not paused:
-            self.print("Mining resumed")
+            self.print(_.t["status"]["mining_resumed"])
         elif resume_at is None:
-            self.print("Mining paused")
+            self.print(_.t["gui"]["status"]["paused"])
         else:
-            self.print(f"Mining paused until {resume_at.astimezone():%Y-%m-%d %H:%M}")
+            self.print(_.t["gui"]["status"]["paused_until"].format(time=f"{resume_at.astimezone():%Y-%m-%d %H:%M}"))
         self._schedule_changed.set()
         self.gui.broadcast_paused(self.pause_info())
 
@@ -409,9 +430,10 @@ class Twitch:
         status = _.t["gui"]["status"]
         if not self._paused:
             return status["outside_hours"]
-        if self._resume_at is None:
+        resume_at = self._pause_resume_time()
+        if resume_at is None:
             return status["paused"]
-        return status["paused_until"].format(time=f"{self._resume_at.astimezone():%H:%M}")
+        return status["paused_until"].format(time=f"{resume_at.astimezone():%H:%M}")
 
     async def _stop_mining_schedule(self) -> None:
         task, self._schedule_task = self._schedule_task, None
@@ -423,7 +445,8 @@ class Twitch:
         """Enforce both boundaries, and recompute immediately after policy edits."""
         was_open = self.is_mining_time()
         while self._state is not State.EXIT:
-            if self._resume_at is not None and datetime.now(timezone.utc) >= self._resume_at:
+            pause_remaining = self._pause_seconds_remaining()
+            if pause_remaining is not None and pause_remaining <= 0:
                 self.set_paused(False)
             self._schedule_changed.clear()
             is_open = self.is_mining_time()
@@ -448,8 +471,9 @@ class Twitch:
             delay = 60.0
             if isinstance(hours, dict) and hours.get("mode") == "range":
                 _in_window, delay = window_status(hours.get("start", ""), hours.get("end", ""), datetime.now())
-            if self._resume_at is not None:
-                delay = min(delay, (self._resume_at - datetime.now(timezone.utc)).total_seconds())
+            pause_remaining = self._pause_seconds_remaining()
+            if pause_remaining is not None:
+                delay = min(delay, pause_remaining)
             # Bound wall-clock/DST resampling; monotonic multi-hour sleeps go stale.
             with suppress(TimeoutError):
                 await asyncio.wait_for(self._schedule_changed.wait(), timeout=max(0.01, min(delay, 60)))

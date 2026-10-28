@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\n应用程序已终止，请关闭窗口以退出应用程序.",
         "watching": "正在观看: {channel}",
+        "mining_resumed": "已恢复挖矿",
         "goes_online": "{channel} 该频道已上线, 正在切换...",
         "goes_offline": "{channel} 该频道已离线, 正在切换...",
         "claimed_drop": "已领取掉宝: {drop}",
@@ -79,6 +80,7 @@
             "pause_1h": "1 小时",
             "pause_tomorrow": "直到明天",
             "pause_indefinite": "直到我继续",
+            "pause_error": "无法更改暂停状态，请重试。",
             "outside_hours": "非开采时段"
         },
         "tabs": {

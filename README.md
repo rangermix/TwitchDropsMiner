@@ -29,7 +29,9 @@ services operated for other users are outside its support scope.
 - Manage everything from a web dashboard with optional password protection.
 - Set daily [mining hours](docs/usage.md#mining-hours) in the miner’s local timezone.
 - [Pause mining](docs/usage.md#pause-mining) for 10 minutes, an hour, until tomorrow,
-  or until you resume, for example while you watch Twitch yourself.
+  or until you resume, for example while you watch Twitch yourself. Fixed durations
+  use elapsed time; tomorrow means the miner's next local midnight. Restarting TDM
+  clears the pause, and already-earned rewards can still be claimed while paused.
 
 Invalid settings or a failed save keep your previous settings unchanged.
 

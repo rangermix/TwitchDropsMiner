@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nAplicația a fost oprită.\nVă rugăm să închideți aplicația.",
         "watching": "Se vizionează : {channel}",
+        "mining_resumed": "Colectarea a fost reluată",
         "goes_online": "{channel} intră ONLINE, se schimbă...",
         "goes_offline": "{channel} intră OFFLINE, se schimbă...",
         "claimed_drop": "Drop-ul a fost recuperat : {drop}",
@@ -79,6 +80,7 @@
             "pause_1h": "Timp de 1 oră",
             "pause_tomorrow": "Până mâine",
             "pause_indefinite": "Până reiau",
+            "pause_error": "Nu s-a putut schimba starea pauzei. Încearcă din nou.",
             "outside_hours": "În afara orelor de minerit"
         },
         "tabs": {

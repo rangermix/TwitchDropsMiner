@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nProgram Afsluttet.\nLuk vinduet for at afslutte programmet.",
         "watching": "Ser på: {channel}",
+        "mining_resumed": "Mining genoptaget",
         "goes_online": "{channel} går ONLINE, skifter...",
         "goes_offline": "{channel} går OFFLINE, skifter...",
         "claimed_drop": "Hentet belønning: {drop}",
@@ -79,6 +80,7 @@
             "pause_1h": "I 1 time",
             "pause_tomorrow": "Indtil i morgen",
             "pause_indefinite": "Indtil jeg genoptager",
+            "pause_error": "Pausetilstanden kunne ikke ændres. Prøv igen.",
             "outside_hours": "Uden for minedriftstid"
         },
         "tabs": {

@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nLa aplicación se ha detenido.\nPor favor, cierre la aplicación.",
         "watching": "Mirando el canal: {channel}",
+        "mining_resumed": "Recolección reanudada",
         "goes_online": "El canal {channel} se ha conectado, cambiando...",
         "goes_offline": "El canal {channel} se ha desconectado, cambiando...",
         "claimed_drop": "Drop reclamado: {drop}",
@@ -79,6 +80,7 @@
             "pause_1h": "Durante 1 hora",
             "pause_tomorrow": "Hasta mañana",
             "pause_indefinite": "Hasta que reanude",
+            "pause_error": "No se pudo cambiar el estado de pausa. Inténtalo de nuevo.",
             "outside_hours": "Fuera del horario de minería"
         },
         "tabs": {

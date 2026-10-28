@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nApplication Terminated.\nClose the window to exit the application.",
         "watching": "Watching: {channel}",
+        "mining_resumed": "Mining resumed",
         "goes_online": "{channel} goes ONLINE, switching...",
         "goes_offline": "{channel} goes OFFLINE, switching...",
         "claimed_drop": "Claimed drop: {drop}",
@@ -79,6 +80,7 @@
             "pause_1h": "For 1 hour",
             "pause_tomorrow": "Until tomorrow",
             "pause_indefinite": "Until I resume",
+            "pause_error": "Failed to change pause state. Please try again.",
             "outside_hours": "Outside mining hours"
         },
         "tabs": {

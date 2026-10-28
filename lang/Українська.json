@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nЗастосунок зупинено.\nЗакрийте вікно для виходу з програми.",
         "watching": "Переглядає: {channel}",
+        "mining_resumed": "Збір нагород відновлено",
         "goes_online": "{channel} онлайн, зміна...",
         "goes_offline": "{channel} офлайн, зміна...",
         "claimed_drop": "Отримано дроп: {drop}",
@@ -79,6 +80,7 @@
             "pause_1h": "На 1 годину",
             "pause_tomorrow": "До завтра",
             "pause_indefinite": "Доки я не продовжу",
+            "pause_error": "Не вдалося змінити стан паузи. Спробуйте ще раз.",
             "outside_hours": "Поза часом майнінгу"
         },
         "tabs": {

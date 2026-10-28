@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nUygulama durduruldu.\nUygulamadan çıkmak için pencereyi kapatın",
         "watching": "{channel} izleniyor",
+        "mining_resumed": "Ödül toplama sürdürüldü",
         "goes_online": "{channel} ÇEVRİMİÇİ oldu, geçiş yapın...",
         "goes_offline": "{channel} ÇEVRİMDIŞI duruma geçti, geçiş yapın...",
         "claimed_drop": "Alınan drop: {drop}",
@@ -79,6 +80,7 @@
             "pause_1h": "1 saat",
             "pause_tomorrow": "Yarına kadar",
             "pause_indefinite": "Ben devam ettirene kadar",
+            "pause_error": "Duraklatma durumu değiştirilemedi. Lütfen tekrar deneyin.",
             "outside_hours": "Madencilik saatleri dışında"
         },
         "tabs": {

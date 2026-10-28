@@ -11,7 +11,10 @@ const state = {
     countdownTimer: null,  // Track the active countdown timer
     translations: {},  // Store current translations
     previewEnabled: false,  // Explicit opt-in for this page only
-    paused: false
+    paused: false,
+    pauseRevision: 0,
+    pauseServerRevision: null,
+    pauseEpoch: 0
 };
 
 // ==================== UI Utilities ====================
@@ -231,7 +234,7 @@ socket.on('initial_state', (data) => {
     if (data.settings) updateSettingsUI(data.settings, true);
     if (data.login) updateLoginStatus(data.login);
     if (data.manual_mode) updateManualModeUI(data.manual_mode);
-    updatePauseUI(data.pause?.paused === true);
+    updatePauseUI(data.pause === undefined ? false : data.pause?.paused, data.pause?.revision, true);
     // Restore current drop progress if it exists
     if (data.current_drop) {
         updateDropProgress(data.current_drop);
@@ -363,7 +366,7 @@ socket.on('manual_mode_update', (data) => {
 });
 
 socket.on('paused_update', (data) => {
-    updatePauseUI(data.paused === true);
+    updatePauseUI(data.paused, data.revision);
 });
 
 socket.on('language_changed', (data) => {
@@ -2001,7 +2004,23 @@ function setPauseMenuOpen(open) {
     if (!state.paused) document.getElementById('pause-btn').setAttribute('aria-expanded', String(open));
 }
 
-function updatePauseUI(paused) {
+function isPauseRevision(revision) {
+    return Number.isSafeInteger(revision) && revision >= 0;
+}
+
+function updatePauseUI(paused, revision, initial = false) {
+    if (typeof paused !== 'boolean' || (revision !== undefined && !isPauseRevision(revision))) return;
+    if (initial) {
+        state.pauseEpoch = (state.pauseEpoch || 0) + 1;
+        state.pauseServerRevision = null;
+    }
+    if (isPauseRevision(revision)) {
+        if (state.pauseServerRevision != null && revision <= state.pauseServerRevision) return;
+        state.pauseServerRevision = revision;
+    } else if (state.pauseServerRevision != null) {
+        return;
+    }
+    state.pauseRevision = (state.pauseRevision || 0) + 1;
     state.paused = paused;
     const button = document.getElementById('pause-btn');
     const t = state.translations.gui?.status || {};
@@ -2027,25 +2046,74 @@ function onPauseButton() {
     if (!menu.hidden) menu.querySelector('[role="menuitem"]').focus();
 }
 
+function onPauseKeydown(event) {
+    const button = document.getElementById('pause-btn');
+    const menu = document.getElementById('pause-menu');
+    if (button.disabled || state.paused) return;
+    if (event.key === 'Escape' || event.key === 'Tab') {
+        if (!menu.hidden) {
+            if (event.key === 'Escape') event.preventDefault();
+            setPauseMenuOpen(false);
+            button.focus();
+        }
+        return;
+    }
+    const fromButton = event.target === button;
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)
+        || (fromButton && !['ArrowDown', 'ArrowUp'].includes(event.key))) return;
+    event.preventDefault();
+    setPauseMenuOpen(true);
+    const items = [...menu.querySelectorAll('[role="menuitem"]')];
+    let index = items.indexOf(document.activeElement);
+    if (event.key === 'Home' || (fromButton && event.key === 'ArrowDown')) index = 0;
+    else if (event.key === 'End' || (fromButton && event.key === 'ArrowUp')) index = items.length - 1;
+    else index = (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+    items[index]?.focus();
+}
+
 async function requestPause(paused, duration = null) {
     const button = document.getElementById('pause-btn');
+    if (button.disabled) return;
+    const menu = document.getElementById('pause-menu');
+    const restoreFocus = document.activeElement === button || menu.contains(document.activeElement);
+    const localRevision = state.pauseRevision || 0;
+    const epoch = state.pauseEpoch || 0;
     // Close first so menu items can't resubmit while the request is in flight.
     setPauseMenuOpen(false);
     button.disabled = true;
+    let focusMoved = false;
+    const onFocus = event => { if (event.target !== button) focusMoved = true; };
+    const onPointer = () => { focusMoved = true; };
+    const onKey = event => { if (event.key === 'Tab') focusMoved = true; };
+    document.addEventListener('focusin', onFocus, true);
+    document.addEventListener('pointerdown', onPointer, true);
+    document.addEventListener('keydown', onKey, true);
     try {
         const response = await fetch('/api/pause', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ paused, duration })
         });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        updatePauseUI((await response.json()).paused === true);
-    } catch (error) {
-        addConsoleLine(`Error changing pause: ${error.message}`);
+        if (!response.ok) throw new Error();
+        const result = await response.json();
+        if ((state.pauseEpoch || 0) !== epoch) return;
+        if (result?.success !== true || typeof result.paused !== 'boolean'
+            || (result.revision !== undefined && !isPauseRevision(result.revision))) throw new Error();
+        if (isPauseRevision(result.revision) || (state.pauseRevision || 0) === localRevision) {
+            updatePauseUI(result.paused, result.revision);
+        }
+    } catch {
+        if ((state.pauseEpoch || 0) === epoch) {
+            const message = state.translations.gui?.status?.pause_error || 'Failed to change pause state. Please try again.';
+            addConsoleLine(message);
+            showToast(message, 'error');
+        }
     } finally {
+        document.removeEventListener('focusin', onFocus, true);
+        document.removeEventListener('pointerdown', onPointer, true);
+        document.removeEventListener('keydown', onKey, true);
         button.disabled = false;
-        // Focus after re-enabling: browsers drop focus from a disabled button.
-        button.focus();
+        if (restoreFocus && !focusMoved) button.focus();
     }
 }
 
@@ -3259,17 +3327,13 @@ document.addEventListener('DOMContentLoaded', () => {
         exitManualBtn.addEventListener('click', exitManualMode);
     }
     document.getElementById('pause-btn').addEventListener('click', onPauseButton);
+    document.getElementById('pause-btn').addEventListener('keydown', onPauseKeydown);
+    document.getElementById('pause-menu').addEventListener('keydown', onPauseKeydown);
     document.querySelectorAll('[data-pause-duration]').forEach(item => {
         item.addEventListener('click', () => requestPause(true, item.dataset.pauseDuration || null));
     });
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.pause-control')) setPauseMenuOpen(false);
-    });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !document.getElementById('pause-menu').hidden) {
-            setPauseMenuOpen(false);
-            document.getElementById('pause-btn').focus();
-        }
     });
 
     // Fetch and populate available languages

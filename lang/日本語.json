@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nアプリケーションが終了しました。\nウィンドウを閉じてアプリケーションを終了します。",
         "watching": "{channel} を視聴中",
+        "mining_resumed": "ドロップの獲得を再開しました",
         "goes_online": "{channel} がオンラインになりました。切り替え中...",
         "goes_offline": "{channel} がオフラインになりました。切り替え中...",
         "claimed_drop": "ドロップを取得しました：{drop}",
@@ -79,6 +80,7 @@
             "pause_1h": "1時間",
             "pause_tomorrow": "明日まで",
             "pause_indefinite": "再開するまで",
+            "pause_error": "一時停止の状態を変更できませんでした。もう一度お試しください。",
             "outside_hours": "マイニング時間外"
         },
         "tabs": {

@@ -369,9 +369,21 @@ lang/                # Translation JSON files (20 languages)
   console message appears
 - The dashboard pause (`POST /api/pause`, `Twitch.set_paused`) is runtime-only and closes
   the same `is_mining_time()` gate as mining hours, so every watch/refresh guard applies.
-  Durations are `10m`, `1h` (kept as UTC instants, so DST cannot stretch them), `tomorrow`
-  (next miner-local midnight) or none (until resumed);
-  the schedule loop ends timed pauses and wakes for them. Status shows Paused/Paused until.
+  Durations are `10m`, `1h` (monotonic elapsed time, unaffected by wall-clock or DST
+  changes), `tomorrow` (next miner-local midnight) or none (until resumed). The schedule
+  loop ends timed pauses and wakes for them. Project fixed-duration resume times from
+  the remaining elapsed time; a clock correction must not expire or extend the pause.
+  Status shows Paused/Paused until. Restarting clears the pause; already-earned reward
+  claims remain available, and mining hours still apply when a pause ends.
+  Increment the server pause revision only for state changes and send it in API/socket
+  state. Ignore older replies/broadcasts; an initial-state snapshot resets revision
+  tracking and invalidates pending replies from the previous connection. Retain the
+  fallback for servers without revisions. Show only translated, fixed pause errors,
+  never remote response or exception text. Preserve deliberate focus moves while a
+  pause request is pending. Arrow keys, Home and End navigate the duration menu;
+  Escape restores the button and Tab closes the menu without trapping focus.
+  Regressions: `tests/test_pause.py` and
+  `tests/test_pause_frontend.py`.
 - Mining hours default to `always`; `range` uses the miner host's local time (Docker `TZ`),
   inclusive start/exclusive end, supports overnight windows, and treats equal times as all day.
   Validate complete `mode`/`start`/`end` objects before live changes or loading saved values;

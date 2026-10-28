@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\n應用程式已終止，請關閉視窗以離開應用程式。",
         "watching": "正在觀看：{channel}",
+        "mining_resumed": "已恢復挖礦",
         "goes_online": "{channel} 頻道已開始實況，正在跳轉…",
         "goes_offline": "{channel} 頻道已結束實況，正在跳轉…",
         "claimed_drop": "已領取掉寶：{drop}",
@@ -79,6 +80,7 @@
             "pause_1h": "1 小時",
             "pause_tomorrow": "直到明天",
             "pause_indefinite": "直到我繼續",
+            "pause_error": "無法變更暫停狀態，請再試一次。",
             "outside_hours": "非開採時段"
         },
         "tabs": {

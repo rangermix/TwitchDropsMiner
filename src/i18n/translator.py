@@ -10,6 +10,7 @@ from src.config import DEFAULT_LANG, LANG_PATH
 class StatusMessages(TypedDict):
     terminated: str
     watching: str
+    mining_resumed: str
     goes_online: str
     goes_offline: str
     claimed_drop: str
@@ -62,6 +63,7 @@ class GUIStatus(TypedDict):
     pause_1h: str
     pause_tomorrow: str
     pause_indefinite: str
+    pause_error: str
     outside_hours: str
 
 

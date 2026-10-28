@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nAplikacja została zatrzymana.\nZamknij okno, aby wyjść z aplikacji.",
         "watching": "Oglądam kanał: {channel}",
+        "mining_resumed": "Wydobywanie wznowione",
         "goes_online": "Nowy status kanału {channel}: ONLINE, zmieniam...",
         "goes_offline": "Nowy status kanału {channel}: OFFLINE, zmieniam...",
         "claimed_drop": "Odebrano drop: {drop}",
@@ -79,6 +80,7 @@
             "pause_1h": "Na 1 godzinę",
             "pause_tomorrow": "Do jutra",
             "pause_indefinite": "Do czasu wznowienia",
+            "pause_error": "Nie udało się zmienić stanu wstrzymania. Spróbuj ponownie.",
             "outside_hours": "Poza godzinami zbierania"
         },
         "tabs": {
