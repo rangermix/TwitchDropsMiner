@@ -49,6 +49,9 @@ placeholder. **Remove Webhook** deletes the saved URL and disables Discord alert
 enter a new URL to enable them again. This does not delete the webhook in Discord.
 
 Discord alerts cover live-event, startup and inventory claims just like Telegram.
+Claim embeds include the first available public Twitch reward image. Bundles still
+list every reward name; missing or unsupported artwork falls back to the same text
+notification. TDM does not download the image or send private/signed image URLs.
 Both providers can be enabled together. Failed deliveries do not undo Twitch claims
 and are not retried. Discord messages cannot ping users or roles. TDM's diagnostics
 include only the Discord response status or connection outcome, never the webhook

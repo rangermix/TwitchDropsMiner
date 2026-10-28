@@ -1,18 +1,23 @@
-"""The playlist polling cadence must not turn seconds into credited minutes."""
+"""Progress polling keeps a minute cadence independent of dashboard countdowns."""
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from src.services.watch_service import WatchService
 from src.utils.async_helpers import AwaitableValue
+from src.web.managers.campaigns import CampaignProgressManager
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('current_session', [True, False])
-async def test_playlist_polling_preserves_minute_progress_cadence(current_session):
+@pytest.mark.parametrize('remaining_seconds', [0, 2700])
+@pytest.mark.parametrize('watch_succeeded,current_stream', [(True, True), (False, True), (True, False)])
+async def test_playlist_polling_preserves_minute_progress_cadence(
+    current_session, remaining_seconds, watch_succeeded, current_stream,
+):
     clock = [0.0]
     watches = []
     progress_checks = []
@@ -21,10 +26,11 @@ async def test_playlist_polling_preserves_minute_progress_cadence(current_sessio
     channel.online = True
     channel.banned = False
     channel.id = 123
+    channel._watch_current.return_value = current_stream
 
     async def send_watch():
         watches.append(clock[0])
-        return True
+        return watch_succeeded
 
     channel.send_watch = send_watch
     selected = AwaitableValue()
@@ -33,6 +39,8 @@ async def test_playlist_polling_preserves_minute_progress_cadence(current_sessio
     drop.can_earn.return_value = True
     campaign = MagicMock()
     campaign.bump_minutes.side_effect = lambda watched: bumps.append(clock[0])
+    progress = CampaignProgressManager(SimpleNamespace(emit=AsyncMock()))
+    progress.update(drop, remaining_seconds)
 
     async def gql_request(operation):
         progress_checks.append(clock[0])
@@ -43,7 +51,7 @@ async def test_playlist_polling_preserves_minute_progress_cadence(current_sessio
     twitch = SimpleNamespace(
         is_mining_time=lambda: True,
         watching_channel=selected,
-        gui=SimpleNamespace(progress=SimpleNamespace(minute_almost_done=lambda: True)),
+        gui=SimpleNamespace(progress=progress),
         gql_request=gql_request,
         _drops={'drop': drop},
         _inventory_service=SimpleNamespace(get_active_campaign=lambda watched: campaign),
@@ -66,11 +74,18 @@ async def test_playlist_polling_preserves_minute_progress_cadence(current_sessio
 
     assert len(watches) >= 10
     assert all(b - a <= 15 for a, b in zip(watches, watches[1:], strict=False))
-    assert progress_checks
+    if not watch_succeeded or not current_stream:
+        assert not progress_checks
+        assert not bumps
+        drop.update_minutes.assert_not_called()
+        return
+    assert progress_checks == [20, 80]
     assert all(b - a >= 59 for a, b in zip(progress_checks, progress_checks[1:], strict=False))
     assert len(progress_checks) <= 3
     if current_session:
         assert not bumps
+        assert drop.update_minutes.call_count == 2
+        drop.update_minutes.assert_called_with(1)
     else:
         assert bumps == progress_checks
 

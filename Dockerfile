@@ -31,7 +31,7 @@ WORKDIR /app
 
 # Login and renewal use private browsers; only the dashboard port is exposed.
 RUN apk upgrade --no-cache \
-    && apk add --no-cache chromium xvfb openbox x11vnc xdotool tzdata
+    && apk add --no-cache chromium xvfb xvfb-run xauth openbox x11vnc xdotool tzdata
 COPY --from=novnc-assets /usr/share/novnc/ /usr/share/novnc/
 RUN addgroup -g 10001 -S tdm-browser \
     && adduser -u 10001 -S -D -H -h /nonexistent -s /sbin/nologin -G tdm-browser tdm-browser

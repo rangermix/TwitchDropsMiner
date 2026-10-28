@@ -11,8 +11,9 @@ server-side session verification and automatic renewal.
 1. Open the TDM dashboard. If dashboard password protection is enabled, unlock it first.
 2. Sign in to Twitch in the browser shown there and complete email verification or
    two-factor authentication as requested by Twitch.
-3. After Twitch confirms you are signed in, select **Finish sign in**. Closing the
-   Chromium window with its X button also finishes the interactive step.
+3. The browser closes automatically after Twitch sets its login cookie, whether scoped
+   to `www.twitch.tv` or `.twitch.tv`. If it stays
+   open after you finish verification, select **Finish sign in** or close its X button.
 4. Wait while TDM verifies the account, campaign access and renewable session. The
    normal dashboard appears automatically after verification and browser cleanup.
 
@@ -20,9 +21,28 @@ An attempt lasts up to 15 minutes. **Retry** starts a new browser after failure,
 reconnects a closed viewer. Do not close the browser before Twitch verification is done.
 Sessions and integrity proofs are checked locally against Twitch before acceptance.
 
+The temporary browser has password saving disabled. Open **Copy and paste** to paste
+text into its focused field, or open the panel before copying text inside Twitch and
+then copy the resulting text from the panel. This works on home-network HTTP dashboards
+without requiring browser clipboard permission. Clipboard text is cleared after sending,
+when the panel closes, and when the viewer disconnects; it is never saved by TDM.
+
+`CATALOG` means Twitch rejected inventory or campaign validation. Safe container-log
+entries beginning with `SESSION_DIAGNOSTIC` distinguish the validation stage, operation
+and cause. For example, `issued_validation` with `Campaigns` and `integrity` means the
+server-issued proof was rejected after browser login. Retrying the Finish button cannot
+repair that proof. Keep the container clock/timezone and network routing consistent;
+report only the fixed diagnostic labels, never session files or complete logs.
+
+Docker builds from current source run the server verification/renewal browser on its own private
+virtual display, separate from the sign-in viewer. Older headless renewal builds can
+fail campaign integrity validation even after a successful browser login. Updating to
+a build containing this correction can recover an existing renewable session without
+another sign-in; TDM still verifies the account and campaign access before accepting it.
+
 ## Docker and timezone
 
-Use the published `rangermix/twitch-drops-miner:2.1.1` image or build the current source.
+Use the published `rangermix/twitch-drops-miner:2.3.2` image or build the current source.
 The image includes Chromium, Xvfb, a window manager and noVNC. It does not need a
 display on the home server or NAS. Only the dashboard port is published; VNC and
 browser control remain on container loopback addresses.
@@ -41,16 +61,16 @@ renewal on the miner server. Twitch can reject either browser; this fallback doe
 not guarantee successful sign-in.
 
 Download the helper matching your **miner version** from the sign-in screen or its
-[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.1.1).
+[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.3.2).
 Choose the platform of the computer where you will run the helper, which may differ
 from your miner server:
 
-| Computer | v2.1.1 archive |
+| Computer | v2.3.2 archive |
 | --- | --- |
-| Windows x64 | `tdm-login-helper-2.1.1-windows-x64.tar.gz` |
-| Linux x64 | `tdm-login-helper-2.1.1-linux-x64.tar.gz` |
-| macOS Apple silicon (arm64) | `tdm-login-helper-2.1.1-macos-arm64.tar.gz` |
-| macOS Intel (x64) | `tdm-login-helper-2.1.1-macos-x64.tar.gz` |
+| Windows x64 | `tdm-login-helper-2.3.2-windows-x64.tar.gz` |
+| Linux x64 | `tdm-login-helper-2.3.2-linux-x64.tar.gz` |
+| macOS Apple silicon (arm64) | `tdm-login-helper-2.3.2-macos-arm64.tar.gz` |
+| macOS Intel (x64) | `tdm-login-helper-2.3.2-macos-x64.tar.gz` |
 
 Extract the archive to a folder before running it. Install a native Chrome, Chromium,
 or Firefox 143+ browser on that computer; the helper does not include a browser.
@@ -153,3 +173,22 @@ interactive sign-in, but the miner host still needs Chromium for server-side
 verification and renewal. See [source installation](installation.md#run-from-source).
 
 [All guides](README.md) · [Next: Games and drops](usage.md)
+
+### Clipboard and existing-session sign in
+
+The embedded viewer includes the native noVNC sidebar. Open its Clipboard panel,
+paste text, return to the Twitch field, and press Ctrl+V. Clipboard content is
+limited to 65,536 characters and cleared after sending, closing, or disconnecting.
+
+For an existing login on your own computer, expand **Use an existing Twitch session**.
+In your browser's developer tools, open Storage/Application → Cookies → Twitch and
+copy only the `auth-token` value. Paste it into the password-style field and select
+**Sign in with token**. This is an advanced alternative: treat that value as a
+password and never send it to anyone. TDM validates the WEB account, creates fresh
+server proof, and validates its account and campaign catalog before saving. Rejected
+or expired tokens cannot sign in. The old device-code flow used a different Twitch
+client and is not restored by this option.
+
+After downtime, an expired SDK seed can be recreated using a still-valid saved OAuth
+identity. Account and catalog validation remain mandatory. Network errors or Twitch
+rejection can still require retrying or signing in again.

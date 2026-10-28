@@ -15,13 +15,22 @@
 <body>
     <section id="twitch-login-screen" class="container browser-login-screen" aria-labelledby="twitch-login-title">
         <h1 id="twitch-login-title">Sign in to Twitch</h1>
-        <p id="twitch-login-instructions">Sign in below, complete verification, then select Finish sign in.</p>
+        <p id="twitch-login-instructions">Sign in below and complete Twitch verification. The browser closes automatically after login; TDM then verifies your session. If it stays open, select Finish sign in.</p>
         <p id="twitch-login-status" role="status" aria-live="polite">Starting browser…</p>
         <div class="browser-login-actions">
             <button id="twitch-login-finish" type="button" class="action-button" hidden>Finish sign in</button>
             <button id="twitch-login-retry" type="button" class="action-button" hidden>Retry</button>
         </div>
         <p id="twitch-login-error" role="status" aria-live="polite"></p>
+        <div id="twitch-vnc" class="browser-login-viewer" hidden></div>
+        <p id="twitch-clipboard-help"></p>
+        <details id="twitch-token-panel" class="browser-login-access">
+            <summary id="twitch-token-title">Use an existing Twitch session</summary>
+            <p id="twitch-token-help"></p>
+            <label id="twitch-token-label" for="twitch-token-input"></label>
+            <input id="twitch-token-input" type="password" maxlength="512" autocomplete="off" spellcheck="false">
+            <button id="twitch-token-send" type="button" class="action-button"></button>
+        </details>
         <details id="twitch-helper-panel" class="browser-login-access">
             <summary id="twitch-helper-title">Use desktop helper</summary>
             <p id="twitch-helper-help"></p>
@@ -49,7 +58,6 @@
             <summary data-auth-text="title">Dashboard password</summary>
             <div id="twitch-login-access"></div>
         </details>
-        <div id="twitch-vnc" class="browser-login-viewer" hidden></div>
     </section>
     <div id="dashboard" class="container" hidden>
         <header>
