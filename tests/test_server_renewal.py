@@ -501,7 +501,8 @@ def listening_inodes() -> set[str]:
 
 CHROMIUM = next(filter(None, map(shutil.which, ("chromium", "chromium-browser", "google-chrome"))), None)
 # The sandbox is irrelevant to the transport under test, and unprivileged user
-# namespaces are blocked on some hosts (such as Ubuntu 24.04 CI runners).
+# namespaces are blocked on some hosts (such as Ubuntu 24.04 CI runners). A cold
+# first launch on a fresh CI runner can exceed the production startup timeout.
 
 
 @pytest.mark.asyncio
@@ -518,7 +519,7 @@ async def test_real_owned_chromium_opens_no_tcp_listener(monkeypatch):
         return processes[-1]
 
     monkeypatch.setattr(asyncio, "create_subprocess_exec", record)
-    async with OwnedChromium(CHROMIUM, no_sandbox=True).start() as browser, browser.target() as page:
+    async with OwnedChromium(CHROMIUM, no_sandbox=True, startup_timeout=60).start() as browser, browser.target() as page:
         result = await page.command("Runtime.evaluate", {"expression": "navigator.userAgent", "returnByValue": True})
         assert "Chrome" in result["result"]["value"]
         group = processes[0].pid
@@ -543,7 +544,7 @@ async def test_real_owned_chromium_opens_no_tcp_listener(monkeypatch):
 async def test_real_chromium_closed_target_fails_page_commands_fast():
     from src.auth.server_renewal import OwnedChromium
 
-    async with OwnedChromium(CHROMIUM, no_sandbox=True).start() as browser, browser.target() as page:
+    async with OwnedChromium(CHROMIUM, no_sandbox=True, startup_timeout=60).start() as browser, browser.target() as page:
         targets = await browser.browser.command("Target.getTargets")
         target = next(info["targetId"] for info in targets["targetInfos"] if info["type"] == "page" and info.get("attached"))
         await browser.browser.command("Target.closeTarget", {"targetId": target})
