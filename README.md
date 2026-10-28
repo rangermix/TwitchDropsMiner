@@ -209,6 +209,9 @@ and development. This fork uses AI-assisted development with automated checks an
 independent review. Agents acknowledge work in the relevant issue or PR before starting
 and post the outcome there when work ends or pauses.
 
+Visual dashboard PRs require redacted screenshots, with before/after views when an
+existing screen changes; see [contribution guidance](CONTRIBUTING.md#5-submit-clear-evidence-and-follow-through).
+
 Based on [DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner).
 See [credits](docs/credits.md) for the original project and translation contributors.
 You can support this fork by [starring it](https://github.com/rangermix/TwitchDropsMiner)
