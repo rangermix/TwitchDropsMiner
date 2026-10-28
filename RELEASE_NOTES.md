@@ -1,3 +1,26 @@
+# Release Notes - v2.3.2
+
+## Discord reward artwork
+
+- Add the first usable public Twitch reward image to successful drop-claim
+  notifications. Bundles retain every reward name, and missing or unsupported
+  artwork falls back to the existing text embed.
+- Forward only bounded HTTPS Twitch CDN URLs without credentials, query values,
+  fragments or control characters. The miner does not download the artwork.
+- Preserve successful Twitch claims, notification failure isolation, disabled
+  mentions, redirect refusal, timeouts and redacted diagnostics.
+
+## Validation and contribution guidance
+
+- Validate submitted Python source without CI automatically rewriting it. Regression
+  tests cover clean source, fixable lint violations and invalid syntax.
+- Require current before/after screenshots for changes to existing dashboard views,
+  with sample data or flattened redaction of personal information. Contributor and
+  agent guidance explains where to attach images and how to handle missing evidence.
+
+Update the miner and downloaded desktop helpers to the matching 2.3.2 release while
+preserving the existing data mount, settings and container options.
+
 # Release Notes - v2.3.1
 
 This patch repairs server-side Twitch session proof issuance and recovery, improves

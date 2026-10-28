@@ -349,6 +349,11 @@ lang/                # Translation JSON files (20 languages)
   success; HTTP, network, and application save failures must remain visible as errors.
 - Discord alerts also originate in the shared `BaseDrop.claim()` transition and must
   preserve Telegram, history and successful Twitch claims on notification failure.
+  Claim embeds may show the first usable benefit image from HTTPS
+  `static-cdn.jtvnw.net`, with no credentials/query/fragment, a 2048-character bound
+  and text-only fallback. Never download artwork on the miner or forward arbitrary
+  hosts, signed URLs or user data. Keep all bundle reward names and image fields intact
+  through embed text escaping. `tests/test_discord_reward_images.py` covers this path.
   `DiscordNotifier` accepts only `https://discord.com/api/webhooks/ID/TOKEN`, refuses
   redirects, disables mentions, bounds transport to ten seconds, and never logs URLs,
   response bodies or exception text. Diagnostics retain only status/outcome metadata.
