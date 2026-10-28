@@ -35,8 +35,8 @@ brings reward priorities, Inventory shortcuts and dashboard security fixes toget
 
 ## Games and Inventory
 
-- The Mining list shows known account-link status, can filter linked or unlinked
-  games, and offers **Select Linked** while preserving existing priorities.
+- The Mining list shows known account-link status. Available Games can filter linked
+  or unlinked games and offers **Select Linked** while preserving existing priorities.
 - Inventory has expandable campaigns, card/list view buttons and grouped filters.
   **Add to mining list** appends a linked game without replacing the saved order.
   Expansion and focus are preserved during updates; cards stay in their columns.
