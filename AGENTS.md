@@ -302,6 +302,21 @@ lang/                # Translation JSON files (20 languages)
   ranks to the list bounds; reject blank/fractional values without changing settings.
   Keep priority and remove-control labels translated and accessible. Regression tests in
   `tests/test_game_priority.py` cover order, bounds, invalid inputs, and persistence calls.
+- Games to Watch shows account-link status per game. Linking belongs to the game account,
+  so `getGameLinkStatus()` treats a game as linked when any campaign for it reports
+  `linked: true` (case-insensitive by `game_name`); games without a known campaign have
+  no badge and count as unknown, not unlinked. Available Games sort linked first, the
+  All / Linked / Not Linked dropdown filters on known status (Not Linked excludes
+  unknown games), and Select Linked appends only missing linked games, keeping the
+  existing order and manual entries and ignoring search/filter like Select All.
+  Keep filter actions and selected-game rows wrapping, and game panels shrinkable,
+  so all controls remain reachable on narrow screens.
+  Re-render the lists only when the link-status signature changes (inventory batch,
+  campaign add/clear), so inventory updates while mining never interrupt a drag or a
+  priority edit. Build badges with safe DOM APIs and keep the five `gui.settings`
+  strings (`select_linked`, `game_linked`, `game_not_linked`, `game_linked_title`,
+  `game_not_linked_title`) in every locale and in `GUISettings`. Coverage lives in
+  `tests/test_account_link_frontend.py` and `tests/test_game_priority.py`.
 - Connection quality multiplier
 - Language selection
 - Proxy support (including verification)
@@ -560,7 +575,9 @@ progress to an ignored drop while the miner intentionally targets another reward
   the rejection warning is logged at most once a minute). Accept only IP literals, `localhost`,
   `*.localhost`, single-label names, `.local`/`.home.arpa`/`.internal`, the
   `PUBLIC_BASE_URL` host and the optional comma-separated `ALLOWED_HOSTS` names (no
-  schemes, ports or wildcards; invalid values stop startup without echo). Never derive
+  schemes, ports or wildcards; invalid values stop startup without echo). Remove one
+  trailing DNS dot from both configured and request hosts for this check, while preserving
+  browser origin serialization and its strict origin checks. Never derive
   trust from the Host header alone. Private responses other than `/session-viewer`
   carry a CSP (`script-src 'self' https://cdn.socket.io`, `frame-ancestors 'none'`);
   every response, static files included, carries `nosniff`. The CDN Socket.IO script
