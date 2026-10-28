@@ -8,7 +8,7 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from src.config.settings import InventoryFilterSettings, MiningHoursSettings
+from src.config.settings import InventoryFilterSettings, MiningHoursSettings, default_settings
 from src.i18n.translator import _
 from src.models.game import Game
 from src.services.discord_service import DiscordNotifier
@@ -55,6 +55,8 @@ class SettingsManager:
         self._console = console
         self._on_change = on_change
         self._available_games: list[str] = []
+        # Console lines and side effects of applied fields, run only after a successful save.
+        self._pending_effects: list[Callable[[], None]] = []
 
     def get_settings(self, legacy_show_not_linked: bool | None = None) -> dict[str, Any]:
         """Get current settings for display.
@@ -118,10 +120,13 @@ class SettingsManager:
     def update_settings(self, settings_data: dict[str, Any]) -> dict[str, Any]:
         """Update settings from user input.
 
+        Every field is validated before any is written, so a ValueError leaves
+        settings, console output and persistence untouched. A failed save restores
+        every field, and change lines and side effects run only after saving.
+
         Args:
             settings_data: Dictionary of settings to update
         """
-        previous_hours: dict[str, str] = getattr(self._settings, "mining_hours", {})
         previous_priority_list_only = getattr(self._settings, "priority_list_only", True)
         requested_priority_list_only = settings_data.get("priority_list_only")
         priority_mode_changed = (
@@ -144,12 +149,33 @@ class SettingsManager:
                 if not DiscordNotifier.is_valid_webhook(requested_webhook):
                     raise ValueError("invalid_discord_webhook")
                 new_webhook = requested_webhook
-        # Validate before mutating anything, so a rejected proxy leaves no partial update.
         new_proxy = None
         if "proxy" in settings_data:
             proxy_value = settings_data["proxy"]
             new_proxy = self.resolve_proxy(str(proxy_value).strip()) if proxy_value else ""
+        inventory_filters = settings_data.get("inventory_filters")
+        legacy_show_not_linked = None
+        if inventory_filters is not None:
+            InventoryFilterSettings.validate_update(inventory_filters)
+            legacy_value = inventory_filters.get("show_not_linked")
+            if isinstance(legacy_value, bool):
+                legacy_show_not_linked = legacy_value
+            inventory_filters = self._normalize_inventory_filters(inventory_filters)
+        language = settings_data.get("language")
+        if language is not None and language not in _.get_languages():
+            raise ValueError("invalid_language")
+        drop_name_blacklist = settings_data.get("drop_name_blacklist")
+        if drop_name_blacklist is not None:
+            drop_name_blacklist = DropIgnorePolicy.normalize_keywords(
+                drop_name_blacklist
+            )
 
+        snapshot = {
+            key: copy.deepcopy(value)
+            for key, value in vars(self._settings).items()
+            if key in default_settings
+        }
+        self._pending_effects = []
         should_trigger_update = False
         previous_allow_unlinked = getattr(self._settings, "allow_unlinked_campaigns", False)
         requested_allow_unlinked = settings_data.get("allow_unlinked_campaigns")
@@ -160,11 +186,6 @@ class SettingsManager:
         should_trigger_update |= self.check_and_update_setting(
             "games_to_watch", settings_data.get("games_to_watch"), True
         )
-        drop_name_blacklist = settings_data.get("drop_name_blacklist")
-        if drop_name_blacklist is not None:
-            drop_name_blacklist = DropIgnorePolicy.normalize_keywords(
-                drop_name_blacklist
-            )
         should_trigger_update |= self.check_and_update_setting(
             "drop_name_blacklist", drop_name_blacklist, True
         )
@@ -172,7 +193,7 @@ class SettingsManager:
             "dark_mode", settings_data.get("dark_mode")
         )
         should_trigger_update |= self.check_and_update_setting(
-            "language", settings_data.get("language"), False, self._set_language
+            "language", language, False, self._set_language
         )
         should_trigger_update |= self.check_and_update_setting(
             "connection_quality", settings_data.get("connection_quality")
@@ -199,13 +220,6 @@ class SettingsManager:
             self.check_and_update_setting(
                 "telegram_chat_id", settings_data.get("telegram_chat_id") or ""
             )
-        inventory_filters = settings_data.get("inventory_filters")
-        legacy_show_not_linked = None
-        if inventory_filters is not None:
-            legacy_value = inventory_filters.get("show_not_linked")
-            if isinstance(legacy_value, bool):
-                legacy_show_not_linked = legacy_value
-            inventory_filters = self._normalize_inventory_filters(inventory_filters)
         should_trigger_update |= self.check_and_update_setting("inventory_filters", inventory_filters)
         should_trigger_update |= self.check_and_update_setting(
             "inventory_list_view", settings_data.get("inventory_list_view")
@@ -228,12 +242,14 @@ class SettingsManager:
         try:
             self._settings.save()
         except Exception:
-            # A rejected save must not silently enable or disable live mining.
-            self._settings.discord_webhook_url = previous_webhook
-            self._settings.allow_unlinked_campaigns = previous_allow_unlinked
-            self._settings.mining_hours = previous_hours
-            self._settings.priority_list_only = previous_priority_list_only
+            # A rejected save must leave no in-memory change for a later save to persist.
+            for key, value in snapshot.items():
+                setattr(self._settings, key, value)
+            self._pending_effects = []
             raise
+        effects, self._pending_effects = self._pending_effects, []
+        for effect in effects:
+            effect()
         if new_webhook != previous_webhook:
             self._log_change(f"Setting changed: discord_webhook_url = {DISCORD_WEBHOOK_MASK}")
         if override_changed:
@@ -272,8 +288,12 @@ class SettingsManager:
         log_value = TELEGRAM_TOKEN_MASK if key in {"telegram_bot_token", "discord_webhook_url"} else (
             log_formatter(new_value) if log_formatter else new_value
         )
-        self._log_change(f"Setting changed: {key} = {log_value}")
-        action(new_value)
+
+        def effect() -> None:
+            self._log_change(f"Setting changed: {key} = {log_value}")
+            action(new_value)
+
+        self._pending_effects.append(effect)
         return should_trigger_update
 
     def _set_language(self, language: str):
