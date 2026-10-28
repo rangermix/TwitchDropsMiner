@@ -226,6 +226,10 @@ existing issues from regressions, and fix new problems introduced by the PR. A g
 workflow does not prove that Mypy was clean. Node.js 24 must be on `PATH`; investigate
 skipped frontend tests rather than claiming they passed.
 
+CI runs Ruff without automatic fixes so it checks the submitted source. Apply any
+lint fixes locally and review the resulting diff before pushing; CI must fail for
+remaining violations instead of silently repairing its own checkout.
+
 Also run these release-script contract tests with Bash and GNU `grep`/`sed` on `PATH`.
 The scripts use `grep -P` and GNU-style `sed -i`; macOS's default utilities are not
 sufficient. On macOS, select GNU tools or use a Linux container/VM. On Windows, use
