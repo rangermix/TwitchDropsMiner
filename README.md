@@ -60,13 +60,13 @@ With Docker installed, choose one setup below. Shell examples use Bash
 Pull and start the published image:
 
 ```bash
-docker pull rangermix/twitch-drops-miner:2.3.1
+docker pull rangermix/twitch-drops-miner:2.3.2
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.3.1
+  rangermix/twitch-drops-miner:2.3.2
 ```
 
 ### Docker Compose
@@ -77,7 +77,7 @@ inside it. Set `TZ` to your home internet connection's timezone:
 ```yaml
 services:
   twitch-drops-miner:
-    image: rangermix/twitch-drops-miner:2.3.1
+    image: rangermix/twitch-drops-miner:2.3.2
     container_name: twitch-drops-miner
     init: true
     stop_grace_period: 30s
