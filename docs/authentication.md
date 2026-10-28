@@ -140,9 +140,10 @@ If logout reports a storage error, check the current session before retrying.
 
 ## Automatic renewal
 
-The miner renews the accepted context using a separate temporary headless Chromium
-browser and validates the same account before saving. Mining requests remain in
-Python; the interactive browser does not remain running after login.
+The miner renews the accepted context using a separate temporary Chromium browser,
+with a private virtual display when available and a headless fallback otherwise.
+It validates the same account before saving. Mining requests remain in Python;
+the interactive browser does not remain running after login.
 Transient failures are retried. Expired or revoked access may require a new sign in,
 which appears automatically when TDM can no longer use the saved session.
 
