@@ -783,6 +783,12 @@ protocol rejection; preserve rejection and target-cleanup assertions.
 
 ### Continuous Integration
 
+- The validation workflow runs `ruff check src/` without automatic fixes. CI must
+  verify the submitted source rather than repair one job's checkout while other
+  jobs build unchanged files. Preserve fail-fast behavior and do not make Ruff
+  advisory. `tests/test_ci_lint_verification.py` executes the actual workflow step
+  against clean, fixable and invalid fixtures, checking status and file preservation.
+
 - `.github/workflows/validation.yml` runs Ruff, Mypy, the Python test suite, language
   JSON validation, `uv lock --check`, release-script tests, and Docker build validation
   for pull requests and pushes to `main`.
