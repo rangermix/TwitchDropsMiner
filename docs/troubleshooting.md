@@ -165,9 +165,10 @@ For **Special Events** or **IRL**, keep the campaign's category in Mining list;
 its participating channels may be streaming another category. See
 [channel selection](usage.md#special-events-and-irl-campaigns).
 
-Try **Reload Campaigns** (Inventory or the Mining list) after correcting settings. **Clear All Cache** can rebuild local
-campaign and channel data while keeping login, settings, and dashboard protection.
-It cannot repair inaccurate campaign information supplied by Twitch.
+Try **Reload Campaigns** (Inventory or the Mining list) after correcting settings.
+**Clear All Cache** can rebuild local campaign and channel data while keeping login,
+settings, and dashboard protection. It cannot repair inaccurate campaign information
+supplied by Twitch.
 
 Source builds exclude channels when Twitch reports any active ban for your account,
 including temporary bans. A temporary ban stops excluding the channel at Twitch's

@@ -363,6 +363,10 @@ def test_filter_bar_groups_chips_under_translated_headings():
     # Chips keep the native checkbox focusable and only restyle the Inventory bar.
     assert '.inventory-filters .filter-checkbox:has(input:focus-visible)' in css
     assert 'opacity: 0;' in css.split('.inventory-filters .filter-checkbox input[type="checkbox"] {', 1)[1].split('}', 1)[0]
+    assert css.index('@supports selector(:has(*))') < css.index('.inventory-filters .filter-checkbox input[type="checkbox"] {')
+    assert 'content: "✓" / "";' in css
+    # The Mining list action row gains a Reload button and must wrap on phones.
+    assert 'flex-wrap: wrap;' in css.split('.filter-actions {', 1)[1].split('}', 1)[0]
     for path in (ROOT / 'lang').glob('*.json'):
         filters = json.loads(path.read_text(encoding='utf-8'))['gui']['inventory']['filters']
         assert filters['status_heading'].strip() and filters['rewards_heading'].strip(), path

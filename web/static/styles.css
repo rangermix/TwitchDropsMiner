@@ -536,28 +536,35 @@ header h1 {
 .filter-toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .reload-campaigns-btn { display: inline-flex; align-items: center; gap: 6px; }
 .reload-campaigns-btn .reload-icon { font-size: 15px; line-height: 1; }
+.reload-campaigns-btn:disabled { opacity: 0.6; cursor: wait; }
 .reload-campaigns-btn[aria-busy="true"] .reload-icon { animation: reload-spin 1s linear infinite; }
 @keyframes reload-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .reload-campaigns-btn[aria-busy="true"] .reload-icon { animation: none; }
+}
 .inventory-filters .filter-checkboxes { gap: 10px 28px; padding-top: 14px; border-top: 1px solid var(--border-color); }
 .filter-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.filter-group-label {
-    font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
-    color: var(--text-secondary); margin-right: 2px;
-}
+.filter-group-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-right: 2px; }
 .inventory-filters .filter-checkbox {
     position: relative; padding: 5px 12px; gap: 0;
     border: 1px solid var(--border-color); border-radius: 999px; background: var(--bg-secondary);
     transition: background 0.15s, border-color 0.15s;
 }
-/* The native checkbox stays focusable and clickable over the whole chip. */
-.inventory-filters .filter-checkbox input[type="checkbox"] {
-    position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0;
+/* The native checkbox stays focusable and clickable over the whole chip; browsers
+   without :has() keep it visible because they cannot show the chip's checked state. */
+@supports selector(:has(*)) {
+    .inventory-filters .filter-checkbox input[type="checkbox"] {
+        position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0;
+    }
 }
 .inventory-filters .filter-checkbox span { font-size: 13px; }
 .inventory-filters .filter-checkbox:hover { border-color: var(--accent-color); }
 .inventory-filters .filter-checkbox:has(input:checked) { background: var(--accent-color); border-color: var(--accent-color); }
 .inventory-filters .filter-checkbox:has(input:checked) span { color: #fff; }
-.inventory-filters .filter-checkbox:has(input:checked) span::before { content: "✓"; margin-right: 6px; }
+.inventory-filters .filter-checkbox:has(input:checked) span::before {
+    content: "✓"; content: "✓" / ""; /* decorative: the checkbox already announces its state */
+    margin-right: 6px;
+}
 .inventory-filters .filter-checkbox:has(input:focus-visible) { outline: 2px solid var(--accent-color); outline-offset: 2px; }
 .inventory-filters #filter-link-status { width: auto; padding: 5px 10px; border-radius: 999px; font-size: 13px; }
 
@@ -1370,6 +1377,7 @@ header h1 {
 
 .filter-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
 }
 
