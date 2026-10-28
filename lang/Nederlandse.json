@@ -354,7 +354,7 @@
         },
         "browser_login": {
             "title": "Aanmelden bij Twitch",
-            "instructions": "Meld je hieronder aan en voltooi de Twitch-verificatie. Kies daarna „Aanmelding voltooien”; TDM controleert de sessie en keert terug naar het dashboard.",
+            "instructions": "Meld je hieronder aan en voltooi de Twitch-verificatie. De browser sluit automatisch en TDM controleert je sessie. Blijft hij open, kies Aanmelden voltooien.",
             "finish": "Aanmelding voltooien",
             "retry": "Opnieuw proberen",
             "starting": "Browser wordt gestart…",
@@ -386,7 +386,15 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "De eerste hulp die verbinding maakt wordt toegelaten. Terugkeren naar de ingebouwde browser sluit de toegang voor de hulp."
+            "helper_access_help": "De eerste hulp die verbinding maakt wordt toegelaten. Terugkeren naar de ingebouwde browser sluit de toegang voor de hulp.",
+            "clipboard_title": "Kopiëren en plakken",
+            "clipboard_help": "Open de linker noVNC-zijbalk en kies Klembord. Plak tekst, ga terug naar het Twitch-veld en druk op Ctrl+V. Tekst wordt na verzenden of sluiten gewist.",
+            "clipboard_label": "Klembordtekst",
+            "clipboard_send": "Plakken in Twitch-browser",
+            "token_title": "Bestaande Twitch-sessie gebruiken",
+            "token_help": "Geavanceerd: plak alleen de auth-token-cookiewaarde uit je eigen aangemelde Twitch-browser. Bescherm deze als een wachtwoord. TDM controleert het account en maakt nieuw bewijs; geweigerde of verlopen tokens geven geen toegang.",
+            "token_label": "Twitch auth-token",
+            "token_send": "Aanmelden met token"
         }
     },
     "helper": {

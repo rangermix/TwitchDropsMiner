@@ -6,6 +6,7 @@ import asyncio
 import logging
 import re
 from typing import TYPE_CHECKING
+from urllib.parse import urlsplit
 
 import aiohttp
 
@@ -75,6 +76,25 @@ class DiscordNotifier:
             r"https://discord\.com/api/webhooks/[0-9]{1,30}/[A-Za-z0-9_-]{1,200}", value
         ) is not None
 
+    @staticmethod
+    def reward_image(drop: BaseDrop) -> str | None:
+        """Select public Twitch artwork; never forward credentials or signed URLs."""
+        for benefit in drop.benefits:
+            value = getattr(benefit, "image_url", None)
+            if not isinstance(value, str) or len(value) > 2048 or any(
+                ord(char) < 33 or 127 <= ord(char) <= 159 for char in value
+            ):
+                continue
+            try:
+                url = urlsplit(value)
+                if (url.scheme == "https" and url.hostname == "static-cdn.jtvnw.net"
+                        and url.port in (None, 443) and not url.username and not url.password
+                        and not url.query and not url.fragment and url.path.startswith("/")):
+                    return value
+            except ValueError:
+                continue
+        return None
+
     async def notify_drop_claimed(self, drop: BaseDrop) -> bool:
         """
         Send an embed notification when a drop is claimed.
@@ -105,6 +125,9 @@ class DiscordNotifier:
                 "fields": fields,
                 "footer": {"text": "TwitchDropsMiner Bot"},
             }
+            image_url = self.reward_image(drop)
+            if image_url is not None:
+                embed["image"] = {"url": image_url}
 
             return await self._send_embed(embed)
         except Exception:

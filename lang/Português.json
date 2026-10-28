@@ -354,7 +354,7 @@
         },
         "browser_login": {
             "title": "Entrar no Twitch",
-            "instructions": "Entre abaixo e conclua a verificação do Twitch. Selecione «Concluir login»; o TDM verifica a sessão e volta ao painel.",
+            "instructions": "Entre abaixo e conclua a verificação do Twitch. O navegador fecha automaticamente e o TDM verifica a sessão. Se continuar aberto, selecione Concluir entrada.",
             "finish": "Concluir login",
             "retry": "Tentar novamente",
             "starting": "Iniciando navegador…",
@@ -386,7 +386,15 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "É aceite o primeiro assistente a ligar-se. Voltar ao navegador integrado fecha o acesso do assistente."
+            "helper_access_help": "É aceite o primeiro assistente a ligar-se. Voltar ao navegador integrado fecha o acesso do assistente.",
+            "clipboard_title": "Copiar e colar",
+            "clipboard_help": "Abra a barra esquerda do noVNC e escolha Área de transferência. Cole o texto, volte ao campo da Twitch e pressione Ctrl+V. O texto é apagado após enviar ou fechar.",
+            "clipboard_label": "Texto da área de transferência",
+            "clipboard_send": "Colar no navegador Twitch",
+            "token_title": "Usar uma sessão Twitch existente",
+            "token_help": "Avançado: cole apenas o valor do cookie auth-token do seu próprio navegador conectado à Twitch. Proteja-o como uma senha. O TDM valida a conta e cria uma nova prova; tokens rejeitados ou expirados não permitem entrar.",
+            "token_label": "auth-token da Twitch",
+            "token_send": "Entrar com token"
         }
     },
     "helper": {

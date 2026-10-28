@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import shutil
 import socket
@@ -213,8 +214,9 @@ class LoginChromium:
         if capture:
             port = loopback_port()
             self.address = f"http://127.0.0.1:{port}"
-            args.extend(["--remote-debugging-address=127.0.0.1", f"--remote-debugging-port={port}", "about:blank"])
+            args.extend(["--disable-extensions", "--remote-debugging-address=127.0.0.1", f"--remote-debugging-port={port}", "about:blank"])
         else:
+            args.append(f"--load-extension={Path(__file__).with_name('login_completion')}")
             args.append("https://www.twitch.tv/login")
         self.process = await asyncio.create_subprocess_exec(
             *args, env={**self.environment,
@@ -237,6 +239,16 @@ class LoginChromium:
         self.isolation = BrowserIsolation()
         self.profile = self.isolation.directory("tdm-login-")
         try:
+            preferences = self.profile / "Default"
+            preferences.mkdir(mode=0o700)
+            self.isolation.own(preferences)
+            preferences = preferences / "Preferences"
+            preferences.write_text(json.dumps({
+                "credentials_enable_service": False,
+                "profile": {"password_manager_enabled": False},
+            }), encoding="utf-8")
+            preferences.chmod(0o600)
+            self.isolation.own(preferences)
             (self.profile / "tmp").mkdir(mode=0o700)
             self.isolation.own(self.profile / "tmp")
             await self.launch()

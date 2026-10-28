@@ -178,6 +178,7 @@ class BaseDrop:
         result = await self._claim()
         if result and not self.is_claimed:
             self.is_claimed = True
+            self.campaign.progress_revision += 1
             # A mixed campaign can still earn unwanted rewards after its last
             # wanted claim. Rebuild policy so fallback can take over promptly.
             self._twitch.request_games_update()
@@ -383,6 +384,8 @@ class TimedDrop(BaseDrop):
 
     def update_minutes(self, new_minutes: int) -> None:
         """Update the current watched minutes for this drop."""
+        # Even an unchanged observation supersedes an older in-flight poll.
+        self.campaign.progress_revision += 1
         delta: int = new_minutes - self.real_current_minutes
         if delta == 0:
             return

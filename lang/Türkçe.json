@@ -354,7 +354,7 @@
         },
         "browser_login": {
             "title": "Twitch’e giriş yap",
-            "instructions": "Aşağıda giriş yapıp Twitch doğrulamasını tamamlayın. „Girişi tamamla” seçeneğini seçin; TDM oturumu doğrulayıp panele döner.",
+            "instructions": "Aşağıdan giriş yapıp Twitch doğrulamasını tamamlayın. Tarayıcı otomatik kapanır ve TDM oturumu doğrular. Açık kalırsa Girişi tamamla seçeneğini kullanın.",
             "finish": "Girişi tamamla",
             "retry": "Yeniden dene",
             "starting": "Tarayıcı başlatılıyor…",
@@ -386,7 +386,15 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "İlk bağlanan yardımcı kabul edilir. Gömülü tarayıcıya dönmek yardımcı erişimini kapatır."
+            "helper_access_help": "İlk bağlanan yardımcı kabul edilir. Gömülü tarayıcıya dönmek yardımcı erişimini kapatır.",
+            "clipboard_title": "Kopyala ve yapıştır",
+            "clipboard_help": "Sol noVNC kenar çubuğunu açıp Pano’yu seçin. Metni yapıştırın, Twitch alanına dönüp Ctrl+V tuşlarına basın. Gönderme veya kapatma sonrası metin silinir.",
+            "clipboard_label": "Pano metni",
+            "clipboard_send": "Twitch tarayıcısına yapıştır",
+            "token_title": "Mevcut Twitch oturumunu kullan",
+            "token_help": "Gelişmiş: yalnızca kendi Twitch oturumunuzun açık olduğu tarayıcıdaki auth-token çerezinin değerini yapıştırın. Parola gibi koruyun. TDM hesabı doğrulayıp yeni kanıt oluşturur; reddedilen veya süresi dolan token giriş sağlayamaz.",
+            "token_label": "Twitch auth-token",
+            "token_send": "Token ile giriş yap"
         }
     },
     "helper": {

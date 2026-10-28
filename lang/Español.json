@@ -354,7 +354,7 @@
         },
         "browser_login": {
             "title": "Iniciar sesión en Twitch",
-            "instructions": "Inicia sesión abajo y completa la verificación de Twitch. Selecciona «Finalizar inicio de sesión»; TDM verifica la sesión y vuelve al panel.",
+            "instructions": "Inicia sesión abajo y completa la verificación de Twitch. El navegador se cierra automáticamente y TDM verifica la sesión. Si sigue abierto, selecciona Finalizar inicio de sesión.",
             "finish": "Finalizar inicio de sesión",
             "retry": "Reintentar",
             "starting": "Iniciando navegador…",
@@ -386,7 +386,15 @@
             "helper_linux": "Linux (x64)",
             "helper_macos_arm": "macOS (Apple silicon)",
             "helper_macos_intel": "macOS (Intel)",
-            "helper_access_help": "Se acepta el primer asistente que se conecte. Volver al navegador integrado cierra el acceso del asistente."
+            "helper_access_help": "Se acepta el primer asistente que se conecte. Volver al navegador integrado cierra el acceso del asistente.",
+            "clipboard_title": "Copiar y pegar",
+            "clipboard_help": "Abre la barra izquierda de noVNC y selecciona Portapapeles. Pega el texto, vuelve al campo de Twitch y pulsa Ctrl+V. El texto se borra al enviarlo o cerrar el panel.",
+            "clipboard_label": "Texto del portapapeles",
+            "clipboard_send": "Pegar en el navegador de Twitch",
+            "token_title": "Usar una sesión de Twitch existente",
+            "token_help": "Avanzado: pega solo el valor de la cookie auth-token de tu propio navegador con Twitch iniciado. Trátalo como una contraseña. TDM valida la cuenta y genera una prueba nueva; un token rechazado o caducado no permite iniciar sesión.",
+            "token_label": "auth-token de Twitch",
+            "token_send": "Iniciar sesión con token"
         }
     },
     "helper": {

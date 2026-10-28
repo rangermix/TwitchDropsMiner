@@ -11,5 +11,11 @@
 .auth-form [hidden], #web-auth-logout[hidden] { display: none; }
 .auth-form [role="status"] { min-height: 1.6em; color: var(--error-color); }
 #web-auth-logout-result { color: var(--error-color); }
+#twitch-clipboard-text { display: block; width: 100%; max-width: 640px; margin: 8px 0; font: inherit; }
+.browser-login-screen > h1 { margin-bottom: 12px; }
+#twitch-login-instructions { max-width: 80ch; line-height: 1.6; }
+#twitch-login-status { padding: 12px; margin: 12px 0; border-inline-start: 3px solid var(--accent-color); background: var(--bg-secondary); }
 .auth-form input:focus-visible, .auth-form button:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
 @media (max-width: 600px) { .auth-card { padding: 24px; } .header-top, .header-controls { flex-wrap: wrap; gap: 12px; } }
+
+.browser-login-frame { width: 100%; height: 100%; border: 0; }
