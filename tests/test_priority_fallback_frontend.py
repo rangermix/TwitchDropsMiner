@@ -221,7 +221,8 @@ def test_unrelated_autosave_cannot_revert_priority_mode_save_in_flight():
         const update = JSON.parse(options.body);
         if (!Object.hasOwn(update, 'priority_list_only')) {
             assert.deepEqual(update.games_to_watch, ['Game B', 'Rust']);
-            return new Promise(resolve => { completeAutosave = () => resolve({ok: true}); });
+            return new Promise(resolve => { completeAutosave = () => resolve({ok: true,
+                json: async () => ({success: true, settings: {games_to_watch: [...games]}})}); });
         }
         assert.deepEqual(update, {priority_list_only: false});
         serverMode = update.priority_list_only;
@@ -285,3 +286,27 @@ for (const translation of [...translations, {gui: {settings: {priority_list_only
 def test_priority_checkbox_defaults_checked_before_settings_load():
     html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     assert 'type="checkbox" id="priority-list-only" checked' in html
+
+
+def test_late_partial_save_reply_preserves_newer_watch_list():
+    run_javascript(
+        ['onPriorityModeChange', 'saveSettings', 'updateSettingsUI', 'toggleMiningHoursRange'],
+        PRIORITY_SETUP + r"""
+(async()=>{
+ updateSettingsUI({games_to_watch:['A','B'],priority_list_only:true},true);
+ let finish;let saved;
+ global.fetch=async(url,options)=>{
+  const body=JSON.parse(options.body);
+  if(Object.hasOwn(body,'priority_list_only'))return new Promise(resolve=>{finish=resolve;});
+  saved=body.games_to_watch;
+  return {ok:true,json:async()=>({success:true,settings:{games_to_watch:saved}})};
+ };
+ input.checked=false;const pending=onPriorityModeChange();
+ // A confirmed Inventory write/socket update arrives before the old partial response.
+ updateSettingsUI({games_to_watch:['A','B','C'],priority_list_only:true},true);
+ finish({ok:true,json:async()=>({success:true,settings:{games_to_watch:['A','B'],priority_list_only:false}})});
+ await pending;assert.deepEqual(state.settings.games_to_watch,['A','B','C']);
+ await saveSettings();assert.deepEqual(saved,['A','B','C']);
+})().catch(error=>{console.error(error);process.exitCode=1;});
+""",
+    )

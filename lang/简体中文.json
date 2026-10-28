@@ -146,16 +146,24 @@
                 "upcoming": "即将开始",
                 "expired": "已过期",
                 "finished": "已完成",
-                "item": "物品",
-                "badge": "徽章",
-                "emote": "表情",
-                "other": "其他",
+                "item": "游戏奖励",
+                "badge": "聊天徽章",
+                "emote": "聊天表情",
+                "other": "其他奖励",
                 "clear": "清除过滤器",
                 "search_placeholder": "搜索游戏...",
                 "account_link": "账号关联",
+                "status_heading": "状态",
+                "rewards_heading": "奖励",
                 "all": "全部",
                 "linked": "已关联"
-            }
+            },
+            "add_game": "添加到挖掘列表",
+            "adding_game": "正在添加…",
+            "add_game_error": "无法保存挖掘列表，请重试。",
+            "link_account": "关联账号",
+            "card_view": "卡片视图",
+            "list_view": "列表视图"
         },
         "settings": {
             "general": {
@@ -163,7 +171,7 @@
                 "dark_mode": "深色模式"
             },
             "reload": "刷新",
-            "games_to_watch": "观看游戏",
+            "games_to_watch": "挖掘列表",
             "games_help": "选择要观看的游戏。顺序很重要 - 拖动以重新排序优先级（顶部 = 最高优先级）。",
             "priority_list_only": "仅优先列表（仅挖掘所选游戏）",
             "priority_list_only_save_error": "无法保存游戏优先级选项，请重试。",
@@ -220,7 +228,7 @@
             "mining_benefits": "挖掘奖励",
             "mining_benefits_help": "选择您想要获取的掉落类型。",
             "multiple_games_found": "您的搜索找到了多个游戏。请更具体一些。",
-            "manual_game_warning": "可用活动列表中没有“{game}”。仍要将其添加到观看游戏列表吗？",
+            "manual_game_warning": "可用活动列表中没有“{game}”。仍要将其添加到挖掘列表列表吗？",
             "deselect_all_warning": "您确定要从观看列表中移除所有游戏吗？",
             "confirm_btn": "确认",
             "cancel_btn": "取消",

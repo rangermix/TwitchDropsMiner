@@ -146,16 +146,24 @@
                 "upcoming": "Nadcházející",
                 "expired": "Vypršelo",
                 "finished": "Dokončeno",
-                "item": "Předmět",
-                "badge": "Odznak",
-                "emote": "Emotikon",
-                "other": "Jiné",
+                "item": "Herní odměna",
+                "badge": "Odznak chatu",
+                "emote": "Emotikon chatu",
+                "other": "Jiná odměna",
                 "clear": "Vymazat filtry",
                 "search_placeholder": "Hledat hry...",
                 "account_link": "Propojení účtu",
+                "status_heading": "Stav",
+                "rewards_heading": "Odměny",
                 "all": "Všechny",
                 "linked": "Propojeno"
-            }
+            },
+            "add_game": "Přidat do seznamu těžby",
+            "adding_game": "Přidávání…",
+            "add_game_error": "Seznam těžby nelze uložit. Zkuste to znovu.",
+            "link_account": "Propojit účet",
+            "card_view": "Zobrazení karet",
+            "list_view": "Zobrazení seznamu"
         },
         "settings": {
             "general": {
@@ -163,7 +171,7 @@
                 "dark_mode": "Tmavý režim"
             },
             "reload": "Obnovit",
-            "games_to_watch": "Hry ke sledování",
+            "games_to_watch": "Seznam těžby",
             "games_help": "Vyberte hry ke sledování. Záleží na pořadí - přetáhněte pro změnu priority (nahoře = nejvyšší priorita).",
             "priority_list_only": "Pouze seznam priorit (těžit pouze vybrané hry)",
             "priority_list_only_save_error": "Nastavení priority her se nepodařilo uložit. Zkuste to znovu.",

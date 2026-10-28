@@ -38,11 +38,12 @@ longer translations, grouping account controls and navigation on smaller screens
 Hover over shortened account or renewal text to read it in full. This dashboard change
 is included in the published releases.
 
-Inventory supports **All / Linked / Not Linked** account-link filters. Settings has a
+Inventory has expandable campaigns, card/list view buttons and **Add to mining list** for linked games
+not yet selected. Campaign details appear once, with matching linked/unlinked card layouts. It supports **All / Linked / Not Linked** account-link filters. Settings has a
 default-off option to mine campaigns reported as Not Linked; read its warning and
 check Twitch progress. See the [dashboard guide](docs/usage.md#account-link-override).
 
-**Settings → Games to Watch** marks each game as **LINKED** or **NOT LINKED** from your
+**Settings → Mining list** marks each game as **LINKED** or **NOT LINKED** from your
 inventory, lists linked games first in **Available Games**, can filter by link status,
 and offers **Select Linked** to add every linked game at once. Selection controls wrap
 on narrow screens. See

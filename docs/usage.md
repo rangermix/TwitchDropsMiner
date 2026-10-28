@@ -22,15 +22,15 @@ simultaneous viewing can disrupt progress.
 
 ## Choose games and priorities
 
-In **Settings → Games to Watch**, put the games you most want first. Drag a game to
+In **Settings → Mining list**, put the games you most want first. Drag a game to
 reorder it, or enter a whole-number priority. **1** is highest. Numbers beyond the
 list's bounds move the game to the nearest end; blank or fractional values leave its
 position unchanged.
 
 Search for a game and press **Enter** or select **Add Game**. An exact name or unique
 partial match selects an available game. If several names match, use a more specific
-search. You can also confirm adding a manually entered name. Select **Reload** after
-adding games to refresh the miner's selection.
+search. You can also confirm adding a manually entered name. Select **Reload Campaigns**
+beside **Add Game** after adding games to refresh the miner's selection.
 
 **Select All** keeps your existing priority order and manual entries, then adds missing
 games. **Deselect All** asks for confirmation. You can cancel a confirmation with
@@ -46,7 +46,7 @@ are hidden by both **Linked** and **Not Linked**. **Select Linked** adds every l
 game that is not yet selected, keeping your existing order.
 
 Version 2.3.0 adds **Settings → General → Priority list only**, enabled by default.
-Leave it enabled to mine only games in **Games to Watch**. Disable it to prefer
+Leave it enabled to mine only games in **Mining list**. Disable it to prefer
 those games, then mine other eligible games whenever no selected game can currently
 be progressed. Other games stay out of your saved list, so you can keep a short list
 of favorites. With an empty list, disabling this option allows all eligible games.
@@ -71,18 +71,34 @@ when its game has no remaining eligible drops or no suitable channel is availabl
 
 ### Special Events and IRL campaigns
 
-Include the campaign's category in **Games to Watch**. These campaigns can progress
+Include the campaign's category in **Mining list**. These campaigns can progress
 on their listed participating channels even when a channel streams another category
 or lacks the drops-enabled flag. Channels must still be live and eligible. A campaign
 without an enabled participating-channel list requires the usual matching category.
 
-Participants streaming categories outside Games to Watch have the lowest automatic
+Participants streaming categories outside Mining list have the lowest automatic
 priority within their mining group. When fallback is enabled, eligible selected
 campaigns still take precedence over games outside your saved list. If the watched
 participant goes offline or becomes ineligible, another
 eligible participant can take over.
 
 ## Inventory and the wanted queue
+
+Select a campaign's overview or arrow to expand its rewards and progress. The arrow
+supports Enter and Space. Campaign names link directly to Twitch; long game and campaign
+names are shortened, with the full name shown on hover. The card and list buttons beside
+**Clear Filters** switch the Inventory layout and remember your choice. List view offers
+compact rows with artwork, names and dates. Opening a card does not move cards between
+columns. In card mode the arrow sits below the linkage badge, with account/mining
+actions beside the dates; open campaigns stay open while progress updates arrive. Each
+column stacks its own cards, so opening a card only moves the cards below it. On
+phone-width screens game and campaign names can use two lines.
+
+For linked games not already selected, **Add to mining list** appends the game at
+the end of your saved priority list. Existing priorities and manual entries keep their
+order. The button disappears after the settings save succeeds; a failed save shows an
+error and leaves the list unchanged. Linking and adding a game do not bypass reward
+eligibility or guarantee progress. Use Settings to reorder or remove selected games.
 
 Inventory's **Active**, **Upcoming**, and **Expired** filters include campaigns with
 any selected status. **Account link → All / Linked / Not Linked** narrows those
@@ -143,7 +159,8 @@ not change your Twitch account or take away rewards.
 
 ## Refreshing and clearing cache
 
-Use **Reload** after changing the games you want or when you need to refresh campaign
+Use **Reload Campaigns** (in the Inventory filter bar or beside the Mining list's **Add
+Game** button) after changing the games you want or when you need to refresh campaign
 selection. **Settings → Clear All Cache** discards derived campaign and channel data,
 then reloads it from Twitch. It preserves Twitch login, settings, and dashboard
 password protection.

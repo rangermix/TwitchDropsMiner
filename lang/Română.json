@@ -146,16 +146,24 @@
                 "upcoming": "Viitor",
                 "expired": "Expirat",
                 "finished": "Terminat",
-                "item": "Obiect",
-                "badge": "Insignă",
-                "emote": "Emoticon",
-                "other": "Altele",
+                "item": "Recompensă de joc",
+                "badge": "Insignă chat",
+                "emote": "Emoticon chat",
+                "other": "Altă recompensă",
                 "clear": "Șterge filtre",
                 "search_placeholder": "Caută jocuri...",
                 "account_link": "Asocierea contului",
+                "status_heading": "Stare",
+                "rewards_heading": "Recompense",
                 "all": "Toate",
                 "linked": "Asociat"
-            }
+            },
+            "add_game": "Adaugă în lista de minare",
+            "adding_game": "Se adaugă…",
+            "add_game_error": "Lista de minare nu a putut fi salvată. Încearcă din nou.",
+            "link_account": "Asociază contul",
+            "card_view": "Vizualizare carduri",
+            "list_view": "Vizualizare listă"
         },
         "settings": {
             "general": {
@@ -163,7 +171,7 @@
                 "dark_mode": "Mod întunecat"
             },
             "reload": "Reîncarcă",
-            "games_to_watch": "Jocuri de urmărit",
+            "games_to_watch": "Lista de minare",
             "games_help": "Selectați jocurile de urmărit. Ordinea contează - trageți pentru a reordona prioritatea (sus = prioritate maximă).",
             "priority_list_only": "Doar lista de priorități (minează doar jocurile selectate)",
             "priority_list_only_save_error": "Opțiunea de prioritate a jocurilor nu a putut fi salvată. Încercați din nou.",

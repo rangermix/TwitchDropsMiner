@@ -1001,14 +1001,153 @@ function handleGameSearchKeydown(event) {
     }
 }
 
+// Cards stay in fixed columns, so opening one only pushes down the cards below it.
+function inventoryColumnCount(container) {
+    if (container.classList.contains('list-view')) return 1;
+    const style = getComputedStyle(container);
+    const min = parseFloat(style.getPropertyValue('--inventory-card-min')) || 350;
+    const gap = parseFloat(style.columnGap) || 0;
+    return Math.max(1, Math.floor((container.clientWidth + gap) / (min + gap)));
+}
+
 function applyInventoryViewMode(listView) {
-    document.getElementById('inventory-grid').classList.toggle('list-view', listView);
+    const grid = document.getElementById('inventory-grid');
+    grid.classList.toggle('list-view', listView);
+    if (grid.dataset.columns && String(inventoryColumnCount(grid)) !== grid.dataset.columns) renderInventory();
+    document.getElementById('inventory-view-cards')?.setAttribute('aria-pressed', String(!listView));
+    document.getElementById('inventory-view-list')?.setAttribute('aria-pressed', String(listView));
+}
+
+function setInventoryViewMode(listView) {
+    if ((state.settings.inventory_list_view === true) === listView) return;
+    state.settings.inventory_list_view = listView;
+    applyInventoryViewMode(listView);
+    // Saving before the first settings load would persist empty defaults (e.g. the Mining list).
+    if (Array.isArray(state.settings.games_to_watch)) saveSettings();
+}
+
+const expandedInventoryCampaigns = new Set();
+let inventoryWatchSavePending = false;
+let inventoryWatchPendingGame = null;
+const gameWatchWrites = { confirmed: null, draft: null, pending: [], tail: Promise.resolve(), revision: 0 };
+
+function applyGameWatchEdit(edit, current) {
+    const key = name => name.toLowerCase();
+    const unique = games => {
+        const seen = new Set();
+        return games.filter(name => {
+            if (seen.has(key(name))) return false;
+            seen.add(key(name));
+            return true;
+        });
+    };
+    if (edit.append) return current.some(name => key(name) === key(edit.append))
+        ? [...current] : [...current, edit.append];
+    const known = new Set(edit.before.map(key));
+    const existing = new Set(current.map(key));
+    return unique([
+        ...edit.after.filter(name => known.has(key(name)) && existing.has(key(name))),
+        ...current.filter(name => !known.has(key(name))),
+        ...edit.after.filter(name => !known.has(key(name)))
+    ]);
+}
+
+function reconcileGameWatchSettings(settings) {
+    if (!Array.isArray(settings.games_to_watch)) return settings;
+    if (JSON.stringify(gameWatchWrites.confirmed) !== JSON.stringify(settings.games_to_watch)) gameWatchWrites.revision++;
+    gameWatchWrites.confirmed = [...settings.games_to_watch];
+    gameWatchWrites.draft = gameWatchWrites.pending.reduce(
+        (games, pending) => applyGameWatchEdit(pending, games), gameWatchWrites.confirmed);
+    return gameWatchWrites.pending.length && JSON.stringify(gameWatchWrites.draft) !== JSON.stringify(settings.games_to_watch)
+        ? { ...settings, games_to_watch: [...gameWatchWrites.draft] } : settings;
+}
+
+function queueSettingsWrite(settings, appendGame = null) {
+    if (gameWatchWrites.confirmed === null) {
+        gameWatchWrites.confirmed = [...(state.settings.games_to_watch || [])];
+        gameWatchWrites.draft = [...gameWatchWrites.confirmed];
+    }
+    const edit = { before: [...gameWatchWrites.draft],
+        after: [...(settings.games_to_watch || gameWatchWrites.draft)], append: appendGame };
+    gameWatchWrites.pending.push(edit);
+    const refresh = () => {
+        gameWatchWrites.draft = gameWatchWrites.pending.reduce(
+            (games, pending) => applyGameWatchEdit(pending, games), gameWatchWrites.confirmed);
+        if (JSON.stringify(state.settings.games_to_watch) !== JSON.stringify(gameWatchWrites.draft)) {
+            state.settings.games_to_watch = [...gameWatchWrites.draft];
+        }
+        renderGamesToWatch();
+        renderChannels();
+        renderInventory();
+    };
+    refresh();
+    const operation = gameWatchWrites.tail.then(async () => {
+        try {
+            const games = applyGameWatchEdit(edit, gameWatchWrites.confirmed);
+            const revision = gameWatchWrites.revision;
+            if (appendGame && gameWatchWrites.confirmed.some(name => name.toLowerCase() === appendGame.toLowerCase())) return;
+            const response = await fetch('/api/settings', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...settings, games_to_watch: games })
+            });
+            if (!response.ok) throw new Error('settings_save_failed');
+            const data = await response.json();
+            if (data.success !== true || !Array.isArray(data.settings?.games_to_watch)
+                || (appendGame && !data.settings.games_to_watch.includes(appendGame))) throw new Error('settings_save_failed');
+            if (gameWatchWrites.revision === revision
+                || JSON.stringify(gameWatchWrites.confirmed) === JSON.stringify(games)) {
+                gameWatchWrites.confirmed = [...data.settings.games_to_watch];
+            }
+            return data;
+        } finally {
+            gameWatchWrites.pending.splice(gameWatchWrites.pending.indexOf(edit), 1);
+            refresh();
+        }
+    });
+    gameWatchWrites.tail = operation.catch(() => {});
+    return operation;
+}
+
+function canAddInventoryGame(campaign) {
+    return campaign?.linked === true && typeof campaign.game_name === 'string'
+        && campaign.game_name.trim().length > 0
+        && Array.isArray(state.settings.games_to_watch)
+        && !state.settings.games_to_watch.some(
+            game => game.toLowerCase() === campaign.game_name.toLowerCase());
+}
+
+async function addInventoryGame(campaignId, button) {
+    const campaign = state.campaigns[campaignId];
+    if (inventoryWatchSavePending || !canAddInventoryGame(campaign)) return;
+    const hadFocus = document.activeElement === button;
+    inventoryWatchSavePending = true;
+    inventoryWatchPendingGame = campaign.game_name;
+    const t = state.translations.gui?.inventory || {};
+    document.querySelectorAll('.inventory-add-game').forEach(control => { control.disabled = true; });
+    button.textContent = t.adding_game || 'Adding…';
+    button.setAttribute('aria-busy', 'true');
+    try {
+        await queueSettingsWrite({}, campaign.game_name);
+    } catch (_) {
+        showToast(t.add_game_error || 'Could not save mining list. Try again.', 'error');
+    } finally {
+        const restoreFocus = hadFocus && (document.activeElement === button || document.activeElement === document.body);
+        inventoryWatchSavePending = false;
+        inventoryWatchPendingGame = null;
+        renderInventory();
+        if (restoreFocus) {
+            const target = document.getElementById(`inventory-add-${encodeURIComponent(campaignId)}`)
+                || document.getElementById(`inventory-toggle-${encodeURIComponent(campaignId)}`);
+            target?.focus();
+        }
+    }
 }
 
 function renderInventory() {
     updateDropArt();
     const container = document.getElementById('inventory-grid');
-    container.innerHTML = '';
+    const focusedId = container.contains(document.activeElement) ? document.activeElement.id : null;
+    container.replaceChildren();
 
     const t = state.translations;
     const allCampaigns = Object.values(state.campaigns);
@@ -1028,9 +1167,16 @@ function renderInventory() {
         return;
     }
 
-    campaigns.forEach(campaign => {
+    const columnCount = inventoryColumnCount(container);
+    container.dataset.columns = String(columnCount);
+    const columns = Array.from({ length: columnCount }, () => makeElement('div', { class: 'inventory-column' }));
+    container.replaceChildren(...columns);
+
+    campaigns.forEach((campaign, index) => {
         const card = document.createElement('div');
         card.className = 'campaign-card';
+        const expanded = expandedInventoryCampaigns.has(campaign.id);
+        const contentId = `inventory-rewards-${encodeURIComponent(campaign.id)}`;
 
         let statusClass = '';
         let statusText = '';
@@ -1074,15 +1220,10 @@ function renderInventory() {
                 class: `drop-item${drop.is_claimed ? ' claimed' : ''}${drop.can_claim ? ' active' : ''}${policyClass}`,
                 ...(policyReason ? { title: policyReason } : {}),
             });
-            dropItem.appendChild(
-                makeElement('div', { class: 'drop-item-header' }, '', el =>
-                    el.appendChild(makeElement('div', { class: 'drop-item-info' }, '', el2 =>
-                        el2.appendChild(makeElement('div', {}, '', el3 =>
-                            el3.appendChild(makeElement('strong', {}, drop.name))
-                        ))
-                    ))
-                )
-            );
+            if (drop.name !== campaign.name) {
+                dropItem.appendChild(makeElement('div', { class: 'drop-item-header' }, null, header =>
+                    header.appendChild(makeElement('strong', { class: 'drop-item-info' }, drop.name))));
+            }
             const benefitsList = makeElement('div', { class: 'benefits-list' });
             if (drop.benefits && drop.benefits.length > 0) {
                 drop.benefits.forEach(benefit => {
@@ -1091,13 +1232,23 @@ function renderInventory() {
                             el.appendChild(makeImageElement(benefit.image_url, benefit.name, 'benefit-icon'));
                             el.appendChild(makeElement('div', { class: 'benefit-info' }, '', el2 => {
                                 el2.appendChild(makeElement('span', { class: 'benefit-name' }, benefit.name));
-                                el2.appendChild(makeElement('span', { class: 'benefit-type' }, `(${benefit.type})`));
+                                const labels = t.gui?.inventory?.filters || {};
+                                const benefitLabel = { DIRECT_ENTITLEMENT: labels.item, BADGE: labels.badge,
+                                    EMOTE: labels.emote, UNKNOWN: labels.other }[benefit.type] || labels.other || 'Other';
+                                el2.appendChild(makeElement('span', { class: 'benefit-type' }, benefitLabel));
                             }));
                         })
                     );
                 });
             }
             dropItem.appendChild(benefitsList);
+            const percent = Number.isFinite(drop.progress) ? Math.max(0, Math.min(100, Math.round(drop.progress * 100))) : 0;
+            const progress = makeElement('div', { class: 'inventory-drop-progress', role: 'progressbar',
+                'aria-label': drop.name, 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': percent });
+            const fill = makeElement('span');
+            fill.style.width = `${percent}%`;
+            progress.appendChild(fill);
+            dropItem.appendChild(progress);
             dropItem.appendChild(makeElement('div', {}, `${drop.current_minutes} / ${drop.required_minutes} minutes (${Math.round(drop.progress * 100)}%)`));
             if (drop.is_claimed) {
                 dropItem.appendChild(makeElement('div', {}, `✓ ${claimedText}`));
@@ -1108,36 +1259,64 @@ function renderInventory() {
         });
 
         // Campaign name link
-        const campaignNameLink = makeElement('a', { href: campaign.campaign_url, target: '_blank', rel: 'noopener noreferrer', class: 'campaign-name-link' }, campaign.name, el =>
-            el.appendChild(makeElement('span', { class: 'external-link-icon' }, '🔗'))
-        );
+        const campaignNameLink = makeElement('a', { id: `inventory-campaign-${encodeURIComponent(campaign.id)}`, href: campaign.campaign_url, target: '_blank', rel: 'noopener noreferrer', class: 'campaign-name-link', title: campaign.name }, '', el => {
+            el.appendChild(makeElement('span', { class: 'campaign-name-text' }, campaign.name));
+            el.appendChild(makeElement('span', { class: 'external-link-icon' }, '🔗'));
+        });
 
-        // Linked/not linked badge
-        const linkStatusBadge = campaign.linked
-            ? makeElement('span', { class: 'campaign-badge linked', title: 'Account is linked' }, 'LINKED')
-            : makeElement('span', { class: 'campaign-badge not-linked', title: 'Click to link your account' }, 'NOT LINKED', el => {
-                el.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
-            });
+        const linkStatusBadge = makeElement('span', {
+            class: `campaign-badge ${campaign.linked ? 'linked' : 'not-linked'}`
+        }, campaign.linked ? (t.gui?.inventory?.filters?.linked || 'Linked')
+            : (t.gui?.inventory?.filters?.not_linked || 'Not Linked'));
 
-        // Link account button
-        const campaignGameDiv = makeElement('div', { class: 'campaign-game' }, '', el => {
+        const campaignGameDiv = makeElement('span', { class: 'campaign-game' }, '', el => {
             if (campaign.game_box_art_url) {
                 const iconUrl = campaign.game_box_art_url.replace('{width}', '52').replace('{height}', '70');
                 el.appendChild(makeImageElement(iconUrl, campaign.game_name, 'game-icon'));
             }
-            el.appendChild(makeElement('span', { class: 'campaign-game-name' }, campaign.game_name));
-            el.appendChild(linkStatusBadge);
+            const titles = makeElement('span', { class: 'campaign-titles' });
+            titles.appendChild(makeElement('strong', { class: 'campaign-game-name', title: campaign.game_name }, campaign.game_name));
+            campaignNameLink.className += ' campaign-subtitle';
+            titles.appendChild(campaignNameLink);
+            el.appendChild(titles);
         });
 
-        const campaignHeader = makeElement('div', { class: 'campaign-header' }, '', el => {
-            el.appendChild(campaignGameDiv);
-            el.appendChild(campaignNameLink);
-            if (!campaign.linked && campaign.link_url) {
-                el.appendChild(makeElement('button', { class: 'link-account-btn' }, 'Link Account', btn => {
-                    btn.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
-                }));
-            }
-        });
+        const overview = makeElement('div', { class: 'campaign-overview' });
+        const toggle = makeElement('button', { type: 'button', class: 'campaign-toggle',
+            id: `inventory-toggle-${encodeURIComponent(campaign.id)}`,
+            'aria-expanded': expanded, 'aria-controls': contentId });
+        toggle.setAttribute('aria-label', `${campaign.game_name} — ${campaign.name}`);
+        overview.appendChild(campaignGameDiv);
+        const dates = makeElement('span', { class: 'campaign-date-range' });
+        for (const [field, key, fallback] of [['starts_at', 'starts', 'Starts: {time}'], ['ends_at', 'ends', 'Ends: {time}']]) {
+            const date = new Date(campaign[field]);
+            if (!campaign[field] || Number.isNaN(date.getTime())) continue;
+            const label = t.gui?.inventory?.[key] || fallback;
+            dates.appendChild(makeElement('time', { datetime: campaign[field], title: label.replace('{time}', date.toLocaleString()) },
+                label.replace('{time}', date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }))));
+        }
+        overview.appendChild(dates);
+        toggle.appendChild(makeElement('span', { class: 'campaign-chevron', 'aria-hidden': 'true' }));
+        const controls = makeElement('div', { class: 'campaign-controls' });
+        controls.appendChild(linkStatusBadge);
+        controls.appendChild(toggle);
+        overview.appendChild(controls);
+        const actions = makeElement('div', { class: 'campaign-actions' });
+        if (canAddInventoryGame(campaign) || (campaign.linked === true && campaign.game_name === inventoryWatchPendingGame)) {
+            const add = makeElement('button', { type: 'button', class: 'inventory-add-game' },
+                campaign.game_name === inventoryWatchPendingGame ? (t.gui?.inventory?.adding_game || 'Adding…')
+                    : (t.gui?.inventory?.add_game || 'Add to mining list'));
+            add.disabled = inventoryWatchSavePending;
+            add.id = `inventory-add-${encodeURIComponent(campaign.id)}`;
+            add.addEventListener('click', () => addInventoryGame(campaign.id, add));
+            actions.appendChild(add);
+        }
+        if (!campaign.linked && campaign.link_url) {
+            const link = makeElement('a', { id: `inventory-link-${encodeURIComponent(campaign.id)}`, href: campaign.link_url, target: '_blank', rel: 'noopener noreferrer', class: 'link-account-btn' },
+                t.gui?.inventory?.link_account || 'Link account');
+            actions.appendChild(link);
+        }
+        overview.appendChild(actions);
 
         const campaignStatus = makeElement('div', { class: 'campaign-status' }, '', el => {
             el.appendChild(makeElement('span', {}, statusText));
@@ -1154,25 +1333,34 @@ function renderInventory() {
         });
 
         const campaignInfo = makeElement('div', { class: 'campaign-info' });
-        campaignInfo.appendChild(campaignHeader);
         campaignInfo.appendChild(campaignStatus);
 
-        // Campaign timing
-        if (campaign.active && campaign.ends_at) {
-            const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
-            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
-        } else if (campaign.upcoming && campaign.starts_at) {
-            const startsLabel = t.gui?.inventory?.starts || 'Starts: {time}';
-            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, startsLabel.replace('{time}', new Date(campaign.starts_at).toLocaleString())));
-        } else if (campaign.expired && campaign.ends_at) {
-            const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
-            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
-        }
+        const content = makeElement('div', { class: 'campaign-content', id: contentId });
+        content.hidden = !expanded;
+        content.appendChild(campaignInfo);
+        content.appendChild(dropsEl);
+        toggle.addEventListener('click', () => {
+            const open = toggle.getAttribute('aria-expanded') !== 'true';
+            if (open) expandedInventoryCampaigns.add(campaign.id);
+            else expandedInventoryCampaigns.delete(campaign.id);
+            toggle.setAttribute('aria-expanded', String(open));
+            content.hidden = !open;
+        });
+        // The whole overview opens the card; its links and buttons keep their own actions.
+        overview.addEventListener('click', event => {
+            if (!event.target.closest('a, button, .campaign-badge') && !getSelection()?.toString()) toggle.click();
+        });
+        card.replaceChildren(overview, content);
 
-        card.replaceChildren(campaignInfo, dropsEl);
-
-        container.appendChild(card);
+        columns[index % columnCount].appendChild(card);
     });
+    if (focusedId) {
+        const prefix = ['inventory-add-', 'inventory-link-', 'inventory-campaign-']
+            .find(value => focusedId.startsWith(value));
+        const target = document.getElementById(focusedId)
+            || (prefix ? document.getElementById('inventory-toggle-' + focusedId.slice(prefix.length)) : null);
+        target?.focus({ preventScroll: true });
+    }
 }
 
 function updateLoginStatus(data) {
@@ -1206,12 +1394,17 @@ function updateLoginStatus(data) {
     globalThis.browserLoginPanel?.updateLogin(data);
 }
 
-function updateSettingsUI(settings) {
+function updateSettingsUI(settings, authoritative = false) {
+    // Initial loads/socket updates own the watch list; unrelated partial-save replies do not.
+    if (!authoritative && Array.isArray(state.settings.games_to_watch)) {
+        settings = { ...settings, games_to_watch: state.settings.games_to_watch };
+    } else {
+        settings = reconcileGameWatchSettings(settings);
+    }
     state.settings = settings;
     const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
     if (allowUnlinked) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
-    document.getElementById('inventory-list-view').checked = settings.inventory_list_view || false;
     document.getElementById('priority-list-only').checked = settings.priority_list_only !== false;
     applyInventoryViewMode(settings.inventory_list_view || false);
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
@@ -1353,7 +1546,7 @@ function updateManualModeUI(manualModeInfo) {
     }
 }
 
-// ==================== Games to Watch Management ====================
+// ==================== mining list Management ====================
 
 let availableGames = new Set(); // All games from campaigns
 let draggedElement = null;
@@ -1746,7 +1939,7 @@ function addGameFromSearch() {
     // Warn if adding manually
     if (isManualAdd) {
         const t = state.translations;
-        let msg = t.gui?.settings?.manual_game_warning || '\"{game}\" is not in the available campaign list. Add it to Games to Watch anyway?';
+        let msg = t.gui?.settings?.manual_game_warning || '\"{game}\" is not in the available campaign list. Add it to mining list anyway?';
         msg = msg.replace('{game}', gameToAdd);
         showConfirmModal(msg, () => finishAdding(gameToAdd));
     } else {
@@ -2078,7 +2271,7 @@ async function onMiningHoursChange() {
 async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
-        inventory_list_view: document.getElementById('inventory-list-view').checked,
+        inventory_list_view: state.settings.inventory_list_view === true,
         language: document.getElementById('language').value,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
@@ -2096,11 +2289,7 @@ async function saveSettings() {
     };
 
     try {
-        await fetch('/api/settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(settings)
-        });
+        await queueSettingsWrite(settings);
         console.log('Settings saved automatically');
     } catch (error) {
         console.error('Failed to save settings:', error);
@@ -2419,8 +2608,10 @@ function applyTranslations(t) {
         const availableGamesHeader = settingsTab.querySelector('.available-games h3');
         if (availableGamesHeader) availableGamesHeader.textContent = t.gui.settings.available_games;
 
-        const reloadBtn = document.getElementById('reload-btn');
-        if (reloadBtn) reloadBtn.textContent = t.gui.settings.reload_campaigns;
+        for (const id of ['inventory-reload-label', 'games-reload-label']) {
+            const label = document.getElementById(id);
+            if (label) label.textContent = t.gui.settings.reload_campaigns;
+        }
 
         const discordTrans = t.gui?.settings?.discord;
         if (discordTrans) {
@@ -2610,6 +2801,10 @@ function applyTranslations(t) {
         };
         updateLabel('filter-active', f.active);
         document.getElementById('filter-link-status-label').textContent = f.account_link;
+        for (const [id, text] of [['filter-status-heading', f.status_heading], ['filter-rewards-heading', f.rewards_heading]]) {
+            const heading = document.getElementById(id);
+            if (heading && text) heading.textContent = text;
+        }
         const linkStatus = document.getElementById('filter-link-status');
         linkStatus.querySelector('[value="all"]').textContent = f.all;
         linkStatus.querySelector('[value="linked"]').textContent = f.linked;
@@ -2624,6 +2819,11 @@ function applyTranslations(t) {
 
         const clearBtn = document.getElementById('clear-filters-btn');
         if (clearBtn) clearBtn.textContent = f.clear;
+        for (const [id, key] of [['inventory-view-cards', 'card_view'], ['inventory-view-list', 'list_view']]) {
+            const label = t.gui?.inventory?.[key];
+            if (label) document.getElementById(id)?.setAttribute('aria-label', label);
+            if (label) document.getElementById(id)?.setAttribute('title', label);
+        }
 
         const searchInput = document.getElementById('games-filter');
         if (searchInput) searchInput.placeholder = f.search_placeholder;
@@ -2674,9 +2874,20 @@ async function requestCampaignRefresh(endpoint, button, actionName) {
     }
 }
 
+// Inventory and the Mining list share one reload; every reload button waits for it.
+function reloadButtons() {
+    return [...document.querySelectorAll('.reload-campaigns-btn')];
+}
+
 async function reloadCampaigns() {
-    const button = document.getElementById('reload-btn');
-    await requestCampaignRefresh('/api/reload', button, 'reload campaigns');
+    const buttons = reloadButtons();
+    if (buttons.some(button => button.disabled)) return;
+    buttons.forEach(button => { button.disabled = true; button.setAttribute('aria-busy', 'true'); });
+    try {
+        await requestCampaignRefresh('/api/reload', null, 'reload campaigns');
+    } finally {
+        buttons.forEach(button => { button.disabled = false; button.removeAttribute('aria-busy'); });
+    }
 }
 
 async function clearAllCache() {
@@ -2775,11 +2986,14 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSettings();
     });
 
-    document.getElementById('inventory-list-view').addEventListener('change', (e) => {
-        // Apply the view mode immediately for instant feedback
-        applyInventoryViewMode(e.target.checked);
-        saveSettings();
-    });
+    // Re-render when the column count changes (resizes, or the Inventory tab becoming visible).
+    new ResizeObserver(() => {
+        const grid = document.getElementById('inventory-grid');
+        // Next frame: re-rendering inside the callback would trigger a ResizeObserver loop warning.
+        if (grid.dataset.columns && String(inventoryColumnCount(grid)) !== grid.dataset.columns) requestAnimationFrame(renderInventory);
+    }).observe(document.getElementById('inventory-grid'));
+    document.getElementById('inventory-view-cards').addEventListener('click', () => setInventoryViewMode(false));
+    document.getElementById('inventory-view-list').addEventListener('click', () => setInventoryViewMode(true));
     document.getElementById('priority-list-only').addEventListener('change', onPriorityModeChange);
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
@@ -2796,7 +3010,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('remove-discord-btn').addEventListener('click', () => updateDiscordSettings('remove'));
     document.getElementById('test-telegram-btn').addEventListener('click', testTelegramConnection);
     document.getElementById('save-telegram-btn').addEventListener('click', handleSaveTelegramClick);
-    document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
+    reloadButtons().forEach(button => button.addEventListener('click', reloadCampaigns));
     document.getElementById('clear-cache-btn').addEventListener('click', clearAllCache);
     document.getElementById('dump-diagnostics-btn').addEventListener('click', dumpDiagnostics);
 
