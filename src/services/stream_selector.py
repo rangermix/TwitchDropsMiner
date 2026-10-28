@@ -4,6 +4,7 @@ from src.config.reward_priority import RewardPriority
 from src.config.settings import Settings
 from src.models.campaign import DropsCampaign
 from src.models.game import Game
+from src.services.game_order import TemporaryGameOrder
 
 
 class StreamSelector:
@@ -87,11 +88,13 @@ class StreamSelector:
             wanted_games.append(fallback_game)
 
     def _get_wanted_game_tree(
-        self, settings: Settings, campaigns: list[DropsCampaign]
+        self, settings: Settings, campaigns: list[DropsCampaign],
+        order: TemporaryGameOrder | None = None,
     ) -> list[dict]:
         """
         Get the hierarchical tree of wanted items (Games -> Campaigns -> Drops -> Benefits).
-        Include campaigns available within an hour, with selected games first.
+        Include campaigns available within an hour, with selected games first. A
+        temporary dashboard order, when set, takes precedence over every other rule.
         """
         wanted_games: list[dict] = []
         queued_ids: set[int] = set()
@@ -157,14 +160,22 @@ class StreamSelector:
             by_id = {campaign.id: campaign for campaign in campaigns}
             for game in wanted_games:
                 game["campaigns"].sort(key=lambda entry: policy.campaign_key(by_id[entry["id"]]))
+        if isinstance(order, TemporaryGameOrder) and order.active:
+            # Stable: games outside the temporary order keep their default sequence.
+            wanted_games.sort(key=lambda game: order.rank(game["game_name"]))
         return wanted_games
 
     def get_wanted_game_tree(
-        self, settings: Settings, campaigns: list[DropsCampaign]
+        self, settings: Settings, campaigns: list[DropsCampaign],
+        order: TemporaryGameOrder | None = None,
     ) -> list[dict]:
         return [
-            {**game, "game_obj": None} for game in self._get_wanted_game_tree(settings, campaigns)
+            {**game, "game_obj": None}
+            for game in self._get_wanted_game_tree(settings, campaigns, order)
         ]
 
-    def get_wanted_games(self, settings: Settings, campaigns: list[DropsCampaign]) -> list[Game]:
-        return [game["game_obj"] for game in self._get_wanted_game_tree(settings, campaigns)]
+    def get_wanted_games(
+        self, settings: Settings, campaigns: list[DropsCampaign],
+        order: TemporaryGameOrder | None = None,
+    ) -> list[Game]:
+        return [game["game_obj"] for game in self._get_wanted_game_tree(settings, campaigns, order)]

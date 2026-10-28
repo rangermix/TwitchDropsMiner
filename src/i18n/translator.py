@@ -185,6 +185,10 @@ class GUIBadges(TypedDict):
 class GUIWanted(TypedDict):
     name: str
     none: str
+    drag_hint: str
+    temporary: str
+    reset: str
+    save_error: str
 
 
 class GUIInvFilters(TypedDict):

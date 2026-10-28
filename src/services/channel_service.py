@@ -19,6 +19,7 @@ from src.config import GQL_OPERATIONS, MAX_INT
 from src.config.reward_priority import RewardPriority
 from src.exceptions import ExitRequest, GQLException, MinerException
 from src.models.channel import Channel
+from src.services.game_order import TemporaryGameOrder
 from src.utils import chunk
 
 
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
     from src.config import GQLRequest, JsonType
     from src.core.client import Twitch
     from src.models.game import Game
+    from src.services.game_order import TemporaryGameOrder
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -104,7 +106,24 @@ class ChannelService:
             return MAX_INT
         return self._twitch.wanted_games.index(game)
 
-    def get_mining_priority(self, channel: Channel) -> tuple[int, int] | tuple[int, int, float, int]:
+    def get_mining_priority(self, channel: Channel) -> tuple[float, ...]:
+        """A temporary dashboard order first, then the default mining priority."""
+        key = self._default_mining_priority(channel)
+        order = getattr(self._twitch, "game_order", None)
+        if not isinstance(order, TemporaryGameOrder) or not order.active:
+            return key
+        return (self._manual_rank(channel, order), *key)
+
+    def _manual_rank(self, channel: Channel, order: TemporaryGameOrder) -> int:
+        """Rank a channel by its best manually ordered wanted game, streamed or earnable."""
+        wanted = self._twitch.wanted_games
+        games = [campaign.game for campaign in self._twitch.inventory
+                 if campaign.game in wanted and campaign.can_earn(channel)]
+        if channel.game is not None and channel.game in wanted:
+            games.append(channel.game)
+        return min((order.rank(game.name) for game in games), default=order.rank(None))
+
+    def _default_mining_priority(self, channel: Channel) -> tuple[int, int] | tuple[int, int, float, int]:
         """Selected games first; optional reward type/deadline before game order."""
         priority = self.get_priority(channel)
         settings = getattr(self._twitch, "settings", None)

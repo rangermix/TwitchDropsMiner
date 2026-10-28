@@ -348,7 +348,11 @@
         },
         "wanted": {
             "name": "Cola de Drops Deseados",
-            "none": "No hay drops deseados en cola..."
+            "none": "No hay drops deseados en cola...",
+            "drag_hint": "Arrastra los juegos para cambiar el orden hasta reiniciar (en pantallas táctiles, mantén pulsado primero). La lista de minado en Configuración sigue siendo la predeterminada.",
+            "temporary": "Orden temporal hasta reiniciar.",
+            "reset": "Restablecer al orden de la lista de minado",
+            "save_error": "No se pudo cambiar el orden de la cola. Inténtalo de nuevo."
         },
         "history": {
             "title": "Historial de drops",

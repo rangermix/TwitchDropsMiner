@@ -348,7 +348,11 @@
         },
         "wanted": {
             "name": "Fila de Drops Desejados",
-            "none": "Nenhum drop desejado na fila..."
+            "none": "Nenhum drop desejado na fila...",
+            "drag_hint": "Arraste os jogos para mudar a ordem até reiniciar (em telas sensíveis ao toque, mantenha pressionado primeiro). A lista de mineração nas Configurações continua sendo o padrão.",
+            "temporary": "Ordem temporária até reiniciar.",
+            "reset": "Restaurar a ordem da lista de mineração",
+            "save_error": "Não foi possível alterar a ordem da fila. Tente novamente."
         },
         "history": {
             "title": "Histórico de drops",

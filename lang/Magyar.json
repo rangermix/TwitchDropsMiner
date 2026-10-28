@@ -305,7 +305,11 @@
         },
         "wanted": {
             "name": "Kívánt jutalmak sorban",
-            "none": "Nincsenek kívánt jutalmak sorban..."
+            "none": "Nincsenek kívánt jutalmak sorban...",
+            "drag_hint": "Húzd a játékokat a sorrend módosításához az újraindításig (érintőképernyőn előbb tartsd lenyomva). A Beállítások bányászati listája marad az alapértelmezett.",
+            "temporary": "Ideiglenes sorrend az újraindításig.",
+            "reset": "Visszaállítás a bányászati lista sorrendjére",
+            "save_error": "Nem sikerült módosítani a sor sorrendjét. Próbáld újra."
         },
         "inventory": {
             "no_campaigns": "Még nincs betöltött kampány...",

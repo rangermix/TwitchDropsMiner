@@ -348,7 +348,11 @@
         },
         "wanted": {
             "name": "Gewenste Drops Wachtrij",
-            "none": "Geen gewenste drops in de wachtrij..."
+            "none": "Geen gewenste drops in de wachtrij...",
+            "drag_hint": "Sleep games om de volgorde tot een herstart te wijzigen (op touchscreens eerst ingedrukt houden). De mininglijst in Instellingen blijft de standaard.",
+            "temporary": "Tijdelijke volgorde tot herstart.",
+            "reset": "Terug naar volgorde van de mininglijst",
+            "save_error": "De volgorde van de wachtrij kon niet worden gewijzigd. Probeer het opnieuw."
         },
         "history": {
             "title": "Dropgeschiedenis",

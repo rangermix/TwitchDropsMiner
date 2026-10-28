@@ -348,7 +348,11 @@
         },
         "wanted": {
             "name": "Fronta chtěných Dropů",
-            "none": "Žádné chtěné dropy ve frontě..."
+            "none": "Žádné chtěné dropy ve frontě...",
+            "drag_hint": "Přetažením her změníte pořadí do restartu (na dotykových obrazovkách nejprve podržte). Seznam těžby v Nastavení zůstává výchozí.",
+            "temporary": "Dočasné pořadí do restartu.",
+            "reset": "Obnovit pořadí seznamu těžby",
+            "save_error": "Pořadí fronty se nepodařilo změnit. Zkuste to znovu."
         },
         "history": {
             "title": "Historie dropů",

@@ -348,7 +348,11 @@
         },
         "wanted": {
             "name": "File d'attente Drops souhaités",
-            "none": "Aucun drop souhaité en file d'attente..."
+            "none": "Aucun drop souhaité en file d'attente...",
+            "drag_hint": "Faites glisser les jeux pour changer l’ordre jusqu’au redémarrage (sur écran tactile, maintenez d’abord appuyé). La liste de minage dans les Paramètres reste l’ordre par défaut.",
+            "temporary": "Ordre temporaire jusqu’au redémarrage.",
+            "reset": "Revenir à l’ordre de la liste de minage",
+            "save_error": "Impossible de modifier l’ordre de la file. Veuillez réessayer."
         },
         "history": {
             "title": "Historique des drops",

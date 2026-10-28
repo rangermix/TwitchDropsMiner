@@ -305,7 +305,11 @@
         },
         "wanted": {
             "name": "Wanted Drops Queue",
-            "none": "No wanted drops queued..."
+            "none": "No wanted drops queued...",
+            "drag_hint": "Drag games to change the order until restart (press and hold first on touch screens). The Mining list in Settings stays the default.",
+            "temporary": "Temporary order until restart.",
+            "reset": "Reset to Mining list order",
+            "save_error": "Could not change the queue order. Please try again."
         },
         "inventory": {
             "no_campaigns": "No campaigns loaded yet...",

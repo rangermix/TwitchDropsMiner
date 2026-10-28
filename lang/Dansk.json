@@ -348,7 +348,11 @@
         },
         "wanted": {
             "name": "Ønskede Drops Kø",
-            "none": "Ingen ønskede drops i køen..."
+            "none": "Ingen ønskede drops i køen...",
+            "drag_hint": "Træk spil for at ændre rækkefølgen indtil genstart (tryk og hold først på berøringsskærme). Mininglisten i Indstillinger forbliver standarden.",
+            "temporary": "Midlertidig rækkefølge indtil genstart.",
+            "reset": "Nulstil til mininglistens rækkefølge",
+            "save_error": "Køens rækkefølge kunne ikke ændres. Prøv igen."
         },
         "history": {
             "title": "Drop-historik",
