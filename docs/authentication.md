@@ -153,7 +153,7 @@ their temporary profiles; an abrupt host crash cannot guarantee profile cleanup.
 ## Dashboard access and source installations
 
 Expand **Dashboard password** on the sign in screen to configure protection before
-entering Twitch credentials. The same controls remain in Settings after sign in.
+entering Twitch credentials. The same controls remain in Settings → Account & Maintenance after sign in.
 
 The viewer and login actions use the dashboard’s access controls, including optional
 password protection, same-origin checks and session expiry. Protect access to the

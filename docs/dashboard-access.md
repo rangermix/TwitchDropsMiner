@@ -88,7 +88,7 @@ Recovery requires access to the miner host:
 1. Stop the miner and restrict network access to its dashboard port.
 2. Delete only `data/web_auth.json` from its persistent data directory. In Docker,
    this is `/app/data/web_auth.json` inside the container, backed by your data mount.
-3. Restart the miner and set a new dashboard password in Settings.
+3. Restart the miner and set a new dashboard password in Settings → Account & Maintenance.
 4. Restore remote access after protection is enabled.
 
 This resets dashboard protection without deleting Twitch cookies or other settings.

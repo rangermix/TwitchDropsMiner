@@ -29,7 +29,7 @@ position unchanged.
 
 Search for a game and press **Enter** or select **Add Game**. An exact name or unique
 partial match selects an available game. If several names match, use a more specific
-search. You can also confirm adding a manually entered name. Select **Account & Maintenance → Reload Campaigns** after
+search. You can also confirm adding a manually entered name. Select **Settings → Account & Maintenance → Reload Campaigns** after
 adding games to refresh the miner's selection.
 
 **Select All** keeps your existing priority order and manual entries, then adds missing
