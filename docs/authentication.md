@@ -42,7 +42,7 @@ another sign-in; TDM still verifies the account and campaign access before accep
 
 ## Docker and timezone
 
-Use the published `rangermix/twitch-drops-miner:2.3.1` image or build the current source.
+Use the published `rangermix/twitch-drops-miner:2.3.2` image or build the current source.
 The image includes Chromium, Xvfb, a window manager and noVNC. It does not need a
 display on the home server or NAS. Only the dashboard port is published; VNC and
 browser control remain on container loopback addresses.
@@ -61,16 +61,16 @@ renewal on the miner server. Twitch can reject either browser; this fallback doe
 not guarantee successful sign-in.
 
 Download the helper matching your **miner version** from the sign-in screen or its
-[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.3.1).
+[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.3.2).
 Choose the platform of the computer where you will run the helper, which may differ
 from your miner server:
 
-| Computer | v2.3.1 archive |
+| Computer | v2.3.2 archive |
 | --- | --- |
-| Windows x64 | `tdm-login-helper-2.3.1-windows-x64.tar.gz` |
-| Linux x64 | `tdm-login-helper-2.3.1-linux-x64.tar.gz` |
-| macOS Apple silicon (arm64) | `tdm-login-helper-2.3.1-macos-arm64.tar.gz` |
-| macOS Intel (x64) | `tdm-login-helper-2.3.1-macos-x64.tar.gz` |
+| Windows x64 | `tdm-login-helper-2.3.2-windows-x64.tar.gz` |
+| Linux x64 | `tdm-login-helper-2.3.2-linux-x64.tar.gz` |
+| macOS Apple silicon (arm64) | `tdm-login-helper-2.3.2-macos-arm64.tar.gz` |
+| macOS Intel (x64) | `tdm-login-helper-2.3.2-macos-x64.tar.gz` |
 
 Extract the archive to a folder before running it. Install a native Chrome, Chromium,
 or Firefox 143+ browser on that computer; the helper does not include a browser.

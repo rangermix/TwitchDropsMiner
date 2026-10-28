@@ -25,6 +25,7 @@ services operated for other users are outside its support scope.
 - Skip channels while Twitch reports an active ban, including temporary bans.
 - Sign in inside the dashboard; TDM saves and renews your session automatically.
 - Review claimed-drop history, export it to CSV, and receive Telegram or Discord notifications.
+  Discord claim alerts include reward artwork when available.
 - Manage everything from a web dashboard with optional password protection.
 - Set daily [mining hours](docs/usage.md#mining-hours) in the miner’s local timezone.
 - [Pause mining](docs/usage.md#pause-mining) for 10 minutes, an hour, until tomorrow,
@@ -61,13 +62,13 @@ With Docker installed, choose one setup below. Shell examples use Bash
 Pull and start the published image:
 
 ```bash
-docker pull rangermix/twitch-drops-miner:2.3.1
+docker pull rangermix/twitch-drops-miner:2.3.2
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.3.1
+  rangermix/twitch-drops-miner:2.3.2
 ```
 
 ### Docker Compose
@@ -78,7 +79,7 @@ inside it. Set `TZ` to your home internet connection's timezone:
 ```yaml
 services:
   twitch-drops-miner:
-    image: rangermix/twitch-drops-miner:2.3.1
+    image: rangermix/twitch-drops-miner:2.3.2
     container_name: twitch-drops-miner
     init: true
     stop_grace_period: 30s
@@ -207,9 +208,13 @@ Search [existing issues](https://github.com/rangermix/TwitchDropsMiner/issues) b
 reporting a problem. Use the [bug-report form](https://github.com/rangermix/TwitchDropsMiner/issues/new?template=bug_report.yml)
 with the running app version, hosting environment, reproduction steps, and redacted evidence.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for bug reports, translations,
-and development. This fork uses AI-assisted development with automated checks and
+and development. CI lint checks validate source without rewriting it.
+This fork uses AI-assisted development with automated checks and
 independent review. Agents acknowledge work in the relevant issue or PR before starting
 and post the outcome there when work ends or pauses.
+
+Visual dashboard PRs require redacted screenshots, with before/after views when an
+existing screen changes; see [contribution guidance](CONTRIBUTING.md#5-submit-clear-evidence-and-follow-through).
 
 Based on [DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner).
 See [credits](docs/credits.md) for the original project and translation contributors.
@@ -224,11 +229,11 @@ or [buying the maintainer a coffee](https://buymeacoffee.com/rangermix).
 <!-- contributors:start -->
 | Contributor | Merged pull requests |
 | --- | --- |
-| [@0zLloen](https://github.com/0zLloen) | [#152](https://github.com/rangermix/TwitchDropsMiner/pull/152) · [#185](https://github.com/rangermix/TwitchDropsMiner/pull/185) |
+| [@0zLloen](https://github.com/0zLloen) | [#152](https://github.com/rangermix/TwitchDropsMiner/pull/152) · [#185](https://github.com/rangermix/TwitchDropsMiner/pull/185) · [#191](https://github.com/rangermix/TwitchDropsMiner/pull/191) · [#188](https://github.com/rangermix/TwitchDropsMiner/pull/188) |
 | [@3lb0z0](https://github.com/3lb0z0) | [#110](https://github.com/rangermix/TwitchDropsMiner/pull/110) |
 | [@andreluisfc](https://github.com/andreluisfc) | [#76](https://github.com/rangermix/TwitchDropsMiner/pull/76) |
 | [@birdhimself](https://github.com/birdhimself) | [#41](https://github.com/rangermix/TwitchDropsMiner/pull/41) |
-| [@brk275](https://github.com/brk275) | [#171](https://github.com/rangermix/TwitchDropsMiner/pull/171) · [#172](https://github.com/rangermix/TwitchDropsMiner/pull/172) |
+| [@brk275](https://github.com/brk275) | [#171](https://github.com/rangermix/TwitchDropsMiner/pull/171) · [#172](https://github.com/rangermix/TwitchDropsMiner/pull/172) · [#179](https://github.com/rangermix/TwitchDropsMiner/pull/179) |
 | [@capkz](https://github.com/capkz) | [#70](https://github.com/rangermix/TwitchDropsMiner/pull/70) |
 | [@Dolverin](https://github.com/Dolverin) | [#142](https://github.com/rangermix/TwitchDropsMiner/pull/142) |
 | [@EthanBlazkowicz](https://github.com/EthanBlazkowicz) | [#33](https://github.com/rangermix/TwitchDropsMiner/pull/33) |
