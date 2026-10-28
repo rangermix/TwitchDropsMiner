@@ -38,7 +38,8 @@ logger = logging.getLogger("TwitchDrops")
 # Create FastAPI app
 app = FastAPI(title="Twitch Drops Miner Web", version=__version__)
 
-web_auth = WebAuth(DATA_DIR / "web_auth.json", public_base_url=os.environ.get("PUBLIC_BASE_URL", ""))
+web_auth = WebAuth(DATA_DIR / "web_auth.json", public_base_url=os.environ.get("PUBLIC_BASE_URL", ""),
+                   allowed_hosts=os.environ.get("ALLOWED_HOSTS", ""))
 sio = AuthSocketServer(web_auth)
 app.include_router(AuthAPI(web_auth, sio).router)
 app.add_middleware(AuthMiddleware, auth=web_auth)
@@ -59,7 +60,8 @@ _server_instance: uvicorn.Server | None = None
 
 session_api = SessionAPI(web_auth, lambda: twitch_client)
 app.include_router(session_api.router)
-app.include_router(HelperAPI(web_auth, lambda: twitch_client).router)
+helper_api = HelperAPI(web_auth, lambda: twitch_client)
+app.include_router(helper_api.router)
 app.include_router(DiagnosticsAPI(lambda: twitch_client).router)
 
 
@@ -103,13 +105,7 @@ class SettingsUpdate(BaseModel):
     @field_validator("inventory_filters")
     @classmethod
     def validate_link_status(cls, value: dict | None) -> dict | None:
-        if (
-            value is not None
-            and "link_status" in value
-            and value["link_status"] not in InventoryFilterSettings.LINK_STATUSES
-        ):
-            raise ValueError("Invalid account-link filter")
-        return value
+        return InventoryFilterSettings.validate_update(value) if value is not None else None
 
 
 class ProxyVerifyRequest(BaseModel):
@@ -266,6 +262,11 @@ async def verify_proxy(request: ProxyVerifyRequest):
     import aiohttp
 
     proxy_url = request.proxy.strip()
+    if gui_manager is not None:
+        try:
+            proxy_url = gui_manager.settings.resolve_proxy(proxy_url)
+        except ValueError:
+            return {"success": False, "message": "Re-enter the proxy password"}
     if not proxy_url:
         return {"success": False, "message": "Proxy URL is empty"}
 
@@ -294,7 +295,8 @@ async def verify_proxy(request: ProxyVerifyRequest):
     except Exception as e:
         if twitch_client is not None:
             twitch_client.diagnostics.record("twitch_page", outcome="timeout" if isinstance(e, TimeoutError) else "connection")
-        return {"success": False, "message": f"Connection failed: {str(e)}"}
+        # Exception text can reveal internal hosts and ports; keep the reply fixed.
+        return {"success": False, "message": "Connection failed"}
 
 
 @app.post("/api/settings/test-discord")
@@ -361,11 +363,9 @@ async def test_telegram(request: TelegramTestRequest):
                 "success": False,
                 "message": "Failed to connect to Telegram. Please check your bot token and chat ID."
             }
-    except Exception as e:
-        return {
-            "success": False,
-            "message": f"Telegram error: {str(e)}"
-        }
+    except Exception:
+        # Exception text can contain the bot API URL, which embeds the token.
+        return {"success": False, "message": "Telegram connection failed."}
 @app.get("/api/version")
 async def get_version():
     """Get current application version and check for updates"""

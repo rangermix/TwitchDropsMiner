@@ -306,6 +306,7 @@ socket.on('inventory_batch_update', (data) => {
         state.campaigns[camp.id] = camp;
     });
     renderInventory();
+    refreshGamesIfLinkStatusChanged();
 });
 
 socket.on('drop_update', (data) => {
@@ -678,11 +679,13 @@ function clearDropProgress() {
 function addCampaign(campaignData) {
     state.campaigns[campaignData.id] = campaignData;
     renderInventory();
+    refreshGamesIfLinkStatusChanged();
 }
 
 function clearInventory() {
     state.campaigns = {};
     renderInventory();
+    refreshGamesIfLinkStatusChanged();
 }
 
 function updateDrop(campaignId, dropData, campaignData = {}, dropsData = null) {
@@ -1553,23 +1556,92 @@ socket.on('games_available', (data) => {
     renderGamesToWatch();
 });
 
+// Account linking is per game, so a game counts as linked if any of its campaigns is.
+// Games without a known campaign are absent from the map (status unknown).
+function getGameLinkStatus() {
+    const status = new Map();
+    Object.values(state.campaigns).forEach(campaign => {
+        if (!campaign.game_name) return;
+        const key = campaign.game_name.toLowerCase();
+        status.set(key, status.get(key) === true || campaign.linked === true);
+    });
+    return status;
+}
+
+function linkStatusSignature(linkStatus) {
+    const shown = new Set([...availableGames, ...(state.settings.games_to_watch || [])]
+        .map(game => game.toLowerCase()));
+    return Array.from(linkStatus.entries()).filter(([game]) => shown.has(game)).sort().join('|');
+}
+
+// Inventory updates arrive often while mining; rebuilding the lists would interrupt
+// a drag or a priority edit, so only re-render when a game's link status changed.
+let renderedLinkSignature = null;
+function refreshGamesIfLinkStatusChanged() {
+    if (linkStatusSignature(getGameLinkStatus()) !== renderedLinkSignature) {
+        renderGamesToWatch();
+    }
+}
+
+function makeGameLinkBadge(linkStatus, game) {
+    const linked = linkStatus.get(game.toLowerCase());
+    if (linked === undefined) return null;
+    const t = state.translations.gui?.settings;
+    return linked
+        ? makeElement('span', { class: 'game-link-badge linked', title: t?.game_linked_title || 'Account is linked' }, t?.game_linked || 'LINKED')
+        : makeElement('span', { class: 'game-link-badge not-linked', title: t?.game_not_linked_title || 'Account is not linked' }, t?.game_not_linked || 'NOT LINKED');
+}
+
+function selectLinkedGames() {
+    const linkStatus = getGameLinkStatus();
+    const existing = state.settings.games_to_watch || [];
+    const selected = new Set(existing.map(game => game.toLowerCase()));
+    const newGames = Array.from(availableGames).sort((a, b) => a.localeCompare(b)).filter(game => {
+        const key = game.toLowerCase();
+        if (selected.has(key) || linkStatus.get(key) !== true) return false;
+        selected.add(key);
+        return true;
+    });
+    if (newGames.length === 0) return;
+
+    state.settings.games_to_watch = [...existing, ...newGames];
+    renderGamesToWatch();
+    renderChannels();
+    saveSettings();
+}
+
 function renderGamesToWatch() {
     const selectedGames = state.settings.games_to_watch || [];
     const filterText = document.getElementById('games-filter')?.value.toLowerCase() || '';
+    const linkFilter = document.getElementById('games-link-filter')?.value || 'all';
+    const linkStatus = getGameLinkStatus();
+    renderedLinkSignature = linkStatusSignature(linkStatus);
 
     // Render selected games (sortable)
-    renderSelectedGames(selectedGames);
+    renderSelectedGames(selectedGames, linkStatus);
 
     // Render available games (checkboxes for unselected games)
+    const selectedKeys = new Set(selectedGames.map(game => game.toLowerCase()));
     const unselectedGames = Array.from(availableGames)
-        .filter(game => !selectedGames.includes(game))
+        .filter(game => !selectedKeys.has(game.toLowerCase()))
         .filter(game => game.toLowerCase().includes(filterText))
-        .sort();
+        .filter(game => {
+            const linked = linkStatus.get(game.toLowerCase());
+            if (linkFilter === 'linked') return linked === true;
+            if (linkFilter === 'not_linked') return linked === false;
+            return true;
+        })
+        // Linked games first, then the rest; alphabetical within each group
+        .sort((a, b) => {
+            const aLinked = linkStatus.get(a.toLowerCase()) === true;
+            const bLinked = linkStatus.get(b.toLowerCase()) === true;
+            return (bLinked - aLinked) || a.localeCompare(b);
+        });
 
-    renderAvailableGames(unselectedGames, filterText);
+    renderAvailableGames(unselectedGames, filterText, linkStatus, linkFilter);
 }
 
-function renderSelectedGames(games) {
+function renderSelectedGames(games, linkStatus = getGameLinkStatus()) {
     const container = document.getElementById('selected-games-list');
     if (!container) return;
 
@@ -1600,6 +1672,7 @@ function renderSelectedGames(games) {
             makeElement('span', { class: 'drag-handle' }, '☰'),
             priorityInput,
             makeElement('span', { class: 'game-name' }, game),
+            ...[makeGameLinkBadge(linkStatus, game)].filter(Boolean),
             makeElement('button', {
                 class: 'remove-btn',
                 title: (t.gui?.settings?.remove_game || 'Remove {game}').replace('{game}', game),
@@ -1631,7 +1704,7 @@ function renderSelectedGames(games) {
     });
 }
 
-function renderAvailableGames(games, filterText) {
+function renderAvailableGames(games, filterText, linkStatus = getGameLinkStatus(), linkFilter = 'all') {
     const container = document.getElementById('available-games-list');
     if (!container) return;
 
@@ -1639,9 +1712,11 @@ function renderAvailableGames(games, filterText) {
     container.innerHTML = '';
 
     if (games.length === 0) {
-        if (filterText) {
+        if (filterText || linkFilter !== 'all') {
             const emptyMsg = t.gui?.settings?.no_games_match || 'No games match your search.';
-            const addHint = t.gui?.settings?.add_game_hint || ' Click "Add Game" to add it manually.';
+            const addHint = filterText
+                ? (t.gui?.settings?.add_game_hint || ' Click "Add Game" to add it manually.')
+                : '';
             container.replaceChildren(makeElement('p', { class: 'empty-message' }, `${emptyMsg}${addHint}`));
         } else {
             const emptyMsg = t.gui?.settings?.all_games_selected || 'All games are selected or no games available.';
@@ -1656,6 +1731,7 @@ function renderAvailableGames(games, filterText) {
         label.replaceChildren(
             makeElement('input', { type: 'checkbox', value: game }),
             makeElement('span', {}, game),
+            ...[makeGameLinkBadge(linkStatus, game)].filter(Boolean),
         );
 
         const checkbox = label.querySelector('input[type="checkbox"]');
@@ -2199,7 +2275,6 @@ async function saveSettings() {
         language: document.getElementById('language').value,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
-        proxy: state.settings.proxy || '',
         games_to_watch: state.settings.games_to_watch || [],
         drop_name_blacklist: parseDropNameBlacklist(
             document.getElementById('drop-name-blacklist')?.value
@@ -2218,6 +2293,37 @@ async function saveSettings() {
         console.log('Settings saved automatically');
     } catch (error) {
         console.error('Failed to save settings:', error);
+    }
+}
+
+/* The proxy saves alone: a rejected value must not block or partially apply autosaves. */
+async function saveProxy() {
+    const button = document.getElementById('set-proxy-btn');
+    const proxyInput = document.getElementById('proxy-url');
+    const resultDiv = document.getElementById('proxy-verify-result');
+    const newValue = proxyInput ? proxyInput.value.trim() : '';
+    if (button.disabled || newValue === (state.settings.proxy || '')) return;
+    const message = state.translations.gui?.settings?.proxy_save_error ||
+        'Could not save the proxy. Re-enter its password and try again.';
+    button.disabled = true;
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ proxy: newValue })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.success !== true) throw new Error('proxy_save_failed');
+        state.settings.proxy = data.settings?.proxy ?? newValue;
+        if (proxyInput) proxyInput.value = state.settings.proxy;
+        resultDiv.style.display = 'none';
+    } catch (error) {
+        if (proxyInput) proxyInput.value = state.settings.proxy || '';
+        resultDiv.className = 'verify-result error';
+        resultDiv.textContent = message;
+        resultDiv.style.display = 'block';
+    } finally {
+        button.disabled = false;
     }
 }
 
@@ -2474,6 +2580,18 @@ function applyTranslations(t) {
 
         const searchInput = document.getElementById('games-filter');
         if (searchInput) searchInput.placeholder = t.gui.settings.search_games;
+
+        const selectLinkedBtn = document.getElementById('select-linked-btn');
+        if (selectLinkedBtn && t.gui.settings.select_linked) selectLinkedBtn.textContent = t.gui.settings.select_linked;
+
+        const gamesLinkFilter = document.getElementById('games-link-filter');
+        if (gamesLinkFilter && t.gui.inventory?.filters) {
+            const f = t.gui.inventory.filters;
+            gamesLinkFilter.querySelector('[value="all"]').textContent = f.all;
+            gamesLinkFilter.querySelector('[value="linked"]').textContent = f.linked;
+            gamesLinkFilter.querySelector('[value="not_linked"]').textContent = f.not_linked;
+            if (f.account_link) gamesLinkFilter.setAttribute('aria-label', f.account_link);
+        }
 
         const selectAllBtn = document.getElementById('select-all-btn');
         if (selectAllBtn) selectAllBtn.textContent = t.gui.settings.select_all;
@@ -2885,16 +3003,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('drop-name-blacklist').addEventListener('change', saveSettings);
     document.getElementById('allow-unlinked-campaigns').addEventListener('change', onUnlinkedMiningChange);
     // Proxy uses a manual "Set Proxy" button instead of auto-save
-    document.getElementById('set-proxy-btn').addEventListener('click', () => {
-        const proxyInput = document.getElementById('proxy-url');
-        const newValue = proxyInput ? proxyInput.value : '';
-
-        // Only save if changed
-        if (newValue !== (state.settings.proxy || '')) {
-            state.settings.proxy = newValue;
-            saveSettings();
-        }
-    });
+    document.getElementById('set-proxy-btn').addEventListener('click', saveProxy);
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
     document.getElementById('test-discord-btn').addEventListener('click', () => updateDiscordSettings('test'));
     document.getElementById('save-discord-btn').addEventListener('click', () => updateDiscordSettings('save'));
@@ -2922,6 +3031,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Games to watch management
+    document.getElementById('select-linked-btn').addEventListener('click', selectLinkedGames);
+    document.getElementById('games-link-filter').addEventListener('change', renderGamesToWatch);
     document.getElementById('select-all-btn').addEventListener('click', selectAllGames);
     document.getElementById('deselect-all-btn').addEventListener('click', deselectAllGames);
     document.getElementById('add-game-btn').addEventListener('click', addGameFromSearch);

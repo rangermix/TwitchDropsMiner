@@ -36,6 +36,15 @@ beside **Add Game** after adding games to refresh the miner's selection.
 games. **Deselect All** asks for confirmation. You can cancel a confirmation with
 **Escape**. Your choices are saved for future runs.
 
+Each game shows a **LINKED** or **NOT LINKED** badge, based on the campaigns in your
+inventory. Linking belongs to the game account, so a game counts as linked when any of
+its campaigns is. Games without a known campaign, such as manually added names, show
+no badge. **Available Games** lists linked games first, and your selected games stay in
+priority order. The dropdown next to the search filters the available games by link
+status; **Not Linked** only shows games known to be unlinked, so games without a badge
+are hidden by both **Linked** and **Not Linked**. **Select Linked** adds every linked
+game that is not yet selected, keeping your existing order.
+
 Version 2.3.0 adds **Settings → General → Priority list only**, enabled by default.
 Leave it enabled to mine only games in **Mining list**. Disable it to prefer
 those games, then mine other eligible games whenever no selected game can currently

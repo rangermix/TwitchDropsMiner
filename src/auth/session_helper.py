@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import itertools
 import json
 import re
 import time
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable, Iterator
 from contextlib import asynccontextmanager, suppress
 from typing import Any, Protocol
 
@@ -46,10 +47,12 @@ class CaptureProtocol(Protocol):
 class DevToolsConnection:
     """Multiplex bounded protocol replies and the few relevant network events."""
 
-    def __init__(self, socket: _DevToolsSocket, *, extra_events: frozenset[str] = frozenset()):
+    def __init__(self, socket: _DevToolsSocket, *, extra_events: frozenset[str] = frozenset(),
+                 ids: Iterator[int] | None = None):
         self.socket = socket
         self.extra_events = extra_events
-        self._sequence = 0
+        # Connections sharing one transport share ids, so a reply cannot match another's command.
+        self._ids = ids or itertools.count(1)
         self._pending: dict[int, asyncio.Future] = {}
         self.events: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue(maxsize=256)
         self._requests: set[str] = set()
@@ -111,8 +114,9 @@ class DevToolsConnection:
             self.events.put_nowait(None)
 
     async def command(self, method: str, params: dict[str, Any] | None = None, *, timeout: float = 30) -> Any:
-        self._sequence += 1
-        sequence = self._sequence
+        if self._reader.done():
+            raise SessionError("BROWSER_PROTOCOL")
+        sequence = next(self._ids)
         future = asyncio.get_running_loop().create_future()
         self._pending[sequence] = future
         try:
@@ -127,6 +131,157 @@ class DevToolsConnection:
         return json.loads(raw)
 
     async def close(self) -> None:
+        self._reader.cancel()
+        await asyncio.gather(self._reader, return_exceptions=True)
+
+
+class _PipeMessage:
+    type = aiohttp.WSMsgType.TEXT
+
+    def __init__(self, data: dict[str, Any]):
+        self.data = data
+
+    def json(self) -> object:
+        return self.data
+
+
+class _PipeSession:
+    """One flattened CDP session on the pipe, shaped like a DevTools websocket."""
+
+    def __init__(self, pipe: DevToolsPipe, session_id: str | None):
+        self.pipe, self.session_id = pipe, session_id
+        # Bounded by bytes, not count: one pipe read can carry hundreds of small
+        # events before DevToolsConnection gets to drop the irrelevant ones.
+        self.queue: asyncio.Queue[tuple[dict[str, Any], int] | None] = asyncio.Queue()
+        self.buffered = 0
+
+    def __aiter__(self) -> _PipeSession:
+        return self
+
+    async def __anext__(self) -> _PipeMessage:
+        item = await self.queue.get()
+        if item is None:
+            raise StopAsyncIteration
+        message, size = item
+        self.buffered -= size
+        return _PipeMessage(message)
+
+    async def send_json(self, data: object, /) -> None:
+        assert isinstance(data, dict)
+        await self.pipe.send(data if self.session_id is None else {**data, "sessionId": self.session_id})
+
+
+class DevToolsPipe:
+    """Chromium's --remote-debugging-pipe: unlike a loopback port, no other local process can attach."""
+
+    LIMIT = 16 * 1024 * 1024
+    ID = re.compile(r"[a-zA-Z0-9-]+")
+
+    def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        self.reader, self.writer = reader, writer
+        self._sessions: dict[str | None, _PipeSession] = {}
+        self._ids = itertools.count(1)
+        self.browser = DevToolsConnection(self._session(None), ids=self._ids)
+        self._reader = asyncio.create_task(self._receive())
+
+    @classmethod
+    @asynccontextmanager
+    async def open(cls, write_fd: int, read_fd: int) -> AsyncIterator[DevToolsPipe]:
+        """Take ownership of both descriptors and close them on every exit path."""
+        loop = asyncio.get_running_loop()
+        read: asyncio.ReadTransport | None = None
+        write: asyncio.WriteTransport | None = None
+        with open(write_fd, "wb", buffering=0) as write_file, open(read_fd, "rb", buffering=0) as read_file:
+            try:
+                reader = asyncio.StreamReader(limit=cls.LIMIT)
+                read, _ = await loop.connect_read_pipe(lambda: asyncio.StreamReaderProtocol(reader), read_file)
+                write, protocol = await loop.connect_write_pipe(asyncio.streams.FlowControlMixin, write_file)
+                pipe = cls(reader, asyncio.StreamWriter(write, protocol, None, loop))
+                try:
+                    yield pipe
+                finally:
+                    await pipe.close()
+            finally:
+                # Both unregister their fd watchers synchronously, before the files close.
+                if read is not None:
+                    read.close()
+                if write is not None and not write.is_closing():
+                    write.abort()
+
+    def _session(self, session_id: str | None) -> _PipeSession:
+        session = self._sessions[session_id] = _PipeSession(self, session_id)
+        return session
+
+    def _end(self, session_id: str | None) -> None:
+        session = self._sessions.pop(session_id, None)
+        if session is not None:
+            session.queue.put_nowait(None)
+
+    async def _receive(self) -> None:
+        try:
+            while True:
+                raw = await self.reader.readuntil(b"\0")
+                data = json.loads(raw[:-1])
+                if not isinstance(data, dict):
+                    break
+                session_id = data.get("sessionId")
+                method, params = data.get("method"), data.get("params")
+                # End a page session as soon as its target goes away, failing its pending commands.
+                if method == "Target.detachedFromTarget" and session_id is None and isinstance(params, dict):
+                    if isinstance(params.get("sessionId"), str):
+                        self._end(params["sessionId"])
+                elif method == "Inspector.detached" and session_id is not None:
+                    self._end(session_id)
+                    continue
+                session = self._sessions.get(session_id)
+                if session is None:
+                    continue
+                if session.buffered + len(raw) > self.LIMIT:
+                    self._end(session_id)
+                else:
+                    session.buffered += len(raw)
+                    session.queue.put_nowait((data, len(raw)))
+        except (asyncio.IncompleteReadError, asyncio.LimitOverrunError, ValueError, TypeError, OSError):
+            pass
+        finally:
+            for session_id in list(self._sessions):
+                self._end(session_id)
+
+    async def send(self, data: dict[str, Any]) -> None:
+        try:
+            self.writer.write(json.dumps(data).encode() + b"\0")
+            await self.writer.drain()
+        except (OSError, RuntimeError):
+            raise SessionError("BROWSER_PROTOCOL") from None
+
+    @asynccontextmanager
+    async def target(self, *, extra_events: frozenset[str] = frozenset()) -> AsyncIterator[CaptureProtocol]:
+        """Create, attach and close only the page target owned by this operation."""
+        target_id = None
+        try:
+            result = await self.browser.command("Target.createTarget", {"url": "about:blank"})
+            target_id = result["targetId"]
+            if not isinstance(target_id, str) or not self.ID.fullmatch(target_id):
+                raise SessionError("BROWSER_PROTOCOL")
+            result = await self.browser.command("Target.attachToTarget", {"targetId": target_id, "flatten": True})
+            session_id = result["sessionId"]
+            if not isinstance(session_id, str) or not self.ID.fullmatch(session_id):
+                raise SessionError("BROWSER_PROTOCOL")
+            protocol = DevToolsConnection(self._session(session_id), extra_events=extra_events, ids=self._ids)
+            try:
+                yield protocol
+            finally:
+                await protocol.close()
+                self._end(session_id)
+        except (KeyError, TypeError, TimeoutError):
+            raise SessionError("BROWSER_PROTOCOL") from None
+        finally:
+            if target_id is not None:
+                with suppress(SessionError, TimeoutError):
+                    await self.browser.command("Target.closeTarget", {"targetId": target_id}, timeout=2)
+
+    async def close(self) -> None:
+        await self.browser.close()
         self._reader.cancel()
         await asyncio.gather(self._reader, return_exceptions=True)
 

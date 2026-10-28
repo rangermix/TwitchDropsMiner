@@ -7,6 +7,15 @@ This file is the canonical harness for AI agents working in this repository.
 `CLAUDE.md` and `GEMINI.md` are relative symbolic links to `AGENTS.md` so every agent
 reads the same guidance. Maintain all shared and agent-specific instructions here.
 
+## Communication
+
+- Use simple, minimal, clear language in all communication.
+- Do not post an issue or PR comment just because you inspected or reviewed it.
+  Comment only to request additional information or report an actual state change,
+  such as starting work, merging a PR, or shipping a fix in a release.
+- When changes are required, list clear action items. Use bullet points when more
+  than one change is required.
+
 ## Mandatory Contribution Workflow
 
 Every coding agent MUST read [CONTRIBUTING.md](./CONTRIBUTING.md) before planning,
@@ -21,14 +30,6 @@ It is the repository's contribution policy, not optional background reading.
   or PR. Never claim completion of checks that did not run or approval not received.
 - Do not declare a PR ready to merge while required checks or review are missing or
   blocking findings remain. Document the gap and keep an incomplete PR in draft.
-- When taking on an issue or PR, first post a comment there acknowledging that work
-  is starting and briefly stating the scope, before investigation, implementation,
-  or review. If both an issue and a PR are being worked on, acknowledge both.
-- Before ending or pausing work, update every issue or PR being worked on with the
-  outcome, relevant evidence or validation, and any remaining action or request for
-  information. Post this update for every outcome, including resolved, closed,
-  no change needed, blocked, or more information needed, even when no code changed
-  or the issue or PR remains open.
 - Visual dashboard changes require current screenshots in the PR description, with
   personal information hidden as described in CONTRIBUTING.md. Prefer rendering them
   from mock or sample data; never use screenshots of a real account without masking.
@@ -315,11 +316,33 @@ lang/                # Translation JSON files (20 languages)
   ranks to the list bounds; reject blank/fractional values without changing settings.
   Keep priority and remove-control labels translated and accessible. Regression tests in
   `tests/test_game_priority.py` cover order, bounds, invalid inputs, and persistence calls.
+- Games to Watch shows account-link status per game. Linking belongs to the game account,
+  so `getGameLinkStatus()` treats a game as linked when any campaign for it reports
+  `linked: true` (case-insensitive by `game_name`); games without a known campaign have
+  no badge and count as unknown, not unlinked. Available Games sort linked first, the
+  All / Linked / Not Linked dropdown filters on known status (Not Linked excludes
+  unknown games), and Select Linked appends only missing linked games, keeping the
+  existing order and manual entries and ignoring search/filter like Select All.
+  Keep filter actions and selected-game rows wrapping, and game panels shrinkable,
+  so all controls remain reachable on narrow screens.
+  Re-render the lists only when the link-status signature changes (inventory batch,
+  campaign add/clear), so inventory updates while mining never interrupt a drag or a
+  priority edit. Build badges with safe DOM APIs and keep the five `gui.settings`
+  strings (`select_linked`, `game_linked`, `game_not_linked`, `game_linked_title`,
+  `game_not_linked_title`) in every locale and in `GUISettings`. Coverage lives in
+  `tests/test_account_link_frontend.py` and `tests/test_game_priority.py`.
 - Connection quality multiplier
 - Language selection
 - Proxy support (including verification)
 - Logging and dump flags from command-line arguments
 - Persistence to JSON file (`settings.json`) in DATA_DIR
+- `SettingsManager.update_settings()` validates every field before writing any: a
+  `ValueError` leaves settings unchanged, prints no change lines, and skips save,
+  broadcast and refresh. `InventoryFilterSettings.validate_update()` is shared with
+  the API model. A failed `save()` restores every field from a pre-apply snapshot;
+  change lines, language switching and broadcasts run only after a successful save.
+  Regressions: `test_rejected_update_writes_prints_and_saves_nothing` and
+  `test_failed_save_restores_every_field_and_defers_effects`.
 - Drop-name ignore list (`drop_name_blacklist`), empty by default. Entries are literal,
   case-insensitive substrings entered one per line; whitespace and blanks are removed and
   duplicates are casefolded while preserving the first spelling/order.
@@ -359,6 +382,16 @@ lang/                # Translation JSON files (20 languages)
   never echoes the stored token: `get_settings()` returns only a `telegram_configured`
   flag and a masked placeholder, console logs mask the value, and a submitted value equal
   to the mask (or empty) leaves the stored credential untouched.
+- `mask_url_password()` (`src/utils`) replaces a proxy URL's password with a mask in
+  `get_settings()`, console change logs, the startup log and websocket connect logs.
+  `SettingsManager.resolve_proxy()` restores the stored URL only when the exact masked
+  form is submitted (settings saves and verify-proxy); any other value containing the
+  mask is rejected before any other setting changes, so the stored password never
+  reaches another host and the mask is never saved as a password. Set Proxy
+  (`saveProxy()`) saves only `proxy`, checks the reply and restores the previous value
+  with translated `gui.settings.proxy_save_error`; generic autosaves never send `proxy`.
+  Coverage: `tests/test_proxy_frontend.py`. Verify-proxy and Test Telegram return fixed failure text;
+  Telegram logs only exception class names because aiohttp errors can embed the bot URL.
 - Telegram alerts originate in the shared `BaseDrop.claim()` successful unclaimed-to-claimed
   transition, covering websocket, startup, and inventory-refresh claims without duplicate
   alerts for repeated events. Telegram failures must not change a successful Twitch claim.
@@ -425,8 +458,10 @@ progress to an ignored drop while the miner intentionally targets another reward
 - `OwnedChromium` uses `xvfb-run` when available for server SDK issuance and renewal,
   with a private authenticated display (1280×800) and ordinary 1200×760 browser window.
   Docker includes `xvfb-run` and `xauth`. Never reuse the interactive VNC display or
-  disable X authentication. Keep profiles owner-only, CDP loopback-only and process-group
-  cleanup on failure/cancellation. Keep Xauthority inside the owned temporary profile
+  disable X authentication. Keep profiles owner-only, CDP on the private pipe (POSIX)
+  or loopback (Windows), and process-group cleanup on failure/cancellation. A page
+  session ends when Chromium reports it detached, and all pipe sessions share command
+  ids. Keep Xauthority inside the owned temporary profile
   so forced shutdown removes it too. Hosts without the runner retain the headless fallback.
   A valid integrity response alone does not prove account/catalog acceptance.
 
@@ -465,6 +500,22 @@ progress to an ignored drop while the miner intentionally targets another reward
 - The renewal worker rotates SDK state, normally five minutes before expiry, with
   bounded retries and same-account/freshness validation. Mining GraphQL stays in
   Python. Preserve safe-read retry rules; never replay ambiguous mutations.
+- On POSIX, `OwnedChromium` (renewal/SDK issuance, run as root) uses
+  `--remote-debugging-pipe` and never opens a DevTools TCP port: CDP has no
+  authentication, and the `tdm-browser` login UID shares loopback. A small exec
+  launcher remaps the pipe to fds 3/4 so PID and process-group cleanup are unchanged;
+  it then execs the private `xvfb-run` wrapper when present, which passes fds 3/4
+  through to Chromium untouched (verified in the Alpine image). Xvfb and the wrapper
+  also inherit copies, so a Chromium crash reaches EOF once the wrapper cleans up.
+  `DevToolsPipe` multiplexes flattened `Target.attachToTarget` sessions with
+  NUL-delimited messages, bounds each session's backlog to 16 MiB by bytes (one read
+  can carry hundreds of small events), and closes its target and fds on every exit.
+  Once a protocol reader ends, new commands must fail with `BROWSER_PROTOCOL`
+  before sending, including after target detachment.
+  Windows keeps the loopback port (no `pass_fds`). The login capture Chromium keeps
+  its port because it runs as `tdm-browser` with a profile that UID already owns.
+  `tests/test_server_renewal.py` checks launch arguments and descriptors, and, with a
+  local Chromium on Linux, that the browser process group opens no TCP listener.
 - `SessionAPI` exposes sanitized status and finish/retry/logout actions, plus optional
   desktop-helper enable/cancel actions guarded by dashboard authentication and CSRF.
   There is no general session upload/export or renewal HTTP route. The binary
@@ -556,6 +607,20 @@ progress to an ignored drop while the miner intentionally targets another reward
   set and delete. Preserve CSRF, Fetch Metadata, session/revocation, and rate-limit checks.
   `tests/test_web_public_url.py` covers both Socket.IO transports, production environment
   wiring, cookie lifecycles, hostile origins, and separate proxy-IP trust.
+- `DashboardOrigin.trusted_host()` blocks DNS rebinding before any other check, for HTTP
+  and websockets, with fixed `403 invalid_host` (only liveness-only `/healthz` is exempt;
+  the rejection warning is logged at most once a minute). Accept only IP literals, `localhost`,
+  `*.localhost`, single-label names, `.local`/`.home.arpa`/`.internal`, the
+  `PUBLIC_BASE_URL` host and the optional comma-separated `ALLOWED_HOSTS` names (no
+  schemes, ports or wildcards; invalid values stop startup without echo). Remove one
+  trailing DNS dot from both configured and request hosts for this check, while preserving
+  browser origin serialization and its strict origin checks. Never derive
+  trust from the Host header alone. Private responses other than `/session-viewer`
+  carry a CSP (`script-src 'self' https://cdn.socket.io`, `frame-ancestors 'none'`);
+  every response, static files included, carries `nosniff`. The CDN Socket.IO script
+  keeps its SRI hash. `HelperAPI` keeps its own
+  rate-limit bucket so helper probes cannot exhaust password logins. Regression
+  coverage: `tests/test_security_hardening.py`.
 - Default cookies are HttpOnly, SameSite=Strict session cookies. Remember me adds a fixed
   30-day Max-Age; server sessions also expire after 30 days and survive restarts. Logout
   revokes the current session; password changes require the current password and revoke
@@ -843,7 +908,8 @@ protocol rejection; preserve rejection and target-cleanup assertions.
   outside Git, the Docker build context, and the wiki publication surface.
 - `.github/workflows/version-release.yml` is the release entry point. It must provision
   `uv`, update `src/version.py`, `pyproject.toml`, and `uv.lock` together, and validate all
-  three before creating a release branch or tag.
+  three before creating a release branch or tag. Release notes read `GEMINI_API_KEY`
+  from the step environment and send it as a header, never as an argument or URL.
   Preserve existing data-volume/session migration instructions. Prepare versioned
   frontend cache keys through the authorized release workflow before deployment.
 - `.github/workflows/github-release.yml` verifies the existing tag against the

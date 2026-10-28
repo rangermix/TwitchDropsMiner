@@ -65,7 +65,7 @@ class TelegramNotifier:
 
             return await self._send_message(message)
         except Exception as e:
-            logger.warning(f"Failed to send Telegram notification: {e}")
+            logger.warning(f"Failed to send Telegram notification: {type(e).__name__}")
             return False
 
     async def notify_drop_progress(self, drop: TimedDrop) -> bool:
@@ -96,7 +96,7 @@ class TelegramNotifier:
 
             return await self._send_message(message)
         except Exception as e:
-            logger.warning(f"Failed to send Telegram progress notification: {e}")
+            logger.warning(f"Failed to send Telegram progress notification: {type(e).__name__}")
             return False
 
     async def test_connection(self) -> bool:
@@ -113,7 +113,7 @@ class TelegramNotifier:
             message = "✅ Telegram notification test successful!"
             return await self._send_message(message)
         except Exception as e:
-            logger.warning(f"Telegram connection test failed: {e}")
+            logger.warning(f"Telegram connection test failed: {type(e).__name__}")
             return False
 
     async def _send_message(self, text: str) -> bool:
@@ -157,5 +157,5 @@ class TelegramNotifier:
         except Exception as e:
             if self.diagnostics is not None:
                 self.diagnostics.record("telegram", outcome="connection")
-            logger.warning(f"Telegram notification error: {e}")
+            logger.warning(f"Telegram notification error: {type(e).__name__}")
             return False
