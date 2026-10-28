@@ -41,7 +41,7 @@ async def test_missing_native_cookie_bootstraps_fresh_proof_and_disposes_before_
         async def isolated(self, *, extra_events=frozenset()):
             lifecycle.append("opened")
             try:
-                async with browser.start() as address, BrowserExporter(address).target(extra_events=extra_events) as protocol:
+                async with browser.start() as owned, owned.target(extra_events=extra_events) as protocol:
                     yield protocol
             finally:
                 lifecycle.append("disposed")
@@ -76,7 +76,7 @@ async def test_bootstrap_wrong_account_closes_transport_and_returns_no_seed(monk
     async with sdk_peer() as (browser, _commands, sdk_closed, _state):
         @asynccontextmanager
         async def isolated(self, *, extra_events=frozenset()):
-            async with browser.start() as address, BrowserExporter(address).target(extra_events=extra_events) as protocol:
+            async with browser.start() as owned, owned.target(extra_events=extra_events) as protocol:
                 yield protocol
 
         monkeypatch.setattr(BrowserExporter, "isolated_target", isolated, raising=False)
@@ -106,7 +106,7 @@ async def test_bootstrap_expiring_before_handoff_is_rejected(monkeypatch, phase)
     async with sdk_peer() as (browser, _commands, _closed, _state):
         @asynccontextmanager
         async def isolated(self, *, extra_events=frozenset()):
-            async with browser.start() as address, BrowserExporter(address).target(extra_events=extra_events) as protocol:
+            async with browser.start() as owned, owned.target(extra_events=extra_events) as protocol:
                 yield protocol
             if phase == "context_disposal":
                 clock[0] = 5601
@@ -242,7 +242,7 @@ async def test_cookie_free_acquisition_still_rejects_expired_replacement():
     from src.auth.session_bundle import SessionBundle
 
     async with sdk_peer(fault="expired_cookie") as (browser, _commands, closed, _state):
-        async with browser.start() as address, BrowserExporter(address).target(extra_events=SDK_EVENTS) as protocol:
+        async with browser.start() as owned, owned.target(extra_events=SDK_EVENTS) as protocol:
             with pytest.raises(SessionError, match="SDK_EXPIRED"):
                 await SDKAcquisition(clock=lambda: 1000).run(protocol, SessionBundle.from_dict(seed_data()["bundle"], now=1000))
         assert closed == ["owned"]

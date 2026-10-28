@@ -45,7 +45,8 @@ another sign-in; TDM still verifies the account and campaign access before accep
 Use the published `rangermix/twitch-drops-miner:2.3.2` image or build the current source.
 The image includes Chromium, Xvfb, a window manager and noVNC. It does not need a
 display on the home server or NAS. Only the dashboard port is published; VNC and
-browser control remain on container loopback addresses.
+login-browser control remain on container loopback addresses, and the miner controls
+its session-renewal browser over a private pipe rather than a network port.
 
 Set `TZ` to match the timezone of your home internet connection, for example
 `TZ=Australia/Sydney`. A mismatched timezone can cause Twitch to reject the browser.
