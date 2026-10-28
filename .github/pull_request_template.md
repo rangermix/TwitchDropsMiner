@@ -7,13 +7,16 @@
 
 <!-- List exact commands and results, regression cases, and any skipped/unavailable
      checks with reasons. For docs-only changes, include link/command/structure checks.
-     Add screenshots for visible UI changes when useful. -->
+     Visual dashboard changes require current screenshots (before/after when an existing
+     view changes; "before" is the base branch without this PR) with personal information
+     hidden; see CONTRIBUTING.md. -->
 
 - Canonical main commit incorporated:
 - Tested head commit:
 - Commands and results:
 - Regression coverage:
 - Limitations or checks not run:
+- Screenshots (visual changes; personal information hidden), or `Not applicable`:
 
 ## Independent adversarial review
 
@@ -34,6 +37,7 @@
 - [ ] Applicable unit, frontend, and regression checks pass, or docs-only checks are recorded.
 - [ ] Required CI passes on the final revision; skipped/unavailable checks are disclosed.
 - [ ] README, agent instructions, and translations are updated as required.
+- [ ] Visual dashboard changes include current screenshots with personal information hidden.
 - [ ] Any release/cache-key requirement is documented below.
 - [ ] Independent adversarial review is complete and blocking findings are resolved.
 
