@@ -127,6 +127,10 @@
                 "name": "General",
                 "dark_mode": "Dark Mode"
             },
+            "tab_mining": "Mining",
+            "tab_games": "Games",
+            "tab_notifications": "Notifications",
+            "tab_account": "Account & Maintenance",
             "reload": "Reload Campaigns",
             "reload_campaigns": "Reload Campaigns",
             "drop_name_blacklist": "Ignored Drop Keywords",

@@ -170,6 +170,10 @@
                 "name": "一般",
                 "dark_mode": "深色模式"
             },
+            "tab_mining": "挖掘",
+            "tab_games": "遊戲",
+            "tab_notifications": "通知",
+            "tab_account": "帳戶與維護",
             "reload": "重新載入",
             "games_to_watch": "挖掘清單",
             "games_help": "選擇要觀看的遊戲。順序很重要 - 拖曳以重新排序優先級（頂部 = 最高優先級）。",

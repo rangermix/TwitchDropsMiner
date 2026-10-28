@@ -170,6 +170,10 @@
                 "name": "Algemeen",
                 "dark_mode": "Donkere Modus"
             },
+            "tab_mining": "Mining",
+            "tab_games": "Games",
+            "tab_notifications": "Meldingen",
+            "tab_account": "Account & onderhoud",
             "reload": "Herladen",
             "games_to_watch": "Mininglijst",
             "games_help": "Selecteer games om te kijken. Volgorde is belangrijk - sleep om prioriteit te wijzigen (bovenaan = hoogste prioriteit).",

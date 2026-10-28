@@ -6,7 +6,7 @@ Use it before making the dashboard accessible beyond your trusted home network.
 
 ## Enable a password
 
-In **Settings → Dashboard password**, enter and confirm a password of 8–1024
+In **Settings → Account & Maintenance → Dashboard password**, enter and confirm a password of 8–1024
 characters, then select **Enable password protection**. No username is needed.
 Before signing in to Twitch, expand **Dashboard password** below the login browser
 to access the same controls.
@@ -112,7 +112,7 @@ Recovery requires access to the miner host:
 1. Stop the miner and restrict network access to its dashboard port.
 2. Delete only `data/web_auth.json` from its persistent data directory. In Docker,
    this is `/app/data/web_auth.json` inside the container, backed by your data mount.
-3. Restart the miner and set a new dashboard password in Settings.
+3. Restart the miner and set a new dashboard password in Settings → Account & Maintenance.
 4. Restore remote access after protection is enabled.
 
 This resets dashboard protection without deleting Twitch cookies or other settings.

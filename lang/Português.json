@@ -170,6 +170,10 @@
                 "name": "Geral",
                 "dark_mode": "Modo Escuro"
             },
+            "tab_mining": "Mineração",
+            "tab_games": "Jogos",
+            "tab_notifications": "Notificações",
+            "tab_account": "Conta e manutenção",
             "reload": "Recarregar",
             "games_to_watch": "Lista de mineração",
             "games_help": "Selecione os jogos para assistir. A ordem importa - arraste para reordenar a prioridade (topo = maior prioridade).",

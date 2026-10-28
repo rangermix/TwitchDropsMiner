@@ -170,6 +170,10 @@
                 "name": "Genel",
                 "dark_mode": "Karanlık Mod"
             },
+            "tab_mining": "Madencilik",
+            "tab_games": "Oyunlar",
+            "tab_notifications": "Bildirimler",
+            "tab_account": "Hesap ve Bakım",
             "reload": "Tekrar yükle",
             "games_to_watch": "Madencilik listesi",
             "games_help": "İzlenecek oyunları seçin. Sıralama önemlidir - önceliği yeniden sıralamak için sürükleyin (üst = en yüksek öncelik).",

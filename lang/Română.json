@@ -170,6 +170,10 @@
                 "name": "General",
                 "dark_mode": "Mod întunecat"
             },
+            "tab_mining": "Minerit",
+            "tab_games": "Jocuri",
+            "tab_notifications": "Notificări",
+            "tab_account": "Cont și întreținere",
             "reload": "Reîncarcă",
             "games_to_watch": "Lista de minare",
             "games_help": "Selectați jocurile de urmărit. Ordinea contează - trageți pentru a reordona prioritatea (sus = prioritate maximă).",

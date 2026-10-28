@@ -17,12 +17,14 @@ simultaneous viewing can disrupt progress.
 | Main | Login status, the current campaign and drop, wanted rewards, console output, and channels |
 | Inventory | Campaigns and rewards, with status, benefit, and game filters |
 | History | Locally recorded claims, statistics, and CSV export |
-| Settings | Game priorities, reward types, ignored names, language, login access, and notifications |
+| Settings | Grouped into sub-tabs: **General** (theme, connection, proxy), **Mining** (reward types, mining hours, account-link override, ignored names), **Games** (priorities and reload), **Notifications** (Discord, Telegram), and **Account & Maintenance** (dashboard password, cache, diagnostics, Twitch logout) |
 | Help | A quick explanation of mining and Telegram setup |
+
+Use Left/Right arrows, Home or End to switch Settings sub-tabs from the tab bar.
 
 ## Choose games and priorities
 
-In **Settings → Mining list**, put the games you most want first. Drag a game to
+In **Settings → Games → Mining list**, put the games you most want first. Drag a game to
 reorder it, or enter a whole-number priority. **1** is highest. Numbers beyond the
 list's bounds move the game to the nearest end; blank or fractional values leave its
 position unchanged.
@@ -45,7 +47,8 @@ status; **Not Linked** only shows games known to be unlinked, so games without a
 are hidden by both **Linked** and **Not Linked**. **Select Linked** adds every linked
 game that is not yet selected, keeping your existing order.
 
-Version 2.3.0 adds **Settings → General → Priority list only**, enabled by default.
+Version 2.3.0 adds **Priority list only**, enabled by default; it now sits in
+**Settings → Games** above the game list.
 Leave it enabled to mine only games in **Mining list**. Disable it to prefer
 those games, then mine other eligible games whenever no selected game can currently
 be progressed. Other games stay out of your saved list, so you can keep a short list
@@ -56,7 +59,7 @@ channel selection retains its existing behavior.
 
 ## Reward types
 
-**Settings → Reward types** lists the four reward types. Untick a type to stop mining
+**Settings → Mining → Reward types** lists the four reward types. Untick a type to stop mining
 it. These mining choices are separate from the Inventory tab's display filters.
 
 Ordering is optional and disabled by default. Enable **Prefer reward types in this
@@ -118,7 +121,7 @@ For linked games not already selected, **Add to mining list** appends the game a
 the end of your saved priority list. Existing priorities and manual entries keep their
 order. The button disappears after the settings save succeeds; a failed save shows an
 error and leaves the list unchanged. Linking and adding a game do not bypass reward
-eligibility or guarantee progress. Use Settings to reorder or remove selected games.
+eligibility or guarantee progress. Use **Settings → Games** to reorder or remove selected games.
 
 Inventory's **Active**, **Upcoming**, and **Expired** filters include campaigns with
 any selected status. **Account link → All / Linked / Not Linked** narrows those
@@ -135,7 +138,7 @@ Successful claims refresh the queue.
 
 ## Account-link override
 
-In Settings, **Allow mining campaigns reported as Not Linked** is off by default.
+In **Settings → Mining**, **Allow mining campaigns reported as Not Linked** is off by default.
 Enable it to attempt mining when Twitch reports a campaign as unlinked. Disabling
 it restores the default account-link requirement. Changes are saved and refresh
 game selection. The override leaves Twitch-reported link badges and Inventory
@@ -150,7 +153,7 @@ to troubleshoot a reported status disagreement.
 
 ## Ignore unwanted reward names
 
-In **Settings → Ignored Drop Keywords**, enter one literal part of a drop name per
+In **Settings → Mining → Ignored Drop Keywords**, enter one literal part of a drop name per
 line. Matching ignores case; these are plain substrings, not regular expressions.
 Blank lines and surrounding whitespace are removed, and duplicate entries are combined.
 The list is empty by default.
@@ -181,7 +184,8 @@ not change your Twitch account or take away rewards.
 
 Use **Reload Campaigns** (in the Inventory filter bar or beside the Mining list's **Add
 Game** button) after changing the games you want or when you need to refresh campaign
-selection. **Settings → Clear All Cache** discards derived campaign and channel data,
+selection. **Settings → Account & Maintenance → Clear All Cache** discards derived
+campaign and channel data,
 then reloads it from Twitch. It preserves Twitch login, settings, and dashboard
 password protection.
 
@@ -193,7 +197,7 @@ returned by Twitch. If progress or eligibility still looks wrong, follow
 
 ## Mining hours
 
-Version 2.3.0 adds **Settings → Mining Hours**. **All day (24/7)** is the default.
+Version 2.3.0 adds **Settings → Mining → Mining Hours**. **All day (24/7)** is the default.
 Choose **Custom time range** and enter start and end times to watch only during that
 window each day. The start is included and the end is excluded. A range such as
 22:00–06:00 crosses midnight; equal start and end times mean all day.

@@ -127,6 +127,10 @@
                 "name": "Általános",
                 "dark_mode": "Sötét mód"
             },
+            "tab_mining": "Bányászat",
+            "tab_games": "Játékok",
+            "tab_notifications": "Értesítések",
+            "tab_account": "Fiók és karbantartás",
             "reload": "Kampányok újratöltése",
             "reload_campaigns": "Kampányok újratöltése",
             "drop_name_blacklist": "Figyelmen kívül hagyott dropkulcsszavak",

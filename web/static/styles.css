@@ -194,6 +194,7 @@ header h1 {
 
 .button-group {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 8px;
 }
@@ -1199,6 +1200,33 @@ header h1 {
     max-width: 800px;
 }
 
+.settings-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.settings-tab-button {
+    padding: 8px 14px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.settings-tab-button:hover {
+    color: var(--text-primary);
+}
+
+.settings-tab-button.active {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+}
+
 .settings-section {
     background: var(--bg-panel);
     border: 1px solid var(--border-color);
@@ -1222,7 +1250,9 @@ header h1 {
 
 .settings-section select,
 .settings-section input[type="number"],
-.settings-section input[type="text"] {
+.settings-section input[type="text"],
+#discord-webhook-url,
+#telegram-bot-token {
     padding: 8px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
@@ -2506,6 +2536,27 @@ header h1 {
     font-size: 12px;
 }
 
+/* Keep the footer at the window bottom so tabs of different heights don't move it. */
+#dashboard {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh; /* excludes mobile browser bars where supported */
+}
+
+#dashboard > .tab-content.active {
+    flex: 1 0 auto;
+}
+
+#dashboard > .footer {
+    width: 100%;
+}
+
+/* Flex items don't collapse margins, so drop the last section's own gap above the footer. */
+.settings-panel > .settings-section:last-child {
+    margin-bottom: 0;
+}
+
 .update-indicator {
     padding: 1px 8px;
     background: rgba(255, 167, 38, 0.14);
@@ -2948,3 +2999,40 @@ header h1 {
     font-size: 14px;
 }
 .browser-helper-downloads a { color: var(--accent-color); }
+
+/* Games tab: stretch both game lists down to the footer instead of stopping at 400px.
+   Desktop only; stacked lists on narrow screens keep their fixed heights. */
+@supports selector(:has(*)) {
+    @media (min-width: 1025px) {
+        #settings-tab.active:has(#settings-panel-games:not([hidden])),
+        .settings-container:has(#settings-panel-games:not([hidden])),
+        #settings-panel-games:not([hidden]),
+        #settings-panel-games > .settings-section,
+        #settings-panel-games .selected-games,
+        #settings-panel-games .available-games {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .settings-container:has(#settings-panel-games:not([hidden])),
+        #settings-panel-games:not([hidden]),
+        #settings-panel-games > .settings-section,
+        #settings-panel-games .selected-games,
+        #settings-panel-games .available-games {
+            flex: 1 1 0;
+        }
+
+        #settings-panel-games .games-container {
+            flex: 1 1 0;
+            min-height: 300px;
+            grid-template-rows: minmax(0, 1fr);
+        }
+
+        #settings-panel-games .sortable-list,
+        #settings-panel-games .checkbox-list {
+            flex: 1 1 0;
+            min-height: 0;
+            max-height: none;
+        }
+    }
+}

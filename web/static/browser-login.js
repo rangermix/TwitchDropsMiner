@@ -275,6 +275,9 @@ class BrowserLoginPanel {
             }
         } catch (_) {
             this.actionError = name === 'logout' ? 'logout_failed' : 'action_failed';
+            if (name === 'logout' && typeof window.reportSettingsError === 'function') {
+                window.reportSettingsError(this.element('twitch-logout-result'), this.translations().logout_failed || '');
+            }
         } finally {
             this.busy = false;
             this.render();

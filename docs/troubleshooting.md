@@ -151,7 +151,8 @@ Check the campaign on Twitch and work through these conditions:
    campaign.
 2. The campaign and individual reward are active, and the reward is earned by
    watching rather than by subscribing or making a purchase.
-3. The game is in **Mining list**, and its reward type is ticked in **Reward types**.
+3. The game is in **Settings → Games → Mining list**, and its reward type is ticked in
+   **Settings → Mining → Reward types**.
 4. Your ignored keywords do not exclude the reward or one of its prerequisites.
 5. An eligible participating channel is live. Some campaigns work only on a fixed
    list of channels.
@@ -165,10 +166,10 @@ For **Special Events** or **IRL**, keep the campaign's category in Mining list;
 its participating channels may be streaming another category. See
 [channel selection](usage.md#special-events-and-irl-campaigns).
 
-Try **Reload Campaigns** (Inventory or the Mining list) after correcting settings.
-**Clear All Cache** can rebuild local campaign and channel data while keeping login,
-settings, and dashboard protection. It cannot repair inaccurate campaign information
-supplied by Twitch.
+Try **Reload Campaigns** in Inventory or **Settings → Games** after correcting settings.
+**Settings → Account & Maintenance → Clear All Cache** can rebuild local campaign and
+channel data while keeping login, settings, and dashboard protection. It cannot repair
+inaccurate campaign information supplied by Twitch.
 
 TDM excludes channels when Twitch reports any active ban for your account,
 including temporary bans. A temporary ban stops excluding the channel at Twitch's
