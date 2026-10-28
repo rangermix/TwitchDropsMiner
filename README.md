@@ -29,6 +29,8 @@ services operated for other users are outside its support scope.
 - Manage everything from a web dashboard with optional password protection.
 - Set daily [mining hours](docs/usage.md#mining-hours) in the miner’s local timezone.
 
+Invalid settings or a failed save keep your previous settings unchanged.
+
 The redesigned dashboard's **Now Watching** card offers **Show thumbnail**, off on
 each page load. When enabled, it shows a Twitch JPEG thumbnail, refreshed on channel
 updates at most once per minute. It does not play video or audio. The header adapts to

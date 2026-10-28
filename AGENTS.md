@@ -322,6 +322,13 @@ lang/                # Translation JSON files (20 languages)
 - Proxy support (including verification)
 - Logging and dump flags from command-line arguments
 - Persistence to JSON file (`settings.json`) in DATA_DIR
+- `SettingsManager.update_settings()` validates every field before writing any: a
+  `ValueError` leaves settings unchanged, prints no change lines, and skips save,
+  broadcast and refresh. `InventoryFilterSettings.validate_update()` is shared with
+  the API model. A failed `save()` restores every field from a pre-apply snapshot;
+  change lines, language switching and broadcasts run only after a successful save.
+  Regressions: `test_rejected_update_writes_prints_and_saves_nothing` and
+  `test_failed_save_restores_every_field_and_defers_effects`.
 - Drop-name ignore list (`drop_name_blacklist`), empty by default. Entries are literal,
   case-insensitive substrings entered one per line; whitespace and blanks are removed and
   duplicates are casefolded while preserving the first spelling/order.
