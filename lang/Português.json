@@ -146,16 +146,24 @@
                 "upcoming": "Próximo",
                 "expired": "Expirado",
                 "finished": "Terminado",
-                "item": "Item",
-                "badge": "Distintivo",
-                "emote": "Emote",
-                "other": "Outro",
+                "item": "Recompensa do jogo",
+                "badge": "Emblema do chat",
+                "emote": "Emote do chat",
+                "other": "Outra recompensa",
                 "clear": "Limpar Filtros",
                 "search_placeholder": "Pesquisar jogos...",
                 "account_link": "Vínculo da conta",
+                "status_heading": "Estado",
+                "rewards_heading": "Recompensas",
                 "all": "Todas",
                 "linked": "Vinculada"
-            }
+            },
+            "add_game": "Adicionar à lista de mineração",
+            "adding_game": "A adicionar…",
+            "add_game_error": "Não foi possível salvar a lista de mineração. Tente novamente.",
+            "link_account": "Vincular conta",
+            "card_view": "Visualização em cartões",
+            "list_view": "Visualização em lista"
         },
         "settings": {
             "general": {
@@ -163,7 +171,7 @@
                 "dark_mode": "Modo Escuro"
             },
             "reload": "Recarregar",
-            "games_to_watch": "Jogos para assistir",
+            "games_to_watch": "Lista de mineração",
             "games_help": "Selecione os jogos para assistir. A ordem importa - arraste para reordenar a prioridade (topo = maior prioridade).",
             "priority_list_only": "Apenas lista de prioridade (minerar somente jogos selecionados)",
             "priority_list_only_save_error": "Não foi possível salvar a opção de prioridade dos jogos. Tente novamente.",

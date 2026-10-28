@@ -146,16 +146,24 @@
                 "upcoming": "Kommende",
                 "expired": "Udløbet",
                 "finished": "Afsluttet",
-                "item": "Genstand",
-                "badge": "Badge",
-                "emote": "Emote",
-                "other": "Andet",
+                "item": "Spilbelønning",
+                "badge": "Chatbadge",
+                "emote": "Chatemote",
+                "other": "Anden belønning",
                 "clear": "Ryd filtre",
                 "search_placeholder": "Søg efter spil...",
                 "account_link": "Kontoforbindelse",
+                "status_heading": "Status",
+                "rewards_heading": "Belønninger",
                 "all": "Alle",
                 "linked": "Forbundet"
-            }
+            },
+            "add_game": "Føj til miningliste",
+            "adding_game": "Tilføjer…",
+            "add_game_error": "Kunne ikke gemme mininglisten. Prøv igen.",
+            "link_account": "Tilknyt konto",
+            "card_view": "Kortvisning",
+            "list_view": "Listevisning"
         },
         "settings": {
             "general": {
@@ -163,7 +171,7 @@
                 "dark_mode": "Mørk tilstand: "
             },
             "reload": "Genindlæs",
-            "games_to_watch": "Spil at se",
+            "games_to_watch": "Miningliste",
             "games_help": "Vælg spil at se. Rækkefølgen er vigtig - træk for at ændre prioritet (top = højeste prioritet).",
             "priority_list_only": "Kun prioritetsliste (minér kun valgte spil)",
             "priority_list_only_save_error": "Kunne ikke gemme indstillingen for spilprioritet. Prøv igen.",

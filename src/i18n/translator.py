@@ -179,6 +179,8 @@ class GUIWanted(TypedDict):
 
 class GUIInvFilters(TypedDict):
     account_link: str
+    status_heading: str
+    rewards_heading: str
     all: str
     linked: str
     active: str
@@ -204,6 +206,12 @@ class GUIInvStatus(TypedDict):
 
 
 class GUIInventory(TypedDict):
+    add_game: str
+    adding_game: str
+    add_game_error: str
+    link_account: str
+    card_view: str
+    list_view: str
     no_campaigns: str
     status: GUIInvStatus
     starts: str

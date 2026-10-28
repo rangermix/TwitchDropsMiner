@@ -146,16 +146,24 @@
                 "upcoming": "Aankomend",
                 "expired": "Verlopen",
                 "finished": "Voltooid",
-                "item": "Item",
-                "badge": "Badge",
-                "emote": "Emote",
-                "other": "Overig",
+                "item": "Spelbeloning",
+                "badge": "Chatbadge",
+                "emote": "Chatemote",
+                "other": "Andere beloning",
                 "clear": "Filters wissen",
                 "search_placeholder": "Zoek spellen...",
                 "account_link": "Accountkoppeling",
+                "status_heading": "Status",
+                "rewards_heading": "Beloningen",
                 "all": "Alle",
                 "linked": "Gekoppeld"
-            }
+            },
+            "add_game": "Aan mininglijst toevoegen",
+            "adding_game": "Toevoegen…",
+            "add_game_error": "Kan de mininglijst niet opslaan. Probeer opnieuw.",
+            "link_account": "Account koppelen",
+            "card_view": "Kaartweergave",
+            "list_view": "Lijstweergave"
         },
         "settings": {
             "general": {
@@ -163,7 +171,7 @@
                 "dark_mode": "Donkere Modus"
             },
             "reload": "Herladen",
-            "games_to_watch": "Games om te kijken",
+            "games_to_watch": "Mininglijst",
             "games_help": "Selecteer games om te kijken. Volgorde is belangrijk - sleep om prioriteit te wijzigen (bovenaan = hoogste prioriteit).",
             "priority_list_only": "Alleen prioriteitenlijst (mine alleen geselecteerde games)",
             "priority_list_only_save_error": "De spelprioriteitsoptie kon niet worden opgeslagen. Probeer het opnieuw.",
