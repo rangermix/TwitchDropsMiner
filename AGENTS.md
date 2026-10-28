@@ -407,8 +407,10 @@ progress to an ignored drop while the miner intentionally targets another reward
 - `OwnedChromium` uses `xvfb-run` when available for server SDK issuance and renewal,
   with a private authenticated display (1280×800) and ordinary 1200×760 browser window.
   Docker includes `xvfb-run` and `xauth`. Never reuse the interactive VNC display or
-  disable X authentication. Keep profiles owner-only, CDP loopback-only and process-group
-  cleanup on failure/cancellation. Keep Xauthority inside the owned temporary profile
+  disable X authentication. Keep profiles owner-only, CDP on the private pipe (POSIX)
+  or loopback (Windows), and process-group cleanup on failure/cancellation. A page
+  session ends when Chromium reports it detached, and all pipe sessions share command
+  ids. Keep Xauthority inside the owned temporary profile
   so forced shutdown removes it too. Hosts without the runner retain the headless fallback.
   A valid integrity response alone does not prove account/catalog acceptance.
 

@@ -3,6 +3,7 @@
 import asyncio
 import base64
 import json
+import time
 import os
 import shutil
 import signal
@@ -451,6 +452,42 @@ async def test_pipe_routes_bursts_ignores_other_sessions_and_fails_on_browser_ex
                 os.close(fd)
 
 
+@pytest.mark.asyncio
+@pytest.mark.skipif(os.name != "posix", reason="Chromium's debugging pipe requires POSIX descriptor passing")
+async def test_pipe_ends_detached_page_sessions_and_shares_command_ids():
+    from src.auth.session_helper import DevToolsConnection, DevToolsPipe
+
+    child_in, parent_out = os.pipe()
+    parent_in, child_out = os.pipe()
+
+    async def sent():
+        return json.loads((await asyncio.to_thread(os.read, child_in, 4096)).rstrip(b"\0"))
+
+    try:
+        async with DevToolsPipe.open(parent_out, parent_in) as pipe:
+            for detach in (b'{"method": "Target.detachedFromTarget", "params": {"sessionId": "S1"}}\0',
+                           b'{"method": "Inspector.detached", "params": {}, "sessionId": "S1"}\0'):
+                page = DevToolsConnection(pipe._session("S1"), ids=pipe._ids)
+                browser_command = asyncio.create_task(pipe.browser.command("Browser.getVersion"))
+                browser_request = await sent()
+                page_command = asyncio.create_task(page.command("Runtime.evaluate", timeout=30))
+                page_request = await sent()
+                # Ids are unique across the pipe, so a session-less error reply for a
+                # detached session cannot complete the browser's own command.
+                assert page_request["id"] != browser_request["id"]
+                os.write(child_out, detach)
+                with pytest.raises(SessionError, match="BROWSER_PROTOCOL"):
+                    await asyncio.wait_for(page_command, 2)
+                error = {"id": page_request["id"], "error": {"code": -32001, "message": "Session not found"}}
+                os.write(child_out, json.dumps(error).encode() + b"\0")
+                os.write(child_out, json.dumps({"id": browser_request["id"], "result": {"ok": 1}}).encode() + b"\0")
+                assert await asyncio.wait_for(browser_command, 2) == {"ok": 1}
+                await page.close()
+    finally:
+        for fd in (child_in, child_out):
+            os.close(fd)
+
+
 def listening_inodes() -> set[str]:
     inodes = set()
     for table in ("/proc/net/tcp", "/proc/net/tcp6"):
@@ -497,6 +534,21 @@ async def test_real_owned_chromium_opens_no_tcp_listener(monkeypatch):
                             sockets.add(link[8:-1])
         assert sockets, "could not inspect the browser process group"
         assert not sockets & listening_inodes(), "the owned browser opened a TCP listener"
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(CHROMIUM is None or os.name != "posix", reason="requires POSIX and a local Chromium")
+async def test_real_chromium_closed_target_fails_page_commands_fast():
+    from src.auth.server_renewal import OwnedChromium
+
+    async with OwnedChromium(CHROMIUM, no_sandbox=os.geteuid() == 0).start() as browser, browser.target() as page:
+        targets = await browser.browser.command("Target.getTargets")
+        target = next(info["targetId"] for info in targets["targetInfos"] if info["type"] == "page" and info.get("attached"))
+        await browser.browser.command("Target.closeTarget", {"targetId": target})
+        started = time.monotonic()
+        with pytest.raises(SessionError, match="BROWSER_PROTOCOL"):
+            await page.command("Runtime.evaluate", {"expression": "1"}, timeout=30)
+        assert time.monotonic() - started < 5
 
 
 @pytest.mark.asyncio

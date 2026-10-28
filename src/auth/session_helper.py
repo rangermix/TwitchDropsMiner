@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import itertools
 import json
 import re
 import time
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable, Iterator
 from contextlib import asynccontextmanager, suppress
 from typing import Any, Protocol
 
@@ -46,10 +47,12 @@ class CaptureProtocol(Protocol):
 class DevToolsConnection:
     """Multiplex bounded protocol replies and the few relevant network events."""
 
-    def __init__(self, socket: _DevToolsSocket, *, extra_events: frozenset[str] = frozenset()):
+    def __init__(self, socket: _DevToolsSocket, *, extra_events: frozenset[str] = frozenset(),
+                 ids: Iterator[int] | None = None):
         self.socket = socket
         self.extra_events = extra_events
-        self._sequence = 0
+        # Connections sharing one transport share ids, so a reply cannot match another's command.
+        self._ids = ids or itertools.count(1)
         self._pending: dict[int, asyncio.Future] = {}
         self.events: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue(maxsize=256)
         self._requests: set[str] = set()
@@ -111,8 +114,7 @@ class DevToolsConnection:
             self.events.put_nowait(None)
 
     async def command(self, method: str, params: dict[str, Any] | None = None, *, timeout: float = 30) -> Any:
-        self._sequence += 1
-        sequence = self._sequence
+        sequence = next(self._ids)
         future = asyncio.get_running_loop().create_future()
         self._pending[sequence] = future
         try:
@@ -176,7 +178,8 @@ class DevToolsPipe:
     def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         self.reader, self.writer = reader, writer
         self._sessions: dict[str | None, _PipeSession] = {}
-        self.browser = DevToolsConnection(self._session(None))
+        self._ids = itertools.count(1)
+        self.browser = DevToolsConnection(self._session(None), ids=self._ids)
         self._reader = asyncio.create_task(self._receive())
 
     @classmethod
@@ -220,6 +223,14 @@ class DevToolsPipe:
                 if not isinstance(data, dict):
                     break
                 session_id = data.get("sessionId")
+                method, params = data.get("method"), data.get("params")
+                # End a page session as soon as its target goes away, failing its pending commands.
+                if method == "Target.detachedFromTarget" and session_id is None and isinstance(params, dict):
+                    if isinstance(params.get("sessionId"), str):
+                        self._end(params["sessionId"])
+                elif method == "Inspector.detached" and session_id is not None:
+                    self._end(session_id)
+                    continue
                 session = self._sessions.get(session_id)
                 if session is None:
                     continue
@@ -254,7 +265,7 @@ class DevToolsPipe:
             session_id = result["sessionId"]
             if not isinstance(session_id, str) or not self.ID.fullmatch(session_id):
                 raise SessionError("BROWSER_PROTOCOL")
-            protocol = DevToolsConnection(self._session(session_id), extra_events=extra_events)
+            protocol = DevToolsConnection(self._session(session_id), extra_events=extra_events, ids=self._ids)
             try:
                 yield protocol
             finally:
