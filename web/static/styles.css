@@ -1273,6 +1273,7 @@ header h1 {
 
 .selected-games,
 .available-games {
+    min-width: 0;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 15px;
@@ -1305,6 +1306,10 @@ header h1 {
     cursor: move;
     transition: all 0.2s;
     user-select: none;
+}
+
+#selected-games-list .sortable-item {
+    flex-wrap: wrap;
 }
 
 .sortable-item:hover {
