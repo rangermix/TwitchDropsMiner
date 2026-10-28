@@ -89,6 +89,15 @@ class InventoryFilterSettings:
     LINK_STATUSES = ("all", "linked", "not_linked")
 
     @classmethod
+    def validate_update(cls, updates: Any) -> dict[str, Any]:
+        """Reject a filter update that is not an object or names an unknown link mode."""
+        if not isinstance(updates, dict) or (
+            "link_status" in updates and updates["link_status"] not in cls.LINK_STATUSES
+        ):
+            raise ValueError("Invalid inventory filters")
+        return updates
+
+    @classmethod
     def normalize(
         cls, updates: dict[str, Any], current: InventoryFilters | None = None
     ) -> InventoryFilters:

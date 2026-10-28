@@ -105,13 +105,7 @@ class SettingsUpdate(BaseModel):
     @field_validator("inventory_filters")
     @classmethod
     def validate_link_status(cls, value: dict | None) -> dict | None:
-        if (
-            value is not None
-            and "link_status" in value
-            and value["link_status"] not in InventoryFilterSettings.LINK_STATUSES
-        ):
-            raise ValueError("Invalid account-link filter")
-        return value
+        return InventoryFilterSettings.validate_update(value) if value is not None else None
 
 
 class ProxyVerifyRequest(BaseModel):
