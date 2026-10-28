@@ -127,8 +127,6 @@
                 "name": "General",
                 "dark_mode": "Dark Mode"
             },
-            "mining_benefits": "Mining Benefits",
-            "mining_benefits_help": "Select which types of drops you want to mine.",
             "reload": "Reload Campaigns",
             "reload_campaigns": "Reload Campaigns",
             "drop_name_blacklist": "Ignored Drop Keywords",
@@ -231,7 +229,13 @@
                 "save_error": "Failed to save Discord settings.",
                 "save_settings": "Save Settings",
                 "test_connection": "Test Connection"
-            }
+            },
+            "reward_priority_title": "Reward types",
+            "reward_priority_enable": "Prefer reward types in this order",
+            "reward_priority_rank": "Position of {type}",
+            "reward_priority_not_mined": "Not mined",
+            "reward_priority_error": "Could not save the reward order. Try again.",
+            "reward_priority_help": "Untick a type to stop mining it. Turn on ordering and drag the rows to prefer some types; earlier reward deadlines break ties, and selected games stay ahead of fallback games. Game rewards come from the game or publisher, badges and emotes are Twitch chat rewards, and Other is a type Twitch did not identify."
         },
         "help": {
             "about": "About Twitch Drops Miner",

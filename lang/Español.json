@@ -225,8 +225,6 @@
             "clear_all_cache_help": "Borra el estado local de campañas, canales y los datos derivados del minero; conserva el inicio de sesión y la configuración, y luego vuelve a cargar los datos desde Twitch.",
             "add_game": "Add Game",
             "add_game_hint": " Click \"Add Game\" to add it manually.",
-            "mining_benefits": "Beneficios de Minería",
-            "mining_benefits_help": "Selecciona qué tipos de drops deseas minar.",
             "multiple_games_found": "Se encontraron múltiples juegos para tu búsqueda. Por favor, sé más específico.",
             "manual_game_warning": "\"{game}\" no está en la lista de campañas disponibles. ¿Añadirlo de todos modos a los juegos para ver?",
             "deselect_all_warning": "¿Estás seguro de que deseas eliminar todos los juegos de tu lista de seguimiento?",
@@ -274,7 +272,13 @@
                 "save_error": "No se pudo guardar la configuración de Discord.",
                 "save_settings": "Guardar configuración",
                 "test_connection": "Probar conexión"
-            }
+            },
+            "reward_priority_title": "Tipos de recompensa",
+            "reward_priority_enable": "Preferir tipos de recompensa en este orden",
+            "reward_priority_rank": "Posición de {type}",
+            "reward_priority_not_mined": "No se mina",
+            "reward_priority_error": "No se pudo guardar el orden de recompensas. Inténtalo de nuevo.",
+            "reward_priority_help": "Desmarca un tipo para dejar de minarlo. Activa el orden y arrastra las filas para preferir ciertos tipos; en caso de empate van primero los plazos más cercanos, y los juegos seleccionados siguen por delante de los juegos de respaldo. Las recompensas de juego vienen del juego o del editor, las insignias y emotes son recompensas del chat de Twitch, y Otra es un tipo que Twitch no identificó."
         },
         "help": {
             "about": "Acerca de Twitch Drops Miner",

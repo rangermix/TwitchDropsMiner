@@ -127,8 +127,6 @@
                 "name": "Általános",
                 "dark_mode": "Sötét mód"
             },
-            "mining_benefits": "Bányászati előnyök",
-            "mining_benefits_help": "Válassza ki, mely típusú jutalmakat szeretné bányászni.",
             "reload": "Kampányok újratöltése",
             "reload_campaigns": "Kampányok újratöltése",
             "drop_name_blacklist": "Figyelmen kívül hagyott dropkulcsszavak",
@@ -231,7 +229,13 @@
                 "save_error": "A Discord-beállítások mentése sikertelen.",
                 "save_settings": "Beállítások mentése",
                 "test_connection": "Kapcsolat tesztelése"
-            }
+            },
+            "reward_priority_title": "Jutalomtípusok",
+            "reward_priority_enable": "Jutalomtípusok előnyben részesítése ebben a sorrendben",
+            "reward_priority_rank": "{type} helye",
+            "reward_priority_not_mined": "Nincs bányászva",
+            "reward_priority_error": "Nem sikerült menteni a jutalmak sorrendjét. Próbáld újra.",
+            "reward_priority_help": "Vedd ki a pipát egy típusnál, hogy ne bányássza tovább. Kapcsold be a sorrendet, és húzd a sorokat bizonyos típusok előnyben részesítéséhez; egyenlőség esetén a korábbi határidő dönt, a kiválasztott játékok pedig továbbra is a tartalék játékok előtt maradnak. A játékjutalmak a játéktól vagy a kiadótól származnak, a jelvények és emote-ok Twitch-csevegési jutalmak, az Egyéb pedig olyan típus, amelyet a Twitch nem azonosított."
         },
         "help": {
             "about": "A Twitch Drops Miner-ről",

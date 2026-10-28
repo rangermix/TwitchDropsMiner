@@ -225,8 +225,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "Vymazat veškerou mezipaměť",
             "clear_all_cache_help": "Vymaže místní stav kampaní, kanálů a odvozený stav mineru; zachová přihlášení a nastavení a poté znovu načte data z Twitche.",
-            "mining_benefits": "Výhody Těžby",
-            "mining_benefits_help": "Vyberte typy dropů, které chcete těžit.",
             "multiple_games_found": "Pro vaše hledání bylo nalezeno více her. Buďte prosím konkrétnější.",
             "manual_game_warning": "„{game}“ není v seznamu dostupných kampaní. Přesto jej přidat mezi hry ke sledování?",
             "deselect_all_warning": "Opravdu chcete odebrat všechny hry ze svého seznamu sledovaných?",
@@ -274,7 +272,13 @@
                 "save_error": "Nastavení Discord se nepodařilo uložit.",
                 "save_settings": "Uložit nastavení",
                 "test_connection": "Testovat připojení"
-            }
+            },
+            "reward_priority_title": "Typy odměn",
+            "reward_priority_enable": "Upřednostnit typy odměn v tomto pořadí",
+            "reward_priority_rank": "Pořadí: {type}",
+            "reward_priority_not_mined": "Netěží se",
+            "reward_priority_error": "Pořadí odměn se nepodařilo uložit. Zkuste to znovu.",
+            "reward_priority_help": "Zrušením zaškrtnutí typu jeho těžbu zastavíte. Zapněte pořadí a přetáhněte řádky, abyste upřednostnili určité typy; při shodě rozhodují dřívější termíny a vybrané hry zůstávají před záložními hrami. Herní odměny pocházejí od hry nebo vydavatele, odznaky a emotes jsou odměny chatu Twitch a Ostatní je typ, který Twitch nerozpoznal."
         },
         "help": {
             "about": "O Twitch Drops Miner",

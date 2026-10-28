@@ -151,7 +151,7 @@ Check the campaign on Twitch and work through these conditions:
    campaign.
 2. The campaign and individual reward are active, and the reward is earned by
    watching rather than by subscribing or making a purchase.
-3. The game is in **Mining list**, and its reward type is enabled in **Mining Benefits**.
+3. The game is in **Mining list**, and its reward type is ticked in **Reward types**.
 4. Your ignored keywords do not exclude the reward or one of its prerequisites.
 5. An eligible participating channel is live. Some campaigns work only on a fixed
    list of channels.

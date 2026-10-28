@@ -300,6 +300,7 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
     async def test_rejected_update_writes_prints_and_saves_nothing(self):
         valid_fields = {
             "games_to_watch": ["Changed game"],
+            "reward_priority": ["BADGE", "EMOTE", "DIRECT_ENTITLEMENT", "UNKNOWN"],
             "drop_name_blacklist": ["Changed"],
             "dark_mode": True,
             "language": "Deutsch",
@@ -313,6 +314,8 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
             "priority_list_only": False,
         }
         invalid_fields = (
+            ("reward_priority", ["BADGE"]),
+            ("reward_priority", ["BADGE", "BADGE", "DIRECT_ENTITLEMENT", "UNKNOWN"]),
             ("inventory_filters", ["not", "an", "object"]),
             ("inventory_filters", {"link_status": "invalid"}),
             ("mining_hours", {"mode": "range", "start": "25:00", "end": "08:00"}),
@@ -360,6 +363,7 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(OSError):
             manager.update_settings({
                 "games_to_watch": ["Changed game"],
+                "reward_priority": ["BADGE", "EMOTE", "DIRECT_ENTITLEMENT", "UNKNOWN"],
                 "drop_name_blacklist": ["Changed"],
                 "dark_mode": True,
                 "language": other_language,

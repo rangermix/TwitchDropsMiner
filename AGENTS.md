@@ -1073,3 +1073,28 @@ Tests cover persistence, filtering, Unicode exports, offsets, and translated UI 
   480 CSS pixels and below the same layout keeps the badge top-right with the arrow
   under it, using a 104px control column, smaller artwork, wrapping badges and names
   clamped to two lines.
+
+- `reward_priority` defaults to `[]` (disabled); enabled values must be an exact
+  permutation of BADGE, EMOTE, DIRECT_ENTITLEMENT, UNKNOWN. `RewardPriority` owns
+  normalization and shared type/deadline ranking. Preserve selected-game precedence
+  over fallback games and all campaign/drop eligibility and mining-benefit filters.
+  Saved game order is unchanged. Failed priority saves restore the prior policy and
+  do not request a selection refresh. SettingsManager validates reward priority before
+  any field changes and includes it in the full settings rollback snapshot.
+  Cover selection and persistence boundaries in
+  `test_reward_priority.py` and translated form behavior in its frontend companion.
+  The Settings UI is one **Reward types** list (`renderRewardPriority()`): each row
+  holds its `mining_benefits` checkbox (optimistic `state.settings` update; `saveSettings()`
+  sends that state, never DOM-derived defaults) and, when ordering is enabled, the
+  Mining-list drag handle plus a position number input as the keyboard/touch
+  alternative. Ordering and benefit changes autosave; there is no Save button. Unticked
+  types stay listed as not mined. Non-authoritative replies keep local
+  `mining_benefits`/`reward_priority`. Shared drag handlers only move rows within their
+  own list. Priority saves restore the replaced control's focus only if the user has
+  not navigated elsewhere while waiting; track focus, pointer and Tab events through
+  success and failure, remove listeners, and never focus a disabled rank input.
+
+- Reward ranking uses currently earnable drops, including prerequisite guards. Keep
+  game, nested campaign and drop queue order consistent with channel and active-campaign
+  selection; selected Special Events/IRL campaigns still outrank fallback campaigns
+  sharing their live channel. Upcoming/sequential queue entries remain visible.

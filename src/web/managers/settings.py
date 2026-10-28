@@ -8,6 +8,7 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from src.config.reward_priority import RewardPriority
 from src.config.settings import InventoryFilterSettings, MiningHoursSettings, default_settings
 from src.i18n.translator import _
 from src.models.game import Game
@@ -127,6 +128,10 @@ class SettingsManager:
         Args:
             settings_data: Dictionary of settings to update
         """
+        previous_reward_priority = getattr(self._settings, "reward_priority", [])
+        requested_reward_priority = settings_data.get("reward_priority")
+        if requested_reward_priority is not None:
+            requested_reward_priority = RewardPriority.normalize(requested_reward_priority)
         previous_priority_list_only = getattr(self._settings, "priority_list_only", True)
         requested_priority_list_only = settings_data.get("priority_list_only")
         priority_mode_changed = (
@@ -238,6 +243,8 @@ class SettingsManager:
             self._settings.allow_unlinked_campaigns = requested_allow_unlinked
         if priority_mode_changed and isinstance(requested_priority_list_only, bool):
             self._settings.priority_list_only = requested_priority_list_only
+        if requested_reward_priority is not None:
+            self._settings.reward_priority = requested_reward_priority
         self._settings.discord_webhook_url = new_webhook
         try:
             self._settings.save()
@@ -261,6 +268,8 @@ class SettingsManager:
             self._log_change(
                 f"Setting changed: priority_list_only = {requested_priority_list_only}"
             )
+            should_trigger_update = True
+        if requested_reward_priority is not None and requested_reward_priority != previous_reward_priority:
             should_trigger_update = True
         response_settings = self.get_settings(legacy_show_not_linked)
         asyncio.create_task(self._broadcaster.emit("settings_updated", response_settings))
