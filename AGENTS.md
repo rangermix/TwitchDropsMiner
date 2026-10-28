@@ -1074,6 +1074,8 @@ Tests cover persistence, filtering, Unicode exports, offsets, and translated UI 
   under it, using a 104px control column, smaller artwork, wrapping badges and names
   clamped to two lines.
 
+- Keep the public reward-type and ordering guide in `docs/usage.md#reward-types`,
+  within the existing eight-guide wiki publication surface.
 - `reward_priority` defaults to `[]` (disabled); enabled values must be an exact
   permutation of BADGE, EMOTE, DIRECT_ENTITLEMENT, UNKNOWN. `RewardPriority` owns
   normalization and shared type/deadline ranking. Preserve selected-game precedence
