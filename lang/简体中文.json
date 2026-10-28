@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "手机2FA令牌双重验证码错误.",
         "email_code_required": "需要电子邮件验证码,查看你的邮箱.",
         "twofa_code_required": "需要手机2FA令牌双重验证.",
+        "headless_renewal": "未找到 xvfb-run，因此会话续期浏览器以无头模式运行。Twitch 可能会拒绝它签发的会话 (CATALOG, integrity)。请安装 xvfb 和 xauth，或使用 Docker 镜像。",
         "status": {
             "logged_in": "已登录",
             "logged_out": "未登录",

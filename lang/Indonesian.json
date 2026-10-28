@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Kode verifikasi 2FA salah.",
         "email_code_required": "Diperlukan kode verifikasi email. Silakan periksa email Anda.",
         "twofa_code_required": "Diperlukan kode 2FA.",
+        "headless_renewal": "xvfb-run tidak ditemukan, jadi browser pembaruan sesi berjalan headless. Twitch dapat menolak sesi yang diterbitkannya (CATALOG, integrity). Pasang xvfb dan xauth, atau gunakan image Docker.",
         "status": {
             "logged_in": "Online",
             "logged_out": "Terputus",

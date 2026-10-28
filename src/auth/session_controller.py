@@ -10,6 +10,7 @@ import shutil
 import time
 from collections.abc import Awaitable, Callable, Iterator
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, contextmanager, nullcontext
+from dataclasses import replace
 from typing import Any
 
 from src.auth.imported_session import ImportedSession
@@ -58,6 +59,10 @@ class SessionController:
             yield
         except SessionError as error:
             error.annotate(stage=stage)
+            if (stage in ("issued_validation", "renewal_validation") and error.code == "CATALOG"
+                    and error.diagnostic.reason == "integrity" and getattr(self.issuer, "headless_fallback", False)):
+                # The rejected proof came from the headless fallback (no xvfb-run).
+                error.diagnostic = replace(error.diagnostic, reason="headless_fallback")
             logging.getLogger(__name__).warning("SESSION_DIAGNOSTIC %s", json.dumps(error.diagnostic.to_dict(), sort_keys=True))
             raise
         except Exception:

@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "El código 2FA es incorrecto.",
         "email_code_required": "Código de verificación de email requerido. \nPor favor, revise su email.",
         "twofa_code_required": "Token 2FA requerido.",
+        "headless_renewal": "No se encontró xvfb-run, así que el navegador de renovación de sesión se ejecuta en modo headless. Twitch puede rechazar las sesiones que emite (CATALOG, integrity). Instala xvfb y xauth, o usa la imagen de Docker.",
         "status": {
             "logged_in": "Conectado",
             "logged_out": "Desconectado",

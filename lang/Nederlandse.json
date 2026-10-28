@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Onjuiste 2FA Code.",
         "email_code_required": "E-mailcode vereist. Controleer de e-mail.",
         "twofa_code_required": "2FA Token vereist.",
+        "headless_renewal": "xvfb-run is niet gevonden, dus de browser voor sessievernieuwing draait headless. Twitch kan de sessies die deze uitgeeft weigeren (CATALOG, integrity). Installeer xvfb en xauth, of gebruik de Docker-image.",
         "status": {
             "logged_in": "Geregistreerd",
             "logged_out": "Uitgelogd",

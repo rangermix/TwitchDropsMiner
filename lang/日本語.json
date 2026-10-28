@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "2段階認証コードが間違っています。",
         "email_code_required": "メールコードが必要です。メールを確認してください。",
         "twofa_code_required": "2段階認証トークンが必要です。",
+        "headless_renewal": "xvfb-run が見つからないため、セッション更新用ブラウザーはヘッドレスで動作しています。Twitch はこのブラウザーが発行したセッションを拒否する場合があります (CATALOG, integrity)。xvfb と xauth をインストールするか、Docker イメージを使用してください。",
         "status": {
             "logged_in": "ログイン済み",
             "logged_out": "ログアウト済み",

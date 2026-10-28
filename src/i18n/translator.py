@@ -34,6 +34,7 @@ class LoginMessages(TypedDict):
     incorrect_login_pass: str
     incorrect_email_code: str
     incorrect_twofa_code: str
+    headless_renewal: str
     status: LoginStatus
 
 

@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import base64
 import json
+import logging
 import os
 import re
 import secrets
@@ -28,6 +29,7 @@ from src.auth.session_bundle import PrivateSessionFile, SessionBundle, SessionEr
 from src.auth.session_helper import BrowserExporter, CaptureProtocol, DevToolsPipe
 from src.auth.session_renewal import RenewalConnection, RenewalLoop, RenewalSender
 from src.config import ClientType
+from src.i18n import _
 
 
 if TYPE_CHECKING:
@@ -75,6 +77,8 @@ class OwnedChromium:
     def __init__(self, executable: str, *, no_sandbox: bool = False, startup_timeout: float = 20):
         self.executable, self.no_sandbox = executable, no_sandbox
         self.startup_timeout = startup_timeout
+        # Whether the last Linux start lacked xvfb-run; Twitch can reject headless proofs.
+        self.headless_fallback = False
 
     async def wait_ready(self, process: asyncio.subprocess.Process, profile: Path) -> str:
         async with asyncio.timeout(self.startup_timeout):  # type: ignore[attr-defined]
@@ -162,6 +166,10 @@ class OwnedChromium:
             if self.no_sandbox:
                 args.insert(1, "--no-sandbox")
             display_runner = shutil.which("xvfb-run") if os.name == "posix" else None
+            # macOS Chromium never uses X, so only Linux is told to install xvfb.
+            self.headless_fallback = os.name == "posix" and sys.platform.startswith("linux") and not display_runner
+            if self.headless_fallback:
+                logging.getLogger("TwitchDrops").warning(_.t["login"]["headless_renewal"])
             if display_runner:
                 # Keep SDK issuance in a normal browser, matching interactive login.
                 # Keep Xauthority in the owned profile so forced cleanup removes it too.
@@ -401,6 +409,10 @@ class SDKIssuer:
                  diagnostics: Diagnostics | None = None):
         self.browser, self.clock, self.timeout = browser, clock, timeout
         self.diagnostics = diagnostics
+
+    @property
+    def headless_fallback(self) -> bool:
+        return getattr(self.browser, "headless_fallback", False)
 
     async def issue(self, seed: ServerSeed, *, initial: bool = False) -> ServerSeed:
         seed.cookie.require_fresh(self.clock())

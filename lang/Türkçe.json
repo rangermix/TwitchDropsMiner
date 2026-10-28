@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Yanlış 2FA kodu.",
         "email_code_required": "E-posta kodu gerekli. Lütfen e-postayı kontrol edin.",
         "twofa_code_required": "2FA belirteci gerekli.",
+        "headless_renewal": "xvfb-run bulunamadı, bu nedenle oturum yenileme tarayıcısı headless çalışıyor. Twitch, bu tarayıcının oluşturduğu oturumları reddedebilir (CATALOG, integrity). xvfb ve xauth paketlerini kurun veya Docker imajını kullanın.",
         "status": {
             "logged_in": "Giriş Yapıldı",
             "logged_out": "Çıkış Yapıldı",

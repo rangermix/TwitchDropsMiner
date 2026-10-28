@@ -483,6 +483,12 @@ progress to an ignored drop while the miner intentionally targets another reward
   session ends when Chromium reports it detached, and all pipe sessions share command
   ids. Keep Xauthority inside the owned temporary profile
   so forced shutdown removes it too. Hosts without the runner retain the headless fallback.
+  On Linux that fallback sets `OwnedChromium.headless_fallback` and logs the translated
+  `login.headless_renewal` warning (install `xvfb`/`xauth` or use Docker) on every start.
+  `SessionController._phase()` relabels a `CATALOG`/`integrity` failure at
+  `issued_validation` or `renewal_validation` as reason `headless_fallback` when the
+  issuer reports it; `captured_validation`, macOS and Windows keep their labels.
+  `tests/test_session_controller.py` and `tests/test_server_renewal.py` cover this.
   A valid integrity response alone does not prove account/catalog acceptance.
 
 - Helper admission preserves allowlisted validation codes without printing remote text.

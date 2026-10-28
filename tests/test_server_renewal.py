@@ -303,7 +303,7 @@ async def test_cancel_during_sdk_wait_closes_owned_target_and_browser():
 @pytest.mark.parametrize("platform", ["posix", "nt"] if os.name == "posix" else ["nt"])
 @pytest.mark.parametrize("outcome", ["success", "failure", "cancel", "startup_timeout"])
 @pytest.mark.parametrize("displayed", [False, True])
-async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatch, outcome, platform, displayed):
+async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatch, caplog, outcome, platform, displayed):
     from src.auth import server_renewal
     from src.auth.session_helper import BrowserExporter, DevToolsPipe
 
@@ -363,6 +363,11 @@ async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatc
     assert all(not profile.exists() for profile in profiles)
     args, kwargs = calls[0]
     assert ("--headless=new" in args) is not displayed
+    # Only a Linux host missing xvfb-run is told to install it; Windows is always headless.
+    headless_fallback = platform == "posix" and sys.platform.startswith("linux") and not displayed
+    assert browser.headless_fallback is headless_fallback
+    assert server_renewal.SDKIssuer(browser).headless_fallback is headless_fallback
+    assert any("xvfb" in record.getMessage() for record in caplog.records) is headless_fallback
     assert kwargs["stdout"] == kwargs["stderr"] == asyncio.subprocess.DEVNULL
     assert kwargs["start_new_session"] is (platform == "posix")
     if platform == "posix":
