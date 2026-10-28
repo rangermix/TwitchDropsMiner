@@ -31,6 +31,10 @@ services operated for other users are outside its support scope.
 
 Invalid settings or a failed save keep your previous settings unchanged.
 
+In v2.4.0, Settings groups controls into **General**, **Mining**, **Games**,
+**Notifications**, and **Account & Maintenance**. The **Pause** menu stops watching
+temporarily; it resets on restart and leaves earned reward claims available.
+
 The redesigned dashboard's **Now Watching** card offers **Show thumbnail**, off on
 each page load. When enabled, it shows a Twitch JPEG thumbnail, refreshed on channel
 updates at most once per minute. It does not play video or audio. The header adapts to
@@ -43,20 +47,20 @@ not yet selected. Campaign details appear once, with matching linked/unlinked ca
 default-off option to mine campaigns reported as Not Linked; read its warning and
 check Twitch progress. See the [dashboard guide](docs/usage.md#account-link-override).
 
-**Settings → Mining list** marks each game as **LINKED** or **NOT LINKED** from your
+**Settings → Games → Mining list** marks each game as **LINKED** or **NOT LINKED** from your
 inventory, lists linked games first in **Available Games**, can filter by link status,
 and offers **Select Linked** to add every linked game at once. Selection controls wrap
 on narrow screens. See
 [Choose games and priorities](docs/usage.md#choose-games-and-priorities).
 
-Source builds ignore progress-poll responses superseded by newer campaign observations
+TDM ignores progress-poll responses superseded by newer campaign observations
 or inventory reloads. Fresh Twitch readings can still correct local progress.
 
-Use **Settings → Dump diagnosis data** for bug reports. It saves
+Use **Settings → Account & Maintenance → Dump diagnosis data** for bug reports. It saves
 deidentified miner state and recent sanitized API responses in your data volume;
 see [diagnosis data](docs/troubleshooting.md#save-diagnosis-data).
 
-Source builds check active Drop progress about once a minute while successfully watching,
+TDM checks active Drop progress about once a minute while successfully watching,
 including when a reward still has substantial watch time remaining.
 
 ## Quick start
@@ -69,13 +73,13 @@ With Docker installed, choose one setup below. Shell examples use Bash
 Pull and start the published image:
 
 ```bash
-docker pull rangermix/twitch-drops-miner:2.3.2
+docker pull rangermix/twitch-drops-miner:2.4.0
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.3.2
+  rangermix/twitch-drops-miner:2.4.0
 ```
 
 ### Docker Compose
@@ -86,7 +90,7 @@ inside it. Set `TZ` to your home internet connection's timezone:
 ```yaml
 services:
   twitch-drops-miner:
-    image: rangermix/twitch-drops-miner:2.3.2
+    image: rangermix/twitch-drops-miner:2.4.0
     container_name: twitch-drops-miner
     init: true
     stop_grace_period: 30s
@@ -134,10 +138,10 @@ Set Docker’s `TZ` to match your home internet connection’s timezone; change
 `Australia/Sydney` in the example as needed. Chromium and the temporary display are
 included in the image. Your everyday browser profile is separate.
 TDM renews the session automatically using a private verification browser, separate
-from the sign-in viewer. On Linux/macOS, source builds use a private pipe for this
-browser's control connection; see [session renewal](docs/authentication.md).
-**Settings → Log out of Twitch**, at the
-bottom, clears this miner’s session and opens sign in again for account replacement.
+from the sign-in viewer. On Linux/macOS, v2.4.0 uses a private pipe for this browser's
+control connection; Windows uses loopback. See [session renewal](docs/authentication.md).
+**Settings → Account & Maintenance → Log out of Twitch** clears this miner’s session
+and opens sign in again for account replacement.
 See [authentication](docs/authentication.md) and [troubleshooting](docs/troubleshooting.md).
 If Twitch rejects the embedded browser, select **Use desktop helper** and run the
 matching Windows, Linux, or macOS helper with your dashboard address. The first helper
@@ -260,7 +264,7 @@ or [buying the maintainer a coffee](https://buymeacoffee.com/rangermix).
 
 </details>
 
-**Settings → Reward types** chooses which reward types to mine and, optionally, drag
+**Settings → Mining → Reward types** chooses which reward types to mine and, optionally, drag
 them into a preferred order; earlier reward deadlines break ties. Position fields also
 support keyboard editing; Tab moves normally while changes save, and settings updates
 keep your chosen reward or game control focused.

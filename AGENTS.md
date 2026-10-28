@@ -912,6 +912,9 @@ protocol rejection; preserve rejection and target-cleanup assertions.
   from the step environment and send it as a header, never as an argument or URL.
   Preserve existing data-volume/session migration instructions. Prepare versioned
   frontend cache keys through the authorized release workflow before deployment.
+  Keep current Docker/helper examples and Settings-tab paths aligned in release
+  documentation. Distinguish historical release behavior from current features and
+  disclose host-name migration requirements without claiming live Twitch acceptance.
 - `.github/workflows/github-release.yml` verifies the existing tag against the
   dispatched source SHA and checks branch/package/lock/source version equality.
   Only the final publishing job has `contents: write`. `publish_release.py` creates

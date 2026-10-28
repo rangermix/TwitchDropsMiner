@@ -34,7 +34,7 @@ server-issued proof was rejected after browser login. Retrying the Finish button
 repair that proof. Keep the container clock/timezone and network routing consistent;
 report only the fixed diagnostic labels, never session files or complete logs.
 
-Docker builds from current source run the server verification/renewal browser on its own private
+The Docker image runs the server verification/renewal browser on its own private
 virtual display, separate from the sign-in viewer. Older headless renewal builds can
 fail campaign integrity validation even after a successful browser login. Updating to
 a build containing this correction can recover an existing renewable session without
@@ -42,12 +42,13 @@ another sign-in; TDM still verifies the account and campaign access before accep
 
 ## Docker and timezone
 
-Use the published `rangermix/twitch-drops-miner:2.3.2` image or build the current source.
+Use the `rangermix/twitch-drops-miner:2.4.0` image or build the current source.
 The image includes Chromium, Xvfb, a window manager and noVNC. It does not need a
 display on the home server or NAS. Only the dashboard port is published; VNC and
-login-browser control remain on container loopback addresses. Current source builds
-control the session-renewal browser over a private pipe; the published 2.3.2 image
-uses a loopback control port.
+login-browser control remain on container loopback addresses. The 2.4.0 Docker image
+and Linux/macOS source builds control the session-renewal browser over a private
+pipe. Windows source builds use loopback; the older 2.3.2 image also uses a loopback
+control port.
 
 Set `TZ` to match the timezone of your home internet connection, for example
 `TZ=Australia/Sydney`. A mismatched timezone can cause Twitch to reject the browser.
@@ -63,16 +64,16 @@ renewal on the miner server. Twitch can reject either browser; this fallback doe
 not guarantee successful sign-in.
 
 Download the helper matching your **miner version** from the sign-in screen or its
-[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.3.2).
+[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.4.0).
 Choose the platform of the computer where you will run the helper, which may differ
 from your miner server:
 
-| Computer | v2.3.2 archive |
+| Computer | v2.4.0 archive |
 | --- | --- |
-| Windows x64 | `tdm-login-helper-2.3.2-windows-x64.tar.gz` |
-| Linux x64 | `tdm-login-helper-2.3.2-linux-x64.tar.gz` |
-| macOS Apple silicon (arm64) | `tdm-login-helper-2.3.2-macos-arm64.tar.gz` |
-| macOS Intel (x64) | `tdm-login-helper-2.3.2-macos-x64.tar.gz` |
+| Windows x64 | `tdm-login-helper-2.4.0-windows-x64.tar.gz` |
+| Linux x64 | `tdm-login-helper-2.4.0-linux-x64.tar.gz` |
+| macOS Apple silicon (arm64) | `tdm-login-helper-2.4.0-macos-arm64.tar.gz` |
+| macOS Intel (x64) | `tdm-login-helper-2.4.0-macos-x64.tar.gz` |
 
 Extract the archive to a folder before running it. Install a native Chrome, Chromium,
 or Firefox 143+ browser on that computer; the helper does not include a browser.
@@ -135,7 +136,7 @@ directory to recover authentication.
 
 ## Log out and change account
 
-At the bottom of **Settings**, select **Log out of Twitch** and confirm. TDM drains
+In **Settings → Account & Maintenance**, select **Log out of Twitch** and confirm. TDM drains
 authenticated work, clears its saved session and legacy cookies, and opens a fresh
 Twitch sign in page. Games, drop history and other settings are preserved.
 This logs out this miner; it does not sign you out of your everyday Twitch browser.
@@ -159,7 +160,8 @@ their temporary profiles; an abrupt host crash cannot guarantee profile cleanup.
 ## Dashboard access and source installations
 
 Expand **Dashboard password** on the sign in screen to configure protection before
-entering Twitch credentials. The same controls remain in Settings after sign in.
+entering Twitch credentials. The same controls remain in **Settings → Account &
+Maintenance** after sign in.
 
 The viewer and login actions use the dashboard’s access controls, including optional
 password protection, same-origin checks and session expiry. Protect access to the
