@@ -19,4 +19,7 @@ services:
       # HTTPS here enables Secure cookies even when the proxy uses HTTP to this container.
       # Does not trust forwarded client IPs; leave unset for direct HTTP access.
       # - PUBLIC_BASE_URL=https://drops.example.com
+      # Optional: extra dashboard host names, e.g. a LAN DNS name. IP addresses, localhost,
+      # single-label names and .local/.home.arpa/.internal names are always accepted.
+      # - ALLOWED_HOSTS=nas.lan
     restart: unless-stopped

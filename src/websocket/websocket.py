@@ -20,6 +20,7 @@ from src.utils import (
     create_nonce,
     format_traceback,
     json_minify,
+    mask_url_password,
     task_wrapper,
 )
 
@@ -167,7 +168,8 @@ class Websocket:
         backoff = ExponentialBackoff(**kwargs)
         proxy = self._twitch.settings.proxy or None
         ws_logger.info(
-            f"Websocket[{self._idx}] connecting with {'no' if proxy is None else proxy} proxy"
+            f"Websocket[{self._idx}] connecting with "
+            f"{'no' if proxy is None else mask_url_password(proxy)} proxy"
         )
         for delay in backoff:
             try:

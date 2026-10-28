@@ -82,7 +82,10 @@ or Firefox 143+ browser on that computer; the helper does not include a browser.
    from the extracted folder in a Linux/macOS terminal. Enter the dashboard address
    shown by TDM, such as `http://192.168.1.10:8080`. The helper asks only for this URL;
    there is no pairing code or dashboard-password prompt. `localhost` works only
-   when the helper and miner run on the same computer.
+   when the helper and miner run on the same computer. A dotted host name such as
+   `nas.lan` is rejected unless it is an
+   [allowed host name](dashboard-access.md#allowed-host-names); use the IP address
+   or add the name to `ALLOWED_HOSTS`.
 3. Complete Twitch sign-in and verification in the helper-opened browser. Close all
    windows of that browser instance normally after Twitch confirms the login; on
    macOS, quit that instance. Keep the helper running while it reopens its temporary

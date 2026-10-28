@@ -49,7 +49,9 @@ jobs:
           echo "Branch '$BRANCH_NAME' does not exist, proceeding..."
 
       - name: Auto-generate release notes if missing
-        run: .github/scripts/generate_release_notes.sh -v "${{ steps.validate.outputs.version }}" -k "${{ secrets.GEMINI_API_KEY }}" -p
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: .github/scripts/generate_release_notes.sh -v "${{ steps.validate.outputs.version }}" -p
 
       - name: Create release branch and update version
         run: .github/scripts/create_release.sh "${{ steps.validate.outputs.version }}" "${{ env.CURRENT_BRANCH_NAME }}"

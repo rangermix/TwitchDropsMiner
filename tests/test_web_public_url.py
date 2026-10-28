@@ -39,8 +39,10 @@ def public_client(tmp_path, monkeypatch):
     monkeypatch.setattr(web, "twitch_client", None)
 
     @contextmanager
-    def create(url=PUBLIC, base_url="http://backend:8080", origin=PUBLIC, trusted_hosts="127.0.0.1"):
-        monkeypatch.setattr(auth, "origin", DashboardOrigin(url))
+    def create(url=PUBLIC, base_url="http://backend:8080", origin=PUBLIC, trusted_hosts="127.0.0.1",
+               allowed_hosts="drops.example.com"):
+        # Without PUBLIC_BASE_URL, a public proxy host name must be listed in ALLOWED_HOSTS.
+        monkeypatch.setattr(auth, "origin", DashboardOrigin(url, allowed_hosts))
         proxy = ProxyHeadersMiddleware(web.socket_app, trusted_hosts=trusted_hosts)
         with TestClient(proxy, base_url=base_url, client=("172.19.0.9", 1234),
                         headers={"Origin": origin, "X-TDM-Request": "1"}) as browser:
@@ -103,6 +105,24 @@ def test_empty_public_url_preserves_request_derived_policy(scheme, host):
     secure = scheme in ("https", "wss")
     assert policy.expected(connection) == f"{'https' if secure else 'http'}://{host}"
     assert policy.secure_cookie(connection) is secure
+
+
+@pytest.mark.parametrize("request_suffix", ["", "."])
+def test_dotted_public_host_passes_guards_without_extra_allowlist(public_client, request_suffix):
+    public = "https://drops.example.com."
+    base = f"https://drops.example.com{request_suffix}"
+    with public_client(url=public, base_url=base, origin=public, allowed_hosts="") as client:
+        assert client.get("/api/auth/status").status_code == 200
+        assert client.get(POLLING).status_code == 200
+        with client.websocket_connect(base.replace("https://", "wss://") + WEBSOCKET,
+                                      headers={"Upgrade": "websocket"}) as connection:
+            assert connection.receive_text().startswith("0")
+        rejected = client.get("/api/auth/status", headers={"Host": "attacker.example"})
+        assert rejected.status_code == 403
+        assert rejected.json() == {"detail": "invalid_host"}
+        assert client.post("/api/auth/settings", json=SETUP,
+                           headers={"Origin": "https://attacker.example"}).status_code == 403
+        assert client.post("/api/auth/settings", json=SETUP).status_code == 200
 
 
 @pytest.mark.parametrize("url,base,origin,secure", [

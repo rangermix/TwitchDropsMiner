@@ -58,6 +58,8 @@ function handleDragOver() {}
 function handleDrop() {}
 function handleDragEnd() {}
 function removeGameFromWatch() {}
+function getGameLinkStatus() { return new Map(); }
+function makeGameLinkBadge() { return null; }
 const changes = [];
 function changeGamePriority(...args) { changes.push(args); }
 renderSelectedGames(['Rust']);
@@ -77,3 +79,52 @@ process.stdout.write(JSON.stringify({changes, resetValues, input: input.attrs, b
     assert data["resetValues"] == ["1", "1", "1", "2"]
     assert data["input"]["aria-label"] == "优先级：Rust"
     assert data["button"]["aria-label"] == data["button"]["title"] == "移除 Rust"
+
+
+def test_link_badges_are_rendered_only_for_games_with_known_status():
+    source = APP_JS.read_text(encoding="utf-8")
+    functions = "\n".join(
+        extract_javascript_function(source, name)
+        for name in ("renderSelectedGames", "renderAvailableGames", "makeGameLinkBadge")
+    )
+    script = functions + """
+class Element {
+    constructor(tag, attrs = {}, text = null) { this.tag = tag; this.attrs = attrs; this.text = text; this.children = []; this.dataset = {}; }
+    replaceChildren(...children) { this.children = children; }
+    appendChild(child) { this.children.push(child); }
+    addEventListener() {}
+    querySelector(selector) {
+        if (selector.startsWith('input')) return this.children.find(el => el.attrs.type === 'checkbox');
+        return this.children.find(el => el.attrs.class === selector.slice(1));
+    }
+}
+const containers = {'selected-games-list': new Element('div'), 'available-games-list': new Element('div')};
+const document = {getElementById: id => containers[id], createElement: tag => new Element(tag)};
+function makeElement(tag, attrs, text) { return new Element(tag, attrs, text); }
+const state = {translations: {}};
+function handleDragStart() {}
+function handleDragOver() {}
+function handleDrop() {}
+function handleDragEnd() {}
+function removeGameFromWatch() {}
+function changeGamePriority() {}
+function toggleGameWatch() {}
+const status = new Map([['rust', true], ['apex', false]]);
+renderSelectedGames(['Rust', 'Apex', 'Manual'], status);
+renderAvailableGames(['Rust', 'Apex', 'Manual'], '', status, 'all');
+const badge = row => row.children.find(el => String(el.attrs.class).startsWith('game-link-badge'));
+const selected = containers['selected-games-list'].children;
+const available = containers['available-games-list'].children;
+process.stdout.write(JSON.stringify({
+    selected: selected.map(row => badge(row) && badge(row).text),
+    selectedLast: selected.map(row => row.children[row.children.length - 1].attrs.class),
+    available: available.map(row => badge(row) && badge(row).text),
+}));
+"""
+    result = subprocess.run(
+        [NODE, "-"], input=script, text=True, capture_output=True, check=True, encoding="utf-8"
+    )
+    data = json.loads(result.stdout)
+    assert data["selected"] == ["LINKED", "NOT LINKED", None]
+    assert data["available"] == ["LINKED", "NOT LINKED", None]
+    assert data["selectedLast"] == ["remove-btn"] * 3
