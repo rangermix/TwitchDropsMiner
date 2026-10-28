@@ -260,7 +260,7 @@ or [buying the maintainer a coffee](https://buymeacoffee.com/rangermix).
 
 **Settings → Reward types** chooses which reward types to mine and, optionally, drag
 them into a preferred order; earlier reward deadlines break ties. Position fields also
-support keyboard editing; saving keeps your focus unless you move elsewhere.
+support keyboard editing; settings updates keep your chosen reward or game control focused.
 [Reward types](docs/usage.md#reward-types) explains the ordering.
 
 The sign-in page also offers an advanced existing-session token option. See the

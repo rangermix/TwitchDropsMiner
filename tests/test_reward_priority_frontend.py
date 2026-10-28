@@ -19,12 +19,14 @@ REWARD_DOM = r"""
 const assert = require('node:assert/strict');
 class Node {
  constructor(tag){this.tag=tag;this.children=[];this.attrs={};this.events={};this.dataset={};this.classes=new Set();
-  this._text='';this.disabled=false;this.checked=false;this.hidden=false;this.parentNode=null;
+  this._text='';this.disabled=false;this.checked=false;this.hidden=false;this.parentNode=null;this.style={};
   this.classList={toggle:(name,on)=>{on?this.classes.add(name):this.classes.delete(name);},
    add:name=>this.classes.add(name),remove:name=>this.classes.delete(name),contains:name=>this.classes.has(name)};}
  setAttribute(key,value){this.attrs[key]=String(value);if(key==='id')this.id=String(value);
   if(key==='class')String(value).split(' ').forEach(name=>this.classes.add(name));}
  getAttribute(key){return this.attrs[key]??null;}
+ set className(value){this.setAttribute('class',value);} get className(){return this.attrs.class||'';}
+ set innerHTML(value){assert.equal(value,'');this.replaceChildren();}
  set textContent(value){this._text=String(value);this.children=[];}
  get textContent(){return this._text+this.children.map(child=>child.textContent).join('');}
  appendChild(child){child.parentNode=this;this.children.push(child);return child;}
@@ -38,7 +40,7 @@ class Node {
  closest(selector){let node=this;while(node){if(node.classes.has(selector.slice(1)))return node;node=node.parentNode;}return null;}
  querySelector(selector){return this.querySelectorAll(selector)[0]||null;}
  querySelectorAll(selector){const all=this.children.flatMap(child=>[child,...child.querySelectorAll(selector)]);
-  return all.filter(node=>node.classes.has(selector.slice(1)));}
+  return all.filter(node=>selector==='input[type="checkbox"]'?node.tag==='input'&&node.attrs.type==='checkbox':node.classes.has(selector.slice(1)));}
  focus(){if(this.disabled)return;document.activeElement=this;document.dispatchEvent({type:'focusin',target:this});}
 }
 const root=new Node('root');
@@ -131,7 +133,7 @@ assert.deepEqual(calls.at(-1),{reward_priority:last});
 
 @pytest.mark.skipif(NODE is None, reason='Node required')
 @pytest.mark.parametrize('success', [True, False])
-@pytest.mark.parametrize('movement', ['unchanged', 'elsewhere', 'removed_control', 'pointer', 'tab'])
+@pytest.mark.parametrize('movement', ['unchanged', 'elsewhere', 'internal_checkbox', 'pointer', 'tab'])
 def test_delayed_reward_save_respects_focus_navigation(success, movement):
     run_rewards(f'const success={json.dumps(success)}, movement={json.dumps(movement)};\n' + r"""
 state.settings.reward_priority=[...rewardTypes];renderRewardPriority();
@@ -144,9 +146,9 @@ const saving=saveRewardPriority(moved);
 assert.equal(document.activeElement,document.body); // Rendering removed the original input.
 const elsewhere=Object.assign(new Node('button'),{id:'different-control'});root.appendChild(elsewhere);
 if(movement==='elsewhere')elsewhere.focus();
-if(movement==='removed_control'){
+if(movement==='internal_checkbox'){
  rows()[0].querySelector('.reward-type-label').children[0].focus();
- renderRewardPriority(moved); // A socket update can remove the user's newly focused control.
+ renderRewardPriority(moved); // Preserve the control chosen by Tab across intervening updates.
 }
 if(movement==='pointer')document.dispatchEvent({type:'pointerdown',target:document.body});
 if(movement==='tab')document.dispatchEvent({type:'keydown',key:'Tab'});
@@ -154,9 +156,66 @@ finish();await saving;
 assert.deepEqual(state.settings.reward_priority,success?moved:rewardTypes);
 assert.equal(document.getElementById('reward-priority-error').hidden,success);
 const expected=movement==='unchanged'?document.getElementById('reward-rank-BADGE'):
- movement==='elsewhere'?elsewhere:document.body;
+ movement==='elsewhere'?elsewhere:movement==='internal_checkbox'?
+ rows().find(row=>row.dataset.rewardType==='EMOTE').querySelector('.reward-type-label').children[0]:document.body;
 assert.ok(document.activeElement===expected,'Saving must respect deliberate focus navigation');
 assert.ok([...document.listeners.values()].every(listeners=>listeners.size===0));
+""")
+
+
+@pytest.mark.skipif(NODE is None, reason='Node required')
+@pytest.mark.parametrize('control', ['checkbox', 'rank'])
+def test_reward_renders_preserve_the_current_control_without_moving_external_focus(control):
+    run_rewards(f'const control={json.dumps(control)};\n' + r"""
+state.settings.reward_priority=[...rewardTypes];renderRewardPriority();
+const find=()=>control==='checkbox'?rows().find(row=>row.dataset.rewardType==='BADGE')
+ .querySelector('.reward-type-label').children[0]:document.getElementById('reward-rank-BADGE');
+find().focus();
+for(let index=0;index<3;index++){
+ renderRewardPriority(['EMOTE','BADGE','DIRECT_ENTITLEMENT','UNKNOWN']);
+ assert.ok(document.activeElement===find(),'Renders must preserve the currently focused reward control');
+}
+const elsewhere=Object.assign(new Node('button'),{id:'different-control'});root.appendChild(elsewhere);
+elsewhere.focus();renderRewardPriority();
+assert.ok(document.activeElement===elsewhere,'Renders must not move focus from outside the list');
+""")
+
+
+@pytest.mark.skipif(NODE is None, reason='Node required')
+@pytest.mark.parametrize('success', [True, False])
+@pytest.mark.parametrize('control', ['priority', 'remove', 'available'])
+def test_delayed_reward_save_keeps_focus_in_the_game_list(success, control):
+    actual_dom = REWARD_DOM.replace(
+        'function updateSettingsUI(settings,authoritative,changed){state.settings={...state.settings,...settings};renderRewardPriority();}',
+        '',
+    )
+    run_javascript(REWARD_FUNCTIONS + ['updateSettingsUI', 'toggleMiningHoursRange',
+                                      'renderGamesToWatch', 'renderSelectedGames', 'renderAvailableGames',
+                                      'getGameLinkStatus', 'linkStatusSignature', 'makeGameLinkBadge'],
+                   actual_dom + f'const success={json.dumps(success)}, control={json.dumps(control)};\n' + r"""
+const realGet=document.getElementById.bind(document);
+document.getElementById=id=>realGet(id)||(()=>{const element=Object.assign(new Node('div'),{id});root.appendChild(element);return element;})();
+let availableGames=new Set(['Game','Other']),selectedInventoryGames=[],renderedLinkSignature=null;
+function applyInventoryViewMode(){}function updateGameTagsDisplay(){}function renderChannels(){}function renderInventory(){}
+function changeGamePriority(){}function removeGameFromWatch(){}function toggleGameWatch(){}function handleDragEnd(){}
+(async()=>{
+state.settings={...state.settings,games_to_watch:['Game'],reward_priority:[...rewardTypes]};
+state.campaigns={selected:{game_name:'Game',linked:true},available:{game_name:'Other',linked:false}};
+renderGamesToWatch();renderRewardPriority();
+document.getElementById('reward-rank-BADGE').focus();
+const moved=['EMOTE','BADGE','DIRECT_ENTITLEMENT','UNKNOWN'];
+let finish;fetch=()=>new Promise(resolve=>{finish=()=>resolve({ok:success,
+ json:async()=>({success:true,settings:{...state.settings,reward_priority:moved}})});});
+const saving=saveRewardPriority(moved);
+const find=()=>control==='available'?document.getElementById('available-games-list').children[0]
+ .querySelector('input[type="checkbox"]'):document.getElementById('selected-games-list').children[0]
+ .querySelector(control==='priority'?'.priority-input':'.remove-btn');
+const original=find();original.focus();finish();await saving;
+if(success)assert.ok(find()!==original,'Exercise the actual settings-response game-list render');
+assert.ok(document.activeElement===find(),'Reward saves must preserve the game-list control chosen by the user');
+assert.deepEqual(state.settings.reward_priority,success?moved:rewardTypes);
+assert.ok([...document.listeners.values()].every(listeners=>listeners.size===0));
+})().catch(error=>{console.error(error);process.exit(1)});
 """)
 
 

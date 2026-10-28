@@ -1097,6 +1097,11 @@ Tests cover persistence, filtering, Unicode exports, offsets, and translated UI 
   own list. Priority saves restore the replaced control's focus only if the user has
   not navigated elsewhere while waiting; track focus, pointer and Tab events through
   success and failure, remove listeners, and never focus a disabled rank input.
+  Give reward checkboxes stable IDs and preserve the currently focused list control
+  across synchronous re-renders, including a checkbox reached with Tab during a save.
+  Game priority inputs, remove buttons and available-game checkboxes also use stable
+  IDs so settings replies preserve the user's current game-list focus. Leave focus
+  outside the lists untouched.
 
 - Reward ranking uses currently earnable drops, including prerequisite guards. Keep
   game, nested campaign and drop queue order consistent with channel and active-campaign
