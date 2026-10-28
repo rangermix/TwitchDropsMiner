@@ -7,6 +7,15 @@ This file is the canonical harness for AI agents working in this repository.
 `CLAUDE.md` and `GEMINI.md` are relative symbolic links to `AGENTS.md` so every agent
 reads the same guidance. Maintain all shared and agent-specific instructions here.
 
+## Communication
+
+- Use simple, minimal, clear language in all communication.
+- Do not post an issue or PR comment just because you inspected or reviewed it.
+  Comment only to request additional information or report an actual state change,
+  such as starting work, merging a PR, or shipping a fix in a release.
+- When changes are required, list clear action items. Use bullet points when more
+  than one change is required.
+
 ## Mandatory Contribution Workflow
 
 Every coding agent MUST read [CONTRIBUTING.md](./CONTRIBUTING.md) before planning,
@@ -21,14 +30,6 @@ It is the repository's contribution policy, not optional background reading.
   or PR. Never claim completion of checks that did not run or approval not received.
 - Do not declare a PR ready to merge while required checks or review are missing or
   blocking findings remain. Document the gap and keep an incomplete PR in draft.
-- When taking on an issue or PR, first post a comment there acknowledging that work
-  is starting and briefly stating the scope, before investigation, implementation,
-  or review. If both an issue and a PR are being worked on, acknowledge both.
-- Before ending or pausing work, update every issue or PR being worked on with the
-  outcome, relevant evidence or validation, and any remaining action or request for
-  information. Post this update for every outcome, including resolved, closed,
-  no change needed, blocked, or more information needed, even when no code changed
-  or the issue or PR remains open.
 - Visual dashboard changes require current screenshots in the PR description, with
   personal information hidden as described in CONTRIBUTING.md. Prefer rendering them
   from mock or sample data; never use screenshots of a real account without masking.
@@ -439,8 +440,10 @@ progress to an ignored drop while the miner intentionally targets another reward
 - `OwnedChromium` uses `xvfb-run` when available for server SDK issuance and renewal,
   with a private authenticated display (1280×800) and ordinary 1200×760 browser window.
   Docker includes `xvfb-run` and `xauth`. Never reuse the interactive VNC display or
-  disable X authentication. Keep profiles owner-only, CDP loopback-only and process-group
-  cleanup on failure/cancellation. Keep Xauthority inside the owned temporary profile
+  disable X authentication. Keep profiles owner-only, CDP on the private pipe (POSIX)
+  or loopback (Windows), and process-group cleanup on failure/cancellation. A page
+  session ends when Chromium reports it detached, and all pipe sessions share command
+  ids. Keep Xauthority inside the owned temporary profile
   so forced shutdown removes it too. Hosts without the runner retain the headless fallback.
   A valid integrity response alone does not prove account/catalog acceptance.
 
@@ -479,6 +482,22 @@ progress to an ignored drop while the miner intentionally targets another reward
 - The renewal worker rotates SDK state, normally five minutes before expiry, with
   bounded retries and same-account/freshness validation. Mining GraphQL stays in
   Python. Preserve safe-read retry rules; never replay ambiguous mutations.
+- On POSIX, `OwnedChromium` (renewal/SDK issuance, run as root) uses
+  `--remote-debugging-pipe` and never opens a DevTools TCP port: CDP has no
+  authentication, and the `tdm-browser` login UID shares loopback. A small exec
+  launcher remaps the pipe to fds 3/4 so PID and process-group cleanup are unchanged;
+  it then execs the private `xvfb-run` wrapper when present, which passes fds 3/4
+  through to Chromium untouched (verified in the Alpine image). Xvfb and the wrapper
+  also inherit copies, so a Chromium crash reaches EOF once the wrapper cleans up.
+  `DevToolsPipe` multiplexes flattened `Target.attachToTarget` sessions with
+  NUL-delimited messages, bounds each session's backlog to 16 MiB by bytes (one read
+  can carry hundreds of small events), and closes its target and fds on every exit.
+  Once a protocol reader ends, new commands must fail with `BROWSER_PROTOCOL`
+  before sending, including after target detachment.
+  Windows keeps the loopback port (no `pass_fds`). The login capture Chromium keeps
+  its port because it runs as `tdm-browser` with a profile that UID already owns.
+  `tests/test_server_renewal.py` checks launch arguments and descriptors, and, with a
+  local Chromium on Linux, that the browser process group opens no TCP listener.
 - `SessionAPI` exposes sanitized status and finish/retry/logout actions, plus optional
   desktop-helper enable/cancel actions guarded by dashboard authentication and CSRF.
   There is no general session upload/export or renewal HTTP route. The binary

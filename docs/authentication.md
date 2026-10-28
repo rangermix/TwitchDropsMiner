@@ -45,7 +45,9 @@ another sign-in; TDM still verifies the account and campaign access before accep
 Use the published `rangermix/twitch-drops-miner:2.3.2` image or build the current source.
 The image includes Chromium, Xvfb, a window manager and noVNC. It does not need a
 display on the home server or NAS. Only the dashboard port is published; VNC and
-browser control remain on container loopback addresses.
+login-browser control remain on container loopback addresses. Current source builds
+control the session-renewal browser over a private pipe; the published 2.3.2 image
+uses a loopback control port.
 
 Set `TZ` to match the timezone of your home internet connection, for example
 `TZ=Australia/Sydney`. A mismatched timezone can cause Twitch to reject the browser.
@@ -142,9 +144,10 @@ If logout reports a storage error, check the current session before retrying.
 
 ## Automatic renewal
 
-The miner renews the accepted context using a separate temporary headless Chromium
-browser and validates the same account before saving. Mining requests remain in
-Python; the interactive browser does not remain running after login.
+The miner renews the accepted context using a separate temporary Chromium browser,
+with a private virtual display when available and a headless fallback otherwise.
+It validates the same account before saving. Mining requests remain in Python;
+the interactive browser does not remain running after login.
 Transient failures are retried. Expired or revoked access may require a new sign in,
 which appears automatically when TDM can no longer use the saved session.
 
