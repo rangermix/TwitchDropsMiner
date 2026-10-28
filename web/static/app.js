@@ -25,6 +25,7 @@ function showToast(message, type = 'info') {
     
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
     toast.textContent = message;
     
     toastContainer.appendChild(toast);
@@ -41,6 +42,15 @@ function showToast(message, type = 'info') {
         toast.style.transform = 'translateY(10px)';
         setTimeout(() => toast.remove(), 300);
     }, 5000);
+}
+
+function reportSettingsError(element, message) {
+    if (element) element.textContent = message;
+    const panel = element?.closest?.('.settings-panel');
+    const tab = element?.closest?.('.tab-content');
+    if (message && (!element || panel?.hidden || tab?.classList?.contains('active') === false)) {
+        showToast(message, 'error');
+    }
 }
 
 function showConfirmModal(message, onConfirm) {
@@ -2020,7 +2030,7 @@ async function verifyProxy() {
 
     if (!proxyUrl) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = 'Please enter a proxy URL first.';
+        reportSettingsError(resultDiv, 'Please enter a proxy URL first.');
         return;
     }
 
@@ -2038,11 +2048,11 @@ async function verifyProxy() {
             resultDiv.textContent = `✓ ${data.message}`;
         } else {
             resultDiv.className = 'verify-result error';
-            resultDiv.textContent = `✗ ${data.message}`;
+            reportSettingsError(resultDiv, `✗ ${data.message}`);
         }
     } catch (error) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = `Error: ${error.message}`;
+        reportSettingsError(resultDiv, `Error: ${error.message}`);
     }
 }
 
@@ -2073,7 +2083,7 @@ async function updateDiscordSettings(action) {
     result.style.display = 'block';
     if (action !== 'remove' && !webhookUrl && !state.settings.discord_configured) {
         result.className = 'verify-result error';
-        result.textContent = dc.missing_credentials || 'Please enter a Discord Webhook URL.';
+        reportSettingsError(result, dc.missing_credentials || 'Please enter a Discord Webhook URL.');
         return;
     }
     state.discordActionPending = true;
@@ -2100,8 +2110,8 @@ async function updateDiscordSettings(action) {
             : (dc.saved || 'Settings saved successfully!');
     } catch (error) {
         result.className = 'verify-result error';
-        result.textContent = saving ? (dc.save_error || 'Failed to save Discord settings.')
-            : (dc.error || 'Failed to connect to Discord. Please check your Webhook URL.');
+        reportSettingsError(result, saving ? (dc.save_error || 'Failed to save Discord settings.')
+            : (dc.error || 'Failed to connect to Discord. Please check your Webhook URL.'));
     } finally {
         state.discordActionPending = false;
         controls.forEach(control => { control.disabled = false; });
@@ -2126,7 +2136,7 @@ async function testTelegramConnection() {
 
     if ((!botToken && !state.settings.telegram_configured) || !chatId) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = tg.missing_credentials || 'Please enter a bot token and chat ID.';
+        reportSettingsError(resultDiv, tg.missing_credentials || 'Please enter a bot token and chat ID.');
         return;
     }
 
@@ -2149,11 +2159,11 @@ async function testTelegramConnection() {
             resultDiv.textContent = tg.success || '✓ Telegram connection successful!';
         } else {
             resultDiv.className = 'verify-result error';
-            resultDiv.textContent = tg.error || 'Telegram connection failed.';
+            reportSettingsError(resultDiv, tg.error || 'Telegram connection failed.');
         }
     } catch (error) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = error.message || tg.error || 'Telegram connection failed.';
+        reportSettingsError(resultDiv, error.message || tg.error || 'Telegram connection failed.');
     }
 }
 
@@ -2206,7 +2216,7 @@ async function handleSaveTelegramClick() {
     // A blank token keeps the stored credential. Clearing the chat ID disables alerts.
     if (!state.settings.telegram_configured && (!botToken || !chatId)) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = tg.missing_credentials || 'Please enter a bot token and chat ID.';
+        reportSettingsError(resultDiv, tg.missing_credentials || 'Please enter a bot token and chat ID.');
         return;
     }
 
@@ -2216,7 +2226,7 @@ async function handleSaveTelegramClick() {
         resultDiv.textContent = tg.saved || '✓ Settings saved successfully!';
     } catch (error) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = error.message || tg.save_error || 'Failed to save Telegram settings.';
+        reportSettingsError(resultDiv, error.message || tg.save_error || 'Failed to save Telegram settings.');
     }
 }
 
@@ -2326,7 +2336,7 @@ async function saveRewardPriority(order) {
         if (data.success !== true || JSON.stringify(data.settings?.reward_priority) !== JSON.stringify(order)) throw new Error();
         updateSettingsUI(data.settings, false, ['reward_priority']);
     } catch (_) {
-        error.textContent = state.translations.gui?.settings?.reward_priority_error || '';
+        reportSettingsError(error, state.translations.gui?.settings?.reward_priority_error || '');
         error.hidden = false;
     } finally {
         if (focused) {
@@ -2382,7 +2392,7 @@ async function onMiningHoursChange() {
         start.value = previous.start;
         end.value = previous.end;
         toggleMiningHoursRange(range.checked);
-        error.textContent = message;
+        reportSettingsError(error, message);
         error.hidden = false;
     } finally {
         controls.forEach(control => { control.disabled = false; });
@@ -2410,6 +2420,7 @@ async function saveSettings() {
         console.log('Settings saved automatically');
     } catch (error) {
         console.error('Failed to save settings:', error);
+        reportSettingsError(null, state.translations?.gui?.auth?.request_failed || 'Request failed. Try again.');
     }
 }
 
@@ -2437,7 +2448,7 @@ async function saveProxy() {
     } catch (error) {
         if (proxyInput) proxyInput.value = state.settings.proxy || '';
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = message;
+        reportSettingsError(resultDiv, message);
         resultDiv.style.display = 'block';
     } finally {
         button.disabled = false;
@@ -2491,7 +2502,7 @@ async function onUnlinkedMiningChange() {
         updateSettingsUI(data.settings);
     } catch (failure) {
         input.checked = state.settings.allow_unlinked_campaigns === true;
-        error.textContent = message;
+        reportSettingsError(error, message);
         error.hidden = false;
     } finally {
         input.disabled = false;
@@ -2616,6 +2627,15 @@ function applyTranslations(t) {
         // Use IDs for robust selection
         const generalHeader = document.getElementById('settings-general-header');
         if (generalHeader) generalHeader.textContent = t.gui.settings.general.name;
+        const settingsTabLabels = {
+            general: t.gui.settings.general?.name, mining: t.gui.settings.tab_mining,
+            games: t.gui.settings.tab_games, notifications: t.gui.settings.tab_notifications,
+            account: t.gui.settings.tab_account
+        };
+        for (const [name, label] of Object.entries(settingsTabLabels)) {
+            const button = document.getElementById(`settings-tab-${name}`);
+            if (button && label) button.textContent = label;
+        }
 
         const allowUnlinkedLabel = document.getElementById('allow-unlinked-label');
         if (allowUnlinkedLabel) allowUnlinkedLabel.textContent = t.gui.settings.allow_unlinked_campaigns;
@@ -3031,14 +3051,14 @@ async function dumpDiagnostics() {
         });
         const data = await response.json();
         if (!response.ok || data.success !== true || typeof data.file !== 'string') {
-            result.textContent = response.status === 429 ? t.diagnostics_busy : t.diagnostics_error;
+            reportSettingsError(result, response.status === 429 ? t.diagnostics_busy : t.diagnostics_error);
             result.className = 'help-text error';
             return;
         }
         result.textContent = t.diagnostics_saved.replace('{path}', `data/${data.file}`);
         result.className = 'help-text success';
     } catch (_) {
-        result.textContent = t.diagnostics_error;
+        reportSettingsError(result, t.diagnostics_error);
         result.className = 'help-text error';
     } finally {
         button.disabled = false;
@@ -3068,6 +3088,41 @@ function switchTab(tabName) {
     }
 }
 
+function switchSettingsTab(name) {
+    const buttons = [...document.querySelectorAll('[data-settings-tab]')];
+    if (!buttons.some(button => button.dataset.settingsTab === name)) return;
+    buttons.forEach(button => {
+        const active = button.dataset.settingsTab === name;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', String(active));
+        button.setAttribute('tabindex', active ? '0' : '-1');
+    });
+    document.querySelectorAll('.settings-panel').forEach(panel => {
+        panel.hidden = panel.id !== `settings-panel-${name}`;
+    });
+}
+
+function handleSettingsTabKeydown(event) {
+    const buttons = [...document.querySelectorAll('[data-settings-tab]')];
+    const current = buttons.indexOf(event.currentTarget);
+    if (current < 0) return;
+    const positions = {ArrowRight: (current + 1) % buttons.length,
+        ArrowLeft: (current + buttons.length - 1) % buttons.length,
+        Home: 0, End: buttons.length - 1};
+    if (!(event.key in positions)) return;
+    event.preventDefault();
+    const next = buttons[positions[event.key]];
+    switchSettingsTab(next.dataset.settingsTab);
+    next.focus();
+}
+
+function initializeSettingsTabs() {
+    document.querySelectorAll('[data-settings-tab]').forEach(button => {
+        button.addEventListener('click', () => switchSettingsTab(button.dataset.settingsTab));
+        button.addEventListener('keydown', handleSettingsTabKeydown);
+    });
+}
+
 // ==================== Event Listeners ====================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -3081,6 +3136,7 @@ document.addEventListener('DOMContentLoaded', () => {
             switchTab(button.dataset.tab);
         });
     });
+    initializeSettingsTabs();
 
     // Settings - auto-save on change
     document.getElementById('dark-mode').addEventListener('change', (e) => {

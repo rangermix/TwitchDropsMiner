@@ -170,6 +170,10 @@
                 "name": "Obecné",
                 "dark_mode": "Tmavý režim"
             },
+            "tab_mining": "Těžba",
+            "tab_games": "Hry",
+            "tab_notifications": "Oznámení",
+            "tab_account": "Účet a údržba",
             "reload": "Obnovit",
             "games_to_watch": "Seznam těžby",
             "games_help": "Vyberte hry ke sledování. Záleží na pořadí - přetáhněte pro změnu priority (nahoře = nejvyšší priorita).",

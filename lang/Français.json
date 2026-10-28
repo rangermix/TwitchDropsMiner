@@ -170,6 +170,10 @@
                 "name": "Général",
                 "dark_mode": "Mode sombre"
             },
+            "tab_mining": "Minage",
+            "tab_games": "Jeux",
+            "tab_notifications": "Notifications",
+            "tab_account": "Compte et maintenance",
             "reload": "Recharger",
             "reload_campaigns": "Recharger les campagnes",
             "games_to_watch": "Liste de minage",

@@ -170,6 +170,10 @@
                 "name": "Umum",
                 "dark_mode": "Mode Gelap"
             },
+            "tab_mining": "Penambangan",
+            "tab_games": "Game",
+            "tab_notifications": "Notifikasi",
+            "tab_account": "Akun & Pemeliharaan",
             "reload": "Muat Ulang",
             "games_to_watch": "Daftar mining",
             "games_help": "Pilih game untuk ditonton. Urutan penting - seret untuk mengatur ulang prioritas (atas = prioritas tertinggi).",

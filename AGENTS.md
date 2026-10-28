@@ -912,6 +912,9 @@ protocol rejection; preserve rejection and target-cleanup assertions.
   from the step environment and send it as a header, never as an argument or URL.
   Preserve existing data-volume/session migration instructions. Prepare versioned
   frontend cache keys through the authorized release workflow before deployment.
+  Keep current Docker/helper examples and Settings-tab paths aligned in release
+  documentation. Distinguish historical release behavior from current features and
+  disclose host-name migration requirements without claiming live Twitch acceptance.
 - `.github/workflows/github-release.yml` verifies the existing tag against the
   dispatched source SHA and checks branch/package/lock/source version equality.
   Only the final publishing job has `contents: write`. `publish_release.py` creates
@@ -952,6 +955,14 @@ The application uses a web-based interface accessible via browser:
 **web/** - Frontend assets:
 
 - `index.html` - Single-page application layout with tabs (Main, Inventory, History, Settings, Help)
+  - Settings is split into sub-tabs (General, Mining, Games, Notifications, Account &
+    Maintenance): each `.settings-section` lives in exactly one `#settings-panel-*` with a
+    matching `[data-settings-tab]` button; `switchSettingsTab()` toggles `hidden`.
+    Keep one tab stop and support Left/Right, Home and End keys. Settings save failures
+    must remain visible when the originating panel is hidden; retain inline feedback
+    and show a global error notification in that case. Gate the Games panel's full-height
+    layout with `@supports selector(:has(*))`: above 1024 CSS pixels its lists stretch
+    to the footer (300px minimum); unsupported browsers keep the fixed-height fallback.
 - `static/app.js` - Socket.IO client, real-time UI updates, API calls, Inventory Filtering and Drop History logic
 - `static/styles.css` - Responsive design with dark mode support
 
@@ -1053,6 +1064,8 @@ Tests cover persistence, filtering, Unicode exports, offsets, and translated UI 
   reconnection disabled. Parent messages contain fixed viewer events only. Override
   native clipboard logging, bound transfers, ignore remote text while the panel is
   closed, and clear text on send/close/disconnect. Preserve attempt teardown.
+- Settings notification and game action button groups wrap at narrow widths so translated controls
+  remain inside the viewport, including German at 320 CSS pixels.
 - Inventory overview places linkage badges in a reserved top-right grid cell, outside
   the disclosure button and action group. Keep long translated labels and game names
   from overlapping. Link account and Add to mining list share outline styling. Visible

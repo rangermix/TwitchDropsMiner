@@ -170,6 +170,10 @@
                 "name": "Ogólne",
                 "dark_mode": "Tryb ciemny"
             },
+            "tab_mining": "Minowanie",
+            "tab_games": "Gry",
+            "tab_notifications": "Powiadomienia",
+            "tab_account": "Konto i konserwacja",
             "reload": "Przeładuj",
             "games_to_watch": "Lista wydobywania",
             "games_help": "Wybierz gry do oglądania. Kolejność ma znaczenie - przeciągnij, aby zmienić priorytet (góra = najwyższy priorytet).",

@@ -61,7 +61,7 @@ values or credentials. A catalog error does not by itself identify a browser rej
 Report the code and a timestamped, redacted log excerpt. Keep browser profiles, session
 files, cookies, tokens and passwords private.
 
-Source builds with the diagnostic update also print a `SESSION_DIAGNOSTIC` JSON line
+TDM also prints a `SESSION_DIAGNOSTIC` JSON line
 after the translated helper explanation. A matching diagnostic is available as
 `helper.diagnostic`, `browser.diagnostic` or `renewal_diagnostic` in `/api/session`.
 Published helpers need a release containing this update; updating only the miner does
@@ -151,7 +151,8 @@ Check the campaign on Twitch and work through these conditions:
    campaign.
 2. The campaign and individual reward are active, and the reward is earned by
    watching rather than by subscribing or making a purchase.
-3. The game is in **Mining list**, and its reward type is ticked in **Reward types**.
+3. The game is in **Settings → Games → Mining list**, and its reward type is ticked in
+   **Settings → Mining → Reward types**.
 4. Your ignored keywords do not exclude the reward or one of its prerequisites.
 5. An eligible participating channel is live. Some campaigns work only on a fixed
    list of channels.
@@ -165,12 +166,12 @@ For **Special Events** or **IRL**, keep the campaign's category in Mining list;
 its participating channels may be streaming another category. See
 [channel selection](usage.md#special-events-and-irl-campaigns).
 
-Try **Reload Campaigns** (Inventory or the Mining list) after correcting settings.
-**Clear All Cache** can rebuild local campaign and channel data while keeping login,
-settings, and dashboard protection. It cannot repair inaccurate campaign information
-supplied by Twitch.
+Try **Reload Campaigns** in Inventory or **Settings → Games** after correcting settings.
+**Settings → Account & Maintenance → Clear All Cache** can rebuild local campaign and
+channel data while keeping login, settings, and dashboard protection. It cannot repair
+inaccurate campaign information supplied by Twitch.
 
-Source builds exclude channels when Twitch reports any active ban for your account,
+TDM excludes channels when Twitch reports any active ban for your account,
 including temporary bans. A temporary ban stops excluding the channel at Twitch's
 reported expiry; otherwise a subsequent discovery or **Reload Campaigns** must confirm that
 the ban is gone. Missing ban information does not create a ban. **Clear All Cache**
@@ -211,7 +212,7 @@ successful drop claim. See [Telegram notifications](notifications.md).
 
 ### Save diagnosis data
 
-In source builds, reproduce the problem and select **Settings → Dump diagnosis data**.
+Reproduce the problem and select **Settings → Account & Maintenance → Dump diagnosis data**.
 The result shows the saved JSON filename. With the supplied Docker mount
 `./data:/app/data`, find it in your host's `data/diagnostics` folder; inside the
 container it is `/app/data/diagnostics`. A named volume keeps it in that same container

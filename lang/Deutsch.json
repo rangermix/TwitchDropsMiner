@@ -170,6 +170,10 @@
                 "name": "Allgemein",
                 "dark_mode": "Dunkler Modus"
             },
+            "tab_mining": "Mining",
+            "tab_games": "Spiele",
+            "tab_notifications": "Benachrichtigungen",
+            "tab_account": "Konto & Wartung",
             "reload": "Neu laden",
             "reload_campaigns": "Kampagnen neu laden",
             "games_to_watch": "Mining-Liste",

@@ -278,6 +278,10 @@ class GUISettings(TypedDict):
     allow_unlinked_campaigns_warning: str
     allow_unlinked_campaigns_save_error: str
     general: GUISettingsGeneral
+    tab_mining: str
+    tab_games: str
+    tab_notifications: str
+    tab_account: str
     discord: GUIDiscordSettings
     telegram: GUITelegramSettings
     reload: str
