@@ -146,16 +146,24 @@
                 "upcoming": "Mendatang",
                 "expired": "Kadaluarsa",
                 "finished": "Selesai",
-                "item": "Item",
-                "badge": "Lencana",
-                "emote": "Emote",
-                "other": "Lainnya",
+                "item": "Hadiah game",
+                "badge": "Lencana chat",
+                "emote": "Emote chat",
+                "other": "Hadiah lainnya",
                 "clear": "Hapus Filter",
                 "search_placeholder": "Cari game...",
                 "account_link": "Tautan akun",
+                "status_heading": "Status",
+                "rewards_heading": "Hadiah",
                 "all": "Semua",
                 "linked": "Tertaut"
-            }
+            },
+            "add_game": "Tambahkan ke daftar mining",
+            "adding_game": "Menambahkan…",
+            "add_game_error": "Daftar mining tidak dapat disimpan. Coba lagi.",
+            "link_account": "Tautkan akun",
+            "card_view": "Tampilan kartu",
+            "list_view": "Tampilan daftar"
         },
         "settings": {
             "general": {
@@ -163,11 +171,16 @@
                 "dark_mode": "Mode Gelap"
             },
             "reload": "Muat Ulang",
-            "games_to_watch": "Game untuk Ditonton",
+            "games_to_watch": "Daftar mining",
             "games_help": "Pilih game untuk ditonton. Urutan penting - seret untuk mengatur ulang prioritas (atas = prioritas tertinggi).",
             "priority_list_only": "Hanya daftar prioritas (menambang hanya game yang dipilih)",
             "priority_list_only_save_error": "Opsi prioritas game tidak dapat disimpan. Silakan coba lagi.",
             "search_games": "Cari game...",
+            "select_linked": "Pilih yang Tertaut",
+            "game_linked": "TERTAUT",
+            "game_not_linked": "BELUM TERTAUT",
+            "game_linked_title": "Akun sudah tertaut",
+            "game_not_linked_title": "Akun belum tertaut",
             "select_all": "Pilih Semua",
             "deselect_all": "Batalkan Semua",
             "selected_games": "Game yang Dipilih (seret untuk mengatur ulang)",
@@ -212,8 +225,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "Hapus Semua Cache",
             "clear_all_cache_help": "Menghapus status kampanye, channel, dan data turunan miner lokal; mempertahankan login dan pengaturan, lalu memuat ulang data dari Twitch.",
-            "mining_benefits": "Manfaat Penambangan",
-            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang.",
             "multiple_games_found": "Beberapa game ditemukan untuk pencarian Anda. Harap lebih spesifik.",
             "manual_game_warning": "\"{game}\" tidak ada dalam daftar kampanye yang tersedia. Tetap tambahkan ke game untuk ditonton?",
             "deselect_all_warning": "Apakah Anda yakin ingin menghapus semua game dari daftar pantauan Anda?",
@@ -237,6 +248,7 @@
             "mining_hours_start": "Mulai",
             "mining_hours_end": "Selesai",
             "mining_hours_save_error": "Gagal menyimpan jam mining. Coba lagi.",
+            "proxy_save_error": "Proxy tidak dapat disimpan. Masukkan ulang kata sandinya, lalu coba lagi.",
             "discord": {
                 "name": "Notifikasi Discord",
                 "description": "Terima notifikasi di Discord saat kamu mengklaim drop.",
@@ -260,7 +272,13 @@
                 "save_error": "Gagal menyimpan pengaturan Discord.",
                 "save_settings": "Simpan Pengaturan",
                 "test_connection": "Uji Koneksi"
-            }
+            },
+            "reward_priority_title": "Jenis hadiah",
+            "reward_priority_enable": "Utamakan jenis hadiah sesuai urutan ini",
+            "reward_priority_rank": "Posisi {type}",
+            "reward_priority_not_mined": "Tidak ditambang",
+            "reward_priority_error": "Gagal menyimpan urutan hadiah. Coba lagi.",
+            "reward_priority_help": "Hapus centang suatu jenis untuk berhenti menambangnya. Aktifkan urutan dan seret baris untuk mengutamakan jenis tertentu; jika setara, tenggat yang lebih awal didahulukan, dan game yang dipilih tetap di depan game cadangan. Hadiah game berasal dari game atau penerbit, lencana dan emote adalah hadiah chat Twitch, dan Lainnya adalah jenis yang tidak dikenali Twitch."
         },
         "help": {
             "about": "Tentang Twitch Drops Miner",

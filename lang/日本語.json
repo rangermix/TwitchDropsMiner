@@ -146,16 +146,24 @@
                 "upcoming": "近日開催",
                 "expired": "期限切れ",
                 "finished": "完了",
-                "item": "アイテム",
-                "badge": "バッジ",
-                "emote": "エモート",
-                "other": "その他",
+                "item": "ゲーム報酬",
+                "badge": "チャットバッジ",
+                "emote": "チャットエモート",
+                "other": "その他の報酬",
                 "clear": "フィルター解除",
                 "search_placeholder": "ゲームを検索...",
                 "account_link": "アカウント連携",
+                "status_heading": "ステータス",
+                "rewards_heading": "報酬",
                 "all": "すべて",
                 "linked": "連携済み"
-            }
+            },
+            "add_game": "マイニングリストに追加",
+            "adding_game": "追加中…",
+            "add_game_error": "マイニングリストを保存できませんでした。再試行してください。",
+            "link_account": "アカウントを連携",
+            "card_view": "カード表示",
+            "list_view": "リスト表示"
         },
         "settings": {
             "general": {
@@ -163,11 +171,16 @@
                 "dark_mode": "ダークモード"
             },
             "reload": "再読み込み",
-            "games_to_watch": "視聴するゲーム",
-            "games_help": "視聴するゲームを選択してください。順序が重要です - ドラッグして優先順位を並べ替えます（上 = 最高優先度）。",
+            "games_to_watch": "マイニングリスト",
+            "games_help": "マイニングリストを選択してください。順序が重要です - ドラッグして優先順位を並べ替えます（上 = 最高優先度）。",
             "priority_list_only": "優先リストのみ（選択したゲームのみを対象）",
             "priority_list_only_save_error": "ゲーム優先順位の設定を保存できませんでした。もう一度お試しください。",
             "search_games": "ゲームを検索...",
+            "select_linked": "連携済みを選択",
+            "game_linked": "連携済み",
+            "game_not_linked": "未連携",
+            "game_linked_title": "アカウントは連携済みです",
+            "game_not_linked_title": "アカウントは未連携です",
             "select_all": "すべて選択",
             "deselect_all": "すべて選択解除",
             "selected_games": "選択されたゲーム（ドラッグして並べ替え）",
@@ -212,10 +225,8 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "すべてのキャッシュを消去",
             "clear_all_cache_help": "ローカルのキャンペーン、チャンネル、およびマイナーの派生状態を消去します。ログイン情報と設定は保持し、その後 Twitch から再読み込みします。",
-            "mining_benefits": "マイニング特典",
-            "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。",
             "multiple_games_found": "検索結果に複数のゲームが見つかりました。もう少し具体的に入力してください。",
-            "manual_game_warning": "「{game}」は利用可能なキャンペーン一覧にありません。それでも視聴するゲームに追加しますか？",
+            "manual_game_warning": "「{game}」は利用可能なキャンペーン一覧にありません。それでもマイニングリストに追加しますか？",
             "deselect_all_warning": "監視リストからすべてのゲームを削除してもよろしいですか？",
             "confirm_btn": "確認",
             "cancel_btn": "キャンセル",
@@ -237,6 +248,7 @@
             "mining_hours_start": "開始",
             "mining_hours_end": "終了",
             "mining_hours_save_error": "稼働時間を保存できませんでした。もう一度お試しください。",
+            "proxy_save_error": "プロキシを保存できませんでした。パスワードを再入力して、もう一度お試しください。",
             "discord": {
                 "name": "Discord通知",
                 "description": "ドロップを受け取るとDiscordに通知が届きます。",
@@ -260,7 +272,13 @@
                 "save_error": "Discord設定を保存できませんでした。",
                 "save_settings": "設定を保存",
                 "test_connection": "接続をテスト"
-            }
+            },
+            "reward_priority_title": "報酬の種類",
+            "reward_priority_enable": "この順序で報酬の種類を優先する",
+            "reward_priority_rank": "{type}の順位",
+            "reward_priority_not_mined": "マイニングしない",
+            "reward_priority_error": "報酬の順序を保存できませんでした。もう一度お試しください。",
+            "reward_priority_help": "チェックを外した種類はマイニングされません。順序を有効にして行をドラッグすると、特定の種類を優先できます。同順位では期限が早い報酬が先になり、選択したゲームは引き続き代替ゲームより優先されます。ゲーム報酬はゲームまたはパブリッシャーから、バッジとエモートはTwitchチャットの報酬で、「その他」はTwitchが識別できなかった種類です。"
         },
         "help": {
             "about": "Twitch Drops Minerについて",

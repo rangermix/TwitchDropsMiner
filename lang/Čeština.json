@@ -146,16 +146,24 @@
                 "upcoming": "Nadcházející",
                 "expired": "Vypršelo",
                 "finished": "Dokončeno",
-                "item": "Předmět",
-                "badge": "Odznak",
-                "emote": "Emotikon",
-                "other": "Jiné",
+                "item": "Herní odměna",
+                "badge": "Odznak chatu",
+                "emote": "Emotikon chatu",
+                "other": "Jiná odměna",
                 "clear": "Vymazat filtry",
                 "search_placeholder": "Hledat hry...",
                 "account_link": "Propojení účtu",
+                "status_heading": "Stav",
+                "rewards_heading": "Odměny",
                 "all": "Všechny",
                 "linked": "Propojeno"
-            }
+            },
+            "add_game": "Přidat do seznamu těžby",
+            "adding_game": "Přidávání…",
+            "add_game_error": "Seznam těžby nelze uložit. Zkuste to znovu.",
+            "link_account": "Propojit účet",
+            "card_view": "Zobrazení karet",
+            "list_view": "Zobrazení seznamu"
         },
         "settings": {
             "general": {
@@ -163,11 +171,16 @@
                 "dark_mode": "Tmavý režim"
             },
             "reload": "Obnovit",
-            "games_to_watch": "Hry ke sledování",
+            "games_to_watch": "Seznam těžby",
             "games_help": "Vyberte hry ke sledování. Záleží na pořadí - přetáhněte pro změnu priority (nahoře = nejvyšší priorita).",
             "priority_list_only": "Pouze seznam priorit (těžit pouze vybrané hry)",
             "priority_list_only_save_error": "Nastavení priority her se nepodařilo uložit. Zkuste to znovu.",
             "search_games": "Hledat hry...",
+            "select_linked": "Vybrat propojené",
+            "game_linked": "PROPOJENO",
+            "game_not_linked": "NEPROPOJENO",
+            "game_linked_title": "Účet je propojen",
+            "game_not_linked_title": "Účet není propojen",
             "select_all": "Vybrat vše",
             "deselect_all": "Zrušit výběr",
             "selected_games": "Vybrané hry (přetáhněte pro změnu pořadí)",
@@ -212,8 +225,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "Vymazat veškerou mezipaměť",
             "clear_all_cache_help": "Vymaže místní stav kampaní, kanálů a odvozený stav mineru; zachová přihlášení a nastavení a poté znovu načte data z Twitche.",
-            "mining_benefits": "Výhody Těžby",
-            "mining_benefits_help": "Vyberte typy dropů, které chcete těžit.",
             "multiple_games_found": "Pro vaše hledání bylo nalezeno více her. Buďte prosím konkrétnější.",
             "manual_game_warning": "„{game}“ není v seznamu dostupných kampaní. Přesto jej přidat mezi hry ke sledování?",
             "deselect_all_warning": "Opravdu chcete odebrat všechny hry ze svého seznamu sledovaných?",
@@ -237,6 +248,7 @@
             "mining_hours_start": "Začátek",
             "mining_hours_end": "Konec",
             "mining_hours_save_error": "Čas těžby se nepodařilo uložit. Zkuste to znovu.",
+            "proxy_save_error": "Proxy se nepodařilo uložit. Zadejte znovu heslo a zkuste to znovu.",
             "discord": {
                 "name": "Notifikace Discord",
                 "description": "Dostávejte upozornění na Discordu, když obdržíte dropy.",
@@ -260,7 +272,13 @@
                 "save_error": "Nastavení Discord se nepodařilo uložit.",
                 "save_settings": "Uložit nastavení",
                 "test_connection": "Testovat připojení"
-            }
+            },
+            "reward_priority_title": "Typy odměn",
+            "reward_priority_enable": "Upřednostnit typy odměn v tomto pořadí",
+            "reward_priority_rank": "Pořadí: {type}",
+            "reward_priority_not_mined": "Netěží se",
+            "reward_priority_error": "Pořadí odměn se nepodařilo uložit. Zkuste to znovu.",
+            "reward_priority_help": "Zrušením zaškrtnutí typu jeho těžbu zastavíte. Zapněte pořadí a přetáhněte řádky, abyste upřednostnili určité typy; při shodě rozhodují dřívější termíny a vybrané hry zůstávají před záložními hrami. Herní odměny pocházejí od hry nebo vydavatele, odznaky a emotes jsou odměny chatu Twitch a Ostatní je typ, který Twitch nerozpoznal."
         },
         "help": {
             "about": "O Twitch Drops Miner",

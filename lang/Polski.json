@@ -146,16 +146,24 @@
                 "upcoming": "Nadchodzące",
                 "expired": "Wygasłe",
                 "finished": "Zakończone",
-                "item": "Przedmiot",
-                "badge": "Odznaka",
-                "emote": "Emotka",
-                "other": "Inne",
+                "item": "Nagroda w grze",
+                "badge": "Odznaka czatu",
+                "emote": "Emotikon czatu",
+                "other": "Inna nagroda",
                 "clear": "Wyczyść filtry",
                 "search_placeholder": "Szukaj gier...",
                 "account_link": "Połączenie konta",
+                "status_heading": "Status",
+                "rewards_heading": "Nagrody",
                 "all": "Wszystkie",
                 "linked": "Połączone"
-            }
+            },
+            "add_game": "Dodaj do listy wydobywania",
+            "adding_game": "Dodawanie…",
+            "add_game_error": "Nie można zapisać listy wydobywania. Spróbuj ponownie.",
+            "link_account": "Połącz konto",
+            "card_view": "Widok kart",
+            "list_view": "Widok listy"
         },
         "settings": {
             "general": {
@@ -163,11 +171,16 @@
                 "dark_mode": "Tryb ciemny"
             },
             "reload": "Przeładuj",
-            "games_to_watch": "Gry do oglądania",
+            "games_to_watch": "Lista wydobywania",
             "games_help": "Wybierz gry do oglądania. Kolejność ma znaczenie - przeciągnij, aby zmienić priorytet (góra = najwyższy priorytet).",
             "priority_list_only": "Tylko lista priorytetów (wydobywaj tylko wybrane gry)",
             "priority_list_only_save_error": "Nie udało się zapisać opcji priorytetu gier. Spróbuj ponownie.",
             "search_games": "Szukaj gier...",
+            "select_linked": "Zaznacz połączone",
+            "game_linked": "POŁĄCZONE",
+            "game_not_linked": "NIEPOŁĄCZONE",
+            "game_linked_title": "Konto jest połączone",
+            "game_not_linked_title": "Konto nie jest połączone",
             "select_all": "Zaznacz wszystko",
             "deselect_all": "Odznacz wszystko",
             "selected_games": "Wybrane gry (przeciągnij, aby zmienić kolejność)",
@@ -212,8 +225,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "Wyczyść całą pamięć podręczną",
             "clear_all_cache_help": "Usuwa lokalny stan kampanii, kanałów i pochodne dane minera; zachowuje logowanie i ustawienia, a następnie ponownie pobiera dane z Twitcha.",
-            "mining_benefits": "Korzyści z Minowania",
-            "mining_benefits_help": "Wybierz rodzaje dropów, które chcesz zdobywać.",
             "multiple_games_found": "Znaleziono kilka gier dla twojego wyszukiwania. Proszę być bardziej precyzywnym.",
             "manual_game_warning": "„{game}” nie znajduje się na liście dostępnych kampanii. Mimo to dodać do gier do oglądania?",
             "deselect_all_warning": "Czy na pewno chcesz usunąć wszystkie gry ze swojej listy obserwowanych?",
@@ -237,6 +248,7 @@
             "mining_hours_start": "Początek",
             "mining_hours_end": "Koniec",
             "mining_hours_save_error": "Nie udało się zapisać godzin. Spróbuj ponownie.",
+            "proxy_save_error": "Nie udało się zapisać proxy. Wprowadź ponownie hasło i spróbuj jeszcze raz.",
             "discord": {
                 "name": "Powiadomienia Discord",
                 "description": "Otrzymuj powiadomienia na Discordzie, gdy odbierzesz dropy.",
@@ -260,7 +272,13 @@
                 "save_error": "Nie udało się zapisać ustawień Discord.",
                 "save_settings": "Zapisz ustawienia",
                 "test_connection": "Testuj połączenie"
-            }
+            },
+            "reward_priority_title": "Typy nagród",
+            "reward_priority_enable": "Preferuj typy nagród w tej kolejności",
+            "reward_priority_rank": "Pozycja: {type}",
+            "reward_priority_not_mined": "Nie wydobywane",
+            "reward_priority_error": "Nie udało się zapisać kolejności nagród. Spróbuj ponownie.",
+            "reward_priority_help": "Odznacz typ, aby przestać go wydobywać. Włącz kolejność i przeciągaj wiersze, aby preferować wybrane typy; przy remisie decydują wcześniejsze terminy, a wybrane gry pozostają przed grami zapasowymi. Nagrody w grze pochodzą od gry lub wydawcy, odznaki i emotki to nagrody czatu Twitch, a Inne to typ, którego Twitch nie rozpoznał."
         },
         "help": {
             "about": "O Twitch Drops Miner",

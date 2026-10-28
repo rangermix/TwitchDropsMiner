@@ -146,16 +146,24 @@
                 "upcoming": "即將開始",
                 "expired": "已過期",
                 "finished": "已完成",
-                "item": "物品",
-                "badge": "徽章",
-                "emote": "表情",
-                "other": "其他",
+                "item": "遊戲獎勵",
+                "badge": "聊天徽章",
+                "emote": "聊天表情",
+                "other": "其他獎勵",
                 "clear": "清除過濾器",
                 "search_placeholder": "搜尋遊戲...",
                 "account_link": "帳號連結",
+                "status_heading": "狀態",
+                "rewards_heading": "獎勵",
                 "all": "全部",
                 "linked": "已連結"
-            }
+            },
+            "add_game": "加入挖掘清單",
+            "adding_game": "正在新增…",
+            "add_game_error": "無法儲存挖掘清單，請重試。",
+            "link_account": "連結帳號",
+            "card_view": "卡片檢視",
+            "list_view": "清單檢視"
         },
         "settings": {
             "general": {
@@ -163,11 +171,16 @@
                 "dark_mode": "深色模式"
             },
             "reload": "重新載入",
-            "games_to_watch": "觀看遊戲",
+            "games_to_watch": "挖掘清單",
             "games_help": "選擇要觀看的遊戲。順序很重要 - 拖曳以重新排序優先級（頂部 = 最高優先級）。",
             "priority_list_only": "僅優先清單（僅挖掘所選遊戲）",
             "priority_list_only_save_error": "無法儲存遊戲優先順序選項，請重試。",
             "search_games": "搜尋遊戲...",
+            "select_linked": "選擇已連結",
+            "game_linked": "已連結",
+            "game_not_linked": "未連結",
+            "game_linked_title": "帳號已連結",
+            "game_not_linked_title": "帳號未連結",
             "select_all": "全選",
             "deselect_all": "取消全選",
             "selected_games": "已選遊戲（拖曳以重新排序）",
@@ -212,10 +225,8 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "清除所有快取",
             "clear_all_cache_help": "清除本機活動、頻道和挖礦器衍生狀態；保留登入資訊和設定，然後從 Twitch 重新載入。",
-            "mining_benefits": "挖掘獎勵",
-            "mining_benefits_help": "選擇您想要獲取的掉落類型。",
             "multiple_games_found": "您的搜尋找到了多個遊戲。請更具體一些。",
-            "manual_game_warning": "可用活動清單中沒有「{game}」。仍要將其加入觀看遊戲清單嗎？",
+            "manual_game_warning": "可用活動清單中沒有「{game}」。仍要將其加入挖掘清單清單嗎？",
             "deselect_all_warning": "您確定要從觀看清單中移除所有遊戲嗎？",
             "confirm_btn": "確認",
             "cancel_btn": "取消",
@@ -237,6 +248,7 @@
             "mining_hours_start": "開始",
             "mining_hours_end": "結束",
             "mining_hours_save_error": "無法儲存執行時段，請重試。",
+            "proxy_save_error": "無法儲存代理。請重新輸入密碼後再試一次。",
             "discord": {
                 "name": "Discord 通知",
                 "description": "領取掉落物時在 Discord 上接收通知。",
@@ -260,7 +272,13 @@
                 "save_error": "無法儲存 Discord 設定。",
                 "save_settings": "儲存設定",
                 "test_connection": "測試連線"
-            }
+            },
+            "reward_priority_title": "獎勵類型",
+            "reward_priority_enable": "依此順序優先獎勵類型",
+            "reward_priority_rank": "{type}的位置",
+            "reward_priority_not_mined": "不挖取",
+            "reward_priority_error": "無法儲存獎勵順序，請再試一次。",
+            "reward_priority_help": "取消勾選某個類型即可停止挖取。開啟排序並拖曳各列可優先特定類型；相同時截止時間較早者優先，已選遊戲仍排在備用遊戲之前。遊戲獎勵來自遊戲或發行商，徽章和表情符號是 Twitch 聊天獎勵，「其他」是 Twitch 無法辨識的類型。"
         },
         "help": {
             "about": "關於 Twitch Drops Miner",

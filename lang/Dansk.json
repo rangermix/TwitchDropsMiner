@@ -146,16 +146,24 @@
                 "upcoming": "Kommende",
                 "expired": "Udløbet",
                 "finished": "Afsluttet",
-                "item": "Genstand",
-                "badge": "Badge",
-                "emote": "Emote",
-                "other": "Andet",
+                "item": "Spilbelønning",
+                "badge": "Chatbadge",
+                "emote": "Chatemote",
+                "other": "Anden belønning",
                 "clear": "Ryd filtre",
                 "search_placeholder": "Søg efter spil...",
                 "account_link": "Kontoforbindelse",
+                "status_heading": "Status",
+                "rewards_heading": "Belønninger",
                 "all": "Alle",
                 "linked": "Forbundet"
-            }
+            },
+            "add_game": "Føj til miningliste",
+            "adding_game": "Tilføjer…",
+            "add_game_error": "Kunne ikke gemme mininglisten. Prøv igen.",
+            "link_account": "Tilknyt konto",
+            "card_view": "Kortvisning",
+            "list_view": "Listevisning"
         },
         "settings": {
             "general": {
@@ -163,11 +171,16 @@
                 "dark_mode": "Mørk tilstand: "
             },
             "reload": "Genindlæs",
-            "games_to_watch": "Spil at se",
+            "games_to_watch": "Miningliste",
             "games_help": "Vælg spil at se. Rækkefølgen er vigtig - træk for at ændre prioritet (top = højeste prioritet).",
             "priority_list_only": "Kun prioritetsliste (minér kun valgte spil)",
             "priority_list_only_save_error": "Kunne ikke gemme indstillingen for spilprioritet. Prøv igen.",
             "search_games": "Søg spil...",
+            "select_linked": "Vælg forbundne",
+            "game_linked": "FORBUNDET",
+            "game_not_linked": "IKKE FORBUNDET",
+            "game_linked_title": "Konto er forbundet",
+            "game_not_linked_title": "Konto er ikke forbundet",
             "select_all": "Vælg alle",
             "deselect_all": "Fravælg alle",
             "selected_games": "Valgte spil (træk for at ændre rækkefølge)",
@@ -212,8 +225,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "Ryd hele cachen",
             "clear_all_cache_help": "Rydder lokal kampagne-, kanal- og afledt minerstatus; bevarer login og indstillinger og genindlæser derefter data fra Twitch.",
-            "mining_benefits": "Mining Fordele",
-            "mining_benefits_help": "Vælg hvilke typer drops du vil mine.",
             "multiple_games_found": "Flere spil fundet for din søgning. Vær venligst mere specifik.",
             "manual_game_warning": "\"{game}\" findes ikke på listen over tilgængelige kampagner. Vil du alligevel føje det til spil, der skal ses?",
             "deselect_all_warning": "Er du sikker på, at du vil fjerne alle spil fra din overvågningsliste?",
@@ -237,6 +248,7 @@
             "mining_hours_start": "Start",
             "mining_hours_end": "Slut",
             "mining_hours_save_error": "Kunne ikke gemme minedriftstiden. Prøv igen.",
+            "proxy_save_error": "Proxyen kunne ikke gemmes. Indtast adgangskoden igen, og prøv igen.",
             "discord": {
                 "name": "Discord-underretninger",
                 "description": "Få besked på Discord, når du gør krav på drops.",
@@ -260,7 +272,13 @@
                 "save_error": "Kunne ikke gemme Discord-indstillinger.",
                 "save_settings": "Gem indstillinger",
                 "test_connection": "Test forbindelse"
-            }
+            },
+            "reward_priority_title": "Belønningstyper",
+            "reward_priority_enable": "Foretræk belønningstyper i denne rækkefølge",
+            "reward_priority_rank": "Placering af {type}",
+            "reward_priority_not_mined": "Mines ikke",
+            "reward_priority_error": "Belønningsrækkefølgen kunne ikke gemmes. Prøv igen.",
+            "reward_priority_help": "Fjern fluebenet for en type for at stoppe med at mine den. Slå rækkefølge til, og træk rækkerne for at foretrække bestemte typer; ved lighed går tidligere deadlines forrest, og valgte spil kommer stadig før reservespil. Spilbelønninger kommer fra spillet eller udgiveren, badges og emotes er Twitch-chatbelønninger, og Andet er en type, Twitch ikke kunne identificere."
         },
         "help": {
             "about": "Om Twitch Drops Miner",

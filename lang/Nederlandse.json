@@ -146,16 +146,24 @@
                 "upcoming": "Aankomend",
                 "expired": "Verlopen",
                 "finished": "Voltooid",
-                "item": "Item",
-                "badge": "Badge",
-                "emote": "Emote",
-                "other": "Overig",
+                "item": "Spelbeloning",
+                "badge": "Chatbadge",
+                "emote": "Chatemote",
+                "other": "Andere beloning",
                 "clear": "Filters wissen",
                 "search_placeholder": "Zoek spellen...",
                 "account_link": "Accountkoppeling",
+                "status_heading": "Status",
+                "rewards_heading": "Beloningen",
                 "all": "Alle",
                 "linked": "Gekoppeld"
-            }
+            },
+            "add_game": "Aan mininglijst toevoegen",
+            "adding_game": "Toevoegen…",
+            "add_game_error": "Kan de mininglijst niet opslaan. Probeer opnieuw.",
+            "link_account": "Account koppelen",
+            "card_view": "Kaartweergave",
+            "list_view": "Lijstweergave"
         },
         "settings": {
             "general": {
@@ -163,11 +171,16 @@
                 "dark_mode": "Donkere Modus"
             },
             "reload": "Herladen",
-            "games_to_watch": "Games om te kijken",
+            "games_to_watch": "Mininglijst",
             "games_help": "Selecteer games om te kijken. Volgorde is belangrijk - sleep om prioriteit te wijzigen (bovenaan = hoogste prioriteit).",
             "priority_list_only": "Alleen prioriteitenlijst (mine alleen geselecteerde games)",
             "priority_list_only_save_error": "De spelprioriteitsoptie kon niet worden opgeslagen. Probeer het opnieuw.",
             "search_games": "Zoek games...",
+            "select_linked": "Gekoppelde selecteren",
+            "game_linked": "GEKOPPELD",
+            "game_not_linked": "NIET GEKOPPELD",
+            "game_linked_title": "Account is gekoppeld",
+            "game_not_linked_title": "Account is niet gekoppeld",
             "select_all": "Alles selecteren",
             "deselect_all": "Alles deselecteren",
             "selected_games": "Geselecteerde games (sleep om te herschikken)",
@@ -212,8 +225,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "Volledige cache wissen",
             "clear_all_cache_help": "Wist de lokale campagne-, kanaal- en afgeleide minerstatus; behoudt je aanmelding en instellingen en laadt daarna opnieuw vanaf Twitch.",
-            "mining_benefits": "Mining Voordelen",
-            "mining_benefits_help": "Selecteer welke soorten drops je wilt minen.",
             "multiple_games_found": "Meerdere spellen gevonden voor je zoekopdracht. Wees alsjeblieft specifieker.",
             "manual_game_warning": "\"{game}\" staat niet in de lijst met beschikbare campagnes. Toch toevoegen aan de te bekijken spellen?",
             "deselect_all_warning": "Weet je zeker dat je alle spellen uit je volglijst wilt verwijderen?",
@@ -237,6 +248,7 @@
             "mining_hours_start": "Start",
             "mining_hours_end": "Einde",
             "mining_hours_save_error": "De miningtijden konden niet worden opgeslagen. Probeer opnieuw.",
+            "proxy_save_error": "De proxy kon niet worden opgeslagen. Voer het wachtwoord opnieuw in en probeer het opnieuw.",
             "discord": {
                 "name": "Discord-meldingen",
                 "description": "Ontvang meldingen op Discord wanneer je drops opent.",
@@ -260,7 +272,13 @@
                 "save_error": "Discord-instellingen konden niet worden opgeslagen.",
                 "save_settings": "Instellingen opslaan",
                 "test_connection": "Verbinding testen"
-            }
+            },
+            "reward_priority_title": "Beloningstypen",
+            "reward_priority_enable": "Beloningstypen in deze volgorde verkiezen",
+            "reward_priority_rank": "Positie van {type}",
+            "reward_priority_not_mined": "Wordt niet gemined",
+            "reward_priority_error": "De beloningsvolgorde kon niet worden opgeslagen. Probeer het opnieuw.",
+            "reward_priority_help": "Vink een type uit om het niet meer te minen. Zet de volgorde aan en sleep de rijen om bepaalde typen te verkiezen; bij gelijkspel gaan eerdere deadlines voor, en geselecteerde games blijven vóór reservegames. Gamebeloningen komen van de game of uitgever, badges en emotes zijn Twitch-chatbeloningen, en Overig is een type dat Twitch niet herkende."
         },
         "help": {
             "about": "Over Twitch Drops Miner",

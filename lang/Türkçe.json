@@ -146,16 +146,24 @@
                 "upcoming": "Yaklaşan",
                 "expired": "Süresi Dolmuş",
                 "finished": "Tamamlanmış",
-                "item": "Eşya",
-                "badge": "Rozet",
-                "emote": "İfade",
-                "other": "Diğer",
+                "item": "Oyun ödülü",
+                "badge": "Sohbet rozeti",
+                "emote": "Sohbet ifadesi",
+                "other": "Diğer ödül",
                 "clear": "Filtreleri Temizle",
                 "search_placeholder": "Oyun ara...",
                 "account_link": "Hesap bağlantısı",
+                "status_heading": "Durum",
+                "rewards_heading": "Ödüller",
                 "all": "Tümü",
                 "linked": "Bağlı"
-            }
+            },
+            "add_game": "Madencilik listesine ekle",
+            "adding_game": "Ekleniyor…",
+            "add_game_error": "Madencilik listesi kaydedilemedi. Tekrar deneyin.",
+            "link_account": "Hesabı bağla",
+            "card_view": "Kart görünümü",
+            "list_view": "Liste görünümü"
         },
         "settings": {
             "general": {
@@ -163,11 +171,16 @@
                 "dark_mode": "Karanlık Mod"
             },
             "reload": "Tekrar yükle",
-            "games_to_watch": "İzlenecek Oyunlar",
+            "games_to_watch": "Madencilik listesi",
             "games_help": "İzlenecek oyunları seçin. Sıralama önemlidir - önceliği yeniden sıralamak için sürükleyin (üst = en yüksek öncelik).",
             "priority_list_only": "Yalnızca öncelik listesi (sadece seçili oyunları kaz)",
             "priority_list_only_save_error": "Oyun önceliği seçeneği kaydedilemedi. Lütfen tekrar deneyin.",
             "search_games": "Oyun ara...",
+            "select_linked": "Bağlı Olanları Seç",
+            "game_linked": "BAĞLI",
+            "game_not_linked": "BAĞLI DEĞİL",
+            "game_linked_title": "Hesap bağlı",
+            "game_not_linked_title": "Hesap bağlı değil",
             "select_all": "Tümünü seç",
             "deselect_all": "Tümünü kaldır",
             "selected_games": "Seçilen oyunlar (yeniden sıralamak için sürükleyin)",
@@ -212,8 +225,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "Tüm Önbelleği Temizle",
             "clear_all_cache_help": "Yerel kampanya, kanal ve türetilmiş madenci durumunu temizler; oturum açma bilgilerini ve ayarları korur, ardından Twitch'ten yeniden yükler.",
-            "mining_benefits": "Madencilik Avantajları",
-            "mining_benefits_help": "Hangi tür dropları toplamak istediğinizi seçin.",
             "multiple_games_found": "Aramanız için birden fazla oyun bulundu. Lütfen daha belirgin olun.",
             "manual_game_warning": "\"{game}\" mevcut kampanyalar listesinde yok. Yine de izlenecek oyunlara eklensin mi?",
             "deselect_all_warning": "İzleme listenizdeki tüm oyunları kaldırmak istediğinize emin misiniz?",
@@ -237,6 +248,7 @@
             "mining_hours_start": "Başlangıç",
             "mining_hours_end": "Bitiş",
             "mining_hours_save_error": "Madencilik saatleri kaydedilemedi. Tekrar deneyin.",
+            "proxy_save_error": "Proxy kaydedilemedi. Parolasını yeniden girip tekrar deneyin.",
             "discord": {
                 "name": "Discord Bildirimleri",
                 "description": "Drop talep ettiğinde Discord'da bildirim al.",
@@ -260,7 +272,13 @@
                 "save_error": "Discord ayarları kaydedilemedi.",
                 "save_settings": "Ayarları Kaydet",
                 "test_connection": "Bağlantıyı Test Et"
-            }
+            },
+            "reward_priority_title": "Ödül türleri",
+            "reward_priority_enable": "Ödül türlerini bu sırayla tercih et",
+            "reward_priority_rank": "{type} sırası",
+            "reward_priority_not_mined": "Madenciliği yapılmıyor",
+            "reward_priority_error": "Ödül sırası kaydedilemedi. Tekrar deneyin.",
+            "reward_priority_help": "Madenciliğini durdurmak için bir türün işaretini kaldırın. Belirli türleri öne almak için sıralamayı açın ve satırları sürükleyin; eşitlikte bitiş tarihi daha erken olan önce gelir ve seçili oyunlar yedek oyunların önünde kalır. Oyun ödülleri oyundan veya yayıncıdan gelir, rozetler ve emote'lar Twitch sohbet ödülleridir, Diğer ise Twitch'in tanımlayamadığı bir türdür."
         },
         "help": {
             "about": "Twitch Drops Miner Hakkında",

@@ -146,16 +146,24 @@
                 "upcoming": "In Arrivo",
                 "expired": "Scaduto",
                 "finished": "Finito",
-                "item": "Oggetto",
-                "badge": "Badge",
-                "emote": "Emote",
-                "other": "Altro",
+                "item": "Ricompensa di gioco",
+                "badge": "Distintivo chat",
+                "emote": "Emote chat",
+                "other": "Altra ricompensa",
                 "clear": "Pulisci Filtri",
                 "search_placeholder": "Cerca giochi...",
                 "account_link": "Collegamento account",
+                "status_heading": "Stato",
+                "rewards_heading": "Ricompense",
                 "all": "Tutte",
                 "linked": "Collegato"
-            }
+            },
+            "add_game": "Aggiungi alla lista di mining",
+            "adding_game": "Aggiunta…",
+            "add_game_error": "Impossibile salvare la lista di mining. Riprova.",
+            "link_account": "Collega account",
+            "card_view": "Vista a schede",
+            "list_view": "Vista a elenco"
         },
         "settings": {
             "general": {
@@ -163,11 +171,16 @@
                 "dark_mode": "Modalità scura"
             },
             "reload": "Ricarica",
-            "games_to_watch": "Giochi da guardare",
+            "games_to_watch": "Lista di mining",
             "games_help": "Seleziona i giochi da guardare. L'ordine è importante - trascina per riordinare la priorità (in alto = priorità massima).",
             "priority_list_only": "Solo lista priorità (mina solo i giochi selezionati)",
             "priority_list_only_save_error": "Impossibile salvare l’opzione di priorità dei giochi. Riprova.",
             "search_games": "Cerca giochi...",
+            "select_linked": "Seleziona collegati",
+            "game_linked": "COLLEGATO",
+            "game_not_linked": "NON COLLEGATO",
+            "game_linked_title": "L'account è collegato",
+            "game_not_linked_title": "L'account non è collegato",
             "select_all": "Seleziona tutto",
             "deselect_all": "Deseleziona tutto",
             "selected_games": "Giochi selezionati (trascina per riordinare)",
@@ -212,8 +225,6 @@
             "drop_name_blacklist_placeholder": "(JP)\n[KR]\nJapan",
             "clear_all_cache": "Svuota tutta la cache",
             "clear_all_cache_help": "Cancella lo stato locale di campagne, canali e i dati derivati del miner; mantiene l’accesso e le impostazioni, quindi ricarica i dati da Twitch.",
-            "mining_benefits": "Vantaggi Minatori",
-            "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare.",
             "multiple_games_found": "Più giochi trovati per la tua ricerca. Per favore, sii più specifico.",
             "manual_game_warning": "\"{game}\" non è nell’elenco delle campagne disponibili. Aggiungerlo comunque ai giochi da guardare?",
             "deselect_all_warning": "Sei sicuro di voler rimuovere tutti i giochi dalla tua lista di osservazione?",
@@ -237,6 +248,7 @@
             "mining_hours_start": "Inizio",
             "mining_hours_end": "Fine",
             "mining_hours_save_error": "Impossibile salvare gli orari. Riprova.",
+            "proxy_save_error": "Impossibile salvare il proxy. Reinserisci la password e riprova.",
             "discord": {
                 "name": "Notifiche Discord",
                 "description": "Ricevi notifiche su Discord quando riscatti i drop.",
@@ -260,7 +272,13 @@
                 "save_error": "Impossibile salvare le impostazioni Discord.",
                 "save_settings": "Salva impostazioni",
                 "test_connection": "Prova Connessione"
-            }
+            },
+            "reward_priority_title": "Tipi di ricompensa",
+            "reward_priority_enable": "Preferisci i tipi di ricompensa in questo ordine",
+            "reward_priority_rank": "Posizione di {type}",
+            "reward_priority_not_mined": "Non minato",
+            "reward_priority_error": "Impossibile salvare l'ordine delle ricompense. Riprova.",
+            "reward_priority_help": "Deseleziona un tipo per smettere di minarlo. Attiva l'ordine e trascina le righe per preferire alcuni tipi; a parità vengono prima le scadenze più vicine, e i giochi selezionati restano davanti ai giochi di riserva. Le ricompense di gioco provengono dal gioco o dall'editore, badge ed emote sono ricompense della chat di Twitch, e Altro è un tipo che Twitch non ha identificato."
         },
         "help": {
             "about": "Informazioni su Twitch Drops Miner",
