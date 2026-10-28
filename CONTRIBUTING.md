@@ -226,6 +226,10 @@ existing issues from regressions, and fix new problems introduced by the PR. A g
 workflow does not prove that Mypy was clean. Node.js 24 must be on `PATH`; investigate
 skipped frontend tests rather than claiming they passed.
 
+CI runs Ruff without automatic fixes so it checks the submitted source. Apply any
+lint fixes locally and review the resulting diff before pushing; CI must fail for
+remaining violations instead of silently repairing its own checkout.
+
 Also run these release-script contract tests with Bash and GNU `grep`/`sed` on `PATH`.
 The scripts use `grep -P` and GNU-style `sed -i`; macOS's default utilities are not
 sufficient. On macOS, select GNU tools or use a Linux container/VM. On Windows, use
@@ -243,7 +247,7 @@ Select additional regression checks from the actual impact of the change:
 | --- | --- |
 | Mining, inventory, or channel selection | Eligibility and timing boundaries, prerequisites, ignored drops, claim behavior, and neighboring selection paths |
 | Settings or persistence | Save/reload round trips, defaults/migration, invalid input, and failure handling |
-| Dashboard or translations | Relevant Node/DOM tests, locale schema and placeholder checks, and a browser check of the affected flow |
+| Dashboard or translations | Relevant Node/DOM tests, locale schema and placeholder checks, a browser check of the affected flow, and redacted screenshots of visual changes |
 | Authentication or API access | Unauthorized requests, origin/CSRF handling, session expiry/revocation, and absence of leaked credentials |
 | Dependencies, Docker, or CI/release scripts | Lock/version consistency, relevant script tests, and Docker build/workflow validation |
 | Documentation only | Accurate commands and paths, working local links, Markdown structure, canonical agent guidance, and valid instruction symlinks |
@@ -293,9 +297,24 @@ collect feedback and CI results while tests or independent review are still pend
 
 Use the [PR template](./.github/pull_request_template.md). Explain the original problem,
 resulting behavior, scope, linked issues, test commands/results, regression coverage,
-adversarial review, and remaining limitations. Include before/after screenshots for
-visible UI changes when useful. Mark work in progress as a draft; do not describe a
-partial implementation or unavailable check as complete.
+adversarial review, and remaining limitations. Mark work in progress as a draft; do
+not describe a partial implementation or unavailable check as complete.
+
+Every change to the dashboard's appearance (layout, styling, new or changed UI text,
+icons or controls) must include screenshots of the result in the PR description, with
+before/after screenshots when an existing view changes. "Before" shows the base branch
+(normally current `main`) without any change from the PR, not an earlier PR revision,
+using the same data and viewport as "after". Cover each affected view and, for layout
+changes, a narrow width. Translation-only string fixes may show one representative
+locale. Screenshots must not show personal information: prefer mock or sample data,
+otherwise crop or fully mask (not blur) Twitch usernames, avatars and IDs, your
+account's linked games and drop history, console output, email addresses, dashboard
+hostnames, IP addresses and URLs, proxy addresses or credentials, tokens, webhook URLs,
+chat IDs, and unrelated browser tabs or bookmarks, then save a new flattened image.
+Check every image before uploading: editing or replacing it later does not remove the
+original from GitHub. Attach images to the PR rather than committing them to the topic
+branch, unless the PR intentionally updates a published documentation image such as
+`screenshot.png`. Update screenshots when later revisions change the visible result.
 
 Before requesting merge, confirm:
 
@@ -307,6 +326,8 @@ Before requesting merge, confirm:
   updated where applicable under the rules above.
 - [ ] An independent adversarial review is recorded and blocking findings are resolved.
 - [ ] The PR description matches the final implementation and includes evidence.
+- [ ] Visual dashboard changes include current screenshots with personal information
+  hidden.
 
 Respond to review feedback respectfully and support technical disagreements with
 reproducible evidence. Maintainers decide when to merge and release. Contributor credit
@@ -363,8 +384,9 @@ The exporter uses an explicit page allowlist. Add a new public guide to that map
 and its tests deliberately; never replace it with a recursive copy of `docs/` or the
 checkout. Publishing runs only from the canonical repository's `main`, never PR code.
 
-Put personal plans, development notes, local verification records, screenshots, and
-captures in `.dev-notes/`. Git and Docker builds exclude that directory. This takes
+Put personal plans, development notes, local verification records, working screenshots,
+and captures in `.dev-notes/`; PR screenshots are redacted copies attached as described
+in section 5. Git and Docker builds exclude `.dev-notes/`. This takes
 precedence over agent skill templates that suggest committing `docs/plans/` or
 `docs/notes/`. Do not force-add private files. Keep concise, redacted test and review
 results in PR descriptions so changes remain reviewable without publishing working data.
