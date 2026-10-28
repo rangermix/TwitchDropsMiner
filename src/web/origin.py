@@ -18,7 +18,7 @@ class DashboardOrigin:
         self.public_origin = self._parse(public_base_url) if public_base_url else None
         self.allowed_hosts = self._parse_hosts(allowed_hosts)
         if self.public_origin is not None:
-            self.allowed_hosts |= {urlsplit(self.public_origin).hostname or ""}
+            self.allowed_hosts |= {(urlsplit(self.public_origin).hostname or "").removesuffix(".")}
 
     @staticmethod
     def _parse_hosts(value: str) -> frozenset[str]:

@@ -553,7 +553,9 @@ progress to an ignored drop while the miner intentionally targets another reward
   the rejection warning is logged at most once a minute). Accept only IP literals, `localhost`,
   `*.localhost`, single-label names, `.local`/`.home.arpa`/`.internal`, the
   `PUBLIC_BASE_URL` host and the optional comma-separated `ALLOWED_HOSTS` names (no
-  schemes, ports or wildcards; invalid values stop startup without echo). Never derive
+  schemes, ports or wildcards; invalid values stop startup without echo). Remove one
+  trailing DNS dot from both configured and request hosts for this check, while preserving
+  browser origin serialization and its strict origin checks. Never derive
   trust from the Host header alone. Private responses other than `/session-viewer`
   carry a CSP (`script-src 'self' https://cdn.socket.io`, `frame-ancestors 'none'`);
   every response, static files included, carries `nosniff`. The CDN Socket.IO script
