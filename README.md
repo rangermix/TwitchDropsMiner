@@ -27,6 +27,8 @@ services operated for other users are outside its support scope.
 - Review claimed-drop history, export it to CSV, and receive Telegram or Discord notifications.
   Discord claim alerts include reward artwork when available.
 - Manage everything from a web dashboard with optional password protection.
+
+Invalid settings or a failed save keep your previous settings unchanged.
 - Set daily [mining hours](docs/usage.md#mining-hours) in the miner’s local timezone.
 
 The redesigned dashboard's **Now Watching** card offers **Show thumbnail**, off on
