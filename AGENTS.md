@@ -323,6 +323,8 @@ lang/                # Translation JSON files (20 languages)
   All / Linked / Not Linked dropdown filters on known status (Not Linked excludes
   unknown games), and Select Linked appends only missing linked games, keeping the
   existing order and manual entries and ignoring search/filter like Select All.
+  Keep filter actions and selected-game rows wrapping, and game panels shrinkable,
+  so all controls remain reachable on narrow screens.
   Re-render the lists only when the link-status signature changes (inventory batch,
   campaign add/clear), so inventory updates while mining never interrupt a drag or a
   priority edit. Build badges with safe DOM APIs and keep the five `gui.settings`

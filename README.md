@@ -43,7 +43,8 @@ check Twitch progress. See the [dashboard guide](docs/usage.md#account-link-over
 
 **Settings → Mining list** marks each game as **LINKED** or **NOT LINKED** from your
 inventory, lists linked games first in **Available Games**, can filter by link status,
-and offers **Select Linked** to add every linked game at once. See
+and offers **Select Linked** to add every linked game at once. Selection controls wrap
+on narrow screens. See
 [Choose games and priorities](docs/usage.md#choose-games-and-priorities).
 
 Source builds ignore progress-poll responses superseded by newer campaign observations
