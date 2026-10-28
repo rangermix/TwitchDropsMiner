@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nAplikace byla ukončena.",
         "watching": "Sledování kanálu: {channel}",
+        "mining_resumed": "Získávání dropů obnoveno",
         "goes_online": "Kanál {channel} je online, přepínám...",
         "goes_offline": "Kanál {channel} je offline, přepínám na další...",
         "claimed_drop": "Drop vyzvednut: {drop}",
@@ -71,6 +72,15 @@
             "fetching_campaigns": "Načítání dropů...",
             "adding_campaigns": "Přidávám dropy... {counter}",
             "ready": "Připraveno",
+            "paused": "Pozastaveno",
+            "pause": "Pozastavit",
+            "resume": "Pokračovat",
+            "paused_until": "Pozastaveno do {time}",
+            "pause_10m": "Na 10 minut",
+            "pause_1h": "Na 1 hodinu",
+            "pause_tomorrow": "Do zítřka",
+            "pause_indefinite": "Dokud nepokračuji",
+            "pause_error": "Nepodařilo se změnit stav pozastavení. Zkuste to znovu.",
             "outside_hours": "Mimo dobu těžby"
         },
         "tabs": {

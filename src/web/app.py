@@ -5,7 +5,7 @@ import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from urllib.parse import quote
 
 import socketio
@@ -115,6 +115,11 @@ class SettingsUpdate(BaseModel):
         return InventoryFilterSettings.validate_update(value) if value is not None else None
 
 
+class PauseRequest(BaseModel):
+    paused: StrictBool
+    duration: Literal["10m", "1h", "tomorrow"] | None = None
+
+
 class ProxyVerifyRequest(BaseModel):
     proxy: str
 
@@ -159,6 +164,7 @@ async def get_status():
         "status": gui_manager.status.get(),
         "login": gui_manager.login.get_status(),
         "manual_mode": twitch_client.get_manual_mode_info(),
+        "pause": twitch_client.pause_info(),
     }
 
 
@@ -527,6 +533,16 @@ async def trigger_close():
     return {"success": True}
 
 
+@app.post("/api/pause")
+async def update_paused(request: PauseRequest):
+    """Pause mining for a duration or until resumed; a restart always resumes."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    twitch_client.set_paused(request.paused, request.duration)
+    return {"success": True, **twitch_client.pause_info()}
+
+
 @app.post("/api/mode/exit-manual")
 async def exit_manual_mode():
     """Exit manual mode and return to automatic channel selection"""
@@ -562,6 +578,7 @@ async def connect(sid, environ):
                 "settings": gui_manager.settings.get_settings(),
                 "login": gui_manager.login.get_status(),
                 "manual_mode": twitch_client.get_manual_mode_info(),
+                "pause": twitch_client.pause_info(),
                 "current_drop": gui_manager.progress.get_current_drop(),
                 "wanted_items": gui_manager.get_wanted_game_tree(),
             },

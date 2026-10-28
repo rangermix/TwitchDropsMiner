@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nToepassing gestopt.\nSLuit het venster om de toepassing af te sluiten",
         "watching": "{channel} wordt gekeken",
+        "mining_resumed": "Drops verzamelen hervat",
         "goes_online": "{channel} is ONLINE gegaan, wijzig...",
         "goes_offline": "{channel} is OFFLINE gegaan, wijzig...",
         "claimed_drop": "Drop verkregen: {drop}",
@@ -71,6 +72,15 @@
             "fetching_campaigns": "Ophalen van de campagne...",
             "adding_campaigns": "De campagnelijst toevoegen aan de inventaris... {counter}",
             "ready": "Klaar",
+            "paused": "Gepauzeerd",
+            "pause": "Pauzeren",
+            "resume": "Hervatten",
+            "paused_until": "Gepauzeerd tot {time}",
+            "pause_10m": "10 minuten",
+            "pause_1h": "1 uur",
+            "pause_tomorrow": "Tot morgen",
+            "pause_indefinite": "Tot ik hervat",
+            "pause_error": "De pauzestatus kon niet worden gewijzigd. Probeer het opnieuw.",
             "outside_hours": "Buiten de mining-uren"
         },
         "tabs": {

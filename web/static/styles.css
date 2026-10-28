@@ -192,6 +192,47 @@ header h1 {
     background-color: var(--hover-bg);
 }
 
+.pause-control {
+    position: relative;
+}
+
+#pause-btn.paused {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+}
+
+.pause-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    min-width: 170px;
+    padding: 4px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.pause-menu button {
+    padding: 8px 10px;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    color: var(--text-primary);
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.pause-menu button:hover,
+.pause-menu button:focus-visible {
+    background: var(--bg-secondary);
+}
+
 .button-group {
     display: flex;
     flex-wrap: wrap;

@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nAplikasi telah dihentikan. \nSilakan tutup aplikasi.",
         "watching": "Menonton : {channel}",
+        "mining_resumed": "Penambangan dilanjutkan",
         "goes_online": "{channel} Tiket masuk ONLINE, ganti...",
         "goes_offline": "{channel} menjadi OFF-LINE, ubah...",
         "claimed_drop": "Drop dipulihkan : {drop}",
@@ -71,6 +72,15 @@
             "fetching_campaigns": "Mengambil kampanye...",
             "adding_campaigns": "Menambahkan daftar kampanye ke inventaris... {counter}",
             "ready": "Siap",
+            "paused": "Dijeda",
+            "pause": "Jeda",
+            "resume": "Lanjutkan",
+            "paused_until": "Dijeda hingga {time}",
+            "pause_10m": "Selama 10 menit",
+            "pause_1h": "Selama 1 jam",
+            "pause_tomorrow": "Sampai besok",
+            "pause_indefinite": "Sampai saya lanjutkan",
+            "pause_error": "Gagal mengubah status jeda. Silakan coba lagi.",
             "outside_hours": "Di luar jam penambangan"
         },
         "tabs": {
