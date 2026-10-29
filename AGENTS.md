@@ -72,7 +72,11 @@ It is the repository's contribution policy, not optional background reading.
    - Frontend translation rendering must use safe DOM construction. Do not inject translated strings with non-clearing `innerHTML`; allowlist any intentional links and build them as DOM nodes.
 
 5. **Documentation**:
-   - Always update `README.md` and `AGENTS.md` when making changes.
+   - Update documentation where the change belongs. Update `README.md` only when its
+     user-facing overview, setup, login, migration, or links need to change. Put detailed
+     behavior, implementation explanations, and troubleshooting in the relevant `docs/`
+     guide. Update `AGENTS.md` when agent instructions or architectural constraints
+     change; code changes do not require edits to either file automatically.
    - Keep `README.md` short and focused on ordinary users: setup, login, migration,
      and links. Detailed public instructions belong in `docs/`, the source for the
      GitHub wiki. Developer contribution policy belongs in `CONTRIBUTING.md`.
@@ -484,6 +488,12 @@ progress to an ignored drop while the miner intentionally targets another reward
   session ends when Chromium reports it detached, and all pipe sessions share command
   ids. Keep Xauthority inside the owned temporary profile
   so forced shutdown removes it too. Hosts without the runner retain the headless fallback.
+  On Linux that fallback sets `OwnedChromium.headless_fallback` and logs the translated
+  `login.headless_renewal` warning (install `xvfb`/`xauth` or use Docker) on every start.
+  `SessionController._phase()` relabels a `CATALOG`/`integrity` failure at
+  `issued_validation` or `renewal_validation` as reason `headless_fallback` when the
+  issuer reports it; `captured_validation`, macOS and Windows keep their labels.
+  `tests/test_session_controller.py` and `tests/test_server_renewal.py` cover this.
   A valid integrity response alone does not prove account/catalog acceptance.
 
 - Helper admission preserves allowlisted validation codes without printing remote text.

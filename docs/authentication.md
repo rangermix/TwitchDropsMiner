@@ -40,6 +40,12 @@ fail campaign integrity validation even after a successful browser login. Updati
 a build containing this correction can recover an existing renewable session without
 another sign-in; TDM still verifies the account and campaign access before accepting it.
 
+A Linux source installation without `xvfb-run` still uses the headless fallback. The
+miner logs a warning to install `xvfb` and `xauth` each time it starts that browser,
+and reports an integrity rejection of its proof as reason `headless_fallback` instead
+of `integrity`. Install both packages, or use Docker. Automatic renewal retries pick up
+the change; a failed sign-in needs a new attempt.
+
 ## Docker and timezone
 
 Use the `rangermix/twitch-drops-miner:2.4.0` image or build the current source.
@@ -184,7 +190,8 @@ If logout reports a storage error, check the current session before retrying.
 ## Automatic renewal
 
 The miner renews the accepted context using a separate temporary Chromium browser,
-with a private virtual display when available and a headless fallback otherwise.
+with a private virtual display when available (`xvfb-run`) and a headless fallback
+otherwise. Twitch can reject proofs issued by the headless fallback.
 It validates the same account before saving. Mining requests remain in Python;
 the interactive browser does not remain running after login.
 Transient failures are retried. Expired or revoked access may require a new sign in,

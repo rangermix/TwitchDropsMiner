@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Forkert 2FA-kode.",
         "email_code_required": "Email kode påkrævet. Tjek din email.",
         "twofa_code_required": "2FA token påkrævet.",
+        "headless_renewal": "xvfb-run blev ikke fundet, så browseren til fornyelse af sessionen kører headless. Twitch kan afvise de sessioner, den udsteder (CATALOG, integrity). Installer xvfb og xauth, eller brug Docker-imaget.",
         "status": {
             "logged_in": "Logget ind",
             "logged_out": "Logget ud",

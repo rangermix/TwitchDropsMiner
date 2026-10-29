@@ -182,11 +182,15 @@ exists; use closing keywords only when the PR fully resolves that issue.
   network failures, retries, and persistent state consistently with nearby code.
 - Add unit tests for backend code changes. For frontend behavior changes, add automated
   coverage where practical; explain any gap and provide a reproducible manual check.
-- Update `README.md` and the canonical `AGENTS.md` with the relevant behavior or
-  workflow changes. Keep `CLAUDE.md` and `GEMINI.md` as relative symbolic links to
-  `AGENTS.md`; do not replace them with duplicated text. Put agent-specific guidance
-  in clearly named sections of `AGENTS.md`. Update this guide when the contribution
-  workflow changes.
+- Update documentation where the change belongs. Update `README.md` only when its
+  overview, setup, login, migration, or links need to change; put detailed behavior,
+  implementation explanations, and troubleshooting in the relevant `docs/` guide.
+  Update the canonical `AGENTS.md` when agent instructions or architectural constraints
+  change, and this guide when the contribution workflow changes. A code change does
+  not automatically require editing either `README.md` or `AGENTS.md`.
+  Keep `CLAUDE.md` and `GEMINI.md` as relative symbolic links to `AGENTS.md`; do not
+  replace them with duplicated text. Put agent-specific guidance in clearly named
+  sections of `AGENTS.md`.
 - For UI or console text changes, update the English source, every affected locale in
   `lang/`, and the TypedDict translation schema when keys change. Preserve key and
   placeholder parity. Build translated UI using `textContent` and safe DOM APIs;
@@ -348,8 +352,8 @@ Before requesting merge, confirm:
 - [ ] The diff is focused and contains no secrets, local data, or unrelated changes.
 - [ ] Backend unit tests and applicable frontend/regression checks are included.
 - [ ] Required checks pass for the final revision; skips and limitations are recorded.
-- [ ] README, agent instructions, translations, and release notes/requirements are
-  updated where applicable under the rules above.
+- [ ] Relevant documentation, agent instructions, translations, and release
+  notes/requirements are updated where applicable under the rules above.
 - [ ] An independent adversarial review is recorded and blocking findings are resolved.
 - [ ] The PR description matches the final implementation and includes evidence.
 - [ ] Visual dashboard changes include current screenshots with personal information

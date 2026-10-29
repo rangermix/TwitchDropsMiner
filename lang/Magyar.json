@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Hibás 2FA kód.",
         "email_code_required": "Email kód szükséges. Ellenőrizze az emailt.",
         "twofa_code_required": "2FA token szükséges.",
+        "headless_renewal": "Az xvfb-run nem található, ezért a munkamenet-megújító böngésző headless módban fut. A Twitch elutasíthatja az általa kiadott munkameneteket (CATALOG, integrity). Telepítsd az xvfb és az xauth csomagot, vagy használd a Docker-képet.",
         "status": {
             "logged_in": "Bejelentkezve",
             "logged_out": "Kijelentkezve",

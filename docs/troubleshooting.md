@@ -71,7 +71,7 @@ not update the helper executable on your computer.
 | --- | --- |
 | `code` | Fixed failure code, without the displayed `SESSION_` prefix |
 | `stage` | The step that failed; see below |
-| `reason` | A recognized cause such as `integrity`, `timeout`, `tls`, `connection`, or `catalog_shape`; `unknown` means the available response does not establish a specific cause |
+| `reason` | A fixed failure classification such as `integrity`, `headless_fallback`, `timeout`, `tls`, `connection`, or `catalog_shape`; `unknown` means the available response does not establish a specific classification |
 | `operation` | `identity`, `Inventory`, `Campaigns`, or `catalog` when known |
 | `http_status` | The dashboard/helper protocol HTTP response status, when received |
 | `upstream_status` | Twitch's HTTP response status, when known; this is separate from the dashboard status |
@@ -80,7 +80,12 @@ For example, `code=CATALOG`, `stage=captured_validation`, `reason=integrity`,
 `operation=Campaigns` identifies Twitch's integrity rejection while checking the
 original captured session. The same code at `issued_validation` means the independently
 issued server session failed. The original session is still not installed in either
-case. Other useful stages are:
+case. `reason=headless_fallback` at `issued_validation` or `renewal_validation` means
+Twitch rejected a proof issued by the headless renewal browser. This identifies the
+browser mode and rejection together; it does not establish why Twitch rejected the
+proof. On a Linux source installation, install `xvfb` and
+`xauth` (Debian/Ubuntu: `sudo apt install xvfb xauth`), or use Docker. Renewal retries
+pick up the change; after a failed sign-in, sign in again. Other useful stages are:
 
 | Stage | What to check |
 | --- | --- |

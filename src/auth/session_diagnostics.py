@@ -42,7 +42,7 @@ class SessionDiagnostic:
         "unknown", "unexpected_exception", "timeout", "tls", "dns", "connection",
         "http_error", "invalid_json", "response_limit", "redirect", "invalid_response",
         "integrity", "persisted_query_not_found", "service", "catalog_shape",
-        "identity_shape", "account_mismatch",
+        "identity_shape", "account_mismatch", "headless_fallback",
     })
     OPERATIONS: ClassVar[frozenset[str]] = frozenset({
         "unknown", "identity", "Inventory", "Campaigns", "catalog",

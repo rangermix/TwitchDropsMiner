@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Codul 2FA este incorect.",
         "email_code_required": "Codul de verificare din e-mail este necesar. Vă rugăm să vă verificați e-mailul.",
         "twofa_code_required": "Este necesar un cod 2FA.",
+        "headless_renewal": "xvfb-run nu a fost găsit, așa că browserul de reînnoire a sesiunii rulează headless. Twitch poate respinge sesiunile emise de acesta (CATALOG, integrity). Instalează xvfb și xauth sau folosește imaginea Docker.",
         "status": {
             "logged_in": "Conectat",
             "logged_out": "Deconectat",

@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Неправильний код двофакторної аутентифікації.",
         "email_code_required": "Потрібен код електронної пошти.",
         "twofa_code_required": "Потрібен жетон двофакторної аутентифікації.",
+        "headless_renewal": "xvfb-run не знайдено, тому браузер оновлення сеансу працює в режимі headless. Twitch може відхилити видані ним сеанси (CATALOG, integrity). Установіть xvfb і xauth або використовуйте образ Docker.",
         "status": {
             "logged_in": "Увійдено",
             "logged_out": "Вийдено",
