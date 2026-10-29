@@ -267,6 +267,13 @@ builds for both supported image architectures. Required CI must pass on the fina
 revision before merge. After review fixes or main integration, rerun the checks affected
 by those changes; do not rely on results from a superseded revision.
 
+Native helper artifacts use pinned Node-24-native transfer actions on GitHub-hosted
+runners. Preserve the named ZIP wrappers around the helper tar archives and keep
+downloads in the same workflow run without extra credentials. Download digest mismatches
+fail the job before archive validation or publication. Local workflow contract tests
+do not prove a hosted artifact round trip; validate workflow upgrades through fork CI
+without dispatching a publishing workflow.
+
 ### 4. Obtain an independent adversarial review
 
 Every PR needs an adversarial review before it is ready to merge, including documentation
