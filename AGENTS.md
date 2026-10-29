@@ -71,7 +71,11 @@ It is the repository's contribution policy, not optional background reading.
    - Frontend translation rendering must use safe DOM construction. Do not inject translated strings with non-clearing `innerHTML`; allowlist any intentional links and build them as DOM nodes.
 
 5. **Documentation**:
-   - Always update `README.md` and `AGENTS.md` when making changes.
+   - Update documentation where the change belongs. Update `README.md` only when its
+     user-facing overview, setup, login, migration, or links need to change. Put detailed
+     behavior, implementation explanations, and troubleshooting in the relevant `docs/`
+     guide. Update `AGENTS.md` when agent instructions or architectural constraints
+     change; code changes do not require edits to either file automatically.
    - Keep `README.md` short and focused on ordinary users: setup, login, migration,
      and links. Detailed public instructions belong in `docs/`, the source for the
      GitHub wiki. Developer contribution policy belongs in `CONTRIBUTING.md`.
