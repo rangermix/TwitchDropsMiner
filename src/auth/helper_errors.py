@@ -8,7 +8,7 @@ from src.i18n import _
 
 class HelperDiagnostics:
     KEYS = {
-        "HELPER_DESTINATION": "destination", "HELPER_CA_FILE": "ca_file", "HELPER_DISABLED": "disabled",
+        "HELPER_DESTINATION": "destination", "HELPER_CA_FILE": "ca_file", "HELPER_INSECURE_TLS": "insecure_tls", "HELPER_DISABLED": "disabled",
         "HELPER_EXPIRED": "expired", "HELPER_BUSY": "busy",
         "HELPER_CHROME_MISSING": "chrome_missing", "HELPER_FIREFOX_MISSING": "firefox_missing",
         "HELPER_CHROMIUM_MISSING": "chromium_missing", "HELPER_LOGIN_MISSING": "login_missing",

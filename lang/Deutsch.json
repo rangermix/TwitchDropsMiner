@@ -425,7 +425,7 @@
         }
     },
     "helper": {
-        "insecure_help": "HTTPS-Zertifikatsprüfung für TDM deaktivieren (unsicher; standardmäßig aus)",
+        "insecure_help": "HTTPS-Zertifikatsprüfung für TDM deaktivieren (unsicher; standardmäßig aus). Nur für private oder Loopback-Adressen; besser --ca-file verwenden.",
         "insecure_warning": "WARNUNG: Die HTTPS-Zertifikatsprüfung für die Verbindung zu TDM ist deaktiviert. Angreifer könnten deine Twitch-Sitzung stehlen. Nur in einem vertrauenswürdigen Netzwerk verwenden.",
         "title": "Twitch mit TDM verbinden",
         "destination_prompt": "URL der TDM-Instanz: ",
@@ -450,6 +450,7 @@
         "errors": {
             "destination": "Ungültige TDM-Adresse. Nutze die http://- oder https://-Basisadresse mit Port, ohne Pfad, Passwort, Abfrage oder Fragment.",
             "ca_file": "Das Zertifikat aus --ca-file konnte nicht verwendet werden. Wähle eine lesbare PEM-Datei mit einem CA-Zertifikat (CA:TRUE), etwa dein selbstsigniertes oder privates CA-Zertifikat, keinen privaten Schlüssel.",
+            "insecure_tls": "--insecure braucht eine https://-Adresse für TDM, deren Host nur zu privaten oder Loopback-Adressen aufgelöst wird. Verwende für andere Adressen --ca-file.",
             "disabled": "Helferzugriff ist geschlossen. Wähle Desktop-Helfer verwenden auf der TDM-Anmeldeseite und starte danach den Helfer.",
             "expired": "Die Helferverbindung ist abgelaufen oder wurde abgebrochen. Aktiviere den Helferzugriff erneut in TDM und starte den Helfer neu.",
             "busy": "Ein anderer Helfer ist bereits verbunden. Beende ihn im TDM-Dashboard, bevor du erneut startest.",

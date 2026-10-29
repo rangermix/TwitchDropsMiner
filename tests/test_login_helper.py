@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import ssl
 import stat
 import subprocess
 import sys
@@ -59,6 +60,13 @@ def accepted():
     return {"success": True, "session": {
         "state": "ready", "user_id": 123, "generation": 2, "expires_at": 4700,
     }, "allow_helper_connection": False}
+
+
+def loopback_tls():
+    # This deliberately untrusted, public fixture key is only used on loopback.
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(Path(__file__).parent / "fixtures" / "helper-test-tls.pem")
+    return context
 
 
 @asynccontextmanager
@@ -142,7 +150,9 @@ async def test_protocol_uses_only_selected_instance_and_keeps_tickets_out_of_rep
 @pytest.mark.parametrize("insecure", [False, True])
 async def test_admission_redirect_never_connects_to_another_destination(insecure):
     async with instance() as (other, other_requests):
-        async with instance(connect_status=307, headers={"Location": other + "/api/helper/connect"}) as (address, _requests):
+        # --insecure accepts only HTTPS on private addresses.
+        async with instance(connect_status=307, headers={"Location": other + "/api/helper/connect"},
+                            ssl_context=loopback_tls() if insecure else None) as (address, _requests):
             async with login_helper.HelperHTTP(login_helper.HelperDestination(address), insecure=insecure) as client:
                 with pytest.raises(SessionError, match="HELPER_REDIRECT"):
                     await client.connect()
@@ -204,7 +214,8 @@ async def test_upload_never_reports_success_without_ready_renewed_server_state(r
 @pytest.mark.parametrize("insecure", [False, True])
 async def test_redirect_cannot_receive_credentials(insecure):
     async with instance() as (other, other_requests):
-        async with instance(complete_status=307, headers={"Location": other + "/api/helper/session"}) as (address, _requests):
+        async with instance(complete_status=307, headers={"Location": other + "/api/helper/session"},
+                            ssl_context=loopback_tls() if insecure else None) as (address, _requests):
             async with login_helper.HelperHTTP(login_helper.HelperDestination(address), clock=lambda: CLOCK,
                                               insecure=insecure) as client:
                 with pytest.raises(SessionError, match="HELPER_REDIRECT"):

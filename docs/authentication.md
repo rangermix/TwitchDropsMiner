@@ -199,6 +199,19 @@ error. Omit it on the next run to restore verification. It does not change HTTPS
 verification in the browser, Twitch requests, or the miner, and it does not follow
 redirects or bypass helper admission or server-side session verification.
 
+`--insecure` is limited to dashboards on your own network. It works only with an
+`https://` address whose host name resolves only to private or loopback addresses:
+`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `127.0.0.0/8`, `::1`, `fc00::/7` or
+`fe80::/10`. Otherwise the helper stops with `SESSION_HELPER_INSECURE_TLS` before
+connecting. It then connects only to the addresses it checked, so a DNS change during
+login cannot send the connection elsewhere.
+
+Carrier-grade NAT addresses (`100.64.0.0/10`) are not accepted, because other
+customers of the same internet provider share that range. This also refuses Tailscale
+`100.x` addresses and MagicDNS names, which resolve to both a `100.x` and an IPv6
+address. Tailscale already encrypts traffic between your devices; use `--ca-file` or
+a certificate from `tailscale cert` instead.
+
 ## Existing installations
 
 Keep the same private `data` directory across updates. Valid saved Android logins and

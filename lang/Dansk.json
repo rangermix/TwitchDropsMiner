@@ -425,7 +425,7 @@
         }
     },
     "helper": {
-        "insecure_help": "Deaktiver kontrol af HTTPS-certifikater for TDM (usikkert; slået fra som standard)",
+        "insecure_help": "Deaktiver kontrol af HTTPS-certifikater for TDM (usikkert; slået fra som standard). Kun til private adresser eller loopback-adresser; brug hellere --ca-file.",
         "insecure_warning": "ADVARSEL: Kontrol af HTTPS-certifikater er deaktiveret for forbindelsen til TDM. En angriber kan stjæle din Twitch-session. Brug kun dette på et betroet netværk.",
         "title": "Forbind Twitch med TDM",
         "destination_prompt": "URL til TDM-instans: ",
@@ -450,6 +450,7 @@
         "errors": {
             "destination": "Ugyldig TDM-adresse. Brug rod-URL med http:// eller https:// og port, uden sti, adgangskode, forespørgsel eller fragment.",
             "ca_file": "Certifikatet fra --ca-file kunne ikke bruges. Vælg en læsbar PEM-fil med et CA-certifikat (CA:TRUE), f.eks. dit selvsignerede eller private CA-certifikat, ikke en privat nøgle.",
+            "insecure_tls": "--insecure kræver en https://-adresse til TDM, hvis vært kun peger på private adresser eller loopback-adresser. Brug --ca-file til andre adresser.",
             "disabled": "Hjælperadgang er lukket. Vælg Brug skrivebordshjælper på TDM's loginskærm, og start derefter hjælperen.",
             "expired": "Hjælperforbindelsen udløb eller blev annulleret. Aktivér hjælperadgang igen i TDM, og genstart hjælperen.",
             "busy": "En anden hjælper er allerede tilsluttet. Annuller den i TDM-dashboardet, før du prøver igen.",

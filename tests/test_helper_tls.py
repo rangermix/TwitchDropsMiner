@@ -1,8 +1,6 @@
 """The helper's TLS exception is explicit, local to TDM, and visibly warned."""
 
-import ssl
 import sys
-from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -10,15 +8,12 @@ import pytest
 from src.auth import login_helper
 from src.auth.session_bundle import SessionError
 from src.i18n import _
-from tests.test_login_helper import CLOCK, FakeBrowser, instance, seed
+from tests.test_login_helper import CLOCK, FakeBrowser, instance, loopback_tls, seed
 
 
 @pytest.fixture
 def server_tls():
-    # This deliberately untrusted, public fixture key is only used on loopback.
-    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain(Path(__file__).parent / "fixtures" / "helper-test-tls.pem")
-    return context
+    return loopback_tls()
 
 
 @pytest.mark.asyncio
@@ -74,7 +69,7 @@ async def test_native_helper_warns_before_connecting_and_forwards_tls_choice(ser
 @pytest.mark.parametrize("language", ["English", "简体中文"])
 def test_cli_tls_flag_and_translated_stderr_warning_before_network(monkeypatch, capsys, insecure, language):
     original_language = _.current_language
-    monkeypatch.setattr(sys, "argv", ["login_helper.py", "--tdm", "https://tdm.example.test",
+    monkeypatch.setattr(sys, "argv", ["login_helper.py", "--tdm", "https://127.0.0.1:8443",
         "--language", language, "--no-pause", *(["--insecure"] if insecure else [])])
     observed = []
 

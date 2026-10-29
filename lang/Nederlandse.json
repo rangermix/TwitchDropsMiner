@@ -425,7 +425,7 @@
         }
     },
     "helper": {
-        "insecure_help": "HTTPS-certificaatcontrole voor TDM uitschakelen (onveilig; standaard uit)",
+        "insecure_help": "HTTPS-certificaatcontrole voor TDM uitschakelen (onveilig; standaard uit). Alleen voor privé- of loopbackadressen; gebruik liever --ca-file.",
         "insecure_warning": "WAARSCHUWING: HTTPS-certificaatcontrole is uitgeschakeld voor de verbinding met TDM. Een aanvaller kan je Twitch-sessie stelen. Gebruik dit alleen op een vertrouwd netwerk.",
         "title": "Twitch met TDM verbinden",
         "destination_prompt": "URL van je TDM-instantie: ",
@@ -450,6 +450,7 @@
         "errors": {
             "destination": "Ongeldig TDM-adres. Gebruik de http://- of https://-basis-URL met poort, zonder pad, wachtwoord, query of fragment.",
             "ca_file": "Het certificaat van --ca-file kon niet worden gebruikt. Kies een leesbaar PEM-bestand met een CA-certificaat (CA:TRUE), zoals je zelfondertekende of privé-CA-certificaat, geen privésleutel.",
+            "insecure_tls": "--insecure vereist een https://-adres voor TDM waarvan de host alleen naar privé- of loopbackadressen verwijst. Gebruik --ca-file voor andere adressen.",
             "disabled": "Toegang voor de hulp is gesloten. Kies Desktophulp gebruiken op het TDM-aanmeldscherm en start daarna de hulp.",
             "expired": "De verbinding met de hulp is verlopen of geannuleerd. Schakel de toegang voor de hulp opnieuw in TDM in en herstart de hulp.",
             "busy": "Er is al een andere hulp verbonden. Annuleer deze in het TDM-dashboard voordat je opnieuw begint.",

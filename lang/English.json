@@ -425,7 +425,7 @@
         }
     },
     "helper": {
-        "insecure_help": "Disable HTTPS certificate verification for TDM (unsafe; off by default)",
+        "insecure_help": "Disable HTTPS certificate verification for TDM (unsafe; off by default). Only for private or loopback addresses; prefer --ca-file.",
         "insecure_warning": "WARNING: HTTPS certificate verification is disabled for the connection to TDM. An attacker could steal your Twitch session. Use only on a trusted network.",
         "title": "Connect Twitch to TDM",
         "destination_prompt": "TDM instance URL: ",
@@ -450,6 +450,7 @@
         "errors": {
             "destination": "Invalid TDM address. Use its http:// or https:// root URL, including the port, without a path, password, query or fragment.",
             "ca_file": "The --ca-file certificate could not be used. Choose a readable PEM file containing a CA certificate (CA:TRUE), such as your self-signed or private CA certificate, not a private key.",
+            "insecure_tls": "--insecure needs an https:// TDM address whose host resolves only to private or loopback addresses. For other addresses, use --ca-file.",
             "disabled": "Helper access is closed. Select Use desktop helper on the TDM sign-in screen, then run the helper.",
             "expired": "This helper connection expired or was cancelled. Enable desktop helper access again in TDM and restart the helper.",
             "busy": "Another helper is already connected. Cancel it in the TDM dashboard before starting again.",

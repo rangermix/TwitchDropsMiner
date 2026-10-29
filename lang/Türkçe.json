@@ -425,7 +425,7 @@
         }
     },
     "helper": {
-        "insecure_help": "TDM için HTTPS sertifika doğrulamasını devre dışı bırak (güvensiz; varsayılan olarak kapalı)",
+        "insecure_help": "TDM için HTTPS sertifika doğrulamasını devre dışı bırak (güvensiz; varsayılan olarak kapalı). Yalnızca özel veya loopback adresleri için; --ca-file tercih edin.",
         "insecure_warning": "UYARI: TDM bağlantısı için HTTPS sertifika doğrulaması devre dışı. Bir saldırgan Twitch oturumunuzu çalabilir. Yalnızca güvenilir bir ağda kullanın.",
         "title": "Twitch’i TDM’ye bağla",
         "destination_prompt": "TDM örneği URL’si: ",
@@ -450,6 +450,7 @@
         "errors": {
             "destination": "Geçersiz TDM adresi. Port içeren http:// veya https:// kök URL kullanın; yol, parola, sorgu ve bölüm eklemeyin.",
             "ca_file": "--ca-file sertifikası kullanılamadı. Özel anahtar değil, CA sertifikası (CA:TRUE) içeren okunabilir bir PEM dosyası seçin; örneğin kendinden imzalı veya özel CA sertifikanız.",
+            "insecure_tls": "--insecure, sunucu adı yalnızca özel veya loopback adreslerine çözümlenen bir https:// TDM adresi gerektirir. Diğer adresler için --ca-file kullanın.",
             "disabled": "Yardımcı erişimi kapalı. TDM giriş ekranında Masaüstü yardımcısını kullan seçeneğini seçip yardımcıyı çalıştırın.",
             "expired": "Yardımcı bağlantısının süresi doldu veya iptal edildi. TDM'de yardımcı erişimini tekrar açıp yardımcıyı yeniden başlatın.",
             "busy": "Başka bir yardımcı zaten bağlı. Yeniden başlamadan önce TDM panelinden iptal edin.",

@@ -67,7 +67,7 @@ class PackagedSmoke:
                 help_result = subprocess.run([str(self.executable), "--help"], **options)
                 assert help_result.returncode == 0, help_result.stderr
                 assert "--tdm" in help_result.stdout and "--output" not in help_result.stdout
-                assert all(option in help_result.stdout for option in ("--browser", "--chromium", "--firefox", "--ca-file"))
+                assert all(option in help_result.stdout for option in ("--browser", "--chromium", "--firefox", "--ca-file", "--insecure"))
                 translated = subprocess.run([str(self.executable), "--language", "简体中文", "--help"], **options)
                 assert translated.returncode == 0, translated.stderr
                 assert "连接 Twitch 与 TDM" in translated.stdout

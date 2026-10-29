@@ -425,7 +425,7 @@
         }
     },
     "helper": {
-        "insecure_help": "Desativar a verificação de certificados HTTPS para o TDM (inseguro; desativado por padrão)",
+        "insecure_help": "Desativar a verificação de certificados HTTPS para o TDM (inseguro; desativado por padrão). Apenas para endereços privados ou de loopback; prefira --ca-file.",
         "insecure_warning": "AVISO: A verificação de certificados HTTPS está desativada na conexão com o TDM. Um invasor pode roubar sua sessão da Twitch. Use apenas em uma rede confiável.",
         "title": "Ligar o Twitch ao TDM",
         "destination_prompt": "URL da instância TDM: ",
@@ -450,6 +450,7 @@
         "errors": {
             "destination": "Endereço TDM inválido. Use a URL raiz http:// ou https:// com porta, sem caminho, senha, consulta ou fragmento.",
             "ca_file": "Não foi possível usar o certificado de --ca-file. Escolha um arquivo PEM legível que contenha um certificado de CA (CA:TRUE), como seu certificado autoassinado ou de CA privada, e não uma chave privada.",
+            "insecure_tls": "--insecure exige um endereço https:// do TDM cujo host resolva apenas para endereços privados ou de loopback. Para outros endereços, use --ca-file.",
             "disabled": "O acesso do assistente está fechado. Seleciona Usar assistente de computador no ecrã de início de sessão do TDM e executa o assistente.",
             "expired": "A ligação do assistente expirou ou foi cancelada. Ativa novamente o acesso do assistente no TDM e reinicia-o.",
             "busy": "Já existe outro assistente ligado. Cancela-o no painel TDM antes de começar novamente.",

@@ -448,6 +448,7 @@ class GUIMessages(TypedDict):
 class HelperErrors(TypedDict):
     destination: str
     ca_file: str
+    insecure_tls: str
     disabled: str
     expired: str
     busy: str

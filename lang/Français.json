@@ -425,7 +425,7 @@
         }
     },
     "helper": {
-        "insecure_help": "Désactiver la vérification des certificats HTTPS pour TDM (dangereux ; désactivé par défaut)",
+        "insecure_help": "Désactiver la vérification des certificats HTTPS pour TDM (dangereux ; désactivé par défaut). Uniquement pour les adresses privées ou de bouclage ; préférez --ca-file.",
         "insecure_warning": "AVERTISSEMENT : la vérification des certificats HTTPS est désactivée pour la connexion à TDM. Un attaquant pourrait voler votre session Twitch. À utiliser uniquement sur un réseau de confiance.",
         "title": "Connecter Twitch à TDM",
         "destination_prompt": "URL de votre instance TDM : ",
@@ -450,6 +450,7 @@
         "errors": {
             "destination": "Adresse TDM invalide. Utilisez l’URL racine http:// ou https:// avec le port, sans chemin, mot de passe, paramètres ni fragment.",
             "ca_file": "Le certificat de --ca-file n'a pas pu être utilisé. Choisissez un fichier PEM lisible contenant un certificat d'autorité (CA:TRUE), comme votre certificat auto-signé ou d'autorité privée, et non une clé privée.",
+            "insecure_tls": "--insecure exige une adresse https:// de TDM dont l'hôte ne se résout qu'en adresses privées ou de bouclage. Pour les autres adresses, utilisez --ca-file.",
             "disabled": "L’accès de l’assistant est fermé. Sélectionnez Utiliser l’assistant de bureau sur l’écran de connexion TDM, puis lancez l’assistant.",
             "expired": "La connexion de l’assistant a expiré ou a été annulée. Réactivez l’accès de l’assistant dans TDM et relancez-le.",
             "busy": "Un autre assistant est déjà connecté. Annulez-le dans le tableau de bord TDM avant de recommencer.",

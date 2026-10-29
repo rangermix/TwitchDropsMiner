@@ -425,7 +425,7 @@
         }
     },
     "helper": {
-        "insecure_help": "Wyłącz weryfikację certyfikatów HTTPS dla TDM (niebezpieczne; domyślnie wyłączone)",
+        "insecure_help": "Wyłącz weryfikację certyfikatów HTTPS dla TDM (niebezpieczne; domyślnie wyłączone). Tylko dla adresów prywatnych lub loopback; lepiej użyj --ca-file.",
         "insecure_warning": "OSTRZEŻENIE: Weryfikacja certyfikatów HTTPS jest wyłączona dla połączenia z TDM. Atakujący może przejąć Twoją sesję Twitch. Używaj tylko w zaufanej sieci.",
         "title": "Połącz Twitch z TDM",
         "destination_prompt": "Adres instancji TDM: ",
@@ -450,6 +450,7 @@
         "errors": {
             "destination": "Nieprawidłowy adres TDM. Użyj głównego URL http:// lub https:// z portem, bez ścieżki, hasła, zapytania i fragmentu.",
             "ca_file": "Nie można użyć certyfikatu z --ca-file. Wybierz czytelny plik PEM zawierający certyfikat CA (CA:TRUE), np. Twój certyfikat samopodpisany lub prywatnego CA, a nie klucz prywatny.",
+            "insecure_tls": "--insecure wymaga adresu https:// TDM, którego host wskazuje tylko adresy prywatne lub loopback. Dla innych adresów użyj --ca-file.",
             "disabled": "Dostęp pomocnika jest zamknięty. Wybierz Użyj pomocnika na komputerze na ekranie logowania TDM, a następnie uruchom pomocnika.",
             "expired": "Połączenie pomocnika wygasło lub zostało anulowane. Ponownie włącz dostęp pomocnika w TDM i uruchom go jeszcze raz.",
             "busy": "Inny pomocnik jest już połączony. Anuluj go w panelu TDM przed ponownym rozpoczęciem.",

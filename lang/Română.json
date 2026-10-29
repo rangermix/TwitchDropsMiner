@@ -425,7 +425,7 @@
         }
     },
     "helper": {
-        "insecure_help": "Dezactivează verificarea certificatelor HTTPS pentru TDM (nesigur; dezactivat implicit)",
+        "insecure_help": "Dezactivează verificarea certificatelor HTTPS pentru TDM (nesigur; dezactivat implicit). Doar pentru adrese private sau loopback; preferă --ca-file.",
         "insecure_warning": "AVERTISMENT: Verificarea certificatelor HTTPS este dezactivată pentru conexiunea la TDM. Un atacator îți poate fura sesiunea Twitch. Folosește opțiunea numai într-o rețea de încredere.",
         "title": "Conectează Twitch la TDM",
         "destination_prompt": "URL-ul instanței TDM: ",
@@ -450,6 +450,7 @@
         "errors": {
             "destination": "Adresă TDM nevalidă. Folosește URL-ul rădăcină http:// sau https:// cu port, fără cale, parolă, interogare sau fragment.",
             "ca_file": "Certificatul din --ca-file nu a putut fi folosit. Alege un fișier PEM lizibil care conține un certificat CA (CA:TRUE), de exemplu certificatul tău autosemnat sau al autorității private, nu o cheie privată.",
+            "insecure_tls": "--insecure necesită o adresă https:// pentru TDM al cărei host se rezolvă doar la adrese private sau loopback. Pentru alte adrese, folosește --ca-file.",
             "disabled": "Accesul asistentului este închis. Selectează Folosește asistentul desktop pe ecranul de autentificare TDM, apoi pornește asistentul.",
             "expired": "Conexiunea asistentului a expirat sau a fost anulată. Reactivează accesul asistentului în TDM și repornește-l.",
             "busy": "Un alt asistent este deja conectat. Anulează-l în panoul TDM înainte să începi din nou.",
