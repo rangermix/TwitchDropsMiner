@@ -601,6 +601,13 @@ progress to an ignored drop while the miner intentionally targets another reward
   Keep tickets out of URLs, CLI arguments, logs, status, broadcasts and storage.
   Document that the first reachable helper is admitted during the trusted-network window.
   `tests/test_helper_admission.py` and `tests/test_desktop_helper_api.py` cover these boundaries.
+- The desktop helper verifies HTTPS using the helper computer's trust store by default.
+  `--insecure` is an explicit, per-run opt-out only for `HelperHTTP` requests to the
+  selected TDM instance. Show the translated `helper.insecure_warning` before connecting
+  whenever enabled, including failed attempts. Never persist the opt-out, retry TLS
+  failures with verification disabled, alter global SSL defaults, or change browser,
+  Twitch validation, miner, admission, redirect or receipt-reconciliation checks.
+  Keep `helper.insecure_help` and `helper.insecure_warning` in every locale.
 - Keep the released helper instructions and download links aligned with the four build
   targets: Windows x64, Linux x64, macOS arm64, and macOS x64. Users choose the helper
   computer's platform and match the miner release. The login screen's **Use desktop

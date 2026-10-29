@@ -64,15 +64,16 @@ class HelperHTTP:
     """Bounded direct protocol, without redirects, proxies or dashboard cookies."""
 
     def __init__(self, destination: HelperDestination, *, clock: Callable[[], float] = time.time,
-                 receipt_attempts: int = 20, receipt_interval: float = 3):
+                 receipt_attempts: int = 20, receipt_interval: float = 3, insecure: bool = False):
         self.destination, self.clock = destination, clock
         self.receipt_attempts, self.receipt_interval = receipt_attempts, receipt_interval
+        self.insecure = insecure
         self.http: aiohttp.ClientSession
 
     async def __aenter__(self) -> HelperHTTP:
         self.http = aiohttp.ClientSession(cookie_jar=aiohttp.DummyCookieJar(), trust_env=False,
             timeout=aiohttp.ClientTimeout(total=300, connect=15),
-            connector=aiohttp.TCPConnector(ssl=truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)),
+            connector=aiohttp.TCPConnector(ssl=False if self.insecure else truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)),
             headers={"X-TDM-Request": "1", "Accept": "application/json"})
         return self
 
@@ -785,18 +786,22 @@ class NativeLoginHelper:
     """Admission precedes the browser; success follows proof and local cleanup."""
 
     def __init__(self, destination: str, *,
+                 insecure: bool = False,
                  browser_factory: Callable[..., Any] = BrowserSelection.create,
                  exporter_factory: Callable[..., Any] | None = None,
                  clock: Callable[[], float] = time.time, report: Callable[[str], None] = lambda _key: None):
         self.destination = HelperDestination(destination)
+        self.insecure = insecure
         self.browser_factory, self.exporter_factory = browser_factory, exporter_factory
         self.clock, self.report = clock, report
 
     async def run(self) -> None:
         phase = "helper_connect"
         try:
+            if self.insecure:
+                self.report("insecure_warning")
             self.report("connecting")
-            async with HelperHTTP(self.destination, clock=self.clock) as client:
+            async with HelperHTTP(self.destination, clock=self.clock, insecure=self.insecure) as client:
                 ticket = await client.connect()
                 phase = "browser_start"
                 async with self.browser_factory() as browser:
@@ -881,6 +886,7 @@ class LoginHelperCLI:
         words = _.t["helper"]
         parser = argparse.ArgumentParser(description=words["title"])
         parser.add_argument("--tdm", help=words["tdm_help"])
+        parser.add_argument("--insecure", action="store_true", help=words["insecure_help"])
         parser.add_argument("--browser", choices=("auto", "chrome", "chromium", "firefox"),
                             default="auto", help=words["browser_help"])
         paths = parser.add_mutually_exclusive_group()
@@ -896,10 +902,11 @@ class LoginHelperCLI:
         result = 0
         try:
             destination = HelperDestination(args.tdm or input(words["destination_prompt"]).strip()).url
-            helper = NativeLoginHelper(destination,
+            helper = NativeLoginHelper(destination, insecure=args.insecure,
                 browser_factory=lambda: BrowserSelection.create(
                 args.browser, chrome=args.chrome, chromium=args.chromium, firefox=args.firefox),
-                report=lambda key: print(words[key], flush=True))  # type: ignore[literal-required]
+                report=lambda key: print(words[key],  # type: ignore[literal-required]
+                    file=sys.stderr if key == "insecure_warning" else sys.stdout, flush=True))
             print(words["destination"].format(url=helper.destination.url), flush=True)
             asyncio.run(LoginHelperCLI.run_cancellable(helper))
         except SessionError as error:

@@ -502,6 +502,8 @@ class HelperMessages(TypedDict):
     chrome_help: str
     language_help: str
     no_pause_help: str
+    insecure_help: str
+    insecure_warning: str
 
 
 class Translation(TypedDict):

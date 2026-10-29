@@ -426,6 +426,8 @@
         }
     },
     "helper": {
+        "insecure_help": "HTTPS-certificaatcontrole voor TDM uitschakelen (onveilig; standaard uit)",
+        "insecure_warning": "WAARSCHUWING: HTTPS-certificaatcontrole is uitgeschakeld voor de verbinding met TDM. Een aanvaller kan je Twitch-sessie stelen. Gebruik dit alleen op een vertrouwd netwerk.",
         "title": "Twitch met TDM verbinden",
         "destination_prompt": "URL van je TDM-instantie: ",
         "destination": "Bestemming: {url}",

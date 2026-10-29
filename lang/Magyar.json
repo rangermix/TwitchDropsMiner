@@ -426,6 +426,8 @@
         }
     },
     "helper": {
+        "insecure_help": "HTTPS-tanúsítványok ellenőrzésének kikapcsolása a TDM-hez (nem biztonságos; alapértelmezés szerint kikapcsolva)",
+        "insecure_warning": "FIGYELMEZTETÉS: A TDM-kapcsolat HTTPS-tanúsítványának ellenőrzése ki van kapcsolva. Egy támadó ellophatja a Twitch-munkamenetedet. Csak megbízható hálózaton használd.",
         "title": "Twitch csatlakoztatása a TDM-hez",
         "destination_prompt": "A TDM-példány URL-je: ",
         "destination": "Cél: {url}",

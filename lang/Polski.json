@@ -426,6 +426,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Wyłącz weryfikację certyfikatów HTTPS dla TDM (niebezpieczne; domyślnie wyłączone)",
+        "insecure_warning": "OSTRZEŻENIE: Weryfikacja certyfikatów HTTPS jest wyłączona dla połączenia z TDM. Atakujący może przejąć Twoją sesję Twitch. Używaj tylko w zaufanej sieci.",
         "title": "Połącz Twitch z TDM",
         "destination_prompt": "Adres instancji TDM: ",
         "destination": "Cel: {url}",
