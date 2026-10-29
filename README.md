@@ -156,8 +156,9 @@ If Twitch rejects the embedded browser, select **Use desktop helper** and run th
 matching Windows, Linux, or macOS helper with your dashboard address. The first helper
 to connect is accepted during a ten-minute window; no pairing code is needed.
 See [desktop helper downloads and steps](docs/authentication.md#desktop-helper-fallback).
-HTTPS verification is on by default. Source helpers can opt out with `--insecure`
-(unsafe; unavailable in v2.4.0 downloads); see [helper HTTPS](docs/authentication.md#helper-https-certificates).
+HTTPS verification is on by default. For a self-signed dashboard certificate, source
+helpers accept `--ca-file`, or can opt out with `--insecure` (unsafe); neither is in
+v2.4.0 downloads. See [helper HTTPS](docs/authentication.md#helper-https-certificates).
 For rejected helper logins, report the fixed error code and a redacted miner log;
 see [helper diagnostics](docs/troubleshooting.md#helper-login-error-codes).
 
