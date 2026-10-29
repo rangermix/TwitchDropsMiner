@@ -1,5 +1,6 @@
 """--insecure is limited to HTTPS hosts resolving only to private addresses, then pinned."""
 
+import asyncio
 import socket
 
 import pytest
@@ -136,3 +137,28 @@ def test_cli_warns_and_refuses_public_address_without_echoing_it():
     assert "HTTPS certificate verification is disabled" in result.stderr
     assert "SESSION_HELPER_INSECURE_TLS" in result.stderr
     assert "8.8.8.8" not in result.stderr
+
+
+@pytest.mark.asyncio
+async def test_resolution_timeout_is_a_network_error(monkeypatch):
+    class Slow(FakeResolver):
+        async def resolve(self, host, port=0, family=socket.AF_INET):
+            await asyncio.sleep(1)
+
+    monkeypatch.setattr(login_helper.PrivateResolver, "DNS_TIMEOUT", 0.01)
+    resolver = login_helper.PrivateResolver(login_helper.HelperDestination("https://tdm.home.arpa:8443"), Slow())
+    with pytest.raises(SessionError, match="HELPER_NETWORK") as error:
+        await resolver.vet()
+    assert error.value.diagnostic.reason == "timeout"
+
+
+@pytest.mark.asyncio
+async def test_connector_uses_only_the_pinned_resolver(monkeypatch):
+    # tdm.test resolves only through the vetting resolver, so the connection succeeds
+    # only if aiohttp's connector asks the pinned resolver instead of the system.
+    monkeypatch.setattr(login_helper.aiohttp, "ThreadedResolver", lambda: FakeResolver(["127.0.0.1"]))
+    async with instance(ssl_context=loopback_tls()) as (address, requests):
+        destination = login_helper.HelperDestination(f"https://tdm.test:{address.rsplit(':', 1)[1]}")
+        async with login_helper.HelperHTTP(destination, clock=lambda: CLOCK, insecure=True) as client:
+            await client.connect()
+        assert [row[0] for row in requests] == ["/api/helper/connect"]

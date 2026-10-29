@@ -425,7 +425,7 @@
         }
     },
     "helper": {
-        "insecure_help": "TDM の HTTPS 証明書検証を無効にする（危険；既定ではオフ）プライベートアドレスまたはループバックアドレス専用です。--ca-file を推奨します。",
+        "insecure_help": "TDM の HTTPS 証明書検証を無効にする（危険；既定ではオフ）。プライベートアドレスまたはループバックアドレス専用です。--ca-file を推奨します。",
         "insecure_warning": "警告: TDM への接続で HTTPS 証明書の検証が無効になっています。攻撃者に Twitch セッションを盗まれるおそれがあります。信頼できるネットワークでのみ使用してください。",
         "title": "Twitch を TDM に接続",
         "destination_prompt": "TDM インスタンスの URL: ",

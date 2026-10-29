@@ -168,6 +168,7 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 825 -subj /CN=tdm \
 #### Skip verification with `--insecure`
 
 Prefer `--ca-file`; the two options cannot be combined.
+
 **Unreleased:** source helpers support `--insecure` as an explicit opt-out. The v2.4.0
 downloads do not support this option; packaged commands below require a later release
 that includes it, matching your miner version. From an activated source environment:
@@ -204,7 +205,8 @@ redirects or bypass helper admission or server-side session verification.
 `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `127.0.0.0/8`, `::1`, `fc00::/7` or
 `fe80::/10`. Otherwise the helper stops with `SESSION_HELPER_INSECURE_TLS` before
 connecting. It then connects only to the addresses it checked, so a DNS change during
-login cannot send the connection elsewhere.
+login cannot send the connection elsewhere. A host name that also has a public IPv6
+address is refused too; use the dashboard's private IP address instead.
 
 Carrier-grade NAT addresses (`100.64.0.0/10`) are not accepted, because other
 customers of the same internet provider share that range. This also refuses Tailscale

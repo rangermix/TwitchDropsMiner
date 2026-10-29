@@ -66,6 +66,8 @@ class PrivateResolver(AbstractResolver):
         "::1/128", "fc00::/7", "fe80::/10",
     ))
 
+    DNS_TIMEOUT = 10
+
     def __init__(self, destination: HelperDestination, resolver: AbstractResolver | None = None):
         url = URL(destination.url)
         self.https, self.host, self.port = url.scheme == "https", url.raw_host or "", url.port or 0
@@ -86,7 +88,11 @@ class PrivateResolver(AbstractResolver):
         if not self.https:
             raise SessionError("HELPER_INSECURE_TLS", stage="helper_configuration")
         try:
-            results = await self.resolver.resolve(self.host, self.port, socket.AF_UNSPEC)
+            # Vetting precedes the session, so its connect timeout does not apply here.
+            results = await asyncio.wait_for(
+                self.resolver.resolve(self.host, self.port, socket.AF_UNSPEC), self.DNS_TIMEOUT)
+        except TimeoutError:
+            raise SessionError("HELPER_NETWORK", stage="helper_connect", reason="timeout") from None
         except OSError:
             raise SessionError("HELPER_NETWORK", stage="helper_connect", reason="dns") from None
         # Every result must qualify, so a mixed answer cannot fall back to a public address.

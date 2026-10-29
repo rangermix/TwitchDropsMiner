@@ -74,6 +74,10 @@ class PackagedSmoke:
                 bad_ca = subprocess.run([str(self.executable), "--tdm", f"http://127.0.0.1:{server.server_port}",
                     "--ca-file", "missing-ca.pem", "--no-pause"], **options)
                 assert bad_ca.returncode == 1 and "SESSION_HELPER_CA_FILE" in bad_ca.stderr, bad_ca.stdout + bad_ca.stderr
+                # A public literal is refused locally, so this makes no request.
+                public = subprocess.run([str(self.executable), "--tdm", "https://8.8.8.8:443", "--insecure",
+                    "--no-pause"], **options)
+                assert public.returncode == 1 and "SESSION_HELPER_INSECURE_TLS" in public.stderr, public.stdout + public.stderr
                 refused = subprocess.run([str(self.executable), "--tdm",
                     f"http://127.0.0.1:{server.server_port}", "--no-pause"], **options)
                 assert refused.returncode == 1, refused.stdout + refused.stderr
