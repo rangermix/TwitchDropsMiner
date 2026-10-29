@@ -425,6 +425,8 @@
         }
     },
     "helper": {
+        "insecure_help": "تعطيل التحقق من شهادات HTTPS لـ TDM (غير آمن؛ معطل افتراضيًا)",
+        "insecure_warning": "تحذير: التحقق من شهادات HTTPS معطل للاتصال بـ TDM. قد يتمكن مهاجم من سرقة جلسة Twitch الخاصة بك. استخدم هذا الخيار على شبكة موثوقة فقط.",
         "title": "ربط Twitch مع TDM",
         "destination_prompt": "عنوان مثيل TDM: ",
         "destination": "الوجهة: {url}",

@@ -425,6 +425,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Deaktiver kontrol af HTTPS-certifikater for TDM (usikkert; slået fra som standard)",
+        "insecure_warning": "ADVARSEL: Kontrol af HTTPS-certifikater er deaktiveret for forbindelsen til TDM. En angriber kan stjæle din Twitch-session. Brug kun dette på et betroet netværk.",
         "title": "Forbind Twitch med TDM",
         "destination_prompt": "URL til TDM-instans: ",
         "destination": "Destination: {url}",

@@ -425,6 +425,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Dezactivează verificarea certificatelor HTTPS pentru TDM (nesigur; dezactivat implicit)",
+        "insecure_warning": "AVERTISMENT: Verificarea certificatelor HTTPS este dezactivată pentru conexiunea la TDM. Un atacator îți poate fura sesiunea Twitch. Folosește opțiunea numai într-o rețea de încredere.",
         "title": "Conectează Twitch la TDM",
         "destination_prompt": "URL-ul instanței TDM: ",
         "destination": "Destinație: {url}",
