@@ -182,11 +182,15 @@ exists; use closing keywords only when the PR fully resolves that issue.
   network failures, retries, and persistent state consistently with nearby code.
 - Add unit tests for backend code changes. For frontend behavior changes, add automated
   coverage where practical; explain any gap and provide a reproducible manual check.
-- Update `README.md` and the canonical `AGENTS.md` with the relevant behavior or
-  workflow changes. Keep `CLAUDE.md` and `GEMINI.md` as relative symbolic links to
-  `AGENTS.md`; do not replace them with duplicated text. Put agent-specific guidance
-  in clearly named sections of `AGENTS.md`. Update this guide when the contribution
-  workflow changes.
+- Update documentation where the change belongs. Update `README.md` only when its
+  overview, setup, login, migration, or links need to change; put detailed behavior,
+  implementation explanations, and troubleshooting in the relevant `docs/` guide.
+  Update the canonical `AGENTS.md` when agent instructions or architectural constraints
+  change, and this guide when the contribution workflow changes. A code change does
+  not automatically require editing either `README.md` or `AGENTS.md`.
+  Keep `CLAUDE.md` and `GEMINI.md` as relative symbolic links to `AGENTS.md`; do not
+  replace them with duplicated text. Put agent-specific guidance in clearly named
+  sections of `AGENTS.md`.
 - For UI or console text changes, update the English source, every affected locale in
   `lang/`, and the TypedDict translation schema when keys change. Preserve key and
   placeholder parity. Build translated UI using `textContent` and safe DOM APIs;
@@ -316,14 +320,40 @@ original from GitHub. Attach images to the PR rather than committing them to the
 branch, unless the PR intentionally updates a published documentation image such as
 `screenshot.png`. Update screenshots when later revisions change the visible result.
 
+If you cannot attach images directly (for example from the command line), push them to
+a separate screenshots-only branch of your **public** fork instead, never to the topic
+branch, and link them from the PR description. For example, use a `pr-screenshots`
+branch with one folder per PR. A separate worktree leaves your topic branch and any
+uncommitted work untouched:
+
+```bash
+git fetch origin
+git worktree add ../pr-screenshots pr-screenshots \
+  || git worktree add --orphan -b pr-screenshots ../pr-screenshots  # first time (Git 2.42+)
+cd ../pr-screenshots \
+  && mkdir -p pr123 && cp /path/to/before-main.png /path/to/after-main.png pr123/ \
+  && git add pr123 && git commit -m "Add PR123 screenshots" \
+  && git push -u origin pr-screenshots \
+  && cd - && git worktree remove ../pr-screenshots
+```
+
+Then link each image with your GitHub user name and your fork's repository name:
+
+```markdown
+![Before](https://raw.githubusercontent.com/YOUR-USER/YOUR-FORK/pr-screenshots/pr123/before-main.png)
+```
+
+The same redaction rules apply, and pushed images cannot be reliably removed. Keep the
+branch after merging so the PR's images keep loading.
+
 Before requesting merge, confirm:
 
 - [ ] The branch incorporates the latest canonical `main`; conflicts are resolved.
 - [ ] The diff is focused and contains no secrets, local data, or unrelated changes.
 - [ ] Backend unit tests and applicable frontend/regression checks are included.
 - [ ] Required checks pass for the final revision; skips and limitations are recorded.
-- [ ] README, agent instructions, translations, and release notes/requirements are
-  updated where applicable under the rules above.
+- [ ] Relevant documentation, agent instructions, translations, and release
+  notes/requirements are updated where applicable under the rules above.
 - [ ] An independent adversarial review is recorded and blocking findings are resolved.
 - [ ] The PR description matches the final implementation and includes evidence.
 - [ ] Visual dashboard changes include current screenshots with personal information

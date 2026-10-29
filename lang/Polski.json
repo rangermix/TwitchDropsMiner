@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Nieprawidłowy kod 2FA.",
         "email_code_required": "Wymagany kod z e-maila.",
         "twofa_code_required": "Wymagany token 2FA.",
+        "headless_renewal": "Nie znaleziono xvfb-run, więc przeglądarka odnawiania sesji działa w trybie headless. Twitch może odrzucić wydane przez nią sesje (CATALOG, integrity). Zainstaluj xvfb i xauth albo użyj obrazu Dockera.",
         "status": {
             "logged_in": "Zalogowano",
             "logged_out": "Wylogowano",
@@ -348,7 +349,11 @@
         },
         "wanted": {
             "name": "Kolejka Pożądanych Dropów",
-            "none": "Brak pożądanych dropów w kolejce..."
+            "none": "Brak pożądanych dropów w kolejce...",
+            "drag_hint": "Przeciągnij gry, aby zmienić kolejność do ponownego uruchomienia (na ekranach dotykowych najpierw naciśnij i przytrzymaj). Lista wydobywania w Ustawieniach pozostaje domyślna.",
+            "temporary": "Tymczasowa kolejność do ponownego uruchomienia.",
+            "reset": "Przywróć kolejność listy wydobywania",
+            "save_error": "Nie udało się zmienić kolejności. Spróbuj ponownie."
         },
         "history": {
             "title": "Historia dropów",

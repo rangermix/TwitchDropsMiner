@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Falscher 2FA Code.",
         "email_code_required": "E-Mail Code erforderlich. Bitte E-Mail prüfen.",
         "twofa_code_required": "2FA Token erforderlich.",
+        "headless_renewal": "xvfb-run wurde nicht gefunden, daher läuft der Browser zur Sitzungserneuerung headless. Twitch kann die von ihm ausgestellten Sitzungen ablehnen (CATALOG, integrity). Installiere xvfb und xauth oder verwende das Docker-Image.",
         "status": {
             "logged_in": "Angemeldet",
             "logged_out": "Abgemeldet",
@@ -348,7 +349,11 @@
         },
         "wanted": {
             "name": "Wunsch-Drops Warteschlange",
-            "none": "Keine Wunsch-Drops in der Warteschlange..."
+            "none": "Keine Wunsch-Drops in der Warteschlange...",
+            "drag_hint": "Ziehe Spiele, um die Reihenfolge bis zum Neustart zu ändern (auf Touchscreens zuerst gedrückt halten). Die Mining-Liste in den Einstellungen bleibt der Standard.",
+            "temporary": "Vorübergehende Reihenfolge bis zum Neustart.",
+            "reset": "Auf Reihenfolge der Mining-Liste zurücksetzen",
+            "save_error": "Die Reihenfolge der Warteschlange konnte nicht geändert werden. Bitte versuche es erneut."
         },
         "history": {
             "title": "Drop-Verlauf",

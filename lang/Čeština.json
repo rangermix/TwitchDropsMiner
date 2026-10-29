@@ -18,6 +18,7 @@
         "incorrect_twofa_code": "Nesprávný dvoufaktorový token",
         "email_code_required": "K přihlášení je vyžadován kód který byl zaslán na váš E-Mail.",
         "twofa_code_required": "K přihlášení je vyžadován dvoufaktorový kód.",
+        "headless_renewal": "Nástroj xvfb-run nebyl nalezen, proto prohlížeč pro obnovu relace běží bez zobrazení (headless). Twitch může relace, které vydá, odmítnout (CATALOG, integrity). Nainstalujte xvfb a xauth, nebo použijte obraz Dockeru.",
         "status": {
             "logged_in": "Přihlášeno",
             "logged_out": "Odhlášeno",
@@ -348,7 +349,11 @@
         },
         "wanted": {
             "name": "Fronta chtěných Dropů",
-            "none": "Žádné chtěné dropy ve frontě..."
+            "none": "Žádné chtěné dropy ve frontě...",
+            "drag_hint": "Přetažením her změníte pořadí do restartu (na dotykových obrazovkách nejprve podržte). Seznam těžby v Nastavení zůstává výchozí.",
+            "temporary": "Dočasné pořadí do restartu.",
+            "reset": "Obnovit pořadí seznamu těžby",
+            "save_error": "Pořadí fronty se nepodařilo změnit. Zkuste to znovu."
         },
         "history": {
             "title": "Historie dropů",

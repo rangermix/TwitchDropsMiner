@@ -19,6 +19,7 @@ from pydantic import BaseModel, StrictBool, field_validator
 from src.config.paths import DATA_DIR
 from src.config.reward_priority import RewardPriority
 from src.config.settings import InventoryFilterSettings, MiningHoursSettings
+from src.services.game_order import TemporaryGameOrder
 from src.version import __version__
 from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
 from src.web.diagnostics_api import DiagnosticsAPI
@@ -50,7 +51,7 @@ socket_app = AuthMiddleware(socketio.ASGIApp(sio, app), web_auth)
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(request, exc):
-    if request.url.path.startswith(("/api/auth/", "/api/diagnostics", "/api/settings")):
+    if request.url.path.startswith(("/api/auth/", "/api/diagnostics", "/api/settings", "/api/wanted-order")):
         return JSONResponse({"detail": "invalid_request"}, status_code=422)
     return await request_validation_exception_handler(request, exc)
 
@@ -113,6 +114,15 @@ class SettingsUpdate(BaseModel):
     @classmethod
     def validate_link_status(cls, value: dict | None) -> dict | None:
         return InventoryFilterSettings.validate_update(value) if value is not None else None
+
+
+class WantedOrderRequest(BaseModel):
+    games: list[str]
+
+    @field_validator("games")
+    @classmethod
+    def validate_games(cls, value: list[str]) -> list[str]:
+        return TemporaryGameOrder.normalize(value)
 
 
 class PauseRequest(BaseModel):
@@ -543,6 +553,16 @@ async def update_paused(request: PauseRequest):
     return {"success": True, **twitch_client.pause_info()}
 
 
+@app.post("/api/wanted-order")
+async def update_wanted_order(request: WantedOrderRequest):
+    """Temporarily reorder queued games until restart; an empty list restores the default."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    twitch_client.set_game_order(request.games)
+    return {"success": True, **twitch_client.game_order.info()}
+
+
 @app.post("/api/mode/exit-manual")
 async def exit_manual_mode():
     """Exit manual mode and return to automatic channel selection"""
@@ -581,6 +601,7 @@ async def connect(sid, environ):
                 "pause": twitch_client.pause_info(),
                 "current_drop": gui_manager.progress.get_current_drop(),
                 "wanted_items": gui_manager.get_wanted_game_tree(),
+                "game_order": twitch_client.game_order.info(),
             },
             room=sid,
         )

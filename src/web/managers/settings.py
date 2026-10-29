@@ -50,11 +50,13 @@ class SettingsManager:
         settings: Settings,
         console: ConsoleOutputManager,
         on_change: Callable[[], None] | None = None,
+        on_games_change: Callable[[], None] | None = None,
     ):
         self._broadcaster = broadcaster
         self._settings = settings
         self._console = console
         self._on_change = on_change
+        self._on_games_change = on_games_change
         self._available_games: list[str] = []
         # Console lines and side effects of applied fields, run only after a successful save.
         self._pending_effects: list[Callable[[], None]] = []
@@ -189,7 +191,8 @@ class SettingsManager:
             and requested_allow_unlinked != previous_allow_unlinked
         )
         should_trigger_update |= self.check_and_update_setting(
-            "games_to_watch", settings_data.get("games_to_watch"), True
+            "games_to_watch", settings_data.get("games_to_watch"), True,
+            lambda _games: self._on_games_change() if self._on_games_change else None,
         )
         should_trigger_update |= self.check_and_update_setting(
             "drop_name_blacklist", drop_name_blacklist, True
