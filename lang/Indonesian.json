@@ -429,6 +429,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Nonaktifkan verifikasi sertifikat HTTPS untuk TDM (tidak aman; nonaktif secara bawaan)",
+        "insecure_warning": "PERINGATAN: Verifikasi sertifikat HTTPS dinonaktifkan untuk koneksi ke TDM. Penyerang dapat mencuri sesi Twitch Anda. Gunakan hanya di jaringan tepercaya.",
         "title": "Hubungkan Twitch ke TDM",
         "destination_prompt": "URL instans TDM: ",
         "destination": "Tujuan: {url}",

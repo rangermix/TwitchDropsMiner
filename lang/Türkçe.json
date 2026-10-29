@@ -429,6 +429,8 @@
         }
     },
     "helper": {
+        "insecure_help": "TDM için HTTPS sertifika doğrulamasını devre dışı bırak (güvensiz; varsayılan olarak kapalı)",
+        "insecure_warning": "UYARI: TDM bağlantısı için HTTPS sertifika doğrulaması devre dışı. Bir saldırgan Twitch oturumunuzu çalabilir. Yalnızca güvenilir bir ağda kullanın.",
         "title": "Twitch’i TDM’ye bağla",
         "destination_prompt": "TDM örneği URL’si: ",
         "destination": "Hedef: {url}",

@@ -429,6 +429,8 @@
         }
     },
     "helper": {
+        "insecure_help": "HTTPS-Zertifikatsprüfung für TDM deaktivieren (unsicher; standardmäßig aus)",
+        "insecure_warning": "WARNUNG: Die HTTPS-Zertifikatsprüfung für die Verbindung zu TDM ist deaktiviert. Angreifer könnten deine Twitch-Sitzung stehlen. Nur in einem vertrauenswürdigen Netzwerk verwenden.",
         "title": "Twitch mit TDM verbinden",
         "destination_prompt": "URL der TDM-Instanz: ",
         "destination": "Ziel: {url}",

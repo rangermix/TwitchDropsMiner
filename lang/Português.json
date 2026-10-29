@@ -429,6 +429,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Desativar a verificação de certificados HTTPS para o TDM (inseguro; desativado por padrão)",
+        "insecure_warning": "AVISO: A verificação de certificados HTTPS está desativada na conexão com o TDM. Um invasor pode roubar sua sessão da Twitch. Use apenas em uma rede confiável.",
         "title": "Ligar o Twitch ao TDM",
         "destination_prompt": "URL da instância TDM: ",
         "destination": "Destino: {url}",

@@ -429,6 +429,8 @@
         }
     },
     "helper": {
+        "insecure_help": "禁用 TDM 的 HTTPS 证书验证（不安全；默认关闭）",
+        "insecure_warning": "警告：连接 TDM 时已禁用 HTTPS 证书验证。攻击者可能窃取你的 Twitch 会话。仅在可信网络中使用。",
         "title": "连接 Twitch 与 TDM",
         "destination_prompt": "TDM 实例地址：",
         "destination": "目标：{url}",
