@@ -89,7 +89,7 @@ pick up the change; after a failed sign-in, sign in again. Other useful stages a
 
 | Stage | What to check |
 | --- | --- |
-| `helper_configuration`, `helper_connect` | Dashboard URL, reachable miner, enabled helper window, matching versions |
+| `helper_configuration`, `helper_connect` | Dashboard URL, [`--ca-file` certificate or `--insecure` address](authentication.md#helper-https-certificates), reachable miner, enabled helper window, matching versions |
 | `browser_start`, `browser_login`, `browser_capture`, `browser_cleanup` | Helper desktop browser startup, manual sign-in/closing its windows, capture, or cleanup |
 | `helper_admission`, `seed_validation` | Helper access or the captured context's format and freshness |
 | `server_issuance`, `renewal_issuance` | The miner's SDK/browser acquisition step |

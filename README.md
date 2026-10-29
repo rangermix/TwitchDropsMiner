@@ -156,8 +156,9 @@ If Twitch rejects the embedded browser, select **Use desktop helper** and run th
 matching Windows, Linux, or macOS helper with your dashboard address. The first helper
 to connect is accepted during a ten-minute window; no pairing code is needed.
 See [desktop helper downloads and steps](docs/authentication.md#desktop-helper-fallback).
-HTTPS verification is on by default. Source helpers can opt out with `--insecure`
-(unsafe; unavailable in v2.4.0 downloads); see [helper HTTPS](docs/authentication.md#helper-https-certificates).
+HTTPS verification is on by default. For a self-signed dashboard certificate, source
+helpers accept `--ca-file`, or can opt out with `--insecure` (unsafe); neither is in
+v2.4.0 downloads. See [helper HTTPS](docs/authentication.md#helper-https-certificates).
 For rejected helper logins, report the fixed error code and a redacted miner log;
 see [helper diagnostics](docs/troubleshooting.md#helper-login-error-codes).
 
@@ -258,7 +259,7 @@ or [buying the maintainer a coffee](https://buymeacoffee.com/rangermix).
 <!-- contributors:start -->
 | Contributor | Merged pull requests |
 | --- | --- |
-| [@0zLloen](https://github.com/0zLloen) | [#152](https://github.com/rangermix/TwitchDropsMiner/pull/152) · [#185](https://github.com/rangermix/TwitchDropsMiner/pull/185) · [#191](https://github.com/rangermix/TwitchDropsMiner/pull/191) · [#188](https://github.com/rangermix/TwitchDropsMiner/pull/188) · [#192](https://github.com/rangermix/TwitchDropsMiner/pull/192) · [#193](https://github.com/rangermix/TwitchDropsMiner/pull/193) · [#194](https://github.com/rangermix/TwitchDropsMiner/pull/194) · [#186](https://github.com/rangermix/TwitchDropsMiner/pull/186) · [#189](https://github.com/rangermix/TwitchDropsMiner/pull/189) · [#175](https://github.com/rangermix/TwitchDropsMiner/pull/175) · [#176](https://github.com/rangermix/TwitchDropsMiner/pull/176) · [#202](https://github.com/rangermix/TwitchDropsMiner/pull/202) · [#200](https://github.com/rangermix/TwitchDropsMiner/pull/200) · [#201](https://github.com/rangermix/TwitchDropsMiner/pull/201) |
+| [@0zLloen](https://github.com/0zLloen) | [#152](https://github.com/rangermix/TwitchDropsMiner/pull/152) · [#185](https://github.com/rangermix/TwitchDropsMiner/pull/185) · [#191](https://github.com/rangermix/TwitchDropsMiner/pull/191) · [#188](https://github.com/rangermix/TwitchDropsMiner/pull/188) · [#192](https://github.com/rangermix/TwitchDropsMiner/pull/192) · [#193](https://github.com/rangermix/TwitchDropsMiner/pull/193) · [#194](https://github.com/rangermix/TwitchDropsMiner/pull/194) · [#186](https://github.com/rangermix/TwitchDropsMiner/pull/186) · [#189](https://github.com/rangermix/TwitchDropsMiner/pull/189) · [#175](https://github.com/rangermix/TwitchDropsMiner/pull/175) · [#176](https://github.com/rangermix/TwitchDropsMiner/pull/176) · [#202](https://github.com/rangermix/TwitchDropsMiner/pull/202) · [#200](https://github.com/rangermix/TwitchDropsMiner/pull/200) · [#201](https://github.com/rangermix/TwitchDropsMiner/pull/201) · [#204](https://github.com/rangermix/TwitchDropsMiner/pull/204) |
 | [@3lb0z0](https://github.com/3lb0z0) | [#110](https://github.com/rangermix/TwitchDropsMiner/pull/110) |
 | [@andreluisfc](https://github.com/andreluisfc) | [#76](https://github.com/rangermix/TwitchDropsMiner/pull/76) |
 | [@birdhimself](https://github.com/birdhimself) | [#41](https://github.com/rangermix/TwitchDropsMiner/pull/41) |
