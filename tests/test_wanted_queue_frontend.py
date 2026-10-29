@@ -13,7 +13,7 @@ FUNCTIONS = ['makeElement', 'makeImageElement', 'wantedText', 'updateGameOrder',
              'saveWantedOrder', 'handleWantedDragStart',
              'handleWantedDragEnd', 'renderWantedItems', 'handleDragStart', 'handleWantedDragOver',
              'dragOverRows', 'handleDrop', 'handleWantedTouchStart', 'handleWantedTouchMove',
-             'handleWantedTouchEnd']
+             'handleWantedTouchEnd', 'flushPendingWantedItems']
 
 DOM = r"""
 const assert = require('node:assert/strict');
@@ -23,7 +23,7 @@ class Node {
   this.classList={add:n=>this.classes.add(n),remove:n=>this.classes.delete(n)};}
  setAttribute(k,v){this.attrs[k]=String(v);if(k==='id')this.id=String(v);if(k==='class')String(v).split(' ').forEach(n=>this.classes.add(n));}
  set className(v){this.classes=new Set();this.setAttribute('class',v);}
- set innerHTML(v){assert.equal(v,'');this.children=[];this._text='';}
+ set innerHTML(v){assert.equal(v,'');this.children.forEach(c=>{c.parentNode=null;});this.children=[];this._text='';}
  set textContent(v){this._text=String(v);this.children=[];}
  get textContent(){return this._text+this.children.map(c=>c.textContent).join('');}
  appendChild(c){c.parentNode=this;this.children.push(c);return c;}
@@ -228,4 +228,73 @@ def test_rows_of_different_heights_do_not_flip_under_a_still_pointer():
  wantedTouch={active:false};const native=event(list().children[0]);list().children[0].events.dragstart(native);
  assert.ok(native.prevented);wantedTouch=null;
 })().catch(error=>{console.error(error);process.exit(1);});
+""")
+
+
+def test_touch_hold_keeps_its_row_when_live_updates_arrive_before_activation():
+    run_javascript(FUNCTIONS, DOM + r"""
+const touch=(row,type,y=0)=>{const e={type,target:row,currentTarget:row,touches:[{clientX:0,clientY:y}],
+ prevented:false,preventDefault(){this.prevented=true;}};row.events[type](e);return e;};
+(async()=>{
+ renderWantedItems(tree);
+ const originalRows=[...list().children];
+ const gamma=originalRows[2];
+ touch(gamma,'touchstart');
+ renderWantedItems([tree[0],tree[2]]);
+ renderWantedItems([...tree].reverse());
+ assert.deepEqual(list().children,originalRows,'updates must preserve the pending hold source');
+ assert.equal(lastWantedTree,tree);
+ await new Promise(r=>setTimeout(r,20));
+ assert.equal(wantedDragActive,true);
+ assert.equal(draggedElement,gamma);
+ assert.equal(gamma.parentNode,list(),'the active source must remain in the visible queue');
+ assert.ok(gamma.classes.has('dragging'));
+ // With no move to save, ending the hold applies the newest deferred tree.
+ touch(gamma,'touchend');
+ assert.deepEqual(names(),['Gamma','Beta','Alpha']);
+ assert.equal(pendingWantedTree,null);
+ assert.equal(wantedTouch,null);
+ assert.equal(wantedDragActive,false);
+ assert.equal(draggedElement,null);
+ assert.equal(calls.length,0);
+})().catch(error=>{console.error(error);process.exit(1);});
+""")
+
+
+def test_pending_touch_updates_flush_on_scroll_release_cancel_and_stale_timers():
+    run_javascript(FUNCTIONS, DOM + r"""
+const callbacks=[];
+const cleared=new Set();
+globalThis.setTimeout=callback=>{callbacks.push(callback);return callback;};
+globalThis.clearTimeout=timer=>cleared.add(timer);
+const touch=(row,type,y=0)=>{const e={type,target:row,currentTarget:row,touches:[{clientX:0,clientY:y}],
+ prevented:false,preventDefault(){this.prevented=true;}};row.events[type](e);return e;};
+for(const end of ['touchend','touchcancel','scroll']){
+ renderWantedItems(tree);
+ const alpha=list().children[0];
+ touch(alpha,'touchstart');
+ const oldTimer=callbacks.at(-1);
+ renderWantedItems([...tree].reverse());
+ const finished=end==='scroll'?touch(alpha,'touchmove',40):touch(alpha,end);
+ assert.equal(finished.prevented,false,'a pending hold must not prevent ordinary scrolling or tapping');
+ assert.ok(cleared.has(oldTimer));
+ assert.equal(wantedTouch,null);
+ assert.equal(pendingWantedTree,null);
+ assert.deepEqual(names(),['Gamma','Beta','Alpha'],'flush the newest update after '+end);
+ // A callback already queued before cancellation must not restart its old gesture,
+ // even if the user has begun another hold in the meantime.
+ const beta=list().children[1];
+ touch(beta,'touchstart');
+ const current=wantedTouch;
+ oldTimer();
+ assert.equal(wantedTouch,current);
+ assert.equal(wantedDragActive,false);
+ assert.equal(draggedElement,null);
+ callbacks.at(-1)();
+ assert.equal(draggedElement,beta);
+ touch(beta,'touchcancel');
+ assert.equal(wantedDragActive,false);
+ assert.equal(draggedElement,null);
+ assert.equal(calls.length,0);
+}
 """)

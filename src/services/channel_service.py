@@ -115,13 +115,16 @@ class ChannelService:
         return (self._manual_rank(channel, order), *key)
 
     def _manual_rank(self, channel: Channel, order: TemporaryGameOrder) -> int:
-        """Rank a channel by its best manually ordered wanted game, streamed or earnable."""
+        """Rank only wanted campaigns this channel can currently progress."""
+        if not channel.online or channel.banned:
+            return order.rank(None)
         wanted = self._twitch.wanted_games
-        games = [campaign.game for campaign in self._twitch.inventory
-                 if campaign.game in wanted and campaign.can_earn(channel)]
-        if channel.game is not None and channel.game in wanted:
-            games.append(channel.game)
-        return min((order.rank(game.name) for game in games), default=order.rank(None))
+        return min(
+            (order.rank(campaign.game.name) for campaign in self._twitch.inventory
+             if campaign.game in wanted and campaign.can_earn(channel)
+             and (campaign.game.is_special() or channel.drops_enabled)),
+            default=order.rank(None),
+        )
 
     def _default_mining_priority(self, channel: Channel) -> tuple[int, int] | tuple[int, int, float, int]:
         """Selected games first; optional reward type/deadline before game order."""

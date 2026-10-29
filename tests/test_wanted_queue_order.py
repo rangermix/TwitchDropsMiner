@@ -118,6 +118,56 @@ class TestMiningSelection:
         twitch.watching_channel.get_with_default.return_value = alpha
         assert watch.should_switch(beta) is True
 
+    @pytest.mark.parametrize("special_id", [509663, 509672])
+    @pytest.mark.parametrize(
+        ("alpha_acl", "drops_enabled"),
+        [((100,), True), ((200,), False)],
+        ids=["outside-category-acl", "category-drops-disabled"],
+    )
+    def test_channel_only_inherits_order_from_watchable_campaigns(
+        self, special_id, alpha_acl, drops_enabled,
+    ):
+        from src.services.watch_service import WatchService
+
+        settings = _settings("Gamma", "Alpha", "Special", priority_list_only=True)
+        alpha = _campaign("alpha", "Alpha", game_id=1, settings=settings, acl=alpha_acl)
+        special = _campaign("special", "Special", game_id=special_id, settings=settings, acl=(200,))
+        gamma = _campaign("gamma", "Gamma", game_id=3, settings=settings, acl=(300,))
+        twitch = alpha._twitch
+        twitch.settings = settings
+        twitch.inventory = [alpha, special, gamma]
+        twitch.game_order = ordered("Alpha", "Gamma", "Special")
+        twitch.wanted_games = StreamSelector().get_wanted_games(
+            settings, twitch.inventory, twitch.game_order,
+        )
+        service = ChannelService(twitch)
+        twitch._channel_service = service
+        watch = WatchService(twitch)
+        special_channel = _channel(
+            twitch, 200, {"id": "1", "name": "Alpha"}, drops_enabled=drops_enabled,
+        )
+        gamma_channel = _channel(twitch, 300, {"id": "3", "name": "Gamma"})
+
+        # The streamed category cannot progress here: it either excludes this
+        # channel or requires its missing drops flag. The special campaign can.
+        assert alpha.can_earn(special_channel) is (200 in alpha_acl)
+        assert special.can_earn(special_channel)
+        assert watch.can_watch(special_channel)
+        assert watch.can_watch(gamma_channel)
+        assert [game.name for game in twitch.wanted_games] == ["Alpha", "Gamma", "Special"]
+        assert sorted([special_channel, gamma_channel], key=service.get_mining_priority) == [
+            gamma_channel, special_channel,
+        ]
+        twitch.watching_channel.get_with_default.return_value = special_channel
+        assert watch.should_switch(gamma_channel)
+        twitch.watching_channel.get_with_default.return_value = gamma_channel
+        assert not watch.should_switch(special_channel)
+
+        # A participating, drops-enabled Alpha channel still takes first place.
+        alpha_channel = _channel(twitch, alpha_acl[0], {"id": "1", "name": "Alpha"})
+        assert watch.can_watch(alpha_channel)
+        assert watch.should_switch(alpha_channel)
+
     def test_active_campaign_follows_the_order_on_a_shared_channel(self):
         settings = _settings("Alpha", "Beta", priority_list_only=True)
         alpha = _campaign("a", "Alpha", game_id=1, settings=settings, acl=(100,))

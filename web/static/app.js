@@ -3569,16 +3569,31 @@ function handleWantedDragEnd(e) {
 const WANTED_TOUCH_HOLD_MS = 350;
 let wantedTouch = null;
 
+function flushPendingWantedItems() {
+    const pending = pendingWantedTree;
+    pendingWantedTree = null;
+    if (pending !== null) renderWantedItems(pending);
+}
+
 function handleWantedTouchStart(e) {
-    if (wantedOrderBusy || wantedDragActive || e.touches.length !== 1 || e.target.closest('a')) return;
+    if (wantedOrderBusy || wantedDragActive || wantedTouch || e.touches.length !== 1 || e.target.closest('a')) return;
     const row = e.currentTarget;
     const touch = e.touches[0];
-    wantedTouch = { row, x: touch.clientX, y: touch.clientY, active: false, timer: setTimeout(() => {
-        wantedTouch.active = true;
+    const gesture = { row, x: touch.clientX, y: touch.clientY, active: false, timer: null };
+    wantedTouch = gesture;
+    gesture.timer = setTimeout(() => {
+        // A cancelled hold must not restart or activate a newer gesture.
+        if (wantedTouch !== gesture) return;
+        if (row.parentNode !== document.getElementById('wanted-items-list')) {
+            wantedTouch = null;
+            flushPendingWantedItems();
+            return;
+        }
+        gesture.active = true;
         wantedDragActive = true;
         draggedElement = row;
         row.classList.add('dragging');
-    }, WANTED_TOUCH_HOLD_MS) };
+    }, WANTED_TOUCH_HOLD_MS);
 }
 
 function handleWantedTouchMove(e) {
@@ -3588,6 +3603,7 @@ function handleWantedTouchMove(e) {
         if (Math.hypot(touch.clientX - wantedTouch.x, touch.clientY - wantedTouch.y) > 10) {
             clearTimeout(wantedTouch.timer);
             wantedTouch = null;
+            flushPendingWantedItems();
         }
         return;
     }
@@ -3607,7 +3623,10 @@ function handleWantedTouchEnd(e) {
     clearTimeout(wantedTouch.timer);
     const { row, active } = wantedTouch;
     wantedTouch = null;
-    if (!active) return;
+    if (!active) {
+        flushPendingWantedItems();
+        return;
+    }
     e.preventDefault();
     if (e.type === 'touchcancel') {
         // An interrupted hold restores the order shown before it started.
@@ -3625,8 +3644,8 @@ function handleWantedTouchEnd(e) {
 function renderWantedItems(tree) {
     const container = document.getElementById('wanted-items-list');
     if (!container) return;
-    if (wantedDragActive) {
-        // Never replace rows under an active drag; apply the newest tree afterwards.
+    if (wantedDragActive || wantedTouch) {
+        // Preserve the touch source from the initial hold through the active drag.
         pendingWantedTree = tree;
         return;
     }
