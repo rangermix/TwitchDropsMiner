@@ -425,6 +425,8 @@
         }
     },
     "helper": {
+        "insecure_help": "停用 TDM 的 HTTPS 憑證驗證（不安全；預設關閉）",
+        "insecure_warning": "警告：連線至 TDM 時已停用 HTTPS 憑證驗證。攻擊者可能竊取你的 Twitch 工作階段。僅在可信任的網路中使用。",
         "title": "連接 Twitch 與 TDM",
         "destination_prompt": "TDM 執行個體網址：",
         "destination": "目標：{url}",

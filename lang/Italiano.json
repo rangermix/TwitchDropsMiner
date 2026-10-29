@@ -425,6 +425,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Disattiva la verifica dei certificati HTTPS per TDM (non sicuro; disattivato per impostazione predefinita)",
+        "insecure_warning": "ATTENZIONE: la verifica dei certificati HTTPS è disattivata per la connessione a TDM. Un aggressore potrebbe rubare la tua sessione Twitch. Usa questa opzione solo su una rete fidata.",
         "title": "Collega Twitch a TDM",
         "destination_prompt": "URL dell’istanza TDM: ",
         "destination": "Destinazione: {url}",

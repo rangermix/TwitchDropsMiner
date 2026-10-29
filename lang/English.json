@@ -425,6 +425,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Disable HTTPS certificate verification for TDM (unsafe; off by default)",
+        "insecure_warning": "WARNING: HTTPS certificate verification is disabled for the connection to TDM. An attacker could steal your Twitch session. Use only on a trusted network.",
         "title": "Connect Twitch to TDM",
         "destination_prompt": "TDM instance URL: ",
         "destination": "Destination: {url}",
