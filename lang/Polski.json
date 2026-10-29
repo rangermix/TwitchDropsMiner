@@ -438,6 +438,8 @@
         "cancelled": "Anulowano.",
         "wait_to_close": "Naciśnij Enter, aby zamknąć.",
         "tdm_help": "Główny adres URL instancji TDM",
+        "ca_file_help": "Plik certyfikatu PEM zaufany tylko dla połączenia HTTPS z TDM, np. certyfikat samopodpisany lub prywatnego CA. Weryfikacja certyfikatów pozostaje włączona.",
+        "ca_file_in_use": "Używany jest własny plik certyfikatu dla połączenia z TDM.",
         "chrome_help": "Ścieżka do Google Chrome (zwykle wykrywana automatycznie)",
         "language_help": "Język konsoli",
         "no_pause_help": "Zakończ bez oczekiwania na Enter",
@@ -447,6 +449,7 @@
         "browser_conflict": "Wybór przeglądarki i ścieżka muszą wskazywać tę samą przeglądarkę.",
         "errors": {
             "destination": "Nieprawidłowy adres TDM. Użyj głównego URL http:// lub https:// z portem, bez ścieżki, hasła, zapytania i fragmentu.",
+            "ca_file": "Nie można użyć certyfikatu z --ca-file. Wybierz czytelny plik PEM zawierający certyfikat CA (CA:TRUE), np. Twój certyfikat samopodpisany lub prywatnego CA, a nie klucz prywatny.",
             "disabled": "Dostęp pomocnika jest zamknięty. Wybierz Użyj pomocnika na komputerze na ekranie logowania TDM, a następnie uruchom pomocnika.",
             "expired": "Połączenie pomocnika wygasło lub zostało anulowane. Ponownie włącz dostęp pomocnika w TDM i uruchom go jeszcze raz.",
             "busy": "Inny pomocnik jest już połączony. Anuluj go w panelu TDM przed ponownym rozpoczęciem.",

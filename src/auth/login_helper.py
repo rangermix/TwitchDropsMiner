@@ -64,21 +64,43 @@ class HelperHTTP:
     """Bounded direct protocol, without redirects, proxies or dashboard cookies."""
 
     def __init__(self, destination: HelperDestination, *, clock: Callable[[], float] = time.time,
-                 receipt_attempts: int = 20, receipt_interval: float = 3, insecure: bool = False):
+                 receipt_attempts: int = 20, receipt_interval: float = 3, insecure: bool = False,
+                 ssl_context: ssl.SSLContext | None = None):
         self.destination, self.clock = destination, clock
         self.receipt_attempts, self.receipt_interval = receipt_attempts, receipt_interval
         self.insecure = insecure
+        self.ssl_context = ssl_context or self.trust()
         self.http: aiohttp.ClientSession
 
     async def __aenter__(self) -> HelperHTTP:
         self.http = aiohttp.ClientSession(cookie_jar=aiohttp.DummyCookieJar(), trust_env=False,
             timeout=aiohttp.ClientTimeout(total=300, connect=15),
-            connector=aiohttp.TCPConnector(ssl=False if self.insecure else truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)),
+            connector=aiohttp.TCPConnector(ssl=False if self.insecure else self.ssl_context),
             headers={"X-TDM-Request": "1", "Accept": "application/json"})
         return self
 
     async def __aexit__(self, *_args: Any) -> None:
         await self.http.close()
+
+    @staticmethod
+    def trust(ca_file: Path | None = None) -> ssl.SSLContext:
+        """System roots plus optional CA certificates for this helper only; verification stays on."""
+        context = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        if ca_file is not None:
+            try:
+                if not ca_file.is_file():
+                    raise OSError
+                probe = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+                probe.load_verify_locations(cafile=ca_file)
+                # Windows and macOS verification only receives CA certificates, so
+                # reject server-only certificates everywhere instead of ignoring them.
+                roots = probe.get_ca_certs(binary_form=True)
+                if not roots:
+                    raise ssl.SSLError
+                context.load_verify_locations(cadata=b"".join(roots))
+            except (OSError, ssl.SSLError, ValueError):
+                raise SessionError("HELPER_CA_FILE", stage="helper_configuration") from None
+        return context
 
     @staticmethod
     def _server_error(path: str, status: int, data: Any) -> SessionError:
@@ -786,12 +808,14 @@ class NativeLoginHelper:
     """Admission precedes the browser; success follows proof and local cleanup."""
 
     def __init__(self, destination: str, *,
-                 insecure: bool = False,
+                 insecure: bool = False, ca_file: Path | None = None,
                  browser_factory: Callable[..., Any] = BrowserSelection.create,
                  exporter_factory: Callable[..., Any] | None = None,
                  clock: Callable[[], float] = time.time, report: Callable[[str], None] = lambda _key: None):
         self.destination = HelperDestination(destination)
-        self.insecure = insecure
+        if insecure and ca_file is not None:
+            raise ValueError("--insecure and --ca-file are exclusive")
+        self.insecure, self.ssl_context = insecure, HelperHTTP.trust(ca_file)
         self.browser_factory, self.exporter_factory = browser_factory, exporter_factory
         self.clock, self.report = clock, report
 
@@ -801,7 +825,8 @@ class NativeLoginHelper:
             if self.insecure:
                 self.report("insecure_warning")
             self.report("connecting")
-            async with HelperHTTP(self.destination, clock=self.clock, insecure=self.insecure) as client:
+            async with HelperHTTP(self.destination, clock=self.clock, insecure=self.insecure,
+                                  ssl_context=self.ssl_context) as client:
                 ticket = await client.connect()
                 phase = "browser_start"
                 async with self.browser_factory() as browser:
@@ -886,7 +911,9 @@ class LoginHelperCLI:
         words = _.t["helper"]
         parser = argparse.ArgumentParser(description=words["title"])
         parser.add_argument("--tdm", help=words["tdm_help"])
-        parser.add_argument("--insecure", action="store_true", help=words["insecure_help"])
+        tls = parser.add_mutually_exclusive_group()
+        tls.add_argument("--insecure", action="store_true", help=words["insecure_help"])
+        tls.add_argument("--ca-file", type=Path, help=words["ca_file_help"])
         parser.add_argument("--browser", choices=("auto", "chrome", "chromium", "firefox"),
                             default="auto", help=words["browser_help"])
         paths = parser.add_mutually_exclusive_group()
@@ -902,12 +929,14 @@ class LoginHelperCLI:
         result = 0
         try:
             destination = HelperDestination(args.tdm or input(words["destination_prompt"]).strip()).url
-            helper = NativeLoginHelper(destination, insecure=args.insecure,
+            helper = NativeLoginHelper(destination, insecure=args.insecure, ca_file=args.ca_file,
                 browser_factory=lambda: BrowserSelection.create(
                 args.browser, chrome=args.chrome, chromium=args.chromium, firefox=args.firefox),
                 report=lambda key: print(words[key],  # type: ignore[literal-required]
                     file=sys.stderr if key == "insecure_warning" else sys.stdout, flush=True))
             print(words["destination"].format(url=helper.destination.url), flush=True)
+            if args.ca_file is not None and helper.destination.url.startswith("https://"):
+                print(words["ca_file_in_use"], flush=True)
             asyncio.run(LoginHelperCLI.run_cancellable(helper))
         except SessionError as error:
             # Codes originate in our validators; never print response bodies or exceptions.

@@ -438,6 +438,8 @@
         "cancelled": "Dibatalkan.",
         "wait_to_close": "Tekan Enter untuk menutup.",
         "tdm_help": "URL dasar instans TDM Anda",
+        "ca_file_help": "Berkas sertifikat PEM yang dipercaya hanya untuk koneksi HTTPS ke TDM, misalnya sertifikat self-signed atau CA pribadi. Pemeriksaan sertifikat tetap aktif.",
+        "ca_file_in_use": "Menggunakan berkas sertifikat kustom untuk koneksi TDM.",
         "chrome_help": "Lokasi Google Chrome (biasanya terdeteksi otomatis)",
         "language_help": "Bahasa konsol",
         "no_pause_help": "Keluar tanpa menunggu Enter",
@@ -447,6 +449,7 @@
         "browser_conflict": "Pilihan browser dan lokasi executable harus merujuk ke browser yang sama.",
         "errors": {
             "destination": "Alamat TDM tidak valid. Gunakan URL dasar http:// atau https:// beserta port, tanpa path, kata sandi, kueri, atau fragmen.",
+            "ca_file": "Sertifikat --ca-file tidak dapat digunakan. Pilih berkas PEM yang dapat dibaca dan berisi sertifikat CA (CA:TRUE), seperti sertifikat self-signed atau CA pribadi Anda, bukan kunci privat.",
             "disabled": "Akses helper ditutup. Pilih Gunakan helper desktop di layar masuk TDM, lalu jalankan helper.",
             "expired": "Koneksi helper kedaluwarsa atau dibatalkan. Aktifkan kembali akses helper desktop di TDM dan mulai ulang helper.",
             "busy": "Helper lain sudah terhubung. Batalkan di dasbor TDM sebelum memulai lagi.",

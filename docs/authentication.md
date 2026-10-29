@@ -125,10 +125,49 @@ private, and never copy cookies or authentication files into the dashboard.
 ### Helper HTTPS certificates
 
 The helper verifies HTTPS certificates and hostnames by default using its computer's
-trust store. For a self-signed reverse proxy, trust the certificate or its issuing CA
-on the computer running the helper, and use a hostname covered by that certificate.
-Adding a CA only to the miner container does not change the desktop helper's trust.
+trust store. For a self-signed reverse proxy, give the certificate to the helper with
+`--ca-file`, or trust the certificate or its issuing CA on the computer running the
+helper. Use a hostname covered by that certificate. Adding a CA only to the miner
+container does not change the desktop helper's trust.
 
+#### Trust one certificate with `--ca-file`
+
+**Unreleased:** source helpers support `--ca-file`; the v2.4.0 downloads do not. Use
+it instead of trusting the certificate system-wide:
+
+```bash
+python login_helper.py --tdm https://192.168.1.10:8443 --ca-file tdm-proxy.pem
+```
+
+A matching packaged helper takes the same options (`tdm-login-helper.exe` on Windows,
+`./tdm-login-helper` on Linux or macOS). The helper then trusts your operating
+system's certificates plus that file, for its connection to TDM only. It still checks
+the certificate chain, its validity dates, and that the certificate names the
+dashboard host (Subject Alternative Name). The file must be PEM and contain a CA
+certificate (`CA:TRUE`): the self-signed proxy certificate itself, or the root CA that
+signed it. Never pass a private key. Convert a DER `.cer` file with
+`openssl x509 -inform der -in proxy.cer -out tdm-proxy.pem`. A server-only
+certificate (`CA:FALSE`) fails with `SESSION_HELPER_CA_FILE`, because Windows and macOS
+ignore it. The helper prints only that a custom certificate file is in use, not its
+path or contents.
+
+macOS also applies Apple's rules for TLS server certificates: the `serverAuth`
+extended key usage, an RSA key of at least 2048 bits (or an EC key) and a validity of
+at most 825 days. A plain `openssl req -x509` certificate lacks `serverAuth`. This
+command creates a proxy certificate that works on all helper platforms; replace the
+IP address with your dashboard host (`DNS:nas.home.arpa` for a name), then configure
+the proxy with `tdm-proxy.pem` and `tdm-proxy.key`. It needs OpenSSL 1.1.1 or newer,
+for example on the proxy host:
+
+```bash
+openssl req -x509 -newkey rsa:2048 -nodes -days 825 -subj /CN=tdm \
+  -addext subjectAltName=IP:192.168.1.10 -addext extendedKeyUsage=serverAuth \
+  -addext basicConstraints=critical,CA:TRUE -keyout tdm-proxy.key -out tdm-proxy.pem
+```
+
+#### Skip verification with `--insecure`
+
+Prefer `--ca-file`; the two options cannot be combined.
 **Unreleased:** source helpers support `--insecure` as an explicit opt-out. The v2.4.0
 downloads do not support this option; packaged commands below require a later release
 that includes it, matching your miner version. From an activated source environment:

@@ -438,6 +438,8 @@
         "cancelled": "Annulleret.",
         "wait_to_close": "Tryk Enter for at lukke.",
         "tdm_help": "Rod-URL til din TDM-instans",
+        "ca_file_help": "PEM-certifikatfil, der kun stoles på for HTTPS-forbindelsen til TDM, f.eks. et selvsigneret eller privat CA-certifikat. Certifikatkontrollen forbliver slået til.",
+        "ca_file_in_use": "Bruger den tilpassede certifikatfil til TDM-forbindelsen.",
         "chrome_help": "Sti til Google Chrome (findes normalt automatisk)",
         "language_help": "Konsolsprog",
         "no_pause_help": "Afslut uden at vente på Enter",
@@ -447,6 +449,7 @@
         "browser_conflict": "Browservalg og programsti skal pege på samme browser.",
         "errors": {
             "destination": "Ugyldig TDM-adresse. Brug rod-URL med http:// eller https:// og port, uden sti, adgangskode, forespørgsel eller fragment.",
+            "ca_file": "Certifikatet fra --ca-file kunne ikke bruges. Vælg en læsbar PEM-fil med et CA-certifikat (CA:TRUE), f.eks. dit selvsignerede eller private CA-certifikat, ikke en privat nøgle.",
             "disabled": "Hjælperadgang er lukket. Vælg Brug skrivebordshjælper på TDM's loginskærm, og start derefter hjælperen.",
             "expired": "Hjælperforbindelsen udløb eller blev annulleret. Aktivér hjælperadgang igen i TDM, og genstart hjælperen.",
             "busy": "En anden hjælper er allerede tilsluttet. Annuller den i TDM-dashboardet, før du prøver igen.",

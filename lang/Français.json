@@ -438,6 +438,8 @@
         "cancelled": "Annulé.",
         "wait_to_close": "Appuyez sur Entrée pour fermer.",
         "tdm_help": "URL racine de votre instance TDM",
+        "ca_file_help": "Fichier de certificat PEM approuvé uniquement pour la connexion HTTPS à TDM, par exemple un certificat auto-signé ou d'une autorité privée. La vérification des certificats reste active.",
+        "ca_file_in_use": "Utilisation du fichier de certificat personnalisé pour la connexion à TDM.",
         "chrome_help": "Chemin de Google Chrome (normalement détecté automatiquement)",
         "language_help": "Langue de la console",
         "no_pause_help": "Quitter sans attendre la touche Entrée",
@@ -447,6 +449,7 @@
         "browser_conflict": "Le choix du navigateur et le chemin doivent désigner le même navigateur.",
         "errors": {
             "destination": "Adresse TDM invalide. Utilisez l’URL racine http:// ou https:// avec le port, sans chemin, mot de passe, paramètres ni fragment.",
+            "ca_file": "Le certificat de --ca-file n'a pas pu être utilisé. Choisissez un fichier PEM lisible contenant un certificat d'autorité (CA:TRUE), comme votre certificat auto-signé ou d'autorité privée, et non une clé privée.",
             "disabled": "L’accès de l’assistant est fermé. Sélectionnez Utiliser l’assistant de bureau sur l’écran de connexion TDM, puis lancez l’assistant.",
             "expired": "La connexion de l’assistant a expiré ou a été annulée. Réactivez l’accès de l’assistant dans TDM et relancez-le.",
             "busy": "Un autre assistant est déjà connecté. Annulez-le dans le tableau de bord TDM avant de recommencer.",

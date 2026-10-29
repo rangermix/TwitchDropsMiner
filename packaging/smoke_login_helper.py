@@ -67,10 +67,13 @@ class PackagedSmoke:
                 help_result = subprocess.run([str(self.executable), "--help"], **options)
                 assert help_result.returncode == 0, help_result.stderr
                 assert "--tdm" in help_result.stdout and "--output" not in help_result.stdout
-                assert all(option in help_result.stdout for option in ("--browser", "--chromium", "--firefox"))
+                assert all(option in help_result.stdout for option in ("--browser", "--chromium", "--firefox", "--ca-file"))
                 translated = subprocess.run([str(self.executable), "--language", "简体中文", "--help"], **options)
                 assert translated.returncode == 0, translated.stderr
                 assert "连接 Twitch 与 TDM" in translated.stdout
+                bad_ca = subprocess.run([str(self.executable), "--tdm", f"http://127.0.0.1:{server.server_port}",
+                    "--ca-file", "missing-ca.pem", "--no-pause"], **options)
+                assert bad_ca.returncode == 1 and "SESSION_HELPER_CA_FILE" in bad_ca.stderr, bad_ca.stdout + bad_ca.stderr
                 refused = subprocess.run([str(self.executable), "--tdm",
                     f"http://127.0.0.1:{server.server_port}", "--no-pause"], **options)
                 assert refused.returncode == 1, refused.stdout + refused.stderr

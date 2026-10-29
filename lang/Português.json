@@ -438,6 +438,8 @@
         "cancelled": "Cancelado.",
         "wait_to_close": "Prima Enter para fechar.",
         "tdm_help": "URL raiz da sua instância TDM",
+        "ca_file_help": "Arquivo de certificado PEM confiável apenas para a conexão HTTPS com o TDM, como um certificado autoassinado ou de uma CA privada. A verificação de certificados continua ativa.",
+        "ca_file_in_use": "Usando o arquivo de certificado personalizado para a conexão com o TDM.",
         "chrome_help": "Caminho do Google Chrome (normalmente detetado automaticamente)",
         "language_help": "Idioma da consola",
         "no_pause_help": "Sair sem esperar por Enter",
@@ -447,6 +449,7 @@
         "browser_conflict": "A escolha do navegador e o caminho devem indicar o mesmo navegador.",
         "errors": {
             "destination": "Endereço TDM inválido. Use a URL raiz http:// ou https:// com porta, sem caminho, senha, consulta ou fragmento.",
+            "ca_file": "Não foi possível usar o certificado de --ca-file. Escolha um arquivo PEM legível que contenha um certificado de CA (CA:TRUE), como seu certificado autoassinado ou de CA privada, e não uma chave privada.",
             "disabled": "O acesso do assistente está fechado. Seleciona Usar assistente de computador no ecrã de início de sessão do TDM e executa o assistente.",
             "expired": "A ligação do assistente expirou ou foi cancelada. Ativa novamente o acesso do assistente no TDM e reinicia-o.",
             "busy": "Já existe outro assistente ligado. Cancela-o no painel TDM antes de começar novamente.",
