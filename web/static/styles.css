@@ -2491,6 +2491,46 @@ header h1 {
     padding: 28px;
 }
 
+/* Temporary queue order: drag a game card by its ☰ cue; the note and Reset sit under the title. */
+.wanted-order-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.wanted-order-error {
+    margin: 0 14px 10px;
+    font-size: 12px;
+    color: var(--error-color);
+}
+
+.wanted-game-group[draggable="true"] .wanted-game-header {
+    cursor: grab;
+}
+
+.wanted-game-group.dragging {
+    opacity: 0.5;
+}
+
+.wanted-drag-handle {
+    order: 3;
+    margin-left: auto;
+    align-self: center;
+    padding: 0 12px;
+}
+
+@media (pointer: coarse) {
+    /* A held card must not trigger text selection or the long-press menu. */
+    .wanted-game-group {
+        -webkit-touch-callout: none;
+        user-select: none;
+    }
+}
+
 .channels-list {
     height: auto;
     max-height: 340px;

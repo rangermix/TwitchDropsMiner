@@ -36,7 +36,7 @@
 - [ ] The diff is focused and free of secrets, local data, and unrelated changes.
 - [ ] Applicable unit, frontend, and regression checks pass, or docs-only checks are recorded.
 - [ ] Required CI passes on the final revision; skipped/unavailable checks are disclosed.
-- [ ] README, agent instructions, and translations are updated as required.
+- [ ] Relevant documentation, agent instructions, and translations are updated as required.
 - [ ] Visual dashboard changes include current screenshots with personal information hidden.
 - [ ] Any release/cache-key requirement is documented below.
 - [ ] Independent adversarial review is complete and blocking findings are resolved.

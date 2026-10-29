@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Hibás 2FA kód.",
         "email_code_required": "Email kód szükséges. Ellenőrizze az emailt.",
         "twofa_code_required": "2FA token szükséges.",
+        "headless_renewal": "Az xvfb-run nem található, ezért a munkamenet-megújító böngésző headless módban fut. A Twitch elutasíthatja az általa kiadott munkameneteket (CATALOG, integrity). Telepítsd az xvfb és az xauth csomagot, vagy használd a Docker-képet.",
         "status": {
             "logged_in": "Bejelentkezve",
             "logged_out": "Kijelentkezve",
@@ -305,7 +306,11 @@
         },
         "wanted": {
             "name": "Kívánt jutalmak sorban",
-            "none": "Nincsenek kívánt jutalmak sorban..."
+            "none": "Nincsenek kívánt jutalmak sorban...",
+            "drag_hint": "Húzd a játékokat a sorrend módosításához az újraindításig (érintőképernyőn előbb tartsd lenyomva). A Beállítások bányászati listája marad az alapértelmezett.",
+            "temporary": "Ideiglenes sorrend az újraindításig.",
+            "reset": "Visszaállítás a bányászati lista sorrendjére",
+            "save_error": "Nem sikerült módosítani a sor sorrendjét. Próbáld újra."
         },
         "inventory": {
             "no_campaigns": "Még nincs betöltött kampány...",
@@ -425,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "HTTPS-tanúsítványok ellenőrzésének kikapcsolása a TDM-hez (nem biztonságos; alapértelmezés szerint kikapcsolva)",
+        "insecure_warning": "FIGYELMEZTETÉS: A TDM-kapcsolat HTTPS-tanúsítványának ellenőrzése ki van kapcsolva. Egy támadó ellophatja a Twitch-munkamenetedet. Csak megbízható hálózaton használd.",
         "title": "Twitch csatlakoztatása a TDM-hez",
         "destination_prompt": "A TDM-példány URL-je: ",
         "destination": "Cél: {url}",

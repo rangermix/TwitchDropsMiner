@@ -12,7 +12,7 @@ from tests.test_telegram_frontend import run_javascript
 
 
 REWARD_FUNCTIONS = ['makeElement', 'displayedRewardOrder', 'renderRewardPriority', 'saveRewardPriority',
-                    'handleDragStart', 'handleDragOver', 'handleDrop']
+                    'handleDragStart', 'handleDragOver', 'dragOverRows', 'pointerPastMiddle', 'handleDrop']
 
 # A small DOM with ids, classes, focus and parents, enough for the reward types list.
 REWARD_DOM = r"""

@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "手机2FA令牌双重验证码错误.",
         "email_code_required": "需要电子邮件验证码,查看你的邮箱.",
         "twofa_code_required": "需要手机2FA令牌双重验证.",
+        "headless_renewal": "未找到 xvfb-run，因此会话续期浏览器以无头模式运行。Twitch 可能会拒绝它签发的会话 (CATALOG, integrity)。请安装 xvfb 和 xauth，或使用 Docker 镜像。",
         "status": {
             "logged_in": "已登录",
             "logged_out": "未登录",
@@ -348,7 +349,11 @@
         },
         "wanted": {
             "name": "期望掉落队列",
-            "none": "队列中没有期望的掉落..."
+            "none": "队列中没有期望的掉落...",
+            "drag_hint": "拖动游戏可在重启前更改顺序（触摸屏上请先长按）。设置中的挖掘列表仍为默认顺序。",
+            "temporary": "临时顺序，重启后恢复。",
+            "reset": "恢复挖掘列表顺序",
+            "save_error": "无法更改队列顺序。请重试。"
         },
         "history": {
             "title": "掉宝历史",
@@ -425,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "禁用 TDM 的 HTTPS 证书验证（不安全；默认关闭）",
+        "insecure_warning": "警告：连接 TDM 时已禁用 HTTPS 证书验证。攻击者可能窃取你的 Twitch 会话。仅在可信网络中使用。",
         "title": "连接 Twitch 与 TDM",
         "destination_prompt": "TDM 实例地址：",
         "destination": "目标：{url}",

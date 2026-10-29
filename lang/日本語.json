@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "2段階認証コードが間違っています。",
         "email_code_required": "メールコードが必要です。メールを確認してください。",
         "twofa_code_required": "2段階認証トークンが必要です。",
+        "headless_renewal": "xvfb-run が見つからないため、セッション更新用ブラウザーはヘッドレスで動作しています。Twitch はこのブラウザーが発行したセッションを拒否する場合があります (CATALOG, integrity)。xvfb と xauth をインストールするか、Docker イメージを使用してください。",
         "status": {
             "logged_in": "ログイン済み",
             "logged_out": "ログアウト済み",
@@ -348,7 +349,11 @@
         },
         "wanted": {
             "name": "欲しいDropsキュー",
-            "none": "キューに欲しいDropsはありません..."
+            "none": "キューに欲しいDropsはありません...",
+            "drag_hint": "ゲームをドラッグすると、再起動まで順序を変更できます（タッチ画面では先に長押し）。設定のマイニングリストが既定の順序のままです。",
+            "temporary": "再起動までの一時的な順序です。",
+            "reset": "マイニングリストの順序に戻す",
+            "save_error": "キューの順序を変更できませんでした。もう一度お試しください。"
         },
         "history": {
             "title": "ドロップ履歴",
@@ -425,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "TDM の HTTPS 証明書検証を無効にする（危険；既定ではオフ）",
+        "insecure_warning": "警告: TDM への接続で HTTPS 証明書の検証が無効になっています。攻撃者に Twitch セッションを盗まれるおそれがあります。信頼できるネットワークでのみ使用してください。",
         "title": "Twitch を TDM に接続",
         "destination_prompt": "TDM インスタンスの URL: ",
         "destination": "接続先: {url}",

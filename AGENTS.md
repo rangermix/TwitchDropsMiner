@@ -35,7 +35,8 @@ It is the repository's contribution policy, not optional background reading.
   from mock or sample data; never use screenshots of a real account without masking.
   "Before" images come from the base branch without any PR change. If you cannot attach
   images, host already-redacted images on a separate screenshots-only branch of your
-  fork (never the topic branch; pushed images cannot be reliably removed), or state that
+  fork such as `pr-screenshots` (example in CONTRIBUTING.md; never the topic branch;
+  pushed images cannot be reliably removed), or state that
   screenshots are pending, keep the PR in draft and ask the user to attach them.
 
 ## Development Guidelines
@@ -71,7 +72,11 @@ It is the repository's contribution policy, not optional background reading.
    - Frontend translation rendering must use safe DOM construction. Do not inject translated strings with non-clearing `innerHTML`; allowlist any intentional links and build them as DOM nodes.
 
 5. **Documentation**:
-   - Always update `README.md` and `AGENTS.md` when making changes.
+   - Update documentation where the change belongs. Update `README.md` only when its
+     user-facing overview, setup, login, migration, or links need to change. Put detailed
+     behavior, implementation explanations, and troubleshooting in the relevant `docs/`
+     guide. Update `AGENTS.md` when agent instructions or architectural constraints
+     change; code changes do not require edits to either file automatically.
    - Keep `README.md` short and focused on ordinary users: setup, login, migration,
      and links. Detailed public instructions belong in `docs/`, the source for the
      GitHub wiki. Developer contribution policy belongs in `CONTRIBUTING.md`.
@@ -312,6 +317,31 @@ lang/                # Translation JSON files (20 languages)
   unique partial matches resolve to available game names; ambiguous matches do not
   add a game. Confirmations support keyboard focus and Escape. Select All preserves
   priority order and manual entries, and manual confirmation uses current settings.
+- The Main page Wanted Drops Queue offers a temporary, runtime-only order:
+  `TemporaryGameOrder` (`src/services/game_order.py`) owned by `Twitch.game_order`,
+  set through `POST /api/wanted-order` (`{"games": [...]}`, empty list resets; bounded
+  and normalized, validation errors never echo input) and broadcast as
+  `game_order_update`/`initial_state.game_order`. It only reorders already queued
+  games, never adds or removes one, and is applied as the final stable queue sort and
+  as the first element of `get_mining_priority()` and active-campaign selection while
+  active (inactive keys are unchanged). Rank a channel only by wanted campaigns it
+  can currently earn, retaining the special-category or drops-enabled guard. Never
+  grant its streamed category's temporary rank without an eligible campaign.
+  Restart, Reset, or a successfully saved
+  Mining list change clears it; the saved Mining list remains the permanent default.
+  Queue cards are drag-and-drop only (press and hold first on touch screens; there is
+  no keyboard path by design), keep their top-left `#n` badge and show the Mining
+  list's ☰ drag cue; links inside a card cannot start a drag. Shared drag handlers ignore drags that did not start on a row
+  of the same list, move a row only once the pointer passes the target's middle (rows
+  of different heights must not flip back and forth) and clear `draggedElement` on
+  drag end. Touch drags auto-scroll near the screen edge. Games joining the queue
+  later rank after the ordered ones. A failed save re-requests the queue. Defer row
+  rebuilds from touchstart through the pending hold and active drag; early release,
+  scrolling and cancellation apply the newest deferred tree. Cancelled hold timers
+  must not activate a later gesture or a detached row. Render optimistically and
+  restore the previous order with translated
+  `gui.wanted.save_error` on failure. Coverage: `tests/test_wanted_queue_order.py`
+  and `tests/test_wanted_queue_frontend.py`.
 - Mining list supports drag ordering and editable integer priority numbers. Clamp valid
   ranks to the list bounds; reject blank/fractional values without changing settings.
   Keep priority and remove-control labels translated and accessible. Regression tests in
@@ -483,6 +513,12 @@ progress to an ignored drop while the miner intentionally targets another reward
   session ends when Chromium reports it detached, and all pipe sessions share command
   ids. Keep Xauthority inside the owned temporary profile
   so forced shutdown removes it too. Hosts without the runner retain the headless fallback.
+  On Linux that fallback sets `OwnedChromium.headless_fallback` and logs the translated
+  `login.headless_renewal` warning (install `xvfb`/`xauth` or use Docker) on every start.
+  `SessionController._phase()` relabels a `CATALOG`/`integrity` failure at
+  `issued_validation` or `renewal_validation` as reason `headless_fallback` when the
+  issuer reports it; `captured_validation`, macOS and Windows keep their labels.
+  `tests/test_session_controller.py` and `tests/test_server_renewal.py` cover this.
   A valid integrity response alone does not prove account/catalog acceptance.
 
 - Helper admission preserves allowlisted validation codes without printing remote text.
@@ -599,6 +635,13 @@ progress to an ignored drop while the miner intentionally targets another reward
   Keep tickets out of URLs, CLI arguments, logs, status, broadcasts and storage.
   Document that the first reachable helper is admitted during the trusted-network window.
   `tests/test_helper_admission.py` and `tests/test_desktop_helper_api.py` cover these boundaries.
+- The desktop helper verifies HTTPS using the helper computer's trust store by default.
+  `--insecure` is an explicit, per-run opt-out only for `HelperHTTP` requests to the
+  selected TDM instance. Show the translated `helper.insecure_warning` before connecting
+  whenever enabled, including failed attempts. Never persist the opt-out, retry TLS
+  failures with verification disabled, alter global SSL defaults, or change browser,
+  Twitch validation, miner, admission, redirect or receipt-reconciliation checks.
+  Keep `helper.insecure_help` and `helper.insecure_warning` in every locale.
 - Keep the released helper instructions and download links aligned with the four build
   targets: Windows x64, Linux x64, macOS arm64, and macOS x64. Users choose the helper
   computer's platform and match the miner release. The login screen's **Use desktop

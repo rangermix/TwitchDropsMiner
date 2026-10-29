@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "El código 2FA es incorrecto.",
         "email_code_required": "Código de verificación de email requerido. \nPor favor, revise su email.",
         "twofa_code_required": "Token 2FA requerido.",
+        "headless_renewal": "No se encontró xvfb-run, así que el navegador de renovación de sesión se ejecuta en modo headless. Twitch puede rechazar las sesiones que emite (CATALOG, integrity). Instala xvfb y xauth, o usa la imagen de Docker.",
         "status": {
             "logged_in": "Conectado",
             "logged_out": "Desconectado",
@@ -348,7 +349,11 @@
         },
         "wanted": {
             "name": "Cola de Drops Deseados",
-            "none": "No hay drops deseados en cola..."
+            "none": "No hay drops deseados en cola...",
+            "drag_hint": "Arrastra los juegos para cambiar el orden hasta reiniciar (en pantallas táctiles, mantén pulsado primero). La lista de minado en Configuración sigue siendo la predeterminada.",
+            "temporary": "Orden temporal hasta reiniciar.",
+            "reset": "Restablecer al orden de la lista de minado",
+            "save_error": "No se pudo cambiar el orden de la cola. Inténtalo de nuevo."
         },
         "history": {
             "title": "Historial de drops",
@@ -425,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Desactivar la verificación de certificados HTTPS para TDM (inseguro; desactivado por defecto)",
+        "insecure_warning": "ADVERTENCIA: La verificación de certificados HTTPS está desactivada para la conexión con TDM. Un atacante podría robar tu sesión de Twitch. Úsalo solo en una red de confianza.",
         "title": "Conectar Twitch a TDM",
         "destination_prompt": "URL de la instancia de TDM: ",
         "destination": "Destino: {url}",

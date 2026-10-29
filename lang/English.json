@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Incorrect 2FA code.",
         "email_code_required": "Email code required. Check your email.",
         "twofa_code_required": "2FA token required.",
+        "headless_renewal": "xvfb-run was not found, so the session renewal browser runs headless. Twitch may reject the sessions it issues (CATALOG, integrity). Install xvfb and xauth, or use the Docker image.",
         "status": {
             "logged_in": "Logged in",
             "logged_out": "Logged out",
@@ -305,7 +306,11 @@
         },
         "wanted": {
             "name": "Wanted Drops Queue",
-            "none": "No wanted drops queued..."
+            "none": "No wanted drops queued...",
+            "drag_hint": "Drag games to change the order until restart (press and hold first on touch screens). The Mining list in Settings stays the default.",
+            "temporary": "Temporary order until restart.",
+            "reset": "Reset to Mining list order",
+            "save_error": "Could not change the queue order. Please try again."
         },
         "inventory": {
             "no_campaigns": "No campaigns loaded yet...",
@@ -425,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Disable HTTPS certificate verification for TDM (unsafe; off by default)",
+        "insecure_warning": "WARNING: HTTPS certificate verification is disabled for the connection to TDM. An attacker could steal your Twitch session. Use only on a trusted network.",
         "title": "Connect Twitch to TDM",
         "destination_prompt": "TDM instance URL: ",
         "destination": "Destination: {url}",

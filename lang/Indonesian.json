@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Kode verifikasi 2FA salah.",
         "email_code_required": "Diperlukan kode verifikasi email. Silakan periksa email Anda.",
         "twofa_code_required": "Diperlukan kode 2FA.",
+        "headless_renewal": "xvfb-run tidak ditemukan, jadi browser pembaruan sesi berjalan headless. Twitch dapat menolak sesi yang diterbitkannya (CATALOG, integrity). Pasang xvfb dan xauth, atau gunakan image Docker.",
         "status": {
             "logged_in": "Online",
             "logged_out": "Terputus",
@@ -348,7 +349,11 @@
         },
         "wanted": {
             "name": "Antrean Drops yang Diinginkan",
-            "none": "Tidak ada drops yang diinginkan dalam antrean..."
+            "none": "Tidak ada drops yang diinginkan dalam antrean...",
+            "drag_hint": "Seret game untuk mengubah urutan hingga dimulai ulang (di layar sentuh, tekan dan tahan terlebih dahulu). Daftar mining di Parameter tetap menjadi default.",
+            "temporary": "Urutan sementara hingga dimulai ulang.",
+            "reset": "Kembalikan ke urutan daftar mining",
+            "save_error": "Tidak dapat mengubah urutan antrean. Silakan coba lagi."
         },
         "history": {
             "title": "Riwayat Drop",
@@ -425,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Nonaktifkan verifikasi sertifikat HTTPS untuk TDM (tidak aman; nonaktif secara bawaan)",
+        "insecure_warning": "PERINGATAN: Verifikasi sertifikat HTTPS dinonaktifkan untuk koneksi ke TDM. Penyerang dapat mencuri sesi Twitch Anda. Gunakan hanya di jaringan tepercaya.",
         "title": "Hubungkan Twitch ke TDM",
         "destination_prompt": "URL instans TDM: ",
         "destination": "Tujuan: {url}",
