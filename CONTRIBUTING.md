@@ -320,6 +320,32 @@ original from GitHub. Attach images to the PR rather than committing them to the
 branch, unless the PR intentionally updates a published documentation image such as
 `screenshot.png`. Update screenshots when later revisions change the visible result.
 
+If you cannot attach images directly (for example from the command line), push them to
+a separate screenshots-only branch of your **public** fork instead, never to the topic
+branch, and link them from the PR description. For example, use a `pr-screenshots`
+branch with one folder per PR. A separate worktree leaves your topic branch and any
+uncommitted work untouched:
+
+```bash
+git fetch origin
+git worktree add ../pr-screenshots pr-screenshots \
+  || git worktree add --orphan -b pr-screenshots ../pr-screenshots  # first time (Git 2.42+)
+cd ../pr-screenshots \
+  && mkdir -p pr123 && cp /path/to/before-main.png /path/to/after-main.png pr123/ \
+  && git add pr123 && git commit -m "Add PR123 screenshots" \
+  && git push -u origin pr-screenshots \
+  && cd - && git worktree remove ../pr-screenshots
+```
+
+Then link each image with your GitHub user name and your fork's repository name:
+
+```markdown
+![Before](https://raw.githubusercontent.com/YOUR-USER/YOUR-FORK/pr-screenshots/pr123/before-main.png)
+```
+
+The same redaction rules apply, and pushed images cannot be reliably removed. Keep the
+branch after merging so the PR's images keep loading.
+
 Before requesting merge, confirm:
 
 - [ ] The branch incorporates the latest canonical `main`; conflicts are resolved.

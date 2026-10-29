@@ -35,7 +35,8 @@ It is the repository's contribution policy, not optional background reading.
   from mock or sample data; never use screenshots of a real account without masking.
   "Before" images come from the base branch without any PR change. If you cannot attach
   images, host already-redacted images on a separate screenshots-only branch of your
-  fork (never the topic branch; pushed images cannot be reliably removed), or state that
+  fork such as `pr-screenshots` (example in CONTRIBUTING.md; never the topic branch;
+  pushed images cannot be reliably removed), or state that
   screenshots are pending, keep the PR in draft and ask the user to attach them.
 
 ## Development Guidelines
