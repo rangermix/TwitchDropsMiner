@@ -21,6 +21,9 @@ services operated for other users are outside its support scope.
 - Choose and prioritize games, or let TDM discover available campaigns.
 - [Mine other eligible games as fallback](docs/usage.md#choose-games-and-priorities)
   while preserving your saved priority list.
+- [Reorder the wanted queue on Main](docs/usage.md#change-the-queue-order-temporarily)
+  until restart, without changing your saved Mining list. Channel selection follows
+  this order among campaigns the channel can earn.
 - Track campaigns and rewards, and ignore drops you do not want.
 - Skip channels while Twitch reports an active ban, including temporary bans.
 - Sign in inside the dashboard; TDM saves and renews your session automatically.

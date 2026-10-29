@@ -349,7 +349,11 @@
         },
         "wanted": {
             "name": "Coda Drops Desiderati",
-            "none": "Nessun drop desiderato in coda..."
+            "none": "Nessun drop desiderato in coda...",
+            "drag_hint": "Trascina i giochi per cambiare l’ordine fino al riavvio (sui touchscreen tieni prima premuto). La lista di mining nelle Impostazioni resta quella predefinita.",
+            "temporary": "Ordine temporaneo fino al riavvio.",
+            "reset": "Ripristina l’ordine della lista di mining",
+            "save_error": "Impossibile cambiare l’ordine della coda. Riprova."
         },
         "history": {
             "title": "Cronologia dei drop",

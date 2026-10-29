@@ -349,7 +349,11 @@
         },
         "wanted": {
             "name": "Coadă Drops Dorite",
-            "none": "Niciun drop dorit în coadă..."
+            "none": "Niciun drop dorit în coadă...",
+            "drag_hint": "Trage jocurile pentru a schimba ordinea până la repornire (pe ecranele tactile, ține apăsat mai întâi). Lista de minare din Setări rămâne cea implicită.",
+            "temporary": "Ordine temporară până la repornire.",
+            "reset": "Revino la ordinea listei de minare",
+            "save_error": "Ordinea cozii nu a putut fi schimbată. Încearcă din nou."
         },
         "history": {
             "title": "Istoricul dropurilor",

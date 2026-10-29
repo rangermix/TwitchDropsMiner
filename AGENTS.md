@@ -317,6 +317,31 @@ lang/                # Translation JSON files (20 languages)
   unique partial matches resolve to available game names; ambiguous matches do not
   add a game. Confirmations support keyboard focus and Escape. Select All preserves
   priority order and manual entries, and manual confirmation uses current settings.
+- The Main page Wanted Drops Queue offers a temporary, runtime-only order:
+  `TemporaryGameOrder` (`src/services/game_order.py`) owned by `Twitch.game_order`,
+  set through `POST /api/wanted-order` (`{"games": [...]}`, empty list resets; bounded
+  and normalized, validation errors never echo input) and broadcast as
+  `game_order_update`/`initial_state.game_order`. It only reorders already queued
+  games, never adds or removes one, and is applied as the final stable queue sort and
+  as the first element of `get_mining_priority()` and active-campaign selection while
+  active (inactive keys are unchanged). Rank a channel only by wanted campaigns it
+  can currently earn, retaining the special-category or drops-enabled guard. Never
+  grant its streamed category's temporary rank without an eligible campaign.
+  Restart, Reset, or a successfully saved
+  Mining list change clears it; the saved Mining list remains the permanent default.
+  Queue cards are drag-and-drop only (press and hold first on touch screens; there is
+  no keyboard path by design), keep their top-left `#n` badge and show the Mining
+  list's ☰ drag cue; links inside a card cannot start a drag. Shared drag handlers ignore drags that did not start on a row
+  of the same list, move a row only once the pointer passes the target's middle (rows
+  of different heights must not flip back and forth) and clear `draggedElement` on
+  drag end. Touch drags auto-scroll near the screen edge. Games joining the queue
+  later rank after the ordered ones. A failed save re-requests the queue. Defer row
+  rebuilds from touchstart through the pending hold and active drag; early release,
+  scrolling and cancellation apply the newest deferred tree. Cancelled hold timers
+  must not activate a later gesture or a detached row. Render optimistically and
+  restore the previous order with translated
+  `gui.wanted.save_error` on failure. Coverage: `tests/test_wanted_queue_order.py`
+  and `tests/test_wanted_queue_frontend.py`.
 - Mining list supports drag ordering and editable integer priority numbers. Clamp valid
   ranks to the list bounds; reject blank/fractional values without changing settings.
   Keep priority and remove-control labels translated and accessible. Regression tests in

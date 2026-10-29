@@ -349,7 +349,11 @@
         },
         "wanted": {
             "name": "Wunsch-Drops Warteschlange",
-            "none": "Keine Wunsch-Drops in der Warteschlange..."
+            "none": "Keine Wunsch-Drops in der Warteschlange...",
+            "drag_hint": "Ziehe Spiele, um die Reihenfolge bis zum Neustart zu ändern (auf Touchscreens zuerst gedrückt halten). Die Mining-Liste in den Einstellungen bleibt der Standard.",
+            "temporary": "Vorübergehende Reihenfolge bis zum Neustart.",
+            "reset": "Auf Reihenfolge der Mining-Liste zurücksetzen",
+            "save_error": "Die Reihenfolge der Warteschlange konnte nicht geändert werden. Bitte versuche es erneut."
         },
         "history": {
             "title": "Drop-Verlauf",

@@ -349,7 +349,11 @@
         },
         "wanted": {
             "name": "İstenen Drop Kuyruğu",
-            "none": "Kuyrukta istenen drop yok..."
+            "none": "Kuyrukta istenen drop yok...",
+            "drag_hint": "Sırayı yeniden başlatmaya kadar değiştirmek için oyunları sürükleyin (dokunmatik ekranlarda önce basılı tutun). Ayarlar’daki madencilik listesi varsayılan olarak kalır.",
+            "temporary": "Yeniden başlatmaya kadar geçici sıra.",
+            "reset": "Madencilik listesi sırasına sıfırla",
+            "save_error": "Kuyruk sırası değiştirilemedi. Lütfen tekrar deneyin."
         },
         "history": {
             "title": "Drop Geçmişi",

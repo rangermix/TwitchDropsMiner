@@ -349,7 +349,11 @@
         },
         "wanted": {
             "name": "Antrean Drops yang Diinginkan",
-            "none": "Tidak ada drops yang diinginkan dalam antrean..."
+            "none": "Tidak ada drops yang diinginkan dalam antrean...",
+            "drag_hint": "Seret game untuk mengubah urutan hingga dimulai ulang (di layar sentuh, tekan dan tahan terlebih dahulu). Daftar mining di Parameter tetap menjadi default.",
+            "temporary": "Urutan sementara hingga dimulai ulang.",
+            "reset": "Kembalikan ke urutan daftar mining",
+            "save_error": "Tidak dapat mengubah urutan antrean. Silakan coba lagi."
         },
         "history": {
             "title": "Riwayat Drop",
