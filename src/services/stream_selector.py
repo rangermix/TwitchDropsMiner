@@ -33,7 +33,7 @@ class StreamSelector:
                     "name": drop.name,
                     "benefits": filtered_benefits,
                     "image_url": next(
-                        (b.image_url for b in drop.benefits if b.name in filtered_benefits and b.image_url), None
+                        (b.image_url for b in drop.benefits if b.is_wanted(mining_benefits) and b.image_url), None
                     ),
                     "current_minutes": drop.current_minutes,
                     "required_minutes": drop.required_minutes,

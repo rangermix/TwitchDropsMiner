@@ -301,7 +301,7 @@ for(const end of ['touchend','touchcancel','scroll']){
 
 
 def test_drop_rows_show_image_progress_and_no_duplicate_reward_names():
-    run_javascript(FUNCTIONS + ['dropPercent', 'makeDropProgressBar', 'updateWantedDropProgress'], DOM + r"""
+    run_javascript(FUNCTIONS + ['dropPercent', 'makeDropProgressBar', 'updateWantedDropProgress', 'wantedMinutesText'], DOM + r"""
 const queue=[{game_name:'Alpha',game_icon:null,campaigns:[{name:'C',url:'https://www.twitch.tv/drops/campaigns',drops:[
  {id:'d1',name:'Skin',benefits:['Skin'],image_url:'https://static-cdn.jtvnw.net/skin.png',current_minutes:610,required_minutes:720,progress:610/720},
  {id:'d2',name:'Bundle',benefits:['Bundle','<b>Extra</b>'],image_url:null,current_minutes:0,required_minutes:60,progress:0}]}]}];
@@ -315,14 +315,17 @@ assert.equal(rows[1].querySelectorAll('.wanted-drop-icon').length,0);
 const pills=rows[1].querySelectorAll('.wanted-benefit-pill');
 assert.deepEqual(pills.map(p=>p.textContent),['<b>Extra</b>']);assert.equal(pills[0].children.length,0);
 
-// Inventory progress events refresh the queue; held during a drag, applied after.
+// Inventory progress events update the shown rows in place: same nodes, so focus and drags survive.
+const firstRow=list().querySelectorAll('.wanted-drop-item')[0];
 updateWantedDropProgress([{id:'d1',current_minutes:700,progress:700/720}]);
+assert.equal(list().querySelectorAll('.wanted-drop-item')[0],firstRow,'rows are patched, not rebuilt');
 assert.equal(list().querySelectorAll('.wanted-drop-minutes')[0].textContent,'700 / 720 · 97%');
-wantedDragActive=true;const shown=list().children[0];
+assert.equal(firstRow.querySelectorAll('.inventory-drop-progress')[0].attrs['aria-valuenow'],'97');
+wantedDragActive=true;
 updateWantedDropProgress([{id:'d1',current_minutes:720,progress:1}]);
-assert.equal(list().children[0],shown,'no re-render under a drag');
-assert.equal(pendingWantedTree,lastWantedTree,'the drag end redraws the patched tree');
-wantedDragActive=false;flushPendingWantedItems();
-assert.equal(list().querySelectorAll('.wanted-drop-minutes')[0].textContent,'720 / 720 · 100%');
+assert.equal(list().querySelectorAll('.wanted-drop-item')[0],firstRow,'no rebuild under a drag');
+assert.equal(firstRow.querySelectorAll('.inventory-drop-progress')[0].children[0].style.width,'100%');
+wantedDragActive=false;renderWantedItems(lastWantedTree);
+assert.equal(list().querySelectorAll('.wanted-drop-minutes')[0].textContent,'720 / 720 · 100%','tree data kept current');
 assert.equal(list().querySelectorAll('.wanted-drop-icon')[0].draggable,false,'artwork never blocks a row drag');
 """)

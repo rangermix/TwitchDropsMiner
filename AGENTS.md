@@ -344,8 +344,9 @@ lang/                # Translation JSON files (20 languages)
   and `tests/test_wanted_queue_frontend.py`.
 - Wanted Drops Queue rows show the first wanted benefit image, the shared Inventory
   progress bar (`makeDropProgressBar()`) and minutes. Benefit pills equal to the drop
-  name are omitted. `drop_update` events patch the shown and deferred queue trees in
-  place and re-render only when no drag/touch hold is active.
+  name are omitted. `drop_update` events patch the shown and deferred queue trees and
+  the shown rows' bars and minutes in place, never rebuilding the queue, so keyboard
+  focus and drags are untouched.
   Regression: `test_wanted_queue_frontend.py` and `test_wanted_items.py`.
 - Mining list supports drag ordering and editable integer priority numbers. Clamp valid
   ranks to the list bounds; reject blank/fractional values without changing settings.

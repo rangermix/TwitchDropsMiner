@@ -3638,7 +3638,7 @@ function handleWantedTouchEnd(e) {
 
 function updateWantedDropProgress(drops) {
     const byId = new Map(drops.filter(Boolean).map(drop => [drop.id, drop]));
-    let changed = false;
+    const patched = new Map();
     // Patch both the shown and any deferred tree in place; never re-render under a drag.
     [lastWantedTree, pendingWantedTree || []].forEach(tree => tree.forEach(game => game.campaigns.forEach(campaign =>
         campaign.drops.forEach(drop => {
@@ -3646,13 +3646,23 @@ function updateWantedDropProgress(drops) {
             if (update && (update.current_minutes !== drop.current_minutes || update.progress !== drop.progress)) {
                 drop.current_minutes = update.current_minutes;
                 drop.progress = update.progress;
-                changed = true;
+                patched.set(drop.id, drop);
             }
         }))));
-    if (!changed) return;
-    // Under a drag, let the existing drag-end flush redraw the patched tree.
-    if (wantedDragActive || wantedTouch) pendingWantedTree = pendingWantedTree || lastWantedTree;
-    else renderWantedItems(lastWantedTree);
+    if (patched.size === 0) return;
+    // Patch the shown rows in place: no rebuild, so focus and drags are untouched.
+    document.getElementById('wanted-items-list')?.querySelectorAll('.wanted-drop-item').forEach(row => {
+        const drop = patched.get(row.dataset.dropId);
+        const bar = row.querySelectorAll('.inventory-drop-progress')[0];
+        if (!drop || !bar) return;
+        bar.setAttribute('aria-valuenow', dropPercent(drop));
+        bar.children[0].style.width = `${dropPercent(drop)}%`;
+        row.querySelectorAll('.wanted-drop-minutes')[0].textContent = wantedMinutesText(drop);
+    });
+}
+
+function wantedMinutesText(drop) {
+    return `${drop.current_minutes} / ${drop.required_minutes} · ${dropPercent(drop)}%`;
 }
 
 function renderWantedItems(tree) {
@@ -3731,10 +3741,11 @@ function renderWantedItems(tree) {
                         if (drop.required_minutes > 0) {
                             info.appendChild(makeDropProgressBar(drop));
                             info.appendChild(makeElement('span', { class: 'wanted-drop-minutes' },
-                                `${drop.current_minutes} / ${drop.required_minutes} · ${dropPercent(drop)}%`));
+                                wantedMinutesText(drop)));
                         }
                     }));
                 });
+                dropEl.dataset.dropId = drop.id;
                 dropContainer.appendChild(dropEl);
             });
 
