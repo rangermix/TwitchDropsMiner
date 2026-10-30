@@ -45,6 +45,10 @@ class TestWantedItems(unittest.TestCase):
         c1.can_earn_within.return_value = True
 
         d1 = MagicMock(spec=TimedDrop)
+        d1.id = "d1_id"
+        d1.current_minutes = 30
+        d1.required_minutes = 60
+        d1.progress = 0.5
         d1.name = "Drop1"
         d1.is_claimed = False
         d1.ends_at = datetime.max.replace(tzinfo=timezone.utc)
@@ -52,6 +56,7 @@ class TestWantedItems(unittest.TestCase):
             d1, TimedDrop
         )
         b1 = MagicMock(spec=Benefit)
+        b1.image_url = "https://img/b1.png"
         b1.name = "Badge1"
         b1.type = BenefitType.BADGE
         b1.is_wanted = Benefit.is_wanted.__get__(b1, Benefit)
@@ -67,6 +72,10 @@ class TestWantedItems(unittest.TestCase):
         c2.can_earn_within.return_value = True
 
         d2 = MagicMock(spec=TimedDrop)
+        d2.id = "d2_id"
+        d2.current_minutes = 30
+        d2.required_minutes = 60
+        d2.progress = 0.5
         d2.name = "Drop2"
         d2.is_claimed = False
         d2.ends_at = datetime.max.replace(tzinfo=timezone.utc)
@@ -74,6 +83,7 @@ class TestWantedItems(unittest.TestCase):
             d2, TimedDrop
         )
         b2 = MagicMock(spec=Benefit)
+        b2.image_url = "https://img/b2.png"
         b2.name = "Item1"
         b2.type = BenefitType.DIRECT_ENTITLEMENT
         b2.is_wanted = Benefit.is_wanted.__get__(b2, Benefit)
@@ -89,6 +99,10 @@ class TestWantedItems(unittest.TestCase):
         c3.can_earn_within.return_value = True
 
         d3 = MagicMock(spec=TimedDrop)
+        d3.id = "d3_id"
+        d3.current_minutes = 30
+        d3.required_minutes = 60
+        d3.progress = 0.5
         d3.name = "Drop3"
         d3.is_claimed = False
         d3.ends_at = datetime.max.replace(tzinfo=timezone.utc)
@@ -96,6 +110,7 @@ class TestWantedItems(unittest.TestCase):
             d3, TimedDrop
         )
         b3 = MagicMock(spec=Benefit)
+        b3.image_url = "https://img/b3.png"
         b3.name = "Badge2"
         b3.type = BenefitType.BADGE
         b3.is_wanted = Benefit.is_wanted.__get__(b3, Benefit)
@@ -111,6 +126,10 @@ class TestWantedItems(unittest.TestCase):
         c4.can_earn_within.return_value = False
 
         d4 = MagicMock(spec=TimedDrop)
+        d4.id = "d4_id"
+        d4.current_minutes = 30
+        d4.required_minutes = 60
+        d4.progress = 0.5
         d4.name = "Drop4"
         d4.is_claimed = False
         d4.ends_at = datetime.max.replace(tzinfo=timezone.utc)
@@ -118,6 +137,7 @@ class TestWantedItems(unittest.TestCase):
             d4, TimedDrop
         )
         b4 = MagicMock(spec=Benefit)
+        b4.image_url = "https://img/b4.png"
         b4.name = "Badge1"
         b4.type = BenefitType.BADGE
         b4.is_wanted = Benefit.is_wanted.__get__(b4, Benefit)
@@ -142,6 +162,12 @@ class TestWantedItems(unittest.TestCase):
         self.assertEqual(len(campaigns[0]["drops"]), 1)
         self.assertEqual(campaigns[0]["drops"][0]["name"], "Drop1")
         self.assertEqual(campaigns[0]["drops"][0]["benefits"], ["Badge1"])
+        # The queue shows the reward image and progress like Inventory.
+        self.assertEqual(campaigns[0]["drops"][0]["id"], "d1_id")
+        self.assertEqual(campaigns[0]["drops"][0]["image_url"], "https://img/b1.png")
+        self.assertEqual(campaigns[0]["drops"][0]["current_minutes"], 30)
+        self.assertEqual(campaigns[0]["drops"][0]["required_minutes"], 60)
+        self.assertEqual(campaigns[0]["drops"][0]["progress"], 0.5)
 
     def test_get_wanted_tree_claimed_filtering(self):
         # Setup Settings
@@ -158,10 +184,15 @@ class TestWantedItems(unittest.TestCase):
         c1.game = Game({"id": 1, "name": "Game1", "boxArtURL": "http://img1"})
 
         d1 = MagicMock(spec=TimedDrop)
+        d1.id = "d1_id"
+        d1.current_minutes = 30
+        d1.required_minutes = 60
+        d1.progress = 0.5
         d1.name = "Drop1"
         d1.is_claimed = True
         d1.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         b1 = MagicMock(spec=Benefit)
+        b1.image_url = "https://img/b1.png"
         b1.name = "Badge1"
         b1.type = BenefitType.BADGE
         d1.benefits = [b1]

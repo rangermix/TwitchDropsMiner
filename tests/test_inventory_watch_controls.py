@@ -71,7 +71,7 @@ const content=id=>document.getElementById('inventory-rewards-'+id);
 def run_inventory(body):
     source = APP_JS.read_text(encoding='utf-8')
     functions = '\n'.join(extract_javascript_function(source, name) for name in (
-        'makeElement', 'canAddInventoryGame', 'renderInventory', 'applyGameWatchEdit',
+        'makeElement', 'dropPercent', 'makeDropProgressBar', 'canAddInventoryGame', 'renderInventory', 'applyGameWatchEdit',
         'reconcileGameWatchSettings', 'queueSettingsWrite', 'parseDropNameBlacklist',
         'applyInventoryViewMode', 'setInventoryViewMode', 'inventoryColumnCount'))
     functions += '\nasync ' + extract_javascript_function(source, 'addInventoryGame')

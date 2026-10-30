@@ -298,3 +298,31 @@ for(const end of ['touchend','touchcancel','scroll']){
  assert.equal(calls.length,0);
 }
 """)
+
+
+def test_drop_rows_show_image_progress_and_no_duplicate_reward_names():
+    run_javascript(FUNCTIONS + ['dropPercent', 'makeDropProgressBar', 'updateWantedDropProgress'], DOM + r"""
+const queue=[{game_name:'Alpha',game_icon:null,campaigns:[{name:'C',url:'https://www.twitch.tv/drops/campaigns',drops:[
+ {id:'d1',name:'Skin',benefits:['Skin'],image_url:'https://static-cdn.jtvnw.net/skin.png',current_minutes:610,required_minutes:720,progress:610/720},
+ {id:'d2',name:'Bundle',benefits:['Bundle','<b>Extra</b>'],image_url:null,current_minutes:0,required_minutes:60,progress:0}]}]}];
+renderWantedItems(queue);
+const rows=list().querySelectorAll('.wanted-drop-item');
+assert.equal(rows[0].querySelectorAll('.wanted-drop-icon')[0].attrs.src,'https://static-cdn.jtvnw.net/skin.png');
+assert.equal(rows[0].querySelectorAll('.wanted-benefit-pill').length,0,'reward named like its drop is not repeated');
+assert.equal(rows[0].querySelectorAll('.inventory-drop-progress')[0].attrs['aria-valuenow'],'85');
+assert.equal(rows[0].querySelectorAll('.wanted-drop-minutes')[0].textContent,'610 / 720 · 85%');
+assert.equal(rows[1].querySelectorAll('.wanted-drop-icon').length,0);
+const pills=rows[1].querySelectorAll('.wanted-benefit-pill');
+assert.deepEqual(pills.map(p=>p.textContent),['<b>Extra</b>']);assert.equal(pills[0].children.length,0);
+
+// Inventory progress events refresh the queue; held during a drag, applied after.
+updateWantedDropProgress([{id:'d1',current_minutes:700,progress:700/720}]);
+assert.equal(list().querySelectorAll('.wanted-drop-minutes')[0].textContent,'700 / 720 · 97%');
+wantedDragActive=true;const shown=list().children[0];
+updateWantedDropProgress([{id:'d1',current_minutes:720,progress:1}]);
+assert.equal(list().children[0],shown,'no re-render under a drag');
+assert.equal(pendingWantedTree,lastWantedTree,'the drag end redraws the patched tree');
+wantedDragActive=false;flushPendingWantedItems();
+assert.equal(list().querySelectorAll('.wanted-drop-minutes')[0].textContent,'720 / 720 · 100%');
+assert.equal(list().querySelectorAll('.wanted-drop-icon')[0].draggable,false,'artwork never blocks a row drag');
+""")

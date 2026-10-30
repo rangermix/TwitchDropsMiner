@@ -1111,17 +1111,47 @@ header h1 {
     font-size: 11px;
     margin-bottom: 4px;
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
-    padding: 4px;
+    gap: 8px;
+    padding: 6px;
     background: var(--bg-secondary);
     border-radius: 4px;
+}
+
+.wanted-drop-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.wanted-drop-info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    flex: 1;
+    min-width: 0;
 }
 
 .wanted-drop-name {
     font-weight: 600;
     color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.wanted-drop-info .inventory-drop-progress {
+    flex-basis: 100%;
+    margin: 2px 0 0;
+}
+
+.wanted-drop-minutes {
+    color: var(--text-secondary);
+    font-size: 10px;
 }
 
 .wanted-benefit-pill {
