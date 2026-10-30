@@ -10,7 +10,7 @@ const state = {
     currentDrop: null,
     countdownTimer: null,  // Track the active countdown timer
     translations: {},  // Store current translations
-    previewEnabled: false,  // Explicit opt-in for this page only
+    playerLogin: null,  // Channel whose Twitch player the user started on this page
     paused: false,
     pauseRevision: 0,
     pauseServerRevision: null,
@@ -461,21 +461,37 @@ function updateNowWatching() {
     if (!card) return;
     const channel = Object.values(state.channels).find(ch => ch.watching);
     const t = state.translations.gui?.channels || {};
-    const img = document.getElementById('now-watching-img');
+    const login = channel?.login ? String(channel.login).toLowerCase() : null;
     const preview = document.getElementById('now-watching-preview');
-    const button = document.getElementById('now-watching-toggle');
-    if (!channel) state.previewEnabled = false;
-    const enabled = state.previewEnabled && Boolean(channel?.login);
-    preview.hidden = !enabled;
-    button.disabled = !channel?.login;
-    button.setAttribute('aria-pressed', String(Boolean(enabled)));
-    button.textContent = enabled ? (t.hide_preview || 'Hide thumbnail') : (t.show_preview || 'Show thumbnail');
-    button.title = t.preview_help || 'Loads Twitch thumbnails and uses extra bandwidth. Off on each page load.';
+    const img = document.getElementById('now-watching-img');
+    const play = document.getElementById('now-watching-play');
+    const close = document.getElementById('now-watching-close');
     document.getElementById('now-watching-title').textContent = t.now_watching || 'Now Watching';
     document.getElementById('now-watching-live').textContent = t.online || 'Online';
-    document.getElementById('now-watching-off').textContent = t.preview_off || 'Thumbnail is off';
-    document.getElementById('now-watching-off').hidden = enabled;
-    if (!enabled) {
+    const embed = canEmbedTwitchPlayer();
+    // The glyph is decorative; on hosts Twitch refuses, the button opens Twitch instead.
+    play.replaceChildren(makeElement('span', { 'aria-hidden': 'true' }, embed ? '▶ ' : '↗ '),
+        embed ? (t.play_stream || 'Play stream') : (t.watch_on_twitch || 'Watch on Twitch'));
+    close.textContent = t.close_player || 'Close player';
+    const closeFocused = document.activeElement === close;
+    // A channel switch closes the player; the user starts the next one explicitly.
+    if (state.playerLogin !== login) state.playerLogin = null;
+    const playing = state.playerLogin !== null;
+    let player = preview.querySelector('iframe');
+    if (!playing && player) player.remove();
+    if (playing && !player) {
+        // Twitch only plays embeds that name the embedding page's host as `parent`.
+        player = makeElement('iframe', {
+            src: `https://player.twitch.tv/?channel=${encodeURIComponent(login)}&parent=${encodeURIComponent(location.hostname)}&autoplay=true`,
+            title: `Twitch: ${channel.name}`, allow: 'autoplay; fullscreen', allowfullscreen: '', class: 'now-watching-player',
+        });
+        preview.appendChild(player);
+    }
+    img.hidden = playing;
+    play.hidden = playing || !login || (!embed && !twitchChannelUrl(channel));
+    close.hidden = !playing;
+    if (closeFocused && close.hidden && !play.hidden) play.focus();
+    if (!login) {
         img.style.backgroundImage = '';
         delete img.dataset.src;
     }
@@ -484,9 +500,8 @@ function updateNowWatching() {
         return;
     }
     card.classList.remove('hidden');
-    if (enabled) {
-        const login = String(channel.login).toLowerCase();
-        // Only opted-in pages load thumbnails; channel events refresh at most once per minute.
+    if (login && !playing) {
+        // Channel events refresh the thumbnail at most once per minute.
         const url = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${encodeURIComponent(login)}-440x248.jpg?t=${Math.floor(Date.now() / 60000)}`;
         if (img.dataset.src !== url) {
             img.dataset.src = url;
@@ -497,12 +512,33 @@ function updateNowWatching() {
     const viewers = channel.viewers !== null && channel.viewers !== undefined
         ? ` | ${Number(channel.viewers).toLocaleString()} ${viewersText}`
         : '';
-    document.getElementById('now-watching-info').textContent = channel.name + viewers;
+    const info = document.getElementById('now-watching-info');
+    const twitchUrl = twitchChannelUrl(channel);
+    const name = twitchUrl
+        ? makeElement('a', { href: twitchUrl, target: '_blank', rel: 'noopener noreferrer' }, channel.name)
+        : document.createTextNode(channel.name);
+    info.replaceChildren(name, viewers);
 }
 
-function toggleNowWatchingPreview() {
-    state.previewEnabled = !state.previewEnabled;
+function twitchChannelUrl(channel) {
+    return /^https:\/\/(www\.)?twitch\.tv\//.test(channel?.url || '') ? channel.url : null;
+}
+
+function canEmbedTwitchPlayer() {
+    // Twitch refuses embeds on plain-HTTP pages ("misconfigured"), except on loopback hosts.
+    return location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname);
+}
+
+function setNowWatchingPlayer(open) {
+    const channel = Object.values(state.channels).find(ch => ch.watching);
+    if (open && !canEmbedTwitchPlayer()) {
+        const url = twitchChannelUrl(channel);
+        if (url) window.open(url, '_blank', 'noopener,noreferrer');
+        return;
+    }
+    state.playerLogin = open && channel?.login ? String(channel.login).toLowerCase() : null;
     updateNowWatching();
+    document.getElementById(open ? 'now-watching-close' : 'now-watching-play').focus();
 }
 
 function renderChannels() {
@@ -3318,7 +3354,8 @@ function initializeSettingsTabs() {
 // ==================== Event Listeners ====================
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('now-watching-toggle').addEventListener('click', toggleNowWatchingPreview);
+    document.getElementById('now-watching-play').addEventListener('click', () => setNowWatchingPlayer(true));
+    document.getElementById('now-watching-close').addEventListener('click', () => setNowWatchingPlayer(false));
     // Fetch and display version information
     fetchAndDisplayVersion();
 

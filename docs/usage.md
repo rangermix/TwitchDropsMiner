@@ -81,6 +81,23 @@ simultaneously; this setting selects the preferred channel and campaign.
 - **Chat emote:** emotes for Twitch chat.
 - **Other reward:** a type reported by Twitch that this version does not recognize.
 
+## Now Watching
+
+The **Now Watching** card on Main shows the watched channel's thumbnail, refreshed at
+most once a minute by the device viewing the dashboard. Click the channel name to open
+it on Twitch.
+
+Click **Play stream** to watch the stream in Twitch's player on that device; **Close
+player** returns to the thumbnail, and the player closes when TDM switches channel.
+Mining is unaffected: the miner itself never downloads video, and the player is not
+needed for progress.
+
+Twitch only allows its player on HTTPS dashboards and on `localhost` or `127.0.0.1`.
+On a plain `http://` address such as `http://192.168.1.50:8080`, the button reads
+**Watch on Twitch** and opens the stream in a new tab instead. An HTTPS dashboard on an
+IP address or private hostname is not fully tested; if Twitch shows "misconfigured",
+use the channel name link.
+
 ## Channels and manual selection
 
 TDM chooses among live channels that can earn your selected rewards. Game priorities,

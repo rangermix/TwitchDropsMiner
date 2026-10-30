@@ -128,10 +128,9 @@
             "channel_count_plural": "channels",
             "viewers": "viewers",
             "now_watching": "Now Watching",
-            "show_preview": "Show thumbnail",
-            "hide_preview": "Hide thumbnail",
-            "preview_off": "Thumbnail is off",
-            "preview_help": "Loads Twitch thumbnails and uses extra bandwidth. Off on each page load."
+            "play_stream": "Play stream",
+            "watch_on_twitch": "Watch on Twitch",
+            "close_player": "Close player"
         },
         "settings": {
             "general": {
