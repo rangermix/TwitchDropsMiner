@@ -572,13 +572,16 @@ header h1 {
 }
 
 /* Inventory filter bar: search and actions on top, labelled groups of toggle chips below.
-   The game search input is the anchor: all four toolbar controls pin to its row and share its height. */
+   The game search input is the anchor: toolbar controls pin to its row and match its 40px
+   height, growing only when a wrapped translated label needs more room. */
 .inventory-filters .filter-controls { gap: 14px; }
 .inventory-filters .filter-search { align-items: flex-end; flex-wrap: wrap; }
 .inventory-filters .game-dropdown-container { flex: 1 1 260px; }
 .inventory-filters #inventory-game-search { height: 40px; }
 .filter-toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.filter-toolbar-actions .small-btn { height: 40px; padding-top: 0; padding-bottom: 0; }
+/* min-height keeps single-line controls aligned with the 40px search input while
+   letting buttons grow for wrapped translated labels at narrow viewports. */
+.filter-toolbar-actions .small-btn { min-height: 40px; }
 .reload-campaigns-btn { display: inline-flex; align-items: center; gap: 6px; }
 .reload-campaigns-btn .reload-icon { font-size: 15px; line-height: 1; }
 .reload-campaigns-btn:disabled { opacity: 0.6; cursor: wait; }
