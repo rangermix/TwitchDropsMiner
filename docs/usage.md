@@ -92,9 +92,11 @@ player** returns to the thumbnail, and the player closes when TDM switches chann
 Mining is unaffected: the miner itself never downloads video, and the player is not
 needed for progress.
 
-Twitch only allows its player on HTTPS dashboards and on `localhost`. On a plain
-`http://` address such as `http://192.168.1.50:8080`, the button reads **Watch on
-Twitch** and opens the stream in a new tab instead.
+Twitch only allows its player on HTTPS dashboards and on `localhost` or `127.0.0.1`.
+On a plain `http://` address such as `http://192.168.1.50:8080`, the button reads
+**Watch on Twitch** and opens the stream in a new tab instead. An HTTPS dashboard on an
+IP address or private hostname is not fully tested; if Twitch shows "misconfigured",
+use the channel name link.
 
 ## Channels and manual selection
 
