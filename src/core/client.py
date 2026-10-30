@@ -760,6 +760,11 @@ class Twitch:
                     # for every campaign without an ACL, for it's game,
                     # add a list of live channels with drops enabled
                     new_channels.update(await self.get_live_streams(game, drops_enabled=True))
+                # Optional: followed channels outside each game's top directory results.
+                # Existing objects win, so directory/ACL state is never replaced.
+                new_channels.update(await self._channel_service.get_followed_live_channels(
+                    {channel.id for channel in new_channels}
+                ))
                 # Filter account-specific bans before priority sorting and the tracking cap.
                 retained_channels = [channel for channel in (
                     self.watching_channel.get_with_default(None), self._manual_target_channel,

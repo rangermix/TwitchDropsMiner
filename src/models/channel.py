@@ -457,17 +457,23 @@ class Channel:
             return None
         stream = Stream.from_get_stream(self, channel_data)
         if not stream.drops_enabled:
-            try:
-                available_drops_campaigns: JsonType = await self._twitch.gql_request(
-                    GQL_OPERATIONS["AvailableDrops"].with_variables({"channelID": str(self.id)})
-                )
-            except MinerException:
-                logger.log(CALL, f"AvailableDrops GQL call failed for channel: {self._login}")
-            else:
-                stream.drops_enabled = self._check_drops_enabled(
-                    available_drops_campaigns["data"]["channel"]["viewerDropCampaigns"] or []
-                )
+            stream.drops_enabled = await self.fetch_drops_enabled()
         return stream
+
+    async def fetch_drops_enabled(self) -> bool:
+        """Ask Twitch whether this channel offers a campaign the account can earn."""
+        try:
+            available_drops_campaigns: JsonType = await self._twitch.gql_request(
+                GQL_OPERATIONS["AvailableDrops"].with_variables({"channelID": str(self.id)})
+            )
+        except ExitRequest:
+            raise
+        except MinerException:
+            logger.log(CALL, f"AvailableDrops GQL call failed for channel: {self.id}")
+            return False
+        return self._check_drops_enabled(
+            available_drops_campaigns["data"]["channel"]["viewerDropCampaigns"] or []
+        )
 
     async def update_stream(self) -> bool:
         """
