@@ -47,12 +47,8 @@ The dashboard header adapts to longer translations, grouping account controls an
 navigation on smaller screens. Hover over shortened account or renewal text to read it
 in full.
 
-From the next release, the **Now Watching** card always shows the channel's thumbnail.
-Click **Play stream** to watch it in Twitch's player on the device you are using; the
-miner itself never downloads video. The thumbnail is fetched from Twitch by the device
-viewing the dashboard, at most once a minute. Twitch refuses its player on plain
-`http://` addresses other than `localhost`, so on an address like
-`http://192.168.1.50:8080` the button reads **Watch on Twitch** and opens a new tab.
+The **Now Watching** card shows the watched channel's thumbnail and can play the
+stream in your browser; see [Now Watching](docs/usage.md#now-watching).
 
 Inventory has expandable campaigns, card/list view buttons and **Add to mining list** for linked games
 not yet selected. Campaign details appear once, with matching linked/unlinked card layouts.
