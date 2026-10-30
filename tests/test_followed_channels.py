@@ -30,6 +30,7 @@ def make_twitch(*, enabled=True, followed=(), streams=None, drops=None):
     twitch.inventory = []
     twitch.game_order = None
     twitch._manual_target_channel = None
+    twitch.watching_channel.get_with_default.return_value = None
     campaign = MagicMock()
     campaign.can_earn.return_value = True
     twitch._campaigns = {"camp": campaign}
@@ -102,6 +103,31 @@ def test_lookup_adds_only_confirmed_drops_channels_and_skips_known_ones():
     checked = [call.args[0]["variables"]["channelID"] for call in twitch.gql_request.await_args_list
                if isinstance(call.args[0], dict) and "channelID" in call.args[0].get("variables", {})]
     assert "5" not in checked, "already tracked channels are not checked again"
+
+
+def test_acl_channels_keep_precedence_over_followed_ones():
+    twitch = make_twitch()
+    service = ChannelService(twitch)
+    service._followed_ids = {1}
+    followed, acl, plain = channel(twitch, 1), channel(twitch, 2), channel(twitch, 3)
+    acl.acl_based = True
+    order = sorted([plain, followed, acl], key=service.get_mining_priority)
+    assert [ch.id for ch in order] == [2, 1, 3]
+
+
+def test_a_same_game_click_is_not_undone_by_the_tie_break():
+    twitch = make_twitch()
+    service = ChannelService(twitch)
+    service._followed_ids = {1}
+    followed, picked = channel(twitch, 1), channel(twitch, 2)
+    service.picked_channel_id = 2
+    twitch.watching_channel.get_with_default.return_value = picked
+    assert service.get_mining_priority(followed) == service.get_mining_priority(picked)
+    # Once the miner leaves the picked channel, following counts again.
+    twitch.watching_channel.get_with_default.return_value = channel(twitch, 3)
+    assert service.get_mining_priority(followed) < service.get_mining_priority(picked)
+    service.clear_bans()
+    assert service.picked_channel_id is None
 
 
 def test_manual_mode_is_never_overridden_by_the_tie_break():

@@ -865,6 +865,7 @@ class Twitch:
                     # Check if this is a game change -> enter manual mode
                     if watching_channel and selected_channel.game != watching_channel.game:
                         self.enter_manual_mode(selected_channel)
+                    self._channel_service.picked_channel_id = selected_channel.id
                     new_watching = selected_channel
                 # Handle manual mode
                 elif self.is_manual_mode():

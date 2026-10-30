@@ -382,9 +382,11 @@ lang/                # Translation JSON files (20 languages)
   that are live on a wanted game with drops confirmed are added: `Stream` defaults
   `drops_enabled` to true, so any later stream refresh would make a drops-disabled
   channel watchable. Existing directory/ACL objects are never replaced or rechecked.
-  `get_mining_priority()` appends the followed tie-break only after the game priority
-  key, so game order, temporary order, fallback tiers and reward ranking are unchanged,
-  and omits it in manual mode so a hand-picked channel is never replaced. Any failure
+  `get_mining_priority()` appends `(not acl_based, not followed)` only after the game
+  priority key, so game order, temporary order, fallback tiers, reward ranking and ACL
+  over directory precedence are unchanged. The tie-break is omitted in manual mode and
+  while the watched channel is `picked_channel_id` (a same-game dashboard click), so a
+  hand-picked channel is never replaced by it. Any failure
   keeps the previous follow set and adds nothing; `ExitRequest` propagates. The lookup
   logs only counts and channel IDs, never names or response text. Follow state is
   account-owned and cleared with bans on identity replacement and shutdown. The

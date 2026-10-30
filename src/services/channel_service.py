@@ -57,6 +57,8 @@ class ChannelService:
         self._ban_refresh: asyncio.TimerHandle | None = None
         # IDs of live channels the account follows, from the last discovery.
         self._followed_ids: set[int] = set()
+        # The channel the user last picked by hand; the follow tie-break never undoes it.
+        self.picked_channel_id: int | None = None
 
     @property
     def banned_channels(self) -> list[Channel]:
@@ -69,6 +71,7 @@ class ChannelService:
             self._ban_refresh = None
         self._banned_channels.clear()
         self._followed_ids.clear()
+        self.picked_channel_id = None
 
     def _schedule_ban_refresh(self) -> None:
         if self._ban_refresh is not None:
@@ -117,9 +120,9 @@ class ChannelService:
         channels of equal game priority; game order itself never changes.
         """
         key: tuple[float, ...] = self._default_mining_priority(channel)
-        if self._prefer_followed() and getattr(self._twitch, "_manual_target_channel", None) is None:
-            # A hand-picked channel (manual mode) is never replaced by the tie-break.
-            key = (*key, 0 if channel.id in self._followed_ids else 1)
+        if self._follow_tie_break():
+            # ACL channels keep their precedence; following only breaks the remaining tie.
+            key = (*key, 0 if channel.acl_based else 1, 0 if channel.id in self._followed_ids else 1)
         order = getattr(self._twitch, "game_order", None)
         if not isinstance(order, TemporaryGameOrder) or not order.active:
             return key
@@ -127,6 +130,14 @@ class ChannelService:
 
     def _prefer_followed(self) -> bool:
         return getattr(getattr(self._twitch, "settings", None), "prefer_followed_channels", False) is True
+
+    def _follow_tie_break(self) -> bool:
+        """Off while a hand-picked channel (manual mode or a same-game click) is watched."""
+        if not self._prefer_followed() or getattr(self._twitch, "_manual_target_channel", None) is not None:
+            return False
+        watching = getattr(self._twitch, "watching_channel", None)
+        watched = watching.get_with_default(None) if watching is not None else None
+        return watched is None or watched.id != self.picked_channel_id
 
     async def get_followed_live_channels(self, known_ids: abc.Set[int] = frozenset()) -> set[Channel]:
         """Live followed channels with drops enabled on a wanted game, for discovery.

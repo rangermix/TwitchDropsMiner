@@ -99,8 +99,9 @@ looks up live channels your Twitch account follows, even small ones outside each
 top directory results, and checks with Twitch that their drops are enabled. Among
 eligible channels for the same game, a followed channel is watched first; if none is
 live, TDM uses the normal choice. Your Mining list order still decides which game is
-mined, so a followed channel on a lower game does not take over, and a channel you
-picked by hand (Manual Mode) is not replaced. Followed channels have no ranking of
+mined, so a followed channel on a lower game does not take over. Channels a campaign
+names explicitly still come before followed ones, and a channel you picked by hand
+is not replaced by a followed one. Followed channels have no ranking of
 their own; ties use the usual rules. TDM checks up to 100 live followed channels, as
 Twitch returns them, each time it reloads channels.
 
