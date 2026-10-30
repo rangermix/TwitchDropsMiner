@@ -128,10 +128,9 @@
             "channel_count_plural": "canale",
             "viewers": "spectatori",
             "now_watching": "Canal urmărit acum",
-            "show_preview": "Afișează miniatura",
-            "hide_preview": "Ascunde miniatura",
-            "preview_off": "Miniatura este oprită",
-            "preview_help": "Încarcă miniaturi Twitch și folosește trafic suplimentar. Oprită la fiecare încărcare a paginii."
+            "play_stream": "Redă streamul",
+            "watch_on_twitch": "Urmărește pe Twitch",
+            "close_player": "Închide playerul"
         },
         "inventory": {
             "status": {

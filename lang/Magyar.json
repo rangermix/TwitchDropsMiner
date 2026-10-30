@@ -128,10 +128,9 @@
             "channel_count_plural": "csatornák",
             "viewers": "néző",
             "now_watching": "Most nézett csatorna",
-            "show_preview": "Bélyegkép megjelenítése",
-            "hide_preview": "Bélyegkép elrejtése",
-            "preview_off": "A bélyegkép ki van kapcsolva",
-            "preview_help": "Twitch-bélyegképeket tölt be, és további sávszélességet használ. Minden oldalbetöltéskor kikapcsolva."
+            "play_stream": "Stream lejátszása",
+            "watch_on_twitch": "Megtekintés a Twitchen",
+            "close_player": "Lejátszó bezárása"
         },
         "settings": {
             "general": {

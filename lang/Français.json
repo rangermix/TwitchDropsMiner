@@ -128,10 +128,9 @@
             "channel_count_plural": "chaînes",
             "viewers": "spectateurs",
             "now_watching": "Chaîne regardée",
-            "show_preview": "Afficher la miniature",
-            "hide_preview": "Masquer la miniature",
-            "preview_off": "La miniature est désactivée",
-            "preview_help": "Charge des miniatures Twitch et utilise de la bande passante supplémentaire. Désactivée à chaque chargement de la page."
+            "play_stream": "Lire le stream",
+            "watch_on_twitch": "Regarder sur Twitch",
+            "close_player": "Fermer le lecteur"
         },
         "inventory": {
             "status": {

@@ -43,12 +43,16 @@ In v2.4.0, Settings groups controls into **General**, **Mining**, **Games**,
 **Notifications**, and **Account & Maintenance**. The **Pause** menu stops watching
 temporarily; it resets on restart and leaves earned reward claims available.
 
-The redesigned dashboard's **Now Watching** card offers **Show thumbnail**, off on
-each page load. When enabled, it shows a Twitch JPEG thumbnail, refreshed on channel
-updates at most once per minute. It does not play video or audio. The header adapts to
-longer translations, grouping account controls and navigation on smaller screens.
-Hover over shortened account or renewal text to read it in full. This dashboard change
-is included in the published releases.
+The dashboard header adapts to longer translations, grouping account controls and
+navigation on smaller screens. Hover over shortened account or renewal text to read it
+in full.
+
+From the next release, the **Now Watching** card always shows the channel's thumbnail.
+Click **Play stream** to watch it in Twitch's player on the device you are using; the
+miner itself never downloads video. The thumbnail is fetched from Twitch by the device
+viewing the dashboard, at most once a minute. Twitch refuses its player on plain
+`http://` addresses other than `localhost`, so on an address like
+`http://192.168.1.50:8080` the button reads **Watch on Twitch** and opens a new tab.
 
 Inventory has expandable campaigns, card/list view buttons and **Add to mining list** for linked games
 not yet selected. Campaign details appear once, with matching linked/unlinked card layouts.

@@ -166,7 +166,7 @@ class AuthMiddleware:
     # The noVNC viewer is a fixed same-origin page and keeps its upstream asset policy.
     CSP = (b"default-src 'self'; script-src 'self' https://cdn.socket.io; "
            b"style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; "
-           b"frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; "
+           b"frame-src 'self' https://player.twitch.tv; object-src 'none'; base-uri 'self'; form-action 'self'; "
            b"frame-ancestors 'none'")
     HELPER_NATIVE = frozenset({("POST", "/api/helper/connect"), ("POST", "/api/helper/session"),
                               ("GET", "/api/helper/result")})

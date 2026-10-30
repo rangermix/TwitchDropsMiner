@@ -128,10 +128,9 @@
             "channel_count_plural": "kanalen",
             "viewers": "kijkers",
             "now_watching": "Nu aan het kijken",
-            "show_preview": "Miniatuur tonen",
-            "hide_preview": "Miniatuur verbergen",
-            "preview_off": "Miniatuur staat uit",
-            "preview_help": "Laadt Twitch-miniaturen en gebruikt extra bandbreedte. Uit bij elke paginalading."
+            "play_stream": "Stream afspelen",
+            "watch_on_twitch": "Bekijken op Twitch",
+            "close_player": "Speler sluiten"
         },
         "inventory": {
             "status": {
