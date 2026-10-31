@@ -1,7 +1,6 @@
 """Issue #206: optionally prefer channels the account follows, within a game only."""
 
 import asyncio
-import logging
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
