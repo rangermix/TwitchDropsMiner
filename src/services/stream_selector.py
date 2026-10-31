@@ -28,7 +28,17 @@ class StreamSelector:
             filtered_benefits = drop.get_wanted_unclaimed_benefits(mining_benefits)
 
             if len(filtered_benefits) > 0:
-                wanted_drops.append({"name": drop.name, "benefits": filtered_benefits})
+                wanted_drops.append({
+                    "id": drop.id,
+                    "name": drop.name,
+                    "benefits": filtered_benefits,
+                    "image_url": next(
+                        (b.image_url for b in drop.benefits if b.is_wanted(mining_benefits) and b.image_url), None
+                    ),
+                    "current_minutes": drop.current_minutes,
+                    "required_minutes": drop.required_minutes,
+                    "progress": drop.progress,
+                })
         return wanted_drops
 
     def _append_unlisted_games(

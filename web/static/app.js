@@ -330,6 +330,7 @@ socket.on('inventory_batch_update', (data) => {
 
 socket.on('drop_update', (data) => {
     updateDrop(data.campaign_id, data.drop, data.campaign, data.drops);
+    updateWantedDropProgress(data.drops || [data.drop]);
 });
 
 socket.on('login_status', (data) => {
@@ -1269,14 +1270,8 @@ function renderInventory() {
                 });
             }
             dropItem.appendChild(benefitsList);
-            const percent = Number.isFinite(drop.progress) ? Math.max(0, Math.min(100, Math.round(drop.progress * 100))) : 0;
-            const progress = makeElement('div', { class: 'inventory-drop-progress', role: 'progressbar',
-                'aria-label': drop.name, 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': percent });
-            const fill = makeElement('span');
-            fill.style.width = `${percent}%`;
-            progress.appendChild(fill);
-            dropItem.appendChild(progress);
-            dropItem.appendChild(makeElement('div', {}, `${drop.current_minutes} / ${drop.required_minutes} minutes (${Math.round(drop.progress * 100)}%)`));
+            dropItem.appendChild(makeDropProgressBar(drop));
+            dropItem.appendChild(makeElement('div', {}, `${drop.current_minutes} / ${drop.required_minutes} minutes (${dropPercent(drop)}%)`));
             if (drop.is_claimed) {
                 dropItem.appendChild(makeElement('div', {}, `✓ ${claimedText}`));
             } else if (policyStatus) {
@@ -3641,6 +3636,35 @@ function handleWantedTouchEnd(e) {
     handleWantedDragEnd({ target: row });
 }
 
+function updateWantedDropProgress(drops) {
+    const byId = new Map(drops.filter(Boolean).map(drop => [drop.id, drop]));
+    const patched = new Map();
+    // Patch both the shown and any deferred tree in place; never re-render under a drag.
+    [lastWantedTree, pendingWantedTree || []].forEach(tree => tree.forEach(game => game.campaigns.forEach(campaign =>
+        campaign.drops.forEach(drop => {
+            const update = byId.get(drop.id);
+            if (update && (update.current_minutes !== drop.current_minutes || update.progress !== drop.progress)) {
+                drop.current_minutes = update.current_minutes;
+                drop.progress = update.progress;
+                patched.set(drop.id, drop);
+            }
+        }))));
+    if (patched.size === 0) return;
+    // Patch the shown rows in place: no rebuild, so focus and drags are untouched.
+    document.getElementById('wanted-items-list')?.querySelectorAll('.wanted-drop-item').forEach(row => {
+        const drop = patched.get(row.dataset.dropId);
+        const bar = row.querySelectorAll('.inventory-drop-progress')[0];
+        if (!drop || !bar) return;
+        bar.setAttribute('aria-valuenow', dropPercent(drop));
+        bar.children[0].style.width = `${dropPercent(drop)}%`;
+        row.querySelectorAll('.wanted-drop-minutes')[0].textContent = wantedMinutesText(drop);
+    });
+}
+
+function wantedMinutesText(drop) {
+    return `${drop.current_minutes} / ${drop.required_minutes} · ${dropPercent(drop)}%`;
+}
+
 function renderWantedItems(tree) {
     const container = document.getElementById('wanted-items-list');
     if (!container) return;
@@ -3703,11 +3727,25 @@ function renderWantedItems(tree) {
 
             campaign.drops.forEach(drop => {
                 const dropEl = makeElement('div', { class: 'wanted-drop-item' }, '', el => {
-                    el.appendChild(makeElement('span', { class: 'wanted-drop-name' }, drop.name));
-                    drop.benefits.forEach(benefit => {
-                        el.appendChild(makeElement('span', { class: 'wanted-benefit-pill' }, benefit));
-                    });
+                    if (drop.image_url) {
+                        const icon = makeImageElement(drop.image_url, '', 'wanted-drop-icon');
+                        icon.draggable = false;
+                        el.appendChild(icon);
+                    }
+                    el.appendChild(makeElement('div', { class: 'wanted-drop-info' }, '', info => {
+                        info.appendChild(makeElement('span', { class: 'wanted-drop-name', title: drop.name }, drop.name));
+                        // Only list rewards whose name adds something beyond the drop name.
+                        drop.benefits.filter(benefit => benefit !== drop.name).forEach(benefit => {
+                            info.appendChild(makeElement('span', { class: 'wanted-benefit-pill' }, benefit));
+                        });
+                        if (drop.required_minutes > 0) {
+                            info.appendChild(makeDropProgressBar(drop));
+                            info.appendChild(makeElement('span', { class: 'wanted-drop-minutes' },
+                                wantedMinutesText(drop)));
+                        }
+                    }));
                 });
+                dropEl.dataset.dropId = drop.id;
                 dropContainer.appendChild(dropEl);
             });
 
@@ -4105,6 +4143,20 @@ function makeElement(tag, attrs = {}, text = null, callback = null) {
         callback(el);
     }
     return el;
+}
+
+function dropPercent(drop) {
+    return Number.isFinite(drop.progress) ? Math.max(0, Math.min(100, Math.round(drop.progress * 100))) : 0;
+}
+
+function makeDropProgressBar(drop) {
+    const percent = dropPercent(drop);
+    const progress = makeElement('div', { class: 'inventory-drop-progress', role: 'progressbar',
+        'aria-label': drop.name, 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': percent });
+    const fill = makeElement('span');
+    fill.style.width = `${percent}%`;
+    progress.appendChild(fill);
+    return progress;
 }
 
 function makeImageElement(src, alt, className) {

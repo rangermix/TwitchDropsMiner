@@ -134,7 +134,8 @@ Zero-minute subscription rewards are omitted from Inventory and the Wanted Drops
 Queue because they cannot be earned by watching. The queue also omits individually
 expired rewards and rewards the miner cannot target. Upcoming and sequential rewards
 can remain visible, so a queued reward is not necessarily earnable immediately.
-Successful claims refresh the queue.
+Successful claims refresh the queue. Each queued reward shows its image and the same
+progress as Inventory; a reward named like its drop is listed once.
 
 ### Change the queue order temporarily
 
