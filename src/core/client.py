@@ -865,7 +865,7 @@ class Twitch:
                     # Check if this is a game change -> enter manual mode
                     if watching_channel and selected_channel.game != watching_channel.game:
                         self.enter_manual_mode(selected_channel)
-                    self._channel_service.picked_channel_id = selected_channel.id
+                    self._channel_service.record_watch(selected_channel, picked=True)
                     new_watching = selected_channel
                 # Handle manual mode
                 elif self.is_manual_mode():
@@ -991,6 +991,8 @@ class Twitch:
 
         self._manual_target_channel = None
         self._manual_target_game = None
+        # Return to Auto also ends the hand-pick protection from the follow tie-break.
+        self._channel_service.picked_channel_id = None
         self.gui.broadcast_manual_mode_change(self.get_manual_mode_info())
         return True
 

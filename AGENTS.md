@@ -386,7 +386,10 @@ lang/                # Translation JSON files (20 languages)
   priority key, so game order, temporary order, fallback tiers, reward ranking and ACL
   over directory precedence are unchanged. The tie-break is omitted in manual mode and
   while the watched channel is `picked_channel_id` (a same-game dashboard click), so a
-  hand-picked channel is never replaced by it. Any failure
+  hand-picked channel is never replaced by it. `record_watch()` runs on every
+  `WatchService.watch()`: watching any other channel ends the protection, as do Return
+  to Auto (`clear_manual_mode()`) and account reset. Tests: `test_followed_channels.py`
+  and `test_followed_channels_frontend.py`. Any failure
   keeps the previous follow set and adds nothing; `ExitRequest` propagates. The lookup
   logs only counts and channel IDs, never names or response text. Follow state is
   account-owned and cleared with bans on identity replacement and shutdown. The

@@ -13,6 +13,7 @@ from src.models.channel import Channel
 from src.models.game import Game
 from src.services.channel_service import ChannelService
 from src.web.managers.settings import SettingsManager
+from tests.test_web_auth import client  # noqa: F401 -- shared isolated production HTTP fixture
 
 
 WANTED = Game({"id": 1, "name": "Wanted"})
@@ -130,6 +131,27 @@ def test_a_same_game_click_is_not_undone_by_the_tie_break():
     assert service.picked_channel_id is None
 
 
+def test_pick_protection_ends_when_another_channel_is_watched():
+    service = ChannelService(make_twitch())
+    picked, other = channel(service._twitch, 2), channel(service._twitch, 3)
+    service.record_watch(picked, picked=True)
+    service.record_watch(picked)  # the same channel staying watched keeps it
+    assert service.picked_channel_id == 2
+    service.record_watch(other)  # an automatic switch away ends it
+    assert service.picked_channel_id is None
+    service.record_watch(picked)  # an automatic return later is not a pick
+    assert service.picked_channel_id is None
+
+
+def test_every_watch_goes_through_record_watch():
+    from src.services.watch_service import WatchService
+    twitch = MagicMock()
+    twitch.is_manual_mode.return_value = False
+    target = channel(twitch, 5)
+    WatchService(twitch).watch(target, update_status=False)
+    twitch._channel_service.record_watch.assert_called_once_with(target)
+
+
 def test_manual_mode_is_never_overridden_by_the_tie_break():
     twitch = make_twitch()
     service = ChannelService(twitch)
@@ -211,3 +233,36 @@ def test_setting_defaults_off_validates_and_refreshes_selection():
     assert stored.prefer_followed_channels is True
     stored.save.assert_called_once()
     on_change.assert_called_once()
+
+
+def test_slow_lookup_times_out_without_adding_or_forgetting(monkeypatch, caplog):
+    twitch = make_twitch(followed=[1], streams={1: WANTED}, drops={1: True})
+
+    async def hang(request):
+        await asyncio.sleep(60)
+    twitch.gql_request.side_effect = hang
+    service = ChannelService(twitch)
+    service._followed_ids = {7}
+    monkeypatch.setattr(ChannelService, "FOLLOW_LOOKUP_TIMEOUT", 0.01)
+    assert asyncio.run(service.get_followed_live_channels()) == set()
+    assert service._followed_ids == {7}
+    assert "lookup failed" in caplog.text
+
+
+@pytest.mark.parametrize("value", ["yes", "true", 1, {"on": True}])
+def test_api_rejects_non_boolean_values(client, value):  # noqa: F811
+    response = client.post("/api/settings", json={"prefer_followed_channels": value})
+    assert response.status_code == 422
+    assert response.json() == {"detail": "invalid_request"}
+
+
+def test_setting_round_trips_through_saved_settings(tmp_path, monkeypatch):
+    from src.config.settings import Settings
+    monkeypatch.setattr("src.config.settings.SETTINGS_PATH", tmp_path / "settings.json")
+    settings = Settings()
+    assert settings.prefer_followed_channels is False
+
+    async def enable():
+        SettingsManager(AsyncMock(), settings, MagicMock()).update_settings({"prefer_followed_channels": True})
+    asyncio.run(enable())
+    assert Settings().prefer_followed_channels is True

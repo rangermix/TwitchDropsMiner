@@ -45,6 +45,9 @@ class ChannelService:
     - Channel sorting by viewers and priority
     """
 
+    # Bound for the whole optional follows lookup, AvailableDrops checks included.
+    FOLLOW_LOOKUP_TIMEOUT = 30
+
     def __init__(self, twitch: Twitch) -> None:
         """
         Initialize the channel service.
@@ -128,6 +131,13 @@ class ChannelService:
             return key
         return (self._manual_rank(channel, order), *key)
 
+    def record_watch(self, channel: Channel, *, picked: bool = False) -> None:
+        """Remember a hand-picked channel; watching any other channel ends that protection."""
+        if picked:
+            self.picked_channel_id = channel.id
+        elif channel.id != self.picked_channel_id:
+            self.picked_channel_id = None
+
     def _prefer_followed(self) -> bool:
         return getattr(getattr(self._twitch, "settings", None), "prefer_followed_channels", False) is True
 
@@ -151,7 +161,9 @@ class ChannelService:
             self._followed_ids.clear()
             return set()
         try:
-            followed, found = await asyncio.wait_for(self._lookup_followed(known_ids), timeout=30)
+            followed, found = await asyncio.wait_for(
+                self._lookup_followed(known_ids), timeout=self.FOLLOW_LOOKUP_TIMEOUT,
+            )
         except ExitRequest:
             raise
         except (MinerException, aiohttp.ClientError, TimeoutError,
