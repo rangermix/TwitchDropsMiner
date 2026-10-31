@@ -209,3 +209,32 @@ class TestWantedItems(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_queue_image_comes_from_a_wanted_reward():
+    """An unwanted reward listed first, even with the same name, never supplies the image."""
+    from types import SimpleNamespace
+
+    from src.services.stream_selector import StreamSelector
+
+    def benefit(name, kind, image):
+        result = MagicMock(spec=Benefit)
+        result.name, result.type, result.image_url = name, kind, image
+        result.is_wanted = Benefit.is_wanted.__get__(result, Benefit)
+        return result
+
+    drop = MagicMock(spec=TimedDrop)
+    drop.id, drop.name, drop.is_claimed, drop.is_watch_drop, drop.is_mineable = "d", "Pack", False, True, True
+    drop.ends_at = datetime.max.replace(tzinfo=timezone.utc)
+    drop.current_minutes, drop.required_minutes, drop.progress = 0, 60, 0.0
+    drop.benefits = [
+        benefit("Pack", BenefitType.DIRECT_ENTITLEMENT, "https://img/unwanted.png"),
+        benefit("Pack", BenefitType.BADGE, ""),
+        benefit("Pack", BenefitType.BADGE, "https://img/wanted.png"),
+    ]
+    drop.get_wanted_unclaimed_benefits = TimedDrop.get_wanted_unclaimed_benefits.__get__(drop, TimedDrop)
+    campaign = SimpleNamespace(drops=[drop])
+    wanted = StreamSelector()._get_wanted_drops(
+        campaign, {"BADGE": True, "DIRECT_ENTITLEMENT": False}, datetime.now(timezone.utc)
+    )
+    assert wanted[0]["image_url"] == "https://img/wanted.png"
