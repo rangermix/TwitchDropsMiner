@@ -15,7 +15,8 @@ from typing import TYPE_CHECKING
 
 import aiohttp
 
-from src.config import GQL_OPERATIONS, MAX_INT
+from src.config import GQL_OPERATIONS, MAX_INT, GQLRawQuery
+from src.config.operations import FOLLOWED_LIVE_QUERY
 from src.config.reward_priority import RewardPriority
 from src.exceptions import ExitRequest, GQLException, MinerException
 from src.models.channel import Channel
@@ -44,6 +45,9 @@ class ChannelService:
     - Channel sorting by viewers and priority
     """
 
+    # Bound for the whole optional follows lookup, AvailableDrops checks included.
+    FOLLOW_LOOKUP_TIMEOUT = 30
+
     def __init__(self, twitch: Twitch) -> None:
         """
         Initialize the channel service.
@@ -54,17 +58,23 @@ class ChannelService:
         self._twitch = twitch
         self._banned_channels: dict[int, Channel] = {}
         self._ban_refresh: asyncio.TimerHandle | None = None
+        # IDs of live channels the account follows, from the last discovery.
+        self._followed_ids: set[int] = set()
+        # The channel the user last picked by hand; the follow tie-break never undoes it.
+        self.picked_channel_id: int | None = None
 
     @property
     def banned_channels(self) -> list[Channel]:
         return [channel for channel in self._banned_channels.values() if channel.banned]
 
     def clear_bans(self) -> None:
-        """Release account-owned ban state and its expiry callback."""
+        """Release account-owned ban and follow state and the ban expiry callback."""
         if self._ban_refresh is not None:
             self._ban_refresh.cancel()
             self._ban_refresh = None
         self._banned_channels.clear()
+        self._followed_ids.clear()
+        self.picked_channel_id = None
 
     def _schedule_ban_refresh(self) -> None:
         if self._ban_refresh is not None:
@@ -107,12 +117,85 @@ class ChannelService:
         return self._twitch.wanted_games.index(game)
 
     def get_mining_priority(self, channel: Channel) -> tuple[float, ...]:
-        """A temporary dashboard order first, then the default mining priority."""
-        key = self._default_mining_priority(channel)
+        """A temporary dashboard order first, then the default mining priority.
+
+        With ``prefer_followed_channels``, followed channels win only between
+        channels of equal game priority; game order itself never changes.
+        """
+        key: tuple[float, ...] = self._default_mining_priority(channel)
+        if self._follow_tie_break():
+            # ACL channels keep their precedence; following only breaks the remaining tie.
+            key = (*key, 0 if channel.acl_based else 1, 0 if channel.id in self._followed_ids else 1)
         order = getattr(self._twitch, "game_order", None)
         if not isinstance(order, TemporaryGameOrder) or not order.active:
             return key
         return (self._manual_rank(channel, order), *key)
+
+    def record_watch(self, channel: Channel, *, picked: bool = False) -> None:
+        """Remember a hand-picked channel; watching any other channel ends that protection."""
+        if picked:
+            self.picked_channel_id = channel.id
+        elif channel.id != self.picked_channel_id:
+            self.picked_channel_id = None
+
+    def _prefer_followed(self) -> bool:
+        return getattr(getattr(self._twitch, "settings", None), "prefer_followed_channels", False) is True
+
+    def _follow_tie_break(self) -> bool:
+        """Off while a hand-picked channel (manual mode or a same-game click) is watched."""
+        if not self._prefer_followed() or getattr(self._twitch, "_manual_target_channel", None) is not None:
+            return False
+        watching = getattr(self._twitch, "watching_channel", None)
+        watched = watching.get_with_default(None) if watching is not None else None
+        return watched is None or watched.id != self.picked_channel_id
+
+    async def get_followed_live_channels(self, known_ids: abc.Set[int] = frozenset()) -> set[Channel]:
+        """Live followed channels with drops enabled on a wanted game, for discovery.
+
+        Directory discovery only returns each game's top live channels, so smaller
+        followed channels are looked up here. ``known_ids`` are already tracked and
+        are not checked again. Any failure keeps the previous follow set and adds
+        nothing; this optional lookup is bounded and never blocks mining.
+        """
+        if not self._prefer_followed():
+            self._followed_ids.clear()
+            return set()
+        try:
+            followed, found = await asyncio.wait_for(
+                self._lookup_followed(known_ids), timeout=self.FOLLOW_LOOKUP_TIMEOUT,
+            )
+        except ExitRequest:
+            raise
+        except (MinerException, aiohttp.ClientError, TimeoutError,
+                KeyError, TypeError, IndexError, ValueError):
+            # Never log response bodies or exception text from account data.
+            logger.warning("Followed channels lookup failed; using game directories only")
+            return set()
+        self._followed_ids = followed
+        logger.info(f"Followed channels: {len(followed)} live, {len(found)} new with drops")
+        return found
+
+    async def _lookup_followed(self, known_ids: abc.Set[int]) -> tuple[set[int], set[Channel]]:
+        response = await self._twitch.gql_request(GQLRawQuery(FOLLOWED_LIVE_QUERY))
+        nodes = [edge["node"] for edge in response["data"]["currentUser"]["followedLiveUsers"]["edges"]]
+        followed = {int(node["id"]) for node in nodes}
+        candidates = [
+            Channel(self._twitch, id=int(node["id"]), login=node["login"],
+                    display_name=node.get("displayName"))
+            for node in nodes if int(node["id"]) not in known_ids
+        ]
+        await self.bulk_check_online(candidates)
+        wanted = [channel for channel in candidates
+                  if channel.online and channel.game in self._twitch.wanted_games]
+        # GetStreamInfo cannot tell whether drops are enabled; ask Twitch per channel.
+        results = await asyncio.gather(
+            *(channel.fetch_drops_enabled() for channel in wanted), return_exceptions=True,
+        )
+        if any(isinstance(result, ExitRequest) for result in results):
+            raise ExitRequest()
+        # Only confirmed channels are added: a later stream refresh resets
+        # drops_enabled to True, so a drops-disabled channel must never be tracked.
+        return followed, {channel for channel, ok in zip(wanted, results, strict=True) if ok is True}
 
     def _manual_rank(self, channel: Channel, order: TemporaryGameOrder) -> int:
         """Rank only wanted campaigns this channel can currently progress."""

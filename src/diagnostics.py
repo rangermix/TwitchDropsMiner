@@ -296,6 +296,7 @@ class Diagnostics:
             "settings": {
                 "language": settings.language if settings.language in self.LOCALES else self.reference(settings.language),
                 "allow_unlinked_campaigns": self.flag(settings.allow_unlinked_campaigns),
+                "prefer_followed_channels": self.flag(getattr(settings, "prefer_followed_channels", False)),
                 "dark_mode": self.flag(settings.dark_mode),
                 "inventory_list_view": self.flag(settings.inventory_list_view),
                 "connection_quality": self.number(settings.connection_quality),

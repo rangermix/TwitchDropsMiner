@@ -69,7 +69,7 @@ assert.deepEqual(buttons.map(b => b.classes.has('active')), [false, true, false]
 def test_failed_save_after_leaving_its_panel_remains_visible(action):
     names = ['switchSettingsTab', 'toggleMiningHoursRange', 'onMiningHoursChange',
              'handleSaveTelegramClick', 'testTelegramConnection', 'saveTelegramSettings',
-             'saveDiscordSettings', 'updateDiscordSettings', 'saveProxy', 'onUnlinkedMiningChange',
+             'saveDiscordSettings', 'updateDiscordSettings', 'saveProxy', 'onUnlinkedMiningChange', 'saveBooleanSetting',
              'saveRewardPriority']
     source = APP_JS.read_text(encoding='utf-8')
     if 'function reportSettingsError(' in source:

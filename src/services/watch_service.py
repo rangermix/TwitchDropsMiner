@@ -126,6 +126,7 @@ class WatchService:
         """
         self._twitch.gui.channels.set_watching(channel)
         self._twitch.watching_channel.set(channel)
+        self._twitch._channel_service.record_watch(channel)
 
         if update_status:
             # Check if manual mode is active for custom status message
