@@ -6,8 +6,9 @@ from collections import OrderedDict, abc, deque
 from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timedelta, timezone
 from functools import partial
-from time import time
+from time import monotonic, time
 from typing import TYPE_CHECKING, Any, Final, Literal
+from uuid import uuid4
 
 import aiohttp
 
@@ -36,6 +37,7 @@ from src.i18n import _
 from src.models.campaign import DropsCampaign
 from src.models.channel import Channel
 from src.services.channel_service import ChannelService
+from src.services.game_order import TemporaryGameOrder
 from src.services.inventory_service import InventoryService
 from src.services.maintenance import MaintenanceService
 from src.services.message_handlers import MessageHandlerService
@@ -62,8 +64,20 @@ gql_logger = logging.getLogger("TwitchDrops.gql")
 
 
 class Twitch:
+    # User pause from the dashboard; runtime only, so a restart resumes mining.
+    _paused: bool = False
+    # Calendar pauses use a UTC instant; fixed durations use elapsed time.
+    _resume_at: datetime | None = None
+    _pause_deadline: float | None = None
+    _pause_revision: int = 0
+    PAUSE_DURATIONS: Final[dict[str, timedelta]] = {
+        "10m": timedelta(minutes=10),
+        "1h": timedelta(hours=1),
+    }
+
     def __init__(self, settings: Settings):
         self.settings: Settings = settings
+        self._pause_instance_id = uuid4().hex
         self.diagnostics = Diagnostics(DATA_DIR)
         # State management
         self._state: State = State.IDLE
@@ -73,6 +87,8 @@ class Twitch:
         self._inventory_refresh_pending = False
         self._clear_cache_pending = False
         self.wanted_games: list[Game] = []
+        # Runtime-only queue order from the dashboard; the saved Mining list is the default.
+        self.game_order = TemporaryGameOrder()
         self.inventory: list[DropsCampaign] = []
         self._drops: dict[str, TimedDrop] = {}
         self._campaigns: dict[str, DropsCampaign] = {}
@@ -355,7 +371,9 @@ class Twitch:
         return partial(self.change_state, state)
 
     def is_mining_time(self) -> bool:
-        """Return whether the configured mining window includes the current local time."""
+        """Return whether mining may run now: not paused and inside the mining window."""
+        if self._paused:
+            return False
         hours = getattr(self.settings, "mining_hours", None)
         if not isinstance(hours, dict) or hours.get("mode") != "range":
             return True
@@ -363,6 +381,84 @@ class Twitch:
             hours.get("start", ""), hours.get("end", ""), datetime.now()
         )
         return in_window
+
+    def pause_info(self) -> dict[str, Any]:
+        """Pause state for the dashboard; resume_at is an ISO time with offset."""
+        resume_time = self._pause_resume_time()
+        resume_at = resume_time.astimezone().isoformat() if resume_time else None
+        return {
+            "paused": self._paused, "resume_at": resume_at,
+            "revision": self._pause_revision, "instance_id": self._pause_instance_id,
+        }
+
+    def _pause_seconds_remaining(self) -> float | None:
+        if not self._paused:
+            return None
+        if self._pause_deadline is not None:
+            return self._pause_deadline - monotonic()
+        if self._resume_at is not None:
+            return (self._resume_at - datetime.now(timezone.utc)).total_seconds()
+        return None
+
+    def _pause_resume_time(self) -> datetime | None:
+        if self._pause_deadline is not None:
+            remaining = self._pause_seconds_remaining()
+            return datetime.now(timezone.utc) + timedelta(seconds=max(0.0, remaining or 0.0))
+        return self._resume_at
+
+    def set_paused(self, paused: bool, duration: str | None = None) -> None:
+        """Pause for a duration ("10m", "1h", "tomorrow" = next local midnight) or until resumed.
+
+        The schedule loop stops or restarts watching and ends timed pauses.
+        """
+        resume_at: datetime | None = None
+        deadline: float | None = None
+        if paused and duration == "tomorrow":
+            midnight = datetime.combine(datetime.now().date() + timedelta(days=1), datetime.min.time())
+            resume_at = midnight.astimezone(timezone.utc)
+        elif paused and duration is not None:
+            interval = self.PAUSE_DURATIONS[duration]
+            resume_at = datetime.now(timezone.utc) + interval
+            deadline = monotonic() + interval.total_seconds()
+        if paused == self._paused and resume_at == self._resume_at and deadline == self._pause_deadline:
+            return
+        self._paused, self._resume_at, self._pause_deadline = paused, resume_at, deadline
+        self._pause_revision += 1
+        if not paused:
+            self.print(_.t["status"]["mining_resumed"])
+        elif resume_at is None:
+            self.print(_.t["gui"]["status"]["paused"])
+        else:
+            self.print(_.t["gui"]["status"]["paused_until"].format(time=f"{resume_at.astimezone():%Y-%m-%d %H:%M}"))
+        self._schedule_changed.set()
+        self.gui.broadcast_paused(self.pause_info())
+
+    def set_game_order(self, names: list[str]) -> None:
+        """Set or (with an empty list) clear the temporary queue order until restart."""
+        self.game_order.set(names)
+        self._game_order_changed()
+
+    def clear_game_order(self) -> None:
+        """Return to the saved Mining list order, e.g. after that list changes."""
+        if self.game_order.clear():
+            self._game_order_changed()
+
+    def _game_order_changed(self) -> None:
+        # Recompute wanted games and channel choice; show the new queue at once,
+        # even while mining is paused and the update is deferred.
+        self.request_games_update()
+        self.gui.broadcast_wanted_items()
+        self.gui.broadcast_game_order(self.game_order.info())
+
+    def _closed_status(self) -> str:
+        """Status text while mining is not allowed to run."""
+        status = _.t["gui"]["status"]
+        if not self._paused:
+            return status["outside_hours"]
+        resume_at = self._pause_resume_time()
+        if resume_at is None:
+            return status["paused"]
+        return status["paused_until"].format(time=f"{resume_at.astimezone():%H:%M}")
 
     async def _stop_mining_schedule(self) -> None:
         task, self._schedule_task = self._schedule_task, None
@@ -374,6 +470,9 @@ class Twitch:
         """Enforce both boundaries, and recompute immediately after policy edits."""
         was_open = self.is_mining_time()
         while self._state is not State.EXIT:
+            pause_remaining = self._pause_seconds_remaining()
+            if pause_remaining is not None and pause_remaining <= 0:
+                self.set_paused(False)
             self._schedule_changed.clear()
             is_open = self.is_mining_time()
             if not is_open:
@@ -384,7 +483,7 @@ class Twitch:
                 if task is not None:
                     task.cancel()
                     await asyncio.gather(task, return_exceptions=True)
-                self.gui.status.update(_.t["gui"]["status"]["outside_hours"])
+                self.gui.status.update(self._closed_status())
                 if was_open:
                     self.change_state(State.IDLE)
             else:
@@ -397,6 +496,9 @@ class Twitch:
             delay = 60.0
             if isinstance(hours, dict) and hours.get("mode") == "range":
                 _in_window, delay = window_status(hours.get("start", ""), hours.get("end", ""), datetime.now())
+            pause_remaining = self._pause_seconds_remaining()
+            if pause_remaining is not None:
+                delay = min(delay, pause_remaining)
             # Bound wall-clock/DST resampling; monotonic multi-hour sleeps go stale.
             with suppress(TimeoutError):
                 await asyncio.wait_for(self._schedule_changed.wait(), timeout=max(0.01, min(delay, 60)))
@@ -505,7 +607,7 @@ class Twitch:
                 if self.is_mining_time():
                     self.gui.status.update(_.t["gui"]["status"]["idle"])
                 else:
-                    self.gui.status.update(_.t["gui"]["status"]["outside_hours"])
+                    self.gui.status.update(self._closed_status())
                 self.stop_watching()
                 # clear the flag and wait until it's set again
                 self._state_change.clear()
@@ -555,7 +657,7 @@ class Twitch:
                 # Build wanted_games list preserving selected priority order,
                 # optionally appending all other eligible games as fallback.
                 self.wanted_games = self._stream_selector.get_wanted_games(
-                    self.settings, self.inventory
+                    self.settings, self.inventory, self.game_order
                 )
                 logger.info("Wanted games list built")
 

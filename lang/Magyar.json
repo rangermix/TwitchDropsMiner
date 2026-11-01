@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nAlkalmazás leállítva.\nZárja be az ablakot a kilépéshez.",
         "watching": "Nézés: {channel}",
+        "mining_resumed": "Bányászat folytatva",
         "goes_online": "{channel} online lesz, váltás...",
         "goes_offline": "{channel} offline lett, váltás...",
         "claimed_drop": "Átvett jutalom: {drop}",
@@ -18,6 +19,7 @@
         "incorrect_twofa_code": "Hibás 2FA kód.",
         "email_code_required": "Email kód szükséges. Ellenőrizze az emailt.",
         "twofa_code_required": "2FA token szükséges.",
+        "headless_renewal": "Az xvfb-run nem található, ezért a munkamenet-megújító böngésző headless módban fut. A Twitch elutasíthatja az általa kiadott munkameneteket (CATALOG, integrity). Telepítsd az xvfb és az xauth csomagot, vagy használd a Docker-képet.",
         "status": {
             "logged_in": "Bejelentkezve",
             "logged_out": "Kijelentkezve",
@@ -71,6 +73,15 @@
             "fetching_inventory": "Készlet lekérése...",
             "fetching_campaigns": "Kampányok lekérése...",
             "adding_campaigns": "Kampányok hozzáadása a készlethez... {counter}",
+            "paused": "Szüneteltetve",
+            "pause": "Szüneteltetés",
+            "resume": "Folytatás",
+            "paused_until": "Szüneteltetve eddig: {time}",
+            "pause_10m": "10 percre",
+            "pause_1h": "1 órára",
+            "pause_tomorrow": "Holnapig",
+            "pause_indefinite": "Amíg nem folytatom",
+            "pause_error": "Nem sikerült módosítani a szüneteltetés állapotát. Próbáld újra.",
             "outside_hours": "A bányászati időn kívül"
         },
         "tabs": {
@@ -127,6 +138,10 @@
                 "name": "Általános",
                 "dark_mode": "Sötét mód"
             },
+            "tab_mining": "Bányászat",
+            "tab_games": "Játékok",
+            "tab_notifications": "Értesítések",
+            "tab_account": "Fiók és karbantartás",
             "reload": "Kampányok újratöltése",
             "reload_campaigns": "Kampányok újratöltése",
             "drop_name_blacklist": "Figyelmen kívül hagyott dropkulcsszavak",
@@ -291,7 +306,11 @@
         },
         "wanted": {
             "name": "Kívánt jutalmak sorban",
-            "none": "Nincsenek kívánt jutalmak sorban..."
+            "none": "Nincsenek kívánt jutalmak sorban...",
+            "drag_hint": "Húzd a játékokat a sorrend módosításához az újraindításig (érintőképernyőn előbb tartsd lenyomva). A Beállítások bányászati listája marad az alapértelmezett.",
+            "temporary": "Ideiglenes sorrend az újraindításig.",
+            "reset": "Visszaállítás a bányászati lista sorrendjére",
+            "save_error": "Nem sikerült módosítani a sor sorrendjét. Próbáld újra."
         },
         "inventory": {
             "no_campaigns": "Még nincs betöltött kampány...",
@@ -411,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "HTTPS-tanúsítványok ellenőrzésének kikapcsolása a TDM-hez (nem biztonságos; alapértelmezés szerint kikapcsolva). Csak privát vagy loopback címekhez; inkább a --ca-file ajánlott.",
+        "insecure_warning": "FIGYELMEZTETÉS: A TDM-kapcsolat HTTPS-tanúsítványának ellenőrzése ki van kapcsolva. Egy támadó ellophatja a Twitch-munkamenetedet. Csak megbízható hálózaton használd.",
         "title": "Twitch csatlakoztatása a TDM-hez",
         "destination_prompt": "A TDM-példány URL-je: ",
         "destination": "Cél: {url}",
@@ -422,6 +443,8 @@
         "cancelled": "Megszakítva.",
         "wait_to_close": "A bezáráshoz nyomd meg az Entert.",
         "tdm_help": "A TDM-példány gyökér-URL-je",
+        "ca_file_help": "PEM-tanúsítványfájl, amelyben csak a TDM HTTPS-kapcsolatához bízik meg a segéd, például önaláírt vagy privát CA-tanúsítvány. A tanúsítványellenőrzés bekapcsolva marad.",
+        "ca_file_in_use": "Egyéni tanúsítványfájl használata a TDM-kapcsolathoz.",
         "chrome_help": "A Google Chrome elérési útja (általában automatikusan felismerhető)",
         "language_help": "A konzol nyelve",
         "no_pause_help": "Kilépés az Enter megvárása nélkül",
@@ -431,6 +454,8 @@
         "browser_conflict": "A böngészőválasztásnak és az útvonalnak ugyanarra a böngészőre kell mutatnia.",
         "errors": {
             "destination": "Érvénytelen TDM-cím. http:// vagy https:// gyökér-URL-t adj meg porttal, útvonal, jelszó, lekérdezés és töredék nélkül.",
+            "ca_file": "A --ca-file tanúsítványa nem használható. Válassz olvasható PEM-fájlt, amely CA-tanúsítványt (CA:TRUE) tartalmaz, például az önaláírt vagy privát CA-tanúsítványodat, ne privát kulcsot.",
+            "insecure_tls": "A --insecure olyan https:// TDM-címet igényel, amelynek gépneve csak privát vagy loopback címekre oldódik fel. Más címekhez használd a --ca-file kapcsolót.",
             "disabled": "A segéd hozzáférése zárva van. Válaszd az Asztali segéd használata lehetőséget a TDM bejelentkezési képernyőjén, majd indítsd el a segédet.",
             "expired": "A segéd kapcsolata lejárt vagy megszakadt. Engedélyezd újra a segéd hozzáférését a TDM-ben, majd indítsd újra a segédet.",
             "busy": "Egy másik segéd már csatlakozott. Újrakezdés előtt szakítsd meg a TDM vezérlőpultján.",

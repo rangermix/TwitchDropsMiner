@@ -192,8 +192,50 @@ header h1 {
     background-color: var(--hover-bg);
 }
 
+.pause-control {
+    position: relative;
+}
+
+#pause-btn.paused {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+}
+
+.pause-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    min-width: 170px;
+    padding: 4px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.pause-menu button {
+    padding: 8px 10px;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    color: var(--text-primary);
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.pause-menu button:hover,
+.pause-menu button:focus-visible {
+    background: var(--bg-secondary);
+}
+
 .button-group {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 8px;
 }
@@ -1199,6 +1241,33 @@ header h1 {
     max-width: 800px;
 }
 
+.settings-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.settings-tab-button {
+    padding: 8px 14px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.settings-tab-button:hover {
+    color: var(--text-primary);
+}
+
+.settings-tab-button.active {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+}
+
 .settings-section {
     background: var(--bg-panel);
     border: 1px solid var(--border-color);
@@ -1222,7 +1291,9 @@ header h1 {
 
 .settings-section select,
 .settings-section input[type="number"],
-.settings-section input[type="text"] {
+.settings-section input[type="text"],
+#discord-webhook-url,
+#telegram-bot-token {
     padding: 8px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
@@ -2420,6 +2491,46 @@ header h1 {
     padding: 28px;
 }
 
+/* Temporary queue order: drag a game card by its ☰ cue; the note and Reset sit under the title. */
+.wanted-order-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.wanted-order-error {
+    margin: 0 14px 10px;
+    font-size: 12px;
+    color: var(--error-color);
+}
+
+.wanted-game-group[draggable="true"] .wanted-game-header {
+    cursor: grab;
+}
+
+.wanted-game-group.dragging {
+    opacity: 0.5;
+}
+
+.wanted-drag-handle {
+    order: 3;
+    margin-left: auto;
+    align-self: center;
+    padding: 0 12px;
+}
+
+@media (pointer: coarse) {
+    /* A held card must not trigger text selection or the long-press menu. */
+    .wanted-game-group {
+        -webkit-touch-callout: none;
+        user-select: none;
+    }
+}
+
 .channels-list {
     height: auto;
     max-height: 340px;
@@ -2504,6 +2615,27 @@ header h1 {
     margin: 14px auto 0;
     padding: 8px 14px;
     font-size: 12px;
+}
+
+/* Keep the footer at the window bottom so tabs of different heights don't move it. */
+#dashboard {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh; /* excludes mobile browser bars where supported */
+}
+
+#dashboard > .tab-content.active {
+    flex: 1 0 auto;
+}
+
+#dashboard > .footer {
+    width: 100%;
+}
+
+/* Flex items don't collapse margins, so drop the last section's own gap above the footer. */
+.settings-panel > .settings-section:last-child {
+    margin-bottom: 0;
 }
 
 .update-indicator {
@@ -2948,3 +3080,40 @@ header h1 {
     font-size: 14px;
 }
 .browser-helper-downloads a { color: var(--accent-color); }
+
+/* Games tab: stretch both game lists down to the footer instead of stopping at 400px.
+   Desktop only; stacked lists on narrow screens keep their fixed heights. */
+@supports selector(:has(*)) {
+    @media (min-width: 1025px) {
+        #settings-tab.active:has(#settings-panel-games:not([hidden])),
+        .settings-container:has(#settings-panel-games:not([hidden])),
+        #settings-panel-games:not([hidden]),
+        #settings-panel-games > .settings-section,
+        #settings-panel-games .selected-games,
+        #settings-panel-games .available-games {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .settings-container:has(#settings-panel-games:not([hidden])),
+        #settings-panel-games:not([hidden]),
+        #settings-panel-games > .settings-section,
+        #settings-panel-games .selected-games,
+        #settings-panel-games .available-games {
+            flex: 1 1 0;
+        }
+
+        #settings-panel-games .games-container {
+            flex: 1 1 0;
+            min-height: 300px;
+            grid-template-rows: minmax(0, 1fr);
+        }
+
+        #settings-panel-games .sortable-list,
+        #settings-panel-games .checkbox-list {
+            flex: 1 1 0;
+            min-height: 0;
+            max-height: none;
+        }
+    }
+}

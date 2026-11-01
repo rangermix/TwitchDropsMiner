@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nApplicazione Terminata.\nChiudi la finestra per uscire dall'applicazione.",
         "watching": "Guardando: {channel}",
+        "mining_resumed": "Raccolta ripresa",
         "goes_online": "{channel} è ONLINE, cambiando...",
         "goes_offline": "{channel} è OFFLINE, cambiando...",
         "claimed_drop": "Contenuti riscattati: {drop}",
@@ -18,6 +19,7 @@
         "incorrect_twofa_code": "Codice 2FA errato.",
         "email_code_required": "Codice email richiesto. Controlla la tua email.",
         "twofa_code_required": "Token 2FA richiesto.",
+        "headless_renewal": "xvfb-run non è stato trovato, quindi il browser di rinnovo della sessione viene eseguito in modalità headless. Twitch potrebbe rifiutare le sessioni che emette (CATALOG, integrity). Installa xvfb e xauth oppure usa l'immagine Docker.",
         "status": {
             "logged_in": "Loggato",
             "logged_out": "Non loggato",
@@ -71,6 +73,15 @@
             "fetching_campaigns": "Recupero delle campagne...",
             "adding_campaigns": "Aggiunta delle campagne all'inventario... {counter}",
             "ready": "Pronto",
+            "paused": "In pausa",
+            "pause": "Pausa",
+            "resume": "Riprendi",
+            "paused_until": "In pausa fino alle {time}",
+            "pause_10m": "Per 10 minuti",
+            "pause_1h": "Per 1 ora",
+            "pause_tomorrow": "Fino a domani",
+            "pause_indefinite": "Finché non riprendo",
+            "pause_error": "Impossibile modificare lo stato di pausa. Riprova.",
             "outside_hours": "Fuori dall'orario di mining"
         },
         "tabs": {
@@ -170,6 +181,10 @@
                 "name": "Generale",
                 "dark_mode": "Modalità scura"
             },
+            "tab_mining": "Mining",
+            "tab_games": "Giochi",
+            "tab_notifications": "Notifiche",
+            "tab_account": "Account e manutenzione",
             "reload": "Ricarica",
             "games_to_watch": "Lista di mining",
             "games_help": "Seleziona i giochi da guardare. L'ordine è importante - trascina per riordinare la priorità (in alto = priorità massima).",
@@ -334,7 +349,11 @@
         },
         "wanted": {
             "name": "Coda Drops Desiderati",
-            "none": "Nessun drop desiderato in coda..."
+            "none": "Nessun drop desiderato in coda...",
+            "drag_hint": "Trascina i giochi per cambiare l’ordine fino al riavvio (sui touchscreen tieni prima premuto). La lista di mining nelle Impostazioni resta quella predefinita.",
+            "temporary": "Ordine temporaneo fino al riavvio.",
+            "reset": "Ripristina l’ordine della lista di mining",
+            "save_error": "Impossibile cambiare l’ordine della coda. Riprova."
         },
         "history": {
             "title": "Cronologia dei drop",
@@ -411,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Disattiva la verifica dei certificati HTTPS per TDM (non sicuro; disattivato per impostazione predefinita). Solo per indirizzi privati o di loopback; preferisci --ca-file.",
+        "insecure_warning": "ATTENZIONE: la verifica dei certificati HTTPS è disattivata per la connessione a TDM. Un aggressore potrebbe rubare la tua sessione Twitch. Usa questa opzione solo su una rete fidata.",
         "title": "Collega Twitch a TDM",
         "destination_prompt": "URL dell’istanza TDM: ",
         "destination": "Destinazione: {url}",
@@ -422,6 +443,8 @@
         "cancelled": "Annullato.",
         "wait_to_close": "Premi Invio per chiudere.",
         "tdm_help": "URL principale dell’istanza TDM",
+        "ca_file_help": "File di certificato PEM considerato attendibile solo per la connessione HTTPS a TDM, ad esempio un certificato autofirmato o di una CA privata. La verifica dei certificati resta attiva.",
+        "ca_file_in_use": "Uso del file di certificato personalizzato per la connessione a TDM.",
         "chrome_help": "Percorso di Google Chrome (di norma rilevato automaticamente)",
         "language_help": "Lingua della console",
         "no_pause_help": "Esci senza attendere Invio",
@@ -431,6 +454,8 @@
         "browser_conflict": "La scelta del browser e il percorso devono indicare lo stesso browser.",
         "errors": {
             "destination": "Indirizzo TDM non valido. Usa l’URL radice http:// o https:// con porta, senza percorso, password, query o frammento.",
+            "ca_file": "Impossibile usare il certificato di --ca-file. Scegli un file PEM leggibile che contenga un certificato CA (CA:TRUE), come il tuo certificato autofirmato o della CA privata, non una chiave privata.",
+            "insecure_tls": "--insecure richiede un indirizzo https:// di TDM il cui host si risolva solo in indirizzi privati o di loopback. Per altri indirizzi, usa --ca-file.",
             "disabled": "L’accesso dell’assistente è chiuso. Seleziona Usa assistente desktop nella schermata di accesso TDM, poi avvia l’assistente.",
             "expired": "La connessione dell’assistente è scaduta o è stata annullata. Riattiva l’accesso dell’assistente in TDM e riavvialo.",
             "busy": "Un altro assistente è già collegato. Annullalo nella dashboard TDM prima di ricominciare.",

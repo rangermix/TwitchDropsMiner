@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nAplikacja została zatrzymana.\nZamknij okno, aby wyjść z aplikacji.",
         "watching": "Oglądam kanał: {channel}",
+        "mining_resumed": "Wydobywanie wznowione",
         "goes_online": "Nowy status kanału {channel}: ONLINE, zmieniam...",
         "goes_offline": "Nowy status kanału {channel}: OFFLINE, zmieniam...",
         "claimed_drop": "Odebrano drop: {drop}",
@@ -18,6 +19,7 @@
         "incorrect_twofa_code": "Nieprawidłowy kod 2FA.",
         "email_code_required": "Wymagany kod z e-maila.",
         "twofa_code_required": "Wymagany token 2FA.",
+        "headless_renewal": "Nie znaleziono xvfb-run, więc przeglądarka odnawiania sesji działa w trybie headless. Twitch może odrzucić wydane przez nią sesje (CATALOG, integrity). Zainstaluj xvfb i xauth albo użyj obrazu Dockera.",
         "status": {
             "logged_in": "Zalogowano",
             "logged_out": "Wylogowano",
@@ -71,6 +73,15 @@
             "fetching_campaigns": "Odświeżanie kampanii...",
             "adding_campaigns": "Dodawanie kampanii do ekwipunku... {counter}",
             "ready": "Gotowy",
+            "paused": "Wstrzymano",
+            "pause": "Wstrzymaj",
+            "resume": "Wznów",
+            "paused_until": "Wstrzymano do {time}",
+            "pause_10m": "Na 10 minut",
+            "pause_1h": "Na 1 godzinę",
+            "pause_tomorrow": "Do jutra",
+            "pause_indefinite": "Do czasu wznowienia",
+            "pause_error": "Nie udało się zmienić stanu wstrzymania. Spróbuj ponownie.",
             "outside_hours": "Poza godzinami zbierania"
         },
         "tabs": {
@@ -170,6 +181,10 @@
                 "name": "Ogólne",
                 "dark_mode": "Tryb ciemny"
             },
+            "tab_mining": "Minowanie",
+            "tab_games": "Gry",
+            "tab_notifications": "Powiadomienia",
+            "tab_account": "Konto i konserwacja",
             "reload": "Przeładuj",
             "games_to_watch": "Lista wydobywania",
             "games_help": "Wybierz gry do oglądania. Kolejność ma znaczenie - przeciągnij, aby zmienić priorytet (góra = najwyższy priorytet).",
@@ -334,7 +349,11 @@
         },
         "wanted": {
             "name": "Kolejka Pożądanych Dropów",
-            "none": "Brak pożądanych dropów w kolejce..."
+            "none": "Brak pożądanych dropów w kolejce...",
+            "drag_hint": "Przeciągnij gry, aby zmienić kolejność do ponownego uruchomienia (na ekranach dotykowych najpierw naciśnij i przytrzymaj). Lista wydobywania w Ustawieniach pozostaje domyślna.",
+            "temporary": "Tymczasowa kolejność do ponownego uruchomienia.",
+            "reset": "Przywróć kolejność listy wydobywania",
+            "save_error": "Nie udało się zmienić kolejności. Spróbuj ponownie."
         },
         "history": {
             "title": "Historia dropów",
@@ -411,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Wyłącz weryfikację certyfikatów HTTPS dla TDM (niebezpieczne; domyślnie wyłączone). Tylko dla adresów prywatnych lub loopback; lepiej użyj --ca-file.",
+        "insecure_warning": "OSTRZEŻENIE: Weryfikacja certyfikatów HTTPS jest wyłączona dla połączenia z TDM. Atakujący może przejąć Twoją sesję Twitch. Używaj tylko w zaufanej sieci.",
         "title": "Połącz Twitch z TDM",
         "destination_prompt": "Adres instancji TDM: ",
         "destination": "Cel: {url}",
@@ -422,6 +443,8 @@
         "cancelled": "Anulowano.",
         "wait_to_close": "Naciśnij Enter, aby zamknąć.",
         "tdm_help": "Główny adres URL instancji TDM",
+        "ca_file_help": "Plik certyfikatu PEM zaufany tylko dla połączenia HTTPS z TDM, np. certyfikat samopodpisany lub prywatnego CA. Weryfikacja certyfikatów pozostaje włączona.",
+        "ca_file_in_use": "Używany jest własny plik certyfikatu dla połączenia z TDM.",
         "chrome_help": "Ścieżka do Google Chrome (zwykle wykrywana automatycznie)",
         "language_help": "Język konsoli",
         "no_pause_help": "Zakończ bez oczekiwania na Enter",
@@ -431,6 +454,8 @@
         "browser_conflict": "Wybór przeglądarki i ścieżka muszą wskazywać tę samą przeglądarkę.",
         "errors": {
             "destination": "Nieprawidłowy adres TDM. Użyj głównego URL http:// lub https:// z portem, bez ścieżki, hasła, zapytania i fragmentu.",
+            "ca_file": "Nie można użyć certyfikatu z --ca-file. Wybierz czytelny plik PEM zawierający certyfikat CA (CA:TRUE), np. Twój certyfikat samopodpisany lub prywatnego CA, a nie klucz prywatny.",
+            "insecure_tls": "--insecure wymaga adresu https:// TDM, którego host wskazuje tylko adresy prywatne lub loopback. Dla innych adresów użyj --ca-file.",
             "disabled": "Dostęp pomocnika jest zamknięty. Wybierz Użyj pomocnika na komputerze na ekranie logowania TDM, a następnie uruchom pomocnika.",
             "expired": "Połączenie pomocnika wygasło lub zostało anulowane. Ponownie włącz dostęp pomocnika w TDM i uruchom go jeszcze raz.",
             "busy": "Inny pomocnik jest już połączony. Anuluj go w panelu TDM przed ponownym rozpoczęciem.",

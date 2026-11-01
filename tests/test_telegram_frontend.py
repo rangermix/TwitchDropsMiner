@@ -17,6 +17,10 @@ def run_javascript(names: list[str], script: str) -> None:
     source = APP_JS.read_text(encoding="utf-8")
     names = list(names)
     functions = []
+    if 'reportSettingsError' not in names and any(
+        'reportSettingsError(' in extract_javascript_function(source, name) for name in names
+    ):
+        names.append('reportSettingsError')
     if 'updateSettingsUI' in names or 'saveSettings' in names:
         functions.append('const gameWatchWrites = {confirmed:null,draft:null,pending:[],tail:Promise.resolve(),revision:0};')
         for dependency in ['applyGameWatchEdit', 'reconcileGameWatchSettings']:

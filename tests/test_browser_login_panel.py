@@ -86,6 +86,21 @@ def run_panel(body):
     assert result.returncode == 0, result.stderr
 
 
+@pytest.mark.skipif(NODE is None, reason='Node required')
+def test_logout_failure_uses_global_settings_feedback_when_available():
+    run_panel(r"""
+const errors=[];
+context.window.reportSettingsError=(element,message)=>errors.push({element,message});
+panel.updateStatus(status('idle',true));
+reply={ok:false,json:async()=>({})};
+await panel.logout();
+assert.equal(errors.length,1);
+assert.equal(errors[0].element,el('twitch-logout-result'));
+assert.equal(errors[0].message,t.logout_failed);
+assert.equal(panel.actionError,'logout_failed');
+""")
+
+
 @pytest.mark.skipif(NODE is None, reason="Node required")
 def test_renewal_tooltip_preserves_translation_and_clears_stale_text():
     run_panel(r"""

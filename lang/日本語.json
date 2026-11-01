@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nアプリケーションが終了しました。\nウィンドウを閉じてアプリケーションを終了します。",
         "watching": "{channel} を視聴中",
+        "mining_resumed": "ドロップの獲得を再開しました",
         "goes_online": "{channel} がオンラインになりました。切り替え中...",
         "goes_offline": "{channel} がオフラインになりました。切り替え中...",
         "claimed_drop": "ドロップを取得しました：{drop}",
@@ -18,6 +19,7 @@
         "incorrect_twofa_code": "2段階認証コードが間違っています。",
         "email_code_required": "メールコードが必要です。メールを確認してください。",
         "twofa_code_required": "2段階認証トークンが必要です。",
+        "headless_renewal": "xvfb-run が見つからないため、セッション更新用ブラウザーはヘッドレスで動作しています。Twitch はこのブラウザーが発行したセッションを拒否する場合があります (CATALOG, integrity)。xvfb と xauth をインストールするか、Docker イメージを使用してください。",
         "status": {
             "logged_in": "ログイン済み",
             "logged_out": "ログアウト済み",
@@ -71,6 +73,15 @@
             "fetching_campaigns": "キャンペーンを取得中...",
             "adding_campaigns": "キャンペーンをインベントリに追加中... {counter}",
             "ready": "準備完了",
+            "paused": "一時停止中",
+            "pause": "一時停止",
+            "resume": "再開",
+            "paused_until": "{time} まで一時停止中",
+            "pause_10m": "10分間",
+            "pause_1h": "1時間",
+            "pause_tomorrow": "明日まで",
+            "pause_indefinite": "再開するまで",
+            "pause_error": "一時停止の状態を変更できませんでした。もう一度お試しください。",
             "outside_hours": "マイニング時間外"
         },
         "tabs": {
@@ -170,6 +181,10 @@
                 "name": "一般",
                 "dark_mode": "ダークモード"
             },
+            "tab_mining": "マイニング",
+            "tab_games": "ゲーム",
+            "tab_notifications": "通知",
+            "tab_account": "アカウントとメンテナンス",
             "reload": "再読み込み",
             "games_to_watch": "マイニングリスト",
             "games_help": "マイニングリストを選択してください。順序が重要です - ドラッグして優先順位を並べ替えます（上 = 最高優先度）。",
@@ -334,7 +349,11 @@
         },
         "wanted": {
             "name": "欲しいDropsキュー",
-            "none": "キューに欲しいDropsはありません..."
+            "none": "キューに欲しいDropsはありません...",
+            "drag_hint": "ゲームをドラッグすると、再起動まで順序を変更できます（タッチ画面では先に長押し）。設定のマイニングリストが既定の順序のままです。",
+            "temporary": "再起動までの一時的な順序です。",
+            "reset": "マイニングリストの順序に戻す",
+            "save_error": "キューの順序を変更できませんでした。もう一度お試しください。"
         },
         "history": {
             "title": "ドロップ履歴",
@@ -411,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "TDM の HTTPS 証明書検証を無効にする（危険；既定ではオフ）。プライベートアドレスまたはループバックアドレス専用です。--ca-file を推奨します。",
+        "insecure_warning": "警告: TDM への接続で HTTPS 証明書の検証が無効になっています。攻撃者に Twitch セッションを盗まれるおそれがあります。信頼できるネットワークでのみ使用してください。",
         "title": "Twitch を TDM に接続",
         "destination_prompt": "TDM インスタンスの URL: ",
         "destination": "接続先: {url}",
@@ -422,6 +443,8 @@
         "cancelled": "キャンセルしました。",
         "wait_to_close": "Enter キーで閉じます。",
         "tdm_help": "TDM インスタンスのルート URL",
+        "ca_file_help": "TDM への HTTPS 接続だけで信頼する PEM 証明書ファイル（自己署名証明書やプライベート CA 証明書など）。証明書の検証は有効なままです。",
+        "ca_file_in_use": "TDM への接続にカスタム証明書ファイルを使用しています。",
         "chrome_help": "Google Chrome のパス（通常は自動検出）",
         "language_help": "コンソールの言語",
         "no_pause_help": "Enter キーを待たずに終了",
@@ -431,6 +454,8 @@
         "browser_conflict": "ブラウザーの指定と実行ファイルのパスを一致させてください。",
         "errors": {
             "destination": "TDM のアドレスが無効です。ポートを含む http:// または https:// のルート URL を指定し、パス、パスワード、クエリ、フラグメントは除いてください。",
+            "ca_file": "--ca-file の証明書を使用できませんでした。秘密鍵ではなく、CA 証明書（CA:TRUE）を含む読み取り可能な PEM ファイル（自己署名証明書やプライベート CA 証明書など）を指定してください。",
+            "insecure_tls": "--insecure には、ホスト名がプライベートアドレスまたはループバックアドレスだけに解決される https:// の TDM アドレスが必要です。それ以外のアドレスには --ca-file を使用してください。",
             "disabled": "ヘルパーへの接続は閉じています。TDMのログイン画面で「デスクトップヘルパーを使う」を選択してから、ヘルパーを起動してください。",
             "expired": "ヘルパー接続が期限切れ、またはキャンセルされました。TDMで接続を再度許可し、ヘルパーを再起動してください。",
             "busy": "別のヘルパーがすでに接続されています。再開する前にTDMダッシュボードでキャンセルしてください。",

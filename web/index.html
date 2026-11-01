@@ -102,6 +102,15 @@
             <span id="auto-mode-badge" class="mode-badge" title="Automatic mode - following game priority">
                 🤖 AUTO
             </span>
+            <div class="pause-control">
+                <button id="pause-btn" class="secondary-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="pause-menu">Pause ▾</button>
+                <div id="pause-menu" class="pause-menu" role="menu" aria-labelledby="pause-btn" hidden>
+                    <button type="button" role="menuitem" tabindex="-1" data-pause-duration="10m" data-pause-key="pause_10m">For 10 minutes</button>
+                    <button type="button" role="menuitem" tabindex="-1" data-pause-duration="1h" data-pause-key="pause_1h">For 1 hour</button>
+                    <button type="button" role="menuitem" tabindex="-1" data-pause-duration="tomorrow" data-pause-key="pause_tomorrow">Until tomorrow</button>
+                    <button type="button" role="menuitem" tabindex="-1" data-pause-duration="" data-pause-key="pause_indefinite">Until I resume</button>
+                </div>
+            </div>
             <span id="proxy-indicator" class="proxy-badge" style="display: none;" title="Proxy connection active">
                 🔒 PROXY
             </span>
@@ -166,6 +175,11 @@
                 <!-- Wanted Items (New Panel) -->
                 <section class="panel wanted-panel">
                     <h2 id="wanted-header">Wanted Drop Queue</h2>
+                    <div class="wanted-order-bar">
+                        <span id="wanted-order-note" class="wanted-order-note"></span>
+                        <button type="button" id="wanted-order-reset" class="small-btn" hidden></button>
+                    </div>
+                    <p id="wanted-order-error" class="wanted-order-error" role="alert" hidden></p>
                     <div id="wanted-items-list" class="wanted-items-list">
                         <p class="empty-message-small">No wanted drops queued...</p>
                     </div>
@@ -257,196 +271,207 @@
         <!-- Settings Tab -->
         <div id="settings-tab" class="tab-content">
             <div class="settings-container">
-                <div id="dashboard-access-slot"></div>
-                <section id="dashboard-access-controls" class="settings-section">
-                    <h2 data-auth-text="title">Dashboard password</h2>
-                    <p id="web-auth-state"></p>
-                    <p class="help-text" data-auth-text="help">Protect this dashboard with one password. Changing it signs out other sessions. Disabling protection clears the password.</p>
-                    <form id="web-auth-settings" class="auth-form">
-                        <div id="web-auth-current-row" hidden>
-                            <label for="web-auth-current" data-auth-text="current_password">Current password</label>
-                            <input id="web-auth-current" type="password" autocomplete="current-password" maxlength="1024">
-                        </div>
-                        <label for="web-auth-new" data-auth-text="new_password">New password (at least 8 characters)</label>
-                        <input id="web-auth-new" type="password" autocomplete="new-password" minlength="8" maxlength="1024" required>
-                        <label for="web-auth-confirm" data-auth-text="confirm_password">Confirm new password</label>
-                        <input id="web-auth-confirm" type="password" autocomplete="new-password" minlength="8" maxlength="1024" required>
-                        <button id="web-auth-save" type="submit" data-auth-text="enable" disabled>Enable password protection</button>
-                        <button id="web-auth-disable" class="auth-secondary" type="button" data-auth-text="disable" hidden>Disable protection and clear password</button>
-                        <p id="web-auth-result" role="status" aria-live="polite"></p>
-                    </form>
-                </section>
-                <section class="settings-section">
-                    <h2 id="settings-general-header">General</h2>
-                    <label>
-                        <input type="checkbox" id="dark-mode"> Dark Mode
-                    </label>
-                    <label>
-                        <input type="checkbox" id="priority-list-only" checked> Priority list only (mine selected games only)
-                    </label>
-                    <label>
-                        Connection Quality:
-                        <input type="number" id="connection-quality" min="1" max="6" value="1">
-                    </label>
-                    <label>
-                        Minimum Refresh Interval (minutes):
-                        <input type="number" id="minimum-refresh-interval" min="1" max="1440" value="30">
-                    </label>
-                    <label>
-                        Proxy URL:
-                        <input type="text" id="proxy-url" placeholder="http://user:pass@host:port">
-                        <button id="set-proxy-btn" class="secondary-btn" title="Set and verify proxy">Set
-                            Proxy</button>
-                        <button id="verify-proxy-btn" class="secondary-btn"
-                            title="Test proxy connection">Verify</button>
-                    </label>
-                    <small class="help-text-inline" style="margin-top: 5px;">Leave empty to disable. Supports
-                        HTTP/HTTPS/SOCKS.</small>
-                    <div id="proxy-verify-result" class="verify-result" style="display: none;"></div>
-                </section>
-
-                <section class="settings-section">
-                    <h2 id="settings-discord-header">Discord Notifications</h2>
-                    <p id="settings-discord-help" class="help-text">Configure drop claim notifications on Discord.</p>
-                    <p id="settings-discord-credentials-help" class="help-text">Leave the URL blank to reuse the saved webhook. Remove Webhook disables notifications and deletes the saved URL.</p>
-                    <label>
-                        <span id="settings-discord-webhook-url-label">Discord Webhook URL:</span>
-                        <input type="password" id="discord-webhook-url" autocomplete="off" placeholder="https://discord.com/api/webhooks/ID/TOKEN">
-                        <small id="settings-discord-webhook-url-hint">Paste the full Webhook URL (it embeds your secret token).</small>
-                    </label>
-                    <div class="button-group">
-                        <button id="save-discord-btn" class="secondary-btn">Save Settings</button>
-                        <button id="test-discord-btn" class="secondary-btn">Test Connection</button>
-                        <button id="remove-discord-btn" class="secondary-btn">Remove Webhook</button>
-                    </div>
-                    <div id="discord-test-result" class="verify-result" style="display: none;"></div>
-                </section>
-
-                <section class="settings-section">
-                    <h2 id="settings-telegram-header">Telegram Notifications</h2>
-                    <p id="settings-telegram-help" class="help-text">Configure drop claim notifications on Telegram.</p>
-                    <p id="settings-telegram-credentials-help" class="help-text">Leave the token blank to keep the saved token. To disable notifications, clear the Chat ID and save.</p>
-                    <label>
-                        <span id="settings-telegram-bot-token-label">Telegram Bot Token:</span>
-                        <input type="password" id="telegram-bot-token" placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz">
-                        <small><span id="settings-telegram-get-from-botfather">Get from</span> <a href="https://t.me/BotFather" target="_blank">@BotFather</a></small>
-                    </label>
-                    <label>
-                        <span id="settings-telegram-chat-id-label">Telegram Chat ID:</span>
-                        <input type="text" id="telegram-chat-id" placeholder="Your numeric ID or @username">
-                        <small id="settings-telegram-your-user-id">Your Telegram user ID (usually starts with a number)</small>
-                    </label>
-                    <div class="button-group">
-                        <button id="save-telegram-btn" class="secondary-btn" title="Save Telegram settings">Save Settings</button>
-                        <button id="test-telegram-btn" class="secondary-btn" title="Test Telegram connection">Test Connection</button>
-                    </div>
-                    <div id="telegram-test-result" class="verify-result" style="display: none;"></div>
-                </section>
-
-                <section class="settings-section" id="reward-priority-section">
-                    <h2 id="reward-priority-title"></h2>
-                    <p id="reward-priority-help" class="help-text"></p>
-                    <label><input type="checkbox" id="reward-priority-enabled"><span id="reward-priority-enable-label"></span></label>
-                    <div id="reward-priority-order" class="reward-type-list"></div>
-                    <p id="reward-priority-error" role="alert" hidden></p>
-                </section>
-
-                <section class="settings-section">
-                    <h2 id="settings-hours-header">Mining Hours</h2>
-                    <p id="settings-hours-help" class="help-text">Uses the miner’s local time (Docker TZ). Overnight ranges cross midnight;
-                        equal start and end times mean all day. Outside the window, watching pauses and resumes automatically.</p>
-                    <div class="benefits-filter filter-checkboxes">
-                        <label class="filter-checkbox">
-                            <input type="radio" name="mining-hours-mode" id="mining-hours-always" checked />
-                            <span id="settings-hours-always-label">All day (24/7)</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="radio" name="mining-hours-mode" id="mining-hours-range" />
-                            <span id="settings-hours-range-label">Custom time range</span>
-                        </label>
-                    </div>
-                    <div id="mining-hours-range-inputs" style="display: none">
+                <div class="settings-tabs" role="tablist">
+                    <button type="button" class="settings-tab-button active" id="settings-tab-general" role="tab" data-settings-tab="general" aria-controls="settings-panel-general" aria-selected="true" tabindex="0">General</button>
+                    <button type="button" class="settings-tab-button" id="settings-tab-mining" role="tab" data-settings-tab="mining" aria-controls="settings-panel-mining" aria-selected="false" tabindex="-1">Mining</button>
+                    <button type="button" class="settings-tab-button" id="settings-tab-games" role="tab" data-settings-tab="games" aria-controls="settings-panel-games" aria-selected="false" tabindex="-1">Games</button>
+                    <button type="button" class="settings-tab-button" id="settings-tab-notifications" role="tab" data-settings-tab="notifications" aria-controls="settings-panel-notifications" aria-selected="false" tabindex="-1">Notifications</button>
+                    <button type="button" class="settings-tab-button" id="settings-tab-account" role="tab" data-settings-tab="account" aria-controls="settings-panel-account" aria-selected="false" tabindex="-1">Account &amp; Maintenance</button>
+                </div>
+                <div id="settings-panel-general" class="settings-panel" role="tabpanel" aria-labelledby="settings-tab-general">
+                    <section class="settings-section">
+                        <h2 id="settings-general-header">General</h2>
                         <label>
-                            <span id="settings-hours-start-label">Start:</span>
-                            <input type="time" id="mining-hours-start" value="08:00" required>
+                            <input type="checkbox" id="dark-mode"> Dark Mode
+                        </label>
+
+                        <label>
+                            Connection Quality:
+                            <input type="number" id="connection-quality" min="1" max="6" value="1">
                         </label>
                         <label>
-                            <span id="settings-hours-end-label">End:</span>
-                            <input type="time" id="mining-hours-end" value="22:00" required>
+                            Minimum Refresh Interval (minutes):
+                            <input type="number" id="minimum-refresh-interval" min="1" max="1440" value="30">
                         </label>
-                    </div>
-                    <p id="mining-hours-error" class="help-text" role="alert" hidden></p>
-                </section>
-
-                <section class="settings-section">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="allow-unlinked-campaigns" aria-describedby="allow-unlinked-warning" />
-                        <span id="allow-unlinked-label">Allow mining campaigns reported as Not Linked</span>
-                    </label>
-                    <p id="allow-unlinked-warning" class="help-text account-link-warning" role="note">Warning: This bypasses only TDM's account-link check. It does not link accounts or guarantee Twitch progress, claims, or in-game rewards. TDM may show estimated minutes. Check Twitch's Drops inventory and link the correct game account to receive rewards.</p>
-                    <p id="allow-unlinked-error" class="help-text" role="alert" hidden></p>
-
-                </section>
-
-                <section class="settings-section">
-                    <h2 id="settings-drop-blacklist-header">Ignored Drop Keywords</h2>
-                    <p id="settings-drop-blacklist-help" class="help-text">Enter one keyword per line. Matching
-                        drops and their dependent branches will not be mined.</p>
-                    <textarea id="drop-name-blacklist" rows="5" placeholder="(JP)&#10;[KR]&#10;Japan"></textarea>
-                </section>
-
-                <section class="settings-section">
-                    <h2 id="settings-games-header">Mining list</h2>
-                    <p id="settings-games-help" class="help-text">Select games to watch. Order matters - drag to
-                        reorder
-                        priority (top = highest
-                        priority).</p>
-
-                    <div class="games-filter">
-                        <input type="text" id="games-filter" placeholder="Search games..." />
-                        <div class="filter-actions">
-                            <select id="games-link-filter" class="small-btn" aria-label="Account link">
-                                <option value="all">All</option>
-                                <option value="linked">Linked</option>
-                                <option value="not_linked">Not Linked</option>
-                            </select>
-                            <button id="select-linked-btn" class="small-btn">Select Linked</button>
-                            <button id="select-all-btn" class="small-btn">Select All</button>
-                            <button id="deselect-all-btn" class="small-btn">Deselect All</button>
-                            <button id="add-game-btn" class="small-btn">Add Game</button>
-                            <button type="button" id="games-reload-btn" class="small-btn reload-campaigns-btn"><span class="reload-icon" aria-hidden="true">⟳</span><span class="reload-label" id="games-reload-label">Reload Campaigns</span></button>
+                        <label>
+                            Proxy URL:
+                            <input type="text" id="proxy-url" placeholder="http://user:pass@host:port">
+                            <button id="set-proxy-btn" class="secondary-btn" title="Set and verify proxy">Set
+                                Proxy</button>
+                            <button id="verify-proxy-btn" class="secondary-btn"
+                                title="Test proxy connection">Verify</button>
+                        </label>
+                        <small class="help-text-inline" style="margin-top: 5px;">Leave empty to disable. Supports
+                            HTTP/HTTPS/SOCKS.</small>
+                        <div id="proxy-verify-result" class="verify-result" style="display: none;"></div>
+                    </section>
+                </div>
+                <div id="settings-panel-mining" class="settings-panel" role="tabpanel" aria-labelledby="settings-tab-mining" hidden>
+                    <section class="settings-section" id="reward-priority-section">
+                        <h2 id="reward-priority-title"></h2>
+                        <p id="reward-priority-help" class="help-text"></p>
+                        <label><input type="checkbox" id="reward-priority-enabled"><span id="reward-priority-enable-label"></span></label>
+                        <div id="reward-priority-order" class="reward-type-list"></div>
+                        <p id="reward-priority-error" role="alert" hidden></p>
+                    </section>
+                    <section class="settings-section">
+                        <h2 id="settings-hours-header">Mining Hours</h2>
+                        <p id="settings-hours-help" class="help-text">Uses the miner’s local time (Docker TZ). Overnight ranges cross midnight;
+                            equal start and end times mean all day. Outside the window, watching pauses and resumes automatically.</p>
+                        <div class="benefits-filter filter-checkboxes">
+                            <label class="filter-checkbox">
+                                <input type="radio" name="mining-hours-mode" id="mining-hours-always" checked />
+                                <span id="settings-hours-always-label">All day (24/7)</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="radio" name="mining-hours-mode" id="mining-hours-range" />
+                                <span id="settings-hours-range-label">Custom time range</span>
+                            </label>
                         </div>
-                    </div>
+                        <div id="mining-hours-range-inputs" style="display: none">
+                            <label>
+                                <span id="settings-hours-start-label">Start:</span>
+                                <input type="time" id="mining-hours-start" value="08:00" required>
+                            </label>
+                            <label>
+                                <span id="settings-hours-end-label">End:</span>
+                                <input type="time" id="mining-hours-end" value="22:00" required>
+                            </label>
+                        </div>
+                        <p id="mining-hours-error" class="help-text" role="alert" hidden></p>
+                    </section>
+                    <section class="settings-section">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="allow-unlinked-campaigns" aria-describedby="allow-unlinked-warning" />
+                            <span id="allow-unlinked-label">Allow mining campaigns reported as Not Linked</span>
+                        </label>
+                        <p id="allow-unlinked-warning" class="help-text account-link-warning" role="note">Warning: This bypasses only TDM's account-link check. It does not link accounts or guarantee Twitch progress, claims, or in-game rewards. TDM may show estimated minutes. Check Twitch's Drops inventory and link the correct game account to receive rewards.</p>
+                        <p id="allow-unlinked-error" class="help-text" role="alert" hidden></p>
 
-                    <div class="games-container">
-                        <div class="selected-games">
-                            <h3>Selected Games (drag to reorder)</h3>
-                            <div id="selected-games-list" class="sortable-list"></div>
+                    </section>
+                    <section class="settings-section">
+                        <h2 id="settings-drop-blacklist-header">Ignored Drop Keywords</h2>
+                        <p id="settings-drop-blacklist-help" class="help-text">Enter one keyword per line. Matching
+                            drops and their dependent branches will not be mined.</p>
+                        <textarea id="drop-name-blacklist" rows="5" placeholder="(JP)&#10;[KR]&#10;Japan"></textarea>
+                    </section>
+                </div>
+                <div id="settings-panel-games" class="settings-panel" role="tabpanel" aria-labelledby="settings-tab-games" hidden>
+                    <section class="settings-section">
+                        <h2 id="settings-games-header">Mining list</h2>
+                        <p id="settings-games-help" class="help-text">Select games to watch. Order matters - drag to
+                            reorder
+                            priority (top = highest
+                            priority).</p>
+
+                    <label>
+                            <input type="checkbox" id="priority-list-only" checked> Priority list only (mine selected games only)
+                        </label>
+
+                        <div class="games-filter">
+                            <input type="text" id="games-filter" placeholder="Search games..." />
+                            <div class="filter-actions">
+                                <select id="games-link-filter" class="small-btn" aria-label="Account link">
+                                    <option value="all">All</option>
+                                    <option value="linked">Linked</option>
+                                    <option value="not_linked">Not Linked</option>
+                                </select>
+                                <button id="select-linked-btn" class="small-btn">Select Linked</button>
+                                <button id="select-all-btn" class="small-btn">Select All</button>
+                                <button id="deselect-all-btn" class="small-btn">Deselect All</button>
+                                <button id="add-game-btn" class="small-btn">Add Game</button>
+                                <button type="button" id="games-reload-btn" class="small-btn reload-campaigns-btn"><span class="reload-icon" aria-hidden="true">⟳</span><span class="reload-label" id="games-reload-label">Reload Campaigns</span></button>
+                            </div>
                         </div>
 
-                        <div class="available-games">
-                            <h3>Available Games</h3>
-                            <div id="available-games-list" class="checkbox-list"></div>
-                        </div>
-                    </div>
-                </section>
+                        <div class="games-container">
+                            <div class="selected-games">
+                                <h3>Selected Games (drag to reorder)</h3>
+                                <div id="selected-games-list" class="sortable-list"></div>
+                            </div>
 
-                <section class="settings-section">
-                    <h2 id="settings-actions-header">Actions</h2>
-                    <div class="settings-actions">
-                        <button id="clear-cache-btn" class="action-button" type="button">Clear All Cache</button>
-                        <button id="dump-diagnostics-btn" class="action-button" type="button" aria-describedby="diagnostics-help">Dump diagnosis data</button>
-                    </div>
-                    <p id="clear-cache-help" class="help-text">Clears local campaign and channel data, keeps
-                        your login and settings, then reloads from Twitch.</p>
-                    <p id="diagnostics-help" class="help-text">Saves deidentified miner state and recent sanitized API responses to data/diagnostics in your mounted data volume.</p>
-                    <p id="diagnostics-result" class="help-text" role="status" aria-live="polite"></p>
-                </section>
-                <section class="settings-section">
-                    <button id="twitch-logout" type="button" class="action-button">Log out of Twitch</button>
-                    <p id="twitch-logout-help" class="help-text">Clears this miner's Twitch session and opens sign in again.</p>
-                    <p id="twitch-logout-result" role="status" aria-live="polite"></p>
-                </section>
+                            <div class="available-games">
+                                <h3>Available Games</h3>
+                                <div id="available-games-list" class="checkbox-list"></div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                <div id="settings-panel-notifications" class="settings-panel" role="tabpanel" aria-labelledby="settings-tab-notifications" hidden>
+                    <section class="settings-section">
+                        <h2 id="settings-discord-header">Discord Notifications</h2>
+                        <p id="settings-discord-help" class="help-text">Configure drop claim notifications on Discord.</p>
+                        <p id="settings-discord-credentials-help" class="help-text">Leave the URL blank to reuse the saved webhook. Remove Webhook disables notifications and deletes the saved URL.</p>
+                        <label>
+                            <span id="settings-discord-webhook-url-label">Discord Webhook URL:</span>
+                            <input type="password" id="discord-webhook-url" autocomplete="off" placeholder="https://discord.com/api/webhooks/ID/TOKEN">
+                            <small id="settings-discord-webhook-url-hint">Paste the full Webhook URL (it embeds your secret token).</small>
+                        </label>
+                        <div class="button-group">
+                            <button id="save-discord-btn" class="secondary-btn">Save Settings</button>
+                            <button id="test-discord-btn" class="secondary-btn">Test Connection</button>
+                            <button id="remove-discord-btn" class="secondary-btn">Remove Webhook</button>
+                        </div>
+                        <div id="discord-test-result" class="verify-result" style="display: none;"></div>
+                    </section>
+                    <section class="settings-section">
+                        <h2 id="settings-telegram-header">Telegram Notifications</h2>
+                        <p id="settings-telegram-help" class="help-text">Configure drop claim notifications on Telegram.</p>
+                        <p id="settings-telegram-credentials-help" class="help-text">Leave the token blank to keep the saved token. To disable notifications, clear the Chat ID and save.</p>
+                        <label>
+                            <span id="settings-telegram-bot-token-label">Telegram Bot Token:</span>
+                            <input type="password" id="telegram-bot-token" placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz">
+                            <small><span id="settings-telegram-get-from-botfather">Get from</span> <a href="https://t.me/BotFather" target="_blank">@BotFather</a></small>
+                        </label>
+                        <label>
+                            <span id="settings-telegram-chat-id-label">Telegram Chat ID:</span>
+                            <input type="text" id="telegram-chat-id" placeholder="Your numeric ID or @username">
+                            <small id="settings-telegram-your-user-id">Your Telegram user ID (usually starts with a number)</small>
+                        </label>
+                        <div class="button-group">
+                            <button id="save-telegram-btn" class="secondary-btn" title="Save Telegram settings">Save Settings</button>
+                            <button id="test-telegram-btn" class="secondary-btn" title="Test Telegram connection">Test Connection</button>
+                        </div>
+                        <div id="telegram-test-result" class="verify-result" style="display: none;"></div>
+                    </section>
+                </div>
+                <div id="settings-panel-account" class="settings-panel" role="tabpanel" aria-labelledby="settings-tab-account" hidden>
+                    <div id="dashboard-access-slot"></div>
+                    <section id="dashboard-access-controls" class="settings-section">
+                        <h2 data-auth-text="title">Dashboard password</h2>
+                        <p id="web-auth-state"></p>
+                        <p class="help-text" data-auth-text="help">Protect this dashboard with one password. Changing it signs out other sessions. Disabling protection clears the password.</p>
+                        <form id="web-auth-settings" class="auth-form">
+                            <div id="web-auth-current-row" hidden>
+                                <label for="web-auth-current" data-auth-text="current_password">Current password</label>
+                                <input id="web-auth-current" type="password" autocomplete="current-password" maxlength="1024">
+                            </div>
+                            <label for="web-auth-new" data-auth-text="new_password">New password (at least 8 characters)</label>
+                            <input id="web-auth-new" type="password" autocomplete="new-password" minlength="8" maxlength="1024" required>
+                            <label for="web-auth-confirm" data-auth-text="confirm_password">Confirm new password</label>
+                            <input id="web-auth-confirm" type="password" autocomplete="new-password" minlength="8" maxlength="1024" required>
+                            <button id="web-auth-save" type="submit" data-auth-text="enable" disabled>Enable password protection</button>
+                            <button id="web-auth-disable" class="auth-secondary" type="button" data-auth-text="disable" hidden>Disable protection and clear password</button>
+                            <p id="web-auth-result" role="status" aria-live="polite"></p>
+                        </form>
+                    </section>
+                    <section class="settings-section">
+                        <h2 id="settings-actions-header">Actions</h2>
+                        <div class="settings-actions">
+                            <button id="clear-cache-btn" class="action-button" type="button">Clear All Cache</button>
+                            <button id="dump-diagnostics-btn" class="action-button" type="button" aria-describedby="diagnostics-help">Dump diagnosis data</button>
+                        </div>
+                        <p id="clear-cache-help" class="help-text">Clears local campaign and channel data, keeps
+                            your login and settings, then reloads from Twitch.</p>
+                        <p id="diagnostics-help" class="help-text">Saves deidentified miner state and recent sanitized API responses to data/diagnostics in your mounted data volume.</p>
+                        <p id="diagnostics-result" class="help-text" role="status" aria-live="polite"></p>
+                    </section>
+                    <section class="settings-section">
+                        <button id="twitch-logout" type="button" class="action-button">Log out of Twitch</button>
+                        <p id="twitch-logout-help" class="help-text">Clears this miner's Twitch session and opens sign in again.</p>
+                        <p id="twitch-logout-result" role="status" aria-live="polite"></p>
+                    </section>
+                </div>
             </div>
         </div>
 

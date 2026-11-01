@@ -14,6 +14,7 @@ MASK = "•" * 8
 def test_proxy_save_is_separate_and_restores_on_rejection():
     source = APP_JS.read_text(encoding="utf-8")
     script = "\n".join([
+        extract_javascript_function(source, "reportSettingsError"),
         "async " + extract_javascript_function(source, "saveProxy"),
         "async " + extract_javascript_function(source, "saveSettings"),
     ]) + r"""

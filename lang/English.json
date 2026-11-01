@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nApplication Terminated.\nClose the window to exit the application.",
         "watching": "Watching: {channel}",
+        "mining_resumed": "Mining resumed",
         "goes_online": "{channel} goes ONLINE, switching...",
         "goes_offline": "{channel} goes OFFLINE, switching...",
         "claimed_drop": "Claimed drop: {drop}",
@@ -18,6 +19,7 @@
         "incorrect_twofa_code": "Incorrect 2FA code.",
         "email_code_required": "Email code required. Check your email.",
         "twofa_code_required": "2FA token required.",
+        "headless_renewal": "xvfb-run was not found, so the session renewal browser runs headless. Twitch may reject the sessions it issues (CATALOG, integrity). Install xvfb and xauth, or use the Docker image.",
         "status": {
             "logged_in": "Logged in",
             "logged_out": "Logged out",
@@ -71,6 +73,15 @@
             "fetching_inventory": "Fetching inventory...",
             "fetching_campaigns": "Fetching campaigns...",
             "adding_campaigns": "Adding campaigns to inventory... {counter}",
+            "paused": "Paused",
+            "pause": "Pause",
+            "resume": "Resume",
+            "paused_until": "Paused until {time}",
+            "pause_10m": "For 10 minutes",
+            "pause_1h": "For 1 hour",
+            "pause_tomorrow": "Until tomorrow",
+            "pause_indefinite": "Until I resume",
+            "pause_error": "Failed to change pause state. Please try again.",
             "outside_hours": "Outside mining hours"
         },
         "tabs": {
@@ -127,6 +138,10 @@
                 "name": "General",
                 "dark_mode": "Dark Mode"
             },
+            "tab_mining": "Mining",
+            "tab_games": "Games",
+            "tab_notifications": "Notifications",
+            "tab_account": "Account & Maintenance",
             "reload": "Reload Campaigns",
             "reload_campaigns": "Reload Campaigns",
             "drop_name_blacklist": "Ignored Drop Keywords",
@@ -291,7 +306,11 @@
         },
         "wanted": {
             "name": "Wanted Drops Queue",
-            "none": "No wanted drops queued..."
+            "none": "No wanted drops queued...",
+            "drag_hint": "Drag games to change the order until restart (press and hold first on touch screens). The Mining list in Settings stays the default.",
+            "temporary": "Temporary order until restart.",
+            "reset": "Reset to Mining list order",
+            "save_error": "Could not change the queue order. Please try again."
         },
         "inventory": {
             "no_campaigns": "No campaigns loaded yet...",
@@ -411,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Disable HTTPS certificate verification for TDM (unsafe; off by default). Only for private or loopback addresses; prefer --ca-file.",
+        "insecure_warning": "WARNING: HTTPS certificate verification is disabled for the connection to TDM. An attacker could steal your Twitch session. Use only on a trusted network.",
         "title": "Connect Twitch to TDM",
         "destination_prompt": "TDM instance URL: ",
         "destination": "Destination: {url}",
@@ -422,6 +443,8 @@
         "cancelled": "Cancelled.",
         "wait_to_close": "Press Enter to close.",
         "tdm_help": "Root URL of your TDM instance",
+        "ca_file_help": "PEM certificate file to trust for the TDM HTTPS connection only, such as a self-signed or private CA certificate. Certificate checks stay on.",
+        "ca_file_in_use": "Using the custom certificate file for the TDM connection.",
         "chrome_help": "Path to Google Chrome (normally detected automatically)",
         "language_help": "Console language",
         "no_pause_help": "Exit without waiting for Enter",
@@ -431,6 +454,8 @@
         "browser_conflict": "The browser choice and executable path must select the same browser.",
         "errors": {
             "destination": "Invalid TDM address. Use its http:// or https:// root URL, including the port, without a path, password, query or fragment.",
+            "ca_file": "The --ca-file certificate could not be used. Choose a readable PEM file containing a CA certificate (CA:TRUE), such as your self-signed or private CA certificate, not a private key.",
+            "insecure_tls": "--insecure needs an https:// TDM address whose host resolves only to private or loopback addresses. For other addresses, use --ca-file.",
             "disabled": "Helper access is closed. Select Use desktop helper on the TDM sign-in screen, then run the helper.",
             "expired": "This helper connection expired or was cancelled. Enable desktop helper access again in TDM and restart the helper.",
             "busy": "Another helper is already connected. Cancel it in the TDM dashboard before starting again.",

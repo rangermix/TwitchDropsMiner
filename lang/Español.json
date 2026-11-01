@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nLa aplicación se ha detenido.\nPor favor, cierre la aplicación.",
         "watching": "Mirando el canal: {channel}",
+        "mining_resumed": "Recolección reanudada",
         "goes_online": "El canal {channel} se ha conectado, cambiando...",
         "goes_offline": "El canal {channel} se ha desconectado, cambiando...",
         "claimed_drop": "Drop reclamado: {drop}",
@@ -18,6 +19,7 @@
         "incorrect_twofa_code": "El código 2FA es incorrecto.",
         "email_code_required": "Código de verificación de email requerido. \nPor favor, revise su email.",
         "twofa_code_required": "Token 2FA requerido.",
+        "headless_renewal": "No se encontró xvfb-run, así que el navegador de renovación de sesión se ejecuta en modo headless. Twitch puede rechazar las sesiones que emite (CATALOG, integrity). Instala xvfb y xauth, o usa la imagen de Docker.",
         "status": {
             "logged_in": "Conectado",
             "logged_out": "Desconectado",
@@ -71,6 +73,15 @@
             "fetching_campaigns": "Obteniendo campañas...",
             "adding_campaigns": "Agregando lista de campañas al inventario... {counter}",
             "ready": "Listo",
+            "paused": "En pausa",
+            "pause": "Pausar",
+            "resume": "Reanudar",
+            "paused_until": "En pausa hasta las {time}",
+            "pause_10m": "Durante 10 minutos",
+            "pause_1h": "Durante 1 hora",
+            "pause_tomorrow": "Hasta mañana",
+            "pause_indefinite": "Hasta que reanude",
+            "pause_error": "No se pudo cambiar el estado de pausa. Inténtalo de nuevo.",
             "outside_hours": "Fuera del horario de minería"
         },
         "tabs": {
@@ -170,6 +181,10 @@
                 "name": "General",
                 "dark_mode": "Modo oscuro"
             },
+            "tab_mining": "Minería",
+            "tab_games": "Juegos",
+            "tab_notifications": "Notificaciones",
+            "tab_account": "Cuenta y mantenimiento",
             "reload": "Recargar",
             "reload_campaigns": "Recargar campañas",
             "games_to_watch": "Lista de minado",
@@ -334,7 +349,11 @@
         },
         "wanted": {
             "name": "Cola de Drops Deseados",
-            "none": "No hay drops deseados en cola..."
+            "none": "No hay drops deseados en cola...",
+            "drag_hint": "Arrastra los juegos para cambiar el orden hasta reiniciar (en pantallas táctiles, mantén pulsado primero). La lista de minado en Configuración sigue siendo la predeterminada.",
+            "temporary": "Orden temporal hasta reiniciar.",
+            "reset": "Restablecer al orden de la lista de minado",
+            "save_error": "No se pudo cambiar el orden de la cola. Inténtalo de nuevo."
         },
         "history": {
             "title": "Historial de drops",
@@ -411,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Desactivar la verificación de certificados HTTPS para TDM (inseguro; desactivado por defecto). Solo para direcciones privadas o de loopback; es preferible --ca-file.",
+        "insecure_warning": "ADVERTENCIA: La verificación de certificados HTTPS está desactivada para la conexión con TDM. Un atacante podría robar tu sesión de Twitch. Úsalo solo en una red de confianza.",
         "title": "Conectar Twitch a TDM",
         "destination_prompt": "URL de la instancia de TDM: ",
         "destination": "Destino: {url}",
@@ -422,6 +443,8 @@
         "cancelled": "Cancelado.",
         "wait_to_close": "Pulsa Intro para cerrar.",
         "tdm_help": "URL raíz de tu instancia de TDM",
+        "ca_file_help": "Archivo de certificado PEM de confianza solo para la conexión HTTPS con TDM, como un certificado autofirmado o de una CA privada. La verificación de certificados sigue activa.",
+        "ca_file_in_use": "Usando el archivo de certificado personalizado para la conexión con TDM.",
         "chrome_help": "Ruta de Google Chrome (normalmente se detecta automáticamente)",
         "language_help": "Idioma de la consola",
         "no_pause_help": "Salir sin esperar a Intro",
@@ -431,6 +454,8 @@
         "browser_conflict": "La opción de navegador y la ruta deben corresponder al mismo navegador.",
         "errors": {
             "destination": "Dirección TDM no válida. Usa la URL raíz http:// o https:// con puerto, sin ruta, contraseña, consulta ni fragmento.",
+            "ca_file": "No se pudo usar el certificado de --ca-file. Elige un archivo PEM legible que contenga un certificado de CA (CA:TRUE), como tu certificado autofirmado o de CA privada, no una clave privada.",
+            "insecure_tls": "--insecure necesita una dirección https:// de TDM cuyo host se resuelva solo a direcciones privadas o de loopback. Para otras direcciones, usa --ca-file.",
             "disabled": "El acceso del asistente está cerrado. Selecciona Usar asistente de escritorio en la pantalla de inicio de sesión de TDM y ejecuta el asistente.",
             "expired": "La conexión del asistente caducó o fue cancelada. Activa de nuevo el acceso del asistente en TDM y reinícialo.",
             "busy": "Ya hay otro asistente conectado. Cancélalo en el panel de TDM antes de empezar de nuevo.",

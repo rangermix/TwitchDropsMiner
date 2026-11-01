@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\nToepassing gestopt.\nSLuit het venster om de toepassing af te sluiten",
         "watching": "{channel} wordt gekeken",
+        "mining_resumed": "Drops verzamelen hervat",
         "goes_online": "{channel} is ONLINE gegaan, wijzig...",
         "goes_offline": "{channel} is OFFLINE gegaan, wijzig...",
         "claimed_drop": "Drop verkregen: {drop}",
@@ -18,6 +19,7 @@
         "incorrect_twofa_code": "Onjuiste 2FA Code.",
         "email_code_required": "E-mailcode vereist. Controleer de e-mail.",
         "twofa_code_required": "2FA Token vereist.",
+        "headless_renewal": "xvfb-run is niet gevonden, dus de browser voor sessievernieuwing draait headless. Twitch kan de sessies die deze uitgeeft weigeren (CATALOG, integrity). Installeer xvfb en xauth, of gebruik de Docker-image.",
         "status": {
             "logged_in": "Geregistreerd",
             "logged_out": "Uitgelogd",
@@ -71,6 +73,15 @@
             "fetching_campaigns": "Ophalen van de campagne...",
             "adding_campaigns": "De campagnelijst toevoegen aan de inventaris... {counter}",
             "ready": "Klaar",
+            "paused": "Gepauzeerd",
+            "pause": "Pauzeren",
+            "resume": "Hervatten",
+            "paused_until": "Gepauzeerd tot {time}",
+            "pause_10m": "10 minuten",
+            "pause_1h": "1 uur",
+            "pause_tomorrow": "Tot morgen",
+            "pause_indefinite": "Tot ik hervat",
+            "pause_error": "De pauzestatus kon niet worden gewijzigd. Probeer het opnieuw.",
             "outside_hours": "Buiten de mining-uren"
         },
         "tabs": {
@@ -170,6 +181,10 @@
                 "name": "Algemeen",
                 "dark_mode": "Donkere Modus"
             },
+            "tab_mining": "Mining",
+            "tab_games": "Games",
+            "tab_notifications": "Meldingen",
+            "tab_account": "Account & onderhoud",
             "reload": "Herladen",
             "games_to_watch": "Mininglijst",
             "games_help": "Selecteer games om te kijken. Volgorde is belangrijk - sleep om prioriteit te wijzigen (bovenaan = hoogste prioriteit).",
@@ -334,7 +349,11 @@
         },
         "wanted": {
             "name": "Gewenste Drops Wachtrij",
-            "none": "Geen gewenste drops in de wachtrij..."
+            "none": "Geen gewenste drops in de wachtrij...",
+            "drag_hint": "Sleep games om de volgorde tot een herstart te wijzigen (op touchscreens eerst ingedrukt houden). De mininglijst in Instellingen blijft de standaard.",
+            "temporary": "Tijdelijke volgorde tot herstart.",
+            "reset": "Terug naar volgorde van de mininglijst",
+            "save_error": "De volgorde van de wachtrij kon niet worden gewijzigd. Probeer het opnieuw."
         },
         "history": {
             "title": "Dropgeschiedenis",
@@ -411,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "HTTPS-certificaatcontrole voor TDM uitschakelen (onveilig; standaard uit). Alleen voor privé- of loopbackadressen; gebruik liever --ca-file.",
+        "insecure_warning": "WAARSCHUWING: HTTPS-certificaatcontrole is uitgeschakeld voor de verbinding met TDM. Een aanvaller kan je Twitch-sessie stelen. Gebruik dit alleen op een vertrouwd netwerk.",
         "title": "Twitch met TDM verbinden",
         "destination_prompt": "URL van je TDM-instantie: ",
         "destination": "Bestemming: {url}",
@@ -422,6 +443,8 @@
         "cancelled": "Geannuleerd.",
         "wait_to_close": "Druk op Enter om te sluiten.",
         "tdm_help": "Basis-URL van je TDM-instantie",
+        "ca_file_help": "PEM-certificaatbestand dat alleen voor de HTTPS-verbinding met TDM wordt vertrouwd, zoals een zelfondertekend of privé-CA-certificaat. Certificaatcontrole blijft aan.",
+        "ca_file_in_use": "Aangepast certificaatbestand wordt gebruikt voor de TDM-verbinding.",
         "chrome_help": "Pad naar Google Chrome (normaal automatisch gevonden)",
         "language_help": "Consoletaal",
         "no_pause_help": "Afsluiten zonder op Enter te wachten",
@@ -431,6 +454,8 @@
         "browser_conflict": "De browserkeuze en het programmapad moeten naar dezelfde browser verwijzen.",
         "errors": {
             "destination": "Ongeldig TDM-adres. Gebruik de http://- of https://-basis-URL met poort, zonder pad, wachtwoord, query of fragment.",
+            "ca_file": "Het certificaat van --ca-file kon niet worden gebruikt. Kies een leesbaar PEM-bestand met een CA-certificaat (CA:TRUE), zoals je zelfondertekende of privé-CA-certificaat, geen privésleutel.",
+            "insecure_tls": "--insecure vereist een https://-adres voor TDM waarvan de host alleen naar privé- of loopbackadressen verwijst. Gebruik --ca-file voor andere adressen.",
             "disabled": "Toegang voor de hulp is gesloten. Kies Desktophulp gebruiken op het TDM-aanmeldscherm en start daarna de hulp.",
             "expired": "De verbinding met de hulp is verlopen of geannuleerd. Schakel de toegang voor de hulp opnieuw in TDM in en herstart de hulp.",
             "busy": "Er is al een andere hulp verbonden. Annuleer deze in het TDM-dashboard voordat je opnieuw begint.",

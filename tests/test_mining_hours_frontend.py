@@ -13,6 +13,7 @@ pytestmark = pytest.mark.skipif(NODE is None, reason="Node.js is required for fr
 def test_schedule_saves_validate_times_and_recover_from_failed_persistence():
     source = APP_JS.read_text(encoding="utf-8")
     script = "\n".join([
+        extract_javascript_function(source, "reportSettingsError"),
         extract_javascript_function(source, "toggleMiningHoursRange"),
         "async " + extract_javascript_function(source, "onMiningHoursChange"),
     ]) + r"""

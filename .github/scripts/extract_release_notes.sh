@@ -55,7 +55,7 @@ When login is needed, open TDM’s dashboard and sign in to Twitch in the browse
 there. Complete verification, select **Finish sign in**, and wait for the dashboard
 to return. The Docker image includes the browser and uses it by default.
 Set Docker’s `TZ` to the timezone of your home internet connection.
-Use **Log out of Twitch** at the bottom of Settings to change the miner’s account.
+Use **Settings → Account & Maintenance → Log out of Twitch** to change the miner’s account.
 
 If Twitch rejects the embedded browser, select **Use desktop helper** and download
 the Windows, Linux, or macOS helper from this same release. Extract and run it on

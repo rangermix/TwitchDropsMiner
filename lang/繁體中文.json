@@ -4,6 +4,7 @@
     "status": {
         "terminated": "\n應用程式已終止，請關閉視窗以離開應用程式。",
         "watching": "正在觀看：{channel}",
+        "mining_resumed": "已恢復挖礦",
         "goes_online": "{channel} 頻道已開始實況，正在跳轉…",
         "goes_offline": "{channel} 頻道已結束實況，正在跳轉…",
         "claimed_drop": "已領取掉寶：{drop}",
@@ -18,6 +19,7 @@
         "incorrect_twofa_code": "2FA 驗證碼不正確。",
         "email_code_required": "需要電子郵件驗證碼，請查看您的電子郵件信箱。",
         "twofa_code_required": "需要 2FA 驗證碼。",
+        "headless_renewal": "找不到 xvfb-run，因此工作階段續期瀏覽器以無頭模式執行。Twitch 可能會拒絕它簽發的工作階段 (CATALOG, integrity)。請安裝 xvfb 和 xauth，或使用 Docker 映像檔。",
         "status": {
             "logged_in": "已登入",
             "logged_out": "未登入",
@@ -71,6 +73,15 @@
             "fetching_campaigns": "正在獲取掉寶活動…",
             "adding_campaigns": "將掉寶活動列表新增至庫存… {counter}",
             "ready": "就緒",
+            "paused": "已暫停",
+            "pause": "暫停",
+            "resume": "繼續",
+            "paused_until": "已暫停至 {time}",
+            "pause_10m": "10 分鐘",
+            "pause_1h": "1 小時",
+            "pause_tomorrow": "直到明天",
+            "pause_indefinite": "直到我繼續",
+            "pause_error": "無法變更暫停狀態，請再試一次。",
             "outside_hours": "非開採時段"
         },
         "tabs": {
@@ -170,6 +181,10 @@
                 "name": "一般",
                 "dark_mode": "深色模式"
             },
+            "tab_mining": "挖掘",
+            "tab_games": "遊戲",
+            "tab_notifications": "通知",
+            "tab_account": "帳戶與維護",
             "reload": "重新載入",
             "games_to_watch": "挖掘清單",
             "games_help": "選擇要觀看的遊戲。順序很重要 - 拖曳以重新排序優先級（頂部 = 最高優先級）。",
@@ -334,7 +349,11 @@
         },
         "wanted": {
             "name": "期望掉落隊列",
-            "none": "隊列中沒有期望的掉落..."
+            "none": "隊列中沒有期望的掉落...",
+            "drag_hint": "拖曳遊戲可在重新啟動前變更順序（觸控螢幕請先長按）。設置中的挖掘清單仍為預設順序。",
+            "temporary": "暫時順序，重新啟動後恢復。",
+            "reset": "恢復挖掘清單順序",
+            "save_error": "無法變更佇列順序。請再試一次。"
         },
         "history": {
             "title": "掉寶歷史",
@@ -411,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "停用 TDM 的 HTTPS 憑證驗證（不安全；預設關閉）。僅限私人位址或回送位址；建議改用 --ca-file。",
+        "insecure_warning": "警告：連線至 TDM 時已停用 HTTPS 憑證驗證。攻擊者可能竊取你的 Twitch 工作階段。僅在可信任的網路中使用。",
         "title": "連接 Twitch 與 TDM",
         "destination_prompt": "TDM 執行個體網址：",
         "destination": "目標：{url}",
@@ -422,6 +443,8 @@
         "cancelled": "已取消。",
         "wait_to_close": "按 Enter 關閉。",
         "tdm_help": "TDM 執行個體的根網址",
+        "ca_file_help": "僅用於 TDM HTTPS 連線的受信任 PEM 憑證檔，例如自簽憑證或私人 CA 憑證。憑證驗證保持開啟。",
+        "ca_file_in_use": "正在為 TDM 連線使用自訂憑證檔。",
         "chrome_help": "Google Chrome 路徑（通常自動偵測）",
         "language_help": "主控台語言",
         "no_pause_help": "結束時不等待 Enter",
@@ -431,6 +454,8 @@
         "browser_conflict": "瀏覽器選項必須與執行檔路徑相符。",
         "errors": {
             "destination": "TDM 位址無效。請輸入 http:// 或 https:// 根位址及連接埠，不要包含路徑、密碼、查詢參數或片段。",
+            "ca_file": "無法使用 --ca-file 中的憑證。請選擇包含 CA 憑證（CA:TRUE）的可讀取 PEM 檔，例如你的自簽憑證或私人 CA 憑證，而非私密金鑰。",
+            "insecure_tls": "--insecure 需要一個 https:// TDM 位址，且其主機名稱只解析到私人位址或回送位址。其他位址請使用 --ca-file。",
             "disabled": "助手連線尚未啟用。請在 TDM 登入頁面選擇「使用桌面助手」，然後執行助手。",
             "expired": "助手連線已到期或被取消。請在 TDM 中重新啟用桌面助手存取權限，然後重新執行助手。",
             "busy": "已有其他助手連線。請先在 TDM 控制台中取消，再重新開始。",

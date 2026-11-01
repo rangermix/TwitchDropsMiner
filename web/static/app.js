@@ -10,7 +10,12 @@ const state = {
     currentDrop: null,
     countdownTimer: null,  // Track the active countdown timer
     translations: {},  // Store current translations
-    previewEnabled: false  // Explicit opt-in for this page only
+    previewEnabled: false,  // Explicit opt-in for this page only
+    paused: false,
+    pauseRevision: 0,
+    pauseServerRevision: null,
+    pauseInstance: null,
+    pauseEpoch: 0
 };
 
 // ==================== UI Utilities ====================
@@ -25,6 +30,7 @@ function showToast(message, type = 'info') {
     
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
     toast.textContent = message;
     
     toastContainer.appendChild(toast);
@@ -41,6 +47,15 @@ function showToast(message, type = 'info') {
         toast.style.transform = 'translateY(10px)';
         setTimeout(() => toast.remove(), 300);
     }, 5000);
+}
+
+function reportSettingsError(element, message) {
+    if (element) element.textContent = message;
+    const panel = element?.closest?.('.settings-panel');
+    const tab = element?.closest?.('.tab-content');
+    if (message && (!element || panel?.hidden || tab?.classList?.contains('active') === false)) {
+        showToast(message, 'error');
+    }
 }
 
 function showConfirmModal(message, onConfirm) {
@@ -230,6 +245,7 @@ socket.on('initial_state', (data) => {
     if (data.settings) updateSettingsUI(data.settings, true);
     if (data.login) updateLoginStatus(data.login);
     if (data.manual_mode) updateManualModeUI(data.manual_mode);
+    updatePauseUI(data.pause === undefined ? false : data.pause?.paused, data.pause?.revision, true, data.pause?.instance_id);
     // Restore current drop progress if it exists
     if (data.current_drop) {
         updateDropProgress(data.current_drop);
@@ -237,6 +253,9 @@ socket.on('initial_state', (data) => {
         clearDropProgress();
     }
 
+    if (data.game_order) {
+        updateGameOrder(data.game_order);
+    }
     if (data.wanted_items) {
         renderWantedItems(data.wanted_items);
     }
@@ -360,6 +379,10 @@ socket.on('manual_mode_update', (data) => {
     updateManualModeUI(data);
 });
 
+socket.on('paused_update', (data) => {
+    updatePauseUI(data.paused, data.revision, false, data.instance_id);
+});
+
 socket.on('language_changed', (data) => {
     console.log('Language changed to:', data.language);
     fetchAndApplyTranslations();
@@ -367,6 +390,10 @@ socket.on('language_changed', (data) => {
 
 socket.on('wanted_items_update', (data) => {
     renderWantedItems(data);
+});
+
+socket.on('game_order_update', (data) => {
+    updateGameOrder(data);
 });
 
 // ==================== UI Update Functions ====================
@@ -1758,18 +1785,29 @@ function handleDragStart(e) {
 }
 
 function handleDragOver(e) {
+    return dragOverRows(e, '.sortable-item');
+}
+
+function handleWantedDragOver(e) {
+    return dragOverRows(e, '.wanted-game-group');
+}
+
+function dragOverRows(e, selector) {
+    // Links or images dragged from elsewhere on the page must not move rows.
+    if (!draggedElement || draggedElement.closest(selector) !== draggedElement) return false;
     if (e.preventDefault) {
         e.preventDefault();
     }
     e.dataTransfer.dropEffect = 'move';
 
-    const target = e.target.closest('.sortable-item');
-    // Rows only move within their own list (Mining list or reward types).
+    const target = e.target.closest(selector);
+    // Rows only move within their own list (Mining list, reward types or wanted queue).
     if (target && target !== draggedElement && target.parentNode === draggedElement?.parentNode) {
         const container = target.parentNode;
-        const allItems = [...container.querySelectorAll('.sortable-item')];
+        const allItems = [...container.querySelectorAll(selector)];
         const draggedIndex = allItems.indexOf(draggedElement);
         const targetIndex = allItems.indexOf(target);
+        if (!pointerPastMiddle(e, target, draggedIndex < targetIndex)) return false;
 
         if (draggedIndex < targetIndex) {
             target.parentNode.insertBefore(draggedElement, target.nextSibling);
@@ -1780,15 +1818,31 @@ function handleDragOver(e) {
     return false;
 }
 
+// Move only once the pointer crosses the target's middle in the direction of travel.
+// Rows of different heights would otherwise swap back and forth under a still pointer.
+function pointerPastMiddle(e, target, forward) {
+    const rect = target.getBoundingClientRect?.();
+    const from = draggedElement.getBoundingClientRect?.();
+    if (!rect || !from || typeof e.clientX !== 'number' || typeof e.clientY !== 'number') return true;
+    const sameRow = Math.abs(rect.top - from.top) < Math.min(rect.height, from.height) / 2;
+    const position = sameRow ? e.clientX : e.clientY;
+    const middle = sameRow ? rect.left + rect.width / 2 : rect.top + rect.height / 2;
+    return forward ? position > middle : position < middle;
+}
+
 function handleDrop(e) {
     if (e.stopPropagation) {
         e.stopPropagation();
+    }
+    if (e.preventDefault) {
+        e.preventDefault(); // never let the browser open a dropped link
     }
     return false;
 }
 
 function handleDragEnd(e) {
     e.target.classList.remove('dragging');
+    draggedElement = null;
 
     // Update the order in state
     const container = document.getElementById('selected-games-list');
@@ -1990,6 +2044,143 @@ async function selectChannel(channelId) {
     }
 }
 
+function setPauseMenuOpen(open) {
+    document.getElementById('pause-menu').hidden = !open;
+    if (!state.paused) document.getElementById('pause-btn').setAttribute('aria-expanded', String(open));
+}
+
+function isPauseRevision(revision) {
+    return Number.isSafeInteger(revision) && revision >= 0;
+}
+
+function isPauseInstance(instance) {
+    return typeof instance === 'string' && /^[a-f0-9]{32}$/.test(instance);
+}
+
+function updatePauseUI(paused, revision, initial = false, instance) {
+    if (typeof paused !== 'boolean' || (revision !== undefined && !isPauseRevision(revision))
+        || (instance !== undefined && (!isPauseInstance(instance) || !isPauseRevision(revision)))) return;
+    if (instance !== undefined) {
+        if (state.pauseInstance !== instance) {
+            if (state.pauseInstance != null) {
+                if (!initial) return;
+                state.pauseEpoch = (state.pauseEpoch || 0) + 1;
+            }
+            state.pauseServerRevision = null;
+            state.pauseInstance = instance;
+        }
+    } else if (initial) {
+        state.pauseEpoch = (state.pauseEpoch || 0) + 1;
+        state.pauseServerRevision = null;
+        state.pauseInstance = null;
+    } else if (state.pauseInstance != null) {
+        return;
+    }
+    if (isPauseRevision(revision)) {
+        if (state.pauseServerRevision != null && revision <= state.pauseServerRevision) return;
+        state.pauseServerRevision = revision;
+    } else if (state.pauseServerRevision != null) {
+        return;
+    }
+    state.pauseRevision = (state.pauseRevision || 0) + 1;
+    state.paused = paused;
+    const button = document.getElementById('pause-btn');
+    const t = state.translations.gui?.status || {};
+    button.textContent = paused ? (t.resume || 'Resume') : `${t.pause || 'Pause'} ▾`;
+    button.classList.toggle('paused', paused);
+    setPauseMenuOpen(false);
+    // Resume acts directly, so it is not a menu button.
+    for (const [name, value] of [['aria-haspopup', 'menu'], ['aria-controls', 'pause-menu']]) {
+        if (paused) button.removeAttribute(name);
+        else button.setAttribute(name, value);
+    }
+    if (paused) button.removeAttribute('aria-expanded');
+}
+
+// Resume immediately when paused; otherwise open the duration menu.
+function onPauseButton() {
+    if (state.paused) {
+        requestPause(false);
+        return;
+    }
+    const menu = document.getElementById('pause-menu');
+    setPauseMenuOpen(menu.hidden);
+    if (!menu.hidden) menu.querySelector('[role="menuitem"]').focus();
+}
+
+function onPauseKeydown(event) {
+    const button = document.getElementById('pause-btn');
+    const menu = document.getElementById('pause-menu');
+    if (button.disabled || state.paused) return;
+    if (event.key === 'Escape' || event.key === 'Tab') {
+        if (!menu.hidden) {
+            if (event.key === 'Escape') event.preventDefault();
+            setPauseMenuOpen(false);
+            button.focus();
+        }
+        return;
+    }
+    const fromButton = event.target === button;
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)
+        || (fromButton && !['ArrowDown', 'ArrowUp'].includes(event.key))) return;
+    event.preventDefault();
+    setPauseMenuOpen(true);
+    const items = [...menu.querySelectorAll('[role="menuitem"]')];
+    let index = items.indexOf(document.activeElement);
+    if (event.key === 'Home' || (fromButton && event.key === 'ArrowDown')) index = 0;
+    else if (event.key === 'End' || (fromButton && event.key === 'ArrowUp')) index = items.length - 1;
+    else index = (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+    items[index]?.focus();
+}
+
+async function requestPause(paused, duration = null) {
+    const button = document.getElementById('pause-btn');
+    if (button.disabled) return;
+    const menu = document.getElementById('pause-menu');
+    const restoreFocus = document.activeElement === button || menu.contains(document.activeElement);
+    const localRevision = state.pauseRevision || 0;
+    const epoch = state.pauseEpoch || 0;
+    // Close first so menu items can't resubmit while the request is in flight.
+    setPauseMenuOpen(false);
+    button.disabled = true;
+    let focusMoved = false;
+    const onFocus = event => { if (event.target !== button) focusMoved = true; };
+    const onPointer = () => { focusMoved = true; };
+    const onKey = event => { if (event.key === 'Tab') focusMoved = true; };
+    document.addEventListener('focusin', onFocus, true);
+    document.addEventListener('pointerdown', onPointer, true);
+    document.addEventListener('keydown', onKey, true);
+    try {
+        const response = await fetch('/api/pause', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paused, duration })
+        });
+        if (!response.ok) throw new Error();
+        const result = await response.json();
+        if ((state.pauseEpoch || 0) !== epoch) return;
+        if (result?.success !== true || typeof result.paused !== 'boolean'
+            || (result.revision !== undefined && !isPauseRevision(result.revision))
+            || (result.instance_id !== undefined && (!isPauseInstance(result.instance_id)
+                || !isPauseRevision(result.revision)))) throw new Error();
+        if (isPauseRevision(result.revision) || (state.pauseRevision || 0) === localRevision) {
+            updatePauseUI(result.paused, result.revision, false, result.instance_id);
+        }
+    } catch {
+        if ((state.pauseEpoch || 0) === epoch) {
+            const message = state.translations.gui?.status?.pause_error || 'Failed to change pause state. Please try again.';
+            addConsoleLine(message);
+            showToast(message, 'error');
+        }
+    } finally {
+        document.removeEventListener('focusin', onFocus, true);
+        document.removeEventListener('pointerdown', onPointer, true);
+        document.removeEventListener('keydown', onKey, true);
+        button.disabled = false;
+        if (restoreFocus && !focusMoved) button.focus();
+    }
+}
+
 async function exitManualMode() {
     try {
         const response = await fetch('/api/mode/exit-manual', {
@@ -2020,7 +2211,7 @@ async function verifyProxy() {
 
     if (!proxyUrl) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = 'Please enter a proxy URL first.';
+        reportSettingsError(resultDiv, 'Please enter a proxy URL first.');
         return;
     }
 
@@ -2038,11 +2229,11 @@ async function verifyProxy() {
             resultDiv.textContent = `✓ ${data.message}`;
         } else {
             resultDiv.className = 'verify-result error';
-            resultDiv.textContent = `✗ ${data.message}`;
+            reportSettingsError(resultDiv, `✗ ${data.message}`);
         }
     } catch (error) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = `Error: ${error.message}`;
+        reportSettingsError(resultDiv, `Error: ${error.message}`);
     }
 }
 
@@ -2073,7 +2264,7 @@ async function updateDiscordSettings(action) {
     result.style.display = 'block';
     if (action !== 'remove' && !webhookUrl && !state.settings.discord_configured) {
         result.className = 'verify-result error';
-        result.textContent = dc.missing_credentials || 'Please enter a Discord Webhook URL.';
+        reportSettingsError(result, dc.missing_credentials || 'Please enter a Discord Webhook URL.');
         return;
     }
     state.discordActionPending = true;
@@ -2100,8 +2291,8 @@ async function updateDiscordSettings(action) {
             : (dc.saved || 'Settings saved successfully!');
     } catch (error) {
         result.className = 'verify-result error';
-        result.textContent = saving ? (dc.save_error || 'Failed to save Discord settings.')
-            : (dc.error || 'Failed to connect to Discord. Please check your Webhook URL.');
+        reportSettingsError(result, saving ? (dc.save_error || 'Failed to save Discord settings.')
+            : (dc.error || 'Failed to connect to Discord. Please check your Webhook URL.'));
     } finally {
         state.discordActionPending = false;
         controls.forEach(control => { control.disabled = false; });
@@ -2126,7 +2317,7 @@ async function testTelegramConnection() {
 
     if ((!botToken && !state.settings.telegram_configured) || !chatId) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = tg.missing_credentials || 'Please enter a bot token and chat ID.';
+        reportSettingsError(resultDiv, tg.missing_credentials || 'Please enter a bot token and chat ID.');
         return;
     }
 
@@ -2149,11 +2340,11 @@ async function testTelegramConnection() {
             resultDiv.textContent = tg.success || '✓ Telegram connection successful!';
         } else {
             resultDiv.className = 'verify-result error';
-            resultDiv.textContent = tg.error || 'Telegram connection failed.';
+            reportSettingsError(resultDiv, tg.error || 'Telegram connection failed.');
         }
     } catch (error) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = error.message || tg.error || 'Telegram connection failed.';
+        reportSettingsError(resultDiv, error.message || tg.error || 'Telegram connection failed.');
     }
 }
 
@@ -2206,7 +2397,7 @@ async function handleSaveTelegramClick() {
     // A blank token keeps the stored credential. Clearing the chat ID disables alerts.
     if (!state.settings.telegram_configured && (!botToken || !chatId)) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = tg.missing_credentials || 'Please enter a bot token and chat ID.';
+        reportSettingsError(resultDiv, tg.missing_credentials || 'Please enter a bot token and chat ID.');
         return;
     }
 
@@ -2216,7 +2407,7 @@ async function handleSaveTelegramClick() {
         resultDiv.textContent = tg.saved || '✓ Settings saved successfully!';
     } catch (error) {
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = error.message || tg.save_error || 'Failed to save Telegram settings.';
+        reportSettingsError(resultDiv, error.message || tg.save_error || 'Failed to save Telegram settings.');
     }
 }
 
@@ -2291,6 +2482,7 @@ function renderRewardPriority(order = state.settings.reward_priority || []) {
         row.addEventListener('drop', handleDrop);
         row.addEventListener('dragend', event => {
             event.target.classList.remove('dragging');
+            draggedElement = null;
             if (!list.classList.contains('ordered')) return;
             saveRewardPriority([...list.children].map(item => item.dataset.rewardType));
         });
@@ -2326,7 +2518,7 @@ async function saveRewardPriority(order) {
         if (data.success !== true || JSON.stringify(data.settings?.reward_priority) !== JSON.stringify(order)) throw new Error();
         updateSettingsUI(data.settings, false, ['reward_priority']);
     } catch (_) {
-        error.textContent = state.translations.gui?.settings?.reward_priority_error || '';
+        reportSettingsError(error, state.translations.gui?.settings?.reward_priority_error || '');
         error.hidden = false;
     } finally {
         if (focused) {
@@ -2382,7 +2574,7 @@ async function onMiningHoursChange() {
         start.value = previous.start;
         end.value = previous.end;
         toggleMiningHoursRange(range.checked);
-        error.textContent = message;
+        reportSettingsError(error, message);
         error.hidden = false;
     } finally {
         controls.forEach(control => { control.disabled = false; });
@@ -2410,6 +2602,7 @@ async function saveSettings() {
         console.log('Settings saved automatically');
     } catch (error) {
         console.error('Failed to save settings:', error);
+        reportSettingsError(null, state.translations?.gui?.auth?.request_failed || 'Request failed. Try again.');
     }
 }
 
@@ -2437,7 +2630,7 @@ async function saveProxy() {
     } catch (error) {
         if (proxyInput) proxyInput.value = state.settings.proxy || '';
         resultDiv.className = 'verify-result error';
-        resultDiv.textContent = message;
+        reportSettingsError(resultDiv, message);
         resultDiv.style.display = 'block';
     } finally {
         button.disabled = false;
@@ -2491,7 +2684,7 @@ async function onUnlinkedMiningChange() {
         updateSettingsUI(data.settings);
     } catch (failure) {
         input.checked = state.settings.allow_unlinked_campaigns === true;
-        error.textContent = message;
+        reportSettingsError(error, message);
         error.hidden = false;
     } finally {
         input.disabled = false;
@@ -2616,6 +2809,15 @@ function applyTranslations(t) {
         // Use IDs for robust selection
         const generalHeader = document.getElementById('settings-general-header');
         if (generalHeader) generalHeader.textContent = t.gui.settings.general.name;
+        const settingsTabLabels = {
+            general: t.gui.settings.general?.name, mining: t.gui.settings.tab_mining,
+            games: t.gui.settings.tab_games, notifications: t.gui.settings.tab_notifications,
+            account: t.gui.settings.tab_account
+        };
+        for (const [name, label] of Object.entries(settingsTabLabels)) {
+            const button = document.getElementById(`settings-tab-${name}`);
+            if (button && label) button.textContent = label;
+        }
 
         const allowUnlinkedLabel = document.getElementById('allow-unlinked-label');
         if (allowUnlinkedLabel) allowUnlinkedLabel.textContent = t.gui.settings.allow_unlinked_campaigns;
@@ -2895,6 +3097,8 @@ function applyTranslations(t) {
         // ID: wanted-header
         const wantedHeader = document.getElementById('wanted-header');
         if (wantedHeader) wantedHeader.textContent = t.gui.wanted.name;
+        updateGameOrder(gameOrder);
+        renderWantedItems(lastWantedTree);
         // Re-render wanted items to update empty message
         // Since we don't store wanted items in state globally (only receives them), we rely on updateWantedItems triggering render
     }
@@ -2948,6 +3152,14 @@ function applyTranslations(t) {
     if (t.gui?.header) {
         const languageLabel = document.querySelector('.language-selector span');
         if (languageLabel) languageLabel.textContent = t.gui.header.language;
+
+        const pauseBtn = document.getElementById('pause-btn');
+        if (pauseBtn && t.gui.status) {
+            pauseBtn.textContent = state.paused ? t.gui.status.resume : `${t.gui.status.pause} ▾`;
+            document.querySelectorAll('[data-pause-duration]').forEach(item => {
+                item.textContent = t.gui.status[item.dataset.pauseKey];
+            });
+        }
 
         const statusText = document.getElementById('status-text');
         if (statusText && statusText.textContent === 'Initializing...') {
@@ -3031,14 +3243,14 @@ async function dumpDiagnostics() {
         });
         const data = await response.json();
         if (!response.ok || data.success !== true || typeof data.file !== 'string') {
-            result.textContent = response.status === 429 ? t.diagnostics_busy : t.diagnostics_error;
+            reportSettingsError(result, response.status === 429 ? t.diagnostics_busy : t.diagnostics_error);
             result.className = 'help-text error';
             return;
         }
         result.textContent = t.diagnostics_saved.replace('{path}', `data/${data.file}`);
         result.className = 'help-text success';
     } catch (_) {
-        result.textContent = t.diagnostics_error;
+        reportSettingsError(result, t.diagnostics_error);
         result.className = 'help-text error';
     } finally {
         button.disabled = false;
@@ -3068,6 +3280,41 @@ function switchTab(tabName) {
     }
 }
 
+function switchSettingsTab(name) {
+    const buttons = [...document.querySelectorAll('[data-settings-tab]')];
+    if (!buttons.some(button => button.dataset.settingsTab === name)) return;
+    buttons.forEach(button => {
+        const active = button.dataset.settingsTab === name;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', String(active));
+        button.setAttribute('tabindex', active ? '0' : '-1');
+    });
+    document.querySelectorAll('.settings-panel').forEach(panel => {
+        panel.hidden = panel.id !== `settings-panel-${name}`;
+    });
+}
+
+function handleSettingsTabKeydown(event) {
+    const buttons = [...document.querySelectorAll('[data-settings-tab]')];
+    const current = buttons.indexOf(event.currentTarget);
+    if (current < 0) return;
+    const positions = {ArrowRight: (current + 1) % buttons.length,
+        ArrowLeft: (current + buttons.length - 1) % buttons.length,
+        Home: 0, End: buttons.length - 1};
+    if (!(event.key in positions)) return;
+    event.preventDefault();
+    const next = buttons[positions[event.key]];
+    switchSettingsTab(next.dataset.settingsTab);
+    next.focus();
+}
+
+function initializeSettingsTabs() {
+    document.querySelectorAll('[data-settings-tab]').forEach(button => {
+        button.addEventListener('click', () => switchSettingsTab(button.dataset.settingsTab));
+        button.addEventListener('keydown', handleSettingsTabKeydown);
+    });
+}
+
 // ==================== Event Listeners ====================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -3081,6 +3328,7 @@ document.addEventListener('DOMContentLoaded', () => {
             switchTab(button.dataset.tab);
         });
     });
+    initializeSettingsTabs();
 
     // Settings - auto-save on change
     document.getElementById('dark-mode').addEventListener('change', (e) => {
@@ -3114,6 +3362,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('allow-unlinked-campaigns').addEventListener('change', onUnlinkedMiningChange);
     // Proxy uses a manual "Set Proxy" button instead of auto-save
     document.getElementById('set-proxy-btn').addEventListener('click', saveProxy);
+    document.getElementById('wanted-order-reset')?.addEventListener('click', () => saveWantedOrder([]));
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
     document.getElementById('test-discord-btn').addEventListener('click', () => updateDiscordSettings('test'));
     document.getElementById('save-discord-btn').addEventListener('click', () => updateDiscordSettings('save'));
@@ -3191,6 +3440,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (exitManualBtn) {
         exitManualBtn.addEventListener('click', exitManualMode);
     }
+    document.getElementById('pause-btn').addEventListener('click', onPauseButton);
+    document.getElementById('pause-btn').addEventListener('keydown', onPauseKeydown);
+    document.getElementById('pause-menu').addEventListener('keydown', onPauseKeydown);
+    document.querySelectorAll('[data-pause-duration]').forEach(item => {
+        item.addEventListener('click', () => requestPause(true, item.dataset.pauseDuration || null));
+    });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.pause-control')) setPauseMenuOpen(false);
+    });
 
     // Fetch and populate available languages
     fetchAndPopulateLanguages();
@@ -3207,21 +3465,206 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ==================== Wanted Items Rendering ====================
 
+// The queue order set here is temporary (until restart); Settings holds the default.
+let lastWantedTree = [];
+let pendingWantedTree = null;
+let wantedDragActive = false;
+let wantedOrderBusy = false;
+let gameOrder = { active: false, games: [] };
+
+function wantedText(key, fallback) {
+    return state.translations.gui?.wanted?.[key] || fallback;
+}
+
+function updateGameOrder(info) {
+    gameOrder = { active: info?.active === true, games: Array.isArray(info?.games) ? info.games : [] };
+    const note = document.getElementById('wanted-order-note');
+    const reset = document.getElementById('wanted-order-reset');
+    if (note) {
+        note.textContent = gameOrder.active
+            ? wantedText('temporary', 'Temporary order until restart.')
+            : wantedText('drag_hint', 'Drag games to change the order until restart. The Mining list in Settings stays the default.');
+    }
+    if (reset) {
+        reset.textContent = wantedText('reset', 'Reset to Mining list order');
+        reset.hidden = !gameOrder.active;
+        reset.disabled = wantedOrderBusy;
+    }
+}
+
+function setWantedOrderError(visible) {
+    const error = document.getElementById('wanted-order-error');
+    if (!error) return;
+    error.textContent = visible ? wantedText('save_error', 'Could not change the queue order. Please try again.') : '';
+    error.hidden = !visible;
+}
+
+async function saveWantedOrder(games) {
+    if (wantedOrderBusy) return false;
+    const previous = lastWantedTree;
+    let optimistic = null;
+    if (games.length) {
+        // Show the new order at once; the server broadcast confirms it.
+        const rank = new Map(games.map((name, index) => [name.toLowerCase(), index]));
+        const reordered = [...previous].sort((a, b) =>
+            (rank.get(a.game_name.toLowerCase()) ?? games.length) - (rank.get(b.game_name.toLowerCase()) ?? games.length));
+        renderWantedItems(reordered);
+        optimistic = lastWantedTree;
+    }
+    wantedOrderBusy = true;
+    updateGameOrder(gameOrder);
+    try {
+        const response = await fetch('/api/wanted-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ games })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.success !== true) throw new Error('wanted_order_failed');
+        setWantedOrderError(false);
+        updateGameOrder(data);
+        return true;
+    } catch (error) {
+        setWantedOrderError(true);
+        // Undo only our own optimistic view; the server may have applied the order
+        // anyway (lost reply), so fetch the real queue rather than trusting a snapshot.
+        if (optimistic === null || lastWantedTree === optimistic) renderWantedItems(previous);
+        if (typeof socket !== 'undefined') socket.emit('get_wanted_items');
+        return false;
+    } finally {
+        wantedOrderBusy = false;
+        updateGameOrder(gameOrder);
+    }
+}
+
+function handleWantedDragStart(e) {
+    // Only the game row moves; links and artwork inside it must not start a drag.
+    // A phone's native long-press drag must not compete with our touch hold.
+    if (e.target !== e.currentTarget || wantedOrderBusy || wantedTouch) {
+        e.preventDefault();
+        return;
+    }
+    wantedDragActive = true;
+    handleDragStart(e);
+}
+
+function handleWantedDragEnd(e) {
+    e.target.classList.remove('dragging');
+    wantedDragActive = false;
+    draggedElement = null;
+    const container = document.getElementById('wanted-items-list');
+    const order = Array.from(container.querySelectorAll('.wanted-game-group')).map(group => group.dataset.game);
+    const changed = order.some((game, index) => game !== lastWantedTree[index]?.game_name);
+    const pending = pendingWantedTree;
+    pendingWantedTree = null;
+    if (changed) {
+        saveWantedOrder(order);
+    } else if (pending) {
+        renderWantedItems(pending);
+    }
+}
+
+// Touch screens have no native drag-and-drop: press and hold a card, then drag it.
+// Moving before the hold ends is an ordinary scroll.
+const WANTED_TOUCH_HOLD_MS = 350;
+let wantedTouch = null;
+
+function flushPendingWantedItems() {
+    const pending = pendingWantedTree;
+    pendingWantedTree = null;
+    if (pending !== null) renderWantedItems(pending);
+}
+
+function handleWantedTouchStart(e) {
+    if (wantedOrderBusy || wantedDragActive || wantedTouch || e.touches.length !== 1 || e.target.closest('a')) return;
+    const row = e.currentTarget;
+    const touch = e.touches[0];
+    const gesture = { row, x: touch.clientX, y: touch.clientY, active: false, timer: null };
+    wantedTouch = gesture;
+    gesture.timer = setTimeout(() => {
+        // A cancelled hold must not restart or activate a newer gesture.
+        if (wantedTouch !== gesture) return;
+        if (row.parentNode !== document.getElementById('wanted-items-list')) {
+            wantedTouch = null;
+            flushPendingWantedItems();
+            return;
+        }
+        gesture.active = true;
+        wantedDragActive = true;
+        draggedElement = row;
+        row.classList.add('dragging');
+    }, WANTED_TOUCH_HOLD_MS);
+}
+
+function handleWantedTouchMove(e) {
+    if (!wantedTouch) return;
+    const touch = e.touches[0];
+    if (!wantedTouch.active) {
+        if (Math.hypot(touch.clientX - wantedTouch.x, touch.clientY - wantedTouch.y) > 10) {
+            clearTimeout(wantedTouch.timer);
+            wantedTouch = null;
+            flushPendingWantedItems();
+        }
+        return;
+    }
+    e.preventDefault(); // keep the page still while a card is held
+    // Near the screen edge, scroll so a long queue can be reordered end to end.
+    const edge = 60;
+    if (touch.clientY < edge) window.scrollBy(0, -12);
+    else if (touch.clientY > window.innerHeight - edge) window.scrollBy(0, 12);
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (target) {
+        dragOverRows({ target, clientX: touch.clientX, clientY: touch.clientY, dataTransfer: {} }, '.wanted-game-group');
+    }
+}
+
+function handleWantedTouchEnd(e) {
+    if (!wantedTouch) return;
+    clearTimeout(wantedTouch.timer);
+    const { row, active } = wantedTouch;
+    wantedTouch = null;
+    if (!active) {
+        flushPendingWantedItems();
+        return;
+    }
+    e.preventDefault();
+    if (e.type === 'touchcancel') {
+        // An interrupted hold restores the order shown before it started.
+        row.classList.remove('dragging');
+        wantedDragActive = false;
+        draggedElement = null;
+        const pending = pendingWantedTree;
+        pendingWantedTree = null;
+        renderWantedItems(pending || lastWantedTree);
+        return;
+    }
+    handleWantedDragEnd({ target: row });
+}
+
 function renderWantedItems(tree) {
     const container = document.getElementById('wanted-items-list');
     if (!container) return;
+    if (wantedDragActive || wantedTouch) {
+        // Preserve the touch source from the initial hold through the active drag.
+        pendingWantedTree = tree;
+        return;
+    }
+    lastWantedTree = Array.isArray(tree) ? tree : [];
 
     container.innerHTML = '';
 
-    if (!tree || tree.length === 0) {
+    if (lastWantedTree.length === 0) {
         const emptyMsg = state.translations.gui?.wanted?.none || 'No wanted drops queued...';
         container.replaceChildren(makeElement('p', { class: 'empty-message-small' }, emptyMsg));
         return;
     }
 
-    tree.forEach((gameGroup, index) => {
+    lastWantedTree.forEach((gameGroup, index) => {
         const groupEl = document.createElement('div');
         groupEl.className = 'wanted-game-group';
+        groupEl.draggable = true;
+        groupEl.dataset.game = gameGroup.game_name;
+        groupEl.title = wantedText('drag_hint', '');
 
         // Game Icon
         let iconUrl = gameGroup.game_icon;
@@ -3231,9 +3674,13 @@ function renderWantedItems(tree) {
 
         const headerChildren = [makeElement('span', { class: 'wanted-game-index' }, `#${index + 1}`)];
         if (iconUrl) {
-            headerChildren.push(makeImageElement(iconUrl, gameGroup.game_name, 'wanted-game-icon'));
+            const icon = makeImageElement(iconUrl, gameGroup.game_name, 'wanted-game-icon');
+            icon.draggable = false;
+            headerChildren.push(icon);
         }
         headerChildren.push(makeElement('span', { class: 'wanted-game-title' }, gameGroup.game_name));
+        // Same drag cue as the Mining list; the whole card is the drag target.
+        headerChildren.push(makeElement('span', { class: 'drag-handle wanted-drag-handle', 'aria-hidden': 'true' }, '☰'));
 
         const headerEl = makeElement('div', { class: 'wanted-game-header' }, '', el => {
             headerChildren.forEach(child => el.appendChild(child));
@@ -3247,7 +3694,7 @@ function renderWantedItems(tree) {
             const dropContainer = makeElement('div', {});
             const cardEl = makeElement('div', { class: 'wanted-card' }, '', el => {
                 el.appendChild(makeElement('div', { class: 'wanted-card-header' }, '', h =>
-                    h.appendChild(makeElement('a', { href: campaign.url, target: '_blank', rel: 'noopener noreferrer', class: 'wanted-card-campaign-link', title: campaign.name }, campaign.name))
+                    h.appendChild(makeElement('a', { href: campaign.url, target: '_blank', rel: 'noopener noreferrer', class: 'wanted-card-campaign-link', title: campaign.name, draggable: 'false' }, campaign.name))
                 ));
                 el.appendChild(makeElement('div', { class: 'wanted-card-body' }, '', b =>
                     b.appendChild(dropContainer)
@@ -3268,6 +3715,15 @@ function renderWantedItems(tree) {
         });
 
         groupEl.appendChild(campaignListEl);
+        groupEl.addEventListener('dragstart', handleWantedDragStart);
+        groupEl.addEventListener('dragover', handleWantedDragOver);
+        groupEl.addEventListener('drop', handleDrop);
+        groupEl.addEventListener('dragend', handleWantedDragEnd);
+        groupEl.addEventListener('touchstart', handleWantedTouchStart, { passive: true });
+        groupEl.addEventListener('touchmove', handleWantedTouchMove, { passive: false });
+        groupEl.addEventListener('touchend', handleWantedTouchEnd);
+        groupEl.addEventListener('touchcancel', handleWantedTouchEnd);
+        groupEl.addEventListener('contextmenu', e => { if (wantedTouch?.active) e.preventDefault(); });
         container.appendChild(groupEl);
     });
 }

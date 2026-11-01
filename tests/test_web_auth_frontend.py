@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.javascript_helpers import NODE
+from tests.javascript_helpers import APP_JS, NODE, extract_javascript_function
 
 
 pytestmark = pytest.mark.skipif(NODE is None, reason="Node.js is required for frontend tests")
@@ -51,6 +51,24 @@ element('submit', {button: true});
         "(async () => {" + script + "})().catch(error => { console.error(error); process.exit(1); });",
         capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_password_failure_after_leaving_account_panel_has_visible_feedback():
+    helper = extract_javascript_function(APP_JS.read_text(encoding='utf-8'), 'reportSettingsError')
+    run(helper + r"""
+const notices=[];
+function showToast(message,type){notices.push({message,type})}
+window.reportSettingsError=reportSettingsError;
+const panel={hidden:false};
+elements.get('web-auth-result').closest=()=>panel;
+let release;
+responder=()=>new Promise(resolve=>{release=()=>resolve({ok:false,json:async()=>({detail:'request_failed'})})});
+const pending=dashboardAuth.submit('change');
+panel.hidden=true;release();await pending;
+assert.deepEqual(notices,[{message:dashboardAuth.translations.request_failed,type:'error'}]);
+assert.equal(elements.get('web-auth-result').textContent,dashboardAuth.translations.request_failed);
+assert.equal(dashboardAuth.busy,false);
+""")
 
 
 @pytest.mark.parametrize("remember", [False, True])

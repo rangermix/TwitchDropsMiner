@@ -1,3 +1,60 @@
+# Release Notes - v2.4.0
+
+This minor release organizes Settings into tabs, adds temporary mining pauses, and
+brings reward priorities, Inventory shortcuts and dashboard security fixes together.
+
+## Hostname configuration when updating
+
+- The dashboard now rejects untrusted host names to protect against DNS rebinding.
+  Custom names such as `nas.lan`, `nas.fritz.box` or a Tailscale `ts.net` name need
+  `ALLOWED_HOSTS`, or `PUBLIC_BASE_URL` for the browser-facing URL. IP addresses and
+  supported local names continue to work. See the
+  [allowed-host guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Dashboard-access#allowed-host-names).
+- Proxy passwords are masked in the dashboard, API and logs. **Set Proxy** saves the
+  proxy separately; an edited masked address is rejected without changing settings.
+  Sensitive connection errors use fixed messages, and network dependencies are updated.
+
+## Settings and mining controls
+
+- Settings has five tabs: **General**, **Mining**, **Games**, **Notifications**, and
+  **Account & Maintenance**. Existing settings are retained. Reload Campaigns remains
+  in Inventory and beside the Mining list; cache clearing, diagnostics and logout are
+  in Account & Maintenance.
+- **Pause** can stop watching for 10 minutes, 1 hour, until the next midnight in the
+  miner's local timezone, or until you resume. Timed pauses end automatically, and
+  mining hours still apply after resuming. Pause is not saved across restarts and does
+  not disable claiming already-earned rewards.
+- **Mining → Reward types** combines mine/do-not-mine choices with optional drag or
+  position-number ordering. Preferred types come first among currently earnable
+  rewards; earlier deadlines break ties. Selected games stay ahead of fallback games,
+  and the saved game order is unchanged. Ordering is off by default. The guide explains
+  game rewards, chat badges, chat emotes and unrecognized **Other** rewards.
+- Invalid updates and failed saves keep all previous settings intact. Delayed replies
+  preserve later game-list and reward choices, and keyboard focus survives saves,
+  native Tab navigation and control redraws.
+
+## Games and Inventory
+
+- The Mining list shows known account-link status. Available Games can filter linked
+  or unlinked games and offers **Select Linked** while preserving existing priorities.
+- Inventory has expandable campaigns, card/list view buttons and grouped filters.
+  **Add to mining list** appends a linked game without replacing the saved order.
+  Expansion and focus are preserved during updates; cards stay in their columns.
+- Narrow-screen controls wrap instead of being clipped. New and changed labels are
+  included in all 20 languages.
+
+## Session renewal and updating
+
+- Linux/macOS control the private session-renewal browser through a private pipe;
+  Windows keeps loopback control. Commands on an already closed browser session fail
+  promptly. Browser cleanup and same-account/catalog validation remain required.
+- Update to `rangermix/twitch-drops-miner:2.4.0` while keeping the same data mount,
+  timezone and custom container options. Reload the dashboard for the versioned
+  frontend assets. Download matching 2.4.0 helpers for Windows x64, Linux x64, macOS
+  arm64 or macOS x64; archive checksums are in `SHA256SUMS`.
+- Automated tests and isolated browser checks do not guarantee live Twitch progress,
+  successful sign-in or every future unattended renewal.
+
 # Release Notes - v2.3.2
 
 ## Discord reward artwork

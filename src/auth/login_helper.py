@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import ctypes
+import ipaddress
 import json
 import math
 import os
@@ -26,6 +27,7 @@ from typing import Any
 
 import aiohttp
 import truststore
+from aiohttp.abc import AbstractResolver, ResolveResult
 from yarl import URL
 
 from src.auth.helper_errors import HelperDiagnostics
@@ -54,6 +56,62 @@ class HelperDestination:
             raise SessionError("HELPER_DESTINATION", stage="helper_configuration", reason="invalid_response") from None
 
 
+class PrivateResolver(AbstractResolver):
+    """Limit --insecure to HTTPS hosts resolving only to private addresses, then pin them."""
+
+    # 100.64.0.0/10 (carrier-grade NAT) is excluded because other ISP customers share
+    # it; IPv4 link-local 169.254.0.0/16 is not on the approved list either.
+    NETWORKS = tuple(ipaddress.ip_network(network) for network in (
+        "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.0/8",
+        "::1/128", "fc00::/7", "fe80::/10",
+    ))
+
+    DNS_TIMEOUT = 10
+
+    def __init__(self, destination: HelperDestination, resolver: AbstractResolver | None = None):
+        url = URL(destination.url)
+        self.https, self.host, self.port = url.scheme == "https", url.raw_host or "", url.port or 0
+        self.resolver = resolver or aiohttp.ThreadedResolver()
+        self.addresses: list[ResolveResult] | None = None
+
+    @classmethod
+    def allowed(cls, value: str) -> bool:
+        try:
+            address = ipaddress.ip_address(value.split("%", 1)[0])
+        except ValueError:
+            return False
+        if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
+            address = address.ipv4_mapped
+        return any(address in network for network in cls.NETWORKS)
+
+    async def vet(self) -> None:
+        if not self.https:
+            raise SessionError("HELPER_INSECURE_TLS", stage="helper_configuration")
+        try:
+            # Vetting precedes the session, so its connect timeout does not apply here.
+            results = await asyncio.wait_for(
+                self.resolver.resolve(self.host, self.port, socket.AF_UNSPEC), self.DNS_TIMEOUT)
+        except TimeoutError:
+            raise SessionError("HELPER_NETWORK", stage="helper_connect", reason="timeout") from None
+        except OSError:
+            raise SessionError("HELPER_NETWORK", stage="helper_connect", reason="dns") from None
+        # Every result must qualify, so a mixed answer cannot fall back to a public address.
+        if not results or not all(self.allowed(result["host"]) for result in results):
+            raise SessionError("HELPER_INSECURE_TLS", stage="helper_configuration")
+        self.addresses = results
+
+    async def resolve(self, host: str, port: int = 0,
+                      family: socket.AddressFamily = socket.AF_INET) -> list[ResolveResult]:
+        addresses = [result for result in self.addresses or ()
+                     if family == socket.AF_UNSPEC or result["family"] == family]
+        if host != self.host or not addresses:
+            raise OSError("unvetted host")
+        return addresses
+
+    async def close(self) -> None:
+        await self.resolver.close()
+
+
 @dataclass(frozen=True)
 class HelperTicket:
     connection: str = field(repr=False)
@@ -64,20 +122,51 @@ class HelperHTTP:
     """Bounded direct protocol, without redirects, proxies or dashboard cookies."""
 
     def __init__(self, destination: HelperDestination, *, clock: Callable[[], float] = time.time,
-                 receipt_attempts: int = 20, receipt_interval: float = 3):
+                 receipt_attempts: int = 20, receipt_interval: float = 3, insecure: bool = False,
+                 ssl_context: ssl.SSLContext | None = None):
         self.destination, self.clock = destination, clock
         self.receipt_attempts, self.receipt_interval = receipt_attempts, receipt_interval
+        self.insecure = insecure
+        self.ssl_context = ssl_context or self.trust()
+        self.resolver: PrivateResolver | None = None
         self.http: aiohttp.ClientSession
 
     async def __aenter__(self) -> HelperHTTP:
+        if self.insecure:
+            self.resolver = PrivateResolver(self.destination)
+            await self.resolver.vet()
         self.http = aiohttp.ClientSession(cookie_jar=aiohttp.DummyCookieJar(), trust_env=False,
             timeout=aiohttp.ClientTimeout(total=300, connect=15),
-            connector=aiohttp.TCPConnector(ssl=truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)),
+            connector=aiohttp.TCPConnector(ssl=False if self.insecure else self.ssl_context,
+                                           resolver=self.resolver),
             headers={"X-TDM-Request": "1", "Accept": "application/json"})
         return self
 
     async def __aexit__(self, *_args: Any) -> None:
         await self.http.close()
+        if self.resolver is not None:
+            # aiohttp closes only resolvers it created itself.
+            await self.resolver.close()
+
+    @staticmethod
+    def trust(ca_file: Path | None = None) -> ssl.SSLContext:
+        """System roots plus optional CA certificates for this helper only; verification stays on."""
+        context = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        if ca_file is not None:
+            try:
+                if not ca_file.is_file():
+                    raise OSError
+                probe = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+                probe.load_verify_locations(cafile=ca_file)
+                # Windows and macOS verification only receives CA certificates, so
+                # reject server-only certificates everywhere instead of ignoring them.
+                roots = probe.get_ca_certs(binary_form=True)
+                if not roots:
+                    raise ssl.SSLError
+                context.load_verify_locations(cadata=b"".join(roots))
+            except (OSError, ssl.SSLError, ValueError):
+                raise SessionError("HELPER_CA_FILE", stage="helper_configuration") from None
+        return context
 
     @staticmethod
     def _server_error(path: str, status: int, data: Any) -> SessionError:
@@ -785,18 +874,25 @@ class NativeLoginHelper:
     """Admission precedes the browser; success follows proof and local cleanup."""
 
     def __init__(self, destination: str, *,
+                 insecure: bool = False, ca_file: Path | None = None,
                  browser_factory: Callable[..., Any] = BrowserSelection.create,
                  exporter_factory: Callable[..., Any] | None = None,
                  clock: Callable[[], float] = time.time, report: Callable[[str], None] = lambda _key: None):
         self.destination = HelperDestination(destination)
+        if insecure and ca_file is not None:
+            raise ValueError("--insecure and --ca-file are exclusive")
+        self.insecure, self.ssl_context = insecure, HelperHTTP.trust(ca_file)
         self.browser_factory, self.exporter_factory = browser_factory, exporter_factory
         self.clock, self.report = clock, report
 
     async def run(self) -> None:
         phase = "helper_connect"
         try:
+            if self.insecure:
+                self.report("insecure_warning")
             self.report("connecting")
-            async with HelperHTTP(self.destination, clock=self.clock) as client:
+            async with HelperHTTP(self.destination, clock=self.clock, insecure=self.insecure,
+                                  ssl_context=self.ssl_context) as client:
                 ticket = await client.connect()
                 phase = "browser_start"
                 async with self.browser_factory() as browser:
@@ -881,6 +977,9 @@ class LoginHelperCLI:
         words = _.t["helper"]
         parser = argparse.ArgumentParser(description=words["title"])
         parser.add_argument("--tdm", help=words["tdm_help"])
+        tls = parser.add_mutually_exclusive_group()
+        tls.add_argument("--insecure", action="store_true", help=words["insecure_help"])
+        tls.add_argument("--ca-file", type=Path, help=words["ca_file_help"])
         parser.add_argument("--browser", choices=("auto", "chrome", "chromium", "firefox"),
                             default="auto", help=words["browser_help"])
         paths = parser.add_mutually_exclusive_group()
@@ -896,11 +995,14 @@ class LoginHelperCLI:
         result = 0
         try:
             destination = HelperDestination(args.tdm or input(words["destination_prompt"]).strip()).url
-            helper = NativeLoginHelper(destination,
+            helper = NativeLoginHelper(destination, insecure=args.insecure, ca_file=args.ca_file,
                 browser_factory=lambda: BrowserSelection.create(
                 args.browser, chrome=args.chrome, chromium=args.chromium, firefox=args.firefox),
-                report=lambda key: print(words[key], flush=True))  # type: ignore[literal-required]
+                report=lambda key: print(words[key],  # type: ignore[literal-required]
+                    file=sys.stderr if key == "insecure_warning" else sys.stdout, flush=True))
             print(words["destination"].format(url=helper.destination.url), flush=True)
+            if args.ca_file is not None and helper.destination.url.startswith("https://"):
+                print(words["ca_file_in_use"], flush=True)
             asyncio.run(LoginHelperCLI.run_cancellable(helper))
         except SessionError as error:
             # Codes originate in our validators; never print response bodies or exceptions.

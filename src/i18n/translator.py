@@ -10,6 +10,7 @@ from src.config import DEFAULT_LANG, LANG_PATH
 class StatusMessages(TypedDict):
     terminated: str
     watching: str
+    mining_resumed: str
     goes_online: str
     goes_offline: str
     claimed_drop: str
@@ -33,6 +34,7 @@ class LoginMessages(TypedDict):
     incorrect_login_pass: str
     incorrect_email_code: str
     incorrect_twofa_code: str
+    headless_renewal: str
     status: LoginStatus
 
 
@@ -54,6 +56,15 @@ class GUIStatus(TypedDict):
     fetching_inventory: str
     fetching_campaigns: str
     adding_campaigns: str
+    paused: str
+    pause: str
+    resume: str
+    paused_until: str
+    pause_10m: str
+    pause_1h: str
+    pause_tomorrow: str
+    pause_indefinite: str
+    pause_error: str
     outside_hours: str
 
 
@@ -175,6 +186,10 @@ class GUIBadges(TypedDict):
 class GUIWanted(TypedDict):
     name: str
     none: str
+    drag_hint: str
+    temporary: str
+    reset: str
+    save_error: str
 
 
 class GUIInvFilters(TypedDict):
@@ -278,6 +293,10 @@ class GUISettings(TypedDict):
     allow_unlinked_campaigns_warning: str
     allow_unlinked_campaigns_save_error: str
     general: GUISettingsGeneral
+    tab_mining: str
+    tab_games: str
+    tab_notifications: str
+    tab_account: str
     discord: GUIDiscordSettings
     telegram: GUITelegramSettings
     reload: str
@@ -433,6 +452,8 @@ class GUIMessages(TypedDict):
 
 class HelperErrors(TypedDict):
     destination: str
+    ca_file: str
+    insecure_tls: str
     disabled: str
     expired: str
     busy: str
@@ -484,9 +505,13 @@ class HelperMessages(TypedDict):
     cancelled: str
     wait_to_close: str
     tdm_help: str
+    ca_file_help: str
+    ca_file_in_use: str
     chrome_help: str
     language_help: str
     no_pause_help: str
+    insecure_help: str
+    insecure_warning: str
 
 
 class Translation(TypedDict):

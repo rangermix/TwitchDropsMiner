@@ -63,7 +63,9 @@ const dashboardAuth = {
             document.querySelectorAll('.auth-form input[type="password"]').forEach(input => { input.value = ''; });
             window.location.replace(action === 'logout' ? '/login' : '/');
         } catch (error) {
-            if (result) result.textContent = this.translations[error.message] || this.translations.request_failed || 'Request failed. Try again.';
+            const message = this.translations[error.message] || this.translations.request_failed || 'Request failed. Try again.';
+            if (typeof window.reportSettingsError === 'function') window.reportSettingsError(result, message);
+            else if (result) result.textContent = message;
             if (error.message === 'authentication_required') window.location.replace('/login');
         } finally {
             this.busy = false;
@@ -101,7 +103,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('web-auth-logout')?.addEventListener('click', () => dashboardAuth.submit('logout'));
     const refresh = reconnect => dashboardAuth.refresh(reconnect).catch(() => {
         const result = document.getElementById('web-auth-result');
-        if (result) result.textContent = dashboardAuth.translations.request_failed || 'Request failed. Try again.';
+        const message = dashboardAuth.translations.request_failed || 'Request failed. Try again.';
+        if (typeof window.reportSettingsError === 'function') window.reportSettingsError(result, message);
+        else if (result) result.textContent = message;
         if (login && !dashboardAuth.busy) {
             login.querySelectorAll('button').forEach(button => { button.disabled = false; });
         }

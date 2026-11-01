@@ -260,3 +260,33 @@ async def test_expired_seed_recovery_failure_preserves_previous_session(controll
     with pytest.raises(SessionError):
         await control.renew_once()
     assert session.path.read_bytes() == before and session.status()['generation'] == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("headless", [True, False])
+@pytest.mark.parametrize("stage", ["captured_validation", "issued_validation", "renewal_validation"])
+async def test_headless_fallback_labels_only_issued_integrity_rejection(controller, stage, headless):
+    control, session, clock, issuer = controller
+    if stage == "renewal_validation":
+        await control.accept(seed(), authorized=lambda: True)
+    issuer.headless_fallback = headless
+    rejected = catalog()
+    rejected[1] = {"errors": [{"message": "failed integrity check"}], "data": None}
+    posts = []
+
+    async def request(method, url, *, headers, body=None):
+        if method == "GET":
+            return {"client_id": ClientType.WEB.CLIENT_ID, "user_id": "42"}
+        posts.append(url)
+        # Accept login's captured catalog unless it is the target; renewal has only issued POSTs.
+        captured = stage != "renewal_validation" and len(posts) == 1
+        return rejected if captured == (stage == "captured_validation") else catalog()
+
+    session._transport.request.side_effect = request
+    with pytest.raises(SessionError) as failure:
+        await (control.renew_once() if stage == "renewal_validation"
+               else control.accept(seed(), authorized=lambda: True))
+    diagnostic = failure.value.diagnostic
+    assert (diagnostic.code, diagnostic.stage, diagnostic.operation) == ("CATALOG", stage, "Campaigns")
+    expected = "headless_fallback" if headless and stage != "captured_validation" else "integrity"
+    assert diagnostic.reason == expected

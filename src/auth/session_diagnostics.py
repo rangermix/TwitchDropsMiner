@@ -22,10 +22,10 @@ class SessionDiagnostic:
         "CAPTURE_LIMIT", "CAPTURE_TIMEOUT", "CATALOG", "CONFIG", "CONNECTION", "DELIVERY",
         "DESTINATION", "EXPIRED", "FILE",
         "FORMAT", "HELPER_BROWSER", "HELPER_BROWSER_CLEANUP", "HELPER_BROWSER_MISSING",
-        "HELPER_BROWSER_OWNER", "HELPER_BUSY", "HELPER_CANCELLED", "HELPER_CHROME_MISSING",
+        "HELPER_BROWSER_OWNER", "HELPER_BUSY", "HELPER_CA_FILE", "HELPER_CANCELLED", "HELPER_CHROME_MISSING",
         "HELPER_CHROMIUM_MISSING", "HELPER_DESTINATION", "HELPER_DISABLED", "HELPER_EXPIRED",
         "HELPER_FAILED", "HELPER_FIREFOX_LOGIN", "HELPER_FIREFOX_MISSING",
-        "HELPER_FIREFOX_VERSION", "HELPER_LOGIN_MISSING", "HELPER_LOGIN_TIMEOUT",
+        "HELPER_FIREFOX_VERSION", "HELPER_INSECURE_TLS", "HELPER_LOGIN_MISSING", "HELPER_LOGIN_TIMEOUT",
         "HELPER_NETWORK", "HELPER_PROFILE_CLEANUP", "HELPER_REDIRECT", "HELPER_REJECTED",
         "HELPER_RESPONSE", "HELPER_RESULT_UNKNOWN", "HELPER_SERVER_BROWSER", "HELPER_STATE",
         "IDENTITY", "LOGIN_MISSING", "LOGIN_TIMEOUT", "PAIRING", "REPLAY", "REQUEST",
@@ -42,7 +42,7 @@ class SessionDiagnostic:
         "unknown", "unexpected_exception", "timeout", "tls", "dns", "connection",
         "http_error", "invalid_json", "response_limit", "redirect", "invalid_response",
         "integrity", "persisted_query_not_found", "service", "catalog_shape",
-        "identity_shape", "account_mismatch",
+        "identity_shape", "account_mismatch", "headless_fallback",
     })
     OPERATIONS: ClassVar[frozenset[str]] = frozenset({
         "unknown", "identity", "Inventory", "Campaigns", "catalog",
