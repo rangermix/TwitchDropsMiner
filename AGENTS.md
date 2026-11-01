@@ -283,6 +283,13 @@ lang/                # Translation JSON files (20 languages)
   20 locales, dashboard logout controls, keyboard tab navigation and narrow viewports
   in a rendered browser. `test_header_frontend.py` and `test_browser_login_panel.py`
   cover full tooltip text and removal of stale account/renewal information.
+- The connection indicator and language selector share a 32px height and 110px minimum
+  width; longer translations may widen them. Inventory search and single-line toolbar
+  controls align at 40px. Text buttons use a 40px minimum height and retain vertical
+  padding so wrapped translations can grow; do not replace this with a fixed height.
+  Align the toolbar's bottom with the search field on a shared flex line, and preserve
+  its separate full-width row at 480 CSS pixels and below. CSS sizing changes require
+  the release workflow's version/cache-key bump before deployment.
 
 **src/websocket/pool.py** - WebSocket management:
 
