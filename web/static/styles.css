@@ -1169,6 +1169,11 @@ header h1 {
     font-weight: 500;
 }
 
+.wanted-drop-info .wanted-benefit-pill {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
 
 .drop-item {
     padding: 10px;

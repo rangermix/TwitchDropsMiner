@@ -354,6 +354,8 @@ lang/                # Translation JSON files (20 languages)
   name are omitted. `drop_update` events patch the shown and deferred queue trees and
   the shown rows' bars and minutes in place, never rebuilding the queue, so keyboard
   focus and drags are untouched.
+  Long additional reward names must wrap within the artwork row's information column
+  rather than overflowing into the card's clipped area.
   Regression: `test_wanted_queue_frontend.py` and `test_wanted_items.py`.
 - Mining list supports drag ordering and editable integer priority numbers. Clamp valid
   ranks to the list bounds; reject blank/fractional values without changing settings.
