@@ -136,6 +136,19 @@ expired rewards and rewards the miner cannot target. Upcoming and sequential rew
 can remain visible, so a queued reward is not necessarily earnable immediately.
 Successful claims refresh the queue.
 
+### Change the queue order temporarily
+
+On **Main**, drag a game card in the Wanted Drops Queue to mine it sooner. On a touch
+screen, press and hold a card first, then drag it. This order takes precedence over
+the Mining list, reward-type order and fallback rules, but it only reorders games that
+are already queued. Games that join the queue later are placed after the games you
+ordered.
+
+The order is temporary: restarting the miner, selecting **Reset to Mining list
+order**, or changing **Mining list** (in Settings or with **Add to mining list** in
+Inventory) returns to the saved order. To change the default order permanently, use
+**Settings → Games → Mining list**.
+
 ## Account-link override
 
 In **Settings → Mining**, **Allow mining campaigns reported as Not Linked** is off by default.

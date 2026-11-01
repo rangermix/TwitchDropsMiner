@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Falscher 2FA Code.",
         "email_code_required": "E-Mail Code erforderlich. Bitte E-Mail prüfen.",
         "twofa_code_required": "2FA Token erforderlich.",
+        "headless_renewal": "xvfb-run wurde nicht gefunden, daher läuft der Browser zur Sitzungserneuerung headless. Twitch kann die von ihm ausgestellten Sitzungen ablehnen (CATALOG, integrity). Installiere xvfb und xauth oder verwende das Docker-Image.",
         "status": {
             "logged_in": "Angemeldet",
             "logged_out": "Abgemeldet",
@@ -348,7 +349,11 @@
         },
         "wanted": {
             "name": "Wunsch-Drops Warteschlange",
-            "none": "Keine Wunsch-Drops in der Warteschlange..."
+            "none": "Keine Wunsch-Drops in der Warteschlange...",
+            "drag_hint": "Ziehe Spiele, um die Reihenfolge bis zum Neustart zu ändern (auf Touchscreens zuerst gedrückt halten). Die Mining-Liste in den Einstellungen bleibt der Standard.",
+            "temporary": "Vorübergehende Reihenfolge bis zum Neustart.",
+            "reset": "Auf Reihenfolge der Mining-Liste zurücksetzen",
+            "save_error": "Die Reihenfolge der Warteschlange konnte nicht geändert werden. Bitte versuche es erneut."
         },
         "history": {
             "title": "Drop-Verlauf",
@@ -425,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "HTTPS-Zertifikatsprüfung für TDM deaktivieren (unsicher; standardmäßig aus). Nur für private oder Loopback-Adressen; besser --ca-file verwenden.",
+        "insecure_warning": "WARNUNG: Die HTTPS-Zertifikatsprüfung für die Verbindung zu TDM ist deaktiviert. Angreifer könnten deine Twitch-Sitzung stehlen. Nur in einem vertrauenswürdigen Netzwerk verwenden.",
         "title": "Twitch mit TDM verbinden",
         "destination_prompt": "URL der TDM-Instanz: ",
         "destination": "Ziel: {url}",
@@ -436,6 +443,8 @@
         "cancelled": "Abgebrochen.",
         "wait_to_close": "Zum Schließen Eingabetaste drücken.",
         "tdm_help": "Stamm-URL deiner TDM-Instanz",
+        "ca_file_help": "PEM-Zertifikatsdatei, der nur für die HTTPS-Verbindung zu TDM vertraut wird, z. B. ein selbstsigniertes oder privates CA-Zertifikat. Die Zertifikatsprüfung bleibt aktiv.",
+        "ca_file_in_use": "Eigene Zertifikatsdatei für die TDM-Verbindung wird verwendet.",
         "chrome_help": "Pfad zu Google Chrome (normalerweise automatisch erkannt)",
         "language_help": "Konsolensprache",
         "no_pause_help": "Ohne Warten auf die Eingabetaste beenden",
@@ -445,6 +454,8 @@
         "browser_conflict": "Browserauswahl und Programmpfad müssen zum selben Browser gehören.",
         "errors": {
             "destination": "Ungültige TDM-Adresse. Nutze die http://- oder https://-Basisadresse mit Port, ohne Pfad, Passwort, Abfrage oder Fragment.",
+            "ca_file": "Das Zertifikat aus --ca-file konnte nicht verwendet werden. Wähle eine lesbare PEM-Datei mit einem CA-Zertifikat (CA:TRUE), etwa dein selbstsigniertes oder privates CA-Zertifikat, keinen privaten Schlüssel.",
+            "insecure_tls": "--insecure braucht eine https://-Adresse für TDM, deren Host nur zu privaten oder Loopback-Adressen aufgelöst wird. Verwende für andere Adressen --ca-file.",
             "disabled": "Helferzugriff ist geschlossen. Wähle Desktop-Helfer verwenden auf der TDM-Anmeldeseite und starte danach den Helfer.",
             "expired": "Die Helferverbindung ist abgelaufen oder wurde abgebrochen. Aktiviere den Helferzugriff erneut in TDM und starte den Helfer neu.",
             "busy": "Ein anderer Helfer ist bereits verbunden. Beende ihn im TDM-Dashboard, bevor du erneut startest.",

@@ -20,6 +20,7 @@ from src.config.reward_priority import RewardPriority
 from src.exceptions import ExitRequest
 from src.i18n import _
 from src.models import DropsCampaign
+from src.services.game_order import TemporaryGameOrder
 from src.utils import chunk
 
 
@@ -280,6 +281,10 @@ class InventoryService:
                     self._twitch.wanted_games.index(campaign.game), campaign.remaining_minutes))
             if not campaigns:
                 return None
+            order = getattr(self._twitch, "game_order", None)
+            if isinstance(order, TemporaryGameOrder) and order.active:
+                # Stable: the temporary dashboard order first, then the rules above.
+                campaigns.sort(key=lambda campaign: order.rank(campaign.game.name))
             return campaigns[0]
 
         return None

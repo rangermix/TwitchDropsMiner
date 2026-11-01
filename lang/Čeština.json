@@ -18,6 +18,7 @@
         "incorrect_twofa_code": "Nesprávný dvoufaktorový token",
         "email_code_required": "K přihlášení je vyžadován kód který byl zaslán na váš E-Mail.",
         "twofa_code_required": "K přihlášení je vyžadován dvoufaktorový kód.",
+        "headless_renewal": "Nástroj xvfb-run nebyl nalezen, proto prohlížeč pro obnovu relace běží bez zobrazení (headless). Twitch může relace, které vydá, odmítnout (CATALOG, integrity). Nainstalujte xvfb a xauth, nebo použijte obraz Dockeru.",
         "status": {
             "logged_in": "Přihlášeno",
             "logged_out": "Odhlášeno",
@@ -348,7 +349,11 @@
         },
         "wanted": {
             "name": "Fronta chtěných Dropů",
-            "none": "Žádné chtěné dropy ve frontě..."
+            "none": "Žádné chtěné dropy ve frontě...",
+            "drag_hint": "Přetažením her změníte pořadí do restartu (na dotykových obrazovkách nejprve podržte). Seznam těžby v Nastavení zůstává výchozí.",
+            "temporary": "Dočasné pořadí do restartu.",
+            "reset": "Obnovit pořadí seznamu těžby",
+            "save_error": "Pořadí fronty se nepodařilo změnit. Zkuste to znovu."
         },
         "history": {
             "title": "Historie dropů",
@@ -425,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Vypnout ověřování certifikátů HTTPS pro TDM (nebezpečné; ve výchozím stavu vypnuto). Pouze pro soukromé adresy nebo adresy loopback; raději použijte --ca-file.",
+        "insecure_warning": "VAROVÁNÍ: Ověřování certifikátů HTTPS pro připojení k TDM je vypnuté. Útočník může ukrást vaši relaci Twitch. Používejte pouze v důvěryhodné síti.",
         "title": "Připojit Twitch k TDM",
         "destination_prompt": "URL instance TDM: ",
         "destination": "Cíl: {url}",
@@ -436,6 +443,8 @@
         "cancelled": "Zrušeno.",
         "wait_to_close": "Stisknutím Enter zavřete.",
         "tdm_help": "Kořenová URL vaší instance TDM",
+        "ca_file_help": "Soubor certifikátu PEM, kterému se důvěřuje jen pro HTTPS připojení k TDM, například certifikát podepsaný sám sebou nebo certifikát soukromé CA. Ověřování certifikátů zůstává zapnuté.",
+        "ca_file_in_use": "Používá se vlastní soubor certifikátu pro připojení k TDM.",
         "chrome_help": "Cesta ke Google Chrome (obvykle se zjistí automaticky)",
         "language_help": "Jazyk konzole",
         "no_pause_help": "Ukončit bez čekání na Enter",
@@ -445,6 +454,8 @@
         "browser_conflict": "Volba prohlížeče a cesta musí označovat stejný prohlížeč.",
         "errors": {
             "destination": "Neplatná adresa TDM. Použijte kořenovou URL http:// nebo https:// s portem, bez cesty, hesla, dotazu či fragmentu.",
+            "ca_file": "Certifikát z --ca-file nelze použít. Vyberte čitelný soubor PEM s certifikátem CA (CA:TRUE), například váš certifikát podepsaný sám sebou nebo certifikát soukromé CA, ne soukromý klíč.",
+            "insecure_tls": "--insecure vyžaduje adresu TDM https://, jejíž hostitel se překládá jen na soukromé adresy nebo adresy loopback. Pro jiné adresy použijte --ca-file.",
             "disabled": "Přístup pomocníka je uzavřen. Na přihlašovací obrazovce TDM zvolte Použít pomocníka pro počítač a poté pomocníka spusťte.",
             "expired": "Spojení pomocníka vypršelo nebo bylo zrušeno. Znovu povolte přístup pomocníka v TDM a spusťte pomocníka znovu.",
             "busy": "Jiný pomocník je již připojen. Před novým pokusem jej zrušte v panelu TDM.",

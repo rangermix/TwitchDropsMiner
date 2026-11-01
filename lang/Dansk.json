@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Forkert 2FA-kode.",
         "email_code_required": "Email kode påkrævet. Tjek din email.",
         "twofa_code_required": "2FA token påkrævet.",
+        "headless_renewal": "xvfb-run blev ikke fundet, så browseren til fornyelse af sessionen kører headless. Twitch kan afvise de sessioner, den udsteder (CATALOG, integrity). Installer xvfb og xauth, eller brug Docker-imaget.",
         "status": {
             "logged_in": "Logget ind",
             "logged_out": "Logget ud",
@@ -348,7 +349,11 @@
         },
         "wanted": {
             "name": "Ønskede Drops Kø",
-            "none": "Ingen ønskede drops i køen..."
+            "none": "Ingen ønskede drops i køen...",
+            "drag_hint": "Træk spil for at ændre rækkefølgen indtil genstart (tryk og hold først på berøringsskærme). Mininglisten i Indstillinger forbliver standarden.",
+            "temporary": "Midlertidig rækkefølge indtil genstart.",
+            "reset": "Nulstil til mininglistens rækkefølge",
+            "save_error": "Køens rækkefølge kunne ikke ændres. Prøv igen."
         },
         "history": {
             "title": "Drop-historik",
@@ -425,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Deaktiver kontrol af HTTPS-certifikater for TDM (usikkert; slået fra som standard). Kun til private adresser eller loopback-adresser; brug hellere --ca-file.",
+        "insecure_warning": "ADVARSEL: Kontrol af HTTPS-certifikater er deaktiveret for forbindelsen til TDM. En angriber kan stjæle din Twitch-session. Brug kun dette på et betroet netværk.",
         "title": "Forbind Twitch med TDM",
         "destination_prompt": "URL til TDM-instans: ",
         "destination": "Destination: {url}",
@@ -436,6 +443,8 @@
         "cancelled": "Annulleret.",
         "wait_to_close": "Tryk Enter for at lukke.",
         "tdm_help": "Rod-URL til din TDM-instans",
+        "ca_file_help": "PEM-certifikatfil, der kun stoles på for HTTPS-forbindelsen til TDM, f.eks. et selvsigneret eller privat CA-certifikat. Certifikatkontrollen forbliver slået til.",
+        "ca_file_in_use": "Bruger den tilpassede certifikatfil til TDM-forbindelsen.",
         "chrome_help": "Sti til Google Chrome (findes normalt automatisk)",
         "language_help": "Konsolsprog",
         "no_pause_help": "Afslut uden at vente på Enter",
@@ -445,6 +454,8 @@
         "browser_conflict": "Browservalg og programsti skal pege på samme browser.",
         "errors": {
             "destination": "Ugyldig TDM-adresse. Brug rod-URL med http:// eller https:// og port, uden sti, adgangskode, forespørgsel eller fragment.",
+            "ca_file": "Certifikatet fra --ca-file kunne ikke bruges. Vælg en læsbar PEM-fil med et CA-certifikat (CA:TRUE), f.eks. dit selvsignerede eller private CA-certifikat, ikke en privat nøgle.",
+            "insecure_tls": "--insecure kræver en https://-adresse til TDM, hvis vært kun peger på private adresser eller loopback-adresser. Brug --ca-file til andre adresser.",
             "disabled": "Hjælperadgang er lukket. Vælg Brug skrivebordshjælper på TDM's loginskærm, og start derefter hjælperen.",
             "expired": "Hjælperforbindelsen udløb eller blev annulleret. Aktivér hjælperadgang igen i TDM, og genstart hjælperen.",
             "busy": "En anden hjælper er allerede tilsluttet. Annuller den i TDM-dashboardet, før du prøver igen.",

@@ -62,6 +62,8 @@ class WebGUIManager:
 
         self.settings = SettingsManager(
             self._broadcaster, twitch.settings, self.output, on_change=on_settings_change,
+            # A changed saved Mining list becomes the new default order.
+            on_games_change=lambda: self._twitch.clear_game_order(),
         )
 
         # Selected channel tracking (set by web client)
@@ -173,9 +175,13 @@ class WebGUIManager:
         """Broadcast pause state from Twitch.pause_info() to connected clients."""
         asyncio.create_task(self._broadcaster.emit("paused_update", pause_info))
 
+    def broadcast_game_order(self, order_info: dict) -> None:
+        """Broadcast the temporary queue order from TemporaryGameOrder.info()."""
+        asyncio.create_task(self._broadcaster.emit("game_order_update", order_info))
+
     def get_wanted_game_tree(self) -> list[dict]:
         return self._stream_selector.get_wanted_game_tree(
-            self._twitch.settings, self._twitch.inventory
+            self._twitch.settings, self._twitch.inventory, getattr(self._twitch, "game_order", None)
         )
 
     async def broadcast_wanted_items_now(self) -> None:

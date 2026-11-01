@@ -37,6 +37,7 @@ from src.i18n import _
 from src.models.campaign import DropsCampaign
 from src.models.channel import Channel
 from src.services.channel_service import ChannelService
+from src.services.game_order import TemporaryGameOrder
 from src.services.inventory_service import InventoryService
 from src.services.maintenance import MaintenanceService
 from src.services.message_handlers import MessageHandlerService
@@ -86,6 +87,8 @@ class Twitch:
         self._inventory_refresh_pending = False
         self._clear_cache_pending = False
         self.wanted_games: list[Game] = []
+        # Runtime-only queue order from the dashboard; the saved Mining list is the default.
+        self.game_order = TemporaryGameOrder()
         self.inventory: list[DropsCampaign] = []
         self._drops: dict[str, TimedDrop] = {}
         self._campaigns: dict[str, DropsCampaign] = {}
@@ -430,6 +433,23 @@ class Twitch:
         self._schedule_changed.set()
         self.gui.broadcast_paused(self.pause_info())
 
+    def set_game_order(self, names: list[str]) -> None:
+        """Set or (with an empty list) clear the temporary queue order until restart."""
+        self.game_order.set(names)
+        self._game_order_changed()
+
+    def clear_game_order(self) -> None:
+        """Return to the saved Mining list order, e.g. after that list changes."""
+        if self.game_order.clear():
+            self._game_order_changed()
+
+    def _game_order_changed(self) -> None:
+        # Recompute wanted games and channel choice; show the new queue at once,
+        # even while mining is paused and the update is deferred.
+        self.request_games_update()
+        self.gui.broadcast_wanted_items()
+        self.gui.broadcast_game_order(self.game_order.info())
+
     def _closed_status(self) -> str:
         """Status text while mining is not allowed to run."""
         status = _.t["gui"]["status"]
@@ -637,7 +657,7 @@ class Twitch:
                 # Build wanted_games list preserving selected priority order,
                 # optionally appending all other eligible games as fallback.
                 self.wanted_games = self._stream_selector.get_wanted_games(
-                    self.settings, self.inventory
+                    self.settings, self.inventory, self.game_order
                 )
                 logger.info("Wanted games list built")
 

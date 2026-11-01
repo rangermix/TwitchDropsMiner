@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Codul 2FA este incorect.",
         "email_code_required": "Codul de verificare din e-mail este necesar. Vă rugăm să vă verificați e-mailul.",
         "twofa_code_required": "Este necesar un cod 2FA.",
+        "headless_renewal": "xvfb-run nu a fost găsit, așa că browserul de reînnoire a sesiunii rulează headless. Twitch poate respinge sesiunile emise de acesta (CATALOG, integrity). Instalează xvfb și xauth sau folosește imaginea Docker.",
         "status": {
             "logged_in": "Conectat",
             "logged_out": "Deconectat",
@@ -348,7 +349,11 @@
         },
         "wanted": {
             "name": "Coadă Drops Dorite",
-            "none": "Niciun drop dorit în coadă..."
+            "none": "Niciun drop dorit în coadă...",
+            "drag_hint": "Trage jocurile pentru a schimba ordinea până la repornire (pe ecranele tactile, ține apăsat mai întâi). Lista de minare din Setări rămâne cea implicită.",
+            "temporary": "Ordine temporară până la repornire.",
+            "reset": "Revino la ordinea listei de minare",
+            "save_error": "Ordinea cozii nu a putut fi schimbată. Încearcă din nou."
         },
         "history": {
             "title": "Istoricul dropurilor",
@@ -425,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Dezactivează verificarea certificatelor HTTPS pentru TDM (nesigur; dezactivat implicit). Doar pentru adrese private sau loopback; preferă --ca-file.",
+        "insecure_warning": "AVERTISMENT: Verificarea certificatelor HTTPS este dezactivată pentru conexiunea la TDM. Un atacator îți poate fura sesiunea Twitch. Folosește opțiunea numai într-o rețea de încredere.",
         "title": "Conectează Twitch la TDM",
         "destination_prompt": "URL-ul instanței TDM: ",
         "destination": "Destinație: {url}",
@@ -436,6 +443,8 @@
         "cancelled": "Anulat.",
         "wait_to_close": "Apasă Enter pentru a închide.",
         "tdm_help": "URL-ul rădăcină al instanței TDM",
+        "ca_file_help": "Fișier de certificat PEM de încredere doar pentru conexiunea HTTPS la TDM, de exemplu un certificat autosemnat sau al unei autorități private. Verificarea certificatelor rămâne activă.",
+        "ca_file_in_use": "Se folosește fișierul de certificat personalizat pentru conexiunea la TDM.",
         "chrome_help": "Calea către Google Chrome (de obicei detectată automat)",
         "language_help": "Limba consolei",
         "no_pause_help": "Ieșire fără a aștepta Enter",
@@ -445,6 +454,8 @@
         "browser_conflict": "Alegerea browserului și calea trebuie să indice același browser.",
         "errors": {
             "destination": "Adresă TDM nevalidă. Folosește URL-ul rădăcină http:// sau https:// cu port, fără cale, parolă, interogare sau fragment.",
+            "ca_file": "Certificatul din --ca-file nu a putut fi folosit. Alege un fișier PEM lizibil care conține un certificat CA (CA:TRUE), de exemplu certificatul tău autosemnat sau al autorității private, nu o cheie privată.",
+            "insecure_tls": "--insecure necesită o adresă https:// pentru TDM al cărei host se rezolvă doar la adrese private sau loopback. Pentru alte adrese, folosește --ca-file.",
             "disabled": "Accesul asistentului este închis. Selectează Folosește asistentul desktop pe ecranul de autentificare TDM, apoi pornește asistentul.",
             "expired": "Conexiunea asistentului a expirat sau a fost anulată. Reactivează accesul asistentului în TDM și repornește-l.",
             "busy": "Un alt asistent este deja conectat. Anulează-l în panoul TDM înainte să începi din nou.",

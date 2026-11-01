@@ -303,7 +303,7 @@ async def test_cancel_during_sdk_wait_closes_owned_target_and_browser():
 @pytest.mark.parametrize("platform", ["posix", "nt"] if os.name == "posix" else ["nt"])
 @pytest.mark.parametrize("outcome", ["success", "failure", "cancel", "startup_timeout"])
 @pytest.mark.parametrize("displayed", [False, True])
-async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatch, outcome, platform, displayed):
+async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatch, caplog, outcome, platform, displayed):
     from src.auth import server_renewal
     from src.auth.session_helper import BrowserExporter, DevToolsPipe
 
@@ -363,20 +363,27 @@ async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatc
     assert all(not profile.exists() for profile in profiles)
     args, kwargs = calls[0]
     assert ("--headless=new" in args) is not displayed
+    # Only a Linux host missing xvfb-run is told to install it; Windows is always headless.
+    headless_fallback = platform == "posix" and sys.platform.startswith("linux") and not displayed
+    assert browser.headless_fallback is headless_fallback
+    assert server_renewal.SDKIssuer(browser).headless_fallback is headless_fallback
+    assert any("xvfb" in record.getMessage() for record in caplog.records) is headless_fallback
     assert kwargs["stdout"] == kwargs["stderr"] == asyncio.subprocess.DEVNULL
     assert kwargs["start_new_session"] is (platform == "posix")
     if platform == "posix":
         assert "--remote-debugging-pipe" in args
         assert not any(arg.startswith("--remote-debugging-") and arg != "--remote-debugging-pipe" for arg in args)
-        assert args[:4] == (sys.executable, "-I", "-S", "-c")
-        assert args[5:7] == tuple(map(str, kwargs["pass_fds"]))
         if displayed:
-            # The launcher remaps fds 3/4, then execs xvfb-run, which runs Chromium with them.
-            assert args[7:14] == ("/usr/bin/xvfb-run", "-a", "-f", str(profiles[0] / "Xauthority"),
-                                  "-s", "-screen 0 1280x800x24 -nolisten tcp", "test-chromium")
+            assert args[:6] == ("/usr/bin/xvfb-run", "-a", "-f", str(profiles[0] / "Xauthority"),
+                               "-s", "-screen 0 1280x800x24 -nolisten tcp")
+            launcher = args[6:]
+            assert all(fd >= 64 for fd in kwargs["pass_fds"])
             assert "--window-size=1200,760" in args
         else:
-            assert args[7] == "test-chromium"
+            launcher = args
+        assert launcher[:4] == (sys.executable, "-I", "-S", "-c")
+        assert launcher[5:7] == tuple(map(str, kwargs["pass_fds"]))
+        assert launcher[7] == "test-chromium"
         if descriptors is not None:
             assert set(os.listdir("/dev/fd")) == descriptors, "a pipe descriptor leaked"
         assert stopped == [(process.pid, signal.SIGTERM), (process.pid, signal.SIGKILL)]
@@ -529,10 +536,53 @@ CHROMIUM = next(filter(None, map(shutil.which, ("chromium", "chromium-browser", 
 # first launch on a fresh CI runner can exceed the production startup timeout.
 
 
+async def run_chromium_warmup(command, profile, *, timeout=180):
+    from src.auth.server_renewal import OwnedChromium
+
+    try:
+        async with OwnedChromium(command[0]).process(command, profile) as process:
+            with suppress(TimeoutError):
+                await asyncio.wait_for(process.wait(), timeout)
+    except SessionError as error:
+        # A warm-up may fail to start, but failed process cleanup must remain visible.
+        if error.code != "BROWSER_START":
+            raise
+
+
+@pytest.fixture(scope="module")
+def warm_chromium(tmp_path_factory):
+    """Absorb a fresh runner's slow first Xvfb/Chromium start before the timed tests."""
+    profile = tmp_path_factory.mktemp("warm-chromium")
+    command = [CHROMIUM, "--headless=new", "--no-sandbox", f"--user-data-dir={profile}",
+               "--no-first-run", "--dump-dom", "about:blank"]
+    if runner := shutil.which("xvfb-run"):
+        command = [runner, "-a", *command]
+    # Reuse the owned process group's cleanup, including descendants of xvfb-run.
+    asyncio.run(run_chromium_warmup(command, profile))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("code", ["BROWSER_START", "BROWSER_STOP"])
+async def test_chromium_warmup_tolerates_start_failure_but_reports_cleanup_failure(monkeypatch, tmp_path, code):
+    from src.auth.server_renewal import OwnedChromium
+
+    @asynccontextmanager
+    async def fail(*args, **kwargs):
+        raise SessionError(code)
+        yield
+
+    monkeypatch.setattr(OwnedChromium, "process", fail)
+    if code == "BROWSER_START":
+        await run_chromium_warmup(["unused"], tmp_path)
+    else:
+        with pytest.raises(SessionError, match="BROWSER_STOP"):
+            await run_chromium_warmup(["unused"], tmp_path)
+
+
 @pytest.mark.asyncio
 @pytest.mark.skipif(CHROMIUM is None or not os.path.exists("/proc/net/tcp"),
                     reason="requires Linux and a local Chromium")
-async def test_real_owned_chromium_opens_no_tcp_listener(monkeypatch):
+async def test_real_owned_chromium_opens_no_tcp_listener(monkeypatch, warm_chromium):
     from src.auth.server_renewal import OwnedChromium
 
     processes = []
@@ -565,7 +615,7 @@ async def test_real_owned_chromium_opens_no_tcp_listener(monkeypatch):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(CHROMIUM is None or os.name != "posix", reason="requires POSIX and a local Chromium")
-async def test_real_chromium_closed_target_fails_page_commands_fast():
+async def test_real_chromium_closed_target_fails_page_commands_fast(warm_chromium):
     from src.auth.server_renewal import OwnedChromium
 
     async with OwnedChromium(CHROMIUM, no_sandbox=True, startup_timeout=60).start() as browser, browser.target() as page:
@@ -620,7 +670,8 @@ async def test_owned_browser_cleanup_uses_platform_api_and_escalates(monkeypatch
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(os.name != "posix", reason="process groups require POSIX")
-async def test_owned_browser_stops_descendant_that_outlives_group_leader():
+@pytest.mark.parametrize("cleanup", ["owner_stop", "warmup_timeout", "warmup_exit", "warmup_cancel"])
+async def test_browser_cleanup_stops_descendant_that_outlives_group_leader(monkeypatch, tmp_path, cleanup):
     from src.auth.server_renewal import OwnedChromium
 
     ready = asyncio.Event()
@@ -637,25 +688,66 @@ async def test_owned_browser_stops_descendant_that_outlives_group_leader():
     child_code = (
         "import os,signal,socket; signal.signal(signal.SIGTERM, signal.SIG_IGN); "
         f"s=socket.create_connection(('127.0.0.1',{port})); "
-        "s.sendall((str(os.getpid())+'\\n').encode()); s.close(); signal.pause()"
+        "s.sendall((str(os.getpid())+'\\n').encode()); s.close(); "
+        "print('ready',flush=True); signal.pause()"
     )
-    leader_code = f"import subprocess,sys,signal; subprocess.Popen([sys.executable,'-c',{child_code!r}]); signal.pause()"
-    process = await asyncio.create_subprocess_exec(
-        sys.executable, "-c", leader_code, start_new_session=True,
-        stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+    leader_code = (
+        f"import subprocess,sys,signal; p=subprocess.Popen([sys.executable,'-c',{child_code!r}],stdout=subprocess.PIPE); "
+        "p.stdout.readline(); " + ("pass" if cleanup == "warmup_exit" else "signal.pause()")
     )
+    processes = []
+    spawn = asyncio.create_subprocess_exec
+
+    async def record(*args, **kwargs):
+        processes.append(await spawn(*args, **kwargs))
+        return processes[-1]
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", record)
     try:
-        await asyncio.wait_for(ready.wait(), 5)
-        await OwnedChromium.stop(process)
+        if cleanup == "owner_stop":
+            process = await record(
+                sys.executable, "-c", leader_code, start_new_session=True,
+                stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+            )
+            await asyncio.wait_for(ready.wait(), 5)
+            await OwnedChromium.stop(process)
+        else:
+            if cleanup == "warmup_timeout":
+                wait_for = asyncio.wait_for
+
+                async def expire_after_child_ready(awaitable, timeout):
+                    if timeout == 180:
+                        await wait_for(ready.wait(), 5)
+                        timeout = 0
+                    return await wait_for(awaitable, timeout)
+
+                monkeypatch.setattr(asyncio, "wait_for", expire_after_child_ready)
+            warmup = run_chromium_warmup([sys.executable, "-c", leader_code], tmp_path)
+            if cleanup == "warmup_cancel":
+                task = asyncio.create_task(warmup)
+                try:
+                    await asyncio.wait_for(ready.wait(), 5)
+                    task.cancel()
+                    with pytest.raises(asyncio.CancelledError):
+                        await task
+                finally:
+                    task.cancel()
+                    await asyncio.gather(task, return_exceptions=True)
+            else:
+                await warmup
+            process = processes[0]
+            assert ready.is_set()
+        assert process.returncode is not None, "warm-up leader was not reaped"
         ps = await asyncio.create_subprocess_exec(
             "ps", "-o", "stat=", "-p", str(child_ids[0]), stdout=asyncio.subprocess.PIPE,
         )
         output, _ = await ps.communicate()
         assert not output.strip() or output.strip().startswith(b"Z"), "live browser descendant escaped cleanup"
     finally:
-        with suppress(ProcessLookupError):
-            os.killpg(process.pid, signal.SIGKILL)
-        await process.wait()
+        if processes:
+            with suppress(ProcessLookupError):
+                os.killpg(processes[0].pid, signal.SIGKILL)
+            await processes[0].wait()
         server.close()
         await server.wait_closed()
 

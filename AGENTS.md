@@ -35,7 +35,8 @@ It is the repository's contribution policy, not optional background reading.
   from mock or sample data; never use screenshots of a real account without masking.
   "Before" images come from the base branch without any PR change. If you cannot attach
   images, host already-redacted images on a separate screenshots-only branch of your
-  fork (never the topic branch; pushed images cannot be reliably removed), or state that
+  fork such as `pr-screenshots` (example in CONTRIBUTING.md; never the topic branch;
+  pushed images cannot be reliably removed), or state that
   screenshots are pending, keep the PR in draft and ask the user to attach them.
 
 ## Development Guidelines
@@ -71,7 +72,11 @@ It is the repository's contribution policy, not optional background reading.
    - Frontend translation rendering must use safe DOM construction. Do not inject translated strings with non-clearing `innerHTML`; allowlist any intentional links and build them as DOM nodes.
 
 5. **Documentation**:
-   - Always update `README.md` and `AGENTS.md` when making changes.
+   - Update documentation where the change belongs. Update `README.md` only when its
+     user-facing overview, setup, login, migration, or links need to change. Put detailed
+     behavior, implementation explanations, and troubleshooting in the relevant `docs/`
+     guide. Update `AGENTS.md` when agent instructions or architectural constraints
+     change; code changes do not require edits to either file automatically.
    - Keep `README.md` short and focused on ordinary users: setup, login, migration,
      and links. Detailed public instructions belong in `docs/`, the source for the
      GitHub wiki. Developer contribution policy belongs in `CONTRIBUTING.md`.
@@ -319,6 +324,31 @@ lang/                # Translation JSON files (20 languages)
   unique partial matches resolve to available game names; ambiguous matches do not
   add a game. Confirmations support keyboard focus and Escape. Select All preserves
   priority order and manual entries, and manual confirmation uses current settings.
+- The Main page Wanted Drops Queue offers a temporary, runtime-only order:
+  `TemporaryGameOrder` (`src/services/game_order.py`) owned by `Twitch.game_order`,
+  set through `POST /api/wanted-order` (`{"games": [...]}`, empty list resets; bounded
+  and normalized, validation errors never echo input) and broadcast as
+  `game_order_update`/`initial_state.game_order`. It only reorders already queued
+  games, never adds or removes one, and is applied as the final stable queue sort and
+  as the first element of `get_mining_priority()` and active-campaign selection while
+  active (inactive keys are unchanged). Rank a channel only by wanted campaigns it
+  can currently earn, retaining the special-category or drops-enabled guard. Never
+  grant its streamed category's temporary rank without an eligible campaign.
+  Restart, Reset, or a successfully saved
+  Mining list change clears it; the saved Mining list remains the permanent default.
+  Queue cards are drag-and-drop only (press and hold first on touch screens; there is
+  no keyboard path by design), keep their top-left `#n` badge and show the Mining
+  list's ☰ drag cue; links inside a card cannot start a drag. Shared drag handlers ignore drags that did not start on a row
+  of the same list, move a row only once the pointer passes the target's middle (rows
+  of different heights must not flip back and forth) and clear `draggedElement` on
+  drag end. Touch drags auto-scroll near the screen edge. Games joining the queue
+  later rank after the ordered ones. A failed save re-requests the queue. Defer row
+  rebuilds from touchstart through the pending hold and active drag; early release,
+  scrolling and cancellation apply the newest deferred tree. Cancelled hold timers
+  must not activate a later gesture or a detached row. Render optimistically and
+  restore the previous order with translated
+  `gui.wanted.save_error` on failure. Coverage: `tests/test_wanted_queue_order.py`
+  and `tests/test_wanted_queue_frontend.py`.
 - Mining list supports drag ordering and editable integer priority numbers. Clamp valid
   ranks to the list bounds; reject blank/fractional values without changing settings.
   Keep priority and remove-control labels translated and accessible. Regression tests in
@@ -490,6 +520,12 @@ progress to an ignored drop while the miner intentionally targets another reward
   session ends when Chromium reports it detached, and all pipe sessions share command
   ids. Keep Xauthority inside the owned temporary profile
   so forced shutdown removes it too. Hosts without the runner retain the headless fallback.
+  On Linux that fallback sets `OwnedChromium.headless_fallback` and logs the translated
+  `login.headless_renewal` warning (install `xvfb`/`xauth` or use Docker) on every start.
+  `SessionController._phase()` relabels a `CATALOG`/`integrity` failure at
+  `issued_validation` or `renewal_validation` as reason `headless_fallback` when the
+  issuer reports it; `captured_validation`, macOS and Windows keep their labels.
+  `tests/test_session_controller.py` and `tests/test_server_renewal.py` cover this.
   A valid integrity response alone does not prove account/catalog acceptance.
 
 - Helper admission preserves allowlisted validation codes without printing remote text.
@@ -530,9 +566,10 @@ progress to an ignored drop while the miner intentionally targets another reward
 - On POSIX, `OwnedChromium` (renewal/SDK issuance, run as root) uses
   `--remote-debugging-pipe` and never opens a DevTools TCP port: CDP has no
   authentication, and the `tdm-browser` login UID shares loopback. A small exec
-  launcher remaps the pipe to fds 3/4 so PID and process-group cleanup are unchanged;
-  it then execs the private `xvfb-run` wrapper when present, which passes fds 3/4
-  through to Chromium untouched (verified in the Alpine image). Xvfb and the wrapper
+  launcher remaps the pipe to fds 3/4 immediately before Chromium, after the private
+  `xvfb-run` wrapper when present. The wrapper may overwrite/close fd 3; carry pipe
+  ends through it on collision-safe descriptors at or above 64, closing parent copies
+  and partial allocations on failure. Preserve the owned process group. Xvfb and the wrapper
   also inherit copies, so a Chromium crash reaches EOF once the wrapper cleans up.
   `DevToolsPipe` multiplexes flattened `Target.attachToTarget` sessions with
   NUL-delimited messages, bounds each session's backlog to 16 MiB by bytes (one read
@@ -541,8 +578,11 @@ progress to an ignored drop while the miner intentionally targets another reward
   before sending, including after target detachment.
   Windows keeps the loopback port (no `pass_fds`). The login capture Chromium keeps
   its port because it runs as `tdm-browser` with a profile that UID already owns.
-  `tests/test_server_renewal.py` checks launch arguments and descriptors, and, with a
+  `tests/test_browser_pipe_wrapper.py` covers descriptor-closing wrappers and partial
+  allocation cleanup. `tests/test_server_renewal.py` checks launch arguments and descriptors, and, with a
   local Chromium on Linux, that the browser process group opens no TCP listener.
+  Python validation runs on Ubuntu 24.04 and 26.04 to retain both display-wrapper
+  behaviors; do not replace this with one moving ubuntu-latest label.
 - `SessionAPI` exposes sanitized status and finish/retry/logout actions, plus optional
   desktop-helper enable/cancel actions guarded by dashboard authentication and CSRF.
   There is no general session upload/export or renewal HTTP route. The binary
@@ -602,6 +642,21 @@ progress to an ignored drop while the miner intentionally targets another reward
   Keep tickets out of URLs, CLI arguments, logs, status, broadcasts and storage.
   Document that the first reachable helper is admitted during the trusted-network window.
   `tests/test_helper_admission.py` and `tests/test_desktop_helper_api.py` cover these boundaries.
+- The desktop helper verifies HTTPS using the helper computer's trust store by default.
+  `--insecure` is an explicit, per-run opt-out only for `HelperHTTP` requests to the
+  selected TDM instance. Show the translated `helper.insecure_warning` before connecting
+  whenever enabled, including failed attempts. Never persist the opt-out, retry TLS
+  failures with verification disabled, alter global SSL defaults, or change browser,
+  Twitch validation, miner, admission, redirect or receipt-reconciliation checks.
+  Keep `helper.insecure_help` and `helper.insecure_warning` in every locale.
+  `PrivateResolver` limits `--insecure` to `https://` destinations whose host resolves
+  only to 10/8, 172.16/12, 192.168/16, 127/8, ::1, fc00::/7 or fe80::/10 (IPv4-mapped
+  forms are unwrapped). 100.64/10 stays excluded because ISP customers share it.
+  `HelperHTTP` vets once before connecting, then the connector resolves only the vetted
+  host to those pinned addresses. Refusals use the fixed `HELPER_INSECURE_TLS` code
+  without echoing the URL, after the warning. Do not widen the address list or apply
+  the opt-out elsewhere without user approval. Coverage: `tests/test_helper_tls.py` and
+  `tests/test_helper_insecure_tls.py`, both in the four-platform helper test list.
 - Keep the released helper instructions and download links aligned with the four build
   targets: Windows x64, Linux x64, macOS arm64, and macOS x64. Users choose the helper
   computer's platform and match the miner release. The login screen's **Use desktop
@@ -611,6 +666,18 @@ progress to an ignored drop while the miner intentionally targets another reward
   as the default. On macOS, users must quit the helper-owned browser instance to flush
   its profile. Keep the release-ready README, installation examples, login guide, and
   generated release-note instructions consistent with these behaviors.
+- The helper's optional `--ca-file PATH` adds CA certificates for its TDM connection
+  only, through `HelperHTTP.trust()`: system trust via truststore plus the file's
+  certificates. Verification and hostname checks stay on. It is mutually exclusive
+  with `--insecure`. Only certificates passing OpenSSL's CA check (normally `CA:TRUE`)
+  are loaded, because truststore passes only those to Windows/macOS verification;
+  missing, unreadable, non-PEM, key-only or server-only files fail before connecting
+  with the fixed `HELPER_CA_FILE` code. Never print the path or file contents; the CLI
+  prints only the fixed `ca_file_in_use` note, for HTTPS destinations.
+  `tests/test_helper_ca_file.py` runs real handshakes and is in the native helper
+  workflow's four-platform test list; keep its certificates within Apple's TLS rules
+  (serverAuth, short validity) and generated through config files that macOS LibreSSL
+  also accepts.
 
 ### Dashboard authentication
 
@@ -912,6 +979,12 @@ protocol rejection; preserve rejection and target-cleanup assertions.
 - Docker validation and release workflows pin the Node-24-native Docker Buildx v4.3.0
   and Build Push v7.3.0 action commits. Update both workflows together when changing
   either action so validation and release builds use the same trusted versions.
+- Native helper and release artifact transfers pin Node-24-native Upload Artifact
+  v7.0.2 and Download Artifact v8.0.2 commits. Keep uploads zipped with hidden files
+  excluded, download extraction enabled and digest mismatches fatal. Preserve artifact
+  names, paths, same-run scope, tar permissions and checksum validation; do not add
+  cross-run credentials or broaden workflow permissions, triggers or publishing gates.
+  Tests: `tests/test_artifact_workflow_contracts.py`, `tests/test_helper_release.py`.
 - `.github/workflows/contributors.yml` credits the human author of each pull request
   merged into `main`, including linked pull request numbers in the alphabetically sorted
   Contributors table in `README.md`.

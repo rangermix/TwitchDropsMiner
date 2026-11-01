@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "Kode verifikasi 2FA salah.",
         "email_code_required": "Diperlukan kode verifikasi email. Silakan periksa email Anda.",
         "twofa_code_required": "Diperlukan kode 2FA.",
+        "headless_renewal": "xvfb-run tidak ditemukan, jadi browser pembaruan sesi berjalan headless. Twitch dapat menolak sesi yang diterbitkannya (CATALOG, integrity). Pasang xvfb dan xauth, atau gunakan image Docker.",
         "status": {
             "logged_in": "Online",
             "logged_out": "Terputus",
@@ -348,7 +349,11 @@
         },
         "wanted": {
             "name": "Antrean Drops yang Diinginkan",
-            "none": "Tidak ada drops yang diinginkan dalam antrean..."
+            "none": "Tidak ada drops yang diinginkan dalam antrean...",
+            "drag_hint": "Seret game untuk mengubah urutan hingga dimulai ulang (di layar sentuh, tekan dan tahan terlebih dahulu). Daftar mining di Parameter tetap menjadi default.",
+            "temporary": "Urutan sementara hingga dimulai ulang.",
+            "reset": "Kembalikan ke urutan daftar mining",
+            "save_error": "Tidak dapat mengubah urutan antrean. Silakan coba lagi."
         },
         "history": {
             "title": "Riwayat Drop",
@@ -425,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "Nonaktifkan verifikasi sertifikat HTTPS untuk TDM (tidak aman; nonaktif secara bawaan). Hanya untuk alamat privat atau loopback; lebih baik gunakan --ca-file.",
+        "insecure_warning": "PERINGATAN: Verifikasi sertifikat HTTPS dinonaktifkan untuk koneksi ke TDM. Penyerang dapat mencuri sesi Twitch Anda. Gunakan hanya di jaringan tepercaya.",
         "title": "Hubungkan Twitch ke TDM",
         "destination_prompt": "URL instans TDM: ",
         "destination": "Tujuan: {url}",
@@ -436,6 +443,8 @@
         "cancelled": "Dibatalkan.",
         "wait_to_close": "Tekan Enter untuk menutup.",
         "tdm_help": "URL dasar instans TDM Anda",
+        "ca_file_help": "Berkas sertifikat PEM yang dipercaya hanya untuk koneksi HTTPS ke TDM, misalnya sertifikat self-signed atau CA pribadi. Pemeriksaan sertifikat tetap aktif.",
+        "ca_file_in_use": "Menggunakan berkas sertifikat kustom untuk koneksi TDM.",
         "chrome_help": "Lokasi Google Chrome (biasanya terdeteksi otomatis)",
         "language_help": "Bahasa konsol",
         "no_pause_help": "Keluar tanpa menunggu Enter",
@@ -445,6 +454,8 @@
         "browser_conflict": "Pilihan browser dan lokasi executable harus merujuk ke browser yang sama.",
         "errors": {
             "destination": "Alamat TDM tidak valid. Gunakan URL dasar http:// atau https:// beserta port, tanpa path, kata sandi, kueri, atau fragmen.",
+            "ca_file": "Sertifikat --ca-file tidak dapat digunakan. Pilih berkas PEM yang dapat dibaca dan berisi sertifikat CA (CA:TRUE), seperti sertifikat self-signed atau CA pribadi Anda, bukan kunci privat.",
+            "insecure_tls": "--insecure memerlukan alamat TDM https:// yang host-nya hanya mengarah ke alamat privat atau loopback. Untuk alamat lain, gunakan --ca-file.",
             "disabled": "Akses helper ditutup. Pilih Gunakan helper desktop di layar masuk TDM, lalu jalankan helper.",
             "expired": "Koneksi helper kedaluwarsa atau dibatalkan. Aktifkan kembali akses helper desktop di TDM dan mulai ulang helper.",
             "busy": "Helper lain sudah terhubung. Batalkan di dasbor TDM sebelum memulai lagi.",

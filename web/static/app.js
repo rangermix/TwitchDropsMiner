@@ -253,6 +253,9 @@ socket.on('initial_state', (data) => {
         clearDropProgress();
     }
 
+    if (data.game_order) {
+        updateGameOrder(data.game_order);
+    }
     if (data.wanted_items) {
         renderWantedItems(data.wanted_items);
     }
@@ -387,6 +390,10 @@ socket.on('language_changed', (data) => {
 
 socket.on('wanted_items_update', (data) => {
     renderWantedItems(data);
+});
+
+socket.on('game_order_update', (data) => {
+    updateGameOrder(data);
 });
 
 // ==================== UI Update Functions ====================
@@ -1778,18 +1785,29 @@ function handleDragStart(e) {
 }
 
 function handleDragOver(e) {
+    return dragOverRows(e, '.sortable-item');
+}
+
+function handleWantedDragOver(e) {
+    return dragOverRows(e, '.wanted-game-group');
+}
+
+function dragOverRows(e, selector) {
+    // Links or images dragged from elsewhere on the page must not move rows.
+    if (!draggedElement || draggedElement.closest(selector) !== draggedElement) return false;
     if (e.preventDefault) {
         e.preventDefault();
     }
     e.dataTransfer.dropEffect = 'move';
 
-    const target = e.target.closest('.sortable-item');
-    // Rows only move within their own list (Mining list or reward types).
+    const target = e.target.closest(selector);
+    // Rows only move within their own list (Mining list, reward types or wanted queue).
     if (target && target !== draggedElement && target.parentNode === draggedElement?.parentNode) {
         const container = target.parentNode;
-        const allItems = [...container.querySelectorAll('.sortable-item')];
+        const allItems = [...container.querySelectorAll(selector)];
         const draggedIndex = allItems.indexOf(draggedElement);
         const targetIndex = allItems.indexOf(target);
+        if (!pointerPastMiddle(e, target, draggedIndex < targetIndex)) return false;
 
         if (draggedIndex < targetIndex) {
             target.parentNode.insertBefore(draggedElement, target.nextSibling);
@@ -1800,15 +1818,31 @@ function handleDragOver(e) {
     return false;
 }
 
+// Move only once the pointer crosses the target's middle in the direction of travel.
+// Rows of different heights would otherwise swap back and forth under a still pointer.
+function pointerPastMiddle(e, target, forward) {
+    const rect = target.getBoundingClientRect?.();
+    const from = draggedElement.getBoundingClientRect?.();
+    if (!rect || !from || typeof e.clientX !== 'number' || typeof e.clientY !== 'number') return true;
+    const sameRow = Math.abs(rect.top - from.top) < Math.min(rect.height, from.height) / 2;
+    const position = sameRow ? e.clientX : e.clientY;
+    const middle = sameRow ? rect.left + rect.width / 2 : rect.top + rect.height / 2;
+    return forward ? position > middle : position < middle;
+}
+
 function handleDrop(e) {
     if (e.stopPropagation) {
         e.stopPropagation();
+    }
+    if (e.preventDefault) {
+        e.preventDefault(); // never let the browser open a dropped link
     }
     return false;
 }
 
 function handleDragEnd(e) {
     e.target.classList.remove('dragging');
+    draggedElement = null;
 
     // Update the order in state
     const container = document.getElementById('selected-games-list');
@@ -2448,6 +2482,7 @@ function renderRewardPriority(order = state.settings.reward_priority || []) {
         row.addEventListener('drop', handleDrop);
         row.addEventListener('dragend', event => {
             event.target.classList.remove('dragging');
+            draggedElement = null;
             if (!list.classList.contains('ordered')) return;
             saveRewardPriority([...list.children].map(item => item.dataset.rewardType));
         });
@@ -3062,6 +3097,8 @@ function applyTranslations(t) {
         // ID: wanted-header
         const wantedHeader = document.getElementById('wanted-header');
         if (wantedHeader) wantedHeader.textContent = t.gui.wanted.name;
+        updateGameOrder(gameOrder);
+        renderWantedItems(lastWantedTree);
         // Re-render wanted items to update empty message
         // Since we don't store wanted items in state globally (only receives them), we rely on updateWantedItems triggering render
     }
@@ -3325,6 +3362,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('allow-unlinked-campaigns').addEventListener('change', onUnlinkedMiningChange);
     // Proxy uses a manual "Set Proxy" button instead of auto-save
     document.getElementById('set-proxy-btn').addEventListener('click', saveProxy);
+    document.getElementById('wanted-order-reset')?.addEventListener('click', () => saveWantedOrder([]));
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
     document.getElementById('test-discord-btn').addEventListener('click', () => updateDiscordSettings('test'));
     document.getElementById('save-discord-btn').addEventListener('click', () => updateDiscordSettings('save'));
@@ -3427,21 +3465,206 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ==================== Wanted Items Rendering ====================
 
+// The queue order set here is temporary (until restart); Settings holds the default.
+let lastWantedTree = [];
+let pendingWantedTree = null;
+let wantedDragActive = false;
+let wantedOrderBusy = false;
+let gameOrder = { active: false, games: [] };
+
+function wantedText(key, fallback) {
+    return state.translations.gui?.wanted?.[key] || fallback;
+}
+
+function updateGameOrder(info) {
+    gameOrder = { active: info?.active === true, games: Array.isArray(info?.games) ? info.games : [] };
+    const note = document.getElementById('wanted-order-note');
+    const reset = document.getElementById('wanted-order-reset');
+    if (note) {
+        note.textContent = gameOrder.active
+            ? wantedText('temporary', 'Temporary order until restart.')
+            : wantedText('drag_hint', 'Drag games to change the order until restart. The Mining list in Settings stays the default.');
+    }
+    if (reset) {
+        reset.textContent = wantedText('reset', 'Reset to Mining list order');
+        reset.hidden = !gameOrder.active;
+        reset.disabled = wantedOrderBusy;
+    }
+}
+
+function setWantedOrderError(visible) {
+    const error = document.getElementById('wanted-order-error');
+    if (!error) return;
+    error.textContent = visible ? wantedText('save_error', 'Could not change the queue order. Please try again.') : '';
+    error.hidden = !visible;
+}
+
+async function saveWantedOrder(games) {
+    if (wantedOrderBusy) return false;
+    const previous = lastWantedTree;
+    let optimistic = null;
+    if (games.length) {
+        // Show the new order at once; the server broadcast confirms it.
+        const rank = new Map(games.map((name, index) => [name.toLowerCase(), index]));
+        const reordered = [...previous].sort((a, b) =>
+            (rank.get(a.game_name.toLowerCase()) ?? games.length) - (rank.get(b.game_name.toLowerCase()) ?? games.length));
+        renderWantedItems(reordered);
+        optimistic = lastWantedTree;
+    }
+    wantedOrderBusy = true;
+    updateGameOrder(gameOrder);
+    try {
+        const response = await fetch('/api/wanted-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ games })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.success !== true) throw new Error('wanted_order_failed');
+        setWantedOrderError(false);
+        updateGameOrder(data);
+        return true;
+    } catch (error) {
+        setWantedOrderError(true);
+        // Undo only our own optimistic view; the server may have applied the order
+        // anyway (lost reply), so fetch the real queue rather than trusting a snapshot.
+        if (optimistic === null || lastWantedTree === optimistic) renderWantedItems(previous);
+        if (typeof socket !== 'undefined') socket.emit('get_wanted_items');
+        return false;
+    } finally {
+        wantedOrderBusy = false;
+        updateGameOrder(gameOrder);
+    }
+}
+
+function handleWantedDragStart(e) {
+    // Only the game row moves; links and artwork inside it must not start a drag.
+    // A phone's native long-press drag must not compete with our touch hold.
+    if (e.target !== e.currentTarget || wantedOrderBusy || wantedTouch) {
+        e.preventDefault();
+        return;
+    }
+    wantedDragActive = true;
+    handleDragStart(e);
+}
+
+function handleWantedDragEnd(e) {
+    e.target.classList.remove('dragging');
+    wantedDragActive = false;
+    draggedElement = null;
+    const container = document.getElementById('wanted-items-list');
+    const order = Array.from(container.querySelectorAll('.wanted-game-group')).map(group => group.dataset.game);
+    const changed = order.some((game, index) => game !== lastWantedTree[index]?.game_name);
+    const pending = pendingWantedTree;
+    pendingWantedTree = null;
+    if (changed) {
+        saveWantedOrder(order);
+    } else if (pending) {
+        renderWantedItems(pending);
+    }
+}
+
+// Touch screens have no native drag-and-drop: press and hold a card, then drag it.
+// Moving before the hold ends is an ordinary scroll.
+const WANTED_TOUCH_HOLD_MS = 350;
+let wantedTouch = null;
+
+function flushPendingWantedItems() {
+    const pending = pendingWantedTree;
+    pendingWantedTree = null;
+    if (pending !== null) renderWantedItems(pending);
+}
+
+function handleWantedTouchStart(e) {
+    if (wantedOrderBusy || wantedDragActive || wantedTouch || e.touches.length !== 1 || e.target.closest('a')) return;
+    const row = e.currentTarget;
+    const touch = e.touches[0];
+    const gesture = { row, x: touch.clientX, y: touch.clientY, active: false, timer: null };
+    wantedTouch = gesture;
+    gesture.timer = setTimeout(() => {
+        // A cancelled hold must not restart or activate a newer gesture.
+        if (wantedTouch !== gesture) return;
+        if (row.parentNode !== document.getElementById('wanted-items-list')) {
+            wantedTouch = null;
+            flushPendingWantedItems();
+            return;
+        }
+        gesture.active = true;
+        wantedDragActive = true;
+        draggedElement = row;
+        row.classList.add('dragging');
+    }, WANTED_TOUCH_HOLD_MS);
+}
+
+function handleWantedTouchMove(e) {
+    if (!wantedTouch) return;
+    const touch = e.touches[0];
+    if (!wantedTouch.active) {
+        if (Math.hypot(touch.clientX - wantedTouch.x, touch.clientY - wantedTouch.y) > 10) {
+            clearTimeout(wantedTouch.timer);
+            wantedTouch = null;
+            flushPendingWantedItems();
+        }
+        return;
+    }
+    e.preventDefault(); // keep the page still while a card is held
+    // Near the screen edge, scroll so a long queue can be reordered end to end.
+    const edge = 60;
+    if (touch.clientY < edge) window.scrollBy(0, -12);
+    else if (touch.clientY > window.innerHeight - edge) window.scrollBy(0, 12);
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (target) {
+        dragOverRows({ target, clientX: touch.clientX, clientY: touch.clientY, dataTransfer: {} }, '.wanted-game-group');
+    }
+}
+
+function handleWantedTouchEnd(e) {
+    if (!wantedTouch) return;
+    clearTimeout(wantedTouch.timer);
+    const { row, active } = wantedTouch;
+    wantedTouch = null;
+    if (!active) {
+        flushPendingWantedItems();
+        return;
+    }
+    e.preventDefault();
+    if (e.type === 'touchcancel') {
+        // An interrupted hold restores the order shown before it started.
+        row.classList.remove('dragging');
+        wantedDragActive = false;
+        draggedElement = null;
+        const pending = pendingWantedTree;
+        pendingWantedTree = null;
+        renderWantedItems(pending || lastWantedTree);
+        return;
+    }
+    handleWantedDragEnd({ target: row });
+}
+
 function renderWantedItems(tree) {
     const container = document.getElementById('wanted-items-list');
     if (!container) return;
+    if (wantedDragActive || wantedTouch) {
+        // Preserve the touch source from the initial hold through the active drag.
+        pendingWantedTree = tree;
+        return;
+    }
+    lastWantedTree = Array.isArray(tree) ? tree : [];
 
     container.innerHTML = '';
 
-    if (!tree || tree.length === 0) {
+    if (lastWantedTree.length === 0) {
         const emptyMsg = state.translations.gui?.wanted?.none || 'No wanted drops queued...';
         container.replaceChildren(makeElement('p', { class: 'empty-message-small' }, emptyMsg));
         return;
     }
 
-    tree.forEach((gameGroup, index) => {
+    lastWantedTree.forEach((gameGroup, index) => {
         const groupEl = document.createElement('div');
         groupEl.className = 'wanted-game-group';
+        groupEl.draggable = true;
+        groupEl.dataset.game = gameGroup.game_name;
+        groupEl.title = wantedText('drag_hint', '');
 
         // Game Icon
         let iconUrl = gameGroup.game_icon;
@@ -3451,9 +3674,13 @@ function renderWantedItems(tree) {
 
         const headerChildren = [makeElement('span', { class: 'wanted-game-index' }, `#${index + 1}`)];
         if (iconUrl) {
-            headerChildren.push(makeImageElement(iconUrl, gameGroup.game_name, 'wanted-game-icon'));
+            const icon = makeImageElement(iconUrl, gameGroup.game_name, 'wanted-game-icon');
+            icon.draggable = false;
+            headerChildren.push(icon);
         }
         headerChildren.push(makeElement('span', { class: 'wanted-game-title' }, gameGroup.game_name));
+        // Same drag cue as the Mining list; the whole card is the drag target.
+        headerChildren.push(makeElement('span', { class: 'drag-handle wanted-drag-handle', 'aria-hidden': 'true' }, '☰'));
 
         const headerEl = makeElement('div', { class: 'wanted-game-header' }, '', el => {
             headerChildren.forEach(child => el.appendChild(child));
@@ -3467,7 +3694,7 @@ function renderWantedItems(tree) {
             const dropContainer = makeElement('div', {});
             const cardEl = makeElement('div', { class: 'wanted-card' }, '', el => {
                 el.appendChild(makeElement('div', { class: 'wanted-card-header' }, '', h =>
-                    h.appendChild(makeElement('a', { href: campaign.url, target: '_blank', rel: 'noopener noreferrer', class: 'wanted-card-campaign-link', title: campaign.name }, campaign.name))
+                    h.appendChild(makeElement('a', { href: campaign.url, target: '_blank', rel: 'noopener noreferrer', class: 'wanted-card-campaign-link', title: campaign.name, draggable: 'false' }, campaign.name))
                 ));
                 el.appendChild(makeElement('div', { class: 'wanted-card-body' }, '', b =>
                     b.appendChild(dropContainer)
@@ -3488,6 +3715,15 @@ function renderWantedItems(tree) {
         });
 
         groupEl.appendChild(campaignListEl);
+        groupEl.addEventListener('dragstart', handleWantedDragStart);
+        groupEl.addEventListener('dragover', handleWantedDragOver);
+        groupEl.addEventListener('drop', handleDrop);
+        groupEl.addEventListener('dragend', handleWantedDragEnd);
+        groupEl.addEventListener('touchstart', handleWantedTouchStart, { passive: true });
+        groupEl.addEventListener('touchmove', handleWantedTouchMove, { passive: false });
+        groupEl.addEventListener('touchend', handleWantedTouchEnd);
+        groupEl.addEventListener('touchcancel', handleWantedTouchEnd);
+        groupEl.addEventListener('contextmenu', e => { if (wantedTouch?.active) e.preventDefault(); });
         container.appendChild(groupEl);
     });
 }

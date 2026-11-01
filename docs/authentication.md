@@ -40,6 +40,12 @@ fail campaign integrity validation even after a successful browser login. Updati
 a build containing this correction can recover an existing renewable session without
 another sign-in; TDM still verifies the account and campaign access before accepting it.
 
+A Linux source installation without `xvfb-run` still uses the headless fallback. The
+miner logs a warning to install `xvfb` and `xauth` each time it starts that browser,
+and reports an integrity rejection of its proof as reason `headless_fallback` instead
+of `integrity`. Install both packages, or use Docker. Automatic renewal retries pick up
+the change; a failed sign-in needs a new attempt.
+
 ## Docker and timezone
 
 Use the `rangermix/twitch-drops-miner:2.4.0` image or build the current source.
@@ -122,6 +128,98 @@ a valid certificate. Your everyday browser profiles are untouched; temporary hel
 profiles are removed when the helper finishes. Keep any profile left after a crash
 private, and never copy cookies or authentication files into the dashboard.
 
+### Helper HTTPS certificates
+
+The helper verifies HTTPS certificates and hostnames by default using its computer's
+trust store. For a self-signed reverse proxy, give the certificate to the helper with
+`--ca-file`, or trust the certificate or its issuing CA on the computer running the
+helper. Use a hostname covered by that certificate. Adding a CA only to the miner
+container does not change the desktop helper's trust.
+
+#### Trust one certificate with `--ca-file`
+
+**Unreleased:** source helpers support `--ca-file`; the v2.4.0 downloads do not. Use
+it instead of trusting the certificate system-wide:
+
+```bash
+python login_helper.py --tdm https://192.168.1.10:8443 --ca-file tdm-proxy.pem
+```
+
+A matching packaged helper takes the same options (`tdm-login-helper.exe` on Windows,
+`./tdm-login-helper` on Linux or macOS). The helper then trusts your operating
+system's certificates plus that file, for its connection to TDM only. It still checks
+the certificate chain, its validity dates, and that the certificate names the
+dashboard host (Subject Alternative Name). The file must be PEM and contain a CA
+certificate (`CA:TRUE`): the self-signed proxy certificate itself, or the root CA that
+signed it. Never pass a private key. Convert a DER `.cer` file with
+`openssl x509 -inform der -in proxy.cer -out tdm-proxy.pem`. A server-only
+certificate (`CA:FALSE`) fails with `SESSION_HELPER_CA_FILE`, because Windows and macOS
+ignore it. The helper prints only that a custom certificate file is in use, not its
+path or contents.
+
+macOS also applies Apple's rules for TLS server certificates: the `serverAuth`
+extended key usage, an RSA key of at least 2048 bits (or an EC key) and a validity of
+at most 825 days. A plain `openssl req -x509` certificate lacks `serverAuth`. This
+command creates a proxy certificate that works on all helper platforms; replace the
+IP address with your dashboard host (`DNS:nas.home.arpa` for a name), then configure
+the proxy with `tdm-proxy.pem` and `tdm-proxy.key`. It needs OpenSSL 1.1.1 or newer,
+for example on the proxy host:
+
+```bash
+openssl req -x509 -newkey rsa:2048 -nodes -days 825 -subj /CN=tdm \
+  -addext subjectAltName=IP:192.168.1.10 -addext extendedKeyUsage=serverAuth \
+  -addext basicConstraints=critical,CA:TRUE -keyout tdm-proxy.key -out tdm-proxy.pem
+```
+
+#### Skip verification with `--insecure`
+
+Prefer `--ca-file`; the two options cannot be combined.
+
+**Unreleased:** source helpers support `--insecure` as an explicit opt-out. The v2.4.0
+downloads do not support this option; packaged commands below require a later release
+that includes it, matching your miner version. From an activated source environment:
+
+```bash
+python login_helper.py --tdm https://tdm.example.home.arpa --insecure
+```
+
+For a matching packaged helper, run from the extracted folder:
+
+```powershell
+# Windows PowerShell
+.\tdm-login-helper.exe --tdm https://tdm.example.home.arpa --insecure
+```
+
+```bash
+# Linux or macOS
+./tdm-login-helper --tdm https://tdm.example.home.arpa --insecure
+```
+
+**Warning:** `--insecure` disables certificate and hostname verification for the
+helper's connection to TDM. An attacker between the helper and miner could impersonate
+the miner and steal your Twitch session, even on a LAN or VPN. Use it only when you
+accept that risk on a trusted network; a trusted, valid certificate is preferable.
+The helper displays a warning before connecting whenever this option is enabled.
+
+The option lasts for that run only and is never enabled automatically after a TLS
+error. Omit it on the next run to restore verification. It does not change HTTPS
+verification in the browser, Twitch requests, or the miner, and it does not follow
+redirects or bypass helper admission or server-side session verification.
+
+`--insecure` is limited to dashboards on your own network. It works only with an
+`https://` address whose host name resolves only to private or loopback addresses:
+`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `127.0.0.0/8`, `::1`, `fc00::/7` or
+`fe80::/10`. Otherwise the helper stops with `SESSION_HELPER_INSECURE_TLS` before
+connecting. It then connects only to the addresses it checked, so a DNS change during
+login cannot send the connection elsewhere. A host name that also has a public IPv6
+address is refused too; use the dashboard's private IP address instead.
+
+Carrier-grade NAT addresses (`100.64.0.0/10`) are not accepted, because other
+customers of the same internet provider share that range. This also refuses Tailscale
+`100.x` addresses and MagicDNS names, which resolve to both a `100.x` and an IPv6
+address. Tailscale already encrypts traffic between your devices; use `--ca-file` or
+a certificate from `tailscale cert` instead.
+
 ## Existing installations
 
 Keep the same private `data` directory across updates. Valid saved Android logins and
@@ -146,7 +244,8 @@ If logout reports a storage error, check the current session before retrying.
 ## Automatic renewal
 
 The miner renews the accepted context using a separate temporary Chromium browser,
-with a private virtual display when available and a headless fallback otherwise.
+with a private virtual display when available (`xvfb-run`) and a headless fallback
+otherwise. Twitch can reject proofs issued by the headless fallback.
 It validates the same account before saving. Mining requests remain in Python;
 the interactive browser does not remain running after login.
 Transient failures are retried. Expired or revoked access may require a new sign in,

@@ -34,6 +34,7 @@ class LoginMessages(TypedDict):
     incorrect_login_pass: str
     incorrect_email_code: str
     incorrect_twofa_code: str
+    headless_renewal: str
     status: LoginStatus
 
 
@@ -185,6 +186,10 @@ class GUIBadges(TypedDict):
 class GUIWanted(TypedDict):
     name: str
     none: str
+    drag_hint: str
+    temporary: str
+    reset: str
+    save_error: str
 
 
 class GUIInvFilters(TypedDict):
@@ -447,6 +452,8 @@ class GUIMessages(TypedDict):
 
 class HelperErrors(TypedDict):
     destination: str
+    ca_file: str
+    insecure_tls: str
     disabled: str
     expired: str
     busy: str
@@ -498,9 +505,13 @@ class HelperMessages(TypedDict):
     cancelled: str
     wait_to_close: str
     tdm_help: str
+    ca_file_help: str
+    ca_file_in_use: str
     chrome_help: str
     language_help: str
     no_pause_help: str
+    insecure_help: str
+    insecure_warning: str
 
 
 class Translation(TypedDict):

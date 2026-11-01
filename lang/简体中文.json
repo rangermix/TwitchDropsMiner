@@ -19,6 +19,7 @@
         "incorrect_twofa_code": "手机2FA令牌双重验证码错误.",
         "email_code_required": "需要电子邮件验证码,查看你的邮箱.",
         "twofa_code_required": "需要手机2FA令牌双重验证.",
+        "headless_renewal": "未找到 xvfb-run，因此会话续期浏览器以无头模式运行。Twitch 可能会拒绝它签发的会话 (CATALOG, integrity)。请安装 xvfb 和 xauth，或使用 Docker 镜像。",
         "status": {
             "logged_in": "已登录",
             "logged_out": "未登录",
@@ -348,7 +349,11 @@
         },
         "wanted": {
             "name": "期望掉落队列",
-            "none": "队列中没有期望的掉落..."
+            "none": "队列中没有期望的掉落...",
+            "drag_hint": "拖动游戏可在重启前更改顺序（触摸屏上请先长按）。设置中的挖掘列表仍为默认顺序。",
+            "temporary": "临时顺序，重启后恢复。",
+            "reset": "恢复挖掘列表顺序",
+            "save_error": "无法更改队列顺序。请重试。"
         },
         "history": {
             "title": "掉宝历史",
@@ -425,6 +430,8 @@
         }
     },
     "helper": {
+        "insecure_help": "禁用 TDM 的 HTTPS 证书验证（不安全；默认关闭）。仅限私有地址或环回地址；建议改用 --ca-file。",
+        "insecure_warning": "警告：连接 TDM 时已禁用 HTTPS 证书验证。攻击者可能窃取你的 Twitch 会话。仅在可信网络中使用。",
         "title": "连接 Twitch 与 TDM",
         "destination_prompt": "TDM 实例地址：",
         "destination": "目标：{url}",
@@ -436,6 +443,8 @@
         "cancelled": "已取消。",
         "wait_to_close": "按回车键关闭。",
         "tdm_help": "TDM 实例的根网址",
+        "ca_file_help": "仅用于 TDM HTTPS 连接的受信任 PEM 证书文件，例如自签名证书或私有 CA 证书。证书验证保持开启。",
+        "ca_file_in_use": "正在为 TDM 连接使用自定义证书文件。",
         "chrome_help": "Google Chrome 路径（通常自动检测）",
         "language_help": "控制台语言",
         "no_pause_help": "退出时不等待回车",
@@ -445,6 +454,8 @@
         "browser_conflict": "浏览器选项必须与可执行文件路径对应。",
         "errors": {
             "destination": "TDM 地址无效。请输入 http:// 或 https:// 根地址及端口，不要包含路径、密码、查询参数或片段。",
+            "ca_file": "无法使用 --ca-file 中的证书。请选择包含 CA 证书（CA:TRUE）的可读 PEM 文件，例如你的自签名证书或私有 CA 证书，而不是私钥。",
+            "insecure_tls": "--insecure 需要一个 https:// TDM 地址，且其主机名只解析到私有地址或环回地址。其他地址请使用 --ca-file。",
             "disabled": "助手连接尚未启用。请在 TDM 登录页面选择“使用桌面助手”，然后运行助手。",
             "expired": "助手连接已过期或被取消。请在 TDM 中重新启用桌面助手访问权限，然后重新运行助手。",
             "busy": "已有其他助手连接。请先在 TDM 控制面板中取消，再重新开始。",
