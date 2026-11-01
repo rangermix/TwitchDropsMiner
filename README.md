@@ -23,7 +23,8 @@ services operated for other users are outside its support scope.
   while preserving your saved priority list.
 - [Reorder the wanted queue on Main](docs/usage.md#change-the-queue-order-temporarily)
   until restart, without changing your saved Mining list. Channel selection follows
-  this order among campaigns the channel can earn.
+  this order among campaigns the channel can earn. Source checkouts also show reward
+  artwork and live drop progress in the queue.
 - Track campaigns and rewards, and ignore drops you do not want.
 - Skip channels while Twitch reports an active ban, including temporary bans.
 - Sign in inside the dashboard; TDM saves and renews your session automatically.
