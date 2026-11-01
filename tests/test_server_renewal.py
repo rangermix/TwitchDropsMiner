@@ -373,15 +373,17 @@ async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatc
     if platform == "posix":
         assert "--remote-debugging-pipe" in args
         assert not any(arg.startswith("--remote-debugging-") and arg != "--remote-debugging-pipe" for arg in args)
-        assert args[:4] == (sys.executable, "-I", "-S", "-c")
-        assert args[5:7] == tuple(map(str, kwargs["pass_fds"]))
         if displayed:
-            # The launcher remaps fds 3/4, then execs xvfb-run, which runs Chromium with them.
-            assert args[7:14] == ("/usr/bin/xvfb-run", "-a", "-f", str(profiles[0] / "Xauthority"),
-                                  "-s", "-screen 0 1280x800x24 -nolisten tcp", "test-chromium")
+            assert args[:6] == ("/usr/bin/xvfb-run", "-a", "-f", str(profiles[0] / "Xauthority"),
+                               "-s", "-screen 0 1280x800x24 -nolisten tcp")
+            launcher = args[6:]
+            assert all(fd >= 64 for fd in kwargs["pass_fds"])
             assert "--window-size=1200,760" in args
         else:
-            assert args[7] == "test-chromium"
+            launcher = args
+        assert launcher[:4] == (sys.executable, "-I", "-S", "-c")
+        assert launcher[5:7] == tuple(map(str, kwargs["pass_fds"]))
+        assert launcher[7] == "test-chromium"
         if descriptors is not None:
             assert set(os.listdir("/dev/fd")) == descriptors, "a pipe descriptor leaked"
         assert stopped == [(process.pid, signal.SIGTERM), (process.pid, signal.SIGKILL)]
