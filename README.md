@@ -23,8 +23,8 @@ services operated for other users are outside its support scope.
   while preserving your saved priority list.
 - [Reorder the wanted queue on Main](docs/usage.md#change-the-queue-order-temporarily)
   until restart, without changing your saved Mining list. Channel selection follows
-  this order among campaigns the channel can earn. Source checkouts also show reward
-  artwork and live drop progress in the queue.
+  this order among campaigns the channel can earn. In v2.5.0, queue rows also show
+  reward artwork and live drop progress.
 - Track campaigns and rewards, and ignore drops you do not want.
 - Skip channels while Twitch reports an active ban, including temporary bans.
 - Sign in inside the dashboard; TDM saves and renews your session automatically.
@@ -57,9 +57,9 @@ It supports **All / Linked / Not Linked** account-link filters. **Settings → M
 default-off option to mine campaigns reported as Not Linked; read its warning and
 check Twitch progress. See the [dashboard guide](docs/usage.md#account-link-override).
 
-Source checkouts align the connection indicator with the language selector and the
-Inventory toolbar with its search field. Long translated button labels can wrap on
-narrow screens.
+In v2.5.0, the connection indicator and language selector share a height, and the
+Inventory toolbar aligns with its search field. Long translated button labels can
+wrap on narrow screens.
 
 **Settings → Games → Mining list** marks each game as **LINKED** or **NOT LINKED** from your
 inventory, lists linked games first in **Available Games**, can filter by link status,
@@ -87,13 +87,13 @@ With Docker installed, choose one setup below. Shell examples use Bash
 Pull and start the published image:
 
 ```bash
-docker pull rangermix/twitch-drops-miner:2.4.0
+docker pull rangermix/twitch-drops-miner:2.5.0
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.4.0
+  rangermix/twitch-drops-miner:2.5.0
 ```
 
 ### Docker Compose
@@ -104,7 +104,7 @@ inside it. Set `TZ` to your home internet connection's timezone:
 ```yaml
 services:
   twitch-drops-miner:
-    image: rangermix/twitch-drops-miner:2.4.0
+    image: rangermix/twitch-drops-miner:2.5.0
     container_name: twitch-drops-miner
     init: true
     stop_grace_period: 30s
@@ -152,8 +152,9 @@ Set Docker’s `TZ` to match your home internet connection’s timezone; change
 `Australia/Sydney` in the example as needed. Chromium and the temporary display are
 included in the image. Your everyday browser profile is separate.
 TDM renews the session automatically using a private verification browser, separate
-from the sign-in viewer. On Linux/macOS, v2.4.0 uses a private pipe for this browser's
-control connection; Windows uses loopback. See [session renewal](docs/authentication.md).
+from the sign-in viewer. Linux/macOS use a private pipe for this browser's control
+connection; v2.5.0 preserves it through display wrappers. Windows uses loopback.
+See [session renewal](docs/authentication.md).
 **Settings → Account & Maintenance → Log out of Twitch** clears this miner’s session
 and opens sign in again for account replacement.
 See [authentication](docs/authentication.md) and [troubleshooting](docs/troubleshooting.md).
@@ -161,9 +162,9 @@ If Twitch rejects the embedded browser, select **Use desktop helper** and run th
 matching Windows, Linux, or macOS helper with your dashboard address. The first helper
 to connect is accepted during a ten-minute window; no pairing code is needed.
 See [desktop helper downloads and steps](docs/authentication.md#desktop-helper-fallback).
-HTTPS verification is on by default. For a self-signed dashboard certificate, source
-helpers accept `--ca-file`, or can opt out with `--insecure` (unsafe); neither is in
-v2.4.0 downloads. See [helper HTTPS](docs/authentication.md#helper-https-certificates).
+HTTPS verification is on by default. For a self-signed dashboard certificate, v2.5.0
+helpers accept `--ca-file`. The unsafe `--insecure` alternative is limited to private
+or loopback HTTPS destinations. See [helper HTTPS](docs/authentication.md#helper-https-certificates).
 For rejected helper logins, report the fixed error code and a redacted miner log;
 see [helper diagnostics](docs/troubleshooting.md#helper-login-error-codes).
 
@@ -241,9 +242,7 @@ Search [existing issues](https://github.com/rangermix/TwitchDropsMiner/issues) b
 reporting a problem. Use the [bug-report form](https://github.com/rangermix/TwitchDropsMiner/issues/new?template=bug_report.yml)
 with the running app version, hosting environment, reproduction steps, and redacted evidence.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for bug reports, translations,
-and development, including CI validation. CI lint checks validate source without rewriting it. Source checkouts
-containing the launcher fix preserve renewal control pipes through display wrappers
-that use low descriptors.
+and development, including CI validation. CI lint checks validate source without rewriting it.
 This fork uses AI-assisted development with automated checks and
 independent review. Agents acknowledge work in the relevant issue or PR before starting
 and post the outcome there when work ends or pauses.
