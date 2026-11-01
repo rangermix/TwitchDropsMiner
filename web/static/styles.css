@@ -571,11 +571,17 @@ header h1 {
     align-items: flex-start;
 }
 
-/* Inventory filter bar: search and actions on top, labelled groups of toggle chips below */
+/* Inventory filter bar: search and actions on top, labelled groups of toggle chips below.
+   The game search input is the anchor: toolbar controls pin to its row and match its 40px
+   height, growing only when a wrapped translated label needs more room. */
 .inventory-filters .filter-controls { gap: 14px; }
-.inventory-filters .filter-search { align-items: center; flex-wrap: wrap; }
+.inventory-filters .filter-search { align-items: flex-end; flex-wrap: wrap; }
 .inventory-filters .game-dropdown-container { flex: 1 1 260px; }
+.inventory-filters #inventory-game-search { height: 40px; }
 .filter-toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+/* min-height keeps single-line controls aligned with the 40px search input while
+   letting buttons grow for wrapped translated labels at narrow viewports. */
+.filter-toolbar-actions .small-btn { min-height: 40px; }
 .reload-campaigns-btn { display: inline-flex; align-items: center; gap: 6px; }
 .reload-campaigns-btn .reload-icon { font-size: 15px; line-height: 1; }
 .reload-campaigns-btn:disabled { opacity: 0.6; cursor: wait; }
@@ -820,7 +826,7 @@ header h1 {
 .campaign-overview:hover:not(:has(a:hover, button:hover, .campaign-badge:hover)) .campaign-toggle { background: var(--bg-secondary); }
 .inventory-view-toggle { display: flex; gap: 4px; }
 .inventory-view-btn {
-    display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0;
+    display: flex; align-items: center; justify-content: center; width: 34px; height: 40px; padding: 0;
     border: 1px solid var(--border-color); border-radius: 5px; background: transparent;
     color: var(--text-secondary); cursor: pointer;
 }
@@ -2224,11 +2230,17 @@ header h1 {
     display: none;
 }
 
+/* Connection pill and language select share one box size so they match in the header. */
 #connection-indicator {
-    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    min-width: 110px;
+    font-size: 13px;
     font-weight: 500;
-    padding: 3px 10px;
-    border-radius: 5px;
+    padding: 0 10px;
+    border-radius: 4px;
     border: 1px solid transparent;
     white-space: nowrap;
 }
@@ -2244,7 +2256,9 @@ header h1 {
 }
 
 .language-selector select {
-    padding: 6px 10px;
+    height: 32px;
+    min-width: 110px;
+    padding: 0 10px;
     font-size: 13px;
 }
 
@@ -2821,10 +2835,6 @@ header h1 {
         white-space: normal;
         overflow-wrap: anywhere;
     }
-}
-
-.language-selector select {
-    min-width: 110px;
 }
 
 .status-bar {

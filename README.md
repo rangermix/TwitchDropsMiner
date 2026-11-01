@@ -56,6 +56,10 @@ It supports **All / Linked / Not Linked** account-link filters. **Settings → M
 default-off option to mine campaigns reported as Not Linked; read its warning and
 check Twitch progress. See the [dashboard guide](docs/usage.md#account-link-override).
 
+Source checkouts align the connection indicator with the language selector and the
+Inventory toolbar with its search field. Long translated button labels can wrap on
+narrow screens.
+
 **Settings → Games → Mining list** marks each game as **LINKED** or **NOT LINKED** from your
 inventory, lists linked games first in **Available Games**, can filter by link status,
 and offers **Select Linked** to add every linked game at once. Selection controls wrap
