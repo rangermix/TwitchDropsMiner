@@ -382,9 +382,11 @@ lang/                # Translation JSON files (20 languages)
   that are live on a wanted game with drops confirmed are added: `Stream` defaults
   `drops_enabled` to true, so any later stream refresh would make a drops-disabled
   channel watchable. Existing directory/ACL objects are never replaced or rechecked.
-  `get_mining_priority()` appends `(not acl_based, not followed)` only after the game
-  priority key, so game order, temporary order, fallback tiers, reward ranking and ACL
-  over directory precedence are unchanged. The tie-break is omitted in manual mode and
+  `get_mining_priority()` appends `(not acl_based, -mineable_drops, not followed)` only
+  after the game priority key, so game order, temporary order, fallback tiers, reward
+  ranking and ACL over directory precedence are unchanged. A channel awarding more
+  mineable drops (for example an ACL-only chat badge campaign on top of the regular
+  drops) still outranks a followed channel that cannot earn them. The tie-break is omitted in manual mode and
   while the watched channel is `picked_channel_id` (a same-game dashboard click), so a
   hand-picked channel is never replaced by it. `record_watch()` runs on every
   `WatchService.watch()`: watching any other channel ends the protection, as do Return

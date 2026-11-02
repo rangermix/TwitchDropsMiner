@@ -115,6 +115,49 @@ def test_acl_channels_keep_precedence_over_followed_ones():
     assert [ch.id for ch in order] == [2, 1, 3]
 
 
+def test_more_mineable_drops_beat_follow_so_badge_only_streamers_still_win():
+    """Issue #209: a channel awarding extra drops (for example an ACL-only chat
+    badge campaign) must still outrank a followed channel that cannot earn it."""
+    twitch = make_twitch()
+    service = ChannelService(twitch)
+    service._followed_ids = {1}
+    followed, with_badge = channel(twitch, 1), channel(twitch, 2)
+
+    def campaign(game, can_earn_on):
+        drop = MagicMock()
+        drop.can_earn.side_effect = lambda ch=None, *_a, **_k: ch in can_earn_on
+        camp = MagicMock(game=game)
+        camp.timed_drops = {"drop": drop}
+        camp.can_earn.side_effect = lambda ch=None, *_a, **_k: ch in can_earn_on
+        return camp
+
+    twitch.inventory = [
+        campaign(WANTED, {followed, with_badge}),  # shared regular drop
+        campaign(WANTED, {with_badge}),            # badge drop, ACL subset
+    ]
+    assert service._mineable_drop_count(with_badge) == 2
+    assert service._mineable_drop_count(followed) == 1
+    assert service.get_mining_priority(with_badge) < service.get_mining_priority(followed)
+
+
+def test_equal_mineable_drops_let_follow_decide():
+    """When both channels can earn the same set of drops the follow tie-break still fires."""
+    twitch = make_twitch()
+    service = ChannelService(twitch)
+    service._followed_ids = {1}
+    followed, plain = channel(twitch, 1), channel(twitch, 2)
+
+    drop = MagicMock()
+    drop.can_earn.side_effect = lambda ch=None, *_a, **_k: ch in {followed, plain}
+    camp = MagicMock(game=WANTED)
+    camp.timed_drops = {"drop": drop}
+    camp.can_earn.side_effect = lambda ch=None, *_a, **_k: ch in {followed, plain}
+    twitch.inventory = [camp]
+
+    assert service._mineable_drop_count(followed) == service._mineable_drop_count(plain) == 1
+    assert service.get_mining_priority(followed) < service.get_mining_priority(plain)
+
+
 def test_a_same_game_click_is_not_undone_by_the_tie_break():
     twitch = make_twitch()
     service = ChannelService(twitch)

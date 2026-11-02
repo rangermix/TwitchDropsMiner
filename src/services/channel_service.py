@@ -120,16 +120,41 @@ class ChannelService:
         """A temporary dashboard order first, then the default mining priority.
 
         With ``prefer_followed_channels``, followed channels win only between
-        channels of equal game priority; game order itself never changes.
+        channels that would currently award the same mineable drops; a channel
+        offering a strictly larger set of rewards (for example an ACL-only
+        chat badge in addition to the regular drops) still wins regardless of
+        follow status. Game order itself never changes.
         """
         key: tuple[float, ...] = self._default_mining_priority(channel)
         if self._follow_tie_break():
-            # ACL channels keep their precedence; following only breaks the remaining tie.
-            key = (*key, 0 if channel.acl_based else 1, 0 if channel.id in self._followed_ids else 1)
+            # ACL first, then the channel offering more mineable rewards, then follow.
+            key = (
+                *key,
+                0 if channel.acl_based else 1,
+                -self._mineable_drop_count(channel),
+                0 if channel.id in self._followed_ids else 1,
+            )
         order = getattr(self._twitch, "game_order", None)
         if not isinstance(order, TemporaryGameOrder) or not order.active:
             return key
         return (self._manual_rank(channel, order), *key)
+
+    def _mineable_drop_count(self, channel: Channel) -> int:
+        """Distinct unclaimed drops this channel can currently award.
+
+        Used only inside the follow tie-break: a channel that awards a strict
+        superset of another channel's drops must still rank higher, so that
+        following cannot push the miner onto a streamer who grants fewer rewards.
+        """
+        if not channel.online or channel.banned:
+            return 0
+        count = 0
+        for campaign in self._twitch.inventory:
+            if (campaign.game in self._twitch.wanted_games
+                    and (campaign.game.is_special() or channel.drops_enabled)
+                    and campaign.can_earn(channel)):
+                count += sum(1 for drop in campaign.timed_drops.values() if drop.can_earn(channel))
+        return count
 
     def record_watch(self, channel: Channel, *, picked: bool = False) -> None:
         """Remember a hand-picked channel; watching any other channel ends that protection."""
