@@ -63,8 +63,8 @@ class OwnedChromium:
     """Own a temporary profile and process group; never attach to a user's browser."""
 
     # Chromium reads commands on fd 3 and writes replies on fd 4. subprocess keeps
-    # inherited descriptor numbers, so remap them here and exec in place: the PID,
-    # process group and cleanup stay Chromium's own.
+    # inherited descriptor numbers, so remap immediately before Chromium, after
+    # any display wrapper. The entire process group remains owned by this class.
     LAUNCHER = (
         "import fcntl,os,sys\n"
         "fds=[int(fd) for fd in sys.argv[1:3]]\n"
@@ -166,6 +166,7 @@ class OwnedChromium:
             if self.no_sandbox:
                 args.insert(1, "--no-sandbox")
             display_runner = shutil.which("xvfb-run") if os.name == "posix" else None
+            display_args: list[str] = []
             # macOS Chromium never uses X, so only Linux is told to install xvfb.
             self.headless_fallback = os.name == "posix" and sys.platform.startswith("linux") and not display_runner
             if self.headless_fallback:
@@ -173,10 +174,10 @@ class OwnedChromium:
             if display_runner:
                 # Keep SDK issuance in a normal browser, matching interactive login.
                 # Keep Xauthority in the owned profile so forced cleanup removes it too.
-                # Never share the interactive VNC display. xvfb-run leaves fds 3/4 alone.
+                # Never share the interactive VNC display.
                 args.append("--window-size=1200,760")
-                args = [display_runner, "-a", "-f", str(profile / "Xauthority"),
-                        "-s", "-screen 0 1280x800x24 -nolisten tcp", *args]
+                display_args = [display_runner, "-a", "-f", str(profile / "Xauthority"),
+                                "-s", "-screen 0 1280x800x24 -nolisten tcp"]
             else:
                 args.insert(1, "--headless=new")
             if os.name != "posix":
@@ -191,10 +192,25 @@ class OwnedChromium:
             parent_in, child_out = os.pipe()
             owned = [child_in, child_out, parent_in, parent_out]
             try:
-                launcher = [sys.executable, "-I", "-S", "-c", self.LAUNCHER, str(child_in), str(child_out)]
-                async with self.process([*launcher, *args], profile, pass_fds=(child_in, child_out)):
+                forwarded: list[int] = []
+                if display_runner:
+                    import fcntl
+
+                    # xvfb-run can overwrite/close fd 3. Carry both pipe ends above
+                    # wrapper-reserved descriptors until the final exec launcher.
                     for fd in (child_in, child_out):
+                        try:
+                            duplicate = fcntl.fcntl(fd, fcntl.F_DUPFD_CLOEXEC, 64)
+                        except OSError:
+                            raise SessionError("BROWSER_START") from None
+                        owned.append(duplicate)
+                        forwarded.append(duplicate)
+                child_fds = tuple(forwarded) if forwarded else (child_in, child_out)
+                launcher = [sys.executable, "-I", "-S", "-c", self.LAUNCHER, *map(str, child_fds)]
+                async with self.process([*display_args, *launcher, *args], profile, pass_fds=child_fds):
+                    for fd in (child_in, child_out, *forwarded):
                         os.close(fd)
+                        owned.remove(fd)
                     owned = []  # DevToolsPipe.open owns the parent ends from here.
                     async with DevToolsPipe.open(parent_out, parent_in) as pipe:
                         try:
