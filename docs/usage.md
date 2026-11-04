@@ -89,8 +89,7 @@ it on Twitch.
 
 Click **Play stream** to watch the stream in Twitch's player on that device; **Close
 player** returns to the thumbnail, and the player closes when TDM switches channel.
-Mining is unaffected: the miner itself never downloads video, and the player is not
-needed for progress.
+The miner itself never downloads video, and the player is not needed for progress.
 
 Twitch only allows its player on HTTPS dashboards and on `localhost` or `127.0.0.1`.
 On a plain `http://` address such as `http://192.168.1.50:8080`, the button reads
