@@ -271,14 +271,22 @@ lang/                # Translation JSON files (20 languages)
   with the application version and serves `/` with `Cache-Control: no-cache`
 - Any `app.js` or `styles.css` change requires an application version bump through the release
   workflow before deployment so existing clients receive a new asset cache key
-- Now Watching offers a page-local thumbnail toggle, off on each page load. Only an
-  explicit opt-in loads a JPEG; channel events refresh it at most once per minute.
-  Disabling it clears the image source, and losing the watched channel resets the toggle.
-  Keep translated labels, native keyboard activation and `aria-pressed` state in sync.
-  The dashboard does not play stream video or audio.
-  Use canonical channel `login`/`url` for thumbnails and Twitch links; `name` is a display
-  label and may contain localized characters. Keep the card title translated.
-  Regression: `test_stream_preview.py`.
+- Now Watching shows the watched channel's Twitch JPEG thumbnail by default; channel
+  events refresh it at most once per minute. A translated Play button replaces it with
+  Twitch's embedded player (`player.twitch.tv`, `parent` = the dashboard's
+  `location.hostname`); only that click loads video, on the viewing device, never on the
+  miner. Close player and any channel switch remove the iframe and restore the
+  thumbnail. CSP `frame-src` allows only `'self'` and `https://player.twitch.tv`. Twitch
+  shows "misconfigured" for embeds on plain-HTTP hosts other than loopback (verified on a
+  LAN IP), so `canEmbedTwitchPlayer()` (HTTPS or `localhost`/`127.0.0.1`) otherwise turns
+  Play into translated "Watch on Twitch", opening the validated twitch.tv URL in a new
+  tab. HTTPS dashboards on IP or private hostnames are untested and may still be refused.
+  If Close player had focus when a channel switch hides it, focus moves to Play.
+  Mining itself never downloads stream video or audio.
+  Use canonical channel `login`/`url` for thumbnails, the player and Twitch links; `name`
+  is a display label and may contain localized characters. Keep labels translated.
+  The channel name links to its `https://` twitch.tv (optional `www.`) page in a new tab;
+  any other URL renders as plain text. Regression: `test_stream_preview.py`.
 - The dashboard header keeps brand, translated tabs and account controls in one row
   from 1280 CSS pixels. Narrower screens give navigation a separate row; screens through
   768 pixels also group account controls and allow account text to wrap. Desktop

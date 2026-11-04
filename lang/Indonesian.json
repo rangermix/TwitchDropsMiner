@@ -128,10 +128,9 @@
             "channel_count_plural": "channel",
             "viewers": "penonton",
             "now_watching": "Sedang ditonton",
-            "show_preview": "Tampilkan gambar mini",
-            "hide_preview": "Sembunyikan gambar mini",
-            "preview_off": "Gambar mini dinonaktifkan",
-            "preview_help": "Memuat gambar mini Twitch dan menggunakan bandwidth tambahan. Nonaktif setiap kali halaman dimuat."
+            "play_stream": "Putar siaran",
+            "watch_on_twitch": "Tonton di Twitch",
+            "close_player": "Tutup pemutar"
         },
         "inventory": {
             "status": {

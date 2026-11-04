@@ -128,10 +128,9 @@
             "channel_count_plural": "kanaler",
             "viewers": "seere",
             "now_watching": "Ser nu",
-            "show_preview": "Vis miniature",
-            "hide_preview": "Skjul miniature",
-            "preview_off": "Miniaturen er slået fra",
-            "preview_help": "Indlæser Twitch-miniaturer og bruger ekstra båndbredde. Slået fra ved hver sideindlæsning."
+            "play_stream": "Afspil stream",
+            "watch_on_twitch": "Se på Twitch",
+            "close_player": "Luk afspiller"
         },
         "inventory": {
             "status": {

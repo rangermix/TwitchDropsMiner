@@ -246,6 +246,7 @@ class TestResponseHeaders:
                 headers = client.get(path).headers
                 assert "frame-ancestors 'none'" in headers["content-security-policy"]
                 assert "script-src 'self' https://cdn.socket.io;" in headers["content-security-policy"]
+                assert "frame-src 'self' https://player.twitch.tv;" in headers["content-security-policy"]
                 assert headers["x-content-type-options"] == "nosniff"
 
     def test_static_files_carry_nosniff(self, isolated):

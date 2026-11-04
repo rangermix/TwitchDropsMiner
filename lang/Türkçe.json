@@ -128,10 +128,9 @@
             "channel_count_plural": "kanal",
             "viewers": "izleyici",
             "now_watching": "Şimdi izlenen",
-            "show_preview": "Küçük resmi göster",
-            "hide_preview": "Küçük resmi gizle",
-            "preview_off": "Küçük resim kapalı",
-            "preview_help": "Twitch küçük resimlerini yükler ve ek bant genişliği kullanır. Her sayfa yüklemesinde kapalıdır."
+            "play_stream": "Yayını oynat",
+            "watch_on_twitch": "Twitch'te izle",
+            "close_player": "Oynatıcıyı kapat"
         },
         "inventory": {
             "status": {

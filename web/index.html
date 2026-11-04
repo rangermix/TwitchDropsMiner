@@ -152,9 +152,11 @@
                             <span id="now-watching-title">Now Watching</span>
                             <span id="now-watching-live" class="live-badge">Online</span>
                         </div>
-                        <button id="now-watching-toggle" class="secondary-btn" type="button" aria-pressed="false" aria-controls="now-watching-preview">Show thumbnail</button>
-                        <p id="now-watching-off">Thumbnail is off</p>
-                        <div id="now-watching-preview" class="now-watching-preview" hidden><div id="now-watching-img"></div></div>
+                        <div id="now-watching-preview" class="now-watching-preview">
+                            <div id="now-watching-img"></div>
+                            <button id="now-watching-play" class="now-watching-play" type="button">Play stream</button>
+                        </div>
+                        <button id="now-watching-close" class="secondary-btn" type="button" hidden>Close player</button>
                         <div class="now-watching-foot" id="now-watching-info"></div>
                     </div>
                     </div>
