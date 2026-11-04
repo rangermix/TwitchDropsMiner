@@ -11,15 +11,23 @@ server-side session verification and automatic renewal.
 1. Open the TDM dashboard. If dashboard password protection is enabled, unlock it first.
 2. Sign in to Twitch in the browser shown there and complete email verification or
    two-factor authentication as requested by Twitch.
-3. The browser closes automatically after Twitch sets its login cookie, whether scoped
-   to `www.twitch.tv` or `.twitch.tv`. If it stays
-   open after you finish verification, select **Finish sign in** or close its X button.
+3. After Twitch confirms the login, select **Finish sign in** (closing the browser with
+   its X button also works). Google Chrome ignores the bundled completion extension, so
+   the browser usually stays open; some Chromium builds close it automatically a few
+   seconds after Twitch sets its login cookie, whether scoped to `www.twitch.tv` or
+   `.twitch.tv`.
 4. Wait while TDM verifies the account, campaign access and renewable session. The
    normal dashboard appears automatically after verification and browser cleanup.
 
 An attempt lasts up to 15 minutes. **Retry** starts a new browser after failure, or
 reconnects a closed viewer. Do not close the browser before Twitch verification is done.
 Sessions and integrity proofs are checked locally against Twitch before acceptance.
+
+Twitch sometimes serves a username-first sign-in form whose integrity check the embedded
+browser fails. Before showing the form, the login browser rotates Twitch's anonymous
+device-identifier cookies and reloads up to four times until the standard
+username/password form appears. Account and session cookies are never touched. If the
+alternate form persists, use the [desktop helper](#desktop-helper-fallback).
 
 The temporary browser has password saving disabled. Open **Copy and paste** to paste
 text into its focused field, or open the panel before copying text inside Twitch and
@@ -48,13 +56,24 @@ the change; a failed sign-in needs a new attempt.
 
 ## Docker and timezone
 
-Use the `rangermix/twitch-drops-miner:2.5.0` image or build the current source.
-The image includes Chromium, Xvfb, a window manager and noVNC. It does not need a
-display on the home server or NAS. Only the dashboard port is published; VNC and
-login-browser control remain on container loopback addresses. The 2.5.0 Docker image
-and Linux/macOS source builds control the session-renewal browser over a private
-pipe. Windows source builds use loopback; the older 2.3.2 image also uses a loopback
-control port.
+Use an image built from the current source. It includes Google Chrome (also available
+as `chromium` on `PATH`), Xvfb, a window manager and noVNC. Chrome is required because
+Twitch rejects integrity proofs from unbranded Chromium builds. The published 2.5.0
+image was built before this change and still bundles Chromium, so build the current
+source for embedded login. The container does not need a display on the home server or
+NAS. Only the dashboard port is published; VNC and capture control remain on container
+loopback addresses. The login browser and the Linux/macOS session-renewal browser are controlled
+over a private pipe. Windows source builds use loopback for renewal; the older 2.3.2
+image also uses a loopback control port.
+
+The Docker image runs the miner as root, so the login browser passes `--no-sandbox`:
+Docker's default seccomp profile denies the unprivileged user namespaces that Chrome's
+sandbox needs. Chrome's own renderer sandbox is therefore disabled for this browser;
+isolation relies on the separate `tdm-browser` user, a private profile and no access to
+miner data or logs, and no special seccomp option is required.
+The renewal browser on a source installation that runs the miner as a normal user keeps
+Chrome's sandbox enabled; embedded source login requires a root miner and uses the same
+no-sandbox behaviour as the image.
 
 Set `TZ` to match the timezone of your home internet connection, for example
 `TZ=Australia/Sydney`. A mismatched timezone can cause Twitch to reject the browser.
@@ -274,10 +293,12 @@ mount cannot enforce private permissions, login fails with `BROWSER_ISOLATION`; 
 a Linux filesystem or a Docker named volume for data/logs.
 
 A source installation using the embedded browser additionally needs Linux, a root miner process with a separate
-`tdm-browser` system user, `chromium`, `Xvfb`, `openbox`, `x11vnc` and `xdotool`, noVNC
-at `/usr/share/novnc`, and timezone data. The desktop helper is an alternative for
-interactive sign-in, but the miner host still needs Chromium for server-side
-verification and renewal. See [source installation](installation.md#run-from-source).
+`tdm-browser` system user, Google Chrome (found as `google-chrome`,
+`google-chrome-stable`, `chromium` or `chromium-browser`), `Xvfb`, `openbox` and
+`x11vnc`, noVNC at `/usr/share/novnc`, and timezone data. The desktop helper is an
+alternative for interactive sign-in, but the miner host still needs branded Chrome for
+server-side verification and renewal. See
+[source installation](installation.md#run-from-source).
 
 [All guides](README.md) · [Next: Games and drops](usage.md)
 

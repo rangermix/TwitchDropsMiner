@@ -557,11 +557,15 @@ progress to an ignored drop while the miner intentionally targets another reward
   restore legacy cookies after explicit logout. Version 3 atomically persists a
   logged-out marker with cleared session/SDK state; successful login clears it.
 - `ContainerLogin` owns one temporary attempt with a 15-minute interactive timeout.
-  Launch ordinary Chromium at Twitch sign in without remote automation, close its
-  window normally to flush storage, then reopen the owned profile for CDP capture.
-  Verify the browser PID before reading credentials. Finish sign in uses EWMH close;
-  the window X works too. Profiles and all owned processes must be drained through
-  cancellation, startup failures, timeout and shutdown. Never attach another profile.
+  Before the viewer shows the form, rotate Twitch's anonymous device-identifier
+  cookies when its username-first form is served, then attach to the visible page
+  over the private pipe. Rotation is best-effort and limited to three minutes of the
+  attempt. Never reload the page while the viewer accepts input. Close
+  the browser through DevTools `Browser.close` so it flushes storage, falling back to
+  `SIGTERM` when the pipe is already gone, then reopen the
+  owned profile for loopback CDP capture. Verify the browser PID before reading
+  credentials. Profiles and all owned processes must be drained through cancellation,
+  startup failures, timeout and shutdown. Never attach another profile.
 - `SessionController` validates the captured account and catalog, independently issues
   a server context, revalidates the same account and atomically installs the seed.
   Account replacement and logout use `Twitch.authentication_change()` to cancel AND
@@ -571,11 +575,15 @@ progress to an ignored drop while the miner intentionally targets another reward
 - The renewal worker rotates SDK state, normally five minutes before expiry, with
   bounded retries and same-account/freshness validation. Mining GraphQL stays in
   Python. Preserve safe-read retry rules; never replay ambiguous mutations.
-- On POSIX, `OwnedChromium` (renewal/SDK issuance, run as root) uses
-  `--remote-debugging-pipe` and never opens a DevTools TCP port: CDP has no
+- On POSIX, `OwnedChromium` (renewal/SDK issuance) and the interactive login Chromium
+  use `--remote-debugging-pipe` and never open a DevTools TCP port: CDP has no
   authentication, and the `tdm-browser` login UID shares loopback. A small exec
   launcher remaps the pipe to fds 3/4 immediately before Chromium, after the private
-  `xvfb-run` wrapper when present. The wrapper may overwrite/close fd 3; carry pipe
+  `xvfb-run` wrapper when present. The interactive login browser uses a `/bin/bash`
+  shim instead: it runs as the unprivileged login UID that may not be able to execute
+  a root-only virtual environment's interpreter, and Debian's `/bin/sh` (dash) cannot
+  remap descriptors above 9. The shim copies the pipe ends to fds 3/4 and closes the
+  inherited originals. The wrapper may overwrite/close fd 3; carry pipe
   ends through it on collision-safe descriptors at or above 64, closing parent copies
   and partial allocations on failure. Preserve the owned process group. Xvfb and the wrapper
   also inherit copies, so a Chromium crash reaches EOF once the wrapper cleans up.
@@ -585,7 +593,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   Once a protocol reader ends, new commands must fail with `BROWSER_PROTOCOL`
   before sending, including after target detachment.
   Windows keeps the loopback port (no `pass_fds`). The login capture Chromium keeps
-  its port because it runs as `tdm-browser` with a profile that UID already owns.
+  its port because it never renders the password form and only reads the profile that
+  `tdm-browser` already owns.
   `tests/test_browser_pipe_wrapper.py` covers descriptor-closing wrappers and partial
   allocation cleanup. `tests/test_server_renewal.py` checks launch arguments and descriptors, and, with a
   local Chromium on Linux, that the browser process group opens no TCP listener.
@@ -604,7 +613,15 @@ progress to an ignored drop while the miner intentionally targets another reward
   closed on mounts that ignore chmod or give the browser ownership. Keep temporary
   display/profile directories owned by the browser UID. Root-only SDK profiles remain
   unreadable to it. Retain tests for file-access isolation and pre-login password setup.
-- Docker includes Chromium, Xvfb, openbox, x11vnc, xdotool, noVNC and timezone data.
+  The interactive login browser passes `--no-sandbox` when the miner runs as root
+  (the Docker image and embedded source login), because Docker's default seccomp
+  profile denies the user namespaces Chrome's sandbox needs. It remains isolated by
+  the dedicated UID, cleared groups and private profiles. Root-only SDK renewal keeps
+  its own `--no-sandbox`.
+- Docker includes Google Chrome, Xvfb, openbox, x11vnc, noVNC and timezone
+  data. Twitch accepts integrity proofs only from branded Chrome builds, so the image
+  installs Chrome from Google's stable channel and exposes it as `chromium` on `PATH`;
+  substituting a distro Chromium build fails campaign validation with `integrity`.
   Set `TZ` to the home internet connection’s timezone. Use init, shared memory and
   a cleanup grace period. Only the dashboard port is published. Display numbers are
   allocated by Xvfb to avoid stale fixed-display locks after engine restarts.
@@ -1033,7 +1050,7 @@ protocol rejection; preserve rejection and target-cleanup assertions.
   Validate archive contents and checksums before upload, and remote size/digests before
   publication. PR jobs never publish. The helper asks only for the dashboard URL.
 - Keep browser/control listeners private; do not revive standalone sidecar URLs or
-  unrestricted credential-upload routes. The standard Alpine image owns default login
+  unrestricted credential-upload routes. The standard Docker image owns default login
   and renewal; an admitted desktop helper supplies only an initial validated session.
 
 
@@ -1106,11 +1123,12 @@ The application uses a web-based interface accessible via browser:
 
 **Dockerfile:**
 
-- Uses floating `python:alpine` and `alpine:latest` base tags, including Chromium for
-  internal SDK renewal. Upgrade Alpine packages during builds; security rebuilds must
-  pull current base images and bypass cached package-install layers.
-  Copy noVNC browser assets from a separate stage; the application's authenticated VNC
-  proxy replaces websockify, so its unused server dependencies stay out of the runtime.
+- Runs on `python:3.12-slim-bookworm` and installs Google Chrome from Google's signed
+  apt repository (symlinked as `chromium`/`chromium-browser`) because Twitch rejects
+  integrity tokens from unbranded Chromium builds. A floating `alpine:latest` stage only
+  extracts noVNC browser assets; the application's authenticated VNC proxy replaces
+  websockify, so its unused server dependencies stay out of the runtime. Security
+  rebuilds must pull current base images and bypass cached apt/Chrome-install layers.
 - Installs dependencies from `pyproject.toml`, then removes installed pip and its vendored
   modules; Python's bundled `ensurepip` bootstrap wheel remains. Dependency changes
   require rebuilding the image.

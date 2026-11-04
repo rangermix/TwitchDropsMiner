@@ -96,6 +96,10 @@ docker run -d \
   rangermix/twitch-drops-miner:2.5.0
 ```
 
+The published 2.5.0 image predates the Google Chrome sign-in change, so its embedded
+login cannot complete Twitch's integrity check. Build the current source for embedded
+sign-in, or use the [desktop helper](https://github.com/rangermix/TwitchDropsMiner/blob/main/docs/authentication.md#desktop-helper-fallback).
+
 ### Docker Compose
 
 For a new installation, create a dedicated folder and save this as `compose.yaml`
@@ -139,8 +143,9 @@ For source security rebuilds with refreshed base images and packages, see the
 
 1. Open the dashboard. When Twitch login is required, TDM shows its container browser
    and the Twitch sign in page automatically.
-2. Sign in and complete Twitch verification. The browser closes automatically a few
-   seconds after login; **Finish sign in** remains available if it stays open.
+2. Sign in and complete Twitch verification. Select **Finish sign in** after Twitch
+   confirms the login; some Chromium builds also close the browser automatically a few
+   seconds after login.
    Password saving is disabled. Expand **Copy and paste** to transfer text to or from the browser.
 3. TDM verifies your account and campaign access, saves the session, and returns to
    the normal dashboard. Select your games there.
@@ -149,8 +154,8 @@ You can close and reopen the dashboard tab during sign in; the container browser
 keeps running until the attempt finishes or times out.
 
 Set Docker’s `TZ` to match your home internet connection’s timezone; change
-`Australia/Sydney` in the example as needed. Chromium and the temporary display are
-included in the image. Your everyday browser profile is separate.
+`Australia/Sydney` in the example as needed. Google Chrome and the temporary display
+are included in the image. Your everyday browser profile is separate.
 TDM renews the session automatically using a private verification browser, separate
 from the sign-in viewer. Linux/macOS use a private pipe for this browser's control
 connection; v2.5.0 preserves it through display wrappers. Windows uses loopback.

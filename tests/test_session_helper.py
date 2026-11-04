@@ -1,13 +1,15 @@
 """Drive the actual local-export protocol against an isolated DevTools peer."""
 
+import itertools
 import json
 from contextlib import asynccontextmanager
+from types import SimpleNamespace
 
 import pytest
 from aiohttp import web
 
 from src.auth.session_bundle import SessionError
-from src.auth.session_helper import BrowserExporter
+from src.auth.session_helper import BrowserExporter, DevToolsPipe
 from src.config import ClientType
 
 
@@ -165,3 +167,26 @@ async def test_export_refuses_unmatched_anonymous_or_rejected_context(options):
         with pytest.raises(SessionError, match="CAPTURE_TIMEOUT"):
             await BrowserExporter(address, clock=lambda: 1000, timeout=.05).capture()
         assert closed == ["owned-tab"]
+
+
+@pytest.mark.asyncio
+async def test_attach_detaches_its_session_and_does_not_reclassify_consumer_errors():
+    commands = []
+
+    async def command(method, params=None, timeout=30):
+        commands.append((method, params))
+        return {"sessionId": "session"} if method == "Target.attachToTarget" else {}
+
+    pipe = object.__new__(DevToolsPipe)
+    pipe._sessions, pipe._ids = {}, itertools.count(1)
+    pipe.browser = SimpleNamespace(command=command)
+    async with pipe.attach("target") as protocol:
+        assert protocol is not None
+    assert commands == [
+        ("Target.attachToTarget", {"targetId": "target", "flatten": True}),
+        ("Target.detachFromTarget", {"sessionId": "session"}),
+    ]
+    with pytest.raises(TimeoutError):
+        async with pipe.attach("target"):
+            raise TimeoutError
+    assert [method for method, _ in commands][-1] == "Target.detachFromTarget"

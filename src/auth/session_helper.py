@@ -255,6 +255,29 @@ class DevToolsPipe:
             raise SessionError("BROWSER_PROTOCOL") from None
 
     @asynccontextmanager
+    async def attach(self, target_id: str, *, extra_events: frozenset[str] = frozenset()) -> AsyncIterator[CaptureProtocol]:
+        """Attach to an existing page without taking ownership of it."""
+        try:
+            result = await self.browser.command("Target.attachToTarget", {"targetId": target_id, "flatten": True})
+            session_id = result["sessionId"]
+            if not isinstance(session_id, str) or not self.ID.fullmatch(session_id):
+                raise SessionError("BROWSER_PROTOCOL")
+        except (KeyError, TypeError, TimeoutError):
+            raise SessionError("BROWSER_PROTOCOL") from None
+        try:
+            protocol = DevToolsConnection(self._session(session_id), extra_events=extra_events, ids=self._ids)
+            try:
+                yield protocol
+            finally:
+                await protocol.close()
+                self._end(session_id)
+        finally:
+            # Detach explicitly so a long-lived pipe does not keep the page session open
+            # after this caller is done with it; the target itself stays alive.
+            with suppress(SessionError, TimeoutError):
+                await self.browser.command("Target.detachFromTarget", {"sessionId": session_id}, timeout=2)
+
+    @asynccontextmanager
     async def target(self, *, extra_events: frozenset[str] = frozenset()) -> AsyncIterator[CaptureProtocol]:
         """Create, attach and close only the page target owned by this operation."""
         target_id = None
@@ -263,16 +286,8 @@ class DevToolsPipe:
             target_id = result["targetId"]
             if not isinstance(target_id, str) or not self.ID.fullmatch(target_id):
                 raise SessionError("BROWSER_PROTOCOL")
-            result = await self.browser.command("Target.attachToTarget", {"targetId": target_id, "flatten": True})
-            session_id = result["sessionId"]
-            if not isinstance(session_id, str) or not self.ID.fullmatch(session_id):
-                raise SessionError("BROWSER_PROTOCOL")
-            protocol = DevToolsConnection(self._session(session_id), extra_events=extra_events, ids=self._ids)
-            try:
+            async with self.attach(target_id, extra_events=extra_events) as protocol:
                 yield protocol
-            finally:
-                await protocol.close()
-                self._end(session_id)
         except (KeyError, TypeError, TimeoutError):
             raise SessionError("BROWSER_PROTOCOL") from None
         finally:

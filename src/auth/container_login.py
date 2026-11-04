@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import shutil
 import socket
 import tempfile
 from collections.abc import Callable
-from contextlib import suppress
+from contextlib import AsyncExitStack, suppress
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +20,12 @@ from src.auth.server_renewal import OwnedChromium
 from src.auth.session_bundle import SessionError
 from src.auth.session_controller import SessionController
 from src.auth.session_diagnostics import SessionDiagnostic
-from src.auth.session_helper import BrowserExporter, DevToolsConnection
+from src.auth.session_helper import (
+    BrowserExporter,
+    CaptureProtocol,
+    DevToolsConnection,
+    DevToolsPipe,
+)
 from src.config.paths import DATA_DIR
 
 
@@ -27,6 +33,35 @@ def loopback_port() -> int:
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", 0))
         return int(listener.getsockname()[1])
+
+
+# Twitch's alternate username-first form has a Continue button and no password field.
+# Its integrity check fails in this browser, so the login browser rotates the anonymous
+# device-id cookies that select it and reloads until the standard form is served.
+_LOGIN_FORM = """(() => {
+    const password = document.querySelector('input[type="password"]');
+    const username = document.querySelector(
+        'input[autocomplete="username webauthn"], input[autocomplete="username"]');
+    const continued = [...document.querySelectorAll('button')]
+        .some(element => /^continue$/i.test((element.textContent || '').trim()));
+    return JSON.stringify({ready: Boolean(password || username), alternative: !password && continued});
+})()"""
+_DEVICE_COOKIES = ("unique_id", "unique_id_durable", "experiment_overrides")
+_TWITCH_DOMAINS = (".twitch.tv", "twitch.tv", "www.twitch.tv")
+# Chromium's pipe uses descriptor 3 for commands and 4 for replies. The login browser
+# runs as a different UID that may not be able to execute the miner's interpreter, so
+# remap with a shell instead. Debian's /bin/sh is dash, which cannot reference
+# descriptors above 9, while the inherited pipe ends are only guaranteed to be valid
+# descriptors; /bin/bash handles any number. The originals are closed afterwards so
+# they do not leak into the browser.
+_SHELL_LAUNCHER = (
+    'in=$1; out=$2; shift 2; '
+    '[ "$in" = 3 ] || eval "exec 3<&$in"; '
+    '[ "$out" = 4 ] || eval "exec 4>&$out"; '
+    '[ "$in" = 3 ] || [ "$in" = 4 ] || eval "exec $in<&-"; '
+    '[ "$out" = 3 ] || [ "$out" = 4 ] || eval "exec $out>&-"; '
+    'exec "$@"'
+)
 
 
 async def finish_cleanup(cleanup: asyncio.Task[None]) -> None:
@@ -112,7 +147,7 @@ class ContainerDesktop:
         return process
 
     async def __aenter__(self):
-        if os.name != "posix" or any(not shutil.which(name) for name in ("Xvfb", "openbox", "x11vnc", "xdotool")):
+        if os.name != "posix" or any(not shutil.which(name) for name in ("Xvfb", "openbox", "x11vnc")):
             raise SessionError("BROWSER_UNAVAILABLE")
         self.isolation = BrowserIsolation()
         self.isolation.protect(DATA_DIR, Path("logs"))
@@ -197,10 +232,13 @@ class LoginChromium:
 
     def __init__(self, environment: dict[str, str]):
         self.environment = environment
-        self.executable = shutil.which("chromium") or shutil.which("chromium-browser")
+        self.executable = (shutil.which("google-chrome") or shutil.which("google-chrome-stable")
+                           or shutil.which("chromium") or shutil.which("chromium-browser"))
         self.process: asyncio.subprocess.Process | None = None
         self.profile: Path | None = None
         self.address = ""
+        self.pipe: DevToolsPipe | None = None
+        self._stack: AsyncExitStack | None = None
         self._cleanup: asyncio.Task[None] | None = None
         self.isolation: BrowserIsolation | None = None
 
@@ -209,35 +247,77 @@ class LoginChromium:
         args = [self.executable, f"--user-data-dir={self.profile}", "--no-first-run",
                 "--no-default-browser-check", "--disable-background-mode", "--disable-sync",
                 "--disable-dev-shm-usage", "--window-size=1200,760"]
-        if os.geteuid() == 0:
+        # Docker's default seccomp profile denies the unprivileged user namespaces
+        # Chrome's sandbox needs. Embedded login requires a root miner process, so keep
+        # the previous no-sandbox behaviour and isolate this browser by UID instead.
+        if os.name == "posix" and os.geteuid() == 0:
             args.insert(1, "--no-sandbox")
-        if capture:
+        options: dict[str, Any] = {
+            **(self.isolation.options if self.isolation else {}),
+            "env": {**self.environment,
+                    "XDG_CONFIG_HOME": str(self.profile / "config"),
+                    "XDG_CACHE_HOME": str(self.profile / "cache"),
+                    **{name: str(self.profile / "tmp") for name in ("TMPDIR", "TMP", "TEMP")}},
+            "stdout": asyncio.subprocess.DEVNULL, "stderr": asyncio.subprocess.DEVNULL,
+            "start_new_session": True,
+        }
+        if capture or os.name != "posix":
+            # Embedded login only runs on Linux; other platforms keep a loopback endpoint.
             port = loopback_port()
             self.address = f"http://127.0.0.1:{port}"
-            args.extend(["--disable-extensions", "--remote-debugging-address=127.0.0.1", f"--remote-debugging-port={port}", "about:blank"])
-        else:
-            args.append(f"--load-extension={Path(__file__).with_name('login_completion')}")
-            args.append("https://www.twitch.tv/login")
-        self.process = await asyncio.create_subprocess_exec(
-            *args, env={**self.environment,
-                        "XDG_CONFIG_HOME": str(self.profile / "config"),
-                        "XDG_CACHE_HOME": str(self.profile / "cache"),
-                        **{name: str(self.profile / "tmp") for name in ("TMPDIR", "TMP", "TEMP")}},
-            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL, start_new_session=True,
-            **(self.isolation.options if self.isolation else {}),
-        )
-        if capture:
-            await self.check_ready()
-        else:
-            await asyncio.sleep(.1)
-            if self.process.returncode is not None:
-                raise SessionError("BROWSER_START")
+            args.extend(["--remote-debugging-address=127.0.0.1", f"--remote-debugging-port={port}"])
+            if capture:
+                args.extend(["--disable-extensions", "about:blank"])
+            else:
+                args.extend([f"--load-extension={Path(__file__).with_name('login_completion')}",
+                             "https://www.twitch.tv/login"])
+            self.process = await asyncio.create_subprocess_exec(*args, **options)
+            if capture:
+                await self.check_ready()
+            else:
+                await asyncio.sleep(.1)
+                if self.process.returncode is not None:
+                    raise SessionError("BROWSER_START")
+            return
+        # The visible window carries credentials, so control it over a private pipe:
+        # unlike a loopback port, another local process cannot attach to it.
+        if self._stack is None:
+            self._stack = AsyncExitStack()
+        child_in = parent_out = parent_in = child_out = -1
+        try:
+            child_in, parent_out = os.pipe()
+            parent_in, child_out = os.pipe()
+            launcher = ["/bin/bash", "-c", _SHELL_LAUNCHER, "tdm-launcher",
+                        str(child_in), str(child_out)]
+            args.extend(["--remote-debugging-pipe",
+                         f"--load-extension={Path(__file__).with_name('login_completion')}",
+                         "https://www.twitch.tv/login"])
+            try:
+                self.process = await asyncio.create_subprocess_exec(
+                    *launcher, *args, pass_fds=(child_in, child_out), **options)
+            finally:
+                for fd in (child_in, child_out):
+                    if fd != -1:
+                        with suppress(OSError):
+                            os.close(fd)
+                child_in = child_out = -1
+            self.pipe = await self._stack.enter_async_context(DevToolsPipe.open(parent_out, parent_in))
+        except BaseException:
+            for fd in (child_in, child_out, parent_out, parent_in):
+                if fd != -1:
+                    with suppress(OSError):
+                        os.close(fd)
+            raise
+        await asyncio.sleep(.1)
+        if self.process.returncode is not None:
+            raise SessionError("BROWSER_START")
 
     async def __aenter__(self):
         if not self.executable:
             raise SessionError("BROWSER_UNAVAILABLE")
         self.isolation = BrowserIsolation()
         self.profile = self.isolation.directory("tdm-login-")
+        self._stack = AsyncExitStack()
         try:
             preferences = self.profile / "Default"
             preferences.mkdir(mode=0o700)
@@ -290,35 +370,128 @@ class LoginChromium:
                     await asyncio.sleep(.1)
         raise SessionError("BROWSER_START")
 
-    async def finish(self) -> None:
-        assert self.process is not None
-        output = await self.window_command("search", "--onlyvisible", "--pid", str(self.process.pid))
-        windows = output.decode("ascii").splitlines()
-        if not windows or any(not window.isdecimal() for window in windows):
-            raise SessionError("BROWSER_CLOSE")
-        for window in windows:
-            # EWMH close asks the WM to perform the ordinary user close, flushing storage.
-            owner = await self.window_command("getwindowpid", window)
-            if owner.strip() != str(self.process.pid).encode("ascii"):
-                raise SessionError("BROWSER_CLOSE")
-            await self.window_command("windowquit", window)
-
-    async def window_command(self, *args: str) -> bytes:
-        process = await asyncio.create_subprocess_exec("xdotool", *args, env=self.environment,
-                    stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL, start_new_session=True,
-                    **(self.isolation.options if self.isolation else {}))
+    async def login_form(self, protocol: CaptureProtocol) -> dict[str, Any] | None:
         try:
-            output, _ = await asyncio.wait_for(process.communicate(), 5)
-            if process.returncode != 0:
-                raise SessionError("BROWSER_CLOSE")
-            return output
-        finally:
-            if process.returncode is None:
-                await OwnedChromium.finish_stop(process)
+            result = await protocol.command("Runtime.evaluate", {
+                "expression": _LOGIN_FORM, "returnByValue": True, "awaitPromise": True})
+        except (SessionError, TimeoutError):
+            return None
+        value = result.get("result", {}).get("value")
+        try:
+            form = json.loads(value) if isinstance(value, str) else None
+        except ValueError:
+            return None
+        return form if isinstance(form, dict) else None
+
+    async def wait_login_form(self, protocol: CaptureProtocol) -> dict[str, Any] | None:
+        for _ in range(60):
+            form = await self.login_form(protocol)
+            if form is not None and form.get("ready"):
+                return form
+            await asyncio.sleep(.5)
+        return None
+
+    async def rotate_device_id(self, protocol: CaptureProtocol) -> None:
+        cookies = (await protocol.command("Storage.getCookies")).get("cookies", [])
+        for cookie in cookies:
+            if cookie.get("name") in _DEVICE_COOKIES and cookie.get("domain") in _TWITCH_DOMAINS:
+                await protocol.command("Network.deleteCookies",
+                                       {"name": cookie["name"], "domain": cookie["domain"]})
+
+    async def page_target(self) -> str:
+        assert self.pipe is not None
+        # The browser can answer as soon as it starts, before the first page target
+        # exists; poll briefly so a slow start does not skip form preparation.
+        for _ in range(20):
+            try:
+                targets = await self.pipe.browser.command("Target.getTargets")
+            except (KeyError, TypeError, TimeoutError):
+                raise SessionError("BROWSER_PROTOCOL") from None
+            infos = targets.get("targetInfos") if isinstance(targets, dict) else None
+            pages = [row for row in infos if isinstance(row, dict) and row.get("type") == "page"] \
+                if isinstance(infos, list) else []
+            page = next((row for row in pages if "twitch.tv" in str(row.get("url"))),
+                        pages[0] if pages else None)
+            target = page.get("targetId") if isinstance(page, dict) else None
+            if isinstance(target, str) and DevToolsPipe.ID.fullmatch(target):
+                return target
+            await asyncio.sleep(.25)
+        raise SessionError("BROWSER_PROTOCOL")
+
+    async def prepare(self) -> None:
+        """Ask Twitch for the standard login form before the user can reach the form."""
+        if self.pipe is None:
+            raise SessionError("BROWSER_START")
+        try:
+            await self.pipe.browser.command("Browser.getVersion", timeout=20)
+        except (SessionError, TimeoutError):
+            raise SessionError("BROWSER_START") from None
+        async with self.pipe.attach(await self.page_target()) as protocol:
+            await protocol.command("Network.enable")
+            for _ in range(4):
+                form = await self.wait_login_form(protocol)
+                if form is None or not form.get("alternative"):
+                    return
+                await self.rotate_device_id(protocol)
+                await protocol.command("Page.reload")
+                await asyncio.sleep(1)
+            form = await self.wait_login_form(protocol)
+            if form is not None and form.get("alternative"):
+                # Fixed labels only; the page, cookies and form contents stay private.
+                logging.getLogger("TwitchDrops").warning(
+                    "LOGIN_FORM_ALTERNATIVE device-cookie rotation did not produce the "
+                    "standard form; the desktop helper remains available")
+
+    async def finish(self) -> None:
+        """Shut Chrome down through DevTools so it flushes the login profile for capture."""
+        process = self.process
+        assert process is not None
+        await self.close_browser(process)
+        try:
+            async with asyncio.timeout(15):  # type: ignore[attr-defined]
+                await process.wait()
+        except TimeoutError:
+            raise SessionError("BROWSER_CLOSE") from None
+
+    async def close_browser(self, process: asyncio.subprocess.Process | None = None) -> None:
+        if self.pipe is not None:
+            try:
+                await self.pipe.browser.command("Browser.close", timeout=10)
+            except (SessionError, OSError, TimeoutError):
+                # Chrome may drop the connection while acknowledging the shutdown, or
+                # the private pipe may have ended while Chrome still runs. Give the
+                # acknowledged shutdown time to finish, then ask the process directly;
+                # SIGTERM still lets Chrome flush the profile that capture reads.
+                # Use the process bound before closing: capture() may already have
+                # replaced self.process with the loopback browser by now, and that
+                # browser must not be terminated.
+                if process is None:
+                    process = self.process
+                if process is not None and process.returncode is None:
+                    with suppress(TimeoutError):
+                        await asyncio.wait_for(process.wait(), 5)  # type: ignore[attr-defined]
+                        return
+                    with suppress(ProcessLookupError):
+                        process.terminate()
+            return
+        try:
+            async with (aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as http,
+                        http.ws_connect(await self.socket_url(http)) as socket):
+                protocol = DevToolsConnection(socket)
+                try:
+                    await protocol.command("Browser.close")
+                except (SessionError, aiohttp.ClientError, OSError, TimeoutError):
+                    # Chrome may drop the connection while acknowledging the shutdown.
+                    pass
+                finally:
+                    await protocol.close()
+        except (aiohttp.ClientError, OSError, KeyError, ValueError, TimeoutError, SessionError):
+            raise SessionError("BROWSER_CLOSE") from None
 
     async def capture(self):
-        assert self.process is not None
-        if await self.process.wait() != 0:
+        process = self.process
+        assert process is not None
+        if await process.wait() != 0:
             raise SessionError("BROWSER_START")
         await self.launch(capture=True)
         async with (aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as http,
@@ -341,9 +514,15 @@ class LoginChromium:
         await finish_cleanup(self._cleanup)
 
     async def _close(self) -> None:
-        if self.process is not None:
-            await OwnedChromium.stop(self.process)
-            self.process = None
+        try:
+            if self.process is not None:
+                await OwnedChromium.stop(self.process)
+                self.process = None
+        finally:
+            stack, self._stack = self._stack, None
+            self.pipe = None
+            if stack is not None:
+                await stack.aclose()
         if self.profile is not None:
             await asyncio.to_thread(shutil.rmtree, self.profile)
             self.profile = None
@@ -398,10 +577,33 @@ class ContainerLogin:
                 async with self.browser_factory(desktop.environment) as browser:
                     self.browser = browser
                     try:
-                        self.change("sign_in")
                         stage = "browser_login"
+                        loop = asyncio.get_running_loop()
+                        deadline = loop.time() + 900
+                        try:
+                            # Rotation must finish before the viewer appears, so a reload
+                            # cannot discard text the user has already typed. It is
+                            # best-effort and limited to three minutes, so a wedged
+                            # renderer cannot use up the whole attempt.
+                            async with asyncio.timeout(min(180.0, deadline - loop.time())):  # type: ignore[attr-defined]
+                                await browser.prepare()
+                        except SessionError as failure:
+                            if failure.code == "BROWSER_START":
+                                raise
+                            # Twitch still serves a usable form if rotation could not run.
+                        except TimeoutError:
+                            pass
+                        except Exception:
+                            # Form detection and rotation are best-effort: a malformed
+                            # reply must not take away an otherwise usable browser.
+                            logging.getLogger("TwitchDrops").warning(
+                                "LOGIN_FORM_PREPARE form detection or device-cookie "
+                                "rotation failed; continuing with the current form")
+                        self.change("sign_in")
                         assert browser.process is not None
-                        await asyncio.wait_for(browser.process.wait(), 900)
+                        await asyncio.wait_for(
+                            browser.process.wait(),
+                            max(0.0, deadline - loop.time()))
                         self.change("verifying")
                         stage = "browser_capture"
                         seed = await browser.capture()

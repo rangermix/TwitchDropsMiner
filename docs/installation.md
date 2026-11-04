@@ -1,8 +1,10 @@
 # Installation
 
-Run TDM on your own computer or home server with Docker. The v2.5.0 image
-includes the dashboard's Twitch login browser, optional desktop-helper access, and
-automatic session renewal.
+Run TDM on your own computer or home server with Docker. The v2.5.0 image includes the
+dashboard, optional desktop-helper access, and automatic session renewal. Its embedded
+Twitch login predates the branded Google Chrome requirement: build the current source
+for embedded sign-in or use the desktop helper. See the
+[login guide](authentication.md#desktop-helper-fallback).
 No desktop or display is needed on the server. Older images use their release's
 authentication instructions.
 
@@ -41,12 +43,14 @@ or settings.
 
 To build a source checkout, run `docker build --pull -t twitch-drops-miner .` from the
 repository root and use `twitch-drops-miner` as the image in the run command above.
-Source builds use the current upstream Python/Alpine images through floating
-`python:alpine` and `alpine:latest` tags. For a security rebuild, run
-`docker build --pull --no-cache -t twitch-drops-miner .` to refresh base images and
-Alpine packages. The runtime includes noVNC's browser library; its unused websockify
-server dependencies are excluded. Published images need a maintainer rebuild to
-pick up fixes; Chromium updates depend on availability in Alpine's repositories.
+Source builds use `python:3.12-slim-bookworm` for the runtime and a floating
+`alpine:latest` stage to extract noVNC's browser library; its unused websockify server
+dependencies are excluded. Twitch accepts session integrity proofs only from branded
+Google Chrome builds, so the image installs Chrome from Google's stable channel instead
+of a distro Chromium package. For a security rebuild, run
+`docker build --pull --no-cache -t twitch-drops-miner .` to refresh base images,
+Debian packages and Chrome. Published images need a maintainer rebuild to pick up
+fixes; Chrome updates follow Google's stable channel and require `--no-cache`.
 
 To retain file logs outside the container, also mount `./logs:/app/logs`. You can read
 the container's console output with:
@@ -178,8 +182,9 @@ For more Compose options, see the [Docker Compose documentation](https://docs.do
 ## Run from source
 
 Install Python 3.12 or newer and [uv](https://docs.astral.sh/uv/). The miner host also
-needs a Chromium executable named `chromium` or `chromium-browser` on its `PATH` for
-automatic renewal. On Linux, also install `xvfb` and `xauth` (for example
+needs Google Chrome on its `PATH` for automatic renewal, found as `google-chrome`,
+`google-chrome-stable`, `chromium` or `chromium-browser`; Twitch rejects integrity
+proofs from unbranded Chromium builds. On Linux, also install `xvfb` and `xauth` (for example
 `sudo apt install xvfb xauth` on Debian or Ubuntu) so `xvfb-run` is available. Without
 it the renewal browser runs headless and the miner logs a warning each time it starts;
 Twitch can reject the session it issues, reported as `reason=headless_fallback`. The
@@ -188,8 +193,8 @@ Docker image already includes these tools.
 Docker includes the tools needed for new interactive login. The integrated desktop requires a separate
 unprivileged browser user and private miner data/log permissions; the image configures
 these automatically. The [desktop helper](authentication.md#desktop-helper-fallback)
-can handle interactive sign-in on another home computer; the miner still needs Chromium
-for verification and renewal. Embedded-browser source requirements are listed in the
+can handle interactive sign-in on another home computer; the miner still needs Google
+Chrome for verification and renewal. Embedded-browser source requirements are listed in the
 [login guide](authentication.md#dashboard-access-and-source-installations).
 From the repository root:
 
