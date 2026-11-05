@@ -353,7 +353,12 @@
             "drag_hint": "Przeciągnij gry, aby zmienić kolejność do ponownego uruchomienia (na ekranach dotykowych najpierw naciśnij i przytrzymaj). Lista wydobywania w Ustawieniach pozostaje domyślna.",
             "temporary": "Tymczasowa kolejność do ponownego uruchomienia.",
             "reset": "Przywróć kolejność listy wydobywania",
-            "save_error": "Nie udało się zmienić kolejności. Spróbuj ponownie."
+            "save_error": "Nie udało się zmienić kolejności. Spróbuj ponownie.",
+            "order_info": "Dlaczego kolejka ma taką kolejność?",
+            "order_mining_list": "Gry są w kolejności z Twojej listy wydobywania.",
+            "order_reward_types": "Kolejność według typu nagrody jest włączona: gry są sortowane według typu nagrody, potem według najbliższego terminu nagrody, a potem według kolejności listy wydobywania. Zmień to w Ustawienia → Minowanie → Typy nagród.",
+            "order_fallback": "Gry spoza Twojej listy wydobywania są dodawane po niej.",
+            "order_temporary": "Ustawiono tymczasową kolejność. Ma pierwszeństwo przed tymi regułami do restartu lub przywrócenia."
         },
         "history": {
             "title": "Historia dropów",

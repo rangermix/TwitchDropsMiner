@@ -190,6 +190,11 @@ class GUIWanted(TypedDict):
     temporary: str
     reset: str
     save_error: str
+    order_info: str
+    order_mining_list: str
+    order_reward_types: str
+    order_fallback: str
+    order_temporary: str
 
 
 class GUIInvFilters(TypedDict):

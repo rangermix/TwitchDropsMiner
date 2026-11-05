@@ -353,7 +353,12 @@
             "drag_hint": "Træk spil for at ændre rækkefølgen indtil genstart (tryk og hold først på berøringsskærme). Mininglisten i Indstillinger forbliver standarden.",
             "temporary": "Midlertidig rækkefølge indtil genstart.",
             "reset": "Nulstil til mininglistens rækkefølge",
-            "save_error": "Køens rækkefølge kunne ikke ændres. Prøv igen."
+            "save_error": "Køens rækkefølge kunne ikke ændres. Prøv igen.",
+            "order_info": "Hvorfor har køen denne rækkefølge?",
+            "order_mining_list": "Spil følger rækkefølgen i din miningliste.",
+            "order_reward_types": "Rækkefølge efter belønningstype er slået til: spil sorteres efter belønningstype, derefter efter den tidligste belønningsfrist og derefter efter mininglistens rækkefølge. Skift det under Indstillinger → Mining → Belønningstyper.",
+            "order_fallback": "Spil, der ikke er på din miningliste, tilføjes efter den.",
+            "order_temporary": "En midlertidig rækkefølge er sat. Den går forud for disse regler indtil genstart eller nulstilling."
         },
         "history": {
             "title": "Drop-historik",

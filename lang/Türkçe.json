@@ -353,7 +353,12 @@
             "drag_hint": "Sırayı yeniden başlatmaya kadar değiştirmek için oyunları sürükleyin (dokunmatik ekranlarda önce basılı tutun). Ayarlar’daki madencilik listesi varsayılan olarak kalır.",
             "temporary": "Yeniden başlatmaya kadar geçici sıra.",
             "reset": "Madencilik listesi sırasına sıfırla",
-            "save_error": "Kuyruk sırası değiştirilemedi. Lütfen tekrar deneyin."
+            "save_error": "Kuyruk sırası değiştirilemedi. Lütfen tekrar deneyin.",
+            "order_info": "Kuyruk neden bu sırada?",
+            "order_mining_list": "Oyunlar madencilik listenizin sırasını izler.",
+            "order_reward_types": "Ödül türüne göre sıralama açık: oyunlar önce ödül türüne, sonra en yakın ödül bitiş tarihine, sonra madencilik listesi sırasına göre sıralanır. Bunu Ayarlar → Madencilik → Ödül türleri bölümünden değiştirin.",
+            "order_fallback": "Madencilik listenizde olmayan oyunlar listeden sonra eklenir.",
+            "order_temporary": "Geçici bir sıra ayarlı. Yeniden başlatılana veya sıfırlanana kadar bu kurallardan önce gelir."
         },
         "history": {
             "title": "Drop Geçmişi",

@@ -1537,6 +1537,7 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
 
     // Re-render inventory to apply filters
     renderInventory();
+    renderWantedOrderInfo();
 }
 
 function updateManualModeUI(manualModeInfo) {
@@ -3358,6 +3359,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Proxy uses a manual "Set Proxy" button instead of auto-save
     document.getElementById('set-proxy-btn').addEventListener('click', saveProxy);
     document.getElementById('wanted-order-reset')?.addEventListener('click', () => saveWantedOrder([]));
+    document.getElementById('wanted-order-info-btn')?.addEventListener('click', toggleWantedOrderInfo);
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
     document.getElementById('test-discord-btn').addEventListener('click', () => updateDiscordSettings('test'));
     document.getElementById('save-discord-btn').addEventListener('click', () => updateDiscordSettings('save'));
@@ -3485,6 +3487,40 @@ function updateGameOrder(info) {
         reset.hidden = !gameOrder.active;
         reset.disabled = wantedOrderBusy;
     }
+    renderWantedOrderInfo();
+}
+
+// The ⓘ panel names the rules the server sorts the queue by (stream_selector.py).
+function renderWantedOrderInfo() {
+    const button = document.getElementById('wanted-order-info-btn');
+    const panel = document.getElementById('wanted-order-info');
+    if (button) {
+        const label = wantedText('order_info', 'Why is the queue in this order?');
+        button.title = label;
+        button.setAttribute('aria-label', label);
+    }
+    if (!panel) return;
+    const settings = state.settings || {};
+    const lines = [];
+    if (gameOrder.active) {
+        lines.push(wantedText('order_temporary', 'A temporary order is set. It comes before these rules until restart or reset.'));
+    }
+    lines.push(Array.isArray(settings.reward_priority) && settings.reward_priority.length
+        ? wantedText('order_reward_types', 'Reward type ordering is on: games are sorted by reward type, then by the earliest reward deadline, then by Mining list order. Change this in Settings → Mining → Reward types.')
+        : wantedText('order_mining_list', 'Games follow your Mining list order.'));
+    if (settings.priority_list_only === false) {
+        lines.push(wantedText('order_fallback', 'Games not in your Mining list are added after it.'));
+    }
+    panel.replaceChildren(...lines.map(text => makeElement('p', {}, text)));
+}
+
+function toggleWantedOrderInfo() {
+    const button = document.getElementById('wanted-order-info-btn');
+    const panel = document.getElementById('wanted-order-info');
+    if (!button || !panel) return;
+    panel.hidden = !panel.hidden;
+    button.setAttribute('aria-expanded', String(!panel.hidden));
+    renderWantedOrderInfo();
 }
 
 function setWantedOrderError(visible) {
