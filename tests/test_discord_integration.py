@@ -15,6 +15,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.config.settings import Settings
 from src.services.discord_service import DiscordNotifier, _escape_embed
+from src.models.benefit import BenefitType
 from src.models.drop import BaseDrop
 from src.services.telegram_service import TelegramNotifier
 from src.services.message_handlers import MessageHandlerService
@@ -181,6 +182,22 @@ class TestNotificationGatedOnClaim(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.drop.is_claimed)
         self.sent.assert_not_awaited()
         self.twitch.drop_history.record.assert_not_called()
+
+    async def test_unlinked_game_reward_is_not_claimed_or_notified(self):
+        # Twitch acknowledges such claims but keeps the drop unclaimed (#218, #220).
+        self.campaign.linked = False
+        self.assertFalse(self.drop.can_claim)
+        self.assertFalse(await self.drop.claim())
+        await self.service.process_drops(1, self._claim_message())
+        self.twitch.gql_request.assert_not_awaited()
+        self.sent.assert_not_awaited()
+        self.twitch.drop_history.record.assert_not_called()
+
+    async def test_unlinked_badge_reward_is_still_claimed(self):
+        self.campaign.linked = False
+        self.drop.benefits[0].type = BenefitType.BADGE
+        self.assertTrue(await self.drop.claim())
+        self.sent.assert_awaited_once()
 
     async def test_already_claimed_drop_is_not_added_to_history_again(self):
         self.drop.is_claimed = True

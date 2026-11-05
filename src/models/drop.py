@@ -149,6 +149,12 @@ class BaseDrop:
             self.claim_id is not None
             and not self.is_claimed
             and datetime.now(timezone.utc) < self.campaign.ends_at + timedelta(hours=24)
+            # Unlinked game rewards cannot be delivered: Twitch acknowledges the claim
+            # but keeps the drop unclaimed, so every refresh would claim it again.
+            and (
+                self.campaign.linked
+                or any(benefit.type.is_badge_or_emote() for benefit in self.benefits)
+            )
         )
 
     def update_claim(self, claim_id: str) -> None:
