@@ -1434,6 +1434,10 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     state.settings = settings;
     const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
     if (allowUnlinked) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
+    for (const [event, enabled] of Object.entries(settings.notification_events || {})) {
+        const input = document.getElementById(`notify-${event}`);
+        if (input) input.checked = enabled === true;
+    }
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('priority-list-only').checked = settings.priority_list_only !== false;
     applyInventoryViewMode(settings.inventory_list_view || false);
@@ -2686,6 +2690,34 @@ async function onUnlinkedMiningChange() {
     }
 }
 
+async function onNotificationEventChange(event) {
+    const input = event.target;
+    const requested = input.checked;
+    const error = document.getElementById('notification-events-error');
+    const message = state.translations.gui?.settings?.notification_events?.save_error ||
+        'Could not save notification choices. Please try again.';
+    input.disabled = true;
+    error.hidden = true;
+    error.textContent = '';
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notification_events: { [input.value]: requested } })
+        });
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || data.settings?.notification_events?.[input.value] !== requested) throw new Error(message);
+        updateSettingsUI(data.settings);
+    } catch (failure) {
+        input.checked = !requested;
+        reportSettingsError(error, message);
+        error.hidden = false;
+    } finally {
+        input.disabled = false;
+    }
+}
+
 async function fetchAndPopulateLanguages() {
     try {
         const response = await fetch('/api/languages');
@@ -2922,6 +2954,18 @@ function applyTranslations(t) {
         for (const id of ['inventory-reload-label', 'games-reload-label']) {
             const label = document.getElementById(id);
             if (label) label.textContent = t.gui.settings.reload_campaigns;
+        }
+
+        const eventsTrans = t.gui?.settings?.notification_events;
+        if (eventsTrans) {
+            const labels = {
+                'settings-notification-events-header': 'header', 'settings-notification-events-help': 'help',
+                'settings-notify-drop-claimed-label': 'drop_claimed', 'settings-notify-new-release-label': 'new_release'
+            };
+            for (const [id, key] of Object.entries(labels)) {
+                const element = document.getElementById(id);
+                if (element) element.textContent = eventsTrans[key];
+            }
         }
 
         const discordTrans = t.gui?.settings?.discord;
@@ -3355,6 +3399,8 @@ document.addEventListener('DOMContentLoaded', () => {
         .forEach(id => document.getElementById(id).addEventListener('change', onMiningHoursChange));
     document.getElementById('drop-name-blacklist').addEventListener('change', saveSettings);
     document.getElementById('allow-unlinked-campaigns').addEventListener('change', onUnlinkedMiningChange);
+    document.querySelectorAll('.notification-event')
+        .forEach(input => input.addEventListener('change', onNotificationEventChange));
     // Proxy uses a manual "Set Proxy" button instead of auto-save
     document.getElementById('set-proxy-btn').addEventListener('click', saveProxy);
     document.getElementById('wanted-order-reset')?.addEventListener('click', () => saveWantedOrder([]));

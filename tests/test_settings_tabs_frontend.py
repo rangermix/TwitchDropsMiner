@@ -65,12 +65,12 @@ assert.deepEqual(buttons.map(b => b.classes.has('active')), [false, true, false]
 
 
 @pytest.mark.skipif(NODE is None, reason="Node.js is required for frontend tests")
-@pytest.mark.parametrize('action', ['hours', 'telegram_save', 'telegram_test', 'discord', 'proxy', 'unlinked', 'reward'])
+@pytest.mark.parametrize('action', ['hours', 'telegram_save', 'telegram_test', 'discord', 'proxy', 'unlinked', 'reward', 'notification_events'])
 def test_failed_save_after_leaving_its_panel_remains_visible(action):
     names = ['switchSettingsTab', 'toggleMiningHoursRange', 'onMiningHoursChange',
              'handleSaveTelegramClick', 'testTelegramConnection', 'saveTelegramSettings',
              'saveDiscordSettings', 'updateDiscordSettings', 'saveProxy', 'onUnlinkedMiningChange',
-             'saveRewardPriority']
+             'saveRewardPriority', 'onNotificationEventChange']
     source = APP_JS.read_text(encoding='utf-8')
     if 'function reportSettingsError(' in source:
         names.append('reportSettingsError')
@@ -92,7 +92,7 @@ Object.assign(state.translations.gui.settings,{mining_hours_save_error:'<b>Hours
  reward_priority_error:'Reward failed',discord:{save_error:'Discord failed',error:'Discord test failed'}});
 for(const id of ['mining-hours-error','allow-unlinked-error','reward-priority-error'])
  document.getElementById(id).closest=()=>panel('mining');
-for(const id of ['telegram-test-result','discord-test-result'])
+for(const id of ['telegram-test-result','discord-test-result','notification-events-error'])
  document.getElementById(id).closest=()=>panel('notifications');
 document.getElementById('proxy-verify-result').closest=()=>panel('general');
 document.getElementById('mining-hours-range').checked=true;
@@ -109,7 +109,9 @@ const actions={
  discord:{panel:'notifications',result:'discord-test-result',run:()=>updateDiscordSettings('save')},
  proxy:{panel:'general',result:'proxy-verify-result',run:saveProxy},
  unlinked:{panel:'mining',result:'allow-unlinked-error',run:onUnlinkedMiningChange},
- reward:{panel:'mining',result:'reward-priority-error',run:()=>saveRewardPriority(['BADGE','EMOTE','DIRECT_ENTITLEMENT','UNKNOWN'])}
+ reward:{panel:'mining',result:'reward-priority-error',run:()=>saveRewardPriority(['BADGE','EMOTE','DIRECT_ENTITLEMENT','UNKNOWN'])},
+ notification_events:{panel:'notifications',result:'notification-events-error',
+  run:()=>onNotificationEventChange({target:document.getElementById('notify-new_release')})}
 };
 """ + f"const action=actions[{action!r}];\n" + r"""
 (async()=>{

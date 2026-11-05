@@ -193,11 +193,17 @@ class BaseDrop:
                 _.t["status"]["claimed_drop"].format(drop=claim_text.replace("\n", " "))
             )
             await self._twitch.gui.broadcast_wanted_items_now()
-            await self._send_telegram_notification()
-            await self._send_discord_notification()
+            if self._claim_notifications_enabled():
+                await self._send_telegram_notification()
+                await self._send_discord_notification()
         elif not result:
             logger.error(f"Drop claim has potentially failed! Drop ID: {self.id}")
         return result
+
+    def _claim_notifications_enabled(self) -> bool:
+        """Only an explicit opt-out disables claim alerts; settings problems cannot block a claim."""
+        events = getattr(self._twitch.settings, "notification_events", None)
+        return not isinstance(events, dict) or events.get("drop_claimed") is not False
 
     async def _send_telegram_notification(self) -> None:
         """Notify once per successful claim without affecting the claim result."""

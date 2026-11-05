@@ -264,6 +264,13 @@
             "mining_hours_end": "Konec",
             "mining_hours_save_error": "Čas těžby se nepodařilo uložit. Zkuste to znovu.",
             "proxy_save_error": "Proxy se nepodařilo uložit. Zadejte znovu heslo a zkuste to znovu.",
+            "notification_events": {
+                "header": "Upozornit mě na",
+                "help": "Platí pro Discord a Telegram, jakmile je jeden z nich níže nastaven.",
+                "drop_claimed": "Vyzvednuté dropy",
+                "new_release": "Nové verze TwitchDropsMiner (kontrola každých 6 hodin)",
+                "save_error": "Volby upozornění se nepodařilo uložit. Zkuste to znovu."
+            },
             "discord": {
                 "name": "Notifikace Discord",
                 "description": "Dostávejte upozornění na Discordu, když obdržíte dropy.",
