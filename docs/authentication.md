@@ -48,10 +48,10 @@ the change; a failed sign-in needs a new attempt.
 
 ## Docker and timezone
 
-Use the `rangermix/twitch-drops-miner:2.4.0` image or build the current source.
+Use the `rangermix/twitch-drops-miner:2.5.0` image or build the current source.
 The image includes Chromium, Xvfb, a window manager and noVNC. It does not need a
 display on the home server or NAS. Only the dashboard port is published; VNC and
-login-browser control remain on container loopback addresses. The 2.4.0 Docker image
+login-browser control remain on container loopback addresses. The 2.5.0 Docker image
 and Linux/macOS source builds control the session-renewal browser over a private
 pipe. Windows source builds use loopback; the older 2.3.2 image also uses a loopback
 control port.
@@ -63,23 +63,23 @@ the container’s network; use consistent network routing for login and mining.
 
 ## Desktop helper fallback
 
-The optional desktop helper is available in v2.1.1. It opens a temporary browser on
-your computer for Twitch sign-in, then sends the verified session to your miner.
+The optional desktop helper has been available since v2.1.1. It opens a temporary
+browser on your computer for Twitch sign-in, then sends the verified session to your miner.
 The embedded browser remains the default, and TDM still verifies the account and
 renewal on the miner server. Twitch can reject either browser; this fallback does
 not guarantee successful sign-in.
 
 Download the helper matching your **miner version** from the sign-in screen or its
-[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.4.0).
+[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.5.0).
 Choose the platform of the computer where you will run the helper, which may differ
 from your miner server:
 
-| Computer | v2.4.0 archive |
+| Computer | v2.5.0 archive |
 | --- | --- |
-| Windows x64 | `tdm-login-helper-2.4.0-windows-x64.tar.gz` |
-| Linux x64 | `tdm-login-helper-2.4.0-linux-x64.tar.gz` |
-| macOS Apple silicon (arm64) | `tdm-login-helper-2.4.0-macos-arm64.tar.gz` |
-| macOS Intel (x64) | `tdm-login-helper-2.4.0-macos-x64.tar.gz` |
+| Windows x64 | `tdm-login-helper-2.5.0-windows-x64.tar.gz` |
+| Linux x64 | `tdm-login-helper-2.5.0-linux-x64.tar.gz` |
+| macOS Apple silicon (arm64) | `tdm-login-helper-2.5.0-macos-arm64.tar.gz` |
+| macOS Intel (x64) | `tdm-login-helper-2.5.0-macos-x64.tar.gz` |
 
 Extract the archive to a folder before running it. Install a native Chrome, Chromium,
 or Firefox 143+ browser on that computer; the helper does not include a browser.
@@ -138,8 +138,8 @@ container does not change the desktop helper's trust.
 
 #### Trust one certificate with `--ca-file`
 
-**Unreleased:** source helpers support `--ca-file`; the v2.4.0 downloads do not. Use
-it instead of trusting the certificate system-wide:
+**Available in v2.5.0 and later:** use `--ca-file` instead of trusting the certificate
+system-wide. Older v2.4.0 helpers do not support this option:
 
 ```bash
 python login_helper.py --tdm https://192.168.1.10:8443 --ca-file tdm-proxy.pem
@@ -175,9 +175,9 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 825 -subj /CN=tdm \
 
 Prefer `--ca-file`; the two options cannot be combined.
 
-**Unreleased:** source helpers support `--insecure` as an explicit opt-out. The v2.4.0
-downloads do not support this option; packaged commands below require a later release
-that includes it, matching your miner version. From an activated source environment:
+**Available in v2.5.0 and later:** `--insecure` is an explicit opt-out. Older v2.4.0
+helpers do not support this option. Use the helper matching your miner version.
+From an activated source environment:
 
 ```bash
 python login_helper.py --tdm https://tdm.example.home.arpa --insecure

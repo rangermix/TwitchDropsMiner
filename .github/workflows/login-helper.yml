@@ -60,12 +60,14 @@ jobs:
       - name: Archive executable with permissions preserved
         run: |
           tar -czf tdm-login-helper-${{ matrix.platform }}.tar.gz -C dist tdm-login-helper${{ matrix.extension }} -C "$GITHUB_WORKSPACE" LICENSE
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: tdm-login-helper-${{ matrix.platform }}
           path: tdm-login-helper-${{ matrix.platform }}.tar.gz
           if-no-files-found: error
           overwrite: true
+          archive: true
+          include-hidden-files: false
 
   prepare-assets:
     name: Validate native release assets
@@ -79,11 +81,13 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: tdm-login-helper-*-*
           path: helper-artifacts
           merge-multiple: true
+          skip-decompress: false
+          digest-mismatch: error
       - name: Validate archives and generate versioned checksums
         run: |
           python -m venv env
@@ -92,9 +96,11 @@ jobs:
           python .github/scripts/prepare_helper_release.py --artifacts helper-artifacts --output release-assets --version "$VERSION"
           cd release-assets
           sha256sum --check SHA256SUMS
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: tdm-login-helper-release
           path: release-assets/
           if-no-files-found: error
           overwrite: true
+          archive: true
+          include-hidden-files: false

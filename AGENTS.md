@@ -288,6 +288,13 @@ lang/                # Translation JSON files (20 languages)
   20 locales, dashboard logout controls, keyboard tab navigation and narrow viewports
   in a rendered browser. `test_header_frontend.py` and `test_browser_login_panel.py`
   cover full tooltip text and removal of stale account/renewal information.
+- The connection indicator and language selector share a 32px height and 110px minimum
+  width; longer translations may widen them. Inventory search and single-line toolbar
+  controls align at 40px. Text buttons use a 40px minimum height and retain vertical
+  padding so wrapped translations can grow; do not replace this with a fixed height.
+  Align the toolbar's bottom with the search field on a shared flex line, and preserve
+  its separate full-width row at 480 CSS pixels and below. CSS sizing changes require
+  the release workflow's version/cache-key bump before deployment.
 
 **src/websocket/pool.py** - WebSocket management:
 
@@ -342,6 +349,14 @@ lang/                # Translation JSON files (20 languages)
   restore the previous order with translated
   `gui.wanted.save_error` on failure. Coverage: `tests/test_wanted_queue_order.py`
   and `tests/test_wanted_queue_frontend.py`.
+- Wanted Drops Queue rows show the first wanted benefit image, the shared Inventory
+  progress bar (`makeDropProgressBar()`) and minutes. Benefit pills equal to the drop
+  name are omitted. `drop_update` events patch the shown and deferred queue trees and
+  the shown rows' bars and minutes in place, never rebuilding the queue, so keyboard
+  focus and drags are untouched.
+  Long additional reward names must wrap within the artwork row's information column
+  rather than overflowing into the card's clipped area.
+  Regression: `test_wanted_queue_frontend.py` and `test_wanted_items.py`.
 - Mining list supports drag ordering and editable integer priority numbers. Clamp valid
   ranks to the list bounds; reject blank/fractional values without changing settings.
   Keep priority and remove-control labels translated and accessible. Regression tests in
@@ -583,9 +598,10 @@ progress to an ignored drop while the miner intentionally targets another reward
 - On POSIX, `OwnedChromium` (renewal/SDK issuance, run as root) uses
   `--remote-debugging-pipe` and never opens a DevTools TCP port: CDP has no
   authentication, and the `tdm-browser` login UID shares loopback. A small exec
-  launcher remaps the pipe to fds 3/4 so PID and process-group cleanup are unchanged;
-  it then execs the private `xvfb-run` wrapper when present, which passes fds 3/4
-  through to Chromium untouched (verified in the Alpine image). Xvfb and the wrapper
+  launcher remaps the pipe to fds 3/4 immediately before Chromium, after the private
+  `xvfb-run` wrapper when present. The wrapper may overwrite/close fd 3; carry pipe
+  ends through it on collision-safe descriptors at or above 64, closing parent copies
+  and partial allocations on failure. Preserve the owned process group. Xvfb and the wrapper
   also inherit copies, so a Chromium crash reaches EOF once the wrapper cleans up.
   `DevToolsPipe` multiplexes flattened `Target.attachToTarget` sessions with
   NUL-delimited messages, bounds each session's backlog to 16 MiB by bytes (one read
@@ -594,8 +610,11 @@ progress to an ignored drop while the miner intentionally targets another reward
   before sending, including after target detachment.
   Windows keeps the loopback port (no `pass_fds`). The login capture Chromium keeps
   its port because it runs as `tdm-browser` with a profile that UID already owns.
-  `tests/test_server_renewal.py` checks launch arguments and descriptors, and, with a
+  `tests/test_browser_pipe_wrapper.py` covers descriptor-closing wrappers and partial
+  allocation cleanup. `tests/test_server_renewal.py` checks launch arguments and descriptors, and, with a
   local Chromium on Linux, that the browser process group opens no TCP listener.
+  Python validation runs on Ubuntu 24.04 and 26.04 to retain both display-wrapper
+  behaviors; do not replace this with one moving ubuntu-latest label.
 - `SessionAPI` exposes sanitized status and finish/retry/logout actions, plus optional
   desktop-helper enable/cancel actions guarded by dashboard authentication and CSRF.
   There is no general session upload/export or renewal HTTP route. The binary
@@ -992,6 +1011,12 @@ protocol rejection; preserve rejection and target-cleanup assertions.
 - Docker validation and release workflows pin the Node-24-native Docker Buildx v4.3.0
   and Build Push v7.3.0 action commits. Update both workflows together when changing
   either action so validation and release builds use the same trusted versions.
+- Native helper and release artifact transfers pin Node-24-native Upload Artifact
+  v7.0.2 and Download Artifact v8.0.2 commits. Keep uploads zipped with hidden files
+  excluded, download extraction enabled and digest mismatches fatal. Preserve artifact
+  names, paths, same-run scope, tar permissions and checksum validation; do not add
+  cross-run credentials or broaden workflow permissions, triggers or publishing gates.
+  Tests: `tests/test_artifact_workflow_contracts.py`, `tests/test_helper_release.py`.
 - `.github/workflows/contributors.yml` credits the human author of each pull request
   merged into `main`, including linked pull request numbers in the alphabetically sorted
   Contributors table in `README.md`.
@@ -1022,6 +1047,8 @@ protocol rejection; preserve rejection and target-cleanup assertions.
   Keep current Docker/helper examples and Settings-tab paths aligned in release
   documentation. Distinguish historical release behavior from current features and
   disclose host-name migration requirements without claiming live Twitch acceptance.
+  When a feature ships, replace its source-only or Unreleased labels in public guides;
+  retain accurate version-of-introduction statements for historical features.
 - `.github/workflows/github-release.yml` verifies the existing tag against the
   dispatched source SHA and checks branch/package/lock/source version equality.
   Only the final publishing job has `contents: write`. `publish_release.py` creates

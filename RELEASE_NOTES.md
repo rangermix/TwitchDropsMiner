@@ -1,3 +1,60 @@
+# Release Notes - v2.5.0
+
+This minor release adds temporary queue ordering, reward artwork and live queue
+progress, helper HTTPS certificate options, and a Linux renewal-browser startup fix.
+
+## Wanted Drops Queue
+
+- On Main, drag game cards to change the mining order, or press and hold before
+  dragging on a touch screen. The order takes precedence over the normal game,
+  reward-type and fallback order without adding games or changing the saved Mining
+  list. Restarting, resetting the order or changing the Mining list restores the
+  saved default.
+- Queue rows show available artwork from a wanted reward, the same progress bar as
+  Inventory, and current/required minutes with a percentage. A reward named like its
+  drop is listed once. Live progress updates preserve campaign-link focus and ongoing
+  drag/touch gestures; long additional reward names wrap inside their cards.
+- Header controls and the Inventory toolbar align more consistently. Long translated
+  button labels can grow on narrow screens instead of being clipped.
+
+## Browser startup and renewal
+
+- Preserve Chromium's private control pipes through display wrappers such as
+  `xvfb-run`, fixing a browser-start failure that can prevent server-side sign-in
+  validation or session renewal. Private profiles, process cleanup and the existing
+  account/catalog validation remain in place.
+- Linux source installations warn when missing `xvfb-run` forces a headless fallback.
+  Install `xvfb` and `xauth`, or use Docker. An integrity rejection in that mode is
+  identified as `headless_fallback`; it does not prove the mode caused the rejection.
+
+## Helper HTTPS certificates
+
+- Matching v2.5.0 helpers support `--ca-file` to trust a custom CA certificate for
+  their connection to TDM while keeping certificate and hostname verification on.
+  Prefer this for a self-signed dashboard or reverse proxy; see the
+  [certificate guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Authentication#helper-https-certificates).
+- The explicit `--insecure` option disables verification for the helper-to-TDM
+  connection only. It is off by default, warns before connecting, and is restricted
+  to HTTPS destinations resolving entirely to supported private or loopback addresses.
+  It cannot be combined with `--ca-file`. It does not change Twitch, browser or miner
+  HTTPS verification, follow redirects or bypass session checks. An attacker on that
+  connection could steal the session; use a trusted certificate whenever possible.
+
+## Build and update
+
+- Native artifact transfers use pinned Node-24-native actions, preserving archive
+  packaging and checksums and failing on digest mismatches. Python validation covers
+  both Ubuntu 24.04 and 26.04.
+- Update to `rangermix/twitch-drops-miner:2.5.0` while preserving the same data mount,
+  settings, timezone and custom container options. Reload the dashboard to receive
+  the new versioned frontend assets. See the
+  [installation and update guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Installation).
+- Download the matching 2.5.0 helper for Windows x64, Linux x64, macOS arm64 or macOS
+  x64. Archive checksums are listed in `SHA256SUMS`. Existing valid saved sessions do
+  not require a data reset.
+- Automated tests and browser checks do not guarantee Twitch sign-in, future
+  unattended renewal or reward progress. Twitch's Drops inventory remains authoritative.
+
 # Release Notes - v2.4.0
 
 This minor release organizes Settings into tabs, adds temporary mining pauses, and
