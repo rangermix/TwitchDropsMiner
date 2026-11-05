@@ -150,6 +150,8 @@ order**, or changing **Mining list** (in Settings or with **Add to mining list**
 Inventory) returns to the saved order. To change the default order permanently, use
 **Settings → Games → Mining list**.
 
+Select **ⓘ** next to the queue title to see which rules currently set its order.
+
 ## Account-link override
 
 In **Settings → Mining**, **Allow mining campaigns reported as Not Linked** is off by default.

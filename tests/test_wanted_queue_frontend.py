@@ -9,6 +9,7 @@ from tests.test_telegram_frontend import run_javascript
 pytestmark = pytest.mark.skipif(NODE is None, reason="Node.js is required for frontend tests")
 
 FUNCTIONS = ['makeElement', 'makeImageElement', 'wantedText', 'updateGameOrder', 'setWantedOrderError',
+             'renderWantedOrderInfo', 'toggleWantedOrderInfo',
              'pointerPastMiddle',
              'saveWantedOrder', 'handleWantedDragStart',
              'handleWantedDragEnd', 'renderWantedItems', 'handleDragStart', 'handleWantedDragOver',
@@ -328,4 +329,31 @@ assert.equal(firstRow.querySelectorAll('.inventory-drop-progress')[0].children[0
 wantedDragActive=false;renderWantedItems(lastWantedTree);
 assert.equal(list().querySelectorAll('.wanted-drop-minutes')[0].textContent,'720 / 720 · 100%','tree data kept current');
 assert.equal(list().querySelectorAll('.wanted-drop-icon')[0].draggable,false,'artwork never blocks a row drag');
+""")
+
+
+def test_info_panel_explains_the_current_queue_order():
+    run_javascript(FUNCTIONS, DOM + r"""
+for(const id of ['wanted-order-info-btn','wanted-order-info'])root.appendChild(Object.assign(new Node('div'),{id}));
+const button=document.getElementById('wanted-order-info-btn');const panel=document.getElementById('wanted-order-info');
+panel.hidden=true;
+Object.assign(state.translations.gui.wanted,{order_info:'Why?',order_mining_list:'<i>List</i>',
+ order_reward_types:'Types',order_fallback:'Fallback',order_temporary:'Temp'});
+const lines=()=>panel.children.map(p=>p.textContent);
+state.settings={reward_priority:[],priority_list_only:true};
+updateGameOrder({active:false,games:[]});
+assert.equal(button.title,'Why?');assert.equal(button.attrs['aria-label'],'Why?');
+
+toggleWantedOrderInfo();
+assert.equal(panel.hidden,false);assert.equal(button.attrs['aria-expanded'],'true');
+assert.deepEqual(lines(),['<i>List</i>']);
+assert.ok(panel.children.every(p=>p.tag==='p'&&p.children.length===0),'text only');
+
+// Each active rule is named: temporary order, reward types instead of list order, fallback games.
+state.settings={reward_priority:['EMOTE','BADGE','DIRECT_ENTITLEMENT','UNKNOWN'],priority_list_only:false};
+updateGameOrder({active:true,games:['Beta']});
+assert.deepEqual(lines(),['Temp','Types','Fallback']);
+
+toggleWantedOrderInfo();
+assert.equal(panel.hidden,true);assert.equal(button.attrs['aria-expanded'],'false');
 """)

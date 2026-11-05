@@ -174,7 +174,10 @@
 
                 <!-- Wanted Items (New Panel) -->
                 <section class="panel wanted-panel">
-                    <h2 id="wanted-header">Wanted Drop Queue</h2>
+                    <h2><span id="wanted-header">Wanted Drop Queue</span>
+                        <button type="button" id="wanted-order-info-btn" class="wanted-info-btn" aria-expanded="false" aria-controls="wanted-order-info">ⓘ</button>
+                    </h2>
+                    <div id="wanted-order-info" class="wanted-order-info" hidden></div>
                     <div class="wanted-order-bar">
                         <span id="wanted-order-note" class="wanted-order-note"></span>
                         <button type="button" id="wanted-order-reset" class="small-btn" hidden></button>

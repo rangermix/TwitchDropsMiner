@@ -353,7 +353,12 @@
             "drag_hint": "Seret game untuk mengubah urutan hingga dimulai ulang (di layar sentuh, tekan dan tahan terlebih dahulu). Daftar mining di Parameter tetap menjadi default.",
             "temporary": "Urutan sementara hingga dimulai ulang.",
             "reset": "Kembalikan ke urutan daftar mining",
-            "save_error": "Tidak dapat mengubah urutan antrean. Silakan coba lagi."
+            "save_error": "Tidak dapat mengubah urutan antrean. Silakan coba lagi.",
+            "order_info": "Mengapa antrean dalam urutan ini?",
+            "order_mining_list": "Game mengikuti urutan daftar mining Anda.",
+            "order_reward_types": "Pengurutan jenis hadiah aktif: game diurutkan berdasarkan jenis hadiah, lalu batas waktu hadiah paling awal, lalu urutan daftar mining. Ubah di Parameter → Penambangan → Jenis hadiah.",
+            "order_fallback": "Game yang tidak ada di daftar mining Anda ditambahkan setelahnya.",
+            "order_temporary": "Urutan sementara sedang aktif. Urutan ini didahulukan dari aturan ini sampai mulai ulang atau diatur ulang."
         },
         "history": {
             "title": "Riwayat Drop",

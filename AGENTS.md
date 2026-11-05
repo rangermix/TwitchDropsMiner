@@ -357,6 +357,10 @@ lang/                # Translation JSON files (20 languages)
   Long additional reward names must wrap within the artwork row's information column
   rather than overflowing into the card's clipped area.
   Regression: `test_wanted_queue_frontend.py` and `test_wanted_items.py`.
+- The queue title's ⓘ button (`aria-expanded`) toggles `renderWantedOrderInfo()`, which
+  names the active ordering rules (temporary order, reward types or Mining list, fallback
+  games) as text. Keep it in step with `StreamSelector._get_wanted_game_tree()` sorting
+  and the `gui.wanted.order_*` strings in every locale.
 - Mining list supports drag ordering and editable integer priority numbers. Clamp valid
   ranks to the list bounds; reject blank/fractional values without changing settings.
   Keep priority and remove-control labels translated and accessible. Regression tests in

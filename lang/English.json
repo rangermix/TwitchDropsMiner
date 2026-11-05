@@ -310,7 +310,12 @@
             "drag_hint": "Drag games to change the order until restart (press and hold first on touch screens). The Mining list in Settings stays the default.",
             "temporary": "Temporary order until restart.",
             "reset": "Reset to Mining list order",
-            "save_error": "Could not change the queue order. Please try again."
+            "save_error": "Could not change the queue order. Please try again.",
+            "order_info": "Why is the queue in this order?",
+            "order_mining_list": "Games follow your Mining list order.",
+            "order_reward_types": "Reward type ordering is on: games are sorted by reward type, then by the earliest reward deadline, then by Mining list order. Change this in Settings → Mining → Reward types.",
+            "order_fallback": "Games not in your Mining list are added after it.",
+            "order_temporary": "A temporary order is set. It comes before these rules until restart or reset."
         },
         "inventory": {
             "no_campaigns": "No campaigns loaded yet...",
