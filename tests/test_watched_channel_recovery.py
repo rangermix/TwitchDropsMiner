@@ -181,6 +181,18 @@ async def test_ended_manual_mode_switches_to_another_wanted_channel(tmp_path, mo
 
 
 @pytest.mark.asyncio
+async def test_selected_channel_is_not_overridden_by_auto_selection(tmp_path, monkeypatch):
+    client, _watched = _reloading_miner(tmp_path, monkeypatch, discovered=[2, 3], stream_status=[])
+    client.watching_channel.clear()
+    selected = client.get_live_streams.return_value[1]
+    selected.viewers = 1
+    client.gui.channels.get_selection.return_value = selected
+    await _run(client)
+    assert client.watching_channel.get_with_default(None) is selected
+    assert not client.is_manual_mode()
+
+
+@pytest.mark.asyncio
 async def test_failed_check_logs_only_the_exception_class(tmp_path, monkeypatch, caplog):
     client = miner(tmp_path, monkeypatch)
     client.gql_request = AsyncMock(side_effect=KeyError("remote text"))
