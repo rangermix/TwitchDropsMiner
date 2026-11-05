@@ -264,6 +264,13 @@
             "mining_hours_end": "Ende",
             "mining_hours_save_error": "Mining-Zeiten konnten nicht gespeichert werden. Bitte erneut versuchen.",
             "proxy_save_error": "Der Proxy konnte nicht gespeichert werden. Gib das Passwort erneut ein und versuche es noch einmal.",
+            "notification_events": {
+                "header": "Benachrichtige mich über",
+                "help": "Gilt für Discord und Telegram, sobald eines davon unten eingerichtet ist.",
+                "drop_claimed": "Eingelöste Drops",
+                "new_release": "Neue TwitchDropsMiner-Versionen (alle 6 Stunden geprüft)",
+                "save_error": "Benachrichtigungsauswahl konnte nicht gespeichert werden. Bitte erneut versuchen."
+            },
             "discord": {
                 "name": "Discord-Benachrichtigungen",
                 "description": "Erhalte Benachrichtigungen auf Discord, wenn du Drops einlöst.",

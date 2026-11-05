@@ -1,7 +1,21 @@
 # Telegram and Discord notifications
 
-TDM can send a Telegram alert when it successfully claims a drop. Notifications cover
-claims found through live events and through startup or later inventory checks.
+TDM can send Telegram and Discord alerts when it successfully claims a drop or when a
+new TDM version is published. Claim alerts cover claims found through live events and
+through startup or later inventory checks.
+
+## Choose what to be notified about
+
+**Settings → Notifications → Notify me about** applies to every configured provider:
+
+- **Claimed drops** is on by default.
+- **New TwitchDropsMiner versions** is off by default. When on, TDM checks the latest
+  GitHub release at startup and every six hours, and sends one alert per newer version
+  with a link to its release page. TDM remembers the announced version across restarts.
+  If every provider fails, the next check tries again. TDM does not update itself;
+  follow the [installation guide](installation.md) to update.
+
+Each checkbox saves immediately. A failed save restores the previous choice.
 
 ## Set up a bot
 

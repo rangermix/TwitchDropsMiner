@@ -264,6 +264,13 @@
             "mining_hours_end": "結束",
             "mining_hours_save_error": "無法儲存執行時段，請重試。",
             "proxy_save_error": "無法儲存代理。請重新輸入密碼後再試一次。",
+            "notification_events": {
+                "header": "通知我以下內容",
+                "help": "在下方設定 Discord 或 Telegram 後生效。",
+                "drop_claimed": "已領取的掉寶",
+                "new_release": "TwitchDropsMiner 新版本(每 6 小時檢查一次)",
+                "save_error": "無法儲存通知選項,請再試一次。"
+            },
             "discord": {
                 "name": "Discord 通知",
                 "description": "領取掉落物時在 Discord 上接收通知。",

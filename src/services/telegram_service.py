@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 
 import aiohttp
 
+from src.version import __version__
+
 
 if TYPE_CHECKING:
     from src.diagnostics import Diagnostics
@@ -98,6 +100,19 @@ class TelegramNotifier:
         except Exception as e:
             logger.warning(f"Failed to send Telegram progress notification: {type(e).__name__}")
             return False
+
+    async def notify_new_release(self, version: str, url: str) -> bool:
+        """Send notification when a newer application version is published."""
+        if not self.enabled:
+            return False
+
+        message = (
+            f"🚀 <b>New TwitchDropsMiner version!</b>\n"
+            f"<b>Version:</b> {html.escape(version)}\n"
+            f"<b>Installed:</b> {html.escape(__version__)}\n"
+            f"{html.escape(url)}"
+        )
+        return await self._send_message(message)
 
     async def test_connection(self) -> bool:
         """

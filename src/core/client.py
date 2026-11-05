@@ -41,6 +41,7 @@ from src.services.game_order import TemporaryGameOrder
 from src.services.inventory_service import InventoryService
 from src.services.maintenance import MaintenanceService
 from src.services.message_handlers import MessageHandlerService
+from src.services.release_service import ReleaseService
 from src.services.stream_selector import StreamSelector
 from src.services.watch_service import WatchService
 from src.utils import (
@@ -531,6 +532,8 @@ class Twitch:
         """Main entry point for the miner - handles exit requests."""
         self.diagnostics.start_logs()
         self.session_controller.start()
+        # Account-independent, so authentication changes leave it running.
+        release_task = asyncio.create_task(ReleaseService(self).run())
         try:
             while self._state is not State.EXIT:
                 await self._resume_mining.wait()
@@ -550,6 +553,8 @@ class Twitch:
                 except aiohttp.ContentTypeError as exc:
                     raise RequestException(_.t["login"]["unexpected_content"]) from exc
         finally:
+            release_task.cancel()
+            await asyncio.gather(release_task, return_exceptions=True)
             await self._stop_mining_schedule()
             self._channel_service.clear_bans()
             self.diagnostics.stop_logs()

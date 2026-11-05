@@ -264,6 +264,13 @@
             "mining_hours_end": "Koniec",
             "mining_hours_save_error": "Nie udało się zapisać godzin. Spróbuj ponownie.",
             "proxy_save_error": "Nie udało się zapisać proxy. Wprowadź ponownie hasło i spróbuj jeszcze raz.",
+            "notification_events": {
+                "header": "Powiadamiaj mnie o",
+                "help": "Dotyczy Discorda i Telegrama, gdy jeden z nich jest skonfigurowany poniżej.",
+                "drop_claimed": "Odebrane dropy",
+                "new_release": "Nowe wersje TwitchDropsMiner (sprawdzane co 6 godzin)",
+                "save_error": "Nie udało się zapisać wyboru powiadomień. Spróbuj ponownie."
+            },
             "discord": {
                 "name": "Powiadomienia Discord",
                 "description": "Otrzymuj powiadomienia na Discordzie, gdy odbierzesz dropy.",

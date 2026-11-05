@@ -398,6 +398,19 @@
                     </section>
                 </div>
                 <div id="settings-panel-notifications" class="settings-panel" role="tabpanel" aria-labelledby="settings-tab-notifications" hidden>
+                    <section class="settings-section" role="group" aria-labelledby="settings-notification-events-header" aria-describedby="settings-notification-events-help">
+                        <h2 id="settings-notification-events-header">Notify me about</h2>
+                        <p id="settings-notification-events-help" class="help-text">Applies to Discord and Telegram, once either is set up below.</p>
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="notification-event" id="notify-drop_claimed" value="drop_claimed" checked>
+                            <span id="settings-notify-drop-claimed-label">Claimed drops</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="notification-event" id="notify-new_release" value="new_release">
+                            <span id="settings-notify-new-release-label">New TwitchDropsMiner versions (checked every 6 hours)</span>
+                        </label>
+                        <p id="notification-events-error" class="help-text" role="alert" hidden></p>
+                    </section>
                     <section class="settings-section">
                         <h2 id="settings-discord-header">Discord Notifications</h2>
                         <p id="settings-discord-help" class="help-text">Configure drop claim notifications on Discord.</p>

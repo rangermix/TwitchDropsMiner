@@ -478,6 +478,16 @@ lang/                # Translation JSON files (20 languages)
   mutation; restore the previous webhook on save failure. API validation errors must
   not echo submitted settings. Test Connection reports success only after saving.
   Preserve localized safe Help rendering and `tests/test_discord_*` coverage.
+- `notification_events` (`NotificationEventSettings`) selects alert events for both
+  providers: `drop_claimed` (default true) and `new_release` (default false). Only an
+  explicit `drop_claimed: false` suppresses claim alerts; settings problems never block a
+  claim. Partial updates merge; unknown keys or non-booleans fail before any write.
+  `ReleaseService` (`src/services/release_service.py`) owns the GitHub latest-release
+  lookup for `/api/version` and the account-independent check task started in
+  `Twitch.run()` (startup, then every six hours). Read bodies through
+  `Diagnostics.read_bounded()`, compare versions numerically, link only to this
+  repository's release tag page, and persist `last_notified_release` after any provider
+  accepts. Coverage: `tests/test_release_notifications.py`.
 - `tests/test_telegram_frontend.py`, `tests/test_telegram_api.py`, and
   `tests/test_telegram_integration.py` cover translated Help rendering, stored credentials,
   failed saves, disabling, all shared claim paths, and transport failures without sending
