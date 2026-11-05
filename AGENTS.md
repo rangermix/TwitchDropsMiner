@@ -192,6 +192,12 @@ lang/                # Translation JSON files (20 languages)
   Keep confirmed bans and expiry callbacks across cache recovery until expiry or a
   confirmed null response. Cancel callbacks and clear account-owned ban state on
   identity replacement and shutdown.
+- Offline detection must not rely only on `stream-down`: a reconnect can lose the event
+  and full cleanup drops topics of channels missing from a game's top 20 directory results.
+  `ChannelService.refresh_watched_channel()` rechecks the watched channel in CHANNELS_FETCH
+  and keeps it tracked while online. A failed watch of the current stream calls
+  `check_online()`. `Channel.refresh_stream()` bounds both checks and keeps known state on
+  failure, so stalled checks cannot pile up. Regression: `tests/test_watched_channel_recovery.py`.
 
 **src/models/campaign.py** - Drop campaigns:
 
