@@ -263,6 +263,24 @@ class ChannelService:
         self._schedule_ban_refresh()
         return [channel for channel in channel_list if not channel.banned]
 
+    async def refresh_watched_channel(self, channels: set[Channel]) -> None:
+        """
+        Recheck the watched channel during discovery and keep tracking it while online.
+
+        Directories list only each game's top channels and cleanup drops websocket
+        topics, so an omitted channel would otherwise never hear about its stream ending.
+        A failed check keeps the known state; the watch loop and next reload retry it.
+
+        Args:
+            channels: The discovered channels; an equal discovered channel is kept
+        """
+        watching = self._twitch.watching_channel.get_with_default(None)
+        if watching is None:
+            return
+        await watching.refresh_stream()
+        if watching.online:
+            channels.add(watching)
+
     async def bulk_check_online(self, channels: abc.Iterable[Channel]) -> None:
         """
         Utilize batch GQL requests to check ONLINE status for multiple channels at once.

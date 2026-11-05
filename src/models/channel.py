@@ -35,6 +35,7 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("TwitchDrops")
+STREAM_CHECK_TIMEOUT = 10  # seconds
 
 
 class Stream:
@@ -445,6 +446,8 @@ class Channel:
     async def get_stream(self) -> Stream | None:
         try:
             response: JsonType = await self._twitch.gql_request(self.stream_gql)
+        except ExitRequest:
+            raise
         except MinerException as exc:
             raise MinerException(f"Channel: {self._login}") from exc
         channel_data: JsonType | None = response["data"]["user"]
@@ -474,10 +477,25 @@ class Channel:
         Fetches the current channel stream, and if one exists,
         updates it's game, title, tags and viewers. Updates channel status in general.
         """
-        old_stream = self._stream
-        self._stream = await self.get_stream()
-        self._twitch.on_channel_update(self, old_stream, self._stream)
+        self._apply_stream(await self.get_stream())
         return self._stream is not None
+
+    def _apply_stream(self, stream: Stream | None) -> None:
+        old_stream = self._stream
+        self._stream = stream
+        self._twitch.on_channel_update(self, old_stream, stream)
+
+    async def refresh_stream(self) -> None:
+        """Recheck the stream, keeping the known state if the lookup fails or stalls."""
+        try:
+            stream = await asyncio.wait_for(self.get_stream(), timeout=STREAM_CHECK_TIMEOUT)
+        except ExitRequest:
+            raise
+        except (MinerException, aiohttp.ClientError, TimeoutError,
+                KeyError, TypeError, IndexError, ValueError) as exc:
+            logger.warning(f"Stream check failed for channel {self.id}: {type(exc).__name__}")
+            return
+        self._apply_stream(stream)
 
     async def _online_delay(self):
         """
@@ -486,7 +504,7 @@ class Channel:
         """
         await asyncio.sleep(ONLINE_DELAY.total_seconds())
         self._pending_stream_up = None  # for 'display' to work properly
-        await self.update_stream()
+        await self.refresh_stream()
 
     def check_online(self) -> None:
         """
