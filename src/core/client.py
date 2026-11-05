@@ -760,6 +760,11 @@ class Twitch:
                     # for every campaign without an ACL, for it's game,
                     # add a list of live channels with drops enabled
                     new_channels.update(await self.get_live_streams(game, drops_enabled=True))
+                # Optional: followed channels outside each game's top directory results.
+                # Existing objects win, so directory/ACL state is never replaced.
+                new_channels.update(await self._channel_service.get_followed_live_channels(
+                    {channel.id for channel in new_channels}
+                ))
                 # Filter account-specific bans before priority sorting and the tracking cap.
                 retained_channels = [channel for channel in (
                     self.watching_channel.get_with_default(None), self._manual_target_channel,
@@ -860,6 +865,7 @@ class Twitch:
                     # Check if this is a game change -> enter manual mode
                     if watching_channel and selected_channel.game != watching_channel.game:
                         self.enter_manual_mode(selected_channel)
+                    self._channel_service.record_watch(selected_channel, picked=True)
                     new_watching = selected_channel
                 # Handle manual mode
                 elif self.is_manual_mode():
@@ -985,6 +991,8 @@ class Twitch:
 
         self._manual_target_channel = None
         self._manual_target_game = None
+        # Return to Auto also ends the hand-pick protection from the follow tie-break.
+        self._channel_service.picked_channel_id = None
         self.gui.broadcast_manual_mode_change(self.get_manual_mode_info())
         return True
 

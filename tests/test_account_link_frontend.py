@@ -54,7 +54,7 @@ const error = document.getElementById('allow-unlinked-error');
 
 
 def test_override_default_restore_enable_disable_and_pending_state():
-    run_javascript(["onUnlinkedMiningChange", "updateSettingsUI", "toggleMiningHoursRange"], SETUP + r"""
+    run_javascript(["onUnlinkedMiningChange", "saveBooleanSetting", "updateSettingsUI", "toggleMiningHoursRange"], SETUP + r"""
 (async () => {
     updateSettingsUI({});
     assert.equal(input.checked, false);
@@ -83,7 +83,7 @@ def test_override_default_restore_enable_disable_and_pending_state():
 @pytest.mark.parametrize("failure", ["http", "network", "application", "old_server"])
 @pytest.mark.parametrize("saved", [False, True])
 def test_failed_save_restores_confirmed_setting_and_shows_literal_error(failure, saved):
-    run_javascript(["onUnlinkedMiningChange", "updateSettingsUI", "toggleMiningHoursRange"], SETUP + f"""
+    run_javascript(["onUnlinkedMiningChange", "saveBooleanSetting", "updateSettingsUI", "toggleMiningHoursRange"], SETUP + f"""
 state.settings.allow_unlinked_campaigns = {json.dumps(saved)};
 input.checked = !state.settings.allow_unlinked_campaigns;
 global.fetch = async () => {{
@@ -108,7 +108,7 @@ def test_controls_are_accessible_and_override_defaults_unchecked():
 
 
 def test_delayed_unrelated_autosave_cannot_undo_explicit_override():
-    run_javascript(["saveSettings", "onUnlinkedMiningChange", "updateSettingsUI"], SETUP + r"""
+    run_javascript(["saveSettings", "onUnlinkedMiningChange", "saveBooleanSetting", "updateSettingsUI"], SETUP + r"""
 function getInventoryFilters() { return {}; }
 function parseDropNameBlacklist() { return []; }
 (async () => {

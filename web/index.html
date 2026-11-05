@@ -350,6 +350,14 @@
 
                     </section>
                     <section class="settings-section">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="prefer-followed-channels" aria-describedby="prefer-followed-help" />
+                            <span id="prefer-followed-label">Prefer channels I follow</span>
+                        </label>
+                        <p id="prefer-followed-help" class="help-text">Among live channels for the same game, watch channels you follow on Twitch first. Your Mining list order does not change.</p>
+                        <p id="prefer-followed-error" class="help-text" role="alert" hidden></p>
+                    </section>
+                    <section class="settings-section">
                         <h2 id="settings-drop-blacklist-header">Ignored Drop Keywords</h2>
                         <p id="settings-drop-blacklist-help" class="help-text">Enter one keyword per line. Matching
                             drops and their dependent branches will not be mined.</p>

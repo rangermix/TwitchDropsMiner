@@ -33,6 +33,7 @@ default_settings = {
     "drop_name_blacklist": [],
     "games_to_watch": [],
     "language": DEFAULT_LANG,
+    "prefer_followed_channels": False,
     "priority_list_only": True,
     "reward_priority": [],
     "inventory_filters": {
@@ -127,6 +128,7 @@ class Settings:
     games_to_watch: list[str]
     language: str
     reward_priority: list[str]
+    prefer_followed_channels: bool
     priority_list_only: bool
     inventory_filters: InventoryFilters
     inventory_list_view: bool

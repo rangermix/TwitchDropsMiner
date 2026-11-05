@@ -292,6 +292,9 @@ class GUISettings(TypedDict):
     allow_unlinked_campaigns: str
     allow_unlinked_campaigns_warning: str
     allow_unlinked_campaigns_save_error: str
+    prefer_followed_channels: str
+    prefer_followed_channels_help: str
+    prefer_followed_channels_save_error: str
     general: GUISettingsGeneral
     tab_mining: str
     tab_games: str
