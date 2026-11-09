@@ -165,6 +165,12 @@ progress. Check your [Twitch Drops inventory](https://www.twitch.tv/drops/invent
 and link the correct game account to receive rewards. Do not unlink accounts just
 to troubleshoot a reported status disagreement.
 
+TDM never claims game rewards from a campaign reported as Not Linked, with or without
+the override: Twitch accepts such claims without delivering the reward, so retrying would
+repeat the claim on every inventory refresh. Badge and emote rewards are still claimed.
+Once you link the account, the next inventory refresh claims any finished rewards that are
+still within Twitch's claim window (up to 24 hours after the campaign ends).
+
 ## Ignore unwanted reward names
 
 In **Settings → Mining → Ignored Drop Keywords**, enter one literal part of a drop name per

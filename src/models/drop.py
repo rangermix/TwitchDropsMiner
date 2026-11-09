@@ -141,6 +141,18 @@ class BaseDrop:
         )
 
     @property
+    def needs_account_link(self) -> bool:
+        """Return whether claiming is blocked until the game account is linked.
+
+        Twitch accepts ClaimDrop for unlinked game rewards without ever marking them
+        claimed, so retrying would repeat the same claim on every inventory refresh.
+        Badges and emotes are delivered to the Twitch account and need no link.
+        """
+        return not self.campaign.linked and not any(
+            benefit.type.is_badge_or_emote() for benefit in self.benefits
+        )
+
+    @property
     def can_claim(self) -> bool:
         # https://help.twitch.tv/s/article/mission-based-drops?language=en_US#claiming
         # "If you are unable to claim the Drop in time, you will be able to claim it
@@ -148,6 +160,7 @@ class BaseDrop:
         return (
             self.claim_id is not None
             and not self.is_claimed
+            and not self.needs_account_link
             and datetime.now(timezone.utc) < self.campaign.ends_at + timedelta(hours=24)
         )
 
@@ -195,6 +208,12 @@ class BaseDrop:
             await self._twitch.gui.broadcast_wanted_items_now()
             await self._send_telegram_notification()
             await self._send_discord_notification()
+        elif self.needs_account_link:
+            logger.info(
+                "Skipping claim for %s: %s account is not linked",
+                self.rewards_text(),
+                self.campaign.game.name,
+            )
         elif not result:
             logger.error(f"Drop claim has potentially failed! Drop ID: {self.id}")
         return result
