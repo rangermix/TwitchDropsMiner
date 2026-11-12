@@ -727,7 +727,9 @@ class Twitch:
                 if self.wanted_games:
                     self.change_state(State.CHANNELS_FETCH)
                 else:
-                    # with no games available, we switch to IDLE after cleanup
+                    # with no games available, we switch to IDLE after cleanup;
+                    # CHANNELS_FETCH won't run, so clear the dashboard list here
+                    self.gui.channels.clear()
                     self.print(
                         _.t["status"]["no_campaign"],
                         collapse_key="status.no_campaign",
