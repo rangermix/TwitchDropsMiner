@@ -252,6 +252,10 @@ lang/                # Translation JSON files (20 languages)
 
 - REST API endpoints: `/api/status`, `/api/channels`, `/api/campaigns`, `/api/settings`, `/api/session`, `/api/session/finish`, `/api/session/retry`, `/api/session/logout`, `/api/session/vnc`, `/api/reload`, `/api/cache/clear`, `/api/close`, `/api/version`, `/api/history`, `/api/history/export.csv`, `/api/history/stats`
 - Socket.IO server for real-time bi-directional communication
+- The dashboard replaces its channel list on Socket.IO reconnect and batch updates.
+  Idle cleanup with no wanted games cancels retired channels' delayed online checks
+  before clearing the list. REST and reconnect snapshots derive the watching flag
+  from the manager's current watched channel ID.
 - Serves static web frontend from `web/` directory
 - Integrates with WebGUIManager via `set_managers()`
 - The Settings **Clear All Cache** action discards local campaign, channel, and other

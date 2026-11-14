@@ -50,6 +50,8 @@ updates at most once per minute. It does not play video or audio. The header ada
 longer translations, grouping account controls and navigation on smaller screens.
 Hover over shortened account or renewal text to read it in full. This dashboard change
 is included in the published releases.
+The dashboard refreshes its channel list on reconnect and clears it when no games
+are left to watch.
 
 Inventory has expandable campaigns, card/list view buttons and **Add to mining list** for linked games
 not yet selected. Campaign details appear once, with matching linked/unlinked card layouts.

@@ -210,12 +210,9 @@ socket.on('initial_state', (data) => {
     console.log('Received initial state', data);
     if (data.status) updateStatus(data.status);
 
-    // Batch update channels to prevent UI freezing
+    // Reconnect state is a complete snapshot, including an empty channel list.
     if (data.channels) {
-        data.channels.forEach(ch => {
-            state.channels[ch.id] = ch;
-        });
-        renderChannels();
+        replaceChannels(data.channels);
     }
 
     // Batch update campaigns to prevent UI freezing
@@ -286,12 +283,7 @@ socket.on('channels_clear', () => {
 });
 
 socket.on('channels_batch_update', (data) => {
-    // Replace all channels atomically to prevent flickering
-    state.channels = {};
-    data.channels.forEach(ch => {
-        state.channels[ch.id] = ch;
-    });
-    renderChannels();
+    replaceChannels(data.channels);
 });
 
 socket.on('channel_watching', (data) => {
@@ -433,9 +425,13 @@ function removeChannel(channelId) {
     renderChannels();
 }
 
-function clearChannels() {
-    state.channels = {};
+function replaceChannels(channels) {
+    state.channels = Object.fromEntries(channels.map(channel => [channel.id, channel]));
     renderChannels();
+}
+
+function clearChannels() {
+    replaceChannels([]);
 }
 
 function setWatchingChannel(channelId) {
