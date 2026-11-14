@@ -55,7 +55,8 @@ Inventory has expandable campaigns, card/list view buttons and **Add to mining l
 not yet selected. Campaign details appear once, with matching linked/unlinked card layouts.
 It supports **All / Linked / Not Linked** account-link filters. **Settings → Mining** has a
 default-off option to mine campaigns reported as Not Linked; read its warning and
-check Twitch progress. See the [dashboard guide](docs/usage.md#account-link-override).
+check Twitch progress. Automatic claims for game rewards wait for Twitch to report
+the campaign as linked. See the [dashboard guide](docs/usage.md#account-link-override).
 
 In v2.5.0, the connection indicator and language selector share a height, and the
 Inventory toolbar aligns with its search field. Long translated button labels can

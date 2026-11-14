@@ -165,6 +165,13 @@ progress. Check your [Twitch Drops inventory](https://www.twitch.tv/drops/invent
 and link the correct game account to receive rewards. Do not unlink accounts just
 to troubleshoot a reported status disagreement.
 
+TDM waits for Twitch to report the campaign as linked before automatically claiming
+completed game rewards. The mining override applies only to watching. Completed rewards
+waiting for a link stay visible in Inventory and leave the Wanted Drops Queue. TDM can
+claim them after an inventory refresh reports the link, up to 24 hours after the
+campaign ends. Drops containing only Twitch badges or emotes can be claimed without
+linking.
+
 ## Ignore unwanted reward names
 
 In **Settings → Mining → Ignored Drop Keywords**, enter one literal part of a drop name per
