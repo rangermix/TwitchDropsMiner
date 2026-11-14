@@ -272,14 +272,28 @@ class ChannelService:
         A failed check keeps the known state; the watch loop and next reload retry it.
 
         Args:
-            channels: The discovered channels; an equal discovered channel is kept
+            channels: The discovered channels, updated with newer watched-stream status
         """
         watching = self._twitch.watching_channel.get_with_default(None)
         if watching is None:
             return
-        await watching.refresh_stream()
-        if watching.online:
+        fresh = await watching.refresh_stream()
+        discovered = next((channel for channel in channels if channel == watching), None)
+        if discovered is not None and discovered is not watching:
+            watching.cancel_online_check()
+            if fresh:
+                discovered.sync_stream_from(watching)
+        elif watching.online:
             channels.add(watching)
+        if fresh and not watching.online:
+            if discovered is not None and not discovered.acl_based:
+                channels.discard(discovered)
+            manual = self._twitch._manual_target_channel
+            if (
+                manual is not None and manual.id == watching.id
+                and manual is not watching and manual is not discovered
+            ):
+                manual.sync_stream_from(watching)
 
     async def bulk_check_online(self, channels: abc.Iterable[Channel]) -> None:
         """

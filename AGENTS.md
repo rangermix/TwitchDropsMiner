@@ -195,9 +195,13 @@ lang/                # Translation JSON files (20 languages)
 - Offline detection must not rely only on `stream-down`: a reconnect can lose the event
   and full cleanup drops topics of channels missing from a game's top 20 directory results.
   `ChannelService.refresh_watched_channel()` rechecks the watched channel in CHANNELS_FETCH
-  and keeps it tracked while online. A failed watch of the current stream calls
-  `check_online()`. `Channel.refresh_stream()` bounds both checks and keeps known state on
-  failure, so stalled checks cannot pile up. Regression: `tests/test_watched_channel_recovery.py`.
+  and keeps it tracked while online. A newer observation takes precedence over the earlier
+  discovery snapshot for that channel, preserving its campaign allowlist membership and
+  same-broadcast drop eligibility. A failed watch of the current stream calls `check_online()`.
+  `Channel.refresh_stream()` bounds both checks and preserves known state on an errored
+  response or timeout. A newer stream update invalidates older replies. Keep delayed
+  checks cancellable through the lookup and cancel them when retiring channel topics.
+  Regression: `tests/test_watched_channel_recovery.py`.
 
 **src/models/campaign.py** - Drop campaigns:
 

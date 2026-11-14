@@ -93,6 +93,26 @@ async def test_reload_replaces_watched_channel_that_ended_unnoticed(tmp_path, mo
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("acl", [False, True])
+async def test_reload_does_not_restore_a_discovered_channel_confirmed_offline(
+    tmp_path, monkeypatch, acl,
+):
+    client, watched = _reloading_miner(
+        tmp_path, monkeypatch, discovered=[1, 2], stream_status=[OFFLINE],
+    )
+    found = client.get_live_streams.return_value[0]
+    found.acl_based = acl
+    await _run(client)
+
+    assert not watched.online
+    assert not found.online
+    assert client.watching_channel.get_with_default(None).id == 2
+    assert set(client.channels) == ({1, 2} if acl else {2})
+    if acl:
+        assert client.channels[1] is found
+
+
+@pytest.mark.asyncio
 async def test_reload_keeps_tracking_live_channel_outside_directory_results(tmp_path, monkeypatch):
     client, watched = _reloading_miner(
         tmp_path, monkeypatch, discovered=[2], stream_status=[LIVE],
@@ -129,6 +149,75 @@ async def test_discovered_channel_replaces_watched_object(tmp_path, monkeypatch)
     assert client.channels[1] is not watched
     assert client.watching_channel.get_with_default(None) is client.channels[1]
     assert client._manual_target_channel is None
+
+
+@pytest.mark.asyncio
+async def test_fresh_stream_updates_discovered_channel_without_losing_acl(
+    tmp_path, monkeypatch,
+):
+    client, _watched = _reloading_miner(
+        tmp_path, monkeypatch, discovered=[1, 2], stream_status=[LIVE],
+    )
+    found = client.get_live_streams.return_value[0]
+    found.acl_based = True
+    found._stream.title = "Old directory title"
+    found._stream.drops_enabled = False
+    await client._channel_service.refresh_watched_channel({found})
+
+    assert found.acl_based
+    assert found._stream.title == "Live"
+    assert found._stream.channel is found
+    assert not found.drops_enabled
+
+
+@pytest.mark.asyncio
+async def test_fresh_category_wins_even_for_the_same_broadcast(tmp_path, monkeypatch):
+    other_game = {"id": "2", "name": "Other Game"}
+    reply = {"data": {"user": {
+        **LIVE["data"]["user"], "broadcastSettings": {"game": other_game, "title": "Live"},
+    }}}
+    client, watched = _reloading_miner(
+        tmp_path, monkeypatch, discovered=[1, 2], stream_status=[reply],
+    )
+    campaign = client.inventory[0]
+    campaign.can_earn = lambda channel: channel.game == campaign.game
+    found = client.get_live_streams.return_value[0]
+
+    await _run(client)
+
+    assert found.game == watched.game == Game(other_game)
+    assert client.channels[1] is found
+    assert client.watching_channel.get_with_default(None).id == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("user", [
+    None, {"displayName": "Watched", "stream": None},
+])
+async def test_reload_preserves_state_on_errored_null_response(tmp_path, monkeypatch, user):
+    error = {"message": "server error", "path": ["user"]}
+    client, watched = _reloading_miner(
+        tmp_path, monkeypatch, discovered=[2],
+        stream_status=[{"data": {"user": user}, "errors": [error]}],
+    )
+    await _run(client)
+
+    assert watched.online
+    assert client.watching_channel.get_with_default(None) is watched
+
+
+@pytest.mark.asyncio
+async def test_discovery_keeps_candidate_if_watched_check_is_unknown(tmp_path, monkeypatch):
+    client, watched = _reloading_miner(
+        tmp_path, monkeypatch, discovered=[1, 2], stream_status=TimeoutError(),
+    )
+    found = client.get_live_streams.return_value[0]
+    found._stream.title = "Directory title"
+    await _run(client)
+
+    assert watched.online
+    assert client.watching_channel.get_with_default(None) is found
+    assert found._stream.title == "Directory title"
 
 
 @pytest.mark.asyncio
@@ -233,6 +322,129 @@ async def test_stalled_stream_check_is_bounded_and_keeps_known_state(
     await asyncio.wait_for(getattr(watched, check)(), 1)
     assert cancelled
     assert watched.online
+
+
+@pytest.mark.asyncio
+async def test_offline_event_during_reload_invalidates_live_reply(tmp_path, monkeypatch):
+    client = miner(tmp_path, monkeypatch)
+    watched = _channel(client, 1)
+    candidate = _channel(client, 1)
+    client.watching_channel.set(watched)
+    candidates = {candidate}
+    entered, release = asyncio.Event(), asyncio.Event()
+
+    async def old_reply(_operation):
+        entered.set()
+        await release.wait()
+        return LIVE
+
+    client.gql_request = old_reply
+    async with asyncio.TaskGroup() as tasks:
+        tasks.create_task(client._channel_service.refresh_watched_channel(candidates))
+        await asyncio.wait_for(entered.wait(), 1)
+        watched.set_offline()
+        release.set()
+
+    assert not watched.online
+    assert not candidates
+
+
+@pytest.mark.asyncio
+async def test_newer_lookup_wins_when_overlapping_checks_finish_out_of_order(
+    tmp_path, monkeypatch,
+):
+    client = miner(tmp_path, monkeypatch)
+    watched = _channel(client, 1)
+    entered, release = asyncio.Event(), asyncio.Event()
+
+    async def old_reply(_operation):
+        entered.set()
+        await release.wait()
+        return LIVE
+
+    client.gql_request = old_reply
+    async with asyncio.TaskGroup() as tasks:
+        tasks.create_task(watched.refresh_stream())
+        await asyncio.wait_for(entered.wait(), 1)
+        client.gql_request = AsyncMock(return_value=OFFLINE)
+        await watched.refresh_stream()
+        release.set()
+
+    assert not watched.online
+
+
+@pytest.mark.asyncio
+async def test_reload_offline_is_applied_while_newer_delayed_check_waits(tmp_path, monkeypatch):
+    client = miner(tmp_path, monkeypatch)
+    monkeypatch.setattr("src.models.channel.ONLINE_DELAY", timedelta(0))
+    watched = _channel(client, 1)
+    client.watching_channel.set(watched)
+    candidates = {_channel(client, 1)}
+    reload_entered, reload_release = asyncio.Event(), asyncio.Event()
+    delayed_entered, delayed_cancelled = asyncio.Event(), asyncio.Event()
+
+    async def reload_reply(_operation):
+        reload_entered.set()
+        await reload_release.wait()
+        return OFFLINE
+
+    async def delayed_reply(_operation):
+        delayed_entered.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            delayed_cancelled.set()
+
+    client.gql_request = reload_reply
+    async with asyncio.TaskGroup() as tasks:
+        tasks.create_task(client._channel_service.refresh_watched_channel(candidates))
+        await asyncio.wait_for(reload_entered.wait(), 1)
+        client.gql_request = delayed_reply
+        watched.check_online()
+        check, = client._channel_tasks
+        try:
+            await asyncio.wait_for(delayed_entered.wait(), 1)
+            reload_release.set()
+            await asyncio.wait_for(delayed_cancelled.wait(), 1)
+        finally:
+            if not check.done():
+                check.cancel()
+            await asyncio.gather(check, return_exceptions=True)
+
+    assert not watched.online
+    assert not candidates
+
+
+@pytest.mark.asyncio
+async def test_retiring_topics_cancels_the_inflight_online_check(tmp_path, monkeypatch):
+    client = miner(tmp_path, monkeypatch)
+    monkeypatch.setattr("src.models.channel.ONLINE_DELAY", timedelta(0))
+    watched = _channel(client, 1)
+    entered, cancelled = asyncio.Event(), asyncio.Event()
+
+    async def blocked_reply(_operation):
+        entered.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            cancelled.set()
+
+    client.gql_request = AsyncMock(side_effect=blocked_reply)
+    watched.check_online()
+    check, = client._channel_tasks
+    try:
+        await asyncio.wait_for(entered.wait(), 1)
+        watched.check_online()
+        assert client._channel_tasks == {check}
+        assert client.gql_request.await_count == 1
+        client._remove_channel_topics([watched])
+        result, = await asyncio.wait_for(asyncio.gather(check, return_exceptions=True), 1)
+        assert isinstance(result, asyncio.CancelledError)
+        assert cancelled.is_set()
+    finally:
+        for task in client._channel_tasks:
+            task.cancel()
+        await asyncio.gather(*client._channel_tasks, return_exceptions=True)
 
 
 @pytest.mark.asyncio

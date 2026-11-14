@@ -5,6 +5,7 @@ import logging
 import re
 from base64 import b64encode
 from collections import OrderedDict
+from copy import copy
 from datetime import timezone
 from time import monotonic, time
 from typing import TYPE_CHECKING, Any, SupportsInt
@@ -184,6 +185,9 @@ class Channel:
         "_display_name",
         "_spade_url",
         "_stream",
+        "_stream_revision",
+        "_stream_check_id",
+        "_applied_stream_check_id",
         "_pending_stream_up",
         "_watch_broadcast_id",
         "_watched_segments",
@@ -210,6 +214,9 @@ class Channel:
         self._display_name: str | None = display_name
         self._spade_url: URLType | None = None
         self._stream: Stream | None = None
+        self._stream_revision = 0
+        self._stream_check_id = 0
+        self._applied_stream_check_id = 0
         self._pending_stream_up: asyncio.Task[Any] | None = None
         self._watch_broadcast_id: int | None = None
         self._watched_segments: OrderedDict[str, None] = OrderedDict()
@@ -391,9 +398,7 @@ class Channel:
 
     def remove(self) -> None:
         """Remove this channel from the GUI and cancel pending tasks."""
-        if self._pending_stream_up is not None:
-            self._pending_stream_up.cancel()
-            self._pending_stream_up = None
+        self.cancel_online_check()
         self._gui_channels.remove(self)
 
     async def get_spade_url(self) -> URLType:
@@ -436,12 +441,22 @@ class Channel:
         Used for bulk-updates of channel statuses during reload.
         """
         if not channel_data["stream"]:
-            self._stream = None
+            self._set_stream(None)
             return
         stream = Stream.from_get_stream(self, channel_data)
         if not stream.drops_enabled:
             stream.drops_enabled = self._check_drops_enabled(available_drops)
-        self._stream = stream
+        self._set_stream(stream)
+
+    def sync_stream_from(self, channel: Channel) -> None:
+        """Apply the watched channel's newer observation without discovery side effects."""
+        stream = copy(channel._stream)
+        if stream is not None:
+            stream.channel = self
+            if stream == self._stream:
+                # Preserve drop eligibility of the discovered copy for this broadcast.
+                stream.drops_enabled = self.drops_enabled
+        self._set_stream(stream)
 
     async def get_stream(self) -> Stream | None:
         try:
@@ -450,13 +465,15 @@ class Channel:
             raise
         except MinerException as exc:
             raise MinerException(f"Channel: {self._login}") from exc
+        if not isinstance(response, dict) or response.get("errors"):
+            raise MinerException("GetStreamInfo returned no reliable stream status")
         channel_data: JsonType | None = response["data"]["user"]
-        if not channel_data:
+        if channel_data is None:
             return None
         # fill in display name
         if self._display_name is None:
             self._display_name = channel_data["displayName"]
-        if not channel_data["stream"]:
+        if channel_data["stream"] is None:
             return None
         stream = Stream.from_get_stream(self, channel_data)
         if not stream.drops_enabled:
@@ -477,16 +494,38 @@ class Channel:
         Fetches the current channel stream, and if one exists,
         updates it's game, title, tags and viewers. Updates channel status in general.
         """
-        self._apply_stream(await self.get_stream())
-        return self._stream is not None
+        check = self._begin_stream_check()
+        self._apply_stream_check(check, await self.get_stream())
+        return self.online
 
-    def _apply_stream(self, stream: Stream | None) -> None:
-        old_stream = self._stream
+    def _set_stream(self, stream: Stream | None) -> None:
+        self._stream_revision += 1
         self._stream = stream
-        self._twitch.on_channel_update(self, old_stream, stream)
 
-    async def refresh_stream(self) -> None:
-        """Recheck the stream, keeping the known state if the lookup fails or stalls."""
+    def _begin_stream_check(self) -> tuple[int, int]:
+        self._stream_check_id += 1
+        return self._stream_revision, self._stream_check_id
+
+    def _apply_stream_check(
+        self, check: tuple[int, int], stream: Stream | None,
+        *, online_check: asyncio.Task[Any] | None = None,
+    ) -> bool:
+        revision, check_id = check
+        if (revision == self._stream_revision and check_id > self._applied_stream_check_id
+                and (online_check is None or self._pending_stream_up is online_check)):
+            old_stream = self._stream
+            if stream is not None and stream == old_stream:
+                stream.drops_enabled = self.drops_enabled
+            self._stream = stream
+            self._applied_stream_check_id = check_id
+            self._twitch.on_channel_update(self, old_stream, stream)
+            return True
+        return self._stream_revision != revision or self._applied_stream_check_id > check_id
+
+    async def refresh_stream(self, *, online_check: asyncio.Task[Any] | None = None) -> bool:
+        """Return whether this check or a concurrent update provided a newer observation."""
+        check = self._begin_stream_check()
+        applied_before = self._applied_stream_check_id
         try:
             stream = await asyncio.wait_for(self.get_stream(), timeout=STREAM_CHECK_TIMEOUT)
         except ExitRequest:
@@ -494,17 +533,24 @@ class Channel:
         except (MinerException, aiohttp.ClientError, TimeoutError,
                 KeyError, TypeError, IndexError, ValueError) as exc:
             logger.warning(f"Stream check failed for channel {self.id}: {type(exc).__name__}")
-            return
-        self._apply_stream(stream)
+            return (
+                self._stream_revision != check[0]
+                or self._applied_stream_check_id != applied_before
+            )
+        return self._apply_stream_check(check, stream, online_check=online_check)
 
     async def _online_delay(self):
         """
         The 'stream-up' event is sent before the stream actually goes online,
         so just wait a bit and check if it's actually online by then.
         """
-        await asyncio.sleep(ONLINE_DELAY.total_seconds())
-        self._pending_stream_up = None  # for 'display' to work properly
-        await self.refresh_stream()
+        online_check = self._pending_stream_up
+        try:
+            await asyncio.sleep(ONLINE_DELAY.total_seconds())
+            await self.refresh_stream(online_check=online_check)
+        finally:
+            if self._pending_stream_up is online_check:
+                self._pending_stream_up = None
 
     def check_online(self) -> None:
         """
@@ -525,23 +571,26 @@ class Channel:
             self._pending_stream_up.add_done_callback(self._twitch._channel_tasks.discard)
             self.display()
 
+    def cancel_online_check(self) -> bool:
+        """Cancel a scheduled or in-flight delayed stream check."""
+        if self._pending_stream_up is None:
+            return False
+        self._pending_stream_up.cancel()
+        self._pending_stream_up = None
+        return True
+
     def set_offline(self) -> None:
         """
         Sets the channel status to OFFLINE. Cancels PENDING_ONLINE if applicable.
 
         This is called externally, if we receive an event indicating the channel is now OFFLINE.
         """
-        needs_display: bool = False
-        if self._pending_stream_up is not None:
-            self._pending_stream_up.cancel()
-            self._pending_stream_up = None
-            needs_display = True
-        if self.online:
-            old_stream = self._stream
-            self._stream = None
-            self._twitch.on_channel_update(self, old_stream, self._stream)
-            needs_display = False  # calling on_channel_update always does a display at the end
-        if needs_display:
+        needs_display = self.cancel_online_check()
+        old_stream = self._stream
+        self._set_stream(None)
+        if old_stream is not None:
+            self._twitch.on_channel_update(self, old_stream, None)
+        elif needs_display:
             self.display()
 
     def _watch_current(self, stream: Stream) -> bool:

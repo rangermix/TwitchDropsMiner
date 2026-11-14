@@ -76,6 +76,8 @@ see [diagnosis data](docs/troubleshooting.md#save-diagnosis-data).
 
 TDM checks active Drop progress about once a minute while successfully watching,
 including when a reward still has substantial watch time remaining.
+It rechecks the current stream during channel refresh and switches to another
+eligible stream when it detects the broadcast has ended.
 
 ## Quick start
 

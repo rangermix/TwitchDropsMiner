@@ -241,7 +241,7 @@ class Twitch:
             self._resume_mining.set()
 
     async def _stop_channel_tasks(self) -> None:
-        """Drain online checks even after their pending display marker is cleared."""
+        """Drain online checks before discarding account-owned state."""
         tasks = tuple(self._channel_tasks)
         for task in tasks:
             task.cancel()
@@ -519,9 +519,10 @@ class Twitch:
         self.gui.print(message, collapse_key=collapse_key)
 
     def _remove_channel_topics(self, channels: abc.Iterable[Channel]) -> None:
-        """Remove websocket topics for a list of channels."""
+        """Retire websocket topics and outstanding stream checks for channels."""
         topics_to_remove: list[str] = []
         for channel in channels:
+            channel.cancel_online_check()
             topics_to_remove.append(WebsocketTopic.as_str("Channel", "StreamState", channel.id))
             topics_to_remove.append(WebsocketTopic.as_str("Channel", "StreamUpdate", channel.id))
         if topics_to_remove:
