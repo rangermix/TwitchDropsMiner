@@ -82,6 +82,10 @@ including when a reward still has substantial watch time remaining.
 With Docker installed, choose one setup below. Shell examples use Bash
 (Linux, macOS, or WSL).
 
+Images built from the current source include an init process to clean up exited
+child processes. Keep `--init` or `init: true` in the examples for the published
+v2.5.0 image and older versions.
+
 ### Docker run
 
 Pull and start the published image:
