@@ -27,7 +27,9 @@ def _make_cache_test_client() -> tuple[Any, dict[str, object], MagicMock, MagicM
     }
     auth_state = MagicMock(name="auth_state")
     game = SimpleNamespace(name="Game A")
-    channel = SimpleNamespace(id=123, name="channel-a", game=game)
+    channel = SimpleNamespace(
+        id=123, name="channel-a", game=game, cancel_online_check=MagicMock(),
+    )
 
     twitch.settings = settings
     twitch._auth_state = auth_state
@@ -70,6 +72,7 @@ def test_clear_cached_state_discards_only_derived_runtime_state():
     settings_snapshot = settings.copy()
     original_settings = twitch.settings
     original_auth_state = twitch._auth_state
+    channel = twitch.channels[123]
 
     InventoryService(twitch).clear_cached_state()
 
@@ -95,6 +98,7 @@ def test_clear_cached_state_discards_only_derived_runtime_state():
     twitch.gui.broadcast_wanted_items.assert_called_once_with()
     twitch.gui.broadcast_manual_mode_change.assert_called_once_with({"active": False})
     maintenance_task.cancel.assert_called_once_with()
+    channel.cancel_online_check.assert_called_once_with()
     twitch.websocket.remove_topics.assert_called_once_with(
         [
             WebsocketTopic.as_str("Channel", "StreamState", 123),
