@@ -141,6 +141,14 @@ class BaseDrop:
         )
 
     @property
+    def claim_requires_account_link(self) -> bool:
+        """Require linking unless every benefit in the claim is a badge or emote."""
+        # Twitch claims the entire drop in one request, including any game rewards.
+        return not self.campaign.linked and not (
+            self.benefits and all(benefit.type.is_badge_or_emote() for benefit in self.benefits)
+        )
+
+    @property
     def can_claim(self) -> bool:
         # https://help.twitch.tv/s/article/mission-based-drops?language=en_US#claiming
         # "If you are unable to claim the Drop in time, you will be able to claim it
@@ -149,12 +157,7 @@ class BaseDrop:
             self.claim_id is not None
             and not self.is_claimed
             and datetime.now(timezone.utc) < self.campaign.ends_at + timedelta(hours=24)
-            # Unlinked game rewards cannot be delivered: Twitch acknowledges the claim
-            # but keeps the drop unclaimed, so every refresh would claim it again.
-            and (
-                self.campaign.linked
-                or any(benefit.type.is_badge_or_emote() for benefit in self.benefits)
-            )
+            and not self.claim_requires_account_link
         )
 
     def update_claim(self, claim_id: str) -> None:
@@ -201,7 +204,7 @@ class BaseDrop:
             await self._twitch.gui.broadcast_wanted_items_now()
             await self._send_telegram_notification()
             await self._send_discord_notification()
-        elif not result:
+        elif not result and not self.claim_requires_account_link:
             logger.error(f"Drop claim has potentially failed! Drop ID: {self.id}")
         return result
 
@@ -269,6 +272,7 @@ class TimedDrop(BaseDrop):
         )
         self.required_minutes: int = data["requiredMinutesWatched"]
         self.extra_current_minutes: int = 0
+        self._claim_completion_observed = self.real_current_minutes >= self.required_minutes
         if self.is_claimed:
             # claimed drops may report inconsistent current minutes, so we need to overwrite them
             self.real_current_minutes = self.required_minutes
@@ -294,6 +298,16 @@ class TimedDrop(BaseDrop):
     def is_watch_drop(self) -> bool:
         """Return whether this drop can be earned by watching a stream."""
         return self.required_minutes > 0
+
+    @property
+    def awaiting_account_link(self) -> bool:
+        """Return whether a watch drop finished earning and must wait for linking."""
+        return (
+            not self.is_claimed
+            and self.is_watch_drop
+            and self._claim_completion_observed
+            and self.claim_requires_account_link
+        )
 
     @property
     def remaining_minutes(self) -> int:
@@ -347,6 +361,7 @@ class TimedDrop(BaseDrop):
         return (
             super()._base_earn_conditions()
             and self.is_watch_drop
+            and not self.awaiting_account_link
             # NOTE: This may be a bad idea, as it invalidates the can_earn status
             # and provides no way to recover from this state until the next reload.
             and self.extra_current_minutes < MAX_EXTRA_MINUTES
@@ -363,6 +378,19 @@ class TimedDrop(BaseDrop):
         else:
             self.real_current_minutes = self.required_minutes
         self.extra_current_minutes = 0
+        self._on_state_changed()
+
+    def defer_claim_until_account_link(self) -> None:
+        """Keep a claim-ready event as completion while waiting for the game account."""
+        if self.awaiting_account_link or not self.is_watch_drop:
+            return
+        # The claim event can arrive before the final minute update. Ordinary minute
+        # updates can apply sibling deltas and cannot establish claim readiness.
+        self._claim_completion_observed = True
+        self.campaign.progress_revision += 1
+        self.real_current_minutes = self.required_minutes
+        self.extra_current_minutes = 0
+        self._twitch.request_games_update()
         self._on_state_changed()
 
     def _bump_minutes(self, channel: Channel | None) -> bool:
