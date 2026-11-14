@@ -416,6 +416,13 @@ lang/                # Translation JSON files (20 languages)
   timing, ACL/category, Mining list, prerequisites, claims, and ignore checks.
   Changes trigger game selection refresh. Keep the warning and save-failure feedback
   translated and safely rendered. Estimated minutes do not prove Twitch progress.
+- Automatic claims check Twitch's campaign link status independently of the mining
+  override. Only a nonempty drop containing exclusively badges/emotes can be claimed
+  while unlinked. Completed, link-deferred drops stay unclaimed in Inventory and leave
+  the Wanted Drops Queue. Their prerequisite dependents still require a successful
+  claim. A claim-ready websocket event preserves the claim ID and updates completion
+  without triggering post-claim polling, history or notifications. A later linked
+  inventory can claim the reward within the existing automatic-claim window.
 - Zero-minute subscription rewards are omitted from Inventory and Wanted Drops Queue;
   individually expired and non-mineable rewards are omitted from the queue without hiding
   upcoming or sequential rewards; successful claims refresh the queue immediately; the

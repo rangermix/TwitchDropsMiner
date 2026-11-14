@@ -11,16 +11,20 @@ Covers the review findings:
 
 import asyncio
 import unittest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.config.settings import Settings
-from src.services.discord_service import DiscordNotifier, _escape_embed
+from src.models.benefit import Benefit, BenefitType
 from src.models.drop import BaseDrop
-from src.services.telegram_service import TelegramNotifier
+from src.services.discord_service import DiscordNotifier, _escape_embed
 from src.services.message_handlers import MessageHandlerService
-from tests.test_watch_drop_filtering import _campaign, _drop
+from src.services.stream_selector import StreamSelector
+from src.services.telegram_service import TelegramNotifier
 from src.web.managers.console import ConsoleOutputManager
+from src.web.managers.inventory import InventoryManager
 from src.web.managers.settings import DISCORD_WEBHOOK_MASK, SettingsManager
+from tests.test_watch_drop_filtering import _campaign, _drop
 
 
 class MockResponseContext:
@@ -182,6 +186,70 @@ class TestNotificationGatedOnClaim(unittest.IsolatedAsyncioTestCase):
         self.sent.assert_not_awaited()
         self.twitch.drop_history.record.assert_not_called()
 
+    async def test_unlinked_game_reward_is_not_claimed_or_notified(self):
+        # Twitch acknowledges such claims but keeps the drop unclaimed (#218, #220).
+        self.campaign.linked = False
+        self.twitch.settings.allow_unlinked_campaigns = True
+        self.assertFalse(self.drop.can_claim)
+        with patch("src.models.drop.logger.error") as error:
+            self.assertFalse(await self.drop.claim())
+        error.assert_not_called()
+        self.twitch.gui.inv.update_drop.reset_mock()
+
+        self.drop.claim_id = None
+        self.twitch.watching_channel.get_with_default.return_value = MagicMock()
+        await self.service.process_drops(1, self._claim_message())
+        await self.service.process_drops(1, self._claim_message())
+        self.assertEqual(self.drop.claim_id, "inst-1")
+        self.assertTrue(self.drop.awaiting_account_link)
+        self.assertFalse(self.drop.is_claimed)
+        self.twitch.gql_request.assert_not_awaited()
+        self.sent.assert_not_awaited()
+        self.twitch.drop_history.record.assert_not_called()
+        self.twitch.restart_watching.assert_not_called()
+        self.twitch.request_inventory_refresh.assert_not_called()
+        self.twitch.request_games_update.assert_called_once()
+        self.twitch.gui.display_drop.assert_not_called()
+        self.twitch.gui.inv.update_drop.assert_called_once_with(self.drop)
+
+        self.campaign.linked = True
+        self.assertTrue(self.drop.can_claim)
+        self.assertTrue(await self.drop.claim())
+        self.twitch.gql_request.assert_awaited_once()
+        self.sent.assert_awaited_once()
+        self.twitch.drop_history.record.assert_called_once_with(self.drop, self.campaign)
+
+    async def test_unlinked_badges_and_emotes_are_still_claimed(self):
+        self.campaign.linked = False
+        self.drop.benefits[0].type = BenefitType.BADGE
+        emote = Benefit(_drop("emote", "Emote", 30)["benefitEdges"][0])
+        emote.type = BenefitType.EMOTE
+        self.drop.benefits.append(emote)
+        self.assertTrue(await self.drop.claim())
+        self.sent.assert_awaited_once()
+
+    async def test_link_required_for_mixed_unknown_and_missing_benefits(self):
+        self.campaign.linked = False
+        game_reward = self.drop.benefits[0]
+        badge = MagicMock(type=BenefitType.BADGE)
+        unknown = MagicMock(type=BenefitType.UNKNOWN)
+        for benefits in ([badge, game_reward], [unknown], []):
+            with self.subTest(benefits=benefits):
+                self.drop.benefits = benefits
+                self.assertFalse(self.drop.can_claim)
+                self.assertFalse(await self.drop.claim())
+        self.twitch.gql_request.assert_not_awaited()
+        self.sent.assert_not_awaited()
+
+    async def test_link_after_automatic_claim_window_does_not_claim(self):
+        self.campaign.linked = False
+        await self.service.process_drops(1, self._claim_message())
+        self.campaign.linked = True
+        self.campaign.ends_at = datetime.now(timezone.utc) - timedelta(hours=25)
+        self.assertFalse(self.drop.can_claim)
+        self.twitch.gql_request.assert_not_awaited()
+        self.sent.assert_not_awaited()
+
     async def test_already_claimed_drop_is_not_added_to_history_again(self):
         self.drop.is_claimed = True
         self.assertTrue(await self.drop.claim())
@@ -207,6 +275,78 @@ class TestNotificationGatedOnClaim(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(self.drop.is_claimed)
         self.assertEqual(self.drop.current_minutes, self.drop.required_minutes)
         notify.assert_awaited_once_with(self.drop)
+
+
+def test_completed_unlinked_drop_leaves_mining_queue_but_stays_in_inventory():
+    source = _drop("link-deferred", "Game reward", 30)
+    source["self"] = {
+        "dropInstanceID": "inst-1",
+        "isClaimed": False,
+        "currentMinutesWatched": 30,
+    }
+    dependent = _drop(
+        "dependent", "Next game reward", 30, precondition_drop_ids=["link-deferred"]
+    )
+    campaign = _campaign("unlinked", [source, dependent, _drop("independent", "Badge", 30)])
+    campaign.linked = False
+    completed_drop = campaign.timed_drops["link-deferred"]
+    badge_drop = campaign.timed_drops["independent"]
+    badge_drop.benefits[0].type = BenefitType.BADGE
+    settings = campaign._twitch.settings
+    settings.allow_unlinked_campaigns = True
+    settings.games_to_watch = [campaign.game.name]
+    settings.mining_benefits = {"DIRECT_ENTITLEMENT": True, "BADGE": True}
+    selector = StreamSelector()
+
+    def queued_ids():
+        tree = selector.get_wanted_game_tree(settings, [campaign])
+        return {
+            drop["id"]
+            for game in tree
+            for entry in game["campaigns"]
+            for drop in entry["drops"]
+        }
+
+    assert completed_drop.awaiting_account_link
+    assert not completed_drop.can_earn()
+    assert not campaign.timed_drops["dependent"].can_earn()
+    assert badge_drop.can_earn()
+    assert "link-deferred" not in queued_ids()
+    assert "independent" in queued_ids()
+    inventory_drop = InventoryManager._serialize_drop(completed_drop)
+    assert inventory_drop["progress"] == 1.0
+    assert not inventory_drop["is_claimed"]
+    assert not inventory_drop["can_claim"]
+    assert not inventory_drop["is_skipped"]
+
+
+def test_sibling_minutes_do_not_defer_an_unlinked_drop():
+    source = _drop("game-reward", "Game reward", 30)
+    source["self"] = {
+        "dropInstanceID": None,
+        "isClaimed": False,
+        "currentMinutesWatched": 29,
+    }
+    sibling = _drop("sibling", "Badge", 90)
+    campaign = _campaign("unlinked", [source, sibling])
+    campaign.linked = False
+    game_drop = campaign.timed_drops["game-reward"]
+    sibling_drop = campaign.timed_drops["sibling"]
+    sibling_drop.benefits[0].type = BenefitType.BADGE
+
+    game_drop.extra_current_minutes = 1
+    assert game_drop.progress == 1.0
+    assert game_drop.can_earn()
+
+    sibling_drop.update_minutes(1)
+
+    assert game_drop.real_current_minutes == 30
+    assert not game_drop.awaiting_account_link
+    assert game_drop.can_earn()
+    campaign._twitch.request_games_update.assert_not_called()
+
+    game_drop.update_minutes(29)
+    assert game_drop.real_current_minutes == 29
 
 
 class TestDiscordMessageEscaping(unittest.IsolatedAsyncioTestCase):

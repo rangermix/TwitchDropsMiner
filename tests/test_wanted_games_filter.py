@@ -30,6 +30,7 @@ class TestWantedGamesFilter(unittest.TestCase):
         d1 = MagicMock()
         d1.name = "Test Drop"
         d1.is_claimed = False
+        d1.awaiting_account_link = False
         d1.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         d1.get_wanted_unclaimed_benefits.return_value = ["Benefit1"]
         c1.drops = [d1]
@@ -43,6 +44,7 @@ class TestWantedGamesFilter(unittest.TestCase):
         c2.can_earn_within.return_value = True
         d2 = MagicMock()
         d2.is_claimed = False
+        d2.awaiting_account_link = False
         d2.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         d2.get_wanted_unclaimed_benefits.return_value = []
         c2.drops = [d2]
@@ -56,6 +58,7 @@ class TestWantedGamesFilter(unittest.TestCase):
         c3.can_earn_within.return_value = True
         d3 = MagicMock()
         d3.is_claimed = False
+        d3.awaiting_account_link = False
         d3.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         d3.get_wanted_unclaimed_benefits.return_value = ["Benefit3"]
         c3.drops = [d3]
@@ -73,6 +76,7 @@ class TestWantedGamesFilter(unittest.TestCase):
         d4 = MagicMock()
         d4.name = "Test Drop"
         d4.is_claimed = True
+        d4.awaiting_account_link = False
         d4.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         d4.get_wanted_unclaimed_benefits.return_value = ["Benefit4"]
         c4.drops = [d4]
@@ -90,6 +94,7 @@ class TestWantedGamesFilter(unittest.TestCase):
         d5 = MagicMock()
         d5.name = "Test Drop"
         d5.is_claimed = False
+        d5.awaiting_account_link = False
         d5.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         d5.get_wanted_unclaimed_benefits.return_value = ["Benefit5"]
         c5.drops = [d5]
