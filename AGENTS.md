@@ -1124,6 +1124,11 @@ The application uses a web-based interface accessible via browser:
 - Installs dependencies from `pyproject.toml`, then removes installed pip and its vendored
   modules; Python's bundled `ensurepip` bootstrap wheel remains. Dependency changes
   require rebuilding the image.
+- Runs under `tini` as its entrypoint so orphans such as browser helpers are reaped
+  even without Docker's `--init`. Python must not become PID 1: it never reaps orphans,
+  and the zombies eventually exhaust the container's task limit (issue #212). Keep the
+  HEALTHCHECK in exec form so a timeout kills the probe rather than orphaning it.
+  Regression: `tests/test_dockerfile_init.py`.
 - Exposes port 8080
 - Health check on the public `/healthz` endpoint
 
