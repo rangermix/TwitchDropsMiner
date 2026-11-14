@@ -207,6 +207,9 @@ class MessageHandlerService:
                 return
 
             drop.update_claim(message["data"]["drop_instance_id"])
+            if not drop.is_claimed and drop.claim_requires_account_link:
+                drop.defer_claim_until_account_link()
+                return
             campaign = drop.campaign
             await drop.claim()
             drop.display()
