@@ -192,6 +192,16 @@ lang/                # Translation JSON files (20 languages)
   Keep confirmed bans and expiry callbacks across cache recovery until expiry or a
   confirmed null response. Cancel callbacks and clear account-owned ban state on
   identity replacement and shutdown.
+- Offline detection must not rely only on `stream-down`: a reconnect can lose the event
+  and full cleanup drops topics of channels missing from a game's top 20 directory results.
+  `ChannelService.refresh_watched_channel()` rechecks the watched channel in CHANNELS_FETCH
+  and keeps it tracked while online. A newer observation takes precedence over the earlier
+  discovery snapshot for that channel, preserving its campaign allowlist membership and
+  same-broadcast drop eligibility. A failed watch of the current stream calls `check_online()`.
+  `Channel.refresh_stream()` bounds both checks and preserves known state on an errored
+  response or timeout. A newer stream update invalidates older replies. Keep delayed
+  checks cancellable through the lookup and cancel them when retiring channel topics.
+  Regression: `tests/test_watched_channel_recovery.py`.
 
 **src/models/campaign.py** - Drop campaigns:
 
@@ -1118,6 +1128,11 @@ The application uses a web-based interface accessible via browser:
 - Installs dependencies from `pyproject.toml`, then removes installed pip and its vendored
   modules; Python's bundled `ensurepip` bootstrap wheel remains. Dependency changes
   require rebuilding the image.
+- Runs under `tini` as its entrypoint so orphans such as browser helpers are reaped
+  even without Docker's `--init`. Python must not become PID 1: it never reaps orphans,
+  and the zombies eventually exhaust the container's task limit (issue #212). Keep the
+  HEALTHCHECK in exec form so a timeout kills the probe rather than orphaning it.
+  Regression: `tests/test_dockerfile_init.py`.
 - Exposes port 8080
 - Health check on the public `/healthz` endpoint
 
