@@ -6,7 +6,7 @@ through startup or later inventory checks.
 
 ## Choose what to be notified about
 
-The event choices are available in current source builds and will be included in the next release.
+Event choices are available in v2.6.0 and later.
 
 **Settings → Notifications → Notify me about** applies to every configured provider:
 

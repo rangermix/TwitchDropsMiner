@@ -210,8 +210,9 @@ clearing campaign cache does not reset it.
 
 Use **Test Connection** in Telegram settings and check any error shown. Start a
 conversation with the bot before testing, and verify the chat ID. Leave a saved token's
-field blank to reuse it. Failed notifications are not retried and do not reverse a
-successful drop claim. See [Telegram notifications](notifications.md).
+field blank to reuse it. TDM attempts each claim notification once. A failed attempt
+leaves the successful claim in place. TDM can retry a failed new-version alert on
+the next version check. See [Telegram notifications](notifications.md).
 
 ## Logs and reporting a problem
 

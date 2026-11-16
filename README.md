@@ -25,7 +25,7 @@ services operated for other users are outside its support scope.
   until restart, without changing your saved Mining list. Channel selection follows
   this order among campaigns the channel can earn. In v2.5.0, queue rows also show
   reward artwork and live drop progress.
-  In source builds, the queue's information button explains which ordering rules apply.
+  Starting in v2.6.0, the queue's information button explains which ordering rules apply.
 - Track campaigns and rewards, and ignore drops you do not want.
 - Skip channels while Twitch reports an active ban, including temporary bans.
 - Optionally [prefer channels you follow](docs/usage.md#prefer-channels-you-follow)
@@ -91,22 +91,22 @@ eligible stream when it detects the broadcast has ended.
 With Docker installed, choose one setup below. Shell examples use Bash
 (Linux, macOS, or WSL).
 
-Images built from the current source include an init process to clean up exited
-child processes. Keep `--init` or `init: true` in the examples for the published
-v2.5.0 image and older versions.
+The v2.6.0 image includes an init process to clean up exited child processes.
+The examples retain `--init` and `init: true` for compatibility with v2.5.0 and older
+images.
 
 ### Docker run
 
 Pull and start the published image:
 
 ```bash
-docker pull rangermix/twitch-drops-miner:2.5.0
+docker pull rangermix/twitch-drops-miner:2.6.0
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.5.0
+  rangermix/twitch-drops-miner:2.6.0
 ```
 
 ### Docker Compose
@@ -117,7 +117,7 @@ inside it. Set `TZ` to your home internet connection's timezone:
 ```yaml
 services:
   twitch-drops-miner:
-    image: rangermix/twitch-drops-miner:2.5.0
+    image: rangermix/twitch-drops-miner:2.6.0
     container_name: twitch-drops-miner
     init: true
     stop_grace_period: 30s
