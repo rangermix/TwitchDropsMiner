@@ -199,6 +199,9 @@ class WatchService:
             await self.watch_sleep(max(0, 10 - (monotonic() - started)))
             if stream is None or not channel._watch_current(stream):
                 continue
+            if not succeeded:
+                # An ended broadcast fails here even if its stream-down event was lost.
+                channel.check_online()
 
             # The dashboard stores total remaining time, not an expiring minute timer.
             if succeeded and monotonic() >= next_progress:

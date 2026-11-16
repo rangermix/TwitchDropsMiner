@@ -22,6 +22,7 @@ class StreamSelector:
                 or drop.is_claimed
                 or drop.ends_at <= now
                 or not drop.is_mineable
+                or drop.awaiting_account_link
             ):
                 continue
 

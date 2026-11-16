@@ -51,6 +51,7 @@ class TestWantedItems(unittest.TestCase):
         d1.progress = 0.5
         d1.name = "Drop1"
         d1.is_claimed = False
+        d1.awaiting_account_link = False
         d1.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         d1.get_wanted_unclaimed_benefits = TimedDrop.get_wanted_unclaimed_benefits.__get__(
             d1, TimedDrop
@@ -78,6 +79,7 @@ class TestWantedItems(unittest.TestCase):
         d2.progress = 0.5
         d2.name = "Drop2"
         d2.is_claimed = False
+        d2.awaiting_account_link = False
         d2.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         d2.get_wanted_unclaimed_benefits = TimedDrop.get_wanted_unclaimed_benefits.__get__(
             d2, TimedDrop
@@ -105,6 +107,7 @@ class TestWantedItems(unittest.TestCase):
         d3.progress = 0.5
         d3.name = "Drop3"
         d3.is_claimed = False
+        d3.awaiting_account_link = False
         d3.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         d3.get_wanted_unclaimed_benefits = TimedDrop.get_wanted_unclaimed_benefits.__get__(
             d3, TimedDrop
@@ -132,6 +135,7 @@ class TestWantedItems(unittest.TestCase):
         d4.progress = 0.5
         d4.name = "Drop4"
         d4.is_claimed = False
+        d4.awaiting_account_link = False
         d4.ends_at = datetime.max.replace(tzinfo=timezone.utc)
         d4.get_wanted_unclaimed_benefits = TimedDrop.get_wanted_unclaimed_benefits.__get__(
             d4, TimedDrop
@@ -225,6 +229,7 @@ def test_queue_image_comes_from_a_wanted_reward():
 
     drop = MagicMock(spec=TimedDrop)
     drop.id, drop.name, drop.is_claimed, drop.is_watch_drop, drop.is_mineable = "d", "Pack", False, True, True
+    drop.awaiting_account_link = False
     drop.ends_at = datetime.max.replace(tzinfo=timezone.utc)
     drop.current_minutes, drop.required_minutes, drop.progress = 0, 60, 0.0
     drop.benefits = [

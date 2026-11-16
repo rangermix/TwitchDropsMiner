@@ -31,7 +31,7 @@ WORKDIR /app
 
 # Login and renewal use private browsers; only the dashboard port is exposed.
 RUN apk upgrade --no-cache \
-    && apk add --no-cache chromium xvfb xvfb-run xauth openbox x11vnc xdotool tzdata
+    && apk add --no-cache chromium xvfb xvfb-run xauth openbox x11vnc xdotool tzdata tini
 COPY --from=novnc-assets /usr/share/novnc/ /usr/share/novnc/
 RUN addgroup -g 10001 -S tdm-browser \
     && adduser -u 10001 -S -D -H -h /nonexistent -s /sbin/nologin -G tdm-browser tdm-browser
@@ -56,9 +56,13 @@ RUN mkdir -p /app/data /app/logs && chmod 700 /app/data /app/logs
 # Expose web port
 EXPOSE 8080
 
-# Health check
+# Health check. Exec form: a timeout kills the probe itself, not a shell that orphans it.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')" || exit 1
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')"]
+
+# Reap orphaned processes, such as browser helpers, with or without Docker's --init.
+# -s avoids tini's warning when --init makes it a child of Docker's own init.
+ENTRYPOINT ["/sbin/tini", "-s", "--"]
 
 # Run the application (web GUI is now default)
 CMD ["python", "main.py"]
