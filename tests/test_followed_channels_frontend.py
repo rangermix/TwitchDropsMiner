@@ -71,6 +71,42 @@ def test_out_of_order_opt_in_responses_keep_both_confirmed_choices():
 """)
 
 
+@pytest.mark.parametrize("socket_first", [False, True])
+@pytest.mark.parametrize("key", ["prefer_followed_channels", "allow_unlinked_campaigns"])
+def test_both_opt_ins_follow_latest_complete_server_revision(socket_first, key):
+    run_javascript(FUNCTIONS + ["onUnlinkedMiningChange"], FOLLOW_SETUP + f"""
+(async () => {{
+    const key = {json.dumps(key)};
+    const current = key === 'prefer_followed_channels' ? follow : input;
+    const other = current === follow ? input : follow;
+    const save = current === follow ? onPreferFollowedChange : onUnlinkedMiningChange;
+    const sibling = current === follow ? 'allow_unlinked_campaigns' : 'prefer_followed_channels';
+    const snapshot = (revision, main, second) => ({{
+        mining_opt_ins_revision: revision, [key]: main, [sibling]: second
+    }});
+    updateSettingsUI(snapshot(0, false, false), true);
+    let finish;
+    global.fetch = () => new Promise(resolve => {{ finish = resolve; }});
+    current.checked = true;
+    const pending = save();
+    if ({json.dumps(socket_first)}) {{
+        updateSettingsUI(snapshot(2, false, true), true);
+        assert.equal(current.checked, true, 'optimistic choice stays visible while pending');
+    }}
+    finish({{ok: true, json: async () => ({{success: true, settings: snapshot(1, true, true)}})}});
+    await pending;
+    assert.equal(current.checked, !{json.dumps(socket_first)});
+    assert.equal(other.checked, true, 'POST confirms both opt-ins together');
+    if (!{json.dumps(socket_first)}) updateSettingsUI(snapshot(2, false, true), true);
+    updateSettingsUI(snapshot(1, true, false), true);
+    updateSettingsUI({{mining_opt_ins_revision: 3, [key]: true}}, true);
+    assert.equal(current.checked, false);
+    assert.equal(other.checked, true);
+    assert.equal(state.settings.mining_opt_ins_revision, 2);
+}})().catch(error => {{ console.error(error); process.exitCode = 1; }});
+""")
+
+
 @pytest.mark.parametrize("failure", ["http", "network", "application", "old_server"])
 def test_failed_save_restores_confirmed_value_and_shows_literal_error(failure):
     run_javascript(FUNCTIONS, FOLLOW_SETUP + f"""

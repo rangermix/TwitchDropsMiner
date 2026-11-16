@@ -62,6 +62,7 @@ default_settings = {
         "start": "08:00",
         "end": "22:00",
     },
+    "mining_opt_ins_revision": 0,
     "notification_events": {
         "drop_claimed": True,
         "new_release": False,
@@ -157,6 +158,7 @@ class Settings:
     minimum_refresh_interval_minutes: int
     mining_benefits: dict[str, bool]
     mining_hours: dict[str, str]
+    mining_opt_ins_revision: int
     notification_events: dict[str, bool]
     notification_events_revision: int
     proxy: str

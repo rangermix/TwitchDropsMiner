@@ -1433,6 +1433,25 @@ function renderNotificationEvents() {
     if (release && !release.disabled) release.checked = events?.new_release === true;
 }
 
+function reconcileMiningOptIns(settings, authoritative, changedFields) {
+    const revision = state.settings.mining_opt_ins_revision ?? -1;
+    const incoming = settings.mining_opt_ins_revision;
+    const keys = ['allow_unlinked_campaigns', 'prefer_followed_channels'];
+    if (Number.isSafeInteger(incoming) && incoming >= 0 && incoming >= revision
+        && keys.every(key => typeof settings[key] === 'boolean')) {
+        return settings;
+    }
+    const next = {...settings, mining_opt_ins_revision: state.settings.mining_opt_ins_revision};
+    for (const key of keys) {
+        // Older servers did not attach a revision. Trust only their explicit writes
+        // and complete settings updates until a versioned snapshot arrives.
+        const acceptLegacy = revision < 0 && incoming === undefined
+            && (authoritative || changedFields.includes(key)) && typeof settings[key] === 'boolean';
+        if (!acceptLegacy) next[key] = state.settings[key];
+    }
+    return next;
+}
+
 function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     // Initial loads/socket updates own the watch list; unrelated partial-save replies do not.
     if (!authoritative && Array.isArray(state.settings.games_to_watch)) {
@@ -1448,14 +1467,7 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     if (!authoritative && !changedFields.includes('mining_benefits') && state.settings.mining_benefits) {
         settings = {...settings, mining_benefits: state.settings.mining_benefits};
     }
-    // A partial write response can arrive after either opt-in was saved.
-    if (!authoritative) {
-        for (const key of ['allow_unlinked_campaigns', 'prefer_followed_channels']) {
-            if (!changedFields.includes(key) && typeof state.settings[key] === 'boolean') {
-                settings = {...settings, [key]: state.settings[key]};
-            }
-        }
-    }
+    settings = reconcileMiningOptIns(settings, authoritative, changedFields);
     state.settings = reconcileNotificationEvents(settings);
     const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
     if (allowUnlinked && !allowUnlinked.disabled) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
@@ -2704,7 +2716,12 @@ async function saveBooleanSetting(key, inputId, errorId, message) {
         if (!response.ok) throw new Error(message);
         const data = await response.json();
         if (data.success !== true || data.settings?.[key] !== requested) throw new Error(message);
-        updateSettingsUI({...state.settings, [key]: requested}, false, [key]);
+        updateSettingsUI({
+            ...state.settings,
+            allow_unlinked_campaigns: data.settings.allow_unlinked_campaigns,
+            prefer_followed_channels: data.settings.prefer_followed_channels,
+            mining_opt_ins_revision: data.settings.mining_opt_ins_revision,
+        }, false, [key]);
     } catch (failure) {
         reportSettingsError(error, message);
         error.hidden = false;

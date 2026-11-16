@@ -214,9 +214,10 @@ class SettingsManager:
         should_trigger_update |= self.check_and_update_setting(
             "dark_mode", settings_data.get("dark_mode")
         )
-        should_trigger_update |= self.check_and_update_setting(
+        follows_changed = self.check_and_update_setting(
             "prefer_followed_channels", prefer_followed, True
         )
+        should_trigger_update |= follows_changed
         should_trigger_update |= self.check_and_update_setting(
             "language", language, False, self._set_language
         )
@@ -264,6 +265,10 @@ class SettingsManager:
 
         if override_changed and isinstance(requested_allow_unlinked, bool):
             self._settings.allow_unlinked_campaigns = requested_allow_unlinked
+        if override_changed or follows_changed:
+            self._settings.mining_opt_ins_revision = getattr(
+                self._settings, "mining_opt_ins_revision", 0
+            ) + 1
         if priority_mode_changed and isinstance(requested_priority_list_only, bool):
             self._settings.priority_list_only = requested_priority_list_only
         if requested_reward_priority is not None:

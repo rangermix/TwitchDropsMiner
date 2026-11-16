@@ -427,3 +427,43 @@ def test_setting_round_trips_through_saved_settings(tmp_path, monkeypatch):
         SettingsManager(AsyncMock(), settings, MagicMock()).update_settings({"prefer_followed_channels": True})
     asyncio.run(enable())
     assert Settings().prefer_followed_channels is True
+
+
+@pytest.mark.asyncio
+async def test_mining_opt_ins_revision_persists_and_rolls_back(tmp_path, monkeypatch):
+    from src.config.settings import Settings
+    settings_path = tmp_path / "settings.json"
+    monkeypatch.setattr("src.config.settings.SETTINGS_PATH", settings_path)
+    settings_path.write_text('{"allow_unlinked_campaigns":true}', encoding="utf-8")
+    settings = Settings()
+    broadcaster = AsyncMock()
+    manager = SettingsManager(broadcaster, settings, MagicMock())
+
+    def snapshot(values):
+        return (
+            values["mining_opt_ins_revision"],
+            values["allow_unlinked_campaigns"],
+            values["prefer_followed_channels"],
+        )
+
+    assert snapshot(manager.get_settings()) == (0, True, False)
+    first = manager.update_settings({"prefer_followed_channels": True})
+    second = manager.update_settings({
+        "allow_unlinked_campaigns": False,
+        "prefer_followed_channels": False,
+    })
+    unchanged = manager.update_settings({"prefer_followed_channels": False, "dark_mode": True})
+    await asyncio.sleep(0)
+    assert snapshot(first) == (1, True, True)
+    assert snapshot(second) == snapshot(unchanged) == (2, False, False)
+    assert [snapshot(call.args[1]) for call in broadcaster.emit.await_args_list] == [
+        (1, True, True), (2, False, False), (2, False, False),
+    ]
+    assert snapshot(vars(Settings())) == (2, False, False)
+
+    monkeypatch.setattr(settings, "save", MagicMock(side_effect=OSError))
+    with pytest.raises(OSError):
+        manager.update_settings({"allow_unlinked_campaigns": True, "prefer_followed_channels": True})
+    assert snapshot(manager.get_settings()) == snapshot(vars(Settings())) == (2, False, False)
+    await asyncio.sleep(0)
+    assert broadcaster.emit.await_count == 3

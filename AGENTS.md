@@ -407,6 +407,10 @@ lang/                # Translation JSON files (20 languages)
   change lines, language switching and broadcasts run only after a successful save.
   Regressions: `test_rejected_update_writes_prints_and_saves_nothing` and
   `test_failed_save_restores_every_field_and_defers_effects`.
+- Persist `mining_opt_ins_revision` atomically with the account-link override and
+  followed-channel option. Return both flags and the revision together. The dashboard
+  accepts complete non-stale snapshots so late POST or socket updates cannot revert
+  another tab's setting. Regressions live in `test_followed_channels*.py`.
 - `prefer_followed_channels` defaults false and accepts only booleans,
   validated before any write; changes request a games update. When true,
   `ChannelService.get_followed_live_channels(known_ids)` runs during CHANNELS_FETCH
