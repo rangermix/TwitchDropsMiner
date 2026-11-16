@@ -102,16 +102,12 @@ class WatchService:
         if watching_channel is None or not self.can_watch(watching_channel):
             return True
 
-        channel_order = self._twitch._channel_service.get_mining_priority(channel)
-        watching_order = self._twitch._channel_service.get_mining_priority(watching_channel)
-
-        return (
-            # this channel's game is higher order than the watching one's
-            channel_order < watching_order
-            or channel_order == watching_order  # or the order is the same
-            # and this channel is ACL-based and the watching channel isn't
-            and channel.acl_based > watching_channel.acl_based
-        )
+        channels = self._twitch._channel_service
+        channel_order = (channels.get_mining_priority(channel), not channel.acl_based)
+        watching_order = (channels.get_mining_priority(watching_channel), not watching_channel.acl_based)
+        if channel_order != watching_order:
+            return channel_order < watching_order
+        return channels.prefer_followed_switch(channel, watching_channel)
 
     def watch(self, channel: Channel, *, update_status: bool = True) -> None:
         """
@@ -126,6 +122,7 @@ class WatchService:
         """
         self._twitch.gui.channels.set_watching(channel)
         self._twitch.watching_channel.set(channel)
+        self._twitch._channel_service.record_watch(channel)
 
         if update_status:
             # Check if manual mode is active for custom status message
@@ -145,6 +142,7 @@ class WatchService:
         self._twitch.gui.clear_drop()
         self._twitch.watching_channel.clear()
         self._twitch.gui.channels.clear_watching()
+        self._twitch._channel_service.picked_channel_id = None
 
     def restart_watching(self) -> None:
         """

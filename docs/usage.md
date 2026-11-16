@@ -92,6 +92,17 @@ If the channel becomes unavailable, TDM tries another eligible channel for that 
 Use **Return to Auto Mode** to resume normal game priorities. Manual mode also ends
 when its game has no remaining eligible drops or no suitable channel is available.
 
+### Prefer channels you follow
+
+**Settings → Mining → Prefer channels I follow** is off by default. When on, TDM also
+looks up live channels your Twitch account follows, even small ones outside each game's
+top directory results, and verifies their drop eligibility with Twitch. The
+preference breaks ties between channels with the same mining priority, campaign
+allowlist priority, and currently eligible drops. Your Mining list, temporary
+queue order and reward settings still take precedence. A manually chosen channel
+is protected from the follow tie-break while it stays selected. TDM checks up to
+100 live followed channels each time it reloads channels.
+
 ### Special Events and IRL campaigns
 
 Include the campaign's category in **Mining list**. These campaigns can progress

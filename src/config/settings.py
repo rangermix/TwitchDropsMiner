@@ -34,6 +34,7 @@ default_settings = {
     "games_to_watch": [],
     "language": DEFAULT_LANG,
     "last_notified_releases": {"telegram": "", "discord": ""},
+    "prefer_followed_channels": False,
     "priority_list_only": True,
     "reward_priority": [],
     "inventory_filters": {
@@ -61,6 +62,7 @@ default_settings = {
         "start": "08:00",
         "end": "22:00",
     },
+    "mining_opt_ins_revision": 0,
     "notification_events": {
         "drop_claimed": True,
         "new_release": False,
@@ -149,12 +151,14 @@ class Settings:
     language: str
     last_notified_releases: dict[str, str]
     reward_priority: list[str]
+    prefer_followed_channels: bool
     priority_list_only: bool
     inventory_filters: InventoryFilters
     inventory_list_view: bool
     minimum_refresh_interval_minutes: int
     mining_benefits: dict[str, bool]
     mining_hours: dict[str, str]
+    mining_opt_ins_revision: int
     notification_events: dict[str, bool]
     notification_events_revision: int
     proxy: str

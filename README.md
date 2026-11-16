@@ -28,6 +28,8 @@ services operated for other users are outside its support scope.
   In source builds, the queue's information button explains which ordering rules apply.
 - Track campaigns and rewards, and ignore drops you do not want.
 - Skip channels while Twitch reports an active ban, including temporary bans.
+- Optionally [prefer channels you follow](docs/usage.md#prefer-channels-you-follow)
+  when otherwise equally ranked channels offer the same drops.
 - Sign in inside the dashboard; TDM saves and renews your session automatically.
 - Review claimed-drop history, export it to CSV, and set up
   [Telegram or Discord alerts](docs/notifications.md) for claims and new versions.

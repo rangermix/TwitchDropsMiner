@@ -179,6 +179,9 @@ class SettingsManager:
             if isinstance(legacy_value, bool):
                 legacy_show_not_linked = legacy_value
             inventory_filters = self._normalize_inventory_filters(inventory_filters)
+        prefer_followed = settings_data.get("prefer_followed_channels")
+        if prefer_followed is not None and not isinstance(prefer_followed, bool):
+            raise ValueError("invalid_prefer_followed_channels")
         language = settings_data.get("language")
         if language is not None and language not in _.get_languages():
             raise ValueError("invalid_language")
@@ -211,6 +214,10 @@ class SettingsManager:
         should_trigger_update |= self.check_and_update_setting(
             "dark_mode", settings_data.get("dark_mode")
         )
+        follows_changed = self.check_and_update_setting(
+            "prefer_followed_channels", prefer_followed, True
+        )
+        should_trigger_update |= follows_changed
         should_trigger_update |= self.check_and_update_setting(
             "language", language, False, self._set_language
         )
@@ -258,6 +265,10 @@ class SettingsManager:
 
         if override_changed and isinstance(requested_allow_unlinked, bool):
             self._settings.allow_unlinked_campaigns = requested_allow_unlinked
+        if override_changed or follows_changed:
+            self._settings.mining_opt_ins_revision = getattr(
+                self._settings, "mining_opt_ins_revision", 0
+            ) + 1
         if priority_mode_changed and isinstance(requested_priority_list_only, bool):
             self._settings.priority_list_only = requested_priority_list_only
         if requested_reward_priority is not None:

@@ -87,6 +87,7 @@ class SettingsUpdate(BaseModel):
     dark_mode: bool | None = None
     language: str | None = None
     priority_list_only: bool | None = None
+    prefer_followed_channels: StrictBool | None = None
     reward_priority: list[str] | None = None
     proxy: str | None = None
     connection_quality: int | None = None

@@ -15,6 +15,15 @@ query ChannelBanStatus($channelID: ID!) {
 }
 """
 
+# Optional account-specific discovery: live channels the account follows.
+FOLLOWED_LIVE_QUERY = """
+query FollowedLiveChannels {
+    currentUser {
+        followedLiveUsers(first: 100) { edges { node { id login } } }
+    }
+}
+"""
+
 
 GQL_OPERATIONS: dict[str, GQLOperation] = {
     # returns stream information for a particular channel

@@ -5,6 +5,7 @@ import logging
 import re
 from base64 import b64encode
 from collections import OrderedDict
+from contextlib import nullcontext
 from copy import copy
 from datetime import timezone
 from time import monotonic, time
@@ -14,9 +15,9 @@ import aiohttp
 from dateutil.parser import isoparse
 from yarl import URL
 
+from src.api.gql_client import private_gql_discovery
 from src.config.client_info import ClientType
 from src.config.constants import (
-    CALL,
     ONLINE_DELAY,
     WATCH_INTERVAL,
     GQLOperation,
@@ -185,6 +186,7 @@ class Channel:
         "_display_name",
         "_spade_url",
         "_stream",
+        "_verify_drops",
         "_stream_revision",
         "_stream_check_id",
         "_applied_stream_check_id",
@@ -206,6 +208,7 @@ class Channel:
         login: str,
         display_name: str | None = None,
         acl_based: bool = False,
+        verify_drops: bool = False,
     ):
         self._twitch: Twitch = twitch
         self._gui_channels: ChannelList = twitch.gui.channels
@@ -214,6 +217,7 @@ class Channel:
         self._display_name: str | None = display_name
         self._spade_url: URLType | None = None
         self._stream: Stream | None = None
+        self._verify_drops = verify_drops
         self._stream_revision = 0
         self._stream_check_id = 0
         self._applied_stream_check_id = 0
@@ -425,10 +429,13 @@ class Channel:
                 raise MinerException("Error while spade_url extraction: step #2")
         return URLType(match.group(1))
 
-    def _check_drops_enabled(self, available_drops: list[JsonType]) -> bool:
+    def _check_drops_enabled(
+        self, available_drops: list[JsonType], *, game: Game | None = None,
+    ) -> bool:
         return any(
             (
                 (campaign := self._twitch._campaigns.get(campaign_data["id"])) is not None
+                and (game is None or campaign.game == game or campaign.game.is_special())
                 and campaign.can_earn(self, ignore_channel_status=True)
             )
             for campaign_data in available_drops
@@ -453,12 +460,17 @@ class Channel:
         stream = copy(channel._stream)
         if stream is not None:
             stream.channel = self
-            if stream == self._stream:
+            if stream == self._stream and not channel._verify_drops:
                 # Preserve drop eligibility of the discovered copy for this broadcast.
                 stream.drops_enabled = self.drops_enabled
         self._set_stream(stream)
 
     async def get_stream(self) -> Stream | None:
+        context = private_gql_discovery() if self._verify_drops else nullcontext()
+        with context:
+            return await self._get_stream()
+
+    async def _get_stream(self) -> Stream | None:
         try:
             response: JsonType = await self._twitch.gql_request(self.stream_gql)
         except ExitRequest:
@@ -476,18 +488,23 @@ class Channel:
         if channel_data["stream"] is None:
             return None
         stream = Stream.from_get_stream(self, channel_data)
-        if not stream.drops_enabled:
-            try:
-                available_drops_campaigns: JsonType = await self._twitch.gql_request(
-                    GQL_OPERATIONS["AvailableDrops"].with_variables({"channelID": str(self.id)})
-                )
-            except MinerException:
-                logger.log(CALL, f"AvailableDrops GQL call failed for channel: {self._login}")
-            else:
-                stream.drops_enabled = self._check_drops_enabled(
-                    available_drops_campaigns["data"]["channel"]["viewerDropCampaigns"] or []
-                )
+        if self._verify_drops or not stream.drops_enabled:
+            stream.drops_enabled = await self.fetch_drops_enabled(stream.game)
         return stream
+
+    async def fetch_drops_enabled(self, game: Game | None) -> bool:
+        """Ask Twitch whether this channel offers a campaign the account can earn."""
+        response = await self._twitch.gql_request(
+            GQL_OPERATIONS["AvailableDrops"].with_variables({"channelID": str(self.id)})
+        )
+        if not isinstance(response, dict) or response.get("errors"):
+            raise MinerException("No reliable AvailableDrops response")
+        campaigns = response["data"]["channel"]["viewerDropCampaigns"]
+        if campaigns is None:
+            return False
+        if not isinstance(campaigns, list):
+            raise MinerException("Invalid AvailableDrops campaign list")
+        return self._check_drops_enabled(campaigns, game=game)
 
     async def update_stream(self) -> bool:
         """
@@ -514,7 +531,7 @@ class Channel:
         if (revision == self._stream_revision and check_id > self._applied_stream_check_id
                 and (online_check is None or self._pending_stream_up is online_check)):
             old_stream = self._stream
-            if stream is not None and stream == old_stream:
+            if stream is not None and stream == old_stream and not self._verify_drops:
                 stream.drops_enabled = self.drops_enabled
             self._stream = stream
             self._applied_stream_check_id = check_id

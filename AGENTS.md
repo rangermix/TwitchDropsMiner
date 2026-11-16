@@ -407,6 +407,28 @@ lang/                # Translation JSON files (20 languages)
   change lines, language switching and broadcasts run only after a successful save.
   Regressions: `test_rejected_update_writes_prints_and_saves_nothing` and
   `test_failed_save_restores_every_field_and_defers_effects`.
+- Persist `mining_opt_ins_revision` atomically with the account-link override and
+  followed-channel option. Return both flags and the revision together. The dashboard
+  accepts complete non-stale snapshots so late POST or socket updates cannot revert
+  another tab's setting. Regressions live in `test_followed_channels*.py`.
+- `prefer_followed_channels` defaults false and accepts only booleans,
+  validated before any write; changes request a games update. When true,
+  `ChannelService.get_followed_live_channels(known_ids)` runs during CHANNELS_FETCH
+  under one 30-second bound: the raw `FOLLOWED_LIVE_QUERY` (`currentUser.followedLiveUsers`,
+  first 100, no pagination), batched stream info for channels not already tracked, and
+  a per-channel AvailableDrops check. Follow-only candidates require positive drop
+  evidence on discovery and later stream checks. The normal watched-stream refresh
+  and ban filtering still run. Apply the follow tie-break only between channels with
+  equal mining and ACL priority and equal sets of eligible (campaign ID, drop ID)
+  pairs. Keep the existing selection order between different reward sets. Manual
+  mode and a current hand-picked channel disable the tie-break. A manual reset,
+  stop, account reset or watching another channel ends hand-pick protection.
+  Failed follow or batch stream results leave the current follow set in place.
+  Failed individual drop checks skip unverified candidates. `ExitRequest` propagates,
+  and in-flight results are discarded after account reset or disabling the setting.
+  Raw GraphQL debugging is suppressed for the optional lookup and its child
+  requests. Tests: `test_followed_channels.py` and
+  `test_followed_channels_frontend.py`.
 - Drop-name ignore list (`drop_name_blacklist`), empty by default. Entries are literal,
   case-insensitive substrings entered one per line; whitespace and blanks are removed and
   duplicates are casefolded while preserving the first spelling/order.

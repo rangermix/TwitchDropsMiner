@@ -70,7 +70,7 @@ def test_failed_save_after_leaving_its_panel_remains_visible(action):
     names = ['switchSettingsTab', 'toggleMiningHoursRange', 'onMiningHoursChange',
              'handleSaveTelegramClick', 'testTelegramConnection', 'saveTelegramSettings',
              'saveDiscordSettings', 'updateDiscordSettings', 'saveProxy', 'onUnlinkedMiningChange',
-             'saveRewardPriority', 'onNotificationEventChange']
+             'saveBooleanSetting', 'saveRewardPriority', 'onNotificationEventChange']
     source = APP_JS.read_text(encoding='utf-8')
     if 'function reportSettingsError(' in source:
         names.append('reportSettingsError')

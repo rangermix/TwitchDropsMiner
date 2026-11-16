@@ -768,6 +768,11 @@ class Twitch:
                     # for every campaign without an ACL, for it's game,
                     # add a list of live channels with drops enabled
                     new_channels.update(await self.get_live_streams(game, drops_enabled=True))
+                # Optional: followed channels outside each game's top directory results.
+                known_ids = {channel.id for channel in new_channels}
+                if (watched := self.watching_channel.get_with_default(None)) is not None:
+                    known_ids.add(watched.id)
+                new_channels.update(await self._channel_service.get_followed_live_channels(known_ids))
                 await self._channel_service.refresh_watched_channel(new_channels)
                 # Filter account-specific bans before priority sorting and the tracking cap.
                 retained_channels = [channel for channel in (
@@ -790,6 +795,7 @@ class Twitch:
                 )
                 ordered_channels.sort(key=lambda ch: ch.acl_based, reverse=True)
                 ordered_channels.sort(key=self._channel_service.get_mining_priority)
+                self._channel_service.prioritize_followed(ordered_channels)
                 # ensure that we won't end up with more channels than we can handle
                 # NOTE: we trim from the end because that's where the non-priority,
                 # offline (or online but low viewers) channels end up
@@ -874,6 +880,7 @@ class Twitch:
                     # Check if this is a game change -> enter manual mode
                     if watching_channel and selected_channel.game != watching_channel.game:
                         self.enter_manual_mode(selected_channel)
+                    self._channel_service.record_watch(selected_channel, picked=True)
                     new_watching = selected_channel
                 # Handle manual mode
                 elif self.is_manual_mode():
@@ -900,9 +907,9 @@ class Twitch:
                             self.exit_manual_mode("No channels available for manual game")
                 # Auto-select best channel based on priority, also right after manual mode ends
                 if new_watching is None and not self.is_manual_mode():
-                    for channel in sorted(
-                        channels.values(), key=self._channel_service.get_mining_priority
-                    ):
+                    ordered = sorted(channels.values(), key=self._channel_service.get_mining_priority)
+                    self._channel_service.prioritize_followed(ordered)
+                    for channel in ordered:
                         if self.can_watch(channel) and self.should_switch(channel):
                             new_watching = channel
                             break
@@ -987,10 +994,12 @@ class Twitch:
     def clear_manual_mode(self, reason: str = "") -> bool:
         """Clear manual targeting without changing the state machine.
 
-        Returns whether any manual target was present.
+        Returns whether manual mode or a protected channel pick was active.
         """
+        picked = self._channel_service.picked_channel_id is not None
+        self._channel_service.picked_channel_id = None
         if self._manual_target_channel is None and self._manual_target_game is None:
-            return False
+            return picked
 
         game_name = self._manual_target_game.name if self._manual_target_game else "Unknown"
         logger.info(
