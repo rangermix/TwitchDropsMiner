@@ -150,7 +150,8 @@ order**, or changing **Mining list** (in Settings or with **Add to mining list**
 Inventory) returns to the saved order. To change the default order permanently, use
 **Settings → Games → Mining list**.
 
-Select **ⓘ** next to the queue title to see which rules currently set its order.
+In source builds, select **ⓘ** next to the queue title to see which rules currently
+set its order. Games outside the temporary order use the default rules.
 
 ## Account-link override
 

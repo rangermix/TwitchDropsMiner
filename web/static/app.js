@@ -3499,13 +3499,13 @@ function renderWantedOrderInfo() {
     const settings = state.settings || {};
     const lines = [];
     if (gameOrder.active) {
-        lines.push(wantedText('order_temporary', 'A temporary order is set. It comes before these rules until restart or reset.'));
+        lines.push(wantedText('order_temporary', 'Games in the temporary order come first. Other games use the rules below.'));
     }
     lines.push(Array.isArray(settings.reward_priority) && settings.reward_priority.length
-        ? wantedText('order_reward_types', 'Reward type ordering is on: games are sorted by reward type, then by the earliest reward deadline, then by Mining list order. Change this in Settings → Mining → Reward types.')
-        : wantedText('order_mining_list', 'Games follow your Mining list order.'));
+        ? wantedText('order_reward_types', 'Games in your Mining list are sorted by reward type, then by the earliest deadline for that type, then by saved list order. Change this in Settings → Mining → Reward types.')
+        : wantedText('order_mining_list', 'Games in your Mining list follow its saved order.'));
     if (settings.priority_list_only === false) {
-        lines.push(wantedText('order_fallback', 'Games not in your Mining list are added after it.'));
+        lines.push(wantedText('order_fallback', 'Other eligible games are placed after Mining list games in the default order.'));
     }
     panel.replaceChildren(...lines.map(text => makeElement('p', {}, text)));
 }

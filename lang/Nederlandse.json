@@ -355,10 +355,10 @@
             "reset": "Terug naar volgorde van de mininglijst",
             "save_error": "De volgorde van de wachtrij kon niet worden gewijzigd. Probeer het opnieuw.",
             "order_info": "Waarom staat de wachtrij in deze volgorde?",
-            "order_mining_list": "Games volgen de volgorde van je mininglijst.",
-            "order_reward_types": "Sorteren op beloningstype staat aan: games worden gesorteerd op beloningstype, dan op de vroegste beloningsdeadline en dan op de volgorde van de mininglijst. Wijzig dit via Instellingen → Mining → Beloningstypen.",
-            "order_fallback": "Games die niet op je mininglijst staan, worden erna toegevoegd.",
-            "order_temporary": "Er is een tijdelijke volgorde ingesteld. Die gaat voor deze regels tot een herstart of reset."
+            "order_mining_list": "Games op je mininglijst volgen de opgeslagen volgorde van die lijst.",
+            "order_reward_types": "Games op je mininglijst worden eerst gesorteerd op beloningstype, dan op de vroegste deadline voor dat type en ten slotte op de opgeslagen lijstvolgorde. Wijzig dit via Instellingen → Mining → Beloningstypen.",
+            "order_fallback": "In de standaardvolgorde komen andere geschikte games na de games op je mininglijst.",
+            "order_temporary": "Games in de tijdelijke volgorde komen eerst. Voor de overige games gelden de onderstaande regels."
         },
         "history": {
             "title": "Dropgeschiedenis",

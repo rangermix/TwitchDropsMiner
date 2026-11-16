@@ -355,10 +355,10 @@
             "reset": "Restaurar a ordem da lista de mineração",
             "save_error": "Não foi possível alterar a ordem da fila. Tente novamente.",
             "order_info": "Por que a fila está nesta ordem?",
-            "order_mining_list": "Os jogos seguem a ordem da sua lista de mineração.",
-            "order_reward_types": "A ordenação por tipo de recompensa está ativada: os jogos são ordenados por tipo de recompensa, depois pelo prazo de recompensa mais próximo e depois pela ordem da lista de mineração. Altere isso em Configurações → Mineração → Tipos de recompensa.",
-            "order_fallback": "Jogos fora da sua lista de mineração são adicionados depois dela.",
-            "order_temporary": "Há uma ordem temporária definida. Ela tem prioridade sobre estas regras até reiniciar ou restaurar."
+            "order_mining_list": "Os jogos da sua lista de mineração seguem a ordem salva.",
+            "order_reward_types": "Os jogos da sua lista de mineração são ordenados por tipo de recompensa, depois pelo prazo mais próximo para esse tipo e, por fim, pela ordem salva da lista. Altere isso em Configurações → Mineração → Tipos de recompensa.",
+            "order_fallback": "Na ordem padrão, os demais jogos elegíveis aparecem depois dos jogos da lista de mineração.",
+            "order_temporary": "Os jogos incluídos na ordem temporária vêm primeiro. Os demais seguem as regras abaixo."
         },
         "history": {
             "title": "Histórico de drops",

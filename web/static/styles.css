@@ -2551,9 +2551,22 @@ header h1 {
     color: var(--text-secondary);
 }
 
+.wanted-queue-heading {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 18px 8px;
+}
+
+.main-grid .wanted-queue-heading h2 {
+    padding: 0;
+}
+
 .wanted-info-btn {
-    margin-left: 4px;
+    flex-shrink: 0;
     padding: 0 4px;
+    min-width: 24px;
+    min-height: 24px;
     background: none;
     border: none;
     font: inherit;
@@ -2564,6 +2577,11 @@ header h1 {
 .wanted-info-btn:hover,
 .wanted-info-btn[aria-expanded="true"] {
     color: var(--accent-color);
+}
+
+.wanted-info-btn:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
 }
 
 .wanted-order-info {

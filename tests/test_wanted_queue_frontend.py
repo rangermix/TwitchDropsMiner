@@ -354,6 +354,15 @@ state.settings={reward_priority:['EMOTE','BADGE','DIRECT_ENTITLEMENT','UNKNOWN']
 updateGameOrder({active:true,games:['Beta']});
 assert.deepEqual(lines(),['Temp','Types','Fallback']);
 
+// A fallback game can lead the temporary order. The saved rules then apply to the rest.
+delete state.translations.gui.wanted.order_temporary;
+delete state.translations.gui.wanted.order_fallback;
+updateGameOrder({active:true,games:['Fallback','Alpha']});
+assert.equal(lines()[0],'Games in the temporary order come first. Other games use the rules below.');
+assert.equal(lines()[2],'Other eligible games are placed after Mining list games in the default order.');
+updateGameOrder({active:false,games:[]});
+assert.equal(lines().length,2);
+
 toggleWantedOrderInfo();
 assert.equal(panel.hidden,true);assert.equal(button.attrs['aria-expanded'],'false');
 """)

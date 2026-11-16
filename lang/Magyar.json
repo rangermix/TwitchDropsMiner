@@ -312,10 +312,10 @@
             "reset": "Visszaállítás a bányászati lista sorrendjére",
             "save_error": "Nem sikerült módosítani a sor sorrendjét. Próbáld újra.",
             "order_info": "Miért ilyen a sor sorrendje?",
-            "order_mining_list": "A játékok a bányászati listád sorrendjét követik.",
-            "order_reward_types": "A jutalomtípus szerinti sorrend be van kapcsolva: a játékok jutalomtípus, majd a legkorábbi jutalomhatáridő, majd a bányászati lista sorrendje szerint rendeződnek. Ezt a Beállítások → Bányászat → Jutalomtípusok alatt módosíthatod.",
-            "order_fallback": "A bányászati listádon nem szereplő játékok utána kerülnek a sorba.",
-            "order_temporary": "Ideiglenes sorrend van beállítva. Újraindításig vagy visszaállításig megelőzi ezeket a szabályokat."
+            "order_mining_list": "A bányászati listádon szereplő játékok a lista mentett sorrendjét követik.",
+            "order_reward_types": "A bányászati listádon szereplő játékokat először a jutalom típusa, majd az adott típus legkorábbi határideje, végül a lista mentett sorrendje szerint rendezzük. Ezt a Beállítások → Bányászat → Jutalomtípusok alatt módosíthatod.",
+            "order_fallback": "Az alapértelmezett sorrendben a többi jogosult játék a bányászati lista játékai után következik.",
+            "order_temporary": "Az ideiglenes sorrendbe sorolt játékok kerülnek előre. A többi játékra az alábbi szabályok vonatkoznak."
         },
         "inventory": {
             "no_campaigns": "Még nincs betöltött kampány...",
