@@ -30,6 +30,50 @@ const watching = {id: 7, name: '配信者', login: 'some_streamer', online: true
 """
 
 
+@pytest.mark.skipif(NODE is None, reason="Node required for DOM behavior tests")
+def test_reconnect_replaces_channel_rows_and_hides_now_watching():
+    source = APP_JS.read_text(encoding="utf-8")
+    handlers = []
+    for name in ("initial_state", "channels_batch_update"):
+        start = source.index(f"socket.on('{name}'")
+        handlers.append(source[start:source.index("\n});", start) + 4])
+    functions = "\n".join(
+        extract_javascript_function(source, name)
+        for name in ("updateNowWatching", "replaceChannels")
+    )
+    script = HARNESS + functions + r"""
+const state = {channels: {7: watching}, translations: {}, previewEnabled: true};
+const handlers = {};
+const socket = {on(name, callback) { handlers[name] = callback; }};
+function updatePauseUI() {}
+function clearDropProgress() {}
+let renders = 0;
+function renderChannels() { renders++; updateNowWatching(); }
+""" + "\n".join(handlers) + r"""
+updateNowWatching();
+assert.equal(document.getElementById('now-watching').classList.contains('hidden'), false);
+handlers.initial_state({});
+assert.equal(renders, 0);
+assert.equal(state.channels[7], watching);
+handlers.initial_state({channels: []});
+assert.deepEqual(state.channels, {});
+assert.equal(renders, 1);
+assert.equal(document.getElementById('now-watching').classList.contains('hidden'), true);
+assert.equal(document.getElementById('now-watching-img').style.backgroundImage, '');
+const next = {...watching, id: 8};
+handlers.channels_batch_update({channels: [next]});
+assert.deepEqual(state.channels, {8: next});
+assert.equal(renders, 2);
+assert.equal(document.getElementById('now-watching').classList.contains('hidden'), false);
+handlers.initial_state({channels: [{...watching, watching: false}]});
+assert.deepEqual(Object.keys(state.channels), ['7']);
+assert.equal(renders, 3);
+assert.equal(document.getElementById('now-watching').classList.contains('hidden'), true);
+"""
+    result = subprocess.run([NODE, "-"], input=script, capture_output=True, text=True, encoding="utf-8")
+    assert result.returncode == 0, result.stderr
+
+
 def run_preview_script(assertions: str, *, with_toggle: bool = False):
     source = APP_JS.read_text()
     functions = extract_javascript_function(source, "updateNowWatching")
