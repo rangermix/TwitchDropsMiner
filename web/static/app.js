@@ -1412,6 +1412,27 @@ function updateLoginStatus(data) {
     globalThis.browserLoginPanel?.updateLogin(data);
 }
 
+function reconcileNotificationEvents(settings) {
+    // A full settings update or POST response can arrive after a newer save.
+    const revision = state.settings.notification_events_revision ?? -1;
+    if ((settings.notification_events_revision ?? -1) < revision) {
+        return {
+            ...settings,
+            notification_events: state.settings.notification_events,
+            notification_events_revision: revision,
+        };
+    }
+    return settings;
+}
+
+function renderNotificationEvents() {
+    const events = state.settings.notification_events;
+    const drop = document.getElementById('notify-drop_claimed');
+    const release = document.getElementById('notify-new_release');
+    if (drop && !drop.disabled) drop.checked = events?.drop_claimed !== false;
+    if (release && !release.disabled) release.checked = events?.new_release === true;
+}
+
 function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     // Initial loads/socket updates own the watch list; unrelated partial-save replies do not.
     if (!authoritative && Array.isArray(state.settings.games_to_watch)) {
@@ -1427,13 +1448,10 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     if (!authoritative && !changedFields.includes('mining_benefits') && state.settings.mining_benefits) {
         settings = {...settings, mining_benefits: state.settings.mining_benefits};
     }
-    state.settings = settings;
+    state.settings = reconcileNotificationEvents(settings);
     const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
     if (allowUnlinked) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
-    for (const [event, enabled] of Object.entries(settings.notification_events || {})) {
-        const input = document.getElementById(`notify-${event}`);
-        if (input) input.checked = enabled === true;
-    }
+    renderNotificationEvents();
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('priority-list-only').checked = settings.priority_list_only !== false;
     applyInventoryViewMode(settings.inventory_list_view || false);
@@ -2703,14 +2721,20 @@ async function onNotificationEventChange(event) {
         });
         if (!response.ok) throw new Error(message);
         const data = await response.json();
-        if (data.success !== true || data.settings?.notification_events?.[input.value] !== requested) throw new Error(message);
-        updateSettingsUI(data.settings);
+        if (data.success !== true || data.settings?.notification_events?.[input.value] !== requested) {
+            throw new Error(message);
+        }
+        state.settings = reconcileNotificationEvents({
+            ...state.settings,
+            notification_events: data.settings.notification_events,
+            notification_events_revision: data.settings.notification_events_revision,
+        });
     } catch (failure) {
-        input.checked = !requested;
         reportSettingsError(error, message);
         error.hidden = false;
     } finally {
         input.disabled = false;
+        renderNotificationEvents();
     }
 }
 

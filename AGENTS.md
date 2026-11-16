@@ -503,12 +503,16 @@ lang/                # Translation JSON files (20 languages)
   providers: `drop_claimed` (default true) and `new_release` (default false). Only an
   explicit `drop_claimed: false` suppresses claim alerts; settings problems never block a
   claim. Partial updates merge; unknown keys or non-booleans fail before any write.
+  Persist the event revision with the choices so late settings responses or broadcasts
+  cannot overwrite newer choices in the dashboard.
   `ReleaseService` (`src/services/release_service.py`) owns the GitHub latest-release
   lookup for `/api/version` and the account-independent check task started in
   `Twitch.run()` (startup, then every six hours). Read bodies through
   `Diagnostics.read_bounded()`, compare versions numerically, link only to this
-  repository's release tag page, and persist `last_notified_release` after any provider
-  accepts. Coverage: `tests/test_release_notifications.py`.
+  repository's matching release tag page, and persist each provider's highest
+  accepted version atomically in `last_notified_releases`. Provider failures retry
+  independently. Recheck the opt-in and provider settings after fetching from GitHub.
+  Keep delivery state in server settings only. Coverage: `tests/test_release_notifications.py`.
 - `tests/test_telegram_frontend.py`, `tests/test_telegram_api.py`, and
   `tests/test_telegram_integration.py` cover translated Help rendering, stored credentials,
   failed saves, disabling, all shared claim paths, and transport failures without sending

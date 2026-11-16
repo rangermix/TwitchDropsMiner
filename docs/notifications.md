@@ -6,14 +6,18 @@ through startup or later inventory checks.
 
 ## Choose what to be notified about
 
+The event choices are available in current source builds and will be included in the next release.
+
 **Settings → Notifications → Notify me about** applies to every configured provider:
 
 - **Claimed drops** is on by default.
 - **New TwitchDropsMiner versions** is off by default. When on, TDM checks the latest
-  GitHub release at startup and every six hours, and sends one alert per newer version
-  with a link to its release page. TDM remembers the announced version across restarts.
-  If every provider fails, the next check tries again. TDM does not update itself;
-  follow the [installation guide](installation.md) to update.
+  GitHub release at startup and every six hours. Each configured provider receives
+  an alert for the latest version if it is newer than both the installed version
+  and the last version that provider accepted. If one provider fails, the next
+  check can retry it without repeating the alert on the other provider. TDM
+  remembers successful deliveries across restarts. Follow the
+  [installation guide](installation.md) to install updates.
 
 Each checkbox saves immediately. A failed save restores the previous choice.
 

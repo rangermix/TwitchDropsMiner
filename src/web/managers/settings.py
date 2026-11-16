@@ -79,6 +79,7 @@ class SettingsManager:
             Dictionary containing all user-configurable settings
         """
         settings = vars(self._settings).copy()
+        settings.pop("last_notified_releases", None)
         settings["games_available"] = self._available_games
         configured_webhook = bool(settings.get("discord_webhook_url"))
         settings["discord_configured"] = configured_webhook
@@ -238,7 +239,9 @@ class SettingsManager:
             self.check_and_update_setting(
                 "telegram_chat_id", settings_data.get("telegram_chat_id") or ""
             )
-        self.check_and_update_setting("notification_events", notification_events)
+        if notification_events is not None and notification_events != self._settings.notification_events:
+            self.check_and_update_setting("notification_events", notification_events)
+            self._settings.notification_events_revision += 1
         should_trigger_update |= self.check_and_update_setting("inventory_filters", inventory_filters)
         should_trigger_update |= self.check_and_update_setting(
             "inventory_list_view", settings_data.get("inventory_list_view")
