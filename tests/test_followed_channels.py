@@ -1,16 +1,19 @@
 """Issue #206: optionally prefer channels the account follows, within a game only."""
 
 import asyncio
+import logging
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.config import GQLRawQuery
+from src.api.gql_client import GQLClient
+from src.config import ClientType, GQLRawQuery
 from src.exceptions import MinerException
 from src.models.channel import Channel
 from src.models.game import Game
 from src.services.channel_service import ChannelService
+from src.services.watch_service import WatchService
 from src.web.managers.settings import SettingsManager
 from tests.test_web_auth import client  # noqa: F401 -- shared isolated production HTTP fixture
 
@@ -31,12 +34,14 @@ def make_twitch(*, enabled=True, followed=(), streams=None, drops=None):
     twitch.game_order = None
     twitch._manual_target_channel = None
     twitch.watching_channel.get_with_default.return_value = None
-    campaign = MagicMock()
+    campaign = MagicMock(game=WANTED)
     campaign.can_earn.return_value = True
     twitch._campaigns = {"camp": campaign}
 
     async def gql_request(request):
         if isinstance(request, GQLRawQuery):
+            if "PublicFixture" in request["query"]:
+                return {"data": {"test": True}}
             nodes = [{"node": {"id": str(cid), "login": f"user{cid}", "displayName": f"User{cid}"}}
                      for cid in followed]
             return {"data": {"currentUser": {"id": "9", "followedLiveUsers": {"edges": nodes}}}}
@@ -47,11 +52,15 @@ def make_twitch(*, enabled=True, followed=(), streams=None, drops=None):
                 game = streams.get(cid)
                 rows.append({"data": {"user": {
                     "id": str(cid),
+                    "displayName": f"User{cid}",
                     "stream": {"id": str(cid * 10), "viewersCount": 5} if game else None,
                     "broadcastSettings": {"game": {"id": game.id, "name": game.name} if game else None,
                                           "title": "t"},
                 }}})
             return rows
+        if request["operationName"] == "VideoPlayerStreamInfoOverlayChannel":
+            rows = await gql_request([request])
+            return rows[0]
         cid = int(request["variables"]["channelID"])  # AvailableDrops
         if drops.get(cid) == "error":
             raise MinerException("boom")
@@ -78,15 +87,29 @@ def test_disabled_keeps_existing_priority_and_skips_lookup():
     assert service.get_mining_priority(channel(twitch, 1)) == (0, 0)
 
 
+def award(twitch, cid, game, eligible):
+    drop = MagicMock(id=f"drop-{cid}")
+    drop.can_earn.side_effect = lambda channel=None: channel in eligible
+    campaign = MagicMock(id=f"campaign-{cid}", game=game, mineable_watch_drops=(drop,))
+    campaign.can_earn.side_effect = lambda channel=None: channel in eligible
+    twitch.inventory.append(campaign)
+
+
 def test_followed_wins_only_between_channels_of_equal_game_priority():
     twitch = make_twitch()
-    service = ChannelService(twitch)
+    service = twitch._channel_service = ChannelService(twitch)
     service._followed_ids = {1, 3}
     followed_wanted, plain_wanted = channel(twitch, 1), channel(twitch, 2)
     followed_other = channel(twitch, 3, OTHER)
-    assert service.get_mining_priority(followed_wanted) < service.get_mining_priority(plain_wanted)
-    # Game order stays first: a followed channel on a lower game never jumps ahead.
-    assert service.get_mining_priority(plain_wanted) < service.get_mining_priority(followed_other)
+    award(twitch, 1, WANTED, {followed_wanted, plain_wanted})
+    award(twitch, 2, OTHER, {followed_other})
+    order = [plain_wanted, followed_wanted, followed_other]
+    service.prioritize_followed(order)
+    assert order == [followed_wanted, plain_wanted, followed_other]
+    twitch.watching_channel.get_with_default.return_value = plain_wanted
+    assert WatchService(twitch).should_switch(followed_wanted)
+    assert not WatchService(twitch).should_switch(followed_other)
+
 
 
 def test_lookup_adds_only_confirmed_drops_channels_and_skips_known_ones():
@@ -96,8 +119,7 @@ def test_lookup_adds_only_confirmed_drops_channels_and_skips_known_ones():
     twitch.wanted_games = [WANTED]
     service = ChannelService(twitch)
     found = asyncio.run(service.get_followed_live_channels(known_ids={5}))
-    # Offline, unwanted-game and drops-disabled channels are never tracked: a later
-    # stream refresh resets drops_enabled to True, which would make them watchable.
+    # Offline, unwanted-game and drops-disabled channels are never added.
     assert {ch.id for ch in found} == {1}
     assert service._followed_ids == {1, 2, 3, 4, 5}, "known followed channels still get the tie-break"
     checked = [call.args[0]["variables"]["channelID"] for call in twitch.gql_request.await_args_list
@@ -107,70 +129,58 @@ def test_lookup_adds_only_confirmed_drops_channels_and_skips_known_ones():
 
 def test_acl_channels_keep_precedence_over_followed_ones():
     twitch = make_twitch()
-    service = ChannelService(twitch)
+    service = twitch._channel_service = ChannelService(twitch)
     service._followed_ids = {1}
     followed, acl, plain = channel(twitch, 1), channel(twitch, 2), channel(twitch, 3)
     acl.acl_based = True
-    order = sorted([plain, followed, acl], key=service.get_mining_priority)
-    assert [ch.id for ch in order] == [2, 1, 3]
+    award(twitch, 1, WANTED, {followed, acl, plain})
+    order = [acl, plain, followed]
+    service.prioritize_followed(order)
+    assert order == [acl, followed, plain]
+    twitch.watching_channel.get_with_default.return_value = acl
+    assert not WatchService(twitch).should_switch(followed)
 
 
-def test_more_mineable_drops_beat_follow_so_badge_only_streamers_still_win():
-    """Issue #209: a channel awarding extra drops (for example an ACL-only chat
-    badge campaign) must still outrank a followed channel that cannot earn it."""
+@pytest.mark.parametrize("shared", [False, True])
+def test_followed_cannot_displace_a_stream_with_different_rewards(shared):
     twitch = make_twitch()
-    service = ChannelService(twitch)
+    service = twitch._channel_service = ChannelService(twitch)
     service._followed_ids = {1}
-    followed, with_badge = channel(twitch, 1), channel(twitch, 2)
-
-    def campaign(game, can_earn_on):
-        drop = MagicMock()
-        drop.can_earn.side_effect = lambda ch=None, *_a, **_k: ch in can_earn_on
-        camp = MagicMock(game=game)
-        camp.timed_drops = {"drop": drop}
-        camp.can_earn.side_effect = lambda ch=None, *_a, **_k: ch in can_earn_on
-        return camp
-
-    twitch.inventory = [
-        campaign(WANTED, {followed, with_badge}),  # shared regular drop
-        campaign(WANTED, {with_badge}),            # badge drop, ACL subset
-    ]
-    assert service._mineable_drop_count(with_badge) == 2
-    assert service._mineable_drop_count(followed) == 1
-    assert service.get_mining_priority(with_badge) < service.get_mining_priority(followed)
-
-
-def test_equal_mineable_drops_let_follow_decide():
-    """When both channels can earn the same set of drops the follow tie-break still fires."""
-    twitch = make_twitch()
-    service = ChannelService(twitch)
-    service._followed_ids = {1}
-    followed, plain = channel(twitch, 1), channel(twitch, 2)
-
-    drop = MagicMock()
-    drop.can_earn.side_effect = lambda ch=None, *_a, **_k: ch in {followed, plain}
-    camp = MagicMock(game=WANTED)
-    camp.timed_drops = {"drop": drop}
-    camp.can_earn.side_effect = lambda ch=None, *_a, **_k: ch in {followed, plain}
-    twitch.inventory = [camp]
-
-    assert service._mineable_drop_count(followed) == service._mineable_drop_count(plain) == 1
-    assert service.get_mining_priority(followed) < service.get_mining_priority(plain)
+    followed, with_badge, same_as_followed = (
+        channel(twitch, 1), channel(twitch, 2), channel(twitch, 3),
+    )
+    # Equal-sized disjoint rewards and a strict superset are both distinct.
+    eligible = {followed, same_as_followed}
+    if shared:
+        eligible.add(with_badge)
+    award(twitch, 1, WANTED, eligible)
+    award(twitch, 2, WANTED, {with_badge})
+    order = [same_as_followed, with_badge, followed]
+    service.prioritize_followed(order)
+    assert order == [followed, with_badge, same_as_followed]
+    twitch.watching_channel.get_with_default.return_value = with_badge
+    assert not WatchService(twitch).should_switch(followed)
+    twitch.watching_channel.get_with_default.return_value = same_as_followed
+    assert WatchService(twitch).should_switch(followed)
 
 
 def test_a_same_game_click_is_not_undone_by_the_tie_break():
     twitch = make_twitch()
-    service = ChannelService(twitch)
+    service = twitch._channel_service = ChannelService(twitch)
     service._followed_ids = {1}
     followed, picked = channel(twitch, 1), channel(twitch, 2)
+    award(twitch, 1, WANTED, {followed, picked})
     service.picked_channel_id = 2
     twitch.watching_channel.get_with_default.return_value = picked
-    assert service.get_mining_priority(followed) == service.get_mining_priority(picked)
-    # Once the miner leaves the picked channel, following counts again.
-    twitch.watching_channel.get_with_default.return_value = channel(twitch, 3)
-    assert service.get_mining_priority(followed) < service.get_mining_priority(picked)
-    service.clear_bans()
+    order = [picked, followed]
+    service.prioritize_followed(order)
+    assert order == [picked, followed]
+    assert not WatchService(twitch).should_switch(followed)
+    WatchService(twitch).stop_watching()
     assert service.picked_channel_id is None
+    service.prioritize_followed(order)
+    assert order == [followed, picked]
+
 
 
 def test_pick_protection_ends_when_another_channel_is_watched():
@@ -198,8 +208,111 @@ def test_manual_mode_is_never_overridden_by_the_tie_break():
     twitch = make_twitch()
     service = ChannelService(twitch)
     service._followed_ids = {1}
-    twitch._manual_target_channel = channel(twitch, 2)
-    assert service.get_mining_priority(channel(twitch, 1)) == service.get_mining_priority(channel(twitch, 2))
+    followed, picked = channel(twitch, 1), channel(twitch, 2)
+    award(twitch, 1, WANTED, {followed, picked})
+    twitch._manual_target_channel = picked
+    twitch.watching_channel.get_with_default.return_value = picked
+    assert not service.prefer_followed_switch(followed, picked)
+
+
+def test_followed_channel_rechecks_drop_eligibility_on_later_stream_updates():
+    twitch = make_twitch(followed=[1], streams={1: WANTED}, drops={1: True})
+    service = ChannelService(twitch)
+
+    async def run():
+        found, = await service.get_followed_live_channels()
+        assert found.drops_enabled
+        # The same broadcast may cease to offer drops.
+        original = twitch.gql_request.side_effect
+
+        async def no_drops(request):
+            if isinstance(request, dict) and request.get("operationName") == "DropsHighlightService_AvailableDrops":
+                return {"data": {"channel": {"viewerDropCampaigns": []}}}
+            return await original(request)
+
+        twitch.gql_request.side_effect = no_drops
+        await found.refresh_stream()
+        assert found.online and not found.drops_enabled
+        discovered = Channel(twitch, id=1, login="user1")
+        discovered.external_update({
+            "stream": {"id": "10", "viewersCount": 100},
+            "broadcastSettings": {"game": {"id": WANTED.id, "name": WANTED.name}, "title": "t"},
+        }, [])
+        assert discovered.drops_enabled
+        discovered.sync_stream_from(found)
+        assert discovered.online and not discovered.drops_enabled
+
+    asyncio.run(run())
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("change", ["disable", "reset"])
+async def test_discovery_drops_inflight_results_after_disable_or_reset(change):
+    twitch = make_twitch(followed=[1], streams={1: WANTED}, drops={1: True})
+    service = ChannelService(twitch)
+    entered, release = asyncio.Event(), asyncio.Event()
+    original = twitch.gql_request.side_effect
+
+    async def pending(request):
+        if isinstance(request, GQLRawQuery):
+            entered.set()
+            await release.wait()
+        return await original(request)
+
+    twitch.gql_request.side_effect = pending
+    async with asyncio.TaskGroup() as tasks:
+        run = tasks.create_task(service.get_followed_live_channels())
+        await asyncio.wait_for(entered.wait(), 1)
+        if change == "disable":
+            twitch.settings.prefer_followed_channels = False
+        else:
+            service.clear_bans()
+        release.set()
+    assert run.result() == set()
+    assert service._followed_ids == set()
+
+
+@pytest.mark.parametrize("operation", ["follows", "stream", "malformed_stream", "malformed_edges"])
+def test_partial_responses_do_not_replace_previous_follows(operation):
+    twitch = make_twitch(followed=[1], streams={1: WANTED}, drops={1: True})
+    service = ChannelService(twitch)
+    service._followed_ids = {7}
+    original = twitch.gql_request.side_effect
+
+    async def partial(request):
+        result = await original(request)
+        if isinstance(request, GQLRawQuery) and operation == "follows":
+            result["errors"] = [{"message": "server error"}]
+        if isinstance(request, GQLRawQuery) and operation == "malformed_edges":
+            result["data"]["currentUser"]["followedLiveUsers"]["edges"] = ""
+        if isinstance(request, list) and operation == "stream":
+            result[0]["errors"] = [{"message": "server error"}]
+        if isinstance(request, list) and operation == "malformed_stream":
+            result[0] = None
+        return result
+
+    twitch.gql_request.side_effect = partial
+    assert asyncio.run(service.get_followed_live_channels()) == set()
+    assert service._followed_ids == {7}
+
+
+def test_real_graphql_logger_excludes_follows_and_descendant_lookups(caplog):
+    twitch = make_twitch(followed=[321], streams={321: WANTED}, drops={321: True})
+    browser = SimpleNamespace(gql=twitch.gql_request)
+    auth = SimpleNamespace(validate=AsyncMock(return_value=SimpleNamespace(
+        browser_active=True, _twitch=SimpleNamespace(_browser=browser),
+    )))
+    gql = GQLClient(MagicMock(), auth, ClientType.WEB)
+    twitch.gql_request = gql.request
+    with caplog.at_level(logging.DEBUG, logger="TwitchDrops.gql"):
+        found = asyncio.run(ChannelService(twitch).get_followed_live_channels())
+        asyncio.run(gql.request(GQLRawQuery("query PublicFixture { test }")))
+    assert {channel.id for channel in found} == {321}
+    assert "user321" not in caplog.text
+    assert "User321" not in caplog.text
+    assert "FollowedLiveChannels" not in caplog.text
+    assert "VideoPlayerStreamInfoOverlayChannel" not in caplog.text
+    assert "PublicFixture" in caplog.text
 
 
 def test_exit_during_drops_checks_propagates():

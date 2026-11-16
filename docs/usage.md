@@ -96,14 +96,12 @@ when its game has no remaining eligible drops or no suitable channel is availabl
 
 **Settings → Mining → Prefer channels I follow** is off by default. When on, TDM also
 looks up live channels your Twitch account follows, even small ones outside each game's
-top directory results, and checks with Twitch that their drops are enabled. Among
-eligible channels for the same game, a followed channel is watched first; if none is
-live, TDM uses the normal choice. Your Mining list order still decides which game is
-mined, so a followed channel on a lower game does not take over. Channels a campaign
-names explicitly still come before followed ones, and a channel you picked by hand
-is not replaced by a followed one. Followed channels have no ranking of
-their own; ties use the usual rules. TDM checks up to 100 live followed channels, as
-Twitch returns them, each time it reloads channels.
+top directory results, and verifies their drop eligibility with Twitch. The
+preference breaks ties between channels with the same mining priority, campaign
+allowlist priority, and currently eligible drops. Your Mining list, temporary
+queue order and reward settings still take precedence. A manually chosen channel
+is protected from the follow tie-break while it stays selected. TDM checks up to
+100 live followed channels each time it reloads channels.
 
 ### Special Events and IRL campaigns
 

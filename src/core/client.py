@@ -790,6 +790,7 @@ class Twitch:
                 )
                 ordered_channels.sort(key=lambda ch: ch.acl_based, reverse=True)
                 ordered_channels.sort(key=self._channel_service.get_mining_priority)
+                self._channel_service.prioritize_followed(ordered_channels)
                 # ensure that we won't end up with more channels than we can handle
                 # NOTE: we trim from the end because that's where the non-priority,
                 # offline (or online but low viewers) channels end up
@@ -901,9 +902,9 @@ class Twitch:
                             self.exit_manual_mode("No channels available for manual game")
                 # Auto-select best channel based on priority, also right after manual mode ends
                 if new_watching is None and not self.is_manual_mode():
-                    for channel in sorted(
-                        channels.values(), key=self._channel_service.get_mining_priority
-                    ):
+                    ordered = sorted(channels.values(), key=self._channel_service.get_mining_priority)
+                    self._channel_service.prioritize_followed(ordered)
+                    for channel in ordered:
                         if self.can_watch(channel) and self.should_switch(channel):
                             new_watching = channel
                             break
@@ -988,10 +989,12 @@ class Twitch:
     def clear_manual_mode(self, reason: str = "") -> bool:
         """Clear manual targeting without changing the state machine.
 
-        Returns whether any manual target was present.
+        Returns whether manual mode or a protected channel pick was active.
         """
+        picked = self._channel_service.picked_channel_id is not None
+        self._channel_service.picked_channel_id = None
         if self._manual_target_channel is None and self._manual_target_game is None:
-            return False
+            return picked
 
         game_name = self._manual_target_game.name if self._manual_target_game else "Unknown"
         logger.info(
@@ -1000,8 +1003,6 @@ class Twitch:
 
         self._manual_target_channel = None
         self._manual_target_game = None
-        # Return to Auto also ends the hand-pick protection from the follow tie-break.
-        self._channel_service.picked_channel_id = None
         self.gui.broadcast_manual_mode_change(self.get_manual_mode_info())
         return True
 

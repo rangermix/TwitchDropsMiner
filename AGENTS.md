@@ -402,30 +402,24 @@ lang/                # Translation JSON files (20 languages)
   change lines, language switching and broadcasts run only after a successful save.
   Regressions: `test_rejected_update_writes_prints_and_saves_nothing` and
   `test_failed_save_restores_every_field_and_defers_effects`.
-- `prefer_followed_channels` (issue #206) defaults false and accepts only booleans,
+- `prefer_followed_channels` defaults false and accepts only booleans,
   validated before any write; changes request a games update. When true,
   `ChannelService.get_followed_live_channels(known_ids)` runs during CHANNELS_FETCH
   under one 30-second bound: the raw `FOLLOWED_LIVE_QUERY` (`currentUser.followedLiveUsers`,
   first 100, no pagination), batched stream info for channels not already tracked, and
-  a per-channel AvailableDrops check (`Channel.fetch_drops_enabled()`). Only channels
-  that are live on a wanted game with drops confirmed are added: `Stream` defaults
-  `drops_enabled` to true, so any later stream refresh would make a drops-disabled
-  channel watchable. Existing directory/ACL objects are never replaced or rechecked.
-  `get_mining_priority()` appends `(not acl_based, -mineable_drops, not followed)` only
-  after the game priority key, so game order, temporary order, fallback tiers, reward
-  ranking and ACL over directory precedence are unchanged. A channel awarding more
-  mineable drops (for example an ACL-only chat badge campaign on top of the regular
-  drops) still outranks a followed channel that cannot earn them. The tie-break is omitted in manual mode and
-  while the watched channel is `picked_channel_id` (a same-game dashboard click), so a
-  hand-picked channel is never replaced by it. `record_watch()` runs on every
-  `WatchService.watch()`: watching any other channel ends the protection, as do Return
-  to Auto (`clear_manual_mode()`) and account reset. Tests: `test_followed_channels.py`
-  and `test_followed_channels_frontend.py`. Any failure
-  keeps the previous follow set and adds nothing; `ExitRequest` propagates. The lookup
-  logs only counts and channel IDs, never names or response text. Follow state is
-  account-owned and cleared with bans on identity replacement and shutdown. The
-  Settings → Mining checkbox shares `saveBooleanSetting()` with the account-link
-  override. Regression: `tests/test_followed_channels.py`.
+  a per-channel AvailableDrops check. Follow-only candidates require positive drop
+  evidence on discovery and later stream checks. The normal watched-stream refresh
+  and ban filtering still run. Apply the follow tie-break only between channels with
+  equal mining and ACL priority and equal sets of eligible (campaign ID, drop ID)
+  pairs. Keep the existing selection order between different reward sets. Manual
+  mode and a current hand-picked channel disable the tie-break. A manual reset,
+  stop, account reset or watching another channel ends hand-pick protection.
+  Failed follow or batch stream results leave the current follow set in place.
+  Failed individual drop checks skip unverified candidates. `ExitRequest` propagates,
+  and in-flight results are discarded after account reset or disabling the setting.
+  Raw GraphQL debugging is suppressed for the optional lookup and its child
+  requests. Tests: `test_followed_channels.py` and
+  `test_followed_channels_frontend.py`.
 - Drop-name ignore list (`drop_name_blacklist`), empty by default. Entries are literal,
   case-insensitive substrings entered one per line; whitespace and blanks are removed and
   duplicates are casefolded while preserving the first spelling/order.

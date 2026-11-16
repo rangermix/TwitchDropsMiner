@@ -19,8 +19,7 @@ query ChannelBanStatus($channelID: ID!) {
 FOLLOWED_LIVE_QUERY = """
 query FollowedLiveChannels {
     currentUser {
-        id
-        followedLiveUsers(first: 100) { edges { node { id login displayName } } }
+        followedLiveUsers(first: 100) { edges { node { id login } } }
     }
 }
 """

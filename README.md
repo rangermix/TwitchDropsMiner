@@ -27,6 +27,8 @@ services operated for other users are outside its support scope.
   reward artwork and live drop progress.
 - Track campaigns and rewards, and ignore drops you do not want.
 - Skip channels while Twitch reports an active ban, including temporary bans.
+- Optionally [prefer channels you follow](docs/usage.md#prefer-channels-you-follow)
+  when otherwise equally ranked channels offer the same drops.
 - Sign in inside the dashboard; TDM saves and renews your session automatically.
 - Review claimed-drop history, export it to CSV, and receive Telegram or Discord notifications.
   Discord claim alerts include reward artwork when available.
