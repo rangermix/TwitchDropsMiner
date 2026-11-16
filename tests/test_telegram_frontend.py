@@ -25,6 +25,9 @@ def run_javascript(names: list[str], script: str) -> None:
         for dependency in ['reconcileNotificationEvents', 'renderNotificationEvents']:
             if dependency not in names:
                 names.append(dependency)
+    if 'updateSettingsUI' in names and 'renderWantedOrderInfo' not in names:
+        # Settings tests do not render the Main tab's queue panel.
+        functions.append('function renderWantedOrderInfo() {}')
     if 'updateSettingsUI' in names or 'saveSettings' in names:
         functions.append('const gameWatchWrites = {confirmed:null,draft:null,pending:[],tail:Promise.resolve(),revision:0};')
         for dependency in ['applyGameWatchEdit', 'reconcileGameWatchSettings']:

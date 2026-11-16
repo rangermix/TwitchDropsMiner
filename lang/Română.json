@@ -360,7 +360,12 @@
             "drag_hint": "Trage jocurile pentru a schimba ordinea până la repornire (pe ecranele tactile, ține apăsat mai întâi). Lista de minare din Setări rămâne cea implicită.",
             "temporary": "Ordine temporară până la repornire.",
             "reset": "Revino la ordinea listei de minare",
-            "save_error": "Ordinea cozii nu a putut fi schimbată. Încearcă din nou."
+            "save_error": "Ordinea cozii nu a putut fi schimbată. Încearcă din nou.",
+            "order_info": "De ce este coada în această ordine?",
+            "order_mining_list": "Jocurile din lista ta de minare urmează ordinea salvată.",
+            "order_reward_types": "Jocurile din lista ta de minare sunt sortate după tipul de recompensă, apoi după cel mai apropiat termen pentru acel tip și, în final, după ordinea salvată a listei. Poți schimba asta în Setări → Minerit → Tipuri de recompense.",
+            "order_fallback": "În ordinea implicită, celelalte jocuri eligibile apar după jocurile din lista de minare.",
+            "order_temporary": "Jocurile incluse în ordinea temporară apar primele. Celelalte jocuri urmează regulile de mai jos."
         },
         "history": {
             "title": "Istoricul dropurilor",

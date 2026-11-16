@@ -360,7 +360,12 @@
             "drag_hint": "Ziehe Spiele, um die Reihenfolge bis zum Neustart zu ändern (auf Touchscreens zuerst gedrückt halten). Die Mining-Liste in den Einstellungen bleibt der Standard.",
             "temporary": "Vorübergehende Reihenfolge bis zum Neustart.",
             "reset": "Auf Reihenfolge der Mining-Liste zurücksetzen",
-            "save_error": "Die Reihenfolge der Warteschlange konnte nicht geändert werden. Bitte versuche es erneut."
+            "save_error": "Die Reihenfolge der Warteschlange konnte nicht geändert werden. Bitte versuche es erneut.",
+            "order_info": "Warum hat die Warteschlange diese Reihenfolge?",
+            "order_mining_list": "Spiele auf deiner Mining-Liste folgen der gespeicherten Reihenfolge.",
+            "order_reward_types": "Spiele auf deiner Mining-Liste werden nach Belohnungsart, dann nach der frühesten Frist für diese Art und schließlich nach der gespeicherten Listenreihenfolge sortiert. Das kannst du unter Einstellungen → Mining → Belohnungsarten ändern.",
+            "order_fallback": "In der Standardreihenfolge folgen andere geeignete Spiele auf die Spiele der Mining-Liste.",
+            "order_temporary": "Spiele in der temporären Reihenfolge kommen zuerst. Für die übrigen Spiele gelten die folgenden Regeln."
         },
         "history": {
             "title": "Drop-Verlauf",

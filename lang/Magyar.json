@@ -317,7 +317,12 @@
             "drag_hint": "Húzd a játékokat a sorrend módosításához az újraindításig (érintőképernyőn előbb tartsd lenyomva). A Beállítások bányászati listája marad az alapértelmezett.",
             "temporary": "Ideiglenes sorrend az újraindításig.",
             "reset": "Visszaállítás a bányászati lista sorrendjére",
-            "save_error": "Nem sikerült módosítani a sor sorrendjét. Próbáld újra."
+            "save_error": "Nem sikerült módosítani a sor sorrendjét. Próbáld újra.",
+            "order_info": "Miért ilyen a sor sorrendje?",
+            "order_mining_list": "A bányászati listádon szereplő játékok a lista mentett sorrendjét követik.",
+            "order_reward_types": "A bányászati listádon szereplő játékokat először a jutalom típusa, majd az adott típus legkorábbi határideje, végül a lista mentett sorrendje szerint rendezzük. Ezt a Beállítások → Bányászat → Jutalomtípusok alatt módosíthatod.",
+            "order_fallback": "Az alapértelmezett sorrendben a többi jogosult játék a bányászati lista játékai után következik.",
+            "order_temporary": "Az ideiglenes sorrendbe sorolt játékok kerülnek előre. A többi játékra az alábbi szabályok vonatkoznak."
         },
         "inventory": {
             "no_campaigns": "Még nincs betöltött kampány...",

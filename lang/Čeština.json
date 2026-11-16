@@ -360,7 +360,12 @@
             "drag_hint": "Přetažením her změníte pořadí do restartu (na dotykových obrazovkách nejprve podržte). Seznam těžby v Nastavení zůstává výchozí.",
             "temporary": "Dočasné pořadí do restartu.",
             "reset": "Obnovit pořadí seznamu těžby",
-            "save_error": "Pořadí fronty se nepodařilo změnit. Zkuste to znovu."
+            "save_error": "Pořadí fronty se nepodařilo změnit. Zkuste to znovu.",
+            "order_info": "Proč je fronta v tomto pořadí?",
+            "order_mining_list": "Hry ve vašem seznamu těžby se řadí podle uloženého pořadí.",
+            "order_reward_types": "Hry ve vašem seznamu těžby se řadí podle typu odměny, poté podle nejbližšího termínu pro tento typ a nakonec podle uloženého pořadí seznamu. Změňte to v Nastavení → Těžba → Typy odměn.",
+            "order_fallback": "Ve výchozím pořadí následují ostatní způsobilé hry až za hrami ze seznamu těžby.",
+            "order_temporary": "Hry s dočasně nastaveným pořadím jsou první. Ostatní se řadí podle pravidel níže."
         },
         "history": {
             "title": "Historie dropů",

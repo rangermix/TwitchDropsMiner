@@ -360,7 +360,12 @@
             "drag_hint": "Trascina i giochi per cambiare l’ordine fino al riavvio (sui touchscreen tieni prima premuto). La lista di mining nelle Impostazioni resta quella predefinita.",
             "temporary": "Ordine temporaneo fino al riavvio.",
             "reset": "Ripristina l’ordine della lista di mining",
-            "save_error": "Impossibile cambiare l’ordine della coda. Riprova."
+            "save_error": "Impossibile cambiare l’ordine della coda. Riprova.",
+            "order_info": "Perché la coda è in questo ordine?",
+            "order_mining_list": "I giochi della tua lista di mining seguono l’ordine salvato.",
+            "order_reward_types": "I giochi della tua lista di mining sono ordinati per tipo di ricompensa, poi per la scadenza più vicina per quel tipo e infine per l’ordine salvato della lista. Puoi modificarlo in Impostazioni → Mining → Tipi di ricompensa.",
+            "order_fallback": "Nell’ordine predefinito, gli altri giochi idonei vengono dopo quelli della lista di mining.",
+            "order_temporary": "I giochi con un ordine temporaneo vengono prima. Gli altri seguono le regole riportate sotto."
         },
         "history": {
             "title": "Cronologia dei drop",

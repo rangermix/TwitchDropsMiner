@@ -108,7 +108,7 @@ class ReleaseService:
         if settings.notification_events.get("new_release") is not True:
             return {}
         diagnostics = self._twitch.diagnostics
-        notifiers = {
+        notifiers: dict[str, TelegramNotifier | DiscordNotifier] = {
             "telegram": TelegramNotifier(
                 settings.telegram_bot_token, settings.telegram_chat_id, diagnostics=diagnostics
             ),
