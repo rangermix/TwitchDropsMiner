@@ -48,11 +48,11 @@ the change; a failed sign-in needs a new attempt.
 
 ## Docker and timezone
 
-Use the `rangermix/twitch-drops-miner:2.5.0` image or build the current source.
+Use the `rangermix/twitch-drops-miner:2.6.0` image or build the current source.
 The image includes Chromium, Xvfb, a window manager and noVNC. It does not need a
 display on the home server or NAS. Only the dashboard port is published; VNC and
-login-browser control remain on container loopback addresses. The 2.5.0 Docker image
-and Linux/macOS source builds control the session-renewal browser over a private
+login-browser control remain on container loopback addresses. Docker images since
+v2.5.0 and Linux/macOS source builds control the session-renewal browser over a private
 pipe. Windows source builds use loopback; the older 2.3.2 image also uses a loopback
 control port.
 
@@ -70,16 +70,18 @@ renewal on the miner server. Twitch can reject either browser; this fallback doe
 not guarantee successful sign-in.
 
 Download the helper matching your **miner version** from the sign-in screen or its
-[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.5.0).
+[GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases). The
+[v2.6.0 release](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.6.0)
+includes the archives below.
 Choose the platform of the computer where you will run the helper, which may differ
 from your miner server:
 
-| Computer | v2.5.0 archive |
+| Computer | v2.6.0 archive |
 | --- | --- |
-| Windows x64 | `tdm-login-helper-2.5.0-windows-x64.tar.gz` |
-| Linux x64 | `tdm-login-helper-2.5.0-linux-x64.tar.gz` |
-| macOS Apple silicon (arm64) | `tdm-login-helper-2.5.0-macos-arm64.tar.gz` |
-| macOS Intel (x64) | `tdm-login-helper-2.5.0-macos-x64.tar.gz` |
+| Windows x64 | `tdm-login-helper-2.6.0-windows-x64.tar.gz` |
+| Linux x64 | `tdm-login-helper-2.6.0-linux-x64.tar.gz` |
+| macOS Apple silicon (arm64) | `tdm-login-helper-2.6.0-macos-arm64.tar.gz` |
+| macOS Intel (x64) | `tdm-login-helper-2.6.0-macos-x64.tar.gz` |
 
 Extract the archive to a folder before running it. Install a native Chrome, Chromium,
 or Firefox 143+ browser on that computer; the helper does not include a browser.

@@ -94,9 +94,10 @@ when its game has no remaining eligible drops or no suitable channel is availabl
 
 ### Prefer channels you follow
 
-**Settings → Mining → Prefer channels I follow** is off by default. When on, TDM also
-looks up live channels your Twitch account follows, even small ones outside each game's
-top directory results, and verifies their drop eligibility with Twitch. The
+**Settings → Mining → Prefer channels I follow** is available in v2.6.0 and later
+and is off by default. When on, TDM looks up live channels your Twitch account
+follows, including channels outside each game's top directory results, and
+verifies their drop eligibility with Twitch. The
 preference breaks ties between channels with the same mining priority, campaign
 allowlist priority, and currently eligible drops. Your Mining list, temporary
 queue order and reward settings still take precedence. A manually chosen channel
@@ -161,7 +162,7 @@ order**, or changing **Mining list** (in Settings or with **Add to mining list**
 Inventory) returns to the saved order. To change the default order permanently, use
 **Settings → Games → Mining list**.
 
-In source builds, select **ⓘ** next to the queue title to see which rules currently
+Starting in v2.6.0, select **ⓘ** next to the queue title to see which rules currently
 set its order. Games outside the temporary order use the default rules.
 
 ## Account-link override
