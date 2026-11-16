@@ -353,7 +353,12 @@
             "drag_hint": "Faites glisser les jeux pour changer l’ordre jusqu’au redémarrage (sur écran tactile, maintenez d’abord appuyé). La liste de minage dans les Paramètres reste l’ordre par défaut.",
             "temporary": "Ordre temporaire jusqu’au redémarrage.",
             "reset": "Revenir à l’ordre de la liste de minage",
-            "save_error": "Impossible de modifier l’ordre de la file. Veuillez réessayer."
+            "save_error": "Impossible de modifier l’ordre de la file. Veuillez réessayer.",
+            "order_info": "Pourquoi la file est-elle dans cet ordre ?",
+            "order_mining_list": "Les jeux de votre liste de minage suivent l’ordre enregistré.",
+            "order_reward_types": "Les jeux de votre liste de minage sont triés par type de récompense, puis par échéance la plus proche pour ce type et enfin selon l’ordre enregistré de la liste. Vous pouvez modifier ce tri dans Paramètres → Minage → Types de récompenses.",
+            "order_fallback": "Dans l’ordre par défaut, les autres jeux éligibles passent après ceux de la liste de minage.",
+            "order_temporary": "Les jeux inclus dans l’ordre temporaire passent en premier. Les autres suivent les règles ci-dessous."
         },
         "history": {
             "title": "Historique des drops",

@@ -25,6 +25,7 @@ services operated for other users are outside its support scope.
   until restart, without changing your saved Mining list. Channel selection follows
   this order among campaigns the channel can earn. In v2.5.0, queue rows also show
   reward artwork and live drop progress.
+  In source builds, the queue's information button explains which ordering rules apply.
 - Track campaigns and rewards, and ignore drops you do not want.
 - Skip channels while Twitch reports an active ban, including temporary bans.
 - Sign in inside the dashboard; TDM saves and renews your session automatically.

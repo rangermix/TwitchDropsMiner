@@ -353,7 +353,12 @@
             "drag_hint": "Arrastra los juegos para cambiar el orden hasta reiniciar (en pantallas táctiles, mantén pulsado primero). La lista de minado en Configuración sigue siendo la predeterminada.",
             "temporary": "Orden temporal hasta reiniciar.",
             "reset": "Restablecer al orden de la lista de minado",
-            "save_error": "No se pudo cambiar el orden de la cola. Inténtalo de nuevo."
+            "save_error": "No se pudo cambiar el orden de la cola. Inténtalo de nuevo.",
+            "order_info": "¿Por qué la cola tiene este orden?",
+            "order_mining_list": "Los juegos de tu lista de minado siguen el orden guardado.",
+            "order_reward_types": "Los juegos de tu lista de minado se ordenan por tipo de recompensa, luego por la fecha límite más próxima para ese tipo y, por último, por el orden guardado de la lista. Puedes cambiarlo en Configuración → Minería → Tipos de recompensa.",
+            "order_fallback": "En el orden predeterminado, los demás juegos elegibles aparecen después de los de la lista de minado.",
+            "order_temporary": "Los juegos del orden temporal van primero. Los demás siguen las reglas de abajo."
         },
         "history": {
             "title": "Historial de drops",
