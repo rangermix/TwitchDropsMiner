@@ -10,6 +10,8 @@ from urllib.parse import urlsplit
 
 import aiohttp
 
+from src.version import __version__
+
 
 if TYPE_CHECKING:
     from src.diagnostics import Diagnostics
@@ -133,6 +135,23 @@ class DiscordNotifier:
         except Exception:
             logger.warning("Failed to send Discord notification")
             return False
+
+    async def notify_new_release(self, version: str, url: str) -> bool:
+        """Send an embed notification when a newer application version is published."""
+        if not self.enabled:
+            return False
+
+        embed = {
+            "title": "🚀 New TwitchDropsMiner version!",
+            "url": url,
+            "color": EMBED_COLOR,
+            "fields": [
+                {"name": "Version", "value": version, "inline": True},
+                {"name": "Installed", "value": __version__, "inline": True},
+            ],
+            "footer": {"text": "TwitchDropsMiner Bot"},
+        }
+        return await self._send_embed(embed)
 
     async def test_connection(self) -> bool:
         """

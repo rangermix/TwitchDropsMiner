@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
+from tempfile import mkstemp
 from typing import Any, TypeVar, cast
 
 from yarl import URL
@@ -153,12 +155,19 @@ def json_load(path: Path, defaults: _JSON_T, *, merge: bool = True) -> _JSON_T:
 
 def json_save(path: Path, contents: Mapping[Any, Any], *, sort: bool = False) -> None:
     """
-    Save data to a JSON file with custom serialization.
+    Save data to a JSON file atomically with custom serialization.
 
     Args:
         path: Path to save JSON file
         contents: Data to serialize
         sort: If True, sort keys alphabetically
     """
-    with open(path, "w", encoding="utf8") as file:
-        json.dump(contents, file, default=_serialize, sort_keys=sort, indent=4)
+    path = path.resolve()
+    descriptor, name = mkstemp(dir=path.parent, prefix=f".{path.name}.")
+    temporary = Path(name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf8") as file:
+            json.dump(contents, file, default=_serialize, sort_keys=sort, indent=4)
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)

@@ -499,9 +499,12 @@ class Channel:
         )
         if not isinstance(response, dict) or response.get("errors"):
             raise MinerException("No reliable AvailableDrops response")
-        return self._check_drops_enabled(
-            response["data"]["channel"]["viewerDropCampaigns"] or [], game=game,
-        )
+        campaigns = response["data"]["channel"]["viewerDropCampaigns"]
+        if campaigns is None:
+            return False
+        if not isinstance(campaigns, list):
+            raise MinerException("Invalid AvailableDrops campaign list")
+        return self._check_drops_enabled(campaigns, game=game)
 
     async def update_stream(self) -> bool:
         """

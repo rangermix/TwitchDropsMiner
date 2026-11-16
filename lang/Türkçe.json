@@ -267,6 +267,13 @@
             "mining_hours_end": "Bitiş",
             "mining_hours_save_error": "Madencilik saatleri kaydedilemedi. Tekrar deneyin.",
             "proxy_save_error": "Proxy kaydedilemedi. Parolasını yeniden girip tekrar deneyin.",
+            "notification_events": {
+                "header": "Şunlar için bildir",
+                "help": "Aşağıda biri ayarlandığında Discord ve Telegram için geçerlidir.",
+                "drop_claimed": "Alınan droplar",
+                "new_release": "Yeni TwitchDropsMiner sürümleri (6 saatte bir kontrol edilir)",
+                "save_error": "Bildirim seçimleri kaydedilemedi. Lütfen tekrar deneyin."
+            },
             "discord": {
                 "name": "Discord Bildirimleri",
                 "description": "Drop talep ettiğinde Discord'da bildirim al.",
@@ -356,7 +363,12 @@
             "drag_hint": "Sırayı yeniden başlatmaya kadar değiştirmek için oyunları sürükleyin (dokunmatik ekranlarda önce basılı tutun). Ayarlar’daki madencilik listesi varsayılan olarak kalır.",
             "temporary": "Yeniden başlatmaya kadar geçici sıra.",
             "reset": "Madencilik listesi sırasına sıfırla",
-            "save_error": "Kuyruk sırası değiştirilemedi. Lütfen tekrar deneyin."
+            "save_error": "Kuyruk sırası değiştirilemedi. Lütfen tekrar deneyin.",
+            "order_info": "Kuyruk neden bu sırada?",
+            "order_mining_list": "Madencilik listenizdeki oyunlar listenin kayıtlı sırasını izler.",
+            "order_reward_types": "Madencilik listenizdeki oyunlar önce ödül türüne, sonra o tür için en yakın son tarihe ve son olarak listenin kayıtlı sırasına göre sıralanır. Bunu Ayarlar → Madencilik → Ödül türleri bölümünden değiştirebilirsiniz.",
+            "order_fallback": "Varsayılan sıralamada diğer uygun oyunlar madencilik listesindeki oyunlardan sonra gelir.",
+            "order_temporary": "Geçici sıralamaya alınan oyunlar önce gelir. Diğer oyunlar aşağıdaki kurallara göre sıralanır."
         },
         "history": {
             "title": "Drop Geçmişi",

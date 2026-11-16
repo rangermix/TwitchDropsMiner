@@ -267,6 +267,13 @@
             "mining_hours_end": "Fine",
             "mining_hours_save_error": "Impossibile salvare gli orari. Riprova.",
             "proxy_save_error": "Impossibile salvare il proxy. Reinserisci la password e riprova.",
+            "notification_events": {
+                "header": "Avvisami per",
+                "help": "Vale per Discord e Telegram, una volta configurato uno dei due qui sotto.",
+                "drop_claimed": "Drop riscattati",
+                "new_release": "Nuove versioni di TwitchDropsMiner (controllate ogni 6 ore)",
+                "save_error": "Impossibile salvare le scelte di notifica. Riprova."
+            },
             "discord": {
                 "name": "Notifiche Discord",
                 "description": "Ricevi notifiche su Discord quando riscatti i drop.",
@@ -356,7 +363,12 @@
             "drag_hint": "Trascina i giochi per cambiare l’ordine fino al riavvio (sui touchscreen tieni prima premuto). La lista di mining nelle Impostazioni resta quella predefinita.",
             "temporary": "Ordine temporaneo fino al riavvio.",
             "reset": "Ripristina l’ordine della lista di mining",
-            "save_error": "Impossibile cambiare l’ordine della coda. Riprova."
+            "save_error": "Impossibile cambiare l’ordine della coda. Riprova.",
+            "order_info": "Perché la coda è in questo ordine?",
+            "order_mining_list": "I giochi della tua lista di mining seguono l’ordine salvato.",
+            "order_reward_types": "I giochi della tua lista di mining sono ordinati per tipo di ricompensa, poi per la scadenza più vicina per quel tipo e infine per l’ordine salvato della lista. Puoi modificarlo in Impostazioni → Mining → Tipi di ricompensa.",
+            "order_fallback": "Nell’ordine predefinito, gli altri giochi idonei vengono dopo quelli della lista di mining.",
+            "order_temporary": "I giochi con un ordine temporaneo vengono prima. Gli altri seguono le regole riportate sotto."
         },
         "history": {
             "title": "Cronologia dei drop",

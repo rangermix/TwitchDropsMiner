@@ -267,6 +267,13 @@
             "mining_hours_end": "結束",
             "mining_hours_save_error": "無法儲存執行時段，請重試。",
             "proxy_save_error": "無法儲存代理。請重新輸入密碼後再試一次。",
+            "notification_events": {
+                "header": "通知我以下內容",
+                "help": "在下方設定 Discord 或 Telegram 後生效。",
+                "drop_claimed": "已領取的掉寶",
+                "new_release": "TwitchDropsMiner 新版本(每 6 小時檢查一次)",
+                "save_error": "無法儲存通知選項,請再試一次。"
+            },
             "discord": {
                 "name": "Discord 通知",
                 "description": "領取掉落物時在 Discord 上接收通知。",
@@ -356,7 +363,12 @@
             "drag_hint": "拖曳遊戲可在重新啟動前變更順序（觸控螢幕請先長按）。設置中的挖掘清單仍為預設順序。",
             "temporary": "暫時順序，重新啟動後恢復。",
             "reset": "恢復挖掘清單順序",
-            "save_error": "無法變更佇列順序。請再試一次。"
+            "save_error": "無法變更佇列順序。請再試一次。",
+            "order_info": "為什麼佇列是這個順序？",
+            "order_mining_list": "挖掘清單中的遊戲依照已儲存的順序排列。",
+            "order_reward_types": "挖掘清單中的遊戲先依獎勵類型排序，再依該類型最早的截止時間排序，最後依清單儲存的順序排列。可在「設置 → 挖掘 → 獎勵類型」中變更。",
+            "order_fallback": "在預設順序下，其他符合條件的遊戲排在挖掘清單中的遊戲之後。",
+            "order_temporary": "臨時順序中的遊戲排在最前面。其他遊戲依下列規則排列。"
         },
         "history": {
             "title": "掉寶歷史",

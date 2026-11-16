@@ -267,6 +267,13 @@
             "mining_hours_end": "Fim",
             "mining_hours_save_error": "Não foi possível guardar o horário. Tente novamente.",
             "proxy_save_error": "Não foi possível salvar o proxy. Digite a senha novamente e tente outra vez.",
+            "notification_events": {
+                "header": "Notificar-me sobre",
+                "help": "Aplica-se ao Discord e ao Telegram, depois de configurar um deles abaixo.",
+                "drop_claimed": "Drops resgatados",
+                "new_release": "Novas versões do TwitchDropsMiner (verificado a cada 6 horas)",
+                "save_error": "Não foi possível guardar as opções de notificação. Tente novamente."
+            },
             "discord": {
                 "name": "Notificações do Discord",
                 "description": "Receba notificações no Discord quando reclamar drops.",
@@ -356,7 +363,12 @@
             "drag_hint": "Arraste os jogos para mudar a ordem até reiniciar (em telas sensíveis ao toque, mantenha pressionado primeiro). A lista de mineração nas Configurações continua sendo o padrão.",
             "temporary": "Ordem temporária até reiniciar.",
             "reset": "Restaurar a ordem da lista de mineração",
-            "save_error": "Não foi possível alterar a ordem da fila. Tente novamente."
+            "save_error": "Não foi possível alterar a ordem da fila. Tente novamente.",
+            "order_info": "Por que a fila está nesta ordem?",
+            "order_mining_list": "Os jogos da sua lista de mineração seguem a ordem salva.",
+            "order_reward_types": "Os jogos da sua lista de mineração são ordenados por tipo de recompensa, depois pelo prazo mais próximo para esse tipo e, por fim, pela ordem salva da lista. Altere isso em Configurações → Mineração → Tipos de recompensa.",
+            "order_fallback": "Na ordem padrão, os demais jogos elegíveis aparecem depois dos jogos da lista de mineração.",
+            "order_temporary": "Os jogos incluídos na ordem temporária vêm primeiro. Os demais seguem as regras abaixo."
         },
         "history": {
             "title": "Histórico de drops",

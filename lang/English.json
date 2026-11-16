@@ -224,6 +224,13 @@
             "mining_hours_end": "End",
             "mining_hours_save_error": "Could not save mining hours. Please try again.",
             "proxy_save_error": "Could not save the proxy. Re-enter its password and try again.",
+            "notification_events": {
+                "header": "Notify me about",
+                "help": "Applies to Discord and Telegram, once either is set up below.",
+                "drop_claimed": "Claimed drops",
+                "new_release": "New TwitchDropsMiner versions (checked every 6 hours)",
+                "save_error": "Could not save notification choices. Please try again."
+            },
             "discord": {
                 "name": "Discord Notifications",
                 "description": "Receive notifications on Discord when you claim drops.",
@@ -313,7 +320,12 @@
             "drag_hint": "Drag games to change the order until restart (press and hold first on touch screens). The Mining list in Settings stays the default.",
             "temporary": "Temporary order until restart.",
             "reset": "Reset to Mining list order",
-            "save_error": "Could not change the queue order. Please try again."
+            "save_error": "Could not change the queue order. Please try again.",
+            "order_info": "Why is the queue in this order?",
+            "order_mining_list": "Games in your Mining list follow its saved order.",
+            "order_reward_types": "Games in your Mining list are sorted by reward type, then by the earliest deadline for that type, then by saved list order. Change this in Settings → Mining → Reward types.",
+            "order_fallback": "Other eligible games are placed after Mining list games in the default order.",
+            "order_temporary": "Games in the temporary order come first. Other games use the rules below."
         },
         "inventory": {
             "no_campaigns": "No campaigns loaded yet...",

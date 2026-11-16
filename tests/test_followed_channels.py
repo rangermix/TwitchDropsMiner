@@ -215,7 +215,8 @@ def test_manual_mode_is_never_overridden_by_the_tie_break():
     assert not service.prefer_followed_switch(followed, picked)
 
 
-def test_followed_channel_rechecks_drop_eligibility_on_later_stream_updates():
+@pytest.mark.parametrize("malformed", ["", {}, False])
+def test_followed_channel_rechecks_drop_eligibility_on_later_stream_updates(malformed):
     twitch = make_twitch(followed=[1], streams={1: WANTED}, drops={1: True})
     service = ChannelService(twitch)
 
@@ -225,12 +226,17 @@ def test_followed_channel_rechecks_drop_eligibility_on_later_stream_updates():
         # The same broadcast may cease to offer drops.
         original = twitch.gql_request.side_effect
 
-        async def no_drops(request):
+        campaigns = malformed
+
+        async def changed_drops(request):
             if isinstance(request, dict) and request.get("operationName") == "DropsHighlightService_AvailableDrops":
-                return {"data": {"channel": {"viewerDropCampaigns": []}}}
+                return {"data": {"channel": {"viewerDropCampaigns": campaigns}}}
             return await original(request)
 
-        twitch.gql_request.side_effect = no_drops
+        twitch.gql_request.side_effect = changed_drops
+        await found.refresh_stream()
+        assert found.online and found.drops_enabled
+        campaigns = []
         await found.refresh_stream()
         assert found.online and not found.drops_enabled
         discovered = Channel(twitch, id=1, login="user1")

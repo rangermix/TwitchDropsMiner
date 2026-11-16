@@ -1412,6 +1412,27 @@ function updateLoginStatus(data) {
     globalThis.browserLoginPanel?.updateLogin(data);
 }
 
+function reconcileNotificationEvents(settings) {
+    // A full settings update or POST response can arrive after a newer save.
+    const revision = state.settings.notification_events_revision ?? -1;
+    if ((settings.notification_events_revision ?? -1) < revision) {
+        return {
+            ...settings,
+            notification_events: state.settings.notification_events,
+            notification_events_revision: revision,
+        };
+    }
+    return settings;
+}
+
+function renderNotificationEvents() {
+    const events = state.settings.notification_events;
+    const drop = document.getElementById('notify-drop_claimed');
+    const release = document.getElementById('notify-new_release');
+    if (drop && !drop.disabled) drop.checked = events?.drop_claimed !== false;
+    if (release && !release.disabled) release.checked = events?.new_release === true;
+}
+
 function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     // Initial loads/socket updates own the watch list; unrelated partial-save replies do not.
     if (!authoritative && Array.isArray(state.settings.games_to_watch)) {
@@ -1427,11 +1448,20 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     if (!authoritative && !changedFields.includes('mining_benefits') && state.settings.mining_benefits) {
         settings = {...settings, mining_benefits: state.settings.mining_benefits};
     }
-    state.settings = settings;
+    // A partial write response can arrive after either opt-in was saved.
+    if (!authoritative) {
+        for (const key of ['allow_unlinked_campaigns', 'prefer_followed_channels']) {
+            if (!changedFields.includes(key) && typeof state.settings[key] === 'boolean') {
+                settings = {...settings, [key]: state.settings[key]};
+            }
+        }
+    }
+    state.settings = reconcileNotificationEvents(settings);
     const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
-    if (allowUnlinked) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
+    if (allowUnlinked && !allowUnlinked.disabled) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
     const preferFollowed = document.getElementById('prefer-followed-channels');
-    if (preferFollowed) preferFollowed.checked = settings.prefer_followed_channels === true;
+    if (preferFollowed && !preferFollowed.disabled) preferFollowed.checked = settings.prefer_followed_channels === true;
+    renderNotificationEvents();
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('priority-list-only').checked = settings.priority_list_only !== false;
     applyInventoryViewMode(settings.inventory_list_view || false);
@@ -1535,6 +1565,7 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
 
     // Re-render inventory to apply filters
     renderInventory();
+    renderWantedOrderInfo();
 }
 
 function updateManualModeUI(manualModeInfo) {
@@ -2673,13 +2704,13 @@ async function saveBooleanSetting(key, inputId, errorId, message) {
         if (!response.ok) throw new Error(message);
         const data = await response.json();
         if (data.success !== true || data.settings?.[key] !== requested) throw new Error(message);
-        updateSettingsUI(data.settings);
+        updateSettingsUI({...state.settings, [key]: requested}, false, [key]);
     } catch (failure) {
-        input.checked = state.settings[key] === true;
         reportSettingsError(error, message);
         error.hidden = false;
     } finally {
         input.disabled = false;
+        input.checked = state.settings[key] === true;
     }
 }
 
@@ -2693,6 +2724,40 @@ function onPreferFollowedChange() {
     return saveBooleanSetting('prefer_followed_channels', 'prefer-followed-channels', 'prefer-followed-error',
         state.translations.gui?.settings?.prefer_followed_channels_save_error ||
         'Could not save the followed channels option. Please try again.');
+}
+
+async function onNotificationEventChange(event) {
+    const input = event.target;
+    const requested = input.checked;
+    const error = document.getElementById('notification-events-error');
+    const message = state.translations.gui?.settings?.notification_events?.save_error ||
+        'Could not save notification choices. Please try again.';
+    input.disabled = true;
+    error.hidden = true;
+    error.textContent = '';
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notification_events: { [input.value]: requested } })
+        });
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || data.settings?.notification_events?.[input.value] !== requested) {
+            throw new Error(message);
+        }
+        state.settings = reconcileNotificationEvents({
+            ...state.settings,
+            notification_events: data.settings.notification_events,
+            notification_events_revision: data.settings.notification_events_revision,
+        });
+    } catch (failure) {
+        reportSettingsError(error, message);
+        error.hidden = false;
+    } finally {
+        input.disabled = false;
+        renderNotificationEvents();
+    }
 }
 
 async function fetchAndPopulateLanguages() {
@@ -2937,6 +3002,18 @@ function applyTranslations(t) {
         for (const id of ['inventory-reload-label', 'games-reload-label']) {
             const label = document.getElementById(id);
             if (label) label.textContent = t.gui.settings.reload_campaigns;
+        }
+
+        const eventsTrans = t.gui?.settings?.notification_events;
+        if (eventsTrans) {
+            const labels = {
+                'settings-notification-events-header': 'header', 'settings-notification-events-help': 'help',
+                'settings-notify-drop-claimed-label': 'drop_claimed', 'settings-notify-new-release-label': 'new_release'
+            };
+            for (const [id, key] of Object.entries(labels)) {
+                const element = document.getElementById(id);
+                if (element) element.textContent = eventsTrans[key];
+            }
         }
 
         const discordTrans = t.gui?.settings?.discord;
@@ -3371,9 +3448,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('drop-name-blacklist').addEventListener('change', saveSettings);
     document.getElementById('allow-unlinked-campaigns').addEventListener('change', onUnlinkedMiningChange);
     document.getElementById('prefer-followed-channels').addEventListener('change', onPreferFollowedChange);
+    document.querySelectorAll('.notification-event')
+        .forEach(input => input.addEventListener('change', onNotificationEventChange));
     // Proxy uses a manual "Set Proxy" button instead of auto-save
     document.getElementById('set-proxy-btn').addEventListener('click', saveProxy);
     document.getElementById('wanted-order-reset')?.addEventListener('click', () => saveWantedOrder([]));
+    document.getElementById('wanted-order-info-btn')?.addEventListener('click', toggleWantedOrderInfo);
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
     document.getElementById('test-discord-btn').addEventListener('click', () => updateDiscordSettings('test'));
     document.getElementById('save-discord-btn').addEventListener('click', () => updateDiscordSettings('save'));
@@ -3501,6 +3581,40 @@ function updateGameOrder(info) {
         reset.hidden = !gameOrder.active;
         reset.disabled = wantedOrderBusy;
     }
+    renderWantedOrderInfo();
+}
+
+// The ⓘ panel names the rules the server sorts the queue by (stream_selector.py).
+function renderWantedOrderInfo() {
+    const button = document.getElementById('wanted-order-info-btn');
+    const panel = document.getElementById('wanted-order-info');
+    if (button) {
+        const label = wantedText('order_info', 'Why is the queue in this order?');
+        button.title = label;
+        button.setAttribute('aria-label', label);
+    }
+    if (!panel) return;
+    const settings = state.settings || {};
+    const lines = [];
+    if (gameOrder.active) {
+        lines.push(wantedText('order_temporary', 'Games in the temporary order come first. Other games use the rules below.'));
+    }
+    lines.push(Array.isArray(settings.reward_priority) && settings.reward_priority.length
+        ? wantedText('order_reward_types', 'Games in your Mining list are sorted by reward type, then by the earliest deadline for that type, then by saved list order. Change this in Settings → Mining → Reward types.')
+        : wantedText('order_mining_list', 'Games in your Mining list follow its saved order.'));
+    if (settings.priority_list_only === false) {
+        lines.push(wantedText('order_fallback', 'Other eligible games are placed after Mining list games in the default order.'));
+    }
+    panel.replaceChildren(...lines.map(text => makeElement('p', {}, text)));
+}
+
+function toggleWantedOrderInfo() {
+    const button = document.getElementById('wanted-order-info-btn');
+    const panel = document.getElementById('wanted-order-info');
+    if (!button || !panel) return;
+    panel.hidden = !panel.hidden;
+    button.setAttribute('aria-expanded', String(!panel.hidden));
+    renderWantedOrderInfo();
 }
 
 function setWantedOrderError(visible) {

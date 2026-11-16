@@ -267,6 +267,13 @@
             "mining_hours_end": "Selesai",
             "mining_hours_save_error": "Gagal menyimpan jam mining. Coba lagi.",
             "proxy_save_error": "Proxy tidak dapat disimpan. Masukkan ulang kata sandinya, lalu coba lagi.",
+            "notification_events": {
+                "header": "Beri tahu saya tentang",
+                "help": "Berlaku untuk Discord dan Telegram, setelah salah satunya diatur di bawah.",
+                "drop_claimed": "Drop yang diklaim",
+                "new_release": "Versi baru TwitchDropsMiner (diperiksa setiap 6 jam)",
+                "save_error": "Tidak dapat menyimpan pilihan notifikasi. Silakan coba lagi."
+            },
             "discord": {
                 "name": "Notifikasi Discord",
                 "description": "Terima notifikasi di Discord saat kamu mengklaim drop.",
@@ -356,7 +363,12 @@
             "drag_hint": "Seret game untuk mengubah urutan hingga dimulai ulang (di layar sentuh, tekan dan tahan terlebih dahulu). Daftar mining di Parameter tetap menjadi default.",
             "temporary": "Urutan sementara hingga dimulai ulang.",
             "reset": "Kembalikan ke urutan daftar mining",
-            "save_error": "Tidak dapat mengubah urutan antrean. Silakan coba lagi."
+            "save_error": "Tidak dapat mengubah urutan antrean. Silakan coba lagi.",
+            "order_info": "Mengapa antrean dalam urutan ini?",
+            "order_mining_list": "Game dalam daftar mining Anda mengikuti urutan yang tersimpan.",
+            "order_reward_types": "Game dalam daftar mining Anda diurutkan berdasarkan jenis hadiah, lalu tenggat terdekat untuk jenis tersebut, lalu urutan daftar yang tersimpan. Ubah pengurutan ini di Parameter → Penambangan → Jenis hadiah.",
+            "order_fallback": "Dalam urutan bawaan, game lain yang memenuhi syarat ditempatkan setelah game dalam daftar mining.",
+            "order_temporary": "Game dalam urutan sementara didahulukan. Game lainnya mengikuti aturan di bawah ini."
         },
         "history": {
             "title": "Riwayat Drop",

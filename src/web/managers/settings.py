@@ -9,7 +9,12 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from src.config.reward_priority import RewardPriority
-from src.config.settings import InventoryFilterSettings, MiningHoursSettings, default_settings
+from src.config.settings import (
+    InventoryFilterSettings,
+    MiningHoursSettings,
+    NotificationEventSettings,
+    default_settings,
+)
 from src.i18n.translator import _
 from src.models.game import Game
 from src.services.discord_service import DiscordNotifier
@@ -74,6 +79,7 @@ class SettingsManager:
             Dictionary containing all user-configurable settings
         """
         settings = vars(self._settings).copy()
+        settings.pop("last_notified_releases", None)
         settings["games_available"] = self._available_games
         configured_webhook = bool(settings.get("discord_webhook_url"))
         settings["discord_configured"] = configured_webhook
@@ -143,6 +149,11 @@ class SettingsManager:
         requested_hours = settings_data.get("mining_hours")
         if requested_hours is not None:
             requested_hours = MiningHoursSettings.normalize(requested_hours)
+        notification_events = settings_data.get("notification_events")
+        if notification_events is not None:
+            notification_events = NotificationEventSettings.normalize(
+                notification_events, self._settings.notification_events
+            )
         previous_webhook = getattr(self._settings, "discord_webhook_url", "")
         new_webhook = previous_webhook
         if settings_data.get("discord_remove_webhook") is True:
@@ -234,6 +245,9 @@ class SettingsManager:
             self.check_and_update_setting(
                 "telegram_chat_id", settings_data.get("telegram_chat_id") or ""
             )
+        if notification_events is not None and notification_events != self._settings.notification_events:
+            self.check_and_update_setting("notification_events", notification_events)
+            self._settings.notification_events_revision += 1
         should_trigger_update |= self.check_and_update_setting("inventory_filters", inventory_filters)
         should_trigger_update |= self.check_and_update_setting(
             "inventory_list_view", settings_data.get("inventory_list_view")

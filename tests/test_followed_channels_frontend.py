@@ -25,7 +25,7 @@ def test_defaults_off_and_saves_only_its_own_field():
 (async () => {
     updateSettingsUI({});
     assert.equal(follow.checked, false, 'off unless the server says true');
-    updateSettingsUI({prefer_followed_channels: true});
+    updateSettingsUI({prefer_followed_channels: true}, true);
     assert.equal(follow.checked, true);
     follow.checked = false;
     let finish;
@@ -41,6 +41,32 @@ def test_defaults_off_and_saves_only_its_own_field():
     assert.equal(follow.checked, false);
     assert.equal(follow.disabled, false);
     assert.equal(followError.hidden, true);
+})().catch(error => { console.error(error); process.exitCode = 1; });
+""")
+
+
+def test_out_of_order_opt_in_responses_keep_both_confirmed_choices():
+    run_javascript(FUNCTIONS + ["onUnlinkedMiningChange"], FOLLOW_SETUP + r"""
+(async () => {
+    updateSettingsUI({prefer_followed_channels: false, allow_unlinked_campaigns: false}, true);
+    const requests = [];
+    global.fetch = () => new Promise(resolve => requests.push(resolve));
+    const result = settings => ({ok: true, json: async () => ({success: true, settings})});
+    input.checked = true;
+    const savingUnlinked = onUnlinkedMiningChange();
+    follow.checked = true;
+    const savingFollowed = onPreferFollowedChange();
+    updateSettingsUI({prefer_followed_channels: false, allow_unlinked_campaigns: true}, true);
+    assert.equal(follow.checked, true, 'pending choice stays visible');
+    requests[1](result({prefer_followed_channels: true, allow_unlinked_campaigns: true}));
+    await savingFollowed;
+    requests[0](result({prefer_followed_channels: false, allow_unlinked_campaigns: true}));
+    await savingUnlinked;
+    assert.equal(follow.checked, true);
+    assert.equal(input.checked, true);
+    updateSettingsUI({prefer_followed_channels: false, allow_unlinked_campaigns: false});
+    assert.equal(follow.checked, true, 'unrelated partial save cannot roll back the choice');
+    assert.equal(input.checked, true);
 })().catch(error => { console.error(error); process.exitCode = 1; });
 """)
 
