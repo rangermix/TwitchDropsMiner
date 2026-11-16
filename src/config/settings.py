@@ -33,6 +33,7 @@ default_settings = {
     "drop_name_blacklist": [],
     "games_to_watch": [],
     "language": DEFAULT_LANG,
+    "last_notified_releases": {"telegram": "", "discord": ""},
     "priority_list_only": True,
     "reward_priority": [],
     "inventory_filters": {
@@ -60,6 +61,11 @@ default_settings = {
         "start": "08:00",
         "end": "22:00",
     },
+    "notification_events": {
+        "drop_claimed": True,
+        "new_release": False,
+    },
+    "notification_events_revision": 0,
     "proxy": "",
     "telegram_bot_token": "",
     "telegram_chat_id": "",
@@ -83,6 +89,21 @@ class MiningHoursSettings:
         ):
             raise ValueError("Invalid mining hours")
         return dict(value)
+
+
+class NotificationEventSettings:
+    """Validate which events send Discord and Telegram notifications."""
+
+    @staticmethod
+    def normalize(value: Any, current: dict[str, bool] | None = None) -> dict[str, bool]:
+        """Merge a partial update of known boolean events into the current choices."""
+        template = default_settings["notification_events"]
+        assert isinstance(template, dict)
+        if not isinstance(value, dict) or any(
+            key not in template or not isinstance(enabled, bool) for key, enabled in value.items()
+        ):
+            raise ValueError("Invalid notification events")
+        return {**template, **(current or {}), **value}
 
 
 class InventoryFilterSettings:
@@ -126,6 +147,7 @@ class Settings:
     drop_name_blacklist: list[str]
     games_to_watch: list[str]
     language: str
+    last_notified_releases: dict[str, str]
     reward_priority: list[str]
     priority_list_only: bool
     inventory_filters: InventoryFilters
@@ -133,6 +155,8 @@ class Settings:
     minimum_refresh_interval_minutes: int
     mining_benefits: dict[str, bool]
     mining_hours: dict[str, str]
+    notification_events: dict[str, bool]
+    notification_events_revision: int
     proxy: str
     telegram_bot_token: str
     telegram_chat_id: str
@@ -151,6 +175,10 @@ class Settings:
         if "mining_hours" in settings:
             settings["mining_hours"] = MiningHoursSettings.normalize(settings["mining_hours"])
         settings["reward_priority"] = RewardPriority.normalize(settings.get("reward_priority", []))
+        # Early builds stored a single release version. Preserve their announce-once behavior.
+        last_notified = settings.pop("last_notified_release", None)
+        if isinstance(last_notified, str) and "last_notified_releases" not in settings:
+            settings["last_notified_releases"] = {"telegram": last_notified, "discord": last_notified}
         merge_json(settings, default_settings)
         settings.pop("allow_helper_connection", None)
         for key, value in settings.items():

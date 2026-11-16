@@ -1412,6 +1412,27 @@ function updateLoginStatus(data) {
     globalThis.browserLoginPanel?.updateLogin(data);
 }
 
+function reconcileNotificationEvents(settings) {
+    // A full settings update or POST response can arrive after a newer save.
+    const revision = state.settings.notification_events_revision ?? -1;
+    if ((settings.notification_events_revision ?? -1) < revision) {
+        return {
+            ...settings,
+            notification_events: state.settings.notification_events,
+            notification_events_revision: revision,
+        };
+    }
+    return settings;
+}
+
+function renderNotificationEvents() {
+    const events = state.settings.notification_events;
+    const drop = document.getElementById('notify-drop_claimed');
+    const release = document.getElementById('notify-new_release');
+    if (drop && !drop.disabled) drop.checked = events?.drop_claimed !== false;
+    if (release && !release.disabled) release.checked = events?.new_release === true;
+}
+
 function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     // Initial loads/socket updates own the watch list; unrelated partial-save replies do not.
     if (!authoritative && Array.isArray(state.settings.games_to_watch)) {
@@ -1427,9 +1448,10 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     if (!authoritative && !changedFields.includes('mining_benefits') && state.settings.mining_benefits) {
         settings = {...settings, mining_benefits: state.settings.mining_benefits};
     }
-    state.settings = settings;
+    state.settings = reconcileNotificationEvents(settings);
     const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
     if (allowUnlinked) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
+    renderNotificationEvents();
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('priority-list-only').checked = settings.priority_list_only !== false;
     applyInventoryViewMode(settings.inventory_list_view || false);
@@ -2683,6 +2705,40 @@ async function onUnlinkedMiningChange() {
     }
 }
 
+async function onNotificationEventChange(event) {
+    const input = event.target;
+    const requested = input.checked;
+    const error = document.getElementById('notification-events-error');
+    const message = state.translations.gui?.settings?.notification_events?.save_error ||
+        'Could not save notification choices. Please try again.';
+    input.disabled = true;
+    error.hidden = true;
+    error.textContent = '';
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notification_events: { [input.value]: requested } })
+        });
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || data.settings?.notification_events?.[input.value] !== requested) {
+            throw new Error(message);
+        }
+        state.settings = reconcileNotificationEvents({
+            ...state.settings,
+            notification_events: data.settings.notification_events,
+            notification_events_revision: data.settings.notification_events_revision,
+        });
+    } catch (failure) {
+        reportSettingsError(error, message);
+        error.hidden = false;
+    } finally {
+        input.disabled = false;
+        renderNotificationEvents();
+    }
+}
+
 async function fetchAndPopulateLanguages() {
     try {
         const response = await fetch('/api/languages');
@@ -2919,6 +2975,18 @@ function applyTranslations(t) {
         for (const id of ['inventory-reload-label', 'games-reload-label']) {
             const label = document.getElementById(id);
             if (label) label.textContent = t.gui.settings.reload_campaigns;
+        }
+
+        const eventsTrans = t.gui?.settings?.notification_events;
+        if (eventsTrans) {
+            const labels = {
+                'settings-notification-events-header': 'header', 'settings-notification-events-help': 'help',
+                'settings-notify-drop-claimed-label': 'drop_claimed', 'settings-notify-new-release-label': 'new_release'
+            };
+            for (const [id, key] of Object.entries(labels)) {
+                const element = document.getElementById(id);
+                if (element) element.textContent = eventsTrans[key];
+            }
         }
 
         const discordTrans = t.gui?.settings?.discord;
@@ -3352,6 +3420,8 @@ document.addEventListener('DOMContentLoaded', () => {
         .forEach(id => document.getElementById(id).addEventListener('change', onMiningHoursChange));
     document.getElementById('drop-name-blacklist').addEventListener('change', saveSettings);
     document.getElementById('allow-unlinked-campaigns').addEventListener('change', onUnlinkedMiningChange);
+    document.querySelectorAll('.notification-event')
+        .forEach(input => input.addEventListener('change', onNotificationEventChange));
     // Proxy uses a manual "Set Proxy" button instead of auto-save
     document.getElementById('set-proxy-btn').addEventListener('click', saveProxy);
     document.getElementById('wanted-order-reset')?.addEventListener('click', () => saveWantedOrder([]));

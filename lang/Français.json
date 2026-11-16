@@ -264,6 +264,13 @@
             "mining_hours_end": "Fin",
             "mining_hours_save_error": "Impossible d’enregistrer les horaires. Réessayez.",
             "proxy_save_error": "Impossible d’enregistrer le proxy. Saisissez à nouveau son mot de passe et réessayez.",
+            "notification_events": {
+                "header": "Me notifier pour",
+                "help": "S’applique à Discord et Telegram, dès que l’un d’eux est configuré ci-dessous.",
+                "drop_claimed": "Drops récupérés",
+                "new_release": "Nouvelles versions de TwitchDropsMiner (vérifié toutes les 6 heures)",
+                "save_error": "Impossible d’enregistrer les choix de notification. Veuillez réessayer."
+            },
             "discord": {
                 "name": "Notifications Discord",
                 "description": "Recevez des notifications sur Discord lorsque vous réclamez des drops.",

@@ -99,6 +99,7 @@ class SettingsUpdate(BaseModel):
     inventory_list_view: bool | None = None
     mining_benefits: dict[str, bool] | None = None
     mining_hours: dict | None = None
+    notification_events: dict[str, StrictBool] | None = None
 
     @field_validator("reward_priority")
     @classmethod
@@ -389,53 +390,21 @@ async def test_telegram(request: TelegramTestRequest):
     except Exception:
         # Exception text can contain the bot API URL, which embeds the token.
         return {"success": False, "message": "Telegram connection failed."}
+
+
 @app.get("/api/version")
 async def get_version():
     """Get current application version and check for updates"""
-    import aiohttp
+    from src.services.release_service import ReleaseService
 
-    from src.version import __version__
-
-    current_version = __version__
-    latest_version = None
-    update_available = False
-    download_url = None
-
-    try:
-        # Check GitHub API for latest release
-        async with (
-            aiohttp.ClientSession() as session,
-            session.get(
-                "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest", timeout=5
-            ) as response,
-        ):
-            if response.status == 200:
-                data = await response.json()
-                if twitch_client is not None:
-                    twitch_client.diagnostics.record_http(
-                        "GET", "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest",
-                        response.status, payload=data,
-                    )
-                latest_version = data.get("tag_name", "").lstrip("v")
-                download_url = data.get("html_url")
-
-                # Compare versions (simple string comparison works for semantic versioning)
-                if latest_version and latest_version > current_version:
-                    update_available = True
-            elif twitch_client is not None:
-                twitch_client.diagnostics.record_http(
-                    "GET", "https://api.github.com/repos/rangermix/TwitchDropsMiner/releases/latest", response.status,
-                )
-    except Exception as e:
-        if twitch_client is not None:
-            twitch_client.diagnostics.record("github_version", outcome="timeout" if isinstance(e, TimeoutError) else "connection")
-        logger.warning(f"Failed to check for updates: {str(e)}")
-
+    release = await ReleaseService.fetch_latest(
+        twitch_client.diagnostics if twitch_client is not None else None
+    )
     return {
-        "current_version": current_version,
-        "latest_version": latest_version,
-        "update_available": update_available,
-        "download_url": download_url or "https://github.com/rangermix/TwitchDropsMiner/releases",
+        "current_version": __version__,
+        "latest_version": release.version if release else None,
+        "update_available": release is not None and ReleaseService.is_newer(release.version),
+        "download_url": release.url if release else ReleaseService.RELEASES_URL,
     }
 
 

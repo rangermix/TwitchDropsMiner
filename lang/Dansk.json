@@ -264,6 +264,13 @@
             "mining_hours_end": "Slut",
             "mining_hours_save_error": "Kunne ikke gemme minedriftstiden. Prøv igen.",
             "proxy_save_error": "Proxyen kunne ikke gemmes. Indtast adgangskoden igen, og prøv igen.",
+            "notification_events": {
+                "header": "Giv mig besked om",
+                "help": "Gælder for Discord og Telegram, når en af dem er sat op nedenfor.",
+                "drop_claimed": "Indløste drops",
+                "new_release": "Nye TwitchDropsMiner-versioner (tjekkes hver 6. time)",
+                "save_error": "Kunne ikke gemme notifikationsvalg. Prøv igen."
+            },
             "discord": {
                 "name": "Discord-underretninger",
                 "description": "Få besked på Discord, når du gør krav på drops.",

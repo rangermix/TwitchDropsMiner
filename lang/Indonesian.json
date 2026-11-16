@@ -264,6 +264,13 @@
             "mining_hours_end": "Selesai",
             "mining_hours_save_error": "Gagal menyimpan jam mining. Coba lagi.",
             "proxy_save_error": "Proxy tidak dapat disimpan. Masukkan ulang kata sandinya, lalu coba lagi.",
+            "notification_events": {
+                "header": "Beri tahu saya tentang",
+                "help": "Berlaku untuk Discord dan Telegram, setelah salah satunya diatur di bawah.",
+                "drop_claimed": "Drop yang diklaim",
+                "new_release": "Versi baru TwitchDropsMiner (diperiksa setiap 6 jam)",
+                "save_error": "Tidak dapat menyimpan pilihan notifikasi. Silakan coba lagi."
+            },
             "discord": {
                 "name": "Notifikasi Discord",
                 "description": "Terima notifikasi di Discord saat kamu mengklaim drop.",

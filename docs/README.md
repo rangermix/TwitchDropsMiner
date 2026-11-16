@@ -13,7 +13,7 @@ and [Using the dashboard](usage.md).
 | [Twitch login](authentication.md) | Dashboard browser login, existing sessions, logout, and automatic renewal |
 | [Using the dashboard](usage.md) | Game priorities, campaigns, inventory, ignored rewards, and drop history |
 | [Dashboard access](dashboard-access.md) | Optional password protection, reverse proxies, and password recovery |
-| [Telegram notifications](notifications.md) | Bot setup, testing, saved credentials, and disabling alerts |
+| [Telegram notifications](notifications.md) | Bot setup, testing, saved credentials, alert choices, and disabling alerts |
 | [Troubleshooting](troubleshooting.md) | Login, renewal, progress, connection, and cache problems |
 | [Credits](credits.md) | Upstream authors, translators, contributors, and project support |
 

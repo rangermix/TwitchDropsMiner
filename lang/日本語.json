@@ -264,6 +264,13 @@
             "mining_hours_end": "終了",
             "mining_hours_save_error": "稼働時間を保存できませんでした。もう一度お試しください。",
             "proxy_save_error": "プロキシを保存できませんでした。パスワードを再入力して、もう一度お試しください。",
+            "notification_events": {
+                "header": "通知する内容",
+                "help": "下で Discord または Telegram を設定すると適用されます。",
+                "drop_claimed": "受け取ったドロップ",
+                "new_release": "TwitchDropsMiner の新バージョン(6 時間ごとに確認)",
+                "save_error": "通知の選択を保存できませんでした。もう一度お試しください。"
+            },
             "discord": {
                 "name": "Discord通知",
                 "description": "ドロップを受け取るとDiscordに通知が届きます。",

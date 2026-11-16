@@ -21,6 +21,10 @@ def run_javascript(names: list[str], script: str) -> None:
         'reportSettingsError(' in extract_javascript_function(source, name) for name in names
     ):
         names.append('reportSettingsError')
+    if 'updateSettingsUI' in names or 'onNotificationEventChange' in names:
+        for dependency in ['reconcileNotificationEvents', 'renderNotificationEvents']:
+            if dependency not in names:
+                names.append(dependency)
     if 'updateSettingsUI' in names and 'renderWantedOrderInfo' not in names:
         # Settings tests do not render the Main tab's queue panel.
         functions.append('function renderWantedOrderInfo() {}')

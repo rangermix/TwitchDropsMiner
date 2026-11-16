@@ -268,6 +268,14 @@ class GUIDiscordSettings(TypedDict):
     test_connection: str
 
 
+class GUINotificationEventSettings(TypedDict):
+    header: str
+    help: str
+    drop_claimed: str
+    new_release: str
+    save_error: str
+
+
 class GUITelegramSettings(TypedDict):
     name: str
     description: str
@@ -303,6 +311,7 @@ class GUISettings(TypedDict):
     tab_notifications: str
     tab_account: str
     discord: GUIDiscordSettings
+    notification_events: GUINotificationEventSettings
     telegram: GUITelegramSettings
     reload: str
     reload_campaigns: str

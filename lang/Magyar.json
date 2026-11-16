@@ -221,6 +221,13 @@
             "mining_hours_end": "Vége",
             "mining_hours_save_error": "A bányászati idő nem menthető. Próbáld újra.",
             "proxy_save_error": "A proxy mentése nem sikerült. Add meg újra a jelszavát, és próbáld újra.",
+            "notification_events": {
+                "header": "Értesítés ezekről",
+                "help": "Discordra és Telegramra vonatkozik, ha valamelyik be van állítva lent.",
+                "drop_claimed": "Begyűjtött dropok",
+                "new_release": "Új TwitchDropsMiner verziók (6 óránként ellenőrizve)",
+                "save_error": "Az értesítési beállítások mentése sikertelen. Próbáld újra."
+            },
             "discord": {
                 "name": "Discord értesítések",
                 "description": "Értesítést kapsz Discordon, amikor lehozod a dropokat.",

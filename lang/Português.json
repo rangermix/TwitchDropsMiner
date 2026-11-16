@@ -264,6 +264,13 @@
             "mining_hours_end": "Fim",
             "mining_hours_save_error": "Não foi possível guardar o horário. Tente novamente.",
             "proxy_save_error": "Não foi possível salvar o proxy. Digite a senha novamente e tente outra vez.",
+            "notification_events": {
+                "header": "Notificar-me sobre",
+                "help": "Aplica-se ao Discord e ao Telegram, depois de configurar um deles abaixo.",
+                "drop_claimed": "Drops resgatados",
+                "new_release": "Novas versões do TwitchDropsMiner (verificado a cada 6 horas)",
+                "save_error": "Não foi possível guardar as opções de notificação. Tente novamente."
+            },
             "discord": {
                 "name": "Notificações do Discord",
                 "description": "Receba notificações no Discord quando reclamar drops.",

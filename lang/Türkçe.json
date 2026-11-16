@@ -264,6 +264,13 @@
             "mining_hours_end": "Bitiş",
             "mining_hours_save_error": "Madencilik saatleri kaydedilemedi. Tekrar deneyin.",
             "proxy_save_error": "Proxy kaydedilemedi. Parolasını yeniden girip tekrar deneyin.",
+            "notification_events": {
+                "header": "Şunlar için bildir",
+                "help": "Aşağıda biri ayarlandığında Discord ve Telegram için geçerlidir.",
+                "drop_claimed": "Alınan droplar",
+                "new_release": "Yeni TwitchDropsMiner sürümleri (6 saatte bir kontrol edilir)",
+                "save_error": "Bildirim seçimleri kaydedilemedi. Lütfen tekrar deneyin."
+            },
             "discord": {
                 "name": "Discord Bildirimleri",
                 "description": "Drop talep ettiğinde Discord'da bildirim al.",

@@ -221,6 +221,13 @@
             "mining_hours_end": "End",
             "mining_hours_save_error": "Could not save mining hours. Please try again.",
             "proxy_save_error": "Could not save the proxy. Re-enter its password and try again.",
+            "notification_events": {
+                "header": "Notify me about",
+                "help": "Applies to Discord and Telegram, once either is set up below.",
+                "drop_claimed": "Claimed drops",
+                "new_release": "New TwitchDropsMiner versions (checked every 6 hours)",
+                "save_error": "Could not save notification choices. Please try again."
+            },
             "discord": {
                 "name": "Discord Notifications",
                 "description": "Receive notifications on Discord when you claim drops.",
