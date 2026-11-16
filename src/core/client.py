@@ -241,7 +241,7 @@ class Twitch:
             self._resume_mining.set()
 
     async def _stop_channel_tasks(self) -> None:
-        """Drain online checks even after their pending display marker is cleared."""
+        """Drain online checks before discarding account-owned state."""
         tasks = tuple(self._channel_tasks)
         for task in tasks:
             task.cancel()
@@ -519,9 +519,10 @@ class Twitch:
         self.gui.print(message, collapse_key=collapse_key)
 
     def _remove_channel_topics(self, channels: abc.Iterable[Channel]) -> None:
-        """Remove websocket topics for a list of channels."""
+        """Retire websocket topics and outstanding stream checks for channels."""
         topics_to_remove: list[str] = []
         for channel in channels:
+            channel.cancel_online_check()
             topics_to_remove.append(WebsocketTopic.as_str("Channel", "StreamState", channel.id))
             topics_to_remove.append(WebsocketTopic.as_str("Channel", "StreamUpdate", channel.id))
         if topics_to_remove:
@@ -727,7 +728,9 @@ class Twitch:
                 if self.wanted_games:
                     self.change_state(State.CHANNELS_FETCH)
                 else:
-                    # with no games available, we switch to IDLE after cleanup
+                    # with no games available, we switch to IDLE after cleanup;
+                    # CHANNELS_FETCH won't run, so clear the dashboard list here
+                    self.gui.channels.clear()
                     self.print(
                         _.t["status"]["no_campaign"],
                         collapse_key="status.no_campaign",
@@ -761,10 +764,11 @@ class Twitch:
                     # add a list of live channels with drops enabled
                     new_channels.update(await self.get_live_streams(game, drops_enabled=True))
                 # Optional: followed channels outside each game's top directory results.
-                # Existing objects win, so directory/ACL state is never replaced.
-                new_channels.update(await self._channel_service.get_followed_live_channels(
-                    {channel.id for channel in new_channels}
-                ))
+                known_ids = {channel.id for channel in new_channels}
+                if (watched := self.watching_channel.get_with_default(None)) is not None:
+                    known_ids.add(watched.id)
+                new_channels.update(await self._channel_service.get_followed_live_channels(known_ids))
+                await self._channel_service.refresh_watched_channel(new_channels)
                 # Filter account-specific bans before priority sorting and the tracking cap.
                 retained_channels = [channel for channel in (
                     self.watching_channel.get_with_default(None), self._manual_target_channel,
@@ -821,6 +825,11 @@ class Twitch:
                         )
                     )
                 self.websocket.add_topics(to_add_topics)
+                # websocket events reach the tracked object, so the manual target must use it
+                if self._manual_target_channel is not None:
+                    self._manual_target_channel = channels.get(
+                        self._manual_target_channel.id, self._manual_target_channel
+                    )
                 # relink watching channel after cleanup
                 # NOTE: this replaces 'self.watching_channel's internal value with the new object
                 # Don't call stop_watching() here - let CHANNEL_SWITCH handle it to avoid clearing drop display
@@ -890,8 +899,8 @@ class Twitch:
                         # No channels available for manual game -> exit manual mode
                         if new_watching is None:
                             self.exit_manual_mode("No channels available for manual game")
-                # Auto-select best channel based on priority
-                else:
+                # Auto-select best channel based on priority, also right after manual mode ends
+                if new_watching is None and not self.is_manual_mode():
                     for channel in sorted(
                         channels.values(), key=self._channel_service.get_mining_priority
                     ):
