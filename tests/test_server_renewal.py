@@ -300,6 +300,31 @@ async def test_cancel_during_sdk_wait_closes_owned_target_and_browser():
 
 
 @pytest.mark.asyncio
+async def test_owned_browser_uses_current_proxy_without_bypass(monkeypatch):
+    from src.auth import server_renewal
+
+    calls = []
+    process = SimpleNamespace(pid=123, returncode=0, wait=AsyncMock(return_value=0))
+
+    async def spawn(*args, **kwargs):
+        calls.append(args)
+        return process
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", spawn)
+    monkeypatch.setattr(server_renewal.OwnedChromium, "wait_ready", AsyncMock(return_value="http://127.0.0.1:1234"))
+    proxy = ["http://proxy-one.test:8080"]
+    browser = server_renewal.OwnedChromium("test-chromium", proxy=lambda: proxy[0])
+    for _ in range(2):
+        async with browser.start():
+            pass
+        proxy[0] = "http://proxy-two.test:8080"
+    assert [next(arg for arg in args if arg.startswith("--proxy-server=")) for args in calls] == [
+        "--proxy-server=http://proxy-one.test:8080",
+        "--proxy-server=http://proxy-two.test:8080",
+    ]
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("platform", ["posix", "nt"] if os.name == "posix" else ["nt"])
 @pytest.mark.parametrize("outcome", ["success", "failure", "cancel", "startup_timeout"])
 @pytest.mark.parametrize("displayed", [False, True])
