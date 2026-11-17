@@ -74,9 +74,10 @@ class OwnedChromium:
         "os.execvp(sys.argv[3],sys.argv[3:])\n"
     )
 
-    def __init__(self, executable: str, *, no_sandbox: bool = False, startup_timeout: float = 20):
+    def __init__(self, executable: str, *, no_sandbox: bool = False, startup_timeout: float = 20,
+                 proxy: str | None | Callable[[], str | None] = None):
         self.executable, self.no_sandbox = executable, no_sandbox
-        self.startup_timeout = startup_timeout
+        self.startup_timeout, self.proxy = startup_timeout, proxy
         # Whether the last Linux start lacked xvfb-run; Twitch can reject headless proofs.
         self.headless_fallback = False
 
@@ -165,6 +166,9 @@ class OwnedChromium:
             ]
             if self.no_sandbox:
                 args.insert(1, "--no-sandbox")
+            proxy = self.proxy() if callable(self.proxy) else self.proxy
+            if proxy:
+                args.append(f"--proxy-server={proxy}")
             display_runner = shutil.which("xvfb-run") if os.name == "posix" else None
             display_args: list[str] = []
             # macOS Chromium never uses X, so only Linux is told to install xvfb.
