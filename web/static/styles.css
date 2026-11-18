@@ -2803,9 +2803,8 @@ header h1 {
 }
 
 .brand-icon {
-    width: 28px;
-    height: 28px;
-    color: var(--text-secondary);
+    width: 40px;
+    height: 40px;
     flex: none;
 }
 

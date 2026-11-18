@@ -95,7 +95,8 @@ class TestDashboardAuth:
                 assert response.status_code == 401, (method, path)
         for path in ("/docs", "/openapi.json", "/static/app.js", "/socket.io/?EIO=4&transport=polling"):
             assert protected.get(path).status_code == 401, path
-        for path in ("/static/auth.js", "/static/auth.css", "/static/styles.css", "/api/auth/status"):
+        for path in ("/static/auth.js", "/static/auth.css", "/static/styles.css", "/static/favicon.png",
+                     "/static/logo.svg", "/api/auth/status"):
             assert protected.get(path).status_code == 200, path
 
     def test_wrong_password_and_cookie_tampering(self, protected):

@@ -16,7 +16,7 @@ from a web dashboard. Run it on your own computer or home server. This hobby pro
 supports personal use on your own hardware and home network; third-party hosting and
 services operated for other users are outside its support scope.
 
-![Twitch Drops Miner web dashboard](./screenshot.png)
+![Twitch Drops Miner web dashboard in light and dark mode](./screenshot.png)
 
 - Choose and prioritize games, or let TDM discover available campaigns.
 - [Mine other eligible games as fallback](docs/usage.md#choose-games-and-priorities)
