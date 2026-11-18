@@ -294,8 +294,7 @@ Keep the same project, mounts, and environment configuration. Do not use
 Stop the miner, update the checkout, activate `env/`, run
 `uv sync --active --locked --python 3.12`, and start it again.
 
-Preserve `data/cookies.jar`. Working Android sessions are reused automatically.
-Smart TV sessions from v1.3.1/v1.3.2, expired sessions, and signed-out installations
-use the [dashboard browser](authentication.md#existing-installations). Do not delete all data to solve a login problem.
+Keep the same private `data` directory. If you need to sign in again, follow the
+[login instructions for source installations](authentication.md#dashboard-access-and-source-installations).
 
 [All guides](README.md) · [Next: Twitch login](authentication.md)

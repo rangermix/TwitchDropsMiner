@@ -230,20 +230,13 @@ This builds that branch's source, which may be newer than the published release,
 reuses the configured data/log mounts. For named volumes, custom Compose files, and
 backup guidance, see [detailed update steps](docs/installation.md#persistent-data-and-upgrades).
 
-## Upgrading to v2.0
-
-Keep your existing `data` directory, including `cookies.jar`, and the same Docker volume.
-A working Android session is restored automatically. If you used the Smart TV login in
-v1.3.1/v1.3.2, your session has expired, or you are signed out, sign in using the dashboard browser. Follow the [v2.0 migration steps](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.0.0)
-when updating your container or source installation.
-
 ## User guides
 
 Browse the [GitHub wiki](https://github.com/rangermix/TwitchDropsMiner/wiki) or read the
 same guides in [docs](docs/README.md):
 
 - [Installation and updates](docs/installation.md)
-- [Login, migration, and recovery](docs/authentication.md)
+- [Twitch login and recovery](docs/authentication.md)
 - [Games, campaigns, inventory, and history](docs/usage.md)
 - [Dashboard password and reverse proxies](docs/dashboard-access.md)
 - [Telegram and Discord notifications](docs/notifications.md)

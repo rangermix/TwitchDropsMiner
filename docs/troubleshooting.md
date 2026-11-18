@@ -129,9 +129,8 @@ directory.
 
 ## TDM needs a new login after an upgrade
 
-Preserve the data directory and `cookies.jar`. Valid Android and browser sessions
-are restored. Smart TV sessions from v1.3.1/v1.3.2 and expired sessions require the
-[dashboard browser](authentication.md). Deleting all data is unnecessary.
+Keep your data directory. If TDM asks you to sign in again, follow the
+[Twitch login guide](authentication.md#sign-in).
 
 ## Renewal is retrying or asks for another login
 

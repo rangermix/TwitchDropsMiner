@@ -1080,8 +1080,9 @@ protocol rejection; preserve rejection and target-cleanup assertions.
   `uv`, update `src/version.py`, `pyproject.toml`, and `uv.lock` together, and validate all
   three before creating a release branch or tag. Release notes read `GEMINI_API_KEY`
   from the step environment and send it as a header, never as an argument or URL.
-  Preserve existing data-volume/session migration instructions. Prepare versioned
-  frontend cache keys through the authorized release workflow before deployment.
+  Keep data preservation and session recovery instructions in the current installation
+  and authentication guides. Prepare versioned frontend cache keys through the
+  authorized release workflow before deployment.
   Keep current Docker/helper examples and Settings-tab paths aligned in release
   documentation. Distinguish historical release behavior from current features and
   disclose host-name migration requirements without claiming live Twitch acceptance.

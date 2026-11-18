@@ -224,11 +224,8 @@ a certificate from `tailscale cert` instead.
 
 ## Existing installations
 
-Keep the same private `data` directory across updates. Valid saved Android logins and
-accepted browser sessions are reused. The existing `imported-session.json` formats
-are read automatically; an accepted session or logout is saved in the new format.
-Expired or rejected credentials show the integrated sign in browser.
-Smart TV logins from v1.3.1/v1.3.2 require a new login.
+Keep the same private `data` directory across updates. TDM reuses valid saved Android
+and browser sessions. If TDM needs a new session, sign in from the dashboard.
 
 Older imported sessions without renewal state remain usable until a new login is
 required. Sign in again to enable automatic renewal. Never delete the whole data
