@@ -158,7 +158,7 @@ class InventoryService:
         except ExitRequest:
             raise
         except (MinerException, KeyError, TypeError, ValueError, AttributeError, TimeoutError):
-            logger.info("Reward repeat info is unavailable; multi-goal campaigns need a started goal")
+            logger.info("Reward repeat info is unavailable; multi-goal campaigns use their first watch goal")
             return frozenset()
 
     async def fetch_reward_campaigns(self) -> list[DropsCampaign]:
