@@ -152,8 +152,8 @@ For source security rebuilds with refreshed base images and packages, see the
 
 1. Open the dashboard. When Twitch login is required, TDM shows its container browser
    and the Twitch sign in page automatically.
-2. Sign in and complete Twitch verification. The browser closes automatically a few
-   seconds after login; **Finish sign in** remains available if it stays open.
+2. Sign in and complete Twitch verification, then select **Finish sign in**.
+   Chromium builds may close the browser automatically a few seconds after login.
    Password saving is disabled. Expand **Copy and paste** to transfer text to or from the browser.
 3. TDM verifies your account and campaign access, saves the session, and returns to
    the normal dashboard. Select your games there.
@@ -162,8 +162,9 @@ You can close and reopen the dashboard tab during sign in; the container browser
 keeps running until the attempt finishes or times out.
 
 Set Docker’s `TZ` to match your home internet connection’s timezone; change
-`Australia/Sydney` in the example as needed. Chromium and the temporary display are
-included in the image. Your everyday browser profile is separate.
+`Australia/Sydney` in the example as needed. Browsers and the temporary display are
+included in the image. Current source builds use Firefox for sign-in and Chromium for
+renewal; the published v2.6.0 image uses Chromium for both. Your everyday browser profile is separate.
 TDM renews the session automatically using a private verification browser, separate
 from the sign-in viewer. Linux/macOS use a private pipe for this browser's control
 connection; v2.5.0 preserves it through display wrappers. Windows uses loopback.
