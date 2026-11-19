@@ -20,7 +20,7 @@ from src.config.constants import GQLRawQuery
 from src.config.operations import (
     REWARD_CAMPAIGNS_QUERY,
     REWARD_PROGRESS_QUERY,
-    REWARD_REPEATS_QUERY,
+    REWARD_WINDOWS_QUERY,
 )
 from src.config.reward_priority import RewardPriority
 from src.exceptions import ExitRequest, MinerException
@@ -140,26 +140,29 @@ class InventoryService:
             if isinstance(group, dict) and isinstance(group.get("self"), dict)
         }
 
-    async def _fetch_reward_repeats(self) -> frozenset[str]:
-        """Return IDs of repeating reward groups; any failure only loses this hint."""
+    async def _fetch_reward_windows(self) -> dict[str, str]:
+        """Return reward group window end times; any failure only loses this hint."""
         try:
             response = await asyncio.wait_for(
-                self._twitch.gql_request(GQLRawQuery(REWARD_REPEATS_QUERY)), timeout=5
+                self._twitch.gql_request(GQLRawQuery(REWARD_WINDOWS_QUERY)), timeout=5
             )
-            return frozenset(
-                group["id"]
-                for campaign in response["data"]["rewardCampaignsAvailableToUser"] or []
+            in_progress = response["data"]["currentUser"]["inventory"][
+                "viewerRewardDropCampaignsInProgress"
+            ]
+            return {
+                group["id"]: group["self"]["currentWindow"]["expiresAt"]
+                for campaign in in_progress or []
                 if isinstance(campaign, dict)
                 for group in campaign["rewardGroups"] or []
                 if isinstance(group, dict)
-                and isinstance(group.get("repeat"), dict)
-                and (group["repeat"].get("times") or 0) > 1
-            )
+                and isinstance(group.get("self"), dict)
+                and isinstance(group["self"].get("currentWindow"), dict)
+            }
         except ExitRequest:
             raise
         except (MinerException, KeyError, TypeError, ValueError, AttributeError, TimeoutError):
-            logger.info("Reward repeat info is unavailable; multi-goal campaigns use their first watch goal")
-            return frozenset()
+            logger.info("Reward window info is unavailable; a granted goal is treated as done")
+            return {}
 
     async def fetch_reward_campaigns(self) -> list[DropsCampaign]:
         """Build watch-based sitewide Open Reward Campaigns; failures never block regular drops."""
@@ -174,7 +177,7 @@ class InventoryService:
 
     async def _load_reward_campaigns(self) -> list[DropsCampaign]:
         progress = await self._fetch_reward_progress()
-        repeat_ids = await self._fetch_reward_repeats()
+        windows = await self._fetch_reward_windows()
         response = await self._twitch.gql_request(GQLRawQuery(REWARD_CAMPAIGNS_QUERY))
         user_id = (await self._twitch.get_auth()).user_id
         campaigns: list[DropsCampaign] = []
@@ -187,7 +190,7 @@ class InventoryService:
                 if not data.get("isSitewide"):
                     continue
                 campaign = DropsCampaign.from_reward_campaign(
-                    self._twitch, data, progress, user_id, repeat_ids
+                    self._twitch, data, progress, user_id, windows
                 )
                 if campaign is not None:
                     self._log_reward_progress(campaign, progress)

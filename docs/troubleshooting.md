@@ -153,8 +153,8 @@ TDM mines watch-based sitewide Open Reward Campaigns, such as GTAVI Launch Celeb
 which the Twitch Drops page lists separately from regular drop campaigns. Each campaign's
 watch goal appears in Inventory under its first listed category, for example the daily
 GTA DVD Chest of GTAVI Launch Celebration under **Grand Theft Auto VI**. When a campaign
-has several watch goals, TDM mines the one in progress on Twitch, otherwise the repeating
-daily goal. For a campaign with parallel tracks, such as Pokemon Evolutions, start the
+has several watch goals, TDM mines the one in progress on Twitch, otherwise the first
+one. For a campaign with parallel tracks, such as Pokemon Evolutions, start the
 track you want on Twitch first. Add that category to **Settings → Games → Mining list**
 and keep **Other reward** ticked in **Settings → Mining → Reward types**. Daily
 goals wait in Inventory until Twitch opens the next window. Subscription goals and

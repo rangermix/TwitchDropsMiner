@@ -53,10 +53,17 @@ query RewardCampaignProgress {
 }
 """
 
-# The `repeat` field is unverified; a separate query means a rejection only loses this hint.
-REWARD_REPEATS_QUERY = """
-query RewardCampaignRepeats {
-    rewardCampaignsAvailableToUser { id rewardGroups { id repeat { times } } }
+# `currentWindow` is used by other miners but unverified here; a separate query means a
+# rejection only loses this hint.
+REWARD_WINDOWS_QUERY = """
+query RewardCampaignWindows {
+    currentUser {
+        inventory {
+            viewerRewardDropCampaignsInProgress {
+                rewardGroups { id self { currentWindow { expiresAt } } }
+            }
+        }
+    }
 }
 """
 

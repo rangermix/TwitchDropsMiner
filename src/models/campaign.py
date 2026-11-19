@@ -26,6 +26,24 @@ if TYPE_CHECKING:
 logger = logging.getLogger("TwitchDrops")
 
 
+def _wait_state(
+    value: object, goal: int, ends_at: datetime
+) -> tuple[int, bool, datetime | None] | None:
+    """Turn a window end or next-eligible time into a reward state; None if unparseable."""
+    try:
+        wait_until = isoparse(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError, AttributeError):
+        return None
+    if wait_until.tzinfo is None:
+        wait_until = wait_until.replace(tzinfo=timezone.utc)
+    if wait_until + timedelta(minutes=goal) > ends_at:
+        # The next window cannot be finished before the campaign ends: last grant.
+        return goal, True, None
+    if wait_until > datetime.now(timezone.utc):
+        return 0, False, wait_until
+    return 0, False, None
+
+
 class DropsCampaign:
     # Open Reward Campaign mapped onto one drop (see from_reward_campaign).
     is_reward: bool = False
@@ -62,7 +80,7 @@ class DropsCampaign:
 
     @staticmethod
     def reward_state(
-        progress: JsonType | None, goal: int, ends_at: datetime
+        progress: JsonType | None, goal: int, ends_at: datetime, window_end: str | None = None
     ) -> tuple[int, bool, datetime | None] | None:
         """Map a reward group's progress to (minutes, granted, wait_until); None = do not farm."""
         if progress is None:
@@ -70,7 +88,12 @@ class DropsCampaign:
         status = progress.get("status")
         if status == "IN_PROGRESS":
             minutes = progress.get("currentMinutesWatched")
-            return (min(max(minutes, 0), goal) if type(minutes) is int else 0), False, None
+            minutes = min(max(minutes, 0), goal) if type(minutes) is int else 0
+            if minutes < goal:
+                return minutes, False, None
+            # Twitch grants the goal and keeps IN_PROGRESS until the window ends; an
+            # unknown window end counts as granted until a reload shows a new reading.
+            return _wait_state(window_end, goal, ends_at) or (goal, True, None)
         if status == "CLAIMABLE":
             return goal, False, None
         if status not in ("CLAIMED", "FULFILLED"):
@@ -78,18 +101,7 @@ class DropsCampaign:
         next_at = progress.get("nextEligibleAt")
         if not next_at:
             return goal, True, None
-        try:
-            wait_until = isoparse(next_at)
-        except (TypeError, ValueError, AttributeError):
-            return None
-        if wait_until.tzinfo is None:
-            wait_until = wait_until.replace(tzinfo=timezone.utc)
-        if wait_until + timedelta(minutes=goal) > ends_at:
-            # The next window cannot be finished before the campaign ends: last grant.
-            return goal, True, None
-        if wait_until > datetime.now(timezone.utc):
-            return 0, False, wait_until
-        return 0, False, None
+        return _wait_state(next_at, goal, ends_at)
 
     @classmethod
     def from_reward_campaign(
@@ -98,45 +110,41 @@ class DropsCampaign:
         data: JsonType,
         progress_by_group: JsonType,
         user_id: str | int,
-        repeat_ids: frozenset[str] = frozenset(),
+        windows: dict[str, str] | None = None,
     ) -> DropsCampaign | None:
-        """Build a campaign from a sitewide Open Reward Campaign's daily watch group."""
+        """Build a campaign from a sitewide Open Reward Campaign's current watch group."""
         watch = [
             g
             for g in data["rewardGroups"]
             if g["unlockRequirements"]["minuteWatchedGoal"] > 0 and g["categories"] and g["rewards"]
         ]
         # shortcut: lane campaigns (several watch tracks, one counts once started) have no
-        # lane choice: the track in progress wins, else the repeating daily goal, else the
-        # first goal; add lane choice if mining a chosen lane is wanted.
+        # lane choice: the track in progress wins, else the first goal; add lane choice if
+        # mining a chosen lane is wanted.
         ends_at = isoparse(data["endsAt"])
+        windows = windows or {}
         active = [
             g
             for g in watch
             if g["id"] in progress_by_group
             and (
                 state := cls.reward_state(
-                    progress_by_group[g["id"]], g["unlockRequirements"]["minuteWatchedGoal"], ends_at
+                    progress_by_group[g["id"]],
+                    g["unlockRequirements"]["minuteWatchedGoal"],
+                    ends_at,
+                    windows.get(g["id"]),
                 )
             )
             is not None
             and not state[1]
         ]
-        pool = active if len(active) == 1 else active or watch
-        if len(pool) > 1:
-            pool = [g for g in pool if g["id"] in repeat_ids] if repeat_ids else pool[:1]
-        if len(pool) != 1:
-            if watch:
-                logger.info(
-                    "Open Reward Campaign %s skipped: several watch goals could count; "
-                    "start one on Twitch to mine it",
-                    data["id"],
-                )
+        pool = active or watch
+        if not pool:
             return None
         group = pool[0]
         goal: int = group["unlockRequirements"]["minuteWatchedGoal"]
         progress: JsonType | None = progress_by_group.get(group["id"])
-        state = cls.reward_state(progress, goal, ends_at)
+        state = cls.reward_state(progress, goal, ends_at, windows.get(group["id"]))
         if state is None:
             return None
         minutes, granted, wait_until = state

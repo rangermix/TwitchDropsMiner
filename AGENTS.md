@@ -841,7 +841,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   `tests/test_playlist_watch.py`, `tests/test_watch_transport.py`, and
   `tests/test_watch_poll_cadence.py`.
 - A watch-based Open Reward Campaign is one `DropsCampaign` (`is_reward`) with one drop: the watch group
-  in progress, else the repeating one (`REWARD_REPEATS_QUERY`), else the first; ambiguous hints skip it.
+  in progress, else the first. Twitch grants a reached goal and keeps it `IN_PROGRESS`, so it
+  counts as granted until its window ends (`REWARD_WINDOWS_QUERY`, optional).
   On the progress tick, `InventoryService.refresh_reward_progress` reads all earnable reward
   campaigns with one query; `get_active_campaign(exclude_rewards=True)` then keeps the
   CurrentDrop query for regular campaigns. A finished window reloads the inventory, and a
@@ -866,7 +867,7 @@ Persisted operations are defined in `src/config/operations.py` as `GQL_OPERATION
 - **NotificationsDelete** - Delete Twitch notifications
 
 Open Reward Campaigns use three raw `GQLRawQuery` operations, `REWARD_CAMPAIGNS_QUERY`,
-`REWARD_PROGRESS_QUERY` and `REWARD_REPEATS_QUERY` (an optional hint with its own 5 s
+`REWARD_PROGRESS_QUERY` and `REWARD_WINDOWS_QUERY` (an optional hint with its own 5 s
 timeout); they have no persisted hashes.
 
 ### Channel Selection Priority

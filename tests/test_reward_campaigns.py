@@ -24,6 +24,7 @@ from tests.test_watched_channel_recovery import OFFLINE, _reloading_miner
 GTA = {"id": "1867279146", "displayName": "Grand Theft Auto VI", "slug": "grand-theft-auto-vi"}
 OTHER = {"id": "7", "name": "Other Game"}
 CAMPAIGN_ID = "b7669f9e-c69c-4a9b-a3b2-36266c1bdfc0"
+NO_WINDOWS: dict = {}
 GROUP_ID = "2283245e-d15c-11f1-8cdd-0a58a9feac02"
 CLAIM_ID = f"uid#{CAMPAIGN_ID}#{GROUP_ID}"
 NOW = datetime.now(timezone.utc)
@@ -117,7 +118,7 @@ def _progress_response(self_data):
     ]}}}}
 
 
-def _gql(progress, *, campaigns=None, repeats=()):
+def _gql(progress, *, campaigns=None, windows=NO_WINDOWS):
     """Answer by operation: raw reward queries and the persisted ClaimDrop."""
     async def request(op):
         if "operationName" in op:
@@ -125,12 +126,14 @@ def _gql(progress, *, campaigns=None, repeats=()):
             return {"data": {"claimDropRewards": {"status": "ELIGIBLE_FOR_ALL"}}}
         if "RewardCampaignProgress" in op["query"]:
             return progress
-        if "RewardCampaignRepeats" in op["query"]:
-            if repeats is None:
-                raise GQLException("unknown field repeat")
-            return {"data": {"rewardCampaignsAvailableToUser": [
-                {"id": CAMPAIGN_ID, "rewardGroups": [{"id": g, "repeat": {"times": 6}} for g in repeats]},
-            ]}}
+        if "RewardCampaignWindows" in op["query"]:
+            if windows is None:
+                raise GQLException("unknown field currentWindow")
+            return {"data": {"currentUser": {"inventory": {"viewerRewardDropCampaignsInProgress": [
+                {"rewardGroups": [
+                    {"id": g, "self": {"currentWindow": {"expiresAt": end}}} for g, end in windows.items()
+                ]},
+            ]}}}}
         return campaigns if campaigns is not None else {"data": {"rewardCampaignsAvailableToUser": [_data()]}}
     return AsyncMock(side_effect=request)
 
@@ -720,36 +723,29 @@ def _pokemon(lanes=3):
     return _data([_group(f"lane{n}", goal=20, categories=(GTA, OTHER)) for n in range(lanes)])
 
 
-def _pick(data, progress=None, repeats=frozenset()):
-    return DropsCampaign.from_reward_campaign(_twitch(), data, progress or {}, "uid", frozenset(repeats))
+def _pick(data, progress=None, windows=None):
+    return DropsCampaign.from_reward_campaign(_twitch(), data, progress or {}, "uid", windows or {})
 
 
-def test_daily_goal_is_picked_when_repeats_are_known():
-    assert list(_pick(_gtavi(), repeats={DVD}).timed_drops) == [DVD]
-    # Group order must not matter.
-    assert list(_pick(_gtavi((IGUANA, DVD)), repeats={DVD}).timed_drops) == [DVD]
-
-
-def test_started_group_is_picked_without_repeat_hint():
+def test_started_group_is_picked():
     campaign = _pick(_gtavi(), {DVD: {"status": "IN_PROGRESS", "currentMinutesWatched": 54}})
     assert list(campaign.timed_drops) == [DVD] and _drop(campaign).current_minutes == 54
 
 
-def test_without_a_hint_the_first_watch_goal_is_kept():
+def test_without_progress_the_first_watch_goal_is_kept():
     assert list(_pick(_gtavi()).timed_drops) == [DVD]
+    assert list(_pick(_gtavi((IGUANA, DVD))).timed_drops) == [IGUANA]
     assert list(_pick(_pokemon()).timed_drops) == ["lane0"]
 
 
-def test_unstarted_lane_campaign_with_a_hint_is_not_mined(caplog):
-    # Every lane repeats, so the repeat hint cannot tell them apart.
-    with caplog.at_level("INFO", logger="TwitchDrops"):
-        assert _pick(_pokemon(), repeats={"lane0", "lane1", "lane2"}) is None
-    assert "skipped: several watch goals could count" in caplog.text
+def test_unstarted_first_lane_of_evolutions_is_mined():
+    live = {"lane0": {"status": "IN_PROGRESS", "currentMinutesWatched": 0, "grantCount": 0, "nextEligibleAt": None}}
+    assert list(_pick(_pokemon(), live).timed_drops) == ["lane0"]
 
 
-def test_finished_final_reward_falls_back_to_the_repeating_daily_goal():
+def test_finished_final_reward_falls_back_to_the_first_goal():
     done = {IGUANA: {"status": "FULFILLED", "nextEligibleAt": None}}
-    assert list(_pick(_gtavi(), done, repeats={DVD}).timed_drops) == [DVD]
+    assert list(_pick(_gtavi(), done).timed_drops) == [DVD]
 
 
 def test_granted_daily_goal_yields_to_the_goal_in_progress():
@@ -757,7 +753,7 @@ def test_granted_daily_goal_yields_to_the_goal_in_progress():
         DVD: {"status": "CLAIMED", "nextEligibleAt": None},
         IGUANA: {"status": "IN_PROGRESS", "currentMinutesWatched": 3},
     }
-    assert list(_pick(_gtavi(), progress, repeats={DVD}).timed_drops) == [IGUANA]
+    assert list(_pick(_gtavi(), progress).timed_drops) == [IGUANA]
 
 
 def test_next_lane_is_picked_after_a_lane_is_finished():
@@ -765,54 +761,78 @@ def test_next_lane_is_picked_after_a_lane_is_finished():
         "lane0": {"status": "FULFILLED", "nextEligibleAt": None},
         "lane1": {"status": "IN_PROGRESS", "currentMinutesWatched": 2},
     }
-    assert list(_pick(_pokemon(), progress, repeats={"lane0", "lane1", "lane2"}).timed_drops) == ["lane1"]
+    assert list(_pick(_pokemon(), progress).timed_drops) == ["lane1"]
 
 
-def test_two_lanes_in_progress_are_ambiguous():
-    progress = {f"lane{n}": {"status": "IN_PROGRESS", "currentMinutesWatched": 2} for n in (0, 1)}
-    assert _pick(_pokemon(), progress, repeats={"lane0", "lane1", "lane2"}) is None
-
-
-def test_started_lane_is_mined():
-    campaign = _pick(_pokemon(), {"lane1": {"status": "IN_PROGRESS", "currentMinutesWatched": 4}})
-    assert list(campaign.timed_drops) == ["lane1"]
-
-
-def test_single_watch_group_needs_no_repeat_hint():
+def test_single_watch_group_works_alone():
     assert list(_pick(_data()).timed_drops) == [GROUP_ID]
 
 
-@pytest.mark.asyncio
-async def test_fetch_picks_daily_goal_and_survives_a_rejected_repeats_query():
+# Live payload: Twitch grants at the goal and keeps IN_PROGRESS.
+GRANTED = {"status": "IN_PROGRESS", "currentMinutesWatched": 60, "grantCount": 1, "nextEligibleAt": None}
+
+
+def test_granted_goal_waits_for_the_window_to_end():
+    end = NOW + timedelta(hours=5)
+    campaign = _pick(_data(), {GROUP_ID: GRANTED}, {GROUP_ID: _iso(timedelta(hours=5))})
+    drop = _drop(campaign)
+    assert drop.starts_at == end.replace(microsecond=0)
+    assert not drop.is_claimed and not campaign.can_earn(_channel(_twitch()))
+    assert campaign.can_earn_within(end + timedelta(minutes=1))
+    assert drop.current_minutes == 0
+
+
+def test_granted_goal_with_a_past_window_is_earnable_again():
     twitch = _twitch()
-    twitch.gql_request = _gql(_progress_response(None), campaigns={
-        "data": {"rewardCampaignsAvailableToUser": [_gtavi()]}}, repeats=[DVD])
-    built = await InventoryService(twitch).fetch_reward_campaigns()
-    assert [list(c.timed_drops) for c in built] == [[DVD]]
+    campaign = _pick(_data(), {GROUP_ID: GRANTED}, {GROUP_ID: _iso(-timedelta(hours=1))})
+    assert campaign.can_earn(_channel(twitch)) and _drop(campaign).current_minutes == 0
 
-    twitch.gql_request = _gql(_progress_response(None), campaigns={
-        "data": {"rewardCampaignsAvailableToUser": [_gtavi(), {**_data(), "id": "single"}]}}, repeats=None)
-    built = await InventoryService(twitch).fetch_reward_campaigns()
-    assert [c.id for c in built] == [CAMPAIGN_ID, "single"]  # no hint: GTAVI keeps its first goal
-    assert list(built[0].timed_drops) == [DVD]
+
+@pytest.mark.parametrize("windows", [None, {}, {GROUP_ID: "not a date"}, {GROUP_ID: 5}])
+def test_granted_goal_without_a_usable_window_counts_as_granted(windows):
+    campaign = _pick(_data(), {GROUP_ID: GRANTED}, windows)
+    assert _drop(campaign).is_claimed and not campaign.can_earn(_channel(_twitch()))
+
+
+def test_granted_goal_whose_next_window_cannot_finish_is_finished():
+    late = (datetime.strptime(_data()["endsAt"], "%Y-%m-%dT%H:%M:%SZ") - timedelta(seconds=1)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ")
+    campaign = _pick(_data(), {GROUP_ID: GRANTED}, {GROUP_ID: late})
+    assert _drop(campaign).is_claimed and campaign.finished
+
+
+def test_tick_with_a_reached_goal_reloads_once_without_bumping():
+    twitch = _twitch()
+    campaign = _build({"status": "IN_PROGRESS", "currentMinutesWatched": 54}, twitch=twitch)
+    campaign.apply_reward_progress(GRANTED, _channel(twitch))
+    twitch.request_inventory_refresh.assert_called_once()
+    assert (_drop(campaign).real_current_minutes, _drop(campaign).extra_current_minutes) == (54, 0)
 
 
 @pytest.mark.asyncio
-async def test_slow_repeats_query_only_loses_the_hint(monkeypatch):
+async def test_fetch_uses_the_window_hint_and_survives_its_rejection(monkeypatch):
     twitch = _twitch()
-    campaigns = {"data": {"rewardCampaignsAvailableToUser": [_gtavi(), {**_data(), "id": "night"}]}}
-    plain = _gql(_progress_response(None), campaigns=campaigns)
+    campaigns = {"data": {"rewardCampaignsAvailableToUser": [_data()]}}
+    progress = _progress_response(GRANTED)
+    twitch.gql_request = _gql(progress, campaigns=campaigns, windows={GROUP_ID: _iso(timedelta(hours=3))})
+    (waiting,) = await InventoryService(twitch).fetch_reward_campaigns()
+    assert not _drop(waiting).is_claimed and _drop(waiting).starts_at > NOW
 
-    async def request(op):
-        if "query" in op and "RewardCampaignRepeats" in op["query"]:
+    twitch.gql_request = _gql(progress, campaigns=campaigns, windows=None)
+    (rejected,) = await InventoryService(twitch).fetch_reward_campaigns()
+    assert _drop(rejected).is_claimed
+
+    plain = _gql(progress, campaigns=campaigns)
+
+    async def slow(op):
+        if "query" in op and "RewardCampaignWindows" in op["query"]:
             await asyncio.sleep(10)
         return await plain(op)
 
-    twitch.gql_request = request
+    twitch.gql_request = slow
     real_wait_for = asyncio.wait_for
     monkeypatch.setattr(
         "src.services.inventory_service.asyncio.wait_for",
         lambda awaitable, timeout: real_wait_for(awaitable, {5: 0.05, 15: 3}[timeout]),
     )
-    built = await InventoryService(twitch).fetch_reward_campaigns()
-    assert [c.id for c in built] == [CAMPAIGN_ID, "night"]
+    assert [c.id for c in await InventoryService(twitch).fetch_reward_campaigns()] == [CAMPAIGN_ID]
