@@ -150,10 +150,10 @@ requests without downloading stream audio or video. A Watching label or accepted
 telemetry alone does not establish progress; compare with Twitch inventory.
 
 TDM does not mine Open Reward Campaigns, which the Twitch Drops page lists separately
-from regular drop campaigns. TDM does not request them from Twitch, so they never
-appear in TDM's Inventory, and ticking **Chat badge** under **Reward types** does not
-include them. Adding their game to Mining list has no effect unless the game also has
-a regular drop campaign that TDM can currently mine.
+from regular drop campaigns. It never requests them from Twitch, so they do not appear
+in TDM's Inventory, and ticking **Chat badge** in **Settings → Mining → Reward types**
+does not include them. Adding their game to **Settings → Games → Mining list** has no
+effect unless the game also has a regular drop campaign that TDM can mine.
 
 Check the campaign on Twitch and work through these conditions:
 
