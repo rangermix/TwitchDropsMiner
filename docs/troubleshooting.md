@@ -149,6 +149,12 @@ If TDM 2.2.0 says it is watching but Twitch inventory does not advance, update t
 requests without downloading stream audio or video. A Watching label or accepted
 telemetry alone does not establish progress; compare with Twitch inventory.
 
+TDM does not mine Open Reward Campaigns, which the Twitch Drops page lists separately
+from regular drop campaigns. TDM does not request them from Twitch, so they never
+appear in TDM's Inventory, and ticking **Chat badge** under **Reward types** does not
+include them. Adding their game to Mining list has no effect unless the game also has
+a regular drop campaign that TDM can currently mine.
+
 Check the campaign on Twitch and work through these conditions:
 
 1. The Twitch account is linked to the correct game account and is eligible for the
