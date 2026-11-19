@@ -178,6 +178,8 @@ class InventoryService:
     async def _load_reward_campaigns(self) -> list[DropsCampaign]:
         progress = await self._fetch_reward_progress()
         windows = await self._fetch_reward_windows()
+        # Real window payloads are unverified, so they are logged next to the progress readings.
+        logger.info("Reward windows: %s", windows)
         response = await self._twitch.gql_request(GQLRawQuery(REWARD_CAMPAIGNS_QUERY))
         user_id = (await self._twitch.get_auth()).user_id
         campaigns: list[DropsCampaign] = []
