@@ -85,6 +85,7 @@ class InventoryManager:
             ],
             "starts_at": drop.starts_at.isoformat(),
             "ends_at": drop.ends_at.isoformat(),
+            "reward_grants": drop.campaign.reward_grants if drop.campaign.is_reward else None,
         }
 
     def _serialize_campaign(self, campaign: DropsCampaign) -> dict[str, Any] | None:

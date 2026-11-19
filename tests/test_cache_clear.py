@@ -145,7 +145,9 @@ async def test_inventory_replacement_removes_stale_campaign_lookup_entries():
         _maintenance_service=SimpleNamespace(run_maintenance_task=AsyncMock()),
     )
 
-    await InventoryService(cast(Twitch, twitch)).fetch_inventory()
+    service = InventoryService(cast(Twitch, twitch))
+    service.fetch_reward_campaigns = AsyncMock(return_value=[])
+    await service.fetch_inventory()
     assert twitch._campaigns == {}
     assert twitch._drops == {}
     assert twitch.inventory == []

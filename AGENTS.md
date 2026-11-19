@@ -840,6 +840,18 @@ progress to an ignored drop while the miner intentionally targets another reward
   Playlist/transport, lifecycle, and controlled-clock regressions live in
   `tests/test_playlist_watch.py`, `tests/test_watch_transport.py`, and
   `tests/test_watch_poll_cadence.py`.
+- A watch-based Open Reward Campaign is one `DropsCampaign` (`is_reward`) with one drop: the watch group
+  in progress, else the first. Twitch grants a reached goal and keeps it `IN_PROGRESS`, so it
+  counts as granted until its window ends (`REWARD_WINDOWS_QUERY`, optional).
+  On the progress tick, `InventoryService.refresh_reward_progress` reads all earnable reward
+  campaigns with one query; `get_active_campaign(exclude_rewards=True)` then keeps the
+  CurrentDrop query for regular campaigns. A finished window reloads the inventory, and a
+  `CLAIMABLE` reading reloads it until the drop has a claim id; the existing claim loop then
+  claims it. A reading without
+  a minute increase bumps the estimate until the extra-minute cutoff switches channels. Reward
+  categories also add live channels without the drops flag in CHANNELS_FETCH.
+  Inventory shows Twitch's `grantCount` as "Times earned" (`reward_grants`; no total is available).
+  Regression coverage: `tests/test_reward_campaigns.py`.
 
 ### GraphQL Operations
 
@@ -854,6 +866,10 @@ Persisted operations are defined in `src/config/operations.py` as `GQL_OPERATION
 - **ClaimDrop** - Claim a completed drop
 - **AvailableDrops** - Check which campaigns a channel qualifies for (badge validation)
 - **NotificationsDelete** - Delete Twitch notifications
+
+Open Reward Campaigns use three raw `GQLRawQuery` operations, `REWARD_CAMPAIGNS_QUERY`,
+`REWARD_PROGRESS_QUERY` and `REWARD_WINDOWS_QUERY` (an optional hint with its own 5 s
+timeout); they have no persisted hashes.
 
 ### Channel Selection Priority
 

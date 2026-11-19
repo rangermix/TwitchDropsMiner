@@ -85,6 +85,7 @@ def test_all_languages_include_drop_ignore_text_with_matching_placeholders():
         "ignored_keyword_reason",
         "ignored_precondition_reason",
         "skipped_branch_reason",
+        "reward_grants",
     }
 
     for filepath in LANG_PATH.glob("*.json"):

@@ -163,7 +163,7 @@ class ChannelService:
             (campaign.id, drop.id)
             for campaign in self._twitch.inventory
             if campaign.game in self._twitch.wanted_games
-            and (campaign.game.is_special() or channel.drops_enabled)
+            and (campaign.skips_drops_flag or channel.drops_enabled)
             for drop in campaign.mineable_watch_drops
             if drop.can_earn(channel)
         )
@@ -258,7 +258,7 @@ class ChannelService:
         return min(
             (order.rank(campaign.game.name) for campaign in self._twitch.inventory
              if campaign.game in wanted and campaign.can_earn(channel)
-             and (campaign.game.is_special() or channel.drops_enabled)),
+             and (campaign.skips_drops_flag or channel.drops_enabled)),
             default=order.rank(None),
         )
 
@@ -275,7 +275,7 @@ class ChannelService:
             if channel.online and not channel.banned
             and campaign.game in self._twitch.wanted_games
             and campaign.can_earn(channel)
-            and (campaign.game.is_special() or channel.drops_enabled)]
+            and (campaign.skips_drops_flag or channel.drops_enabled)]
         selected = [campaign for campaign in candidates if campaign.game.name.lower() in selected_names]
         tier = 0 if not fallback or selected else 1
         if not policy.enabled:

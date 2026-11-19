@@ -1268,6 +1268,11 @@ function renderInventory() {
             dropItem.appendChild(benefitsList);
             dropItem.appendChild(makeDropProgressBar(drop));
             dropItem.appendChild(makeElement('div', {}, `${drop.current_minutes} / ${drop.required_minutes} minutes (${dropPercent(drop)}%)`));
+            if (Number.isInteger(drop.reward_grants)) {
+                const grantsTemplate = t.gui?.inventory?.reward_grants || 'Times earned: {count}';
+                dropItem.appendChild(makeElement('div', { class: 'drop-reward-grants' },
+                    grantsTemplate.replace('{count}', String(drop.reward_grants))));
+            }
             if (drop.is_claimed) {
                 dropItem.appendChild(makeElement('div', {}, `✓ ${claimedText}`));
             } else if (policyStatus) {
