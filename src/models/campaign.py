@@ -186,10 +186,13 @@ class DropsCampaign:
             # Finished window or unknown status: rebuild from Twitch.
             self._twitch.request_inventory_refresh()
         elif progress.get("status") == "CLAIMABLE":
-            # The rebuilt drop carries a claim id and the regular reload retries the claim.
             if drop.claim_id is None:
                 self._twitch.request_inventory_refresh()
-        elif state[0] > drop.real_current_minutes:
+            else:
+                # The claim loop already tried this grant: let the extra-minute cutoff
+                # switch channels, and the regular reload retry the claim.
+                self.bump_minutes(channel)
+        elif state[0] != drop.real_current_minutes:
             drop.extra_current_minutes = 0
             drop.update_minutes(state[0])
         else:

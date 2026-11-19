@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -665,3 +666,32 @@ async def test_unwanted_reward_game_is_not_polled():
     twitch, regular, reward, ops = _loop_miner(True, wanted=False)
     await _run_loop(twitch)
     assert not [op for op in ops if "query" in op]
+
+
+def test_lower_reading_corrects_minutes_instead_of_bumping():
+    twitch = _twitch()
+    campaign = _build({"status": "IN_PROGRESS", "currentMinutesWatched": 30}, twitch=twitch)
+    drop = _drop(campaign)
+    campaign.apply_reward_progress({"status": "IN_PROGRESS", "currentMinutesWatched": 3}, _channel(twitch))
+    assert (drop.real_current_minutes, drop.extra_current_minutes) == (3, 0)
+
+
+def test_claim_that_keeps_failing_ends_with_a_channel_switch():
+    twitch = _twitch()
+    campaign = _build({"status": "CLAIMABLE", "currentMinutesWatched": 60}, twitch=twitch)
+    channel = _channel(twitch)
+    for _ in range(MAX_EXTRA_MINUTES):
+        campaign.apply_reward_progress({"status": "CLAIMABLE"}, channel)
+    assert not campaign.can_earn(channel)
+    twitch.change_state.assert_called_with(State.CHANNEL_SWITCH)
+    twitch.request_inventory_refresh.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_channels_fetch_keeps_flag_of_a_kept_stream_in_another_category(tmp_path, monkeypatch):
+    client, calls = _channels_fetch_client(tmp_path, monkeypatch, [False])
+    kept = _channel(client, OTHER, drops_enabled=False, channel_id=2)
+    client.channels[2] = kept
+    with suppress(TimeoutError):  # a stream change may end the scripted run early
+        await _run_client(client)
+    assert kept.drops_enabled is False

@@ -776,7 +776,10 @@ class Twitch:
                     kept = {channel: channel for channel in new_channels}
                     for channel in found:
                         old = kept.get(channel)
-                        if old is not None and old._stream is not None and old._stream == channel._stream:
+                        if (
+                            old is not None and old._stream is not None
+                            and old._stream == channel._stream and old._stream.game == game
+                        ):
                             old._stream.drops_enabled = True
                     new_channels.update(found)
                 for game in flagless:
