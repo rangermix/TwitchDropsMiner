@@ -27,6 +27,9 @@ logger = logging.getLogger("TwitchDrops")
 
 
 class DropsCampaign:
+    # Open Reward Campaign mapped onto one drop (see from_reward_campaign).
+    is_reward: bool = False
+
     def __init__(self, twitch: Twitch, data: JsonType, claimed_benefits: dict[str, datetime]):
         self._twitch: Twitch = twitch
         # Shared progress updates can affect every eligible sibling drop.
@@ -56,6 +59,122 @@ class DropsCampaign:
             tuple[tuple[str, ...], tuple[tuple[str, bool], ...]] | None
         ) = None
         self._drop_ignore_cache: DropIgnoreEvaluation | None = None
+
+    @staticmethod
+    def reward_state(
+        progress: JsonType | None, goal: int
+    ) -> tuple[int, bool, str | None] | None:
+        """Map a reward group's progress to (minutes, granted, wait_until); None = do not farm."""
+        if progress is None:
+            return 0, False, None
+        status = progress.get("status")
+        if status == "IN_PROGRESS":
+            return progress.get("currentMinutesWatched") or 0, False, None
+        if status == "CLAIMABLE":
+            return goal, False, None
+        if status not in ("CLAIMED", "FULFILLED"):
+            return None
+        next_at: str | None = progress.get("nextEligibleAt")
+        if not next_at:
+            return goal, True, None
+        if isoparse(next_at) > datetime.now(timezone.utc):
+            return 0, False, next_at
+        return 0, False, None
+
+    @classmethod
+    def from_reward_campaign(
+        cls,
+        twitch: Twitch,
+        data: JsonType,
+        progress_by_group: JsonType,
+        user_id: str | int,
+    ) -> DropsCampaign | None:
+        """Build a campaign from a sitewide Open Reward Campaign's first watch group."""
+        # shortcut: only the first watch group and its first category, multi-lane
+        # campaigns need per-lane selection, add it when one is mined.
+        group = next(
+            (
+                g
+                for g in data["rewardGroups"]
+                if g["unlockRequirements"]["minuteWatchedGoal"] > 0 and g["categories"]
+            ),
+            None,
+        )
+        if group is None:
+            return None
+        goal: int = group["unlockRequirements"]["minuteWatchedGoal"]
+        progress: JsonType | None = progress_by_group.get(group["id"])
+        state = cls.reward_state(progress, goal)
+        if state is None:
+            return None
+        minutes, granted, wait_until = state
+        claimable = progress is not None and progress.get("status") == "CLAIMABLE"
+        campaign = cls(
+            twitch,
+            {
+                "id": data["id"],
+                "name": data["name"],
+                "game": group["categories"][0],
+                "self": {"isAccountConnected": True},
+                "accountLinkURL": "",
+                "startAt": data["startsAt"],
+                "endAt": data["endsAt"],
+                "status": data["status"],
+                "allow": {"channels": None},
+                "timeBasedDrops": [
+                    {
+                        "id": group["id"],
+                        "name": data["name"],
+                        "benefitEdges": [
+                            {
+                                "benefit": {
+                                    "id": reward["id"],
+                                    "name": reward["name"],
+                                    "distributionType": None,
+                                    "imageAssetURL": (reward.get("thumbnailImage") or {}).get(
+                                        "image1xURL"
+                                    ),
+                                }
+                            }
+                            for reward in group["rewards"]
+                        ],
+                        "startAt": wait_until or data["startsAt"],
+                        "endAt": data["endsAt"],
+                        "preconditionDrops": None,
+                        "requiredMinutesWatched": goal,
+                        "self": {
+                            "dropInstanceID": (
+                                f"{user_id}#{data['id']}#{group['id']}" if claimable else None
+                            ),
+                            "isClaimed": granted,
+                            "currentMinutesWatched": minutes,
+                        },
+                    }
+                ],
+            },
+            {},
+        )
+        campaign.is_reward = True
+        return campaign
+
+    @property
+    def skips_drops_flag(self) -> bool:
+        """Whether progress does not need the channel's drops-enabled flag."""
+        return self.is_reward or self.game.is_special()
+
+    async def apply_reward_progress(self, progress: JsonType | None) -> None:
+        """Apply a fresh reward group reading to this campaign's single drop."""
+        drop = next(iter(self.drops))
+        state = self.reward_state(progress, drop.required_minutes)
+        if state is None or state[1] or state[2]:
+            # Window finished or status unknown: reload to get the next window or drop it.
+            self._twitch.request_inventory_refresh()
+        elif progress is not None and progress.get("status") == "CLAIMABLE":
+            await drop.generate_claim()
+            await drop.claim()
+        else:
+            drop.extra_current_minutes = 0
+            drop.update_minutes(state[0])
 
     def __repr__(self) -> str:
         return f"Campaign({self.game!s}, {self.name}, {self.claimed_drops}/{self.total_drops})"

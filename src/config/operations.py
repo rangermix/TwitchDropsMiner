@@ -24,6 +24,35 @@ query FollowedLiveChannels {
 }
 """
 
+# Open Reward Campaigns have no persisted hashes; both are plain inline queries.
+REWARD_CAMPAIGNS_QUERY = """
+query RewardCampaigns {
+    rewardCampaignsAvailableToUser {
+        id name status startsAt endsAt isSitewide
+        rewardGroups {
+            id
+            unlockRequirements { minuteWatchedGoal }
+            categories { id displayName slug boxArtURL }
+            rewards { id name thumbnailImage { image1xURL } }
+        }
+    }
+}
+"""
+
+REWARD_PROGRESS_QUERY = """
+query RewardCampaignProgress {
+    currentUser {
+        id
+        inventory {
+            viewerRewardDropCampaignsInProgress {
+                id
+                rewardGroups { id self { status currentMinutesWatched grantCount nextEligibleAt } }
+            }
+        }
+    }
+}
+"""
+
 
 GQL_OPERATIONS: dict[str, GQLOperation] = {
     # returns stream information for a particular channel

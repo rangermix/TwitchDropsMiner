@@ -38,6 +38,7 @@ async def test_playlist_polling_preserves_minute_progress_cadence(
     drop = MagicMock()
     drop.can_earn.return_value = True
     campaign = MagicMock()
+    campaign.is_reward = False
     campaign.bump_minutes.side_effect = lambda watched: bumps.append(clock[0])
     progress = CampaignProgressManager(SimpleNamespace(emit=AsyncMock()))
     progress.update(drop, remaining_seconds)
@@ -116,6 +117,7 @@ async def test_blocked_progress_query_is_drained_and_playlist_polling_resumes(mo
     selected = AwaitableValue()
     selected.set(channel)
     campaign = MagicMock()
+    campaign.is_reward = False
     campaign.bump_minutes.side_effect = lambda watched: bumps.append(clock[0])
     twitch = SimpleNamespace(
         is_mining_time=lambda: True,

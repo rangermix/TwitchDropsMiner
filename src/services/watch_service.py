@@ -77,8 +77,8 @@ class WatchService:
             # Respect the user's selection using the campaign's category.
             campaign.game in wanted_games
             and campaign.can_earn(channel)
-            # Special campaigns may progress without the channel's drops flag.
-            and (campaign.game.is_special() or channel.drops_enabled)
+            # Special and reward campaigns may progress without the channel's drops flag.
+            and (campaign.skips_drops_flag or channel.drops_enabled)
             for campaign in self._twitch.inventory
         )
 
@@ -216,6 +216,14 @@ class WatchService:
                 fallback_revision = (
                     fallback_campaign.progress_revision if fallback_campaign is not None else None
                 )
+                if (
+                    fallback_campaign is not None
+                    and fallback_campaign.is_reward
+                    and await self._twitch._inventory_service.refresh_reward_progress(
+                        fallback_campaign
+                    )
+                ):
+                    continue
                 try:
                     context = await asyncio.wait_for(
                         self._twitch.gql_request(

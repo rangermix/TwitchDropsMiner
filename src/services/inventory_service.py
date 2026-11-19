@@ -16,8 +16,10 @@ from dateutil.parser import isoparse
 
 from src.api import GQLClient
 from src.config import GQL_OPERATIONS
+from src.config.constants import GQLRawQuery
+from src.config.operations import REWARD_CAMPAIGNS_QUERY, REWARD_PROGRESS_QUERY
 from src.config.reward_priority import RewardPriority
-from src.exceptions import ExitRequest
+from src.exceptions import ExitRequest, MinerException
 from src.i18n import _
 from src.models import DropsCampaign
 from src.services.game_order import TemporaryGameOrder
@@ -120,6 +122,72 @@ class InventoryService:
 
         return GQLClient.merge_data(campaign_ids, fetched_data)
 
+    async def _fetch_reward_progress(self) -> dict[str, JsonType]:
+        """Return the viewer's reward group progress keyed by group ID."""
+        response = await self._twitch.gql_request(GQLRawQuery(REWARD_PROGRESS_QUERY))
+        in_progress = response["data"]["currentUser"]["inventory"][
+            "viewerRewardDropCampaignsInProgress"
+        ]
+        return {
+            group["id"]: group["self"]
+            for campaign in in_progress or []
+            for group in campaign["rewardGroups"] or []
+            if group["self"] is not None
+        }
+
+    async def fetch_reward_campaigns(self) -> list[DropsCampaign]:
+        """Build watch-based sitewide Open Reward Campaigns; failures never block regular drops."""
+        try:
+            progress = await self._fetch_reward_progress()
+            response = await self._twitch.gql_request(GQLRawQuery(REWARD_CAMPAIGNS_QUERY))
+            user_id = (await self._twitch.get_auth()).user_id
+            campaigns: list[DropsCampaign] = []
+            # shortcut: game-specific reward campaigns may need an account link, skipped
+            # until one is verified to progress without it.
+            for data in response["data"]["rewardCampaignsAvailableToUser"] or []:
+                if not data["isSitewide"]:
+                    continue
+                campaign = DropsCampaign.from_reward_campaign(
+                    self._twitch, data, progress, user_id
+                )
+                if campaign is not None:
+                    self._log_reward_progress(campaign, progress)
+                    campaigns.append(campaign)
+            return campaigns
+        except ExitRequest:
+            raise
+        except (MinerException, KeyError, TypeError, ValueError):
+            logger.warning("Open Reward Campaigns could not be loaded; regular drops are unaffected")
+            return []
+
+    @staticmethod
+    def _log_reward_progress(campaign: DropsCampaign, progress: dict[str, JsonType]) -> None:
+        # Real "self" payloads are unverified, so the raw reading is logged at INFO.
+        drop_id = next(iter(campaign.timed_drops))
+        logger.info(
+            "Reward progress %s (%s): %s", campaign.name, campaign.game, progress.get(drop_id)
+        )
+
+    async def refresh_reward_progress(self, campaign: DropsCampaign) -> bool:
+        """Poll a reward campaign's progress; False means the caller should fall back."""
+        revision = campaign.progress_revision
+        try:
+            progress = await asyncio.wait_for(self._fetch_reward_progress(), timeout=5)
+        except ExitRequest:
+            raise
+        except (MinerException, KeyError, TypeError, ValueError, TimeoutError):
+            return False
+        if (
+            self._twitch._campaigns.get(campaign.id) is not campaign
+            or campaign.progress_revision != revision
+        ):
+            # A newer observation or inventory replacement superseded this reply.
+            return True
+        drop_id = next(iter(campaign.timed_drops))
+        self._log_reward_progress(campaign, progress)
+        await campaign.apply_reward_progress(progress.get(drop_id))
+        return True
+
     async def fetch_inventory(self) -> None:
         """
         Fetch the complete inventory including campaigns and drops.
@@ -185,6 +253,7 @@ class InventoryService:
             DropsCampaign(self._twitch, campaign_data, claimed_benefits)
             for campaign_data in inventory_data.values()
         ]
+        campaigns.extend(await self.fetch_reward_campaigns())
         campaigns.sort(key=lambda c: c.active, reverse=True)
         campaigns.sort(key=lambda c: c.upcoming and c.starts_at or c.ends_at)
         campaigns.sort(key=lambda c: c.eligible, reverse=True)

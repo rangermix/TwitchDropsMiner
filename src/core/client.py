@@ -750,6 +750,7 @@ class Twitch:
                 # NOTE: we consider only campaigns that can be progressed
                 # NOTE: we use another set so that we can set them online separately
                 no_acl: set[Game] = set()
+                flagless: set[Game] = set()
                 acl_channels: set[Channel] = set()
                 next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
                 for campaign in self.inventory:
@@ -758,6 +759,8 @@ class Twitch:
                             acl_channels.update(campaign.allowed_channels)
                         else:
                             no_acl.add(campaign.game)
+                            if campaign.is_reward:
+                                flagless.add(campaign.game)
                 # remove all ACL channels that already exist from the other set
                 acl_channels.difference_update(new_channels)
                 # use the other set to set them online if possible
@@ -767,7 +770,9 @@ class Twitch:
                 for game in no_acl:
                     # for every campaign without an ACL, for it's game,
                     # add a list of live channels with drops enabled
-                    new_channels.update(await self.get_live_streams(game, drops_enabled=True))
+                    new_channels.update(
+                        await self.get_live_streams(game, drops_enabled=game not in flagless)
+                    )
                 # Optional: followed channels outside each game's top directory results.
                 known_ids = {channel.id for channel in new_channels}
                 if (watched := self.watching_channel.get_with_default(None)) is not None:

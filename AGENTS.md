@@ -840,6 +840,10 @@ progress to an ignored drop while the miner intentionally targets another reward
   Playlist/transport, lifecycle, and controlled-clock regressions live in
   `tests/test_playlist_watch.py`, `tests/test_watch_transport.py`, and
   `tests/test_watch_poll_cadence.py`.
+- A watch-based Open Reward Campaign is one `DropsCampaign` (`is_reward`) with one drop.
+  `InventoryService.refresh_reward_progress` replaces the CurrentDrop query on the same
+  progress tick, and it claims with the synthetic `userId#campaignId#groupId` ID.
+  Regression coverage: `tests/test_reward_campaigns.py`.
 
 ### GraphQL Operations
 
@@ -854,6 +858,9 @@ Persisted operations are defined in `src/config/operations.py` as `GQL_OPERATION
 - **ClaimDrop** - Claim a completed drop
 - **AvailableDrops** - Check which campaigns a channel qualifies for (badge validation)
 - **NotificationsDelete** - Delete Twitch notifications
+
+Open Reward Campaigns use two raw `GQLRawQuery` operations, `REWARD_CAMPAIGNS_QUERY` and
+`REWARD_PROGRESS_QUERY`; they have no persisted hashes.
 
 ### Channel Selection Priority
 
