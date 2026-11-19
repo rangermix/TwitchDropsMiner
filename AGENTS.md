@@ -840,12 +840,13 @@ progress to an ignored drop while the miner intentionally targets another reward
   Playlist/transport, lifecycle, and controlled-clock regressions live in
   `tests/test_playlist_watch.py`, `tests/test_watch_transport.py`, and
   `tests/test_watch_poll_cadence.py`.
-- A watch-based Open Reward Campaign is one `DropsCampaign` (`is_reward`) with one drop: the started
-  watch group, else the single repeating one (`REWARD_REPEATS_QUERY`); several candidates are skipped.
+- A watch-based Open Reward Campaign is one `DropsCampaign` (`is_reward`) with one drop: the watch group
+  in progress, else the repeating one (`REWARD_REPEATS_QUERY`), else the first; ambiguous hints skip it.
   On the progress tick, `InventoryService.refresh_reward_progress` reads all earnable reward
   campaigns with one query; `get_active_campaign(exclude_rewards=True)` then keeps the
-  CurrentDrop query for regular campaigns. A `CLAIMABLE` or finished window requests an
-  inventory reload, and the existing claim loop claims the rebuilt drop. A reading without
+  CurrentDrop query for regular campaigns. A finished window reloads the inventory, and a
+  `CLAIMABLE` reading reloads it until the drop has a claim id; the existing claim loop then
+  claims it. A reading without
   a minute increase bumps the estimate until the extra-minute cutoff switches channels. Reward
   categories also add live channels without the drops flag in CHANNELS_FETCH.
   Regression coverage: `tests/test_reward_campaigns.py`.
@@ -864,8 +865,9 @@ Persisted operations are defined in `src/config/operations.py` as `GQL_OPERATION
 - **AvailableDrops** - Check which campaigns a channel qualifies for (badge validation)
 - **NotificationsDelete** - Delete Twitch notifications
 
-Open Reward Campaigns use two raw `GQLRawQuery` operations, `REWARD_CAMPAIGNS_QUERY` and
-`REWARD_PROGRESS_QUERY`; they have no persisted hashes.
+Open Reward Campaigns use three raw `GQLRawQuery` operations, `REWARD_CAMPAIGNS_QUERY`,
+`REWARD_PROGRESS_QUERY` and `REWARD_REPEATS_QUERY` (an optional hint with its own 5 s
+timeout); they have no persisted hashes.
 
 ### Channel Selection Priority
 

@@ -143,7 +143,9 @@ class InventoryService:
     async def _fetch_reward_repeats(self) -> frozenset[str]:
         """Return IDs of repeating reward groups; any failure only loses this hint."""
         try:
-            response = await self._twitch.gql_request(GQLRawQuery(REWARD_REPEATS_QUERY))
+            response = await asyncio.wait_for(
+                self._twitch.gql_request(GQLRawQuery(REWARD_REPEATS_QUERY)), timeout=5
+            )
             return frozenset(
                 group["id"]
                 for campaign in response["data"]["rewardCampaignsAvailableToUser"] or []
@@ -155,7 +157,7 @@ class InventoryService:
             )
         except ExitRequest:
             raise
-        except (MinerException, KeyError, TypeError, ValueError, AttributeError):
+        except (MinerException, KeyError, TypeError, ValueError, AttributeError, TimeoutError):
             logger.info("Reward repeat info is unavailable; multi-goal campaigns need a started goal")
             return frozenset()
 

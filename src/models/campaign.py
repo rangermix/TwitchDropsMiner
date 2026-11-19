@@ -106,17 +106,29 @@ class DropsCampaign:
             for g in data["rewardGroups"]
             if g["unlockRequirements"]["minuteWatchedGoal"] > 0 and g["categories"] and g["rewards"]
         ]
-        # shortcut: lane campaigns (several watch tracks, one counts once started) are only
-        # mined after the viewer starts a lane on Twitch; add lane choice if one is wanted.
-        # Of several goals the single repeating one is the daily chain, and only its first
-        # category is used.
-        pool = [g for g in watch if g["id"] in progress_by_group] or watch
+        # shortcut: lane campaigns (several watch tracks, one counts once started) have no
+        # lane choice: the track in progress wins, else the repeating daily goal, else the
+        # first goal; add lane choice if mining a chosen lane is wanted.
+        ends_at = isoparse(data["endsAt"])
+        active = [
+            g
+            for g in watch
+            if g["id"] in progress_by_group
+            and (
+                state := cls.reward_state(
+                    progress_by_group[g["id"]], g["unlockRequirements"]["minuteWatchedGoal"], ends_at
+                )
+            )
+            is not None
+            and not state[1]
+        ]
+        pool = active if len(active) == 1 else active or watch
         if len(pool) > 1:
-            pool = [g for g in pool if g["id"] in repeat_ids]
+            pool = [g for g in pool if g["id"] in repeat_ids] if repeat_ids else pool[:1]
         if len(pool) != 1:
             if watch:
                 logger.info(
-                    "Open Reward Campaign %s skipped: several watch goals; "
+                    "Open Reward Campaign %s skipped: several watch goals could count; "
                     "start one on Twitch to mine it",
                     data["id"],
                 )
@@ -124,7 +136,7 @@ class DropsCampaign:
         group = pool[0]
         goal: int = group["unlockRequirements"]["minuteWatchedGoal"]
         progress: JsonType | None = progress_by_group.get(group["id"])
-        state = cls.reward_state(progress, goal, isoparse(data["endsAt"]))
+        state = cls.reward_state(progress, goal, ends_at)
         if state is None:
             return None
         minutes, granted, wait_until = state

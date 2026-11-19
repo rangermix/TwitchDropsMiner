@@ -150,12 +150,13 @@ requests without downloading stream audio or video. A Watching label or accepted
 telemetry alone does not establish progress; compare with Twitch inventory.
 
 TDM mines watch-based sitewide Open Reward Campaigns, such as GTAVI Launch Celebration,
-which the Twitch Drops page lists separately from regular drop campaigns. The daily
-watch goal appears in Inventory under its first listed category, for example GTAVI's GTA
-DVD Chest, which Twitch opens into one chain badge a day. Campaigns with several watch
-tracks, such as Pokemon Evolutions, are mined only after you start one track on Twitch.
-Add the category, for example **Grand Theft Auto VI**, to **Settings → Games → Mining
-list** and keep **Other reward** ticked in **Settings → Mining → Reward types**. Daily
+which the Twitch Drops page lists separately from regular drop campaigns. Each campaign's
+watch goal appears in Inventory under its first listed category, for example the daily
+GTA DVD Chest of GTAVI Launch Celebration under **Grand Theft Auto VI**. When a campaign
+has several watch goals, TDM mines the one in progress on Twitch, otherwise the repeating
+daily goal. For a campaign with parallel tracks, such as Pokemon Evolutions, start the
+track you want on Twitch first. Add that category to **Settings → Games → Mining list**
+and keep **Other reward** ticked in **Settings → Mining → Reward types**. Daily
 goals wait in Inventory until Twitch opens the next window. Subscription goals and
 game-specific reward campaigns are not mined. Compare progress with Twitch inventory.
 
