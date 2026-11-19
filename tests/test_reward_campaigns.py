@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.config import GQL_OPERATIONS, State
+from src.config import GQL_OPERATIONS
 from src.exceptions import ExitRequest, GQLException
 from src.models import DropsCampaign
 from src.models.channel import Channel, Stream
@@ -556,3 +556,12 @@ async def test_dashboard_serializes_reward_campaign_without_images_or_link():
     assert serialized["link_url"] == "" and serialized["game_name"] == "Grand Theft Auto VI"
     assert serialized["drops"][0]["benefits"] == []
     assert serialized["drops"][0]["current_minutes"] == 12
+
+
+@pytest.mark.asyncio
+async def test_claim_reply_without_status_is_unconfirmed():
+    twitch = _twitch()
+    drop = _drop(_build({"status": "CLAIMABLE", "currentMinutesWatched": 60}, twitch=twitch))
+    twitch.gql_request = AsyncMock(return_value={"data": {"claimDropRewards": {"dropInstanceID": CLAIM_ID}}})
+    assert await drop.claim() is False
+    assert not drop.is_claimed
