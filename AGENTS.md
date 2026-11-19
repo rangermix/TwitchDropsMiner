@@ -841,8 +841,11 @@ progress to an ignored drop while the miner intentionally targets another reward
   `tests/test_playlist_watch.py`, `tests/test_watch_transport.py`, and
   `tests/test_watch_poll_cadence.py`.
 - A watch-based Open Reward Campaign is one `DropsCampaign` (`is_reward`) with one drop.
-  `InventoryService.refresh_reward_progress` replaces the CurrentDrop query on the same
-  progress tick, and it claims with the synthetic `userId#campaignId#groupId` ID.
+  On the progress tick, `InventoryService.refresh_reward_progress` reads all earnable reward
+  campaigns with one query; `get_active_campaign(exclude_rewards=True)` then keeps the
+  CurrentDrop query for regular campaigns. A `CLAIMABLE` or finished window requests an
+  inventory reload, and the existing claim loop claims the rebuilt drop. Reward
+  categories also add live channels without the drops flag in CHANNELS_FETCH.
   Regression coverage: `tests/test_reward_campaigns.py`.
 
 ### GraphQL Operations

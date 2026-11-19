@@ -62,23 +62,33 @@ class DropsCampaign:
 
     @staticmethod
     def reward_state(
-        progress: JsonType | None, goal: int
-    ) -> tuple[int, bool, str | None] | None:
+        progress: JsonType | None, goal: int, ends_at: datetime
+    ) -> tuple[int, bool, datetime | None] | None:
         """Map a reward group's progress to (minutes, granted, wait_until); None = do not farm."""
         if progress is None:
             return 0, False, None
         status = progress.get("status")
         if status == "IN_PROGRESS":
-            return progress.get("currentMinutesWatched") or 0, False, None
+            minutes = progress.get("currentMinutesWatched")
+            return (min(max(minutes, 0), goal) if type(minutes) is int else 0), False, None
         if status == "CLAIMABLE":
             return goal, False, None
         if status not in ("CLAIMED", "FULFILLED"):
             return None
-        next_at: str | None = progress.get("nextEligibleAt")
+        next_at = progress.get("nextEligibleAt")
         if not next_at:
             return goal, True, None
-        if isoparse(next_at) > datetime.now(timezone.utc):
-            return 0, False, next_at
+        try:
+            wait_until = isoparse(next_at)
+        except (TypeError, ValueError, AttributeError):
+            return None
+        if wait_until.tzinfo is None:
+            wait_until = wait_until.replace(tzinfo=timezone.utc)
+        if wait_until >= ends_at:
+            # The next window opens after the campaign ends: this was the last grant.
+            return goal, True, None
+        if wait_until > datetime.now(timezone.utc):
+            return 0, False, wait_until
         return 0, False, None
 
     @classmethod
@@ -96,7 +106,9 @@ class DropsCampaign:
             (
                 g
                 for g in data["rewardGroups"]
-                if g["unlockRequirements"]["minuteWatchedGoal"] > 0 and g["categories"]
+                if g["unlockRequirements"]["minuteWatchedGoal"] > 0
+                and g["categories"]
+                and g["rewards"]
             ),
             None,
         )
@@ -104,7 +116,7 @@ class DropsCampaign:
             return None
         goal: int = group["unlockRequirements"]["minuteWatchedGoal"]
         progress: JsonType | None = progress_by_group.get(group["id"])
-        state = cls.reward_state(progress, goal)
+        state = cls.reward_state(progress, goal, isoparse(data["endsAt"]))
         if state is None:
             return None
         minutes, granted, wait_until = state
@@ -138,7 +150,7 @@ class DropsCampaign:
                             }
                             for reward in group["rewards"]
                         ],
-                        "startAt": wait_until or data["startsAt"],
+                        "startAt": wait_until.isoformat() if wait_until else data["startsAt"],
                         "endAt": data["endsAt"],
                         "preconditionDrops": None,
                         "requiredMinutesWatched": goal,
@@ -162,16 +174,16 @@ class DropsCampaign:
         """Whether progress does not need the channel's drops-enabled flag."""
         return self.is_reward or self.game.is_special()
 
-    async def apply_reward_progress(self, progress: JsonType | None) -> None:
+    def apply_reward_progress(self, progress: JsonType | None) -> None:
         """Apply a fresh reward group reading to this campaign's single drop."""
+        if progress is None:
+            return  # no observation; only building a campaign reads a missing group as 0
         drop = next(iter(self.drops))
-        state = self.reward_state(progress, drop.required_minutes)
-        if state is None or state[1] or state[2]:
-            # Window finished or status unknown: reload to get the next window or drop it.
+        state = self.reward_state(progress, drop.required_minutes, self.ends_at)
+        if state is None or state[1] or state[2] or progress.get("status") == "CLAIMABLE":
+            # Finished window, unknown status or a claimable grant: rebuild from Twitch,
+            # where the claim loop picks the grant up.
             self._twitch.request_inventory_refresh()
-        elif progress is not None and progress.get("status") == "CLAIMABLE":
-            await drop.generate_claim()
-            await drop.claim()
         else:
             drop.extra_current_minutes = 0
             drop.update_minutes(state[0])

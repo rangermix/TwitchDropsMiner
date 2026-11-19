@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.config import State
+from src.config import GQL_OPERATIONS, State
 from src.exceptions import ExitRequest, GQLException
 from src.models import DropsCampaign
 from src.models.channel import Channel, Stream
@@ -91,9 +91,9 @@ def _channel(twitch, game=GTA, *, drops_enabled=False, channel_id=1):
     return channel
 
 
-def _regular(twitch):
+def _regular(twitch, game=OTHER):
     return DropsCampaign(twitch, {
-        "id": "regular", "name": "Regular", "game": OTHER, "status": "ACTIVE",
+        "id": "regular", "name": "Regular", "game": game, "status": "ACTIVE",
         "self": {"isAccountConnected": True}, "accountLinkURL": "https://link",
         "startAt": _iso(-timedelta(days=1)), "endAt": _iso(timedelta(days=1)),
         "allow": {"channels": None},
@@ -115,12 +115,12 @@ def _progress_response(self_data):
     ]}}}}
 
 
-def _gql(progress, *, claim=None, campaigns=None):
+def _gql(progress, *, campaigns=None):
     """Answer by operation: raw reward queries and the persisted ClaimDrop."""
     async def request(op):
         if "operationName" in op:
             assert op["operationName"] == "DropsPage_ClaimDropRewards"
-            return claim or {"data": {"claimDropRewards": {"status": "ELIGIBLE_FOR_ALL"}}}
+            return {"data": {"claimDropRewards": {"status": "ELIGIBLE_FOR_ALL"}}}
         if "RewardCampaignProgress" in op["query"]:
             return progress
         return campaigns if campaigns is not None else {"data": {"rewardCampaignsAvailableToUser": [_data()]}}
@@ -199,6 +199,39 @@ def test_group_selection():
     assert list(mixed.timed_drops) == [GROUP_ID]
 
 
+def test_group_without_rewards_is_skipped():
+    # A drop without benefits is never mineable, so it would show up in Inventory but never earn.
+    no_rewards = {**_group(), "rewards": []}
+    assert _build(data=_data([no_rewards])) is None
+    assert list(_build(data=_data([no_rewards, _group("second")])).timed_drops) == ["second"]
+
+
+@pytest.mark.parametrize("progress", [
+    {"status": "CLAIMED", "nextEligibleAt": "not a date"},
+    {"status": "CLAIMED", "nextEligibleAt": 12345},
+    {"status": "CLAIMED", "nextEligibleAt": ["x"]},
+])
+def test_unreadable_next_window_is_not_farmed(progress):
+    assert _build(progress) is None
+
+
+def test_naive_next_window_is_utc():
+    naive = (NOW + timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%S")
+    drop = _drop(_build({"status": "CLAIMED", "nextEligibleAt": naive}))
+    assert drop.starts_at == (NOW + timedelta(hours=2)).replace(microsecond=0)
+
+
+@pytest.mark.parametrize(("minutes", "expected"), [("12", 0), (None, 0), (True, 0), (-5, 0), (999, 60), (7.5, 0)])
+def test_minutes_are_validated_and_clamped(minutes, expected):
+    drop = _drop(_build({"status": "IN_PROGRESS", "currentMinutesWatched": minutes}))
+    assert drop.current_minutes == expected
+
+
+def test_next_window_after_campaign_end_means_finished():
+    campaign = _build({"status": "CLAIMED", "nextEligibleAt": _iso(timedelta(days=11))})
+    assert _drop(campaign).is_claimed and campaign.finished
+
+
 # 9
 def test_can_watch_without_drops_flag_only_for_reward_category():
     twitch = _twitch()
@@ -267,36 +300,33 @@ async def test_refresh_updates_minutes_and_resets_extra():
     drop = _drop(campaign)
     drop.extra_current_minutes = 3
     twitch.gql_request = _gql(_progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 20}))
-    assert await InventoryService(twitch).refresh_reward_progress(campaign) is True
+    assert await InventoryService(twitch).refresh_reward_progress([campaign]) is True
     assert (drop.real_current_minutes, drop.extra_current_minutes) == (20, 0)
+    assert twitch.gql_request.await_count == 1
 
 
 @pytest.mark.asyncio
-async def test_refresh_claims_with_synthetic_id_once():
+async def test_refresh_claimable_reloads_inventory_instead_of_claiming():
     twitch = _twitch()
     campaign = _build(twitch=twitch)
     twitch._campaigns[campaign.id] = campaign
     twitch.gql_request = _gql(_progress_response({"status": "CLAIMABLE", "currentMinutesWatched": 60}))
-    service = InventoryService(twitch)
-    assert await service.refresh_reward_progress(campaign) is True
-    assert _drop(campaign).is_claimed
-    (claim,) = _claims(twitch)
-    assert claim.args[0]["variables"] == {"input": {"dropInstanceID": CLAIM_ID}}
-    # Twitch may still report CLAIMABLE on the next tick; no second claim is sent.
-    assert await service.refresh_reward_progress(campaign) is True
-    assert len(_claims(twitch)) == 1
+    assert await InventoryService(twitch).refresh_reward_progress([campaign]) is True
+    twitch.request_inventory_refresh.assert_called_once()
+    assert not _claims(twitch) and not _drop(campaign).is_claimed
+    # The rebuilt campaign carries the synthetic claim id for the regular claim loop.
+    assert _drop(_build({"status": "CLAIMABLE", "currentMinutesWatched": 60})).claim_id == CLAIM_ID
 
 
 @pytest.mark.asyncio
-async def test_missing_claim_status_counts_only_for_reward_drops():
+async def test_refresh_without_observation_changes_nothing():
     twitch = _twitch()
-    reply = {"data": {"claimDropRewards": {"dropType": {"id": "x"}}}}
-    twitch.gql_request = _gql(None, claim=reply)
-    reward = _drop(_build({"status": "CLAIMABLE", "currentMinutesWatched": 60}, twitch=twitch))
-    assert await reward._claim() is True
-    regular = _regular(twitch).timed_drops["d1"]
-    await regular.generate_claim()
-    assert await regular._claim() is False
+    campaign = _build({"status": "IN_PROGRESS", "currentMinutesWatched": 9}, twitch=twitch)
+    twitch._campaigns[campaign.id] = campaign
+    twitch.gql_request = _gql({"data": {"currentUser": {"inventory": {"viewerRewardDropCampaignsInProgress": []}}}})
+    assert await InventoryService(twitch).refresh_reward_progress([campaign]) is True
+    assert _drop(campaign).current_minutes == 9
+    twitch.request_inventory_refresh.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -306,7 +336,7 @@ async def test_refresh_finished_window_requests_inventory_reload():
     twitch._campaigns[campaign.id] = campaign
     twitch.gql_request = _gql(_progress_response(
         {"status": "CLAIMED", "nextEligibleAt": _iso(timedelta(hours=3))}))
-    assert await InventoryService(twitch).refresh_reward_progress(campaign) is True
+    assert await InventoryService(twitch).refresh_reward_progress([campaign]) is True
     twitch.request_inventory_refresh.assert_called_once()
 
 
@@ -317,12 +347,28 @@ async def test_refresh_failure_returns_false(error):
     campaign = _build(twitch=twitch)
     twitch._campaigns[campaign.id] = campaign
     twitch.gql_request = AsyncMock(side_effect=error)
-    assert await InventoryService(twitch).refresh_reward_progress(campaign) is False
+    assert await InventoryService(twitch).refresh_reward_progress([campaign]) is False
+
+
+@pytest.mark.asyncio
+async def test_refresh_apply_failure_returns_false_and_exit_propagates():
+    twitch = _twitch()
+    campaign = _build(twitch=twitch)
+    twitch._campaigns[campaign.id] = campaign
+    twitch.gql_request = _gql(_progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 5}))
+    service = InventoryService(twitch)
+    for error, outcome in ((ValueError("x"), False), (ExitRequest(), ExitRequest)):
+        with patch.object(DropsCampaign, "apply_reward_progress", side_effect=error):
+            if outcome is False:
+                assert await service.refresh_reward_progress([campaign]) is False
+            else:
+                with pytest.raises(ExitRequest):
+                    await service.refresh_reward_progress([campaign])
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("stale", ["revision", "replaced"])
-async def test_refresh_discards_stale_reply(stale):
+async def test_refresh_discards_stale_reply_per_campaign(stale):
     twitch = _twitch()
     campaign = _build(twitch=twitch)
     twitch._campaigns[campaign.id] = campaign
@@ -336,34 +382,71 @@ async def test_refresh_discards_stale_reply(stale):
         return _progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 33})
 
     twitch.gql_request = AsyncMock(side_effect=request)
-    assert await InventoryService(twitch).refresh_reward_progress(campaign) is True
+    assert await InventoryService(twitch).refresh_reward_progress([campaign]) is True
     assert drop.current_minutes == 0
 
 
-# 12
 @pytest.mark.asyncio
-@pytest.mark.parametrize("refreshed", [True, False])
-async def test_watch_loop_replaces_current_drop_for_reward_campaign(refreshed):
-    clock = [0.0]
-    current_drop_calls = []
-    channel = MagicMock(online=True, banned=False, id=1)
-    channel.send_watch = AsyncMock(return_value=True)
-    selected = AwaitableValue()
-    selected.set(channel)
-    campaign = MagicMock(is_reward=True)
+async def test_fetch_reward_campaigns_isolates_a_broken_campaign(caplog):
+    twitch = _twitch()
+    broken = {"id": "broken", "isSitewide": True}
+    twitch.gql_request = _gql(_progress_response(None), campaigns={
+        "data": {"rewardCampaignsAvailableToUser": [broken, {"id": "no flag"}, _data()]},
+    })
+    with caplog.at_level("WARNING", logger="TwitchDrops"):
+        built = await InventoryService(twitch).fetch_reward_campaigns()
+    assert [c.id for c in built] == [CAMPAIGN_ID]
+    assert "broken" in caplog.text
 
-    async def gql_request(op):
-        current_drop_calls.append(op)
+
+@pytest.mark.asyncio
+async def test_fetch_reward_campaigns_is_time_bounded(monkeypatch, caplog):
+    twitch = _twitch()
+
+    async def hang(op):
+        await asyncio.Event().wait()
+
+    twitch.gql_request = AsyncMock(side_effect=hang)
+    real_wait_for = asyncio.wait_for
+    monkeypatch.setattr(
+        "src.services.inventory_service.asyncio.wait_for",
+        lambda awaitable, timeout: real_wait_for(awaitable, 0.05),
+    )
+    with caplog.at_level("WARNING", logger="TwitchDrops"):
+        assert await InventoryService(twitch).fetch_reward_campaigns() == []
+    assert "regular drops are unaffected" in caplog.text
+
+
+# 12: the real InventoryService picks the active campaign, as in the miner
+def _loop_miner(channel_flag, *, progress_error=None):
+    twitch = _twitch()
+    reward = _build({"status": "IN_PROGRESS", "currentMinutesWatched": 5}, twitch=twitch)
+    regular = _regular(twitch, GTA)
+    twitch.inventory = [regular, reward]
+    twitch.wanted_games = [reward.game]
+    twitch._campaigns = {c.id: c for c in twitch.inventory}
+    twitch._drops = {d.id: d for c in twitch.inventory for d in c.drops}
+    twitch.is_mining_time = lambda: True
+    channel = _channel(twitch, drops_enabled=channel_flag)
+    twitch.watching_channel = AwaitableValue()
+    twitch.watching_channel.set(channel)
+    twitch._inventory_service = InventoryService(twitch)
+    ops = []
+
+    async def request(op):
+        ops.append(op)
+        if "query" in op:
+            if progress_error is not None:
+                raise progress_error
+            return _progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 20})
         return {"data": {"currentUser": {"dropCurrentSession": None}}}
 
-    twitch = SimpleNamespace(
-        is_mining_time=lambda: True, watching_channel=selected, gui=MagicMock(),
-        gql_request=gql_request, _drops={},
-        _inventory_service=SimpleNamespace(
-            get_active_campaign=lambda watched: campaign,
-            refresh_reward_progress=AsyncMock(return_value=refreshed),
-        ),
-    )
+    twitch.gql_request = request
+    return twitch, regular, reward, ops
+
+
+async def _run_loop(twitch):
+    clock = [0.0]
     service = WatchService(twitch)
 
     async def advance(delay):
@@ -374,37 +457,93 @@ async def test_watch_loop_replaces_current_drop_for_reward_campaign(refreshed):
     with (
         patch("src.services.watch_service.monotonic", side_effect=lambda: clock[0]),
         patch.object(service, "watch_sleep", side_effect=advance),
+        patch.object(Channel, "send_watch", AsyncMock(return_value=True)),
         pytest.raises(asyncio.CancelledError),
     ):
         await service.watch_loop()
 
-    twitch._inventory_service.refresh_reward_progress.assert_awaited_with(campaign)
-    if refreshed:
-        assert not current_drop_calls
-        campaign.bump_minutes.assert_not_called()
-    else:
-        assert current_drop_calls
-        campaign.bump_minutes.assert_called()
+
+def _current_drop_queries(ops):
+    return [op for op in ops if op.get("operationName") == GQL_OPERATIONS["CurrentDrop"]["operationName"]]
+
+
+@pytest.mark.asyncio
+async def test_flagged_channel_polls_reward_and_still_queries_current_drop_for_regular():
+    twitch, regular, reward, ops = _loop_miner(True)
+    await _run_loop(twitch)
+    assert _drop(reward).real_current_minutes == 20
+    assert _current_drop_queries(ops)
+
+
+@pytest.mark.asyncio
+async def test_flagless_channel_never_progresses_regular_campaign_of_the_same_game():
+    twitch, regular, reward, ops = _loop_miner(False)
+    await _run_loop(twitch)
+    assert _drop(reward).real_current_minutes == 20
+    assert not _current_drop_queries(ops)
+    assert regular.timed_drops["d1"].extra_current_minutes == 0
+
+
+@pytest.mark.asyncio
+async def test_reward_refresh_failure_falls_back_to_current_drop_and_bump():
+    twitch, regular, reward, ops = _loop_miner(False, progress_error=GQLException("x"))
+    await _run_loop(twitch)
+    assert _current_drop_queries(ops)
+    assert _drop(reward).extra_current_minutes >= 1
+    assert regular.timed_drops["d1"].extra_current_minutes == 0
+
+
+def test_active_campaign_requires_drops_flag_and_can_skip_rewards():
+    twitch, regular, reward, _ops = _loop_miner(True)
+    service = twitch._inventory_service
+    assert service.get_active_campaign() in (regular, reward)
+    assert service.get_active_campaign(exclude_rewards=True) is regular
+    twitch.watching_channel.get_with_default(None)._stream.drops_enabled = False
+    assert service.get_active_campaign() is reward
+    assert service.get_active_campaign(exclude_rewards=True) is None
 
 
 # 13
-@pytest.mark.asyncio
-@pytest.mark.parametrize("reward", [True, False])
-async def test_channels_fetch_ignores_drops_flag_for_reward_game(tmp_path, monkeypatch, reward):
+def _channels_fetch_client(tmp_path, monkeypatch, campaigns):
     client, _watched = _reloading_miner(tmp_path, monkeypatch, discovered=[2], stream_status=[OFFLINE])
-    game = Game(GTA if reward else OTHER)
+    game = Game(GTA)
     client.wanted_games = [game]
     client.inventory = [SimpleNamespace(
         game=game, can_earn_within=lambda stamp: True, allowed_channels=[],
         can_earn=lambda channel: True, is_reward=reward, skips_drops_flag=reward,
-    )]
+    ) for reward in campaigns]
+    calls = []
+
+    async def live_streams(game, *, drops_enabled=True, **_):
+        calls.append(drops_enabled)
+        return [_channel(client, drops_enabled=drops_enabled, channel_id=2)]
+
+    client.get_live_streams = live_streams
+    return client, calls
+
+
+async def _run_client(client):
     try:
         await asyncio.wait_for(client._run(), 1)
     finally:
         if client._watching_task is not None:
             client._watching_task.cancel()
-    assert client.get_live_streams.await_args.kwargs["drops_enabled"] is (not reward)
-    assert client._state is State.EXIT
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("campaigns", "expected"), [
+    ([False], [True]),
+    ([True], [True, False]),
+    ([False, True], [True, False]),
+])
+async def test_channels_fetch_adds_flagless_channels_after_drops_enabled_ones(
+    tmp_path, monkeypatch, campaigns, expected,
+):
+    client, calls = _channels_fetch_client(tmp_path, monkeypatch, campaigns)
+    await _run_client(client)
+    assert calls == expected
+    # The drops-enabled Channel object found first is the one that is kept.
+    assert client.channels[2].drops_enabled is True
 
 
 # Dashboard

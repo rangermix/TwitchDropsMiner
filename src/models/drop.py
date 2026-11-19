@@ -260,12 +260,10 @@ class BaseDrop:
         elif "claimDropRewards" in data:
             if not data["claimDropRewards"]:
                 return False
-            status = data["claimDropRewards"].get("status")
-            # Sitewide reward groups may answer without a status.
-            if status in (
+            elif data["claimDropRewards"]["status"] in (
                 "ELIGIBLE_FOR_ALL",
                 "DROP_INSTANCE_ALREADY_CLAIMED",
-            ) or self.campaign.is_reward and status is None:
+            ):
                 return True
         return False
 
