@@ -770,7 +770,15 @@ class Twitch:
                 for game in no_acl:
                     # for every campaign without an ACL, for it's game,
                     # add a list of live channels with drops enabled
-                    new_channels.update(await self.get_live_streams(game, drops_enabled=True))
+                    found = await self.get_live_streams(game, drops_enabled=True)
+                    # A channel kept from a fetch without the drops filter has the same
+                    # broadcast: record that drops are enabled, keeping the old object.
+                    kept = {channel: channel for channel in new_channels}
+                    for channel in found:
+                        old = kept.get(channel)
+                        if old is not None and old._stream is not None and old._stream == channel._stream:
+                            old._stream.drops_enabled = True
+                    new_channels.update(found)
                 for game in flagless:
                     # Reward campaigns progress on any live channel in the category. Added
                     # after the lookup above, so a drops-enabled Channel is kept (set.update

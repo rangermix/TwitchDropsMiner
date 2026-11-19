@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import cached_property
 from itertools import chain
 from typing import TYPE_CHECKING
@@ -84,8 +84,8 @@ class DropsCampaign:
             return None
         if wait_until.tzinfo is None:
             wait_until = wait_until.replace(tzinfo=timezone.utc)
-        if wait_until >= ends_at:
-            # The next window opens after the campaign ends: this was the last grant.
+        if wait_until + timedelta(minutes=goal) > ends_at:
+            # The next window cannot be finished before the campaign ends: last grant.
             return goal, True, None
         if wait_until > datetime.now(timezone.utc):
             return 0, False, wait_until
@@ -174,19 +174,28 @@ class DropsCampaign:
         """Whether progress does not need the channel's drops-enabled flag."""
         return self.is_reward or self.game.is_special()
 
-    def apply_reward_progress(self, progress: JsonType | None) -> None:
+    def apply_reward_progress(self, progress: JsonType | None, channel: Channel) -> None:
         """Apply a fresh reward group reading to this campaign's single drop."""
-        if progress is None:
-            return  # no observation; only building a campaign reads a missing group as 0
         drop = next(iter(self.drops))
+        if progress is None:
+            # No observation (only building a campaign reads a missing group as 0).
+            self.bump_minutes(channel)
+            return
         state = self.reward_state(progress, drop.required_minutes, self.ends_at)
-        if state is None or state[1] or state[2] or progress.get("status") == "CLAIMABLE":
-            # Finished window, unknown status or a claimable grant: rebuild from Twitch,
-            # where the claim loop picks the grant up.
+        if state is None or state[1] or state[2]:
+            # Finished window or unknown status: rebuild from Twitch.
             self._twitch.request_inventory_refresh()
-        else:
+        elif progress.get("status") == "CLAIMABLE":
+            # The rebuilt drop carries a claim id and the regular reload retries the claim.
+            if drop.claim_id is None:
+                self._twitch.request_inventory_refresh()
+        elif state[0] > drop.real_current_minutes:
             drop.extra_current_minutes = 0
             drop.update_minutes(state[0])
+        else:
+            # Twitch may not credit this watch: estimate until the extra-minute cutoff
+            # switches channels.
+            self.bump_minutes(channel)
 
     def __repr__(self) -> str:
         return f"Campaign({self.game!s}, {self.name}, {self.claimed_drops}/{self.total_drops})"

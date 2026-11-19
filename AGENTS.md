@@ -844,7 +844,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   On the progress tick, `InventoryService.refresh_reward_progress` reads all earnable reward
   campaigns with one query; `get_active_campaign(exclude_rewards=True)` then keeps the
   CurrentDrop query for regular campaigns. A `CLAIMABLE` or finished window requests an
-  inventory reload, and the existing claim loop claims the rebuilt drop. Reward
+  inventory reload, and the existing claim loop claims the rebuilt drop. A reading without
+  a minute increase bumps the estimate until the extra-minute cutoff switches channels. Reward
   categories also add live channels without the drops flag in CHANNELS_FETCH.
   Regression coverage: `tests/test_reward_campaigns.py`.
 

@@ -131,8 +131,9 @@ class InventoryService:
         return {
             group["id"]: group["self"]
             for campaign in in_progress or []
+            if isinstance(campaign, dict)
             for group in campaign["rewardGroups"] or []
-            if group["self"] is not None
+            if isinstance(group, dict) and isinstance(group.get("self"), dict)
         }
 
     async def fetch_reward_campaigns(self) -> list[DropsCampaign]:
@@ -142,7 +143,7 @@ class InventoryService:
             return await asyncio.wait_for(self._load_reward_campaigns(), timeout=15)
         except ExitRequest:
             raise
-        except (MinerException, KeyError, TypeError, ValueError, TimeoutError):
+        except (MinerException, KeyError, TypeError, ValueError, AttributeError, TimeoutError):
             logger.warning("Open Reward Campaigns could not be loaded; regular drops are unaffected")
             return []
 
@@ -154,6 +155,8 @@ class InventoryService:
         # shortcut: game-specific reward campaigns may need an account link, skipped
         # until one is verified to progress without it.
         for data in response["data"]["rewardCampaignsAvailableToUser"] or []:
+            if not isinstance(data, dict):
+                continue
             try:
                 if not data.get("isSitewide"):
                     continue
@@ -163,7 +166,7 @@ class InventoryService:
                 if campaign is not None:
                     self._log_reward_progress(campaign, progress)
                     campaigns.append(campaign)
-            except (KeyError, TypeError, ValueError):
+            except (KeyError, TypeError, ValueError, AttributeError):
                 logger.warning("Open Reward Campaign %s could not be read", data.get("id"))
         return campaigns
 
@@ -175,7 +178,9 @@ class InventoryService:
             "Reward progress %s (%s): %s", campaign.name, campaign.game, progress.get(drop_id)
         )
 
-    async def refresh_reward_progress(self, campaigns: list[DropsCampaign]) -> bool:
+    async def refresh_reward_progress(
+        self, campaigns: list[DropsCampaign], channel: Channel
+    ) -> bool:
         """Poll reward progress once for these campaigns; False means the caller should fall back."""
         revisions = {campaign.id: campaign.progress_revision for campaign in campaigns}
         try:
@@ -189,10 +194,10 @@ class InventoryService:
                     continue
                 drop_id = next(iter(campaign.timed_drops))
                 self._log_reward_progress(campaign, progress)
-                campaign.apply_reward_progress(progress.get(drop_id))
+                campaign.apply_reward_progress(progress.get(drop_id), channel)
         except ExitRequest:
             raise
-        except (MinerException, KeyError, TypeError, ValueError, TimeoutError):
+        except (MinerException, KeyError, TypeError, ValueError, AttributeError, TimeoutError):
             return False
         return True
 
