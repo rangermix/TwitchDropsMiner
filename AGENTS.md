@@ -850,6 +850,7 @@ progress to an ignored drop while the miner intentionally targets another reward
   claims it. A reading without
   a minute increase bumps the estimate until the extra-minute cutoff switches channels. Reward
   categories also add live channels without the drops flag in CHANNELS_FETCH.
+  Inventory shows Twitch's `grantCount` as "Times earned" (`reward_grants`; no total is available).
   Regression coverage: `tests/test_reward_campaigns.py`.
 
 ### GraphQL Operations

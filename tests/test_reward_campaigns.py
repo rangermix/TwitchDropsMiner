@@ -836,3 +836,33 @@ async def test_fetch_uses_the_window_hint_and_survives_its_rejection(monkeypatch
         lambda awaitable, timeout: real_wait_for(awaitable, {5: 0.05, 15: 3}[timeout]),
     )
     assert [c.id for c in await InventoryService(twitch).fetch_reward_campaigns()] == [CAMPAIGN_ID]
+
+
+# Grant count shown in Inventory
+@pytest.mark.parametrize(("count", "expected"), [
+    (1, 1), (0, 0), (6, 6), (None, 0), (-1, 0), (True, 0), ("1", 0), (1.5, 0),
+])
+def test_grant_count_is_a_non_negative_int(count, expected):
+    progress = {"status": "IN_PROGRESS", "currentMinutesWatched": 5, "grantCount": count}
+    assert _build(progress).reward_grants == expected
+    assert _build({"status": "IN_PROGRESS", "currentMinutesWatched": 5}).reward_grants == 0
+    assert _build().reward_grants == 0
+
+
+def test_tick_updates_the_grant_count_only_for_a_valid_reading():
+    twitch = _twitch()
+    campaign = _build({"status": "IN_PROGRESS", "currentMinutesWatched": 5, "grantCount": 1}, twitch=twitch)
+    channel = _channel(twitch)
+    campaign.apply_reward_progress({"status": "IN_PROGRESS", "currentMinutesWatched": 9, "grantCount": 2}, channel)
+    assert campaign.reward_grants == 2
+    for bad in (None, -3, "x", True):
+        campaign.apply_reward_progress({"status": "IN_PROGRESS", "currentMinutesWatched": 12, "grantCount": bad}, channel)
+    assert campaign.reward_grants == 2
+
+
+def test_dashboard_reports_grants_for_reward_drops_only():
+    manager = InventoryManager(MagicMock(), MagicMock())
+    reward = _build({"status": "IN_PROGRESS", "currentMinutesWatched": 5, "grantCount": 1})
+    assert manager._serialize_campaign(reward)["drops"][0]["reward_grants"] == 1
+    regular = _regular(_twitch())
+    assert manager._serialize_campaign(regular)["drops"][0]["reward_grants"] is None

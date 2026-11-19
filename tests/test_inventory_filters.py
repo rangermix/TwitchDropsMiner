@@ -63,6 +63,7 @@ class TestInventoryDropUpdates(unittest.IsolatedAsyncioTestCase):
             active=True,
             upcoming=False,
             expired=False,
+            is_reward=False,
         )
         drop = SimpleNamespace(
             id="drop-1",

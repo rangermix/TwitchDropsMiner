@@ -151,6 +151,7 @@
             "ignored_keyword_reason": "Ignorado por la palabra clave: {keyword}",
             "ignored_precondition_reason": "Ignorado porque depende de {drop}",
             "skipped_branch_reason": "Omitido porque ninguna recompensa obtenible depende de este drop.",
+            "reward_grants": "Veces obtenido: {count}",
             "filters": {
                 "active": "Activo",
                 "not_linked": "No Vinculado",

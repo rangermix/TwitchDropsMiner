@@ -47,6 +47,8 @@ def _wait_state(
 class DropsCampaign:
     # Open Reward Campaign mapped onto one drop (see from_reward_campaign).
     is_reward: bool = False
+    # Times the goal was earned (Twitch reports no total); shown in Inventory.
+    reward_grants: int = 0
 
     def __init__(self, twitch: Twitch, data: JsonType, claimed_benefits: dict[str, datetime]):
         self._twitch: Twitch = twitch
@@ -102,6 +104,11 @@ class DropsCampaign:
         if not next_at:
             return goal, True, None
         return _wait_state(next_at, goal, ends_at)
+
+    @staticmethod
+    def _grant_count(progress: JsonType) -> int | None:
+        count = progress.get("grantCount")
+        return count if type(count) is int and count >= 0 else None
 
     @classmethod
     def from_reward_campaign(
@@ -195,6 +202,7 @@ class DropsCampaign:
             {},
         )
         campaign.is_reward = True
+        campaign.reward_grants = (cls._grant_count(progress) if progress else None) or 0
         return campaign
 
     @property
@@ -209,6 +217,8 @@ class DropsCampaign:
             # No observation (only building a campaign reads a missing group as 0).
             self.bump_minutes(channel)
             return
+        if (grants := self._grant_count(progress)) is not None:
+            self.reward_grants = grants
         state = self.reward_state(progress, drop.required_minutes, self.ends_at)
         if state is None or state[1] or state[2]:
             # Finished window or unknown status: rebuild from Twitch.
