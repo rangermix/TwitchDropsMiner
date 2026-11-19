@@ -17,7 +17,11 @@ from dateutil.parser import isoparse
 from src.api import GQLClient
 from src.config import GQL_OPERATIONS
 from src.config.constants import GQLRawQuery
-from src.config.operations import REWARD_CAMPAIGNS_QUERY, REWARD_PROGRESS_QUERY
+from src.config.operations import (
+    REWARD_CAMPAIGNS_QUERY,
+    REWARD_PROGRESS_QUERY,
+    REWARD_REPEATS_QUERY,
+)
 from src.config.reward_priority import RewardPriority
 from src.exceptions import ExitRequest, MinerException
 from src.i18n import _
@@ -136,6 +140,25 @@ class InventoryService:
             if isinstance(group, dict) and isinstance(group.get("self"), dict)
         }
 
+    async def _fetch_reward_repeats(self) -> frozenset[str]:
+        """Return IDs of repeating reward groups; any failure only loses this hint."""
+        try:
+            response = await self._twitch.gql_request(GQLRawQuery(REWARD_REPEATS_QUERY))
+            return frozenset(
+                group["id"]
+                for campaign in response["data"]["rewardCampaignsAvailableToUser"] or []
+                if isinstance(campaign, dict)
+                for group in campaign["rewardGroups"] or []
+                if isinstance(group, dict)
+                and isinstance(group.get("repeat"), dict)
+                and (group["repeat"].get("times") or 0) > 1
+            )
+        except ExitRequest:
+            raise
+        except (MinerException, KeyError, TypeError, ValueError, AttributeError):
+            logger.info("Reward repeat info is unavailable; multi-goal campaigns need a started goal")
+            return frozenset()
+
     async def fetch_reward_campaigns(self) -> list[DropsCampaign]:
         """Build watch-based sitewide Open Reward Campaigns; failures never block regular drops."""
         try:
@@ -149,6 +172,7 @@ class InventoryService:
 
     async def _load_reward_campaigns(self) -> list[DropsCampaign]:
         progress = await self._fetch_reward_progress()
+        repeat_ids = await self._fetch_reward_repeats()
         response = await self._twitch.gql_request(GQLRawQuery(REWARD_CAMPAIGNS_QUERY))
         user_id = (await self._twitch.get_auth()).user_id
         campaigns: list[DropsCampaign] = []
@@ -161,7 +185,7 @@ class InventoryService:
                 if not data.get("isSitewide"):
                     continue
                 campaign = DropsCampaign.from_reward_campaign(
-                    self._twitch, data, progress, user_id
+                    self._twitch, data, progress, user_id, repeat_ids
                 )
                 if campaign is not None:
                     self._log_reward_progress(campaign, progress)

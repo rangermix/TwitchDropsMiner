@@ -53,6 +53,13 @@ query RewardCampaignProgress {
 }
 """
 
+# The `repeat` field is unverified; a separate query means a rejection only loses this hint.
+REWARD_REPEATS_QUERY = """
+query RewardCampaignRepeats {
+    rewardCampaignsAvailableToUser { id rewardGroups { id repeat { times } } }
+}
+"""
+
 
 GQL_OPERATIONS: dict[str, GQLOperation] = {
     # returns stream information for a particular channel

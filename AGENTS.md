@@ -840,7 +840,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   Playlist/transport, lifecycle, and controlled-clock regressions live in
   `tests/test_playlist_watch.py`, `tests/test_watch_transport.py`, and
   `tests/test_watch_poll_cadence.py`.
-- A watch-based Open Reward Campaign is one `DropsCampaign` (`is_reward`) with one drop.
+- A watch-based Open Reward Campaign is one `DropsCampaign` (`is_reward`) with one drop: the started
+  watch group, else the single repeating one (`REWARD_REPEATS_QUERY`); several candidates are skipped.
   On the progress tick, `InventoryService.refresh_reward_progress` reads all earnable reward
   campaigns with one query; `get_active_campaign(exclude_rewards=True)` then keeps the
   CurrentDrop query for regular campaigns. A `CLAIMABLE` or finished window requests an

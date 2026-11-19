@@ -117,7 +117,7 @@ def _progress_response(self_data):
     ]}}}}
 
 
-def _gql(progress, *, campaigns=None):
+def _gql(progress, *, campaigns=None, repeats=()):
     """Answer by operation: raw reward queries and the persisted ClaimDrop."""
     async def request(op):
         if "operationName" in op:
@@ -125,6 +125,12 @@ def _gql(progress, *, campaigns=None):
             return {"data": {"claimDropRewards": {"status": "ELIGIBLE_FOR_ALL"}}}
         if "RewardCampaignProgress" in op["query"]:
             return progress
+        if "RewardCampaignRepeats" in op["query"]:
+            if repeats is None:
+                raise GQLException("unknown field repeat")
+            return {"data": {"rewardCampaignsAvailableToUser": [
+                {"id": CAMPAIGN_ID, "rewardGroups": [{"id": g, "repeat": {"times": 6}} for g in repeats]},
+            ]}}
         return campaigns if campaigns is not None else {"data": {"rewardCampaignsAvailableToUser": [_data()]}}
     return AsyncMock(side_effect=request)
 
@@ -695,3 +701,70 @@ async def test_channels_fetch_keeps_flag_of_a_kept_stream_in_another_category(tm
     with suppress(TimeoutError):  # a stream change may end the scripted run early
         await _run_client(client)
     assert kept.drops_enabled is False
+
+
+# Daily watch goal and lane campaigns, shaped like the public snapshot
+DVD, IGUANA, SUB = GROUP_ID, "c7e4cd08-0000-0000-0000-000000000001", "sub-1"
+
+
+def _gtavi(order=(DVD, IGUANA)):
+    groups = {
+        DVD: {**_group(DVD), "rewards": [{"id": "dvd", "name": "GTA DVD Chest", "thumbnailImage": None}]},
+        IGUANA: {**_group(IGUANA), "rewards": [{"id": "ig", "name": "Golden Iguana", "thumbnailImage": None}]},
+        SUB: _group(SUB, goal=0, subs=1),
+    }
+    return _data([groups[key] for key in (*order, SUB)])
+
+
+def _pokemon(lanes=3):
+    return _data([_group(f"lane{n}", goal=20, categories=(GTA, OTHER)) for n in range(lanes)])
+
+
+def _pick(data, progress=None, repeats=frozenset()):
+    return DropsCampaign.from_reward_campaign(_twitch(), data, progress or {}, "uid", frozenset(repeats))
+
+
+def test_daily_goal_is_picked_when_repeats_are_known():
+    assert list(_pick(_gtavi(), repeats={DVD}).timed_drops) == [DVD]
+    # Group order must not matter.
+    assert list(_pick(_gtavi((IGUANA, DVD)), repeats={DVD}).timed_drops) == [DVD]
+
+
+def test_started_group_is_picked_without_repeat_hint():
+    campaign = _pick(_gtavi(), {DVD: {"status": "IN_PROGRESS", "currentMinutesWatched": 54}})
+    assert list(campaign.timed_drops) == [DVD] and _drop(campaign).current_minutes == 54
+
+
+def test_several_watch_goals_without_a_hint_are_not_mined(caplog):
+    with caplog.at_level("INFO", logger="TwitchDrops"):
+        assert _pick(_gtavi()) is None
+    assert "skipped: several watch goals" in caplog.text
+
+
+def test_unstarted_lane_campaign_is_not_mined():
+    # Every lane repeats, so the repeat hint cannot tell them apart either.
+    assert _pick(_pokemon()) is None
+    assert _pick(_pokemon(), repeats={"lane0", "lane1", "lane2"}) is None
+
+
+def test_started_lane_is_mined():
+    campaign = _pick(_pokemon(), {"lane1": {"status": "IN_PROGRESS", "currentMinutesWatched": 4}})
+    assert list(campaign.timed_drops) == ["lane1"]
+
+
+def test_single_watch_group_needs_no_repeat_hint():
+    assert list(_pick(_data()).timed_drops) == [GROUP_ID]
+
+
+@pytest.mark.asyncio
+async def test_fetch_picks_daily_goal_and_survives_a_rejected_repeats_query():
+    twitch = _twitch()
+    twitch.gql_request = _gql(_progress_response(None), campaigns={
+        "data": {"rewardCampaignsAvailableToUser": [_gtavi()]}}, repeats=[DVD])
+    built = await InventoryService(twitch).fetch_reward_campaigns()
+    assert [list(c.timed_drops) for c in built] == [[DVD]]
+
+    twitch.gql_request = _gql(_progress_response(None), campaigns={
+        "data": {"rewardCampaignsAvailableToUser": [_gtavi(), {**_data(), "id": "single"}]}}, repeats=None)
+    built = await InventoryService(twitch).fetch_reward_campaigns()
+    assert [c.id for c in built] == ["single"]  # only the single-group copy; GTAVI is ambiguous

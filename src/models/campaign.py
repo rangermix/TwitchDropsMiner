@@ -98,22 +98,30 @@ class DropsCampaign:
         data: JsonType,
         progress_by_group: JsonType,
         user_id: str | int,
+        repeat_ids: frozenset[str] = frozenset(),
     ) -> DropsCampaign | None:
-        """Build a campaign from a sitewide Open Reward Campaign's first watch group."""
-        # shortcut: only the first watch group and its first category, multi-lane
-        # campaigns need per-lane selection, add it when one is mined.
-        group = next(
-            (
-                g
-                for g in data["rewardGroups"]
-                if g["unlockRequirements"]["minuteWatchedGoal"] > 0
-                and g["categories"]
-                and g["rewards"]
-            ),
-            None,
-        )
-        if group is None:
+        """Build a campaign from a sitewide Open Reward Campaign's daily watch group."""
+        watch = [
+            g
+            for g in data["rewardGroups"]
+            if g["unlockRequirements"]["minuteWatchedGoal"] > 0 and g["categories"] and g["rewards"]
+        ]
+        # shortcut: lane campaigns (several watch tracks, one counts once started) are only
+        # mined after the viewer starts a lane on Twitch; add lane choice if one is wanted.
+        # Of several goals the single repeating one is the daily chain, and only its first
+        # category is used.
+        pool = [g for g in watch if g["id"] in progress_by_group] or watch
+        if len(pool) > 1:
+            pool = [g for g in pool if g["id"] in repeat_ids]
+        if len(pool) != 1:
+            if watch:
+                logger.info(
+                    "Open Reward Campaign %s skipped: several watch goals; "
+                    "start one on Twitch to mine it",
+                    data["id"],
+                )
             return None
+        group = pool[0]
         goal: int = group["unlockRequirements"]["minuteWatchedGoal"]
         progress: JsonType | None = progress_by_group.get(group["id"])
         state = cls.reward_state(progress, goal, isoparse(data["endsAt"]))
