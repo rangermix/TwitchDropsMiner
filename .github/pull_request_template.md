@@ -9,14 +9,15 @@
      checks with reasons. For docs-only changes, include link/command/structure checks.
      Visual dashboard changes require current screenshots (before/after when an existing
      view changes; "before" is the base branch without this PR) with personal information
-     hidden; see CONTRIBUTING.md. -->
+     hidden; see CONTRIBUTING.md. Other changes need no screenshots, and no PR should
+     include images of code, diffs, test output or logs. -->
 
 - Canonical main commit incorporated:
 - Tested head commit:
 - Commands and results:
 - Regression coverage:
 - Limitations or checks not run:
-- Screenshots (visual changes; personal information hidden), or `Not applicable`:
+- Screenshots if the dashboard looks different (personal info hidden), else `Not applicable`:
 
 ## Independent adversarial review
 
