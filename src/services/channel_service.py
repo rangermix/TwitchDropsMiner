@@ -136,7 +136,7 @@ class ChannelService:
         progressable = sum(
             1 for campaign in self._twitch.inventory
             if campaign.game in self._twitch.wanted_games and campaign.can_earn(channel)
-            and (campaign.skips_drops_flag or channel.drops_enabled)
+            and campaign.can_progress_on(channel)
         )
         return (self.get_mining_priority(channel), not channel.acl_based, -progressable)
 
