@@ -1530,7 +1530,7 @@ async def test_rebuild_without_the_group_does_not_rebase_the_ledger():
 
 
 @pytest.mark.asyncio
-async def test_group_never_seen_with_a_reading_is_not_initialised():
+async def test_first_reading_already_at_the_goal_is_not_announced():
     twitch = _twitch()
     ledger = RewardLedger()
     campaign = RewardCampaign.from_reward_campaign(twitch, _data(), {}, "uid", None, None, None, ledger)
@@ -1538,6 +1538,42 @@ async def test_group_never_seen_with_a_reading_is_not_initialised():
     campaign.apply_reward_progress({**GRANTED, "grantCount": 2}, _channel(twitch))
     await campaign.announce_new_grants()
     twitch.print.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_first_grant_of_a_group_that_was_not_started_at_load_is_announced():
+    twitch = _twitch()
+    ledger = RewardLedger()
+    build = lambda: RewardCampaign.from_reward_campaign(  # noqa: E731
+        twitch, _data(), {}, "uid", None, None, None, ledger
+    )
+    campaign = build()
+    for minutes in (0, 30, 59):
+        campaign.apply_reward_progress(
+            {"status": "IN_PROGRESS", "currentMinutesWatched": minutes, "grantCount": 0}, _channel(twitch)
+        )
+    campaign.apply_reward_progress({**GRANTED, "grantCount": 1}, _channel(twitch))
+    twitch.request_inventory_refresh.assert_called_once()
+    # The reload sees the group with its reading: setdefault must not swallow the grant.
+    rebuilt = _granted_build(1, twitch, ledger=ledger)
+    await rebuilt.announce_new_grants()
+    await rebuilt.announce_new_grants()
+    assert twitch.print.call_count == 1 and _history_ids(twitch) == [f"{GROUP_ID}#1"]
+
+
+@pytest.mark.asyncio
+async def test_first_grant_after_a_lane_switch_to_an_unstarted_group_is_announced():
+    twitch = _twitch()
+    ledger = RewardLedger()
+    # Lane 0 is mined, lane 1 has no reading; the miner switches to lane 1.
+    other = RewardCampaign.from_reward_campaign(
+        twitch, _data([_group("lane1")]), {}, "uid", None, None, None, ledger
+    )
+    other.apply_reward_progress({"status": "IN_PROGRESS", "currentMinutesWatched": 1, "grantCount": 0}, _channel(twitch))
+    assert ledger.announced["lane1"] == 0
+    other.apply_reward_progress({**GRANTED, "grantCount": 1}, _channel(twitch))
+    await other.announce_new_grants()
+    assert twitch.print.call_count == 1 and _history_ids(twitch) == ["lane1#1"]
 
 
 # Unfinishable goal is not mineable
@@ -1576,3 +1612,28 @@ def test_stale_memo_survives_one_failed_hints_query():
     assert ledger.stale
     rebuilt = RewardCampaign.from_reward_campaign(twitch, _data(), {GROUP_ID: GRANTED}, "uid", None, None, None, ledger)
     assert _drop(rebuilt).is_claimed and ledger.stale
+
+
+@pytest.mark.parametrize("change", [
+    {"categories": [{"id": "1", "slug": "gta"}]},
+    {"categories": [{"id": [1], "displayName": "GTA"}]},
+    {"categories": [{"id": "abc", "displayName": "GTA"}]},
+    {"categories": [{"id": True, "displayName": "GTA"}]},
+    {"rewards": [{"id": "x", "name": "x", "thumbnailImage": "u"}]},
+    {"rewards": [{"id": "x", "name": "x", "thumbnailImage": []}]},
+])
+def test_group_that_game_or_the_drop_build_cannot_read_is_skipped(change):
+    bad = {**_group("bad"), **change}
+    assert list(_build(data=_data([bad, _group()])).timed_drops) == [GROUP_ID]
+
+
+@pytest.mark.parametrize("change", [
+    {"categories": [{"id": 1, "displayName": "GTA"}]},
+    {"categories": [{"id": "1", "name": "GTA"}]},
+    {"rewards": [{"id": "x", "name": "", "thumbnailImage": None}]},
+    {"rewards": [{"id": "x", "name": "x"}]},
+    {"unlockRequirements": {"minuteWatchedGoal": 60, "subsGoal": None}},
+])
+def test_valid_group_shapes_are_still_picked(change):
+    group = {**_group("ok"), **change}
+    assert list(_build(data=_data([group])).timed_drops) == ["ok"]

@@ -863,14 +863,16 @@ progress to an ignored drop while the miner intentionally targets another reward
   group as done, until the reading changes (a missing window from a failed hints query is
   ignored in that comparison). A goal that cannot finish before the campaign ends is
   unmineable (`RewardCampaign.mineable_drop_ids`; start time at `endsAt`) but not shown as
-  claimed. Groups whose categories or rewards are malformed (no category ID, a reward without
-  ID or name) are skipped, not the campaign. A reward drop's claim is quiet (`quiet_claim`):
+  claimed. Groups whose categories or rewards are malformed (a category without an int-like ID or a name, a reward without
+  ID or name, a non-dict `thumbnailImage`) are skipped, not the campaign. A reward drop's claim is quiet (`quiet_claim`):
   it prints, notifies and records nothing itself. Every announcement (print with the grant
   number, notifications, history entry `<dropid>#<grantCount>`, `announce_new_grants`) comes
   from a `grantCount` rise. Announced counts live per group in
   `InventoryService._reward_ledger` (`RewardLedger`), so reloads and failed loads keep them.
   A group's first sighting with a real reading (`grantCount` an int) starts at its current
-  count; a missing group or reading leaves the ledger untouched. A claim that Twitch does not
+  count; a missing group or reading leaves the ledger untouched at load. A group not in
+  progress at load is seeded by the first tick reading below its goal, so its first grant is
+  announced; a first reading already at the goal (restart) is not. A claim that Twitch does not
   count in `grantCount` is not announced (claims were never seen live). Announcement errors
   only log a warning. This relies on `grantCount` rising when the goal is reached (the live
   run saw 0 -> 1 at 60/60).

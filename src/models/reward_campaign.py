@@ -52,8 +52,6 @@ class RewardCampaign(DropsCampaign):
     reward_grants: int = 0
     # End of the current window, so a tick can tell a stale at-goal reading from a grant.
     window_end: str | None = None
-    # A CLAIMABLE reading is announced by the claim itself, not as a grant.
-    claimable: bool = False
     # Twitch's own grant has no claim to announce it, so grants are tracked here.
     _ledger: RewardLedger
 
@@ -104,17 +102,32 @@ class RewardCampaign(DropsCampaign):
 
     @staticmethod
     def _valid_lists(group: JsonType) -> bool:
-        """Whether the group has categories with an ID and rewards with an ID and a name."""
+        """Whether the group has what Game and the drop build read from it.
+
+        Game needs an int-like category ID and a displayName or name; each reward needs a
+        string ID and name, and a thumbnailImage that is a dict when present.
+        """
         categories, rewards = group.get("categories"), group.get("rewards")
+        if not (isinstance(categories, list) and categories and isinstance(categories[0], dict)):
+            return False
+        category = categories[0]
+        cid = category.get("id")
+        if isinstance(cid, bool) or not isinstance(cid, int | str):
+            return False
+        try:
+            int(cid)
+        except ValueError:
+            return False
+        names = (category.get("displayName"), category.get("name"))
         return (
-            isinstance(categories, list)
-            and bool(categories)
-            and isinstance(categories[0], dict)
-            and bool(categories[0].get("id"))
+            any(isinstance(n, str) and n for n in names)
             and isinstance(rewards, list)
             and bool(rewards)
             and all(
-                isinstance(r, dict) and isinstance(r.get("id"), str) and isinstance(r.get("name"), str)
+                isinstance(r, dict)
+                and isinstance(r.get("id"), str)
+                and isinstance(r.get("name"), str)
+                and (r.get("thumbnailImage") is None or isinstance(r["thumbnailImage"], dict))
                 for r in rewards
             )
         )
@@ -232,7 +245,6 @@ class RewardCampaign(DropsCampaign):
         )
         campaign.reward_grants = (cls._grant_count(progress) if progress else None) or 0
         campaign.window_end = windows.get(group["id"])
-        campaign.claimable = claimable
         # The ledger is shared by the service across reloads: a group seen for the first
         # time starts at its current count, so grants that already existed are not news.
         campaign._ledger = ledger
@@ -310,8 +322,17 @@ class RewardCampaign(DropsCampaign):
             self.bump_minutes(channel)
             return
         gid = drop.id
-        self.claimable = progress.get("status") == "CLAIMABLE"
         grants = self._grant_count(progress)
+        minutes = progress.get("currentMinutesWatched")
+        if (
+            gid not in self._ledger.announced
+            and grants is not None
+            and type(minutes) is int
+            and minutes < drop.required_minutes
+        ):
+            # A group that was not in progress at load has no entry. Seeding from a reading
+            # below the goal makes its first grant (grantCount rising at the goal) news.
+            self._ledger.announced[gid] = grants
         # Compared with what was announced too: a reload can rebuild with a lower reading.
         rose = grants is not None and grants > max(
             self.reward_grants, self._ledger.announced.get(gid, 0)
