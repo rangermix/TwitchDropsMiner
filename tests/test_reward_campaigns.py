@@ -345,6 +345,24 @@ async def test_refresh_claimable_reloads_inventory_instead_of_claiming():
 
 
 @pytest.mark.asyncio
+async def test_claim_id_uses_the_in_progress_campaign_id():
+    other_id = "in-progress-campaign"
+    twitch = _twitch()
+    response = _progress_response({"status": "CLAIMABLE", "currentMinutesWatched": 60})
+    response["data"]["currentUser"]["inventory"]["viewerRewardDropCampaignsInProgress"][0]["id"] = other_id
+    twitch.gql_request = _gql(response, campaigns={"data": {"rewardCampaignsAvailableToUser": [_data()]}})
+    [campaign] = await InventoryService(twitch).fetch_reward_campaigns()
+    assert _drop(campaign).claim_id == f"uid#{other_id}#{GROUP_ID}"
+
+
+def test_claim_id_falls_back_to_the_event_id_without_an_in_progress_id():
+    progress = {GROUP_ID: {"status": "CLAIMABLE", "currentMinutesWatched": 60}}
+    for ids in (None, {}, {"other-group": "x"}):
+        campaign = RewardCampaign.from_reward_campaign(_twitch(), _data(), progress, "uid", None, ids)
+        assert _drop(campaign).claim_id == CLAIM_ID
+
+
+@pytest.mark.asyncio
 async def test_refresh_without_observation_only_bumps_the_estimate():
     twitch = _twitch()
     campaign = _build({"status": "IN_PROGRESS", "currentMinutesWatched": 9}, twitch=twitch)
@@ -644,7 +662,7 @@ async def test_non_dict_payload_entries_are_contained():
         "data": {"rewardCampaignsAvailableToUser": [None, ["x"], "y", _data()]},
     })
     service = InventoryService(twitch)
-    assert await service._fetch_reward_progress() == {}
+    assert await service._fetch_reward_progress() == ({}, {})
     assert await service.refresh_reward_progress([campaign], _channel(twitch)) is True
     assert [c.id for c in await service.fetch_reward_campaigns()] == [CAMPAIGN_ID]
 

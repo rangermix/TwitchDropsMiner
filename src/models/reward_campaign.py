@@ -76,6 +76,7 @@ class RewardCampaign(DropsCampaign):
         progress_by_group: JsonType,
         user_id: str | int,
         windows: dict[str, str] | None = None,
+        campaign_ids: dict[str, str] | None = None,
     ) -> RewardCampaign | None:
         """Build a campaign from a sitewide Open Reward Campaign's current watch group."""
         # Subscription goals cannot be earned by watching, so groups that need one are skipped.
@@ -111,6 +112,9 @@ class RewardCampaign(DropsCampaign):
         if not pool:
             return None
         group = pool[0]
+        # The claim ID uses the in-progress campaign's ID, which can differ from the
+        # campaign's own; before a group starts only the event's ID is known.
+        claim_campaign_id = (campaign_ids or {}).get(group["id"], data["id"])
         goal: int = group["unlockRequirements"]["minuteWatchedGoal"]
         progress: JsonType | None = progress_by_group.get(group["id"])
         state = cls.reward_state(progress, goal, ends_at, windows.get(group["id"]))
@@ -153,7 +157,7 @@ class RewardCampaign(DropsCampaign):
                         "requiredMinutesWatched": goal,
                         "self": {
                             "dropInstanceID": (
-                                f"{user_id}#{data['id']}#{group['id']}" if claimable else None
+                                f"{user_id}#{claim_campaign_id}#{group['id']}" if claimable else None
                             ),
                             "isClaimed": granted,
                             "currentMinutesWatched": minutes,

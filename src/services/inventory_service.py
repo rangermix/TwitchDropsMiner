@@ -126,19 +126,28 @@ class InventoryService:
 
         return GQLClient.merge_data(campaign_ids, fetched_data)
 
-    async def _fetch_reward_progress(self) -> dict[str, JsonType]:
-        """Return the viewer's reward group progress keyed by group ID."""
-        response = await self._twitch.gql_request(GQLRawQuery(REWARD_PROGRESS_QUERY))
+    @staticmethod
+    def _parse_reward_progress(response: JsonType) -> tuple[dict[str, JsonType], dict[str, str]]:
+        """Return reward group readings and the in-progress campaign ID, both keyed by group ID."""
         in_progress = response["data"]["currentUser"]["inventory"][
             "viewerRewardDropCampaignsInProgress"
         ]
-        return {
-            group["id"]: group["self"]
-            for campaign in in_progress or []
-            if isinstance(campaign, dict)
-            for group in campaign["rewardGroups"] or []
-            if isinstance(group, dict) and isinstance(group.get("self"), dict)
-        }
+        readings: dict[str, JsonType] = {}
+        campaign_ids: dict[str, str] = {}
+        for campaign in in_progress or []:
+            if not isinstance(campaign, dict):
+                continue
+            for group in campaign["rewardGroups"] or []:
+                if isinstance(group, dict) and isinstance(group.get("self"), dict):
+                    readings[group["id"]] = group["self"]
+                    if isinstance(campaign.get("id"), str):
+                        campaign_ids[group["id"]] = campaign["id"]
+        return readings, campaign_ids
+
+    async def _fetch_reward_progress(self) -> tuple[dict[str, JsonType], dict[str, str]]:
+        """Query the viewer's reward group progress (see _parse_reward_progress)."""
+        response = await self._twitch.gql_request(GQLRawQuery(REWARD_PROGRESS_QUERY))
+        return self._parse_reward_progress(response)
 
     async def _fetch_reward_windows(self) -> dict[str, str]:
         """Return reward group window end times; any failure only loses this hint."""
@@ -176,7 +185,7 @@ class InventoryService:
             return []
 
     async def _load_reward_campaigns(self) -> list[RewardCampaign]:
-        progress = await self._fetch_reward_progress()
+        progress, campaign_ids = await self._fetch_reward_progress()
         windows = await self._fetch_reward_windows()
         # Real window payloads are unverified, so they are logged next to the progress readings.
         logger.info("Reward windows: %s", windows)
@@ -192,7 +201,7 @@ class InventoryService:
                 if not data.get("isSitewide"):
                     continue
                 campaign = RewardCampaign.from_reward_campaign(
-                    self._twitch, data, progress, user_id, windows
+                    self._twitch, data, progress, user_id, windows, campaign_ids
                 )
                 if campaign is not None:
                     self._log_reward_progress(campaign, progress)
@@ -215,7 +224,7 @@ class InventoryService:
         """Poll reward progress once for these campaigns; False means the caller should fall back."""
         revisions = {campaign.id: campaign.progress_revision for campaign in campaigns}
         try:
-            progress = await asyncio.wait_for(self._fetch_reward_progress(), timeout=5)
+            progress, _ = await asyncio.wait_for(self._fetch_reward_progress(), timeout=5)
             for campaign in campaigns:
                 if (
                     self._twitch._campaigns.get(campaign.id) is not campaign
