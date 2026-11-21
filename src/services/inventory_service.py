@@ -203,8 +203,7 @@ class InventoryService:
     async def _load_reward_campaigns(self) -> list[RewardCampaign]:
         progress, campaign_ids = await self._fetch_reward_progress()
         windows, badges = await self._fetch_reward_hints()
-        # Real window payloads are unverified, so they are logged next to the progress readings.
-        logger.info("Reward windows: %s", windows)
+        logger.debug("Reward windows: %s, badge rewards: %s", windows, badges)
         response = await self._twitch.gql_request(GQLRawQuery(REWARD_CAMPAIGNS_QUERY))
         user_id = (await self._twitch.get_auth()).user_id
         campaigns: list[RewardCampaign] = []
@@ -228,9 +227,8 @@ class InventoryService:
 
     @staticmethod
     def _log_reward_progress(campaign: DropsCampaign, progress: dict[str, JsonType]) -> None:
-        # Real "self" payloads are unverified, so the raw reading is logged at INFO.
         drop_id = next(iter(campaign.timed_drops))
-        logger.info(
+        logger.debug(
             "Reward progress %s (%s): %s", campaign.name, campaign.game, progress.get(drop_id)
         )
 
