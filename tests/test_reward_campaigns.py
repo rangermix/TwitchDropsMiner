@@ -1008,3 +1008,31 @@ async def test_loading_batches_progress_and_campaigns_into_one_request():
     batch, hints = (call.args[0] for call in twitch.gql_request.await_args_list)
     assert [op["query"].split()[1] for op in batch] == ["RewardCampaignProgress", "RewardCampaigns"]
     assert "RewardCampaignHints" in hints["query"] and twitch.gql_request.await_count == 2
+
+
+# Goals that cannot be finished before the campaign ends
+def _state(progress, goal=60, *, ends_in):
+    return RewardCampaign.reward_state(progress, goal, datetime.now(timezone.utc) + ends_in)
+
+
+def test_next_window_is_checked_from_now_not_from_a_past_wait_time():
+    # The wait time passed an hour ago, so a full goal no longer fits in the 30 minutes left.
+    past = {"status": "CLAIMED", "nextEligibleAt": _iso(-timedelta(hours=1))}
+    assert _state(past, ends_in=timedelta(minutes=30)) == (60, True, None)
+    assert _state(past, ends_in=timedelta(minutes=90)) == (0, False, None)
+
+
+@pytest.mark.parametrize(("minutes", "ends_in", "expected"), [
+    (30, timedelta(minutes=29), (60, True, None)),
+    (30, timedelta(minutes=31), (30, False, None)),
+    (59, timedelta(seconds=30), (60, True, None)),
+    (59, timedelta(minutes=2), (59, False, None)),
+])
+def test_reading_that_cannot_reach_the_goal_before_the_end_is_finished(minutes, ends_in, expected):
+    reading = {"status": "IN_PROGRESS", "currentMinutesWatched": minutes}
+    assert _state(reading, ends_in=ends_in) == expected
+
+
+def test_unstarted_goal_that_no_longer_fits_is_finished():
+    assert _state(None, ends_in=timedelta(minutes=59)) == (60, True, None)
+    assert _state(None, ends_in=timedelta(minutes=61)) == (0, False, None)
