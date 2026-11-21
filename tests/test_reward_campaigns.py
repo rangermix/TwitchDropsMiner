@@ -1036,3 +1036,28 @@ def test_reading_that_cannot_reach_the_goal_before_the_end_is_finished(minutes, 
 def test_unstarted_goal_that_no_longer_fits_is_finished():
     assert _state(None, ends_in=timedelta(minutes=59)) == (60, True, None)
     assert _state(None, ends_in=timedelta(minutes=61)) == (0, False, None)
+
+
+# A passed window leaves Twitch showing the old at-goal reading until the next one starts
+def test_stale_at_goal_reading_after_the_window_bumps_instead_of_reloading():
+    twitch = _twitch()
+    campaign = RewardCampaign.from_reward_campaign(
+        twitch, _data(), {GROUP_ID: GRANTED}, "uid", {GROUP_ID: _iso(-timedelta(minutes=2))}
+    )
+    drop = _drop(campaign)
+    assert not drop.is_claimed and drop.real_current_minutes == 0
+    channel = _channel(twitch)
+    for tick in range(1, 4):
+        campaign.apply_reward_progress(GRANTED, channel)
+        assert drop.extra_current_minutes == tick
+    twitch.request_inventory_refresh.assert_not_called()
+
+
+def test_at_goal_reading_inside_the_window_still_reloads_once_the_window_ends():
+    twitch = _twitch()
+    campaign = RewardCampaign.from_reward_campaign(
+        twitch, _data(), {GROUP_ID: {"status": "IN_PROGRESS", "currentMinutesWatched": 59}}, "uid",
+        {GROUP_ID: _iso(timedelta(hours=3))},
+    )
+    campaign.apply_reward_progress(GRANTED, _channel(twitch))
+    twitch.request_inventory_refresh.assert_called_once()

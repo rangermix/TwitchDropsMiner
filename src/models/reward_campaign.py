@@ -38,6 +38,8 @@ class RewardCampaign(DropsCampaign):
 
     # Times the goal was earned (Twitch reports no total); shown in Inventory.
     reward_grants: int = 0
+    # End of the current window, so a tick can tell a stale at-goal reading from a grant.
+    window_end: str | None = None
 
     @staticmethod
     def _unfinishable(minutes: int, goal: int, ends_at: datetime) -> tuple[int, bool, None] | None:
@@ -182,6 +184,7 @@ class RewardCampaign(DropsCampaign):
             {},
         )
         campaign.reward_grants = (cls._grant_count(progress) if progress else None) or 0
+        campaign.window_end = windows.get(group["id"])
         return campaign
 
     @property
@@ -198,7 +201,9 @@ class RewardCampaign(DropsCampaign):
             return
         if (grants := self._grant_count(progress)) is not None:
             self.reward_grants = grants
-        state = self.reward_state(progress, drop.required_minutes, self.ends_at)
+        # A reading at the goal after the window passed is Twitch's old one: no new minutes,
+        # not a grant to reload for.
+        state = self.reward_state(progress, drop.required_minutes, self.ends_at, self.window_end)
         if state is None or state[1] or state[2]:
             # Finished window or unknown status: rebuild from Twitch.
             self._twitch.request_inventory_refresh()
