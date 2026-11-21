@@ -1171,3 +1171,16 @@ def test_history_keeps_one_entry_per_grant_of_a_repeating_goal(tmp_path):
     for entry_id in (f"{GROUP_ID}#1", f"{GROUP_ID}#2", f"{GROUP_ID}#2"):
         history.record(drop, campaign, entry_id)
     assert history.total_count == 2
+
+
+@pytest.mark.asyncio
+async def test_reply_for_a_channel_that_is_no_longer_watched_is_not_applied():
+    twitch = _twitch()
+    campaign = _build({"status": "IN_PROGRESS", "currentMinutesWatched": 5}, twitch=twitch)
+    twitch._campaigns[campaign.id] = campaign
+    twitch.gql_request = _gql(_progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 20}))
+    service = InventoryService(twitch)
+    assert await service.refresh_reward_progress([campaign], _channel(twitch), lambda: False) is True
+    assert _drop(campaign).real_current_minutes == 5 and _drop(campaign).extra_current_minutes == 0
+    assert await service.refresh_reward_progress([campaign], _channel(twitch), lambda: True) is True
+    assert _drop(campaign).real_current_minutes == 20

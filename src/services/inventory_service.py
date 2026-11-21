@@ -31,6 +31,8 @@ from src.utils import chunk
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from src.config import JsonType
     from src.core.client import Twitch
     from src.models.channel import Channel
@@ -239,14 +241,23 @@ class InventoryService:
         )
 
     async def refresh_reward_progress(
-        self, campaigns: list[RewardCampaign], channel: Channel
+        self,
+        campaigns: list[RewardCampaign],
+        channel: Channel,
+        is_current: Callable[[], bool] | None = None,
     ) -> bool:
-        """Poll reward progress once for these campaigns; False means the caller should fall back."""
+        """Poll reward progress once for these campaigns; False means the caller should fall back.
+
+        is_current is checked after the request: a reply for a channel that is no longer
+        the watched one is dropped without applying (and without a fallback).
+        """
         revisions = {campaign.id: campaign.progress_revision for campaign in campaigns}
         try:
             progress, _campaign_ids = await asyncio.wait_for(
                 self._fetch_reward_progress(), timeout=5
             )
+            if is_current is not None and not is_current():
+                return True
             for campaign in campaigns:
                 if (
                     self._twitch._campaigns.get(campaign.id) is not campaign

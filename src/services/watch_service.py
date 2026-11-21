@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import suppress
+from functools import partial
 from time import monotonic
 from typing import TYPE_CHECKING, NoReturn
 
@@ -218,8 +219,12 @@ class WatchService:
                     and campaign.can_earn(channel)
                 ]
                 rewards_ok = bool(rewards) and await (
-                    self._twitch._inventory_service.refresh_reward_progress(rewards, channel)
+                    self._twitch._inventory_service.refresh_reward_progress(
+                        rewards, channel, partial(channel._watch_current, stream)
+                    )
                 )
+                if not channel._watch_current(stream):
+                    continue
 
                 # Solution 1: use GQL to query for the currently mined drop status
                 progress_snapshot = {
