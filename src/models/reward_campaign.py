@@ -40,6 +40,8 @@ class RewardCampaign(DropsCampaign):
     reward_grants: int = 0
     # End of the current window, so a tick can tell a stale at-goal reading from a grant.
     window_end: str | None = None
+    # Grants already announced; Twitch's own grant has no claim to announce it.
+    grants_announced: int = 0
 
     @staticmethod
     def _unfinishable(minutes: int, goal: int, ends_at: datetime) -> tuple[int, bool, None] | None:
@@ -181,12 +183,30 @@ class RewardCampaign(DropsCampaign):
         )
         campaign.reward_grants = (cls._grant_count(progress) if progress else None) or 0
         campaign.window_end = windows.get(group["id"])
+        campaign.grants_announced = campaign.reward_grants
         return campaign
 
     @property
     def skips_drops_flag(self) -> bool:
         """Reward progress does not need the channel's drops-enabled flag."""
         return True
+
+    async def announce_new_grants(self, previous: RewardCampaign | None = None) -> None:
+        """Announce each grant that appeared since the last one announced, once.
+
+        A rebuilt campaign passes the one it replaces; grants that existed at its first
+        load were never announced and are not counted as new.
+        """
+        if previous is not None:
+            self.grants_announced = previous.grants_announced
+        first = self.grants_announced + 1
+        if self.reward_grants < first:
+            return
+        # Set before awaiting so a tick and a reload seeing the same rise announce it once.
+        self.grants_announced = self.reward_grants
+        drop = next(iter(self.drops))
+        for number in range(first, self.reward_grants + 1):
+            await drop.announce_grant(number)
 
     def apply_reward_progress(self, progress: JsonType | None, channel: Channel) -> None:
         """Apply a fresh reward group reading to this campaign's single drop."""

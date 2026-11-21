@@ -253,6 +253,7 @@ class InventoryService:
                 drop_id = next(iter(campaign.timed_drops))
                 self._log_reward_progress(campaign, progress)
                 campaign.apply_reward_progress(progress.get(drop_id), channel)
+                await campaign.announce_new_grants()
         except ExitRequest:
             raise
         except (MinerException, KeyError, TypeError, ValueError, AttributeError, TimeoutError):
@@ -329,6 +330,7 @@ class InventoryService:
         campaigns.sort(key=lambda c: c.upcoming and c.starts_at or c.ends_at)
         campaigns.sort(key=lambda c: c.eligible, reverse=True)
 
+        previous = dict(self._twitch._campaigns)
         self._clear_inventory_state()
         switch_triggers: set[datetime] = set()
         next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
@@ -340,6 +342,9 @@ class InventoryService:
                 switch_triggers.update(campaign.time_triggers)
             self._twitch.inventory.append(campaign)
             self._twitch._campaigns[campaign.id] = campaign
+            if isinstance(campaign, RewardCampaign):
+                old = previous.get(campaign.id)
+                await campaign.announce_new_grants(old if isinstance(old, RewardCampaign) else None)
 
         # concurrently add the campaigns into the GUI
         # NOTE: this fetches pictures from the CDN, so might be slow without a cache

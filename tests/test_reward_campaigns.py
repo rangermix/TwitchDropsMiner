@@ -1082,3 +1082,73 @@ def test_all_groups_unusable_builds_nothing():
 
 def _drop_of(campaign):
     return next(iter(campaign.drops))
+
+
+# Twitch's own grant has no claim, so the miner announces it
+def _granted_build(count, twitch=None, windows=None):
+    reading = {**GRANTED, "grantCount": count}
+    return RewardCampaign.from_reward_campaign(
+        twitch or _twitch(), _data(), {GROUP_ID: reading}, "uid", windows or {GROUP_ID: _iso(timedelta(hours=3))}
+    )
+
+
+def _history_ids(twitch):
+    return [call.args[2] for call in twitch.drop_history.record.call_args_list]
+
+
+@pytest.mark.asyncio
+async def test_grants_that_exist_at_the_first_load_are_not_announced():
+    twitch = _twitch()
+    campaign = _granted_build(3, twitch)
+    await campaign.announce_new_grants()
+    twitch.print.assert_not_called()
+    twitch.drop_history.record.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_a_grant_seen_on_a_tick_is_announced_once_and_recorded_per_grant():
+    twitch = _twitch()
+    campaign = RewardCampaign.from_reward_campaign(
+        twitch, _data(), {GROUP_ID: {"status": "IN_PROGRESS", "currentMinutesWatched": 59, "grantCount": 1}}, "uid",
+    )
+    channel = _channel(twitch)
+    campaign.apply_reward_progress({**GRANTED, "grantCount": 2}, channel)
+    await campaign.announce_new_grants()
+    await campaign.announce_new_grants()
+    twitch.print.assert_called_once()
+    assert _history_ids(twitch) == [f"{GROUP_ID}#2"]
+    campaign.apply_reward_progress({**GRANTED, "grantCount": 4}, channel)
+    await campaign.announce_new_grants()
+    assert _history_ids(twitch) == [f"{GROUP_ID}#2", f"{GROUP_ID}#3", f"{GROUP_ID}#4"]
+
+
+@pytest.mark.asyncio
+async def test_reload_after_a_tick_does_not_announce_the_same_grant_again():
+    twitch = _twitch()
+    old = _granted_build(1, twitch)
+    old.apply_reward_progress({**GRANTED, "grantCount": 2}, _channel(twitch))
+    await old.announce_new_grants()
+    new = _granted_build(2, twitch)
+    await new.announce_new_grants(old)
+    assert twitch.print.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_reload_announces_a_grant_the_tick_did_not_see():
+    twitch = _twitch()
+    old = _granted_build(1, twitch)
+    new = _granted_build(2, twitch)
+    await new.announce_new_grants(old)
+    await new.announce_new_grants()
+    assert twitch.print.call_count == 1 and _history_ids(twitch) == [f"{GROUP_ID}#2"]
+
+
+def test_history_keeps_one_entry_per_grant_of_a_repeating_goal(tmp_path):
+    from src.drop_history import DropHistory
+
+    history = DropHistory(tmp_path)
+    campaign = _granted_build(1)
+    drop = _drop(campaign)
+    for entry_id in (f"{GROUP_ID}#1", f"{GROUP_ID}#2", f"{GROUP_ID}#2"):
+        history.record(drop, campaign, entry_id)
+    assert history.total_count == 2

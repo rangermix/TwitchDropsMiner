@@ -191,23 +191,27 @@ class BaseDrop:
             # A mixed campaign can still earn unwanted rewards after its last
             # wanted claim. Rebuild policy so fallback can take over promptly.
             self._twitch.request_games_update()
-            claim_text = (
-                f"{self.campaign.game.name}\n"
-                f"{self.rewards_text()} "
-                f"({self.campaign.claimed_drops}/{self.campaign.total_drops})"
-            )
-            # two different claim texts, becase a new line after the game name
-            # looks ugly in the output window - replace it with a space
-            self._twitch.print(
-                _.t["status"]["claimed_drop"].format(drop=claim_text.replace("\n", " "))
-            )
-            await self._twitch.gui.broadcast_wanted_items_now()
-            if self._claim_notifications_enabled():
-                await self._send_telegram_notification()
-                await self._send_discord_notification()
+            await self._announce_claim()
         elif not result and not self.claim_requires_account_link:
             logger.error(f"Drop claim has potentially failed! Drop ID: {self.id}")
         return result
+
+    async def _announce_claim(self) -> None:
+        """Print the claim, refresh the GUI and send the claim notifications."""
+        claim_text = (
+            f"{self.campaign.game.name}\n"
+            f"{self.rewards_text()} "
+            f"({self.campaign.claimed_drops}/{self.campaign.total_drops})"
+        )
+        # two different claim texts, becase a new line after the game name
+        # looks ugly in the output window - replace it with a space
+        self._twitch.print(
+            _.t["status"]["claimed_drop"].format(drop=claim_text.replace("\n", " "))
+        )
+        await self._twitch.gui.broadcast_wanted_items_now()
+        if self._claim_notifications_enabled():
+            await self._send_telegram_notification()
+            await self._send_discord_notification()
 
     def _claim_notifications_enabled(self) -> bool:
         """Only an explicit opt-out disables claim alerts; settings problems cannot block a claim."""
@@ -418,6 +422,12 @@ class TimedDrop(BaseDrop):
                 self._twitch.drop_history.record(self, self.campaign)
         self._on_state_changed()
         return result
+
+    async def announce_grant(self, number: int) -> None:
+        """Run the claim's follow-up for a reward Twitch granted without a claim."""
+        await self._announce_claim()
+        # A daily goal repeats under one drop ID, so each grant gets its own history entry.
+        self._twitch.drop_history.record(self, self.campaign, f"{self.id}#{number}")
 
     def display(self, *, countdown: bool = True, subone: bool = False) -> None:
         """Display this drop in the GUI with progress information."""

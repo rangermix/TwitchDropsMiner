@@ -69,13 +69,15 @@ class DropHistory:
     # Public API
     # ------------------------------------------------------------------
 
-    def record(self, drop: TimedDrop, campaign: DropsCampaign) -> None:
+    def record(
+        self, drop: TimedDrop, campaign: DropsCampaign, entry_id: str | None = None
+    ) -> None:
         """
         Persist a claimed drop to history.
         Call this immediately after ``await drop.claim()`` returns.
-        Duplicate entries (same drop.id) are silently ignored.
+        Duplicate entries (same drop.id, or the given entry_id) are silently ignored.
         """
-        drop_id: str = drop.id
+        drop_id: str = entry_id or drop.id
 
         # Skip if this drop was already recorded (e.g. restart replaying events)
         if any(e["id"] == drop_id for e in self._entries):
