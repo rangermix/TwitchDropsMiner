@@ -124,8 +124,8 @@ class RewardCampaign(DropsCampaign):
         if not pool:
             return None
         group = pool[0]
-        # The claim ID uses the in-progress campaign's ID, which can differ from the
-        # campaign's own; before a group starts only the event's ID is known.
+        # The claim ID uses the in-progress campaign's ID. GTAVI's equals the event's, so this
+        # is defensive; before a group starts only the event's ID is known.
         claim_campaign_id = (campaign_ids or {}).get(group["id"], data["id"])
         goal: int = group["unlockRequirements"]["minuteWatchedGoal"]
         progress: JsonType | None = progress_by_group.get(group["id"])

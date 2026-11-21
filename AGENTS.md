@@ -850,9 +850,13 @@ progress to an ignored drop while the miner intentionally targets another reward
   Loading sends progress and campaigns as one batched request; readings log at debug level.
   On the progress tick, `InventoryService.refresh_reward_progress` reads all earnable reward
   campaigns with one query; `get_active_campaign(exclude_rewards=True)` then keeps the
-  CurrentDrop query for regular campaigns. A finished window reloads the inventory, and a
-  `CLAIMABLE` reading reloads it until the drop has a claim id; the existing claim loop then
-  claims it. A reading without
+  CurrentDrop query for regular campaigns. A goal reached inside a known window (or with an
+  unknown window end) reloads the inventory once, and a `CLAIMABLE` reading reloads it until
+  the drop has a claim id; the existing claim loop then claims it. After the stored window
+  end (`window_end`) Twitch keeps the old at-goal reading until the next window starts: that
+  is stale, so it counts as no new minutes and does not reload. A grant Twitch makes without a
+  claim is announced once (print, notifications, history entry per grant, `announce_new_grants`).
+  A reading without
   a minute increase bumps the estimate until the extra-minute cutoff switches channels. Reward
   categories also add live channels without the drops flag in CHANNELS_FETCH.
   Inventory shows Twitch's `grantCount` as "Times earned" (`reward_grants`; no total is available).

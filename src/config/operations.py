@@ -24,7 +24,7 @@ query FollowedLiveChannels {
 }
 """
 
-# Open Reward Campaigns have no persisted hashes; both are plain inline queries.
+# Open Reward Campaigns have no persisted hashes; the three queries below are plain inline queries.
 REWARD_CAMPAIGNS_QUERY = """
 query RewardCampaigns {
     rewardCampaignsAvailableToUser {
@@ -53,8 +53,10 @@ query RewardCampaignProgress {
 }
 """
 
-# `currentWindow` and `dropDetail.badge` are unverified against Twitch. They live in their
-# own query so a rejected field only loses these hints and never the progress reading.
+# `currentWindow` and `dropDetail.badge` are accepted under viewerRewardDropCampaignsInProgress
+# (live probe 2026-11-21). `dropDetail` is rejected on rewardCampaignsAvailableToUser rewards,
+# so badge info only exists once a campaign is in progress. These hints stay in their own
+# query so a future rejection only loses them and never the progress reading.
 REWARD_HINTS_QUERY = """
 query RewardCampaignHints {
     currentUser {
