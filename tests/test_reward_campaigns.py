@@ -581,7 +581,7 @@ def _channels_fetch_client(tmp_path, monkeypatch, campaigns):
     for campaign, reward in zip(client.inventory, campaigns):
         campaign.configure_mock(
             game=game, can_earn_within=lambda stamp: True, allowed_channels=[],
-            can_earn=lambda channel: True, skips_drops_flag=reward,
+            can_earn=lambda channel: True, can_progress_on=lambda channel, reward=reward: reward or channel.drops_enabled,
         )
     calls = []
 
@@ -1184,3 +1184,11 @@ async def test_reply_for_a_channel_that_is_no_longer_watched_is_not_applied():
     assert _drop(campaign).real_current_minutes == 5 and _drop(campaign).extra_current_minutes == 0
     assert await service.refresh_reward_progress([campaign], _channel(twitch), lambda: True) is True
     assert _drop(campaign).real_current_minutes == 20
+
+
+@pytest.mark.parametrize("flag", [True, False])
+def test_can_progress_on_needs_the_drops_flag_except_for_reward_and_special_games(flag):
+    twitch = _twitch()
+    channel = _channel(twitch, drops_enabled=flag)
+    assert _build().can_progress_on(channel) is True
+    assert _regular(twitch, GTA).can_progress_on(channel) is flag

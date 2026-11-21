@@ -62,6 +62,10 @@ class DropsCampaign:
         """Whether progress does not need the channel's drops-enabled flag."""
         return self.game.is_special()
 
+    def can_progress_on(self, channel: Channel) -> bool:
+        """Whether this campaign progresses on the channel given its drops-enabled flag."""
+        return self.skips_drops_flag or channel.drops_enabled
+
     def __repr__(self) -> str:
         return f"Campaign({self.game!s}, {self.name}, {self.claimed_drops}/{self.total_drops})"
 

@@ -440,7 +440,7 @@ class InventoryService:
         for campaign in self._twitch.inventory:
             if (
                 campaign.can_earn(watching_channel)
-                and (campaign.skips_drops_flag or watching_channel.drops_enabled)
+                and campaign.can_progress_on(watching_channel)
                 and not (exclude_rewards and isinstance(campaign, RewardCampaign))
             ):
                 campaigns.append(campaign)

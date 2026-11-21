@@ -80,7 +80,7 @@ class WatchService:
             campaign.game in wanted_games
             and campaign.can_earn(channel)
             # Special and reward campaigns may progress without the channel's drops flag.
-            and (campaign.skips_drops_flag or channel.drops_enabled)
+            and campaign.can_progress_on(channel)
             for campaign in self._twitch.inventory
         )
 
