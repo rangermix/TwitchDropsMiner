@@ -78,10 +78,14 @@ class RewardCampaign(DropsCampaign):
         windows: dict[str, str] | None = None,
     ) -> RewardCampaign | None:
         """Build a campaign from a sitewide Open Reward Campaign's current watch group."""
+        # Subscription goals cannot be earned by watching, so groups that need one are skipped.
         watch = [
             g
             for g in data["rewardGroups"]
-            if g["unlockRequirements"]["minuteWatchedGoal"] > 0 and g["categories"] and g["rewards"]
+            if g["unlockRequirements"]["minuteWatchedGoal"] > 0
+            and not (g["unlockRequirements"].get("subsGoal") or 0) > 0
+            and g["categories"]
+            and g["rewards"]
         ]
         # shortcut: lane campaigns (several watch tracks, one counts once started) have no
         # lane choice: the track in progress wins, else the first goal; add lane choice if

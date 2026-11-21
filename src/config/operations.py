@@ -31,7 +31,7 @@ query RewardCampaigns {
         id name status startsAt endsAt isSitewide
         rewardGroups {
             id
-            unlockRequirements { minuteWatchedGoal }
+            unlockRequirements { minuteWatchedGoal subsGoal }
             categories { id displayName slug boxArtURL }
             rewards { id name thumbnailImage { image1xURL } }
         }

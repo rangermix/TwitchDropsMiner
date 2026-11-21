@@ -210,6 +210,21 @@ def test_group_selection():
     assert list(mixed.timed_drops) == [GROUP_ID]
 
 
+@pytest.mark.parametrize("subs", [None, 0])
+def test_group_without_a_subscription_goal_is_mined(subs):
+    group = _group(subs=subs)
+    if subs is None:
+        del group["unlockRequirements"]["subsGoal"]
+    assert list(_build(data=_data([group])).timed_drops) == [GROUP_ID]
+
+
+def test_group_with_watch_and_subscription_goal_is_skipped():
+    both = _group("both", goal=60, subs=1)
+    assert _build(data=_data([both])) is None
+    picked = _build(data=_data([both, _group()]))
+    assert list(picked.timed_drops) == [GROUP_ID]
+
+
 def test_group_without_rewards_is_skipped():
     # A drop without benefits is never mineable, so it would show up in Inventory but never earn.
     no_rewards = {**_group(), "rewards": []}
