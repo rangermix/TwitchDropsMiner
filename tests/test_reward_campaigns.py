@@ -1190,3 +1190,80 @@ def test_can_progress_on_needs_the_drops_flag_except_for_reward_and_special_game
     channel = _channel(twitch, drops_enabled=flag)
     assert _build().can_progress_on(channel) is True
     assert _regular(twitch, GTA).can_progress_on(channel) is flag
+
+
+# A real claim of a repeating goal
+async def _claim_with(drop, twitch):
+    twitch.gql_request = AsyncMock(return_value={"data": {"claimDropRewards": {"status": "ELIGIBLE_FOR_ALL"}}})
+    assert await drop.claim() is True
+
+
+def _claimable(twitch, count):
+    reading = {"status": "CLAIMABLE", "currentMinutesWatched": 60, "grantCount": count}
+    return RewardCampaign.from_reward_campaign(twitch, _data(), {GROUP_ID: reading}, "uid")
+
+
+@pytest.mark.asyncio
+async def test_claim_then_the_grant_count_rise_sends_one_message_and_one_history_entry():
+    twitch = _twitch()
+    campaign = _claimable(twitch, 1)
+    await _claim_with(_drop(campaign), twitch)
+    assert twitch.print.call_count == 1 and _history_ids(twitch) == [f"{GROUP_ID}#2"]
+    campaign.apply_reward_progress({**GRANTED, "grantCount": 2}, _channel(twitch))
+    await campaign.announce_new_grants()
+    assert twitch.print.call_count == 1 and _history_ids(twitch) == [f"{GROUP_ID}#2"]
+
+
+@pytest.mark.asyncio
+async def test_claims_on_two_days_get_two_history_entries():
+    twitch = _twitch()
+    for count in (1, 2):
+        # Each day the inventory reload builds a new campaign carrying the previous one over.
+        await _claim_with(_drop(_claimable(twitch, count)), twitch)
+    assert _history_ids(twitch) == [f"{GROUP_ID}#2", f"{GROUP_ID}#3"]
+
+
+@pytest.mark.asyncio
+async def test_claims_keep_numbering_across_a_reload_of_the_same_campaign():
+    twitch = _twitch()
+    first = _claimable(twitch, 0)
+    await _claim_with(_drop(first), twitch)
+    second = _claimable(twitch, 1)
+    await second.announce_new_grants(first)
+    await _claim_with(_drop(second), twitch)
+    assert _history_ids(twitch) == [f"{GROUP_ID}#1", f"{GROUP_ID}#2"] and twitch.print.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_regular_drop_claim_is_recorded_without_an_entry_id():
+    twitch = _twitch()
+    regular = _regular(twitch, GTA)
+    drop = next(iter(regular.drops))
+    drop.claim_id = "regular-claim"
+    await _claim_with(drop, twitch)
+    twitch.drop_history.record.assert_called_once_with(drop, regular)
+
+
+@pytest.mark.asyncio
+async def test_fetch_inventory_reload_announces_a_grant_rise_once():
+    from collections import deque
+
+    twitch = _twitch()
+    twitch._drops, twitch.inventory, twitch._mnt_triggers, twitch._mnt_task = {}, [], deque(), None
+    twitch._state = State.IDLE
+    twitch.gui.inv.add_campaign = AsyncMock()
+    twitch._maintenance_service = SimpleNamespace(run_maintenance_task=AsyncMock())
+    twitch.gql_request = AsyncMock(side_effect=lambda op: (
+        {"data": {"currentUser": {"inventory": {"dropCampaignsInProgress": [], "gameEventDrops": []}}}}
+        if op is GQL_OPERATIONS["Inventory"] else {"data": {"currentUser": {"dropCampaigns": []}}}
+    ))
+    service = InventoryService(twitch)
+    builds = [_granted_build(1, twitch), _granted_build(2, twitch), _granted_build(2, twitch)]
+    service.fetch_reward_campaigns = AsyncMock(side_effect=lambda: [builds.pop(0)])
+    await service.fetch_inventory()  # first load: grants that already exist are not news
+    twitch.print.assert_not_called()
+    await service.fetch_inventory()  # the count rose between reloads
+    assert twitch.print.call_count == 1 and _history_ids(twitch) == [f"{GROUP_ID}#2"]
+    await service.fetch_inventory()  # unchanged
+    assert twitch.print.call_count == 1
+    await twitch._mnt_task

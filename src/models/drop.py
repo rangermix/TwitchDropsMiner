@@ -18,6 +18,8 @@ from src.utils import DropIgnoreReason
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from src.config.constants import JsonType
     from src.core.client import Twitch
     from src.models.campaign import DropsCampaign
@@ -274,6 +276,9 @@ class BaseDrop:
 
 
 class TimedDrop(BaseDrop):
+    # Set by a reward campaign: names this claim's history entry (a goal repeats daily).
+    claim_entry_id: Callable[[], str] | None = None
+
     def __init__(
         self, campaign: DropsCampaign, data: JsonType, claimed_benefits: dict[str, datetime]
     ):
@@ -419,7 +424,10 @@ class TimedDrop(BaseDrop):
             self.real_current_minutes = self.required_minutes
             self.extra_current_minutes = 0
             if not was_claimed:
-                self._twitch.drop_history.record(self, self.campaign)
+                if self.claim_entry_id is None:
+                    self._twitch.drop_history.record(self, self.campaign)
+                else:
+                    self._twitch.drop_history.record(self, self.campaign, self.claim_entry_id())
         self._on_state_changed()
         return result
 

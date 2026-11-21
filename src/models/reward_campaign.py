@@ -184,12 +184,18 @@ class RewardCampaign(DropsCampaign):
         campaign.reward_grants = (cls._grant_count(progress) if progress else None) or 0
         campaign.window_end = windows.get(group["id"])
         campaign.grants_announced = campaign.reward_grants
+        next(iter(campaign.drops)).claim_entry_id = campaign._claim_entry_id
         return campaign
 
     @property
     def skips_drops_flag(self) -> bool:
         """Reward progress does not need the channel's drops-enabled flag."""
         return True
+
+    def _claim_entry_id(self) -> str:
+        """History entry for a real claim: it is the next grant, already announced by the claim."""
+        self.grants_announced += 1
+        return f"{next(iter(self.drops)).id}#{self.grants_announced}"
 
     async def announce_new_grants(self, previous: RewardCampaign | None = None) -> None:
         """Announce each grant that appeared since the last one announced, once.
