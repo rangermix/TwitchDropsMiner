@@ -766,21 +766,21 @@ async def test_channels_fetch_keeps_flag_of_a_kept_stream_in_another_category(tm
     assert kept.drops_enabled is False
 
 
-# Daily watch goal and lane campaigns, shaped like the public snapshot
-DVD, IGUANA, SUB = GROUP_ID, "c7e4cd08-0000-0000-0000-000000000001", "sub-1"
+# GTAVI follows the real snapshot (.dev-notes/reward-campaigns-research.md): one watch group
+# for "GTA DVD Chest" plus 8 subscription-tier groups. The sub-tier IDs are synthetic.
+DVD = GROUP_ID
+SUBS = [f"sub-tier-{n}" for n in range(1, 9)]
+POKEMON = {"id": "1001", "displayName": "Pokemon", "slug": "pokemon"}
 
 
-def _gtavi(order=(DVD, IGUANA)):
-    groups = {
-        DVD: {**_group(DVD), "rewards": [{"id": "dvd", "name": "GTA DVD Chest", "thumbnailImage": None}]},
-        IGUANA: {**_group(IGUANA), "rewards": [{"id": "ig", "name": "Golden Iguana", "thumbnailImage": None}]},
-        SUB: _group(SUB, goal=0, subs=1),
-    }
-    return _data([groups[key] for key in (*order, SUB)])
+def _gtavi():
+    return _data([_group(DVD)] + [_group(sub, goal=0, subs=1) for sub in SUBS])
 
 
 def _pokemon(lanes=3):
-    return _data([_group(f"lane{n}", goal=20, categories=(GTA, OTHER)) for n in range(lanes)])
+    # Synthetic: the research notes hold no Pokemon snapshot; only the several-watch-lanes
+    # shape ("one counts once started") is taken from them.
+    return _data([_group(f"lane{n}", goal=20, categories=(POKEMON,)) for n in range(lanes)])
 
 
 def _pick(data, progress=None, windows=None):
@@ -792,9 +792,10 @@ def test_started_group_is_picked():
     assert list(campaign.timed_drops) == [DVD] and _drop(campaign).current_minutes == 54
 
 
-def test_without_progress_the_first_watch_goal_is_kept():
-    assert list(_pick(_gtavi()).timed_drops) == [DVD]
-    assert list(_pick(_gtavi((IGUANA, DVD))).timed_drops) == [IGUANA]
+def test_without_progress_the_watch_goal_is_kept_and_sub_tiers_are_ignored():
+    campaign = _pick(_gtavi())
+    assert list(campaign.timed_drops) == [DVD]
+    assert _pick(_gtavi(), {sub: {"status": "IN_PROGRESS", "currentMinutesWatched": 0} for sub in SUBS}).id == CAMPAIGN_ID
     assert list(_pick(_pokemon()).timed_drops) == ["lane0"]
 
 
@@ -803,17 +804,14 @@ def test_unstarted_first_lane_of_evolutions_is_mined():
     assert list(_pick(_pokemon(), live).timed_drops) == ["lane0"]
 
 
-def test_finished_final_reward_falls_back_to_the_first_goal():
-    done = {IGUANA: {"status": "FULFILLED", "nextEligibleAt": None}}
-    assert list(_pick(_gtavi(), done).timed_drops) == [DVD]
+def test_finished_last_lane_leaves_the_first_unstarted_lane():
+    done = {"lane2": {"status": "FULFILLED", "nextEligibleAt": None}}
+    assert list(_pick(_pokemon(), done).timed_drops) == ["lane0"]
 
 
-def test_granted_daily_goal_yields_to_the_goal_in_progress():
-    progress = {
-        DVD: {"status": "CLAIMED", "nextEligibleAt": None},
-        IGUANA: {"status": "IN_PROGRESS", "currentMinutesWatched": 3},
-    }
-    assert list(_pick(_gtavi(), progress).timed_drops) == [IGUANA]
+def test_granted_daily_goal_alone_stays_as_the_finished_goal():
+    campaign = _pick(_gtavi(), {DVD: {"status": "CLAIMED", "nextEligibleAt": None}})
+    assert list(campaign.timed_drops) == [DVD] and _drop(campaign).is_claimed
 
 
 def test_next_lane_is_picked_after_a_lane_is_finished():
