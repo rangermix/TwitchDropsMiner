@@ -131,7 +131,7 @@ lang/                # Translation JSON files (21 languages)
 ├── Español.json
 ├── Français.json
 ├── Deutsch.json
-└── ...              # 16 more languages
+└── ...              # 17 more languages
 ```
 
 ### Core Components

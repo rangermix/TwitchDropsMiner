@@ -65,6 +65,13 @@ def test_all_translations_match_english_schema_and_placeholders():
         _assert_translation_shape(english, translation, f"{filepath.name}:root")
 
 
+def test_frisian_translation_metadata():
+    frisian = json.loads((LANG_PATH / "Frysk.json").read_text(encoding="utf-8"))
+
+    assert frisian["language_name"] == "Frysk"
+    assert frisian["english_name"] == "Frisian"
+
+
 def test_hungarian_translation_metadata():
     hungarian = json.loads((LANG_PATH / "Magyar.json").read_text(encoding="utf-8"))
 
