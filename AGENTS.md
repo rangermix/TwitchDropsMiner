@@ -841,7 +841,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   `tests/test_playlist_watch.py`, `tests/test_watch_transport.py`, and
   `tests/test_watch_poll_cadence.py`.
 - A watch-based Open Reward Campaign is one `RewardCampaign` (a `DropsCampaign` subclass in `src/models/reward_campaign.py`) with one drop: the watch group
-  in progress, else the first. Twitch grants a reached goal and keeps it `IN_PROGRESS`, so it
+  Twitch reports in progress and that can be mined now, else the first group that can be,
+  else one waiting for its next window, else a granted one. Twitch grants a reached goal and keeps it `IN_PROGRESS`, so it
   counts as granted until its window ends. Groups that also need a subscription goal
   (`subsGoal`) are skipped. Window ends and badge rewards come from `REWARD_HINTS_QUERY`
   (optional, separate so a rejected field only loses the hints): a reward Twitch reports as
@@ -854,8 +855,13 @@ progress to an ignored drop while the miner intentionally targets another reward
   unknown window end) reloads the inventory once, and a `CLAIMABLE` reading reloads it until
   the drop has a claim id; the existing claim loop then claims it. After the stored window
   end (`window_end`) Twitch keeps the old at-goal reading until the next window starts: that
-  is stale, so it counts as no new minutes and does not reload. A grant Twitch makes without a
-  claim is announced once (print, notifications, history entry per grant, `announce_new_grants`).
+  is stale, so it counts as no new minutes and does not reload; a `grantCount` rise still
+  reloads. A grant Twitch makes without a claim is announced once (print with the grant
+  number, notifications, history entry per grant, `announce_new_grants`). Announced counts
+  live per group in `InventoryService._grants_announced`, so reloads and failed loads keep
+  them; a group's first sighting starts at its current count. Nothing is announced while the
+  reading is `CLAIMABLE`: a real claim announces itself and counts as that grant. This relies
+  on `grantCount` rising when the goal is reached (the live run saw 0 -> 1 at 60/60).
   A reading without
   a minute increase bumps the estimate until the extra-minute cutoff switches channels. Reward
   categories also add live channels without the drops flag in CHANNELS_FETCH.
@@ -877,8 +883,8 @@ Persisted operations are defined in `src/config/operations.py` as `GQL_OPERATION
 - **NotificationsDelete** - Delete Twitch notifications
 
 Open Reward Campaigns use three raw `GQLRawQuery` operations, `REWARD_CAMPAIGNS_QUERY`,
-`REWARD_PROGRESS_QUERY` and `REWARD_WINDOWS_QUERY` (an optional hint with its own 5 s
-timeout); they have no persisted hashes.
+`REWARD_PROGRESS_QUERY` and `REWARD_HINTS_QUERY` (optional window and badge hints with
+their own 5 s timeout); they have no persisted hashes.
 
 ### Channel Selection Priority
 
