@@ -21,6 +21,7 @@ from src.config.operations import FOLLOWED_LIVE_QUERY
 from src.config.reward_priority import RewardPriority
 from src.exceptions import ExitRequest, GQLException, MinerException
 from src.models.channel import Channel
+from src.models.reward_campaign import RewardCampaign
 from src.services.game_order import TemporaryGameOrder
 from src.utils import chunk
 
@@ -133,10 +134,16 @@ class ChannelService:
         In a game with a reward and a regular campaign, a channel without the drops flag
         progresses only the reward campaign, so a drops-enabled channel goes first.
         """
-        progressable = sum(
-            1 for campaign in self._twitch.inventory
+        earnable = [
+            campaign for campaign in self._twitch.inventory
             if campaign.game in self._twitch.wanted_games and campaign.can_earn(channel)
-            and campaign.can_progress_on(channel)
+        ]
+        # Only a reward campaign makes flagless channels watchable, so other games keep
+        # their viewer order.
+        progressable = (
+            sum(campaign.can_progress_on(channel) for campaign in earnable)
+            if any(isinstance(campaign, RewardCampaign) for campaign in earnable)
+            else 0
         )
         return (self.get_mining_priority(channel), not channel.acl_based, -progressable)
 

@@ -85,3 +85,18 @@ async def test_regular_campaign_keeps_the_drops_enabled_lookup(tmp_path, monkeyp
     assert calls == expected
     # The drops-enabled Channel object found first is the one that is kept.
     assert client.channels[2].drops_enabled is True
+
+
+@pytest.mark.parametrize(("reward", "expected"), [(False, (0, 0)), (True, (-2, -1))])
+def test_campaign_count_only_ranks_channels_in_games_with_a_reward_campaign(
+    tmp_path, monkeypatch, reward, expected
+):
+    # Without a reward campaign the order stays mining priority, ACL, then viewers.
+    client, _calls = _fetching_client(tmp_path, monkeypatch, regular=True, reward=reward)
+    enabled = _live(client, 2, 100, drops_enabled=True)
+    flagless = _live(client, 3, 1000, drops_enabled=False)
+    service = client._channel_service
+    assert (
+        service.get_selection_priority(enabled)[2],
+        service.get_selection_priority(flagless)[2],
+    ) == expected
