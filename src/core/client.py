@@ -758,10 +758,11 @@ class Twitch:
                     if campaign.game in self.wanted_games and campaign.can_earn_within(next_hour):
                         if campaign.allowed_channels:
                             acl_channels.update(campaign.allowed_channels)
+                        elif isinstance(campaign, RewardCampaign):
+                            flagless.add(campaign.game)
                         else:
+                            # Only regular campaigns need the drops-enabled lookup.
                             no_acl.add(campaign.game)
-                            if isinstance(campaign, RewardCampaign):
-                                flagless.add(campaign.game)
                 # remove all ACL channels that already exist from the other set
                 acl_channels.difference_update(new_channels)
                 # use the other set to set them online if possible

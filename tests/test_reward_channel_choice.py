@@ -65,3 +65,23 @@ def test_mixed_game_switches_away_from_a_healthy_flagless_channel(tmp_path, monk
     assert client.can_watch(flagless) and client.can_watch(enabled)
     assert client.should_switch(enabled)
     assert not client.should_switch(_live(client, 5, 50, drops_enabled=False))
+
+
+@pytest.mark.asyncio
+async def test_reward_only_game_uses_one_unfiltered_lookup_and_the_top_viewer_channel(tmp_path, monkeypatch):
+    client, calls = _fetching_client(tmp_path, monkeypatch, regular=False, reward=True)
+    assert await _select(client) == 3
+    assert calls == [False]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("regular", "reward", "expected"), [
+    (True, True, [True, False]),
+    (True, False, [True]),
+])
+async def test_regular_campaign_keeps_the_drops_enabled_lookup(tmp_path, monkeypatch, regular, reward, expected):
+    client, calls = _fetching_client(tmp_path, monkeypatch, regular=regular, reward=reward)
+    await _select(client)
+    assert calls == expected
+    # The drops-enabled Channel object found first is the one that is kept.
+    assert client.channels[2].drops_enabled is True

@@ -604,7 +604,6 @@ async def _run_client(client):
 @pytest.mark.asyncio
 @pytest.mark.parametrize(("campaigns", "expected"), [
     ([False], [True]),
-    ([True], [True, False]),
     ([False, True], [True, False]),
 ])
 async def test_channels_fetch_adds_flagless_channels_after_drops_enabled_ones(
