@@ -885,8 +885,10 @@ timeout); they have no persisted hashes.
 1. Selected channel (if user clicked one)
 2. ACL-based channels over directory channels
 3. Game priority order (from settings)
-4. Viewer count (descending)
-5. Maximum 199 channels tracked simultaneously
+4. More wanted campaigns progressable on the channel, at equal priority and ACL status
+   (`ChannelService.get_selection_priority()`, also used by `should_switch()`)
+5. Viewer count (descending)
+6. Maximum 199 channels tracked simultaneously
 
 ### Maintenance Task
 

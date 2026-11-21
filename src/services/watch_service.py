@@ -93,6 +93,7 @@ class WatchService:
         - The currently watched channel can no longer progress a wanted campaign
         - The channel's game has higher priority than the watching channel's game
         - The channel has the same game priority but is ACL-based and watching isn't
+        - Same priority and ACL status, but the channel progresses more wanted campaigns
 
         Args:
             channel: The channel to evaluate as a switch candidate
@@ -105,8 +106,8 @@ class WatchService:
             return True
 
         channels = self._twitch._channel_service
-        channel_order = (channels.get_mining_priority(channel), not channel.acl_based)
-        watching_order = (channels.get_mining_priority(watching_channel), not watching_channel.acl_based)
+        channel_order = channels.get_selection_priority(channel)
+        watching_order = channels.get_selection_priority(watching_channel)
         if channel_order != watching_order:
             return channel_order < watching_order
         return channels.prefer_followed_switch(channel, watching_channel)

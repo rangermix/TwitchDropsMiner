@@ -127,6 +127,19 @@ class ChannelService:
             return key
         return (self._manual_rank(channel, order), *key)
 
+    def get_selection_priority(self, channel: Channel) -> tuple[tuple[float, ...], bool, int]:
+        """Mining priority, then ACL channels, then channels that progress more wanted campaigns.
+
+        In a game with a reward and a regular campaign, a channel without the drops flag
+        progresses only the reward campaign, so a drops-enabled channel goes first.
+        """
+        progressable = sum(
+            1 for campaign in self._twitch.inventory
+            if campaign.game in self._twitch.wanted_games and campaign.can_earn(channel)
+            and (campaign.skips_drops_flag or channel.drops_enabled)
+        )
+        return (self.get_mining_priority(channel), not channel.acl_based, -progressable)
+
     def prioritize_followed(self, channels: list[Channel]) -> None:
         """Promote follows within matching priority, ACL and eligible-drop groups."""
         if not self._follow_tie_break():

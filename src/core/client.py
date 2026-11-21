@@ -813,8 +813,7 @@ class Twitch:
                 ordered_channels: list[Channel] = sorted(
                     unbanned_channels, key=ChannelService.get_viewers_key, reverse=True
                 )
-                ordered_channels.sort(key=lambda ch: ch.acl_based, reverse=True)
-                ordered_channels.sort(key=self._channel_service.get_mining_priority)
+                ordered_channels.sort(key=self._channel_service.get_selection_priority)
                 self._channel_service.prioritize_followed(ordered_channels)
                 # ensure that we won't end up with more channels than we can handle
                 # NOTE: we trim from the end because that's where the non-priority,
@@ -927,7 +926,7 @@ class Twitch:
                             self.exit_manual_mode("No channels available for manual game")
                 # Auto-select best channel based on priority, also right after manual mode ends
                 if new_watching is None and not self.is_manual_mode():
-                    ordered = sorted(channels.values(), key=self._channel_service.get_mining_priority)
+                    ordered = sorted(channels.values(), key=self._channel_service.get_selection_priority)
                     self._channel_service.prioritize_followed(ordered)
                     for channel in ordered:
                         if self.can_watch(channel) and self.should_switch(channel):
