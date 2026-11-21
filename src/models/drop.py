@@ -198,13 +198,14 @@ class BaseDrop:
             logger.error(f"Drop claim has potentially failed! Drop ID: {self.id}")
         return result
 
-    async def _announce_claim(self) -> None:
-        """Print the claim, refresh the GUI and send the claim notifications."""
-        claim_text = (
-            f"{self.campaign.game.name}\n"
-            f"{self.rewards_text()} "
-            f"({self.campaign.claimed_drops}/{self.campaign.total_drops})"
-        )
+    async def _announce_claim(self, progress: str | None = None) -> None:
+        """Print the claim, refresh the GUI and send the claim notifications.
+
+        progress replaces the "claimed/total" suffix, which means nothing for a grant.
+        """
+        if progress is None:
+            progress = f"{self.campaign.claimed_drops}/{self.campaign.total_drops}"
+        claim_text = f"{self.campaign.game.name}\n{self.rewards_text()} ({progress})"
         # two different claim texts, becase a new line after the game name
         # looks ugly in the output window - replace it with a space
         self._twitch.print(
@@ -433,7 +434,7 @@ class TimedDrop(BaseDrop):
 
     async def announce_grant(self, number: int) -> None:
         """Run the claim's follow-up for a reward Twitch granted without a claim."""
-        await self._announce_claim()
+        await self._announce_claim(f"#{number}")
         # A daily goal repeats under one drop ID, so each grant gets its own history entry.
         self._twitch.drop_history.record(self, self.campaign, f"{self.id}#{number}")
 

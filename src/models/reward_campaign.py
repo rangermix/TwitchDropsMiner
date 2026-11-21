@@ -40,8 +40,10 @@ class RewardCampaign(DropsCampaign):
     reward_grants: int = 0
     # End of the current window, so a tick can tell a stale at-goal reading from a grant.
     window_end: str | None = None
-    # Grants already announced; Twitch's own grant has no claim to announce it.
-    grants_announced: int = 0
+    # A CLAIMABLE reading is announced by the claim itself, not as a grant.
+    claimable: bool = False
+    # Grants already announced per group (Twitch's own grant has no claim to announce it).
+    _announced: dict[str, int]
 
     @staticmethod
     def _unfinishable(minutes: int, goal: int, ends_at: datetime) -> tuple[int, bool, None] | None:
@@ -92,6 +94,7 @@ class RewardCampaign(DropsCampaign):
         windows: dict[str, str] | None = None,
         campaign_ids: dict[str, str] | None = None,
         badge_rewards: set[str] | None = None,
+        grants_announced: dict[str, int] | None = None,
     ) -> RewardCampaign | None:
         """Build a campaign from a sitewide Open Reward Campaign's current watch group."""
         # Subscription goals cannot be earned by watching, so groups that need one are skipped.
@@ -104,8 +107,9 @@ class RewardCampaign(DropsCampaign):
             and g["rewards"]
         ]
         # shortcut: lane campaigns (several watch tracks, one counts once started) have no
-        # lane choice: the track in progress wins, else the first unfinished goal, else the
-        # first granted one; add lane choice if mining a chosen lane is wanted.
+        # lane choice: the started track that can be mined now wins, else the first one
+        # that can be, else the first waiting for its next window, else the first granted
+        # one; add lane choice if mining a chosen lane is wanted.
         ends_at = isoparse(data["endsAt"])
         windows = windows or {}
         states = {
@@ -117,10 +121,17 @@ class RewardCampaign(DropsCampaign):
             )
             for g in watch
         }
-        usable = [g for g in watch if states[g["id"]] is not None]
-        open_groups = [g for g in usable if not states[g["id"]][1]]  # type: ignore[index]
-        started = [g for g in open_groups if g["id"] in progress_by_group]
-        pool = started or open_groups or usable
+        usable = [(g, state) for g in watch if (state := states[g["id"]]) is not None]
+        # Mineable now: not granted and not waiting for the next window.
+        mineable = [g for g, (_, granted, wait) in usable if not granted and wait is None]
+        waiting = [g for g, (_, granted, wait) in usable if not granted and wait is not None]
+        granted_groups = [g for g, (_, granted, _w) in usable if granted]
+        pool = (
+            [g for g in mineable if g["id"] in progress_by_group]
+            or mineable
+            or waiting
+            or granted_groups
+        )
         if not pool:
             return None
         group = pool[0]
@@ -183,7 +194,11 @@ class RewardCampaign(DropsCampaign):
         )
         campaign.reward_grants = (cls._grant_count(progress) if progress else None) or 0
         campaign.window_end = windows.get(group["id"])
-        campaign.grants_announced = campaign.reward_grants
+        campaign.claimable = claimable
+        # Shared by the service across reloads, keyed by group: a group seen for the first
+        # time starts at its current count, so grants that already existed are not news.
+        campaign._announced = grants_announced if grants_announced is not None else {}
+        campaign._announced.setdefault(group["id"], campaign.reward_grants)
         next(iter(campaign.drops)).claim_entry_id = campaign._claim_entry_id
         return campaign
 
@@ -193,24 +208,27 @@ class RewardCampaign(DropsCampaign):
         return True
 
     def _claim_entry_id(self) -> str:
-        """History entry for a real claim: it is the next grant, already announced by the claim."""
-        self.grants_announced += 1
-        return f"{next(iter(self.drops)).id}#{self.grants_announced}"
+        """History entry for a real claim, which counts as announced.
 
-    async def announce_new_grants(self, previous: RewardCampaign | None = None) -> None:
+        Twitch may or may not already count the CLAIMABLE window in grantCount, so the
+        grant is numbered by whichever is higher and later counts do not repeat it.
+        """
+        drop = next(iter(self.drops))
+        number = max(self._announced[drop.id] + 1, self.reward_grants)
+        self._announced[drop.id] = number
+        return f"{drop.id}#{number}"
+
+    async def announce_new_grants(self) -> None:
         """Announce each grant that appeared since the last one announced, once.
 
-        A rebuilt campaign passes the one it replaces; grants that existed at its first
-        load were never announced and are not counted as new.
+        Relies on grantCount rising when the goal is reached (the live run saw 0 -> 1 at 60/60).
         """
-        if previous is not None:
-            self.grants_announced = previous.grants_announced
-        first = self.grants_announced + 1
-        if self.reward_grants < first:
+        drop = next(iter(self.drops))
+        first = self._announced[drop.id] + 1
+        if self.claimable or self.reward_grants < first:
             return
         # Set before awaiting so a tick and a reload seeing the same rise announce it once.
-        self.grants_announced = self.reward_grants
-        drop = next(iter(self.drops))
+        self._announced[drop.id] = self.reward_grants
         for number in range(first, self.reward_grants + 1):
             await drop.announce_grant(number)
 
@@ -221,8 +239,16 @@ class RewardCampaign(DropsCampaign):
             # No observation (only building a campaign reads a missing group as 0).
             self.bump_minutes(channel)
             return
-        if (grants := self._grant_count(progress)) is not None:
+        self.claimable = progress.get("status") == "CLAIMABLE"
+        grants = self._grant_count(progress)
+        rose = grants is not None and grants > self.reward_grants
+        if grants is not None:
             self.reward_grants = grants
+        at_goal = self.reward_state(progress, drop.required_minutes, self.ends_at)
+        if rose and at_goal is not None and at_goal[1]:
+            # A new grant, even if the stored window looks over (Twitch reset it late).
+            self._twitch.request_inventory_refresh()
+            return
         # A reading at the goal after the window passed is Twitch's old one: no new minutes,
         # not a grant to reload for.
         state = self.reward_state(progress, drop.required_minutes, self.ends_at, self.window_end)

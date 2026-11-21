@@ -407,9 +407,11 @@ async def test_refresh_apply_failure_is_contained_and_exit_propagates():
     service = InventoryService(twitch)
     with patch.object(RewardCampaign, "apply_reward_progress", side_effect=ValueError("x")):
         assert await service.refresh_reward_progress([campaign], _channel(twitch)) is True
-    with patch.object(RewardCampaign, "apply_reward_progress", side_effect=ExitRequest()):
-        with pytest.raises(ExitRequest):
-            await service.refresh_reward_progress([campaign], _channel(twitch))
+    with (
+        patch.object(RewardCampaign, "apply_reward_progress", side_effect=ExitRequest()),
+        pytest.raises(ExitRequest),
+    ):
+        await service.refresh_reward_progress([campaign], _channel(twitch))
 
 
 @pytest.mark.asyncio
@@ -578,7 +580,7 @@ def _channels_fetch_client(tmp_path, monkeypatch, campaigns):
     client.inventory = [
         (MagicMock(spec=RewardCampaign) if reward else MagicMock(spec=DropsCampaign)) for reward in campaigns
     ]
-    for campaign, reward in zip(client.inventory, campaigns):
+    for campaign, reward in zip(client.inventory, campaigns, strict=True):
         campaign.configure_mock(
             game=game, can_earn_within=lambda stamp: True, allowed_channels=[],
             can_earn=lambda channel: True, can_progress_on=lambda channel, reward=reward: reward or channel.drops_enabled,
@@ -1101,10 +1103,11 @@ def _drop_of(campaign):
 
 
 # Twitch's own grant has no claim, so the miner announces it
-def _granted_build(count, twitch=None, windows=None):
+def _granted_build(count, twitch=None, windows=None, ledger=None, group=GROUP_ID):
     reading = {**GRANTED, "grantCount": count}
     return RewardCampaign.from_reward_campaign(
-        twitch or _twitch(), _data(), {GROUP_ID: reading}, "uid", windows or {GROUP_ID: _iso(timedelta(hours=3))}
+        twitch or _twitch(), _data([_group(group)]), {group: reading}, "uid",
+        windows or {group: _iso(timedelta(hours=3))}, None, None, ledger,
     )
 
 
@@ -1141,20 +1144,22 @@ async def test_a_grant_seen_on_a_tick_is_announced_once_and_recorded_per_grant()
 @pytest.mark.asyncio
 async def test_reload_after_a_tick_does_not_announce_the_same_grant_again():
     twitch = _twitch()
-    old = _granted_build(1, twitch)
+    ledger = {}
+    old = _granted_build(1, twitch, ledger=ledger)
     old.apply_reward_progress({**GRANTED, "grantCount": 2}, _channel(twitch))
     await old.announce_new_grants()
-    new = _granted_build(2, twitch)
-    await new.announce_new_grants(old)
+    new = _granted_build(2, twitch, ledger=ledger)
+    await new.announce_new_grants()
     assert twitch.print.call_count == 1
 
 
 @pytest.mark.asyncio
 async def test_reload_announces_a_grant_the_tick_did_not_see():
     twitch = _twitch()
-    old = _granted_build(1, twitch)
-    new = _granted_build(2, twitch)
-    await new.announce_new_grants(old)
+    ledger = {}
+    _granted_build(1, twitch, ledger=ledger)
+    new = _granted_build(2, twitch, ledger=ledger)
+    await new.announce_new_grants()
     await new.announce_new_grants()
     assert twitch.print.call_count == 1 and _history_ids(twitch) == [f"{GROUP_ID}#2"]
 
@@ -1197,9 +1202,11 @@ async def _claim_with(drop, twitch):
     assert await drop.claim() is True
 
 
-def _claimable(twitch, count):
+def _claimable(twitch, count, ledger=None):
     reading = {"status": "CLAIMABLE", "currentMinutesWatched": 60, "grantCount": count}
-    return RewardCampaign.from_reward_campaign(twitch, _data(), {GROUP_ID: reading}, "uid")
+    return RewardCampaign.from_reward_campaign(
+        twitch, _data(), {GROUP_ID: reading}, "uid", None, None, None, ledger
+    )
 
 
 @pytest.mark.asyncio
@@ -1225,10 +1232,11 @@ async def test_claims_on_two_days_get_two_history_entries():
 @pytest.mark.asyncio
 async def test_claims_keep_numbering_across_a_reload_of_the_same_campaign():
     twitch = _twitch()
-    first = _claimable(twitch, 0)
+    ledger = {}
+    first = _claimable(twitch, 0, ledger)
     await _claim_with(_drop(first), twitch)
-    second = _claimable(twitch, 1)
-    await second.announce_new_grants(first)
+    second = _claimable(twitch, 1, ledger)
+    await second.announce_new_grants()
     await _claim_with(_drop(second), twitch)
     assert _history_ids(twitch) == [f"{GROUP_ID}#1", f"{GROUP_ID}#2"] and twitch.print.call_count == 2
 
@@ -1257,7 +1265,8 @@ async def test_fetch_inventory_reload_announces_a_grant_rise_once():
         if op is GQL_OPERATIONS["Inventory"] else {"data": {"currentUser": {"dropCampaigns": []}}}
     ))
     service = InventoryService(twitch)
-    builds = [_granted_build(1, twitch), _granted_build(2, twitch), _granted_build(2, twitch)]
+    ledger = service._grants_announced
+    builds = [_granted_build(n, twitch, ledger=ledger) for n in (1, 2, 2)]
     service.fetch_reward_campaigns = AsyncMock(side_effect=lambda: [builds.pop(0)])
     await service.fetch_inventory()  # first load: grants that already exist are not news
     twitch.print.assert_not_called()
@@ -1266,3 +1275,124 @@ async def test_fetch_inventory_reload_announces_a_grant_rise_once():
     await service.fetch_inventory()  # unchanged
     assert twitch.print.call_count == 1
     await twitch._mnt_task
+
+
+# Review round: grant bookkeeping is per group and survives reloads
+@pytest.mark.asyncio
+async def test_reload_onto_another_group_neither_invents_nor_misses_grants():
+    twitch = _twitch()
+    ledger = {}
+    await _granted_build(3, twitch, ledger=ledger, group="gB").announce_new_grants()
+    # The reload now mines group gA, first seen with 0 grants; gB (3 grants) is not replayed.
+    await _granted_build(0, twitch, ledger=ledger, group="gA").announce_new_grants()
+    gb_again = _granted_build(3, twitch, ledger=ledger, group="gB")
+    await gb_again.announce_new_grants()
+    twitch.print.assert_not_called()
+    # gA's first grant is not missed because gB was announced earlier.
+    ga = _granted_build(1, twitch, ledger=ledger, group="gA")
+    await ga.announce_new_grants()
+    assert _history_ids(twitch) == ["gA#1"]
+
+
+@pytest.mark.asyncio
+async def test_a_failed_reward_load_does_not_lose_a_grant():
+    twitch = _twitch()
+    twitch.gql_request = AsyncMock(side_effect=GQLException("down"))
+    service = InventoryService(twitch)
+    first = _granted_build(1, twitch, ledger=service._grants_announced)
+    assert await service.fetch_reward_campaigns() == []
+    second = _granted_build(2, twitch, ledger=service._grants_announced)
+    await second.announce_new_grants()
+    assert first is not second and _history_ids(twitch) == [f"{GROUP_ID}#2"]
+
+
+@pytest.mark.asyncio
+async def test_no_grant_announcement_while_the_reading_is_claimable():
+    twitch = _twitch()
+    ledger = {}
+    campaign = _claimable(twitch, 0, ledger)
+    campaign.apply_reward_progress({"status": "CLAIMABLE", "currentMinutesWatched": 60, "grantCount": 1}, _channel(twitch))
+    await campaign.announce_new_grants()
+    twitch.print.assert_not_called()
+    # Twitch counts the CLAIMABLE window already: the claim is that grant, not a second one.
+    await _claim_with(_drop(campaign), twitch)
+    assert _history_ids(twitch) == [f"{GROUP_ID}#1"] and twitch.print.call_count == 1
+    campaign.apply_reward_progress({**GRANTED, "grantCount": 1}, _channel(twitch))
+    await campaign.announce_new_grants()
+    assert twitch.print.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_claim_when_twitch_never_counts_claims_still_numbers_forward():
+    twitch = _twitch()
+    ledger = {}
+    await _claim_with(_drop(_claimable(twitch, 4, ledger)), twitch)
+    await _claim_with(_drop(_claimable(twitch, 4, ledger)), twitch)
+    assert _history_ids(twitch) == [f"{GROUP_ID}#5", f"{GROUP_ID}#6"]
+
+
+def test_a_grant_rise_is_a_grant_even_when_the_stored_window_looks_over():
+    twitch = _twitch()
+    campaign = _granted_build(1, twitch, windows={GROUP_ID: _iso(-timedelta(hours=20))})
+    campaign.apply_reward_progress({**GRANTED, "grantCount": 2}, _channel(twitch))
+    twitch.request_inventory_refresh.assert_called_once()
+    campaign.apply_reward_progress({**GRANTED, "grantCount": 2}, _channel(twitch))
+    twitch.request_inventory_refresh.assert_called_once()
+
+
+def test_group_that_can_be_mined_now_beats_a_waiting_group():
+    waiting = {"status": "CLAIMED", "nextEligibleAt": _iso(timedelta(hours=10))}
+    mining = {"status": "IN_PROGRESS", "currentMinutesWatched": 3}
+    picked = _pick(_pokemon(), {"lane0": waiting, "lane1": mining})
+    assert list(picked.timed_drops) == ["lane1"]
+    # An unstarted group that can be mined now also beats a waiting one.
+    assert list(_pick(_pokemon(2), {"lane0": waiting}).timed_drops) == ["lane1"]
+    # With nothing mineable the waiting group is shown, ahead of a granted one.
+    done = {"status": "FULFILLED", "nextEligibleAt": None}
+    assert list(_pick(_pokemon(2), {"lane0": done, "lane1": waiting}).timed_drops) == ["lane1"]
+
+
+def test_malformed_entries_without_an_id_are_skipped_by_the_parsers():
+    bad_group = {"self": {"currentWindow": {"expiresAt": "T"}}, "rewards": [
+        {"dropDetail": {"badge": {}}}, {"id": 5, "dropDetail": {"badge": {}}},
+        {"id": "r", "dropDetail": {"badge": {}}}]}
+    good = {"id": "g", "self": {"currentWindow": {"expiresAt": "T"}}, "rewards": []}
+    assert InventoryService._parse_reward_hints(_hints([bad_group, good])) == ({"g": "T"}, {"r"})
+    response = {"data": {"currentUser": {"inventory": {"viewerRewardDropCampaignsInProgress": [
+        {"id": "c1"}, {"id": "c2", "rewardGroups": [{"self": {"status": "X"}}, {"id": 7, "self": {}}]},
+        {"id": "c3", "rewardGroups": [{"id": "g", "self": {"status": "IN_PROGRESS"}}]},
+    ]}}}}
+    assert InventoryService._parse_reward_progress(response) == (
+        {"g": {"status": "IN_PROGRESS"}}, {"g": "c3"}
+    )
+
+
+@pytest.mark.asyncio
+async def test_announcements_wait_until_the_inventory_is_rebuilt():
+    twitch = _twitch()
+    twitch._drops, twitch.inventory, twitch._mnt_triggers, twitch._mnt_task = {}, [], __import__("collections").deque(), None
+    twitch._state = State.IDLE
+    twitch.gui.inv.add_campaign = AsyncMock()
+    twitch._maintenance_service = SimpleNamespace(run_maintenance_task=AsyncMock())
+    twitch.gql_request = AsyncMock(side_effect=lambda op: (
+        {"data": {"currentUser": {"inventory": {"dropCampaignsInProgress": [], "gameEventDrops": []}}}}
+        if op is GQL_OPERATIONS["Inventory"] else {"data": {"currentUser": {"dropCampaigns": []}}}
+    ))
+    service = InventoryService(twitch)
+    seen = []
+    twitch.print = MagicMock(side_effect=lambda *_: seen.append(len(twitch.inventory)))
+    builds = [_granted_build(n, twitch, ledger=service._grants_announced) for n in (1, 2)]
+    service.fetch_reward_campaigns = AsyncMock(side_effect=lambda: [builds.pop(0)])
+    await service.fetch_inventory()
+    await service.fetch_inventory()
+    assert seen == [1]
+
+
+@pytest.mark.asyncio
+async def test_grant_message_shows_the_grant_number_not_a_claimed_count():
+    twitch = _twitch()
+    campaign = _granted_build(0, twitch)
+    campaign.reward_grants = 1
+    await campaign.announce_new_grants()
+    text = twitch.print.call_args.args[0]
+    assert "(#1)" in text and "(0/1)" not in text and "(1/1)" not in text

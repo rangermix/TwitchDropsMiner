@@ -64,6 +64,8 @@ class InventoryService:
             twitch: The Twitch client instance
         """
         self._twitch = twitch
+        # Reward grants announced per group; outlives reloads, including failed ones.
+        self._grants_announced: dict[str, int] = {}
 
     def _clear_inventory_state(self) -> None:
         """Clear derived campaign and drop state before replacing inventory."""
@@ -143,8 +145,12 @@ class InventoryService:
         for campaign in in_progress or []:
             if not isinstance(campaign, dict):
                 continue
-            for group in campaign["rewardGroups"] or []:
-                if isinstance(group, dict) and isinstance(group.get("self"), dict):
+            for group in campaign.get("rewardGroups") or []:
+                if (
+                    isinstance(group, dict)
+                    and isinstance(group.get("id"), str)
+                    and isinstance(group.get("self"), dict)
+                ):
                     readings[group["id"]] = group["self"]
                     if isinstance(campaign.get("id"), str):
                         campaign_ids[group["id"]] = campaign["id"]
@@ -174,10 +180,16 @@ class InventoryService:
                     continue
                 reading = group.get("self")
                 window = reading.get("currentWindow") if isinstance(reading, dict) else None
-                if isinstance(window, dict) and window.get("expiresAt") is not None:
+                if (
+                    isinstance(group.get("id"), str)
+                    and isinstance(window, dict)
+                    and window.get("expiresAt") is not None
+                ):
                     windows[group["id"]] = window["expiresAt"]
                 for reward in group.get("rewards") or []:
-                    detail = reward.get("dropDetail") if isinstance(reward, dict) else None
+                    if not isinstance(reward, dict) or not isinstance(reward.get("id"), str):
+                        continue
+                    detail = reward.get("dropDetail")
                     if isinstance(detail, dict) and isinstance(detail.get("badge"), dict):
                         badges.add(reward["id"])
         return windows, badges
@@ -224,11 +236,14 @@ class InventoryService:
                 if not data.get("isSitewide"):
                     continue
                 campaign = RewardCampaign.from_reward_campaign(
-                    self._twitch, data, progress, user_id, windows, campaign_ids, badges
+                    self._twitch, data, progress, user_id, windows, campaign_ids, badges,
+                    self._grants_announced,
                 )
                 if campaign is not None:
                     self._log_reward_progress(campaign, progress)
                     campaigns.append(campaign)
+            # Deliberately not REWARD_ERRORS: only a malformed campaign is skipped here; network
+            # errors, timeouts and exit requests belong to the caller.
             except (KeyError, TypeError, ValueError, AttributeError):
                 logger.warning("Open Reward Campaign %s could not be read", data.get("id"))
         return campaigns
@@ -353,7 +368,6 @@ class InventoryService:
         campaigns.sort(key=lambda c: c.upcoming and c.starts_at or c.ends_at)
         campaigns.sort(key=lambda c: c.eligible, reverse=True)
 
-        previous = dict(self._twitch._campaigns)
         self._clear_inventory_state()
         switch_triggers: set[datetime] = set()
         next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
@@ -365,9 +379,6 @@ class InventoryService:
                 switch_triggers.update(campaign.time_triggers)
             self._twitch.inventory.append(campaign)
             self._twitch._campaigns[campaign.id] = campaign
-            if isinstance(campaign, RewardCampaign):
-                old = previous.get(campaign.id)
-                await campaign.announce_new_grants(old if isinstance(old, RewardCampaign) else None)
 
         # concurrently add the campaigns into the GUI
         # NOTE: this fetches pictures from the CDN, so might be slow without a cache
@@ -410,6 +421,11 @@ class InventoryService:
         self._twitch._mnt_task = asyncio.create_task(
             self._twitch._maintenance_service.run_maintenance_task()
         )
+
+        # Announced only now, so the GUI and notification awaits cannot interleave with the rebuild.
+        for campaign in campaigns:
+            if isinstance(campaign, RewardCampaign):
+                await campaign.announce_new_grants()
 
     def get_active_campaign(
         self, channel: Channel | None = None, *, exclude_rewards: bool = False
