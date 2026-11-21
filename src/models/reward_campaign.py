@@ -102,26 +102,23 @@ class RewardCampaign(DropsCampaign):
             and g["rewards"]
         ]
         # shortcut: lane campaigns (several watch tracks, one counts once started) have no
-        # lane choice: the track in progress wins, else the first goal; add lane choice if
-        # mining a chosen lane is wanted.
+        # lane choice: the track in progress wins, else the first unfinished goal, else the
+        # first granted one; add lane choice if mining a chosen lane is wanted.
         ends_at = isoparse(data["endsAt"])
         windows = windows or {}
-        active = [
-            g
-            for g in watch
-            if g["id"] in progress_by_group
-            and (
-                state := cls.reward_state(
-                    progress_by_group[g["id"]],
-                    g["unlockRequirements"]["minuteWatchedGoal"],
-                    ends_at,
-                    windows.get(g["id"]),
-                )
+        states = {
+            g["id"]: cls.reward_state(
+                progress_by_group.get(g["id"]),
+                g["unlockRequirements"]["minuteWatchedGoal"],
+                ends_at,
+                windows.get(g["id"]),
             )
-            is not None
-            and not state[1]
-        ]
-        pool = active or watch
+            for g in watch
+        }
+        usable = [g for g in watch if states[g["id"]] is not None]
+        open_groups = [g for g in usable if not states[g["id"]][1]]  # type: ignore[index]
+        started = [g for g in open_groups if g["id"] in progress_by_group]
+        pool = started or open_groups or usable
         if not pool:
             return None
         group = pool[0]
@@ -130,9 +127,8 @@ class RewardCampaign(DropsCampaign):
         claim_campaign_id = (campaign_ids or {}).get(group["id"], data["id"])
         goal: int = group["unlockRequirements"]["minuteWatchedGoal"]
         progress: JsonType | None = progress_by_group.get(group["id"])
-        state = cls.reward_state(progress, goal, ends_at, windows.get(group["id"]))
-        if state is None:
-            return None
+        state = states[group["id"]]
+        assert state is not None
         minutes, granted, wait_until = state
         claimable = progress is not None and progress.get("status") == "CLAIMABLE"
         campaign = cls(

@@ -1061,3 +1061,24 @@ def test_at_goal_reading_inside_the_window_still_reloads_once_the_window_ends():
     )
     campaign.apply_reward_progress(GRANTED, _channel(twitch))
     twitch.request_inventory_refresh.assert_called_once()
+
+
+# Without a started group the first usable, unfinished group is mined
+@pytest.mark.parametrize("status", ["EXPIRED", "SOMETHING_NEW", "FULFILLED", "CLAIMED"])
+def test_unusable_or_finished_first_lane_does_not_hide_unstarted_lanes(status):
+    first = {"lane0": {"status": status, "nextEligibleAt": None}}
+    assert list(_pick(_pokemon(), first).timed_drops) == ["lane1"]
+
+
+def test_only_granted_groups_left_keeps_the_first_granted_one():
+    done = {f"lane{n}": {"status": "FULFILLED", "nextEligibleAt": None} for n in range(3)}
+    campaign = _pick(_pokemon(), done)
+    assert list(campaign.timed_drops) == ["lane0"] and _drop_of(campaign).is_claimed
+
+
+def test_all_groups_unusable_builds_nothing():
+    assert _pick(_pokemon(2), {f"lane{n}": {"status": "EXPIRED"} for n in range(2)}) is None
+
+
+def _drop_of(campaign):
+    return next(iter(campaign.drops))
