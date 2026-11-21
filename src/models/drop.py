@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import re
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING
 
 from dateutil.parser import isoparse
 
@@ -183,6 +183,9 @@ class BaseDrop:
             return []
         return [benefit.name for benefit in self.benefits if benefit.is_wanted(allowed_benefits)]
 
+    # Reward drops announce grants from grantCount, not from the claim (see RewardCampaign).
+    quiet_claim: bool = False
+
     async def claim(self) -> bool:
         result = await self._claim()
         if result and not self.is_claimed:
@@ -191,7 +194,8 @@ class BaseDrop:
             # A mixed campaign can still earn unwanted rewards after its last
             # wanted claim. Rebuild policy so fallback can take over promptly.
             self._twitch.request_games_update()
-            await self._announce_claim()
+            if not self.quiet_claim:
+                await self._announce_claim()
         elif not result and not self.claim_requires_account_link:
             logger.error(f"Drop claim has potentially failed! Drop ID: {self.id}")
         return result
@@ -274,17 +278,7 @@ class BaseDrop:
         return False
 
 
-class ClaimTracker(Protocol):
-    def begin_claim(self) -> None: ...
-
-    def finish_claim(self, success: bool) -> str | None:
-        """Return the history entry ID for a successful claim."""
-
-
 class TimedDrop(BaseDrop):
-    # Set by a reward campaign, whose goal repeats daily and needs numbered history entries.
-    claim_tracker: ClaimTracker | None = None
-
     def __init__(
         self, campaign: DropsCampaign, data: JsonType, claimed_benefits: dict[str, datetime]
     ):
@@ -425,24 +419,12 @@ class TimedDrop(BaseDrop):
 
     async def claim(self) -> bool:
         was_claimed = self.is_claimed
-        tracker = self.claim_tracker
-        if tracker is not None:
-            tracker.begin_claim()
-        try:
-            result = await super().claim()
-        except BaseException:
-            if tracker is not None:
-                tracker.finish_claim(False)
-            raise
-        entry_id = tracker.finish_claim(bool(result) and not was_claimed) if tracker else None
+        result = await super().claim()
         if result:
             self.real_current_minutes = self.required_minutes
             self.extra_current_minutes = 0
-            if not was_claimed:
-                if entry_id is None:
-                    self._twitch.drop_history.record(self, self.campaign)
-                else:
-                    self._twitch.drop_history.record(self, self.campaign, entry_id)
+            if not was_claimed and not self.quiet_claim:
+                self._twitch.drop_history.record(self, self.campaign)
         self._on_state_changed()
         return result
 

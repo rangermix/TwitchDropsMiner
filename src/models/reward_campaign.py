@@ -39,12 +39,8 @@ def _wait_state(
 class RewardLedger:
     """Per-group reward bookkeeping, kept by the inventory service across reloads."""
 
-    # Grants already announced (or taken as the starting count).
+    # Grants already announced (or taken as the starting count), set only from a real reading.
     announced: dict[str, int] = field(default_factory=dict)
-    # Highest history entry number written, so numbers never repeat.
-    used: dict[str, int] = field(default_factory=dict)
-    # Groups with a real claim in flight or waiting for its new baseline reading.
-    pending: set[str] = field(default_factory=set)
     # Groups whose stale at-goal reading ran into the extra-minute cutoff: reading signature.
     stale: dict[str, tuple[object, ...]] = field(default_factory=dict)
 
@@ -106,6 +102,23 @@ class RewardCampaign(DropsCampaign):
         count = progress.get("grantCount")
         return count if type(count) is int and count >= 0 else None
 
+    @staticmethod
+    def _valid_lists(group: JsonType) -> bool:
+        """Whether the group has categories with an ID and rewards with an ID and a name."""
+        categories, rewards = group.get("categories"), group.get("rewards")
+        return (
+            isinstance(categories, list)
+            and bool(categories)
+            and isinstance(categories[0], dict)
+            and bool(categories[0].get("id"))
+            and isinstance(rewards, list)
+            and bool(rewards)
+            and all(
+                isinstance(r, dict) and isinstance(r.get("id"), str) and isinstance(r.get("name"), str)
+                for r in rewards
+            )
+        )
+
     @classmethod
     def from_reward_campaign(
         cls,
@@ -130,8 +143,7 @@ class RewardCampaign(DropsCampaign):
             and type(req.get("minuteWatchedGoal")) is int
             and req["minuteWatchedGoal"] > 0
             and not (isinstance(req.get("subsGoal"), int) and req["subsGoal"] > 0)
-            and g.get("categories")
-            and g.get("rewards")
+            and cls._valid_lists(g)
         ]
         ends_at = isoparse(data["endsAt"])
         windows = windows or {}
@@ -224,12 +236,11 @@ class RewardCampaign(DropsCampaign):
         # The ledger is shared by the service across reloads: a group seen for the first
         # time starts at its current count, so grants that already existed are not news.
         campaign._ledger = ledger
-        ledger.announced.setdefault(group["id"], campaign.reward_grants)
-        if group["id"] in ledger.pending and not claimable:
-            # A claim finished and Twitch now shows the reading after it: the new baseline.
-            ledger.announced[group["id"]] = campaign.reward_grants
-            ledger.pending.discard(group["id"])
-        next(iter(campaign.drops)).claim_tracker = campaign
+        # A group without a usable reading leaves the ledger alone, so a rebuild that misses it
+        # does not rebase and replay old grants later.
+        if progress is not None and (count := cls._grant_count(progress)) is not None:
+            ledger.announced.setdefault(group["id"], count)
+        next(iter(campaign.drops)).quiet_claim = True
         return campaign
 
     @property
@@ -250,50 +261,45 @@ class RewardCampaign(DropsCampaign):
         state = cls.reward_state(progress, goal, ends_at, window_end)
         remembered = ledger.stale.get(group["id"])
         if remembered is not None:
-            if progress is not None and remembered == cls._reading_signature(progress, window_end):
+            if progress is not None and cls._same_reading(
+                remembered, cls._reading_signature(progress, window_end)
+            ):
                 # The same stale at-goal reading already ran into the extra-minute cutoff.
                 return goal, True, None
             del ledger.stale[group["id"]]
         return state
 
     @staticmethod
+    def _same_reading(remembered: tuple[object, ...], current: tuple[object, ...]) -> bool:
+        # A missing window (the hints query failed) must not forget a stale reading.
+        return remembered == current or (current[-1] is None and remembered[:-1] == current[:-1])
+
+    @staticmethod
     def _reading_signature(progress: JsonType, window_end: str | None) -> tuple[object, ...]:
         return (progress.get("status"), progress.get("grantCount"),
                 progress.get("currentMinutesWatched"), window_end)
 
-    # Claim tracking, called by TimedDrop.claim around a real claim request.
-    def begin_claim(self) -> None:
-        self._ledger.pending.add(next(iter(self.drops)).id)
-
-    def finish_claim(self, success: bool) -> str | None:
-        """Return the history entry ID of a successful claim, the next unused number.
-
-        The group stays pending until the next reading that is not CLAIMABLE: whether Twitch
-        counts the claim in grantCount is not known, so that reading becomes the new baseline
-        instead of being announced as a second grant.
-        """
-        gid = next(iter(self.drops)).id
-        if not success:
-            self._ledger.pending.discard(gid)
-            return None
-        number = max(self._ledger.announced[gid], self._ledger.used.get(gid, 0)) + 1
-        self._ledger.used[gid] = number
-        return f"{gid}#{number}"
+    @property
+    def mineable_drop_ids(self) -> frozenset[str]:
+        # A goal that cannot finish before the campaign ends starts at its end (_unfinishable).
+        return frozenset(
+            i for i in super().mineable_drop_ids if self.timed_drops[i].starts_at < self.ends_at
+        )
 
     async def announce_new_grants(self) -> None:
         """Announce each grant that appeared since the last one announced, once.
 
         Relies on grantCount rising when the goal is reached (the live run saw 0 -> 1 at 60/60).
         """
-        gid = next(iter(self.drops)).id
-        first = self._ledger.announced[gid] + 1
-        if self.claimable or gid in self._ledger.pending or self.reward_grants < first:
+        drop = next(iter(self.drops))
+        announced = self._ledger.announced.get(drop.id)
+        # shortcut: a claim Twitch does not count in grantCount is not announced; claims were
+        # never seen live, so every announcement comes from a grantCount rise.
+        if announced is None or self.reward_grants <= announced:
             return
         # Set before awaiting so a tick and a reload seeing the same rise announce it once.
-        self._ledger.announced[gid] = self.reward_grants
-        drop = next(iter(self.drops))
-        for number in range(first, self.reward_grants + 1):
-            self._ledger.used[gid] = max(self._ledger.used.get(gid, 0), number)
+        self._ledger.announced[drop.id] = self.reward_grants
+        for number in range(announced + 1, self.reward_grants + 1):
             await drop.announce_grant(number)
 
     def apply_reward_progress(self, progress: JsonType | None, channel: Channel) -> None:
@@ -312,11 +318,6 @@ class RewardCampaign(DropsCampaign):
         )
         if grants is not None:
             self.reward_grants = grants
-        if gid in self._ledger.pending and not self.claimable and grants is not None:
-            # First reading after a real claim: the new baseline, not a second grant.
-            self._ledger.announced[gid] = grants
-            self._ledger.pending.discard(gid)
-            rose = False
         at_goal = self.reward_state(progress, drop.required_minutes, self.ends_at)
         if rose and at_goal is not None and at_goal[1]:
             # A new grant, even if the stored window looks over (Twitch reset it late).
@@ -332,7 +333,7 @@ class RewardCampaign(DropsCampaign):
         )
         signature = self._reading_signature(progress, self.window_end)
         remembered = self._ledger.stale.get(gid)
-        if remembered is not None and (not stale or remembered != signature):
+        if remembered is not None and (not stale or not self._same_reading(remembered, signature)):
             # The reading changed (minutes, grant count, new window): mine it again.
             del self._ledger.stale[gid]
         if state is None or state[1] or state[2]:
