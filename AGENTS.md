@@ -126,7 +126,7 @@ src/
 ├── version.py       # Version string
 └── __main__.py      # Entry point
 
-lang/                # Translation JSON files (20 languages)
+lang/                # Translation JSON files (21 languages)
 ├── English.json     # Default/fallback translations
 ├── Español.json
 ├── Français.json
@@ -299,7 +299,7 @@ lang/                # Translation JSON files (20 languages)
   account/renewal text may shorten with ellipsis, but its full translated text remains
   in the DOM and title.
   Update both titles on state changes, including logout and renewal errors. Check all
-  20 locales, dashboard logout controls, keyboard tab navigation and narrow viewports
+  21 locales, dashboard logout controls, keyboard tab navigation and narrow viewports
   in a rendered browser. `test_header_frontend.py` and `test_browser_login_panel.py`
   cover full tooltip text and removal of stale account/renewal information.
 - The connection indicator and language selector share a 32px height and 110px minimum
@@ -874,7 +874,7 @@ Runs in background to trigger:
 
 **Architecture:**
 
-- All translations stored as JSON files in `lang/` directory (20 languages supported)
+- All translations stored as JSON files in `lang/` directory (21 languages supported)
 - English (`lang/English.json`) is the single source of truth and fallback language
 - Strongly typed with TypedDict schema defined in `src/i18n/translator.py`
 - Translator class (`src/i18n/translator.py`) handles language loading and fallback
@@ -882,7 +882,7 @@ Runs in background to trigger:
 
 **Supported Languages:**
 
-- English, Dansk (Danish), Deutsch (German), Español (Spanish), Français (French)
+- English, Dansk (Danish), Deutsch (German), Español (Spanish), Français (French), Frysk (West Frisian)
 - Magyar (Hungarian), Indonesian, Italiano (Italian), Nederlandse (Dutch), Polski (Polish), Português (Portuguese)
 - Română (Romanian), Türkçe (Turkish), Čeština (Czech)
 - Русский (Russian), Українська (Ukrainian), العربية (Arabic)
@@ -931,7 +931,7 @@ login_text = _.t["login"]["status"]["logged_in"]  # Returns "Logged in"
 - **src/i18n/** - Internationalization package with TypedDict schema and Translator class
   - **translator.py** - Translator class with typed translation schema (Translation TypedDict)
   - **__init__.py** - Exports translation types and `_` (Translator instance)
-- **lang/** - Translation JSON files for 20 languages (English.json is the single source of truth)
+- **lang/** - Translation JSON files for 21 languages (English.json is the single source of truth)
 - **src/version.py** - Version string
 - **src/web/app.py** - FastAPI application with REST API and Socket.IO
 - **src/web/managers/cache.py** - ImageCache for campaign artwork caching

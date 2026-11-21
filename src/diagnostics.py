@@ -65,7 +65,7 @@ class Diagnostics:
                              "REPLAY", "SDK_EXPIRED", "SDK_TIMEOUT", "SDK_ISSUANCE", "SDK_COOKIE", "SDK_PAGE", "SDK_SEED",
                              "CAPTURE_TIMEOUT", "STOPPED", "STALE", "UNAUTHENTICATED", "FORBIDDEN", "PERSISTED_QUERY_NOT_FOUND"})
     DATE_FIELDS = frozenset({"startAt", "endAt", "expiresAt", "createdAt", "awardedAt", "lastAwardedAt", "published_at"})
-    LOCALES = frozenset({"English", "Dansk", "Deutsch", "Español", "Français", "Magyar", "Indonesian", "Italiano",
+    LOCALES = frozenset({"English", "Dansk", "Deutsch", "Español", "Français", "Frysk", "Magyar", "Indonesian", "Italiano",
                         "Nederlandse", "Polski", "Português", "Română", "Türkçe", "Čeština", "Русский", "Українська",
                         "العربية", "日本語", "简体中文", "繁體中文"})
     LOG_MODULES = frozenset(["client", "gql_client", "http_client", "auth_state", "channel", "watch_service", "inventory_service", "maintenance", "message_handlers", "websocket", "pool", "app", "gui_manager", "server_renewal", "container_login", "session_controller", "imported_session", "telegram_service", "discord_service", "origin", "settings", "login", "drop"])
