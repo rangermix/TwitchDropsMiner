@@ -157,9 +157,11 @@ has several watch goals, TDM mines the one Twitch reports in progress, otherwise
 unfinished one. For a campaign with parallel tracks, such as Pokemon Evolutions, start the
 track you want on Twitch first. Add that category to **Settings → Games → Mining list**
 and keep **Other reward** ticked in **Settings → Mining → Reward types**, which covers
-the GTA DVD Chest. Rewards Twitch reports as badges, such as Pokemon's Pikachu badge, need
-**Chat badge** ticked instead. Daily
-goals wait in Inventory until Twitch opens the next window. Subscription goals and
+the GTA DVD Chest. Twitch only reports whether a reward is a badge (such as Pokemon's
+Pikachu badge) once the campaign has progress, so until then its rewards count as
+**Other reward**. For badge campaigns keep both **Other reward** and **Chat badge** ticked.
+Daily goals wait in Inventory until Twitch opens the next window. A goal that can no longer
+be finished before the campaign ends stays unmineable and is not shown as claimed. Subscription goals and
 game-specific reward campaigns are not mined. Compare progress with Twitch inventory.
 
 Check the campaign on Twitch and work through these conditions:

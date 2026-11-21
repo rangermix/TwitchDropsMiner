@@ -841,8 +841,9 @@ progress to an ignored drop while the miner intentionally targets another reward
   `tests/test_playlist_watch.py`, `tests/test_watch_transport.py`, and
   `tests/test_watch_poll_cadence.py`.
 - A watch-based Open Reward Campaign is one `RewardCampaign` (a `DropsCampaign` subclass in `src/models/reward_campaign.py`) with one drop: the watch group
-  Twitch reports in progress and that can be mined now, else the first group that can be,
-  else one waiting for its next window, else a granted one. Twitch grants a reached goal and keeps it `IN_PROGRESS`, so it
+  Twitch reports in progress. Started groups (a reading exists) come first: mineable now,
+  then waiting for the next window, then at the goal inside an open window; then unstarted
+  groups that can be mined, then finished ones (`CLAIMED`/`FULFILLED`). Twitch grants a reached goal and keeps it `IN_PROGRESS`, so it
   counts as granted until its window ends. Groups that also need a subscription goal
   (`subsGoal`) are skipped. Window ends and badge rewards come from `REWARD_HINTS_QUERY`
   (optional, separate so a rejected field only loses the hints): a reward Twitch reports as
@@ -855,18 +856,25 @@ progress to an ignored drop while the miner intentionally targets another reward
   unknown window end) reloads the inventory once, and a `CLAIMABLE` reading reloads it until
   the drop has a claim id; the existing claim loop then claims it. After the stored window
   end (`window_end`) Twitch keeps the old at-goal reading until the next window starts: that
-  is stale, so it counts as no new minutes and does not reload; a `grantCount` rise still
-  reloads. A grant Twitch makes without a claim is announced once (print with the grant
+  is stale, so it counts as no new minutes and does not reload; a `grantCount` rise reloads
+  only at the goal. Twitch resetting 60 -> 1 at a new window was observed live; what it shows
+  after the final grant is assumed. A stale reading that reaches the extra-minute cutoff is
+  remembered per group (`RewardLedger.stale`) so a rebuild with the same reading counts the
+  group as done, until the reading changes. A goal that cannot finish before the campaign ends
+  is unmineable (start time at `endsAt`) but not shown as claimed. A grant Twitch makes without a claim is announced once (print with the grant
   number, notifications, history entry per grant, `announce_new_grants`). Announced counts
-  live per group in `InventoryService._grants_announced`, so reloads and failed loads keep
-  them; a group's first sighting starts at its current count. Nothing is announced while the
+  live per group in `InventoryService._reward_ledger` (`RewardLedger`), so reloads and failed
+  loads keep them; a real claim sets a pending flag so no tick announces it, takes the next
+  history number, and the first non-`CLAIMABLE` reading becomes the new baseline; announcement
+  errors only log a warning; a group's first sighting starts at its current count. Nothing is announced while the
   reading is `CLAIMABLE`: a real claim announces itself and counts as that grant. This relies
   on `grantCount` rising when the goal is reached (the live run saw 0 -> 1 at 60/60).
   A reading without
   a minute increase bumps the estimate until the extra-minute cutoff switches channels. Reward
   categories also add live channels without the drops flag in CHANNELS_FETCH.
   Inventory shows Twitch's `grantCount` as "Times earned" (`reward_grants`; no total is available).
-  Regression coverage: `tests/test_reward_campaigns.py`.
+  Regression coverage: `tests/test_reward_campaigns.py`, `tests/test_reward_channel_choice.py`
+  and `tests/test_reward_grants_frontend.py`.
 
 ### GraphQL Operations
 
