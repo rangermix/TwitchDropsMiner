@@ -156,7 +156,8 @@ GTA DVD Chest of GTAVI Launch Celebration under **Grand Theft Auto VI**. When a 
 has several watch goals, TDM mines the one in progress on Twitch, otherwise the first
 one. For a campaign with parallel tracks, such as Pokemon Evolutions, start the
 track you want on Twitch first. Add that category to **Settings → Games → Mining list**
-and keep **Other reward** ticked in **Settings → Mining → Reward types**. Daily
+and keep **Other reward** ticked in **Settings → Mining → Reward types**; once Twitch reports
+the reward as a badge, keep **Chat badge** ticked instead. Daily
 goals wait in Inventory until Twitch opens the next window. Subscription goals and
 game-specific reward campaigns are not mined. Compare progress with Twitch inventory.
 

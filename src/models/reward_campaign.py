@@ -77,6 +77,7 @@ class RewardCampaign(DropsCampaign):
         user_id: str | int,
         windows: dict[str, str] | None = None,
         campaign_ids: dict[str, str] | None = None,
+        badge_rewards: set[str] | None = None,
     ) -> RewardCampaign | None:
         """Build a campaign from a sitewide Open Reward Campaign's current watch group."""
         # Subscription goals cannot be earned by watching, so groups that need one are skipped.
@@ -143,7 +144,10 @@ class RewardCampaign(DropsCampaign):
                                 "benefit": {
                                     "id": reward["id"],
                                     "name": reward["name"],
-                                    "distributionType": None,
+                                    # Twitch reports the type only through the hints query.
+                                    "distributionType": (
+                                        "BADGE" if reward["id"] in (badge_rewards or ()) else None
+                                    ),
                                     "imageAssetURL": (reward.get("thumbnailImage") or {}).get(
                                         "image1xURL"
                                     ),

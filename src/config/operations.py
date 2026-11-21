@@ -53,14 +53,18 @@ query RewardCampaignProgress {
 }
 """
 
-# `currentWindow` is used by other miners but unverified here; a separate query means a
-# rejection only loses this hint.
-REWARD_WINDOWS_QUERY = """
-query RewardCampaignWindows {
+# `currentWindow` and `dropDetail.badge` are unverified against Twitch. They live in their
+# own query so a rejected field only loses these hints and never the progress reading.
+REWARD_HINTS_QUERY = """
+query RewardCampaignHints {
     currentUser {
         inventory {
             viewerRewardDropCampaignsInProgress {
-                rewardGroups { id self { currentWindow { expiresAt } } }
+                rewardGroups {
+                    id
+                    self { currentWindow { expiresAt } }
+                    rewards { id dropDetail { badge { setID } } }
+                }
             }
         }
     }

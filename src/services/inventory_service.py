@@ -19,8 +19,8 @@ from src.config import GQL_OPERATIONS
 from src.config.constants import GQLRawQuery
 from src.config.operations import (
     REWARD_CAMPAIGNS_QUERY,
+    REWARD_HINTS_QUERY,
     REWARD_PROGRESS_QUERY,
-    REWARD_WINDOWS_QUERY,
 )
 from src.config.reward_priority import RewardPriority
 from src.exceptions import ExitRequest, MinerException
@@ -149,29 +149,45 @@ class InventoryService:
         response = await self._twitch.gql_request(GQLRawQuery(REWARD_PROGRESS_QUERY))
         return self._parse_reward_progress(response)
 
-    async def _fetch_reward_windows(self) -> dict[str, str]:
-        """Return reward group window end times; any failure only loses this hint."""
+    @staticmethod
+    def _parse_reward_hints(response: JsonType) -> tuple[dict[str, str], set[str]]:
+        """Return window end times by group ID and the IDs of rewards Twitch reports as badges.
+
+        The two hints are read independently, so a missing one never drops the other.
+        """
+        windows: dict[str, str] = {}
+        badges: set[str] = set()
+        in_progress = response["data"]["currentUser"]["inventory"][
+            "viewerRewardDropCampaignsInProgress"
+        ]
+        for campaign in in_progress or []:
+            if not isinstance(campaign, dict):
+                continue
+            for group in campaign.get("rewardGroups") or []:
+                if not isinstance(group, dict):
+                    continue
+                reading = group.get("self")
+                window = reading.get("currentWindow") if isinstance(reading, dict) else None
+                if isinstance(window, dict) and window.get("expiresAt") is not None:
+                    windows[group["id"]] = window["expiresAt"]
+                for reward in group.get("rewards") or []:
+                    detail = reward.get("dropDetail") if isinstance(reward, dict) else None
+                    if isinstance(detail, dict) and isinstance(detail.get("badge"), dict):
+                        badges.add(reward["id"])
+        return windows, badges
+
+    async def _fetch_reward_hints(self) -> tuple[dict[str, str], set[str]]:
+        """Return (window end times, badge reward IDs); any failure only loses these hints."""
         try:
             response = await asyncio.wait_for(
-                self._twitch.gql_request(GQLRawQuery(REWARD_WINDOWS_QUERY)), timeout=5
+                self._twitch.gql_request(GQLRawQuery(REWARD_HINTS_QUERY)), timeout=5
             )
-            in_progress = response["data"]["currentUser"]["inventory"][
-                "viewerRewardDropCampaignsInProgress"
-            ]
-            return {
-                group["id"]: group["self"]["currentWindow"]["expiresAt"]
-                for campaign in in_progress or []
-                if isinstance(campaign, dict)
-                for group in campaign["rewardGroups"] or []
-                if isinstance(group, dict)
-                and isinstance(group.get("self"), dict)
-                and isinstance(group["self"].get("currentWindow"), dict)
-            }
+            return self._parse_reward_hints(response)
         except ExitRequest:
             raise
         except (MinerException, KeyError, TypeError, ValueError, AttributeError, TimeoutError):
-            logger.info("Reward window info is unavailable; a granted goal is treated as done")
-            return {}
+            logger.info("Reward hints are unavailable; a granted goal is treated as done")
+            return {}, set()
 
     async def fetch_reward_campaigns(self) -> list[RewardCampaign]:
         """Build watch-based sitewide Open Reward Campaigns; failures never block regular drops."""
@@ -186,7 +202,7 @@ class InventoryService:
 
     async def _load_reward_campaigns(self) -> list[RewardCampaign]:
         progress, campaign_ids = await self._fetch_reward_progress()
-        windows = await self._fetch_reward_windows()
+        windows, badges = await self._fetch_reward_hints()
         # Real window payloads are unverified, so they are logged next to the progress readings.
         logger.info("Reward windows: %s", windows)
         response = await self._twitch.gql_request(GQLRawQuery(REWARD_CAMPAIGNS_QUERY))
@@ -201,7 +217,7 @@ class InventoryService:
                 if not data.get("isSitewide"):
                     continue
                 campaign = RewardCampaign.from_reward_campaign(
-                    self._twitch, data, progress, user_id, windows, campaign_ids
+                    self._twitch, data, progress, user_id, windows, campaign_ids, badges
                 )
                 if campaign is not None:
                     self._log_reward_progress(campaign, progress)

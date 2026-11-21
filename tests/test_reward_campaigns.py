@@ -118,7 +118,7 @@ def _progress_response(self_data):
     ]}}}}
 
 
-def _gql(progress, *, campaigns=None, windows=NO_WINDOWS):
+def _gql(progress, *, campaigns=None, windows=NO_WINDOWS, badges=()):
     """Answer by operation: raw reward queries and the persisted ClaimDrop."""
     async def request(op):
         if "operationName" in op:
@@ -126,12 +126,14 @@ def _gql(progress, *, campaigns=None, windows=NO_WINDOWS):
             return {"data": {"claimDropRewards": {"status": "ELIGIBLE_FOR_ALL"}}}
         if "RewardCampaignProgress" in op["query"]:
             return progress
-        if "RewardCampaignWindows" in op["query"]:
+        if "RewardCampaignHints" in op["query"]:
             if windows is None:
                 raise GQLException("unknown field currentWindow")
             return {"data": {"currentUser": {"inventory": {"viewerRewardDropCampaignsInProgress": [
                 {"rewardGroups": [
-                    {"id": g, "self": {"currentWindow": {"expiresAt": end}}} for g, end in windows.items()
+                    {"id": g, "self": {"currentWindow": {"expiresAt": end}},
+                     "rewards": [{"id": r, "dropDetail": {"badge": {"setID": "s"}}} for r in badges]}
+                    for g, end in windows.items()
                 ]},
             ]}}}}
         return campaigns if campaigns is not None else {"data": {"rewardCampaignsAvailableToUser": [_data()]}}
@@ -862,7 +864,7 @@ async def test_fetch_uses_the_window_hint_and_survives_its_rejection(monkeypatch
     plain = _gql(progress, campaigns=campaigns)
 
     async def slow(op):
-        if "query" in op and "RewardCampaignWindows" in op["query"]:
+        if "query" in op and "RewardCampaignHints" in op["query"]:
             await asyncio.sleep(10)
         return await plain(op)
 
@@ -903,3 +905,94 @@ def test_dashboard_reports_grants_for_reward_drops_only():
     assert manager._serialize_campaign(reward)["drops"][0]["reward_grants"] == 1
     regular = _regular(_twitch())
     assert manager._serialize_campaign(regular)["drops"][0]["reward_grants"] is None
+
+
+# Reward type from the optional hints query
+def _hints(groups):
+    return {"data": {"currentUser": {"inventory": {"viewerRewardDropCampaignsInProgress": [
+        {"rewardGroups": groups},
+    ]}}}}
+
+
+HINT_CASES = [
+    # (label, group payload, expected windows, expected badge ids)
+    ("badge and window", {"id": "g", "self": {"currentWindow": {"expiresAt": "T"}},
+                          "rewards": [{"id": "r1", "dropDetail": {"badge": {"setID": "s"}}}]}, {"g": "T"}, {"r1"}),
+    ("badge, currentWindow missing", {"id": "g", "self": {}, "rewards": [
+        {"id": "r1", "dropDetail": {"badge": {"setID": "s"}}}]}, {}, {"r1"}),
+    ("badge, self null", {"id": "g", "self": None, "rewards": [
+        {"id": "r1", "dropDetail": {"badge": {"setID": "s"}}}]}, {}, {"r1"}),
+    ("window, badge null", {"id": "g", "self": {"currentWindow": {"expiresAt": "T"}}, "rewards": [
+        {"id": "r1", "dropDetail": {"badge": None}}]}, {"g": "T"}, set()),
+    ("window, dropDetail null", {"id": "g", "self": {"currentWindow": {"expiresAt": "T"}}, "rewards": [
+        {"id": "r1", "dropDetail": None}]}, {"g": "T"}, set()),
+    ("window, dropDetail missing", {"id": "g", "self": {"currentWindow": {"expiresAt": "T"}}, "rewards": [
+        {"id": "r1"}]}, {"g": "T"}, set()),
+    ("window, rewards missing", {"id": "g", "self": {"currentWindow": {"expiresAt": "T"}}}, {"g": "T"}, set()),
+    ("window, rewards null", {"id": "g", "self": {"currentWindow": {"expiresAt": "T"}}, "rewards": None},
+     {"g": "T"}, set()),
+    ("window without expiresAt, badge", {"id": "g", "self": {"currentWindow": {}}, "rewards": [
+        {"id": "r1", "dropDetail": {"badge": {}}}]}, {}, {"r1"}),
+    ("junk reward entries", {"id": "g", "self": {"currentWindow": {"expiresAt": "T"}}, "rewards": [
+        None, "x", {"id": "r2", "dropDetail": {"badge": {"setID": "s"}}}]}, {"g": "T"}, {"r2"}),
+]
+
+
+@pytest.mark.parametrize(("label", "group", "windows", "badges"), HINT_CASES, ids=[c[0] for c in HINT_CASES])
+def test_hints_parse_windows_and_badges_independently(label, group, windows, badges):
+    assert InventoryService._parse_reward_hints(_hints([group])) == (windows, badges)
+
+
+@pytest.mark.parametrize("response", [None, {}, {"data": None}, {"data": {"currentUser": {"inventory": None}}},
+                                      {"data": {"currentUser": {"inventory": {"viewerRewardDropCampaignsInProgress": 5}}}}])
+@pytest.mark.asyncio
+async def test_unusable_hints_response_returns_empty_hints(response):
+    twitch = _twitch()
+    twitch.gql_request = AsyncMock(return_value=response)
+    assert await InventoryService(twitch)._fetch_reward_hints() == ({}, set())
+
+
+def _types(campaign):
+    return [benefit.type.name for benefit in _drop(campaign).benefits]
+
+
+def test_reward_type_is_badge_only_when_twitch_reports_one():
+    progress = {GROUP_ID: {"status": "IN_PROGRESS", "currentMinutesWatched": 5}}
+
+    def build(badges):
+        return RewardCampaign.from_reward_campaign(_twitch(), _data(), progress, "uid", None, None, badges)
+
+    assert _types(build({"r1"})) == ["BADGE"]
+    assert _types(build({"other-reward"})) == _types(build(set())) == _types(build(None)) == ["UNKNOWN"]
+    # Before the event starts there is no in-progress entry and so no hint.
+    assert _types(_build()) == ["UNKNOWN"]
+
+
+def test_badge_reward_campaign_is_still_mined_and_follows_the_reward_type_filter():
+    twitch = _twitch()
+    campaign = RewardCampaign.from_reward_campaign(
+        twitch, _data(), {GROUP_ID: {"status": "IN_PROGRESS", "currentMinutesWatched": 5}}, "uid", None, None, {"r1"}
+    )
+    assert campaign.can_earn(_channel(twitch)) and _drop(campaign).can_earn()
+    assert campaign.has_badge_or_emote and campaign.skips_drops_flag
+    assert campaign.has_wanted_unclaimed_benefits({"BADGE": True, "UNKNOWN": False})
+    assert not campaign.has_wanted_unclaimed_benefits({"BADGE": False, "UNKNOWN": True})
+    # A claimable badge needs no account link (reward campaigns are always linked).
+    ready = RewardCampaign.from_reward_campaign(
+        twitch, _data(), {GROUP_ID: {"status": "CLAIMABLE"}}, "uid", None, None, {"r1"}
+    )
+    assert _drop(ready).can_claim
+
+
+@pytest.mark.asyncio
+async def test_loading_marks_badge_rewards_from_the_hints_query():
+    twitch = _twitch()
+    twitch.gql_request = _gql(
+        _progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 5}),
+        windows={GROUP_ID: _iso(timedelta(hours=3))}, badges=("r1",),
+    )
+    [campaign] = await InventoryService(twitch).fetch_reward_campaigns()
+    assert _types(campaign) == ["BADGE"]
+    twitch.gql_request = _gql(_progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 5}), windows=None)
+    [campaign] = await InventoryService(twitch).fetch_reward_campaigns()
+    assert _types(campaign) == ["UNKNOWN"]
