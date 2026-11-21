@@ -39,6 +39,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger("TwitchDrops")
 
 
+# Failures a malformed or slow reward reply can raise; none may block regular drops.
+REWARD_ERRORS = (MinerException, KeyError, TypeError, ValueError, AttributeError, TimeoutError)
+
+
 class InventoryService:
     """
     Service responsible for inventory and campaign management.
@@ -185,7 +189,7 @@ class InventoryService:
             return self._parse_reward_hints(response)
         except ExitRequest:
             raise
-        except (MinerException, KeyError, TypeError, ValueError, AttributeError, TimeoutError):
+        except REWARD_ERRORS:
             logger.info("Reward hints are unavailable; a granted goal is treated as done")
             return {}, set()
 
@@ -196,7 +200,7 @@ class InventoryService:
             return await asyncio.wait_for(self._load_reward_campaigns(), timeout=15)
         except ExitRequest:
             raise
-        except (MinerException, KeyError, TypeError, ValueError, AttributeError, TimeoutError):
+        except REWARD_ERRORS:
             logger.warning("Open Reward Campaigns could not be loaded; regular drops are unaffected")
             return []
 
@@ -250,13 +254,21 @@ class InventoryService:
                 ):
                     # A newer observation or inventory replacement superseded this reply.
                     continue
-                drop_id = next(iter(campaign.timed_drops))
-                self._log_reward_progress(campaign, progress)
-                campaign.apply_reward_progress(progress.get(drop_id), channel)
-                await campaign.announce_new_grants()
+                try:
+                    drop_id = next(iter(campaign.timed_drops))
+                    self._log_reward_progress(campaign, progress)
+                    campaign.apply_reward_progress(progress.get(drop_id), channel)
+                    await campaign.announce_new_grants()
+                except ExitRequest:
+                    raise
+                except REWARD_ERRORS:
+                    # Only this campaign is unobserved: estimate it, and leave the ones
+                    # already applied alone.
+                    logger.warning("Reward progress for %s could not be applied", campaign.name)
+                    campaign.bump_minutes(channel)
         except ExitRequest:
             raise
-        except (MinerException, KeyError, TypeError, ValueError, AttributeError, TimeoutError):
+        except REWARD_ERRORS:
             return False
         return True
 

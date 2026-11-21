@@ -399,19 +399,38 @@ async def test_refresh_failure_returns_false(error):
 
 
 @pytest.mark.asyncio
-async def test_refresh_apply_failure_returns_false_and_exit_propagates():
+async def test_refresh_apply_failure_is_contained_and_exit_propagates():
     twitch = _twitch()
     campaign = _build(twitch=twitch)
     twitch._campaigns[campaign.id] = campaign
     twitch.gql_request = _gql(_progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 5}))
     service = InventoryService(twitch)
-    for error, outcome in ((ValueError("x"), False), (ExitRequest(), ExitRequest)):
-        with patch.object(RewardCampaign, "apply_reward_progress", side_effect=error):
-            if outcome is False:
-                assert await service.refresh_reward_progress([campaign], _channel(twitch)) is False
-            else:
-                with pytest.raises(ExitRequest):
-                    await service.refresh_reward_progress([campaign], _channel(twitch))
+    with patch.object(RewardCampaign, "apply_reward_progress", side_effect=ValueError("x")):
+        assert await service.refresh_reward_progress([campaign], _channel(twitch)) is True
+    with patch.object(RewardCampaign, "apply_reward_progress", side_effect=ExitRequest()):
+        with pytest.raises(ExitRequest):
+            await service.refresh_reward_progress([campaign], _channel(twitch))
+
+
+@pytest.mark.asyncio
+async def test_a_failing_campaign_does_not_make_applied_ones_fall_back():
+    twitch = _twitch()
+    first, second = _build({"status": "IN_PROGRESS", "currentMinutesWatched": 5}, twitch=twitch), _build(twitch=twitch)
+    second.id = "second"
+    for campaign in (first, second):
+        twitch._campaigns[campaign.id] = campaign
+    twitch.gql_request = _gql(_progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 9}))
+    real = RewardCampaign.apply_reward_progress
+
+    def apply(self, progress, channel):
+        if self is second:
+            raise ValueError("x")
+        real(self, progress, channel)
+
+    with patch.object(RewardCampaign, "apply_reward_progress", apply):
+        assert await InventoryService(twitch).refresh_reward_progress([first, second], _channel(twitch)) is True
+    assert (_drop(first).real_current_minutes, _drop(first).extra_current_minutes) == (9, 0)
+    assert _drop(second).extra_current_minutes == 1
 
 
 @pytest.mark.asyncio
