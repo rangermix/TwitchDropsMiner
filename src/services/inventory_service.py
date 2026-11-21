@@ -26,6 +26,7 @@ from src.config.reward_priority import RewardPriority
 from src.exceptions import ExitRequest, MinerException
 from src.i18n import _
 from src.models import DropsCampaign, RewardCampaign
+from src.models.reward_campaign import RewardLedger
 from src.services.game_order import TemporaryGameOrder
 from src.utils import chunk
 
@@ -39,6 +40,16 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("TwitchDrops")
+
+
+def _as_list(value: object) -> list[Any]:
+    """Treat anything that is not a list as empty, so a malformed entry is skipped."""
+    return value if isinstance(value, list) else []
+
+
+def _has_id(entry: object) -> bool:
+    """Whether the entry is a dict with a non-empty string ID."""
+    return isinstance(entry, dict) and isinstance(entry.get("id"), str) and bool(entry["id"])
 
 
 # Failures a malformed or slow reward reply can raise; none may block regular drops.
@@ -64,8 +75,8 @@ class InventoryService:
             twitch: The Twitch client instance
         """
         self._twitch = twitch
-        # Reward grants announced per group; outlives reloads, including failed ones.
-        self._grants_announced: dict[str, int] = {}
+        # Reward grants, claims and stale readings per group; outlives reloads and failed ones.
+        self._reward_ledger = RewardLedger()
 
     def _clear_inventory_state(self) -> None:
         """Clear derived campaign and drop state before replacing inventory."""
@@ -142,15 +153,11 @@ class InventoryService:
         ]
         readings: dict[str, JsonType] = {}
         campaign_ids: dict[str, str] = {}
-        for campaign in in_progress or []:
+        for campaign in _as_list(in_progress):
             if not isinstance(campaign, dict):
                 continue
-            for group in campaign.get("rewardGroups") or []:
-                if (
-                    isinstance(group, dict)
-                    and isinstance(group.get("id"), str)
-                    and isinstance(group.get("self"), dict)
-                ):
+            for group in _as_list(campaign.get("rewardGroups")):
+                if _has_id(group) and isinstance(group.get("self"), dict):
                     readings[group["id"]] = group["self"]
                     if isinstance(campaign.get("id"), str):
                         campaign_ids[group["id"]] = campaign["id"]
@@ -172,22 +179,18 @@ class InventoryService:
         in_progress = response["data"]["currentUser"]["inventory"][
             "viewerRewardDropCampaignsInProgress"
         ]
-        for campaign in in_progress or []:
+        for campaign in _as_list(in_progress):
             if not isinstance(campaign, dict):
                 continue
-            for group in campaign.get("rewardGroups") or []:
+            for group in _as_list(campaign.get("rewardGroups")):
                 if not isinstance(group, dict):
                     continue
                 reading = group.get("self")
                 window = reading.get("currentWindow") if isinstance(reading, dict) else None
-                if (
-                    isinstance(group.get("id"), str)
-                    and isinstance(window, dict)
-                    and window.get("expiresAt") is not None
-                ):
+                if _has_id(group) and isinstance(window, dict) and window.get("expiresAt") is not None:
                     windows[group["id"]] = window["expiresAt"]
-                for reward in group.get("rewards") or []:
-                    if not isinstance(reward, dict) or not isinstance(reward.get("id"), str):
+                for reward in _as_list(group.get("rewards")):
+                    if not _has_id(reward):
                         continue
                     detail = reward.get("dropDetail")
                     if isinstance(detail, dict) and isinstance(detail.get("badge"), dict):
@@ -237,7 +240,7 @@ class InventoryService:
                     continue
                 campaign = RewardCampaign.from_reward_campaign(
                     self._twitch, data, progress, user_id, windows, campaign_ids, badges,
-                    self._grants_announced,
+                    self._reward_ledger,
                 )
                 if campaign is not None:
                     self._log_reward_progress(campaign, progress)
@@ -284,7 +287,7 @@ class InventoryService:
                     drop_id = next(iter(campaign.timed_drops))
                     self._log_reward_progress(campaign, progress)
                     campaign.apply_reward_progress(progress.get(drop_id), channel)
-                    await campaign.announce_new_grants()
+                    await self._announce_reward_grants(campaign)
                 except ExitRequest:
                     raise
                 except REWARD_ERRORS:
@@ -425,7 +428,18 @@ class InventoryService:
         # Announced only now, so the GUI and notification awaits cannot interleave with the rebuild.
         for campaign in campaigns:
             if isinstance(campaign, RewardCampaign):
-                await campaign.announce_new_grants()
+                await self._announce_reward_grants(campaign)
+
+    @staticmethod
+    async def _announce_reward_grants(campaign: RewardCampaign) -> None:
+        """Announce new grants; a failing history write, GUI or notification only warns."""
+        try:
+            await campaign.announce_new_grants()
+        except ExitRequest:
+            raise
+        except Exception:
+            # Broad on purpose: announcements are side effects that must not stop a reload.
+            logger.warning("Reward grant announcement for %s failed", campaign.name, exc_info=True)
 
     def get_active_campaign(
         self, channel: Channel | None = None, *, exclude_rewards: bool = False

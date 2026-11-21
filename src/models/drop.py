@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import re
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 from dateutil.parser import isoparse
 
@@ -18,8 +18,6 @@ from src.utils import DropIgnoreReason
 
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from src.config.constants import JsonType
     from src.core.client import Twitch
     from src.models.campaign import DropsCampaign
@@ -276,9 +274,16 @@ class BaseDrop:
         return False
 
 
+class ClaimTracker(Protocol):
+    def begin_claim(self) -> None: ...
+
+    def finish_claim(self, success: bool) -> str | None:
+        """Return the history entry ID for a successful claim."""
+
+
 class TimedDrop(BaseDrop):
-    # Set by a reward campaign: names this claim's history entry (a goal repeats daily).
-    claim_entry_id: Callable[[], str] | None = None
+    # Set by a reward campaign, whose goal repeats daily and needs numbered history entries.
+    claim_tracker: ClaimTracker | None = None
 
     def __init__(
         self, campaign: DropsCampaign, data: JsonType, claimed_benefits: dict[str, datetime]
@@ -420,15 +425,24 @@ class TimedDrop(BaseDrop):
 
     async def claim(self) -> bool:
         was_claimed = self.is_claimed
-        result = await super().claim()
+        tracker = self.claim_tracker
+        if tracker is not None:
+            tracker.begin_claim()
+        try:
+            result = await super().claim()
+        except BaseException:
+            if tracker is not None:
+                tracker.finish_claim(False)
+            raise
+        entry_id = tracker.finish_claim(bool(result) and not was_claimed) if tracker else None
         if result:
             self.real_current_minutes = self.required_minutes
             self.extra_current_minutes = 0
             if not was_claimed:
-                if self.claim_entry_id is None:
+                if entry_id is None:
                     self._twitch.drop_history.record(self, self.campaign)
                 else:
-                    self._twitch.drop_history.record(self, self.campaign, self.claim_entry_id())
+                    self._twitch.drop_history.record(self, self.campaign, entry_id)
         self._on_state_changed()
         return result
 
