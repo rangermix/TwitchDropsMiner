@@ -25,7 +25,7 @@ from src.config.operations import (
 from src.config.reward_priority import RewardPriority
 from src.exceptions import ExitRequest, MinerException
 from src.i18n import _
-from src.models import DropsCampaign
+from src.models import DropsCampaign, RewardCampaign
 from src.services.game_order import TemporaryGameOrder
 from src.utils import chunk
 
@@ -164,7 +164,7 @@ class InventoryService:
             logger.info("Reward window info is unavailable; a granted goal is treated as done")
             return {}
 
-    async def fetch_reward_campaigns(self) -> list[DropsCampaign]:
+    async def fetch_reward_campaigns(self) -> list[RewardCampaign]:
         """Build watch-based sitewide Open Reward Campaigns; failures never block regular drops."""
         try:
             # The GQL client retries some service errors without a cap, so bound the whole call.
@@ -175,14 +175,14 @@ class InventoryService:
             logger.warning("Open Reward Campaigns could not be loaded; regular drops are unaffected")
             return []
 
-    async def _load_reward_campaigns(self) -> list[DropsCampaign]:
+    async def _load_reward_campaigns(self) -> list[RewardCampaign]:
         progress = await self._fetch_reward_progress()
         windows = await self._fetch_reward_windows()
         # Real window payloads are unverified, so they are logged next to the progress readings.
         logger.info("Reward windows: %s", windows)
         response = await self._twitch.gql_request(GQLRawQuery(REWARD_CAMPAIGNS_QUERY))
         user_id = (await self._twitch.get_auth()).user_id
-        campaigns: list[DropsCampaign] = []
+        campaigns: list[RewardCampaign] = []
         # shortcut: game-specific reward campaigns may need an account link, skipped
         # until one is verified to progress without it.
         for data in response["data"]["rewardCampaignsAvailableToUser"] or []:
@@ -191,7 +191,7 @@ class InventoryService:
             try:
                 if not data.get("isSitewide"):
                     continue
-                campaign = DropsCampaign.from_reward_campaign(
+                campaign = RewardCampaign.from_reward_campaign(
                     self._twitch, data, progress, user_id, windows
                 )
                 if campaign is not None:
@@ -210,7 +210,7 @@ class InventoryService:
         )
 
     async def refresh_reward_progress(
-        self, campaigns: list[DropsCampaign], channel: Channel
+        self, campaigns: list[RewardCampaign], channel: Channel
     ) -> bool:
         """Poll reward progress once for these campaigns; False means the caller should fall back."""
         revisions = {campaign.id: campaign.progress_revision for campaign in campaigns}
@@ -386,7 +386,7 @@ class InventoryService:
             if (
                 campaign.can_earn(watching_channel)
                 and (campaign.skips_drops_flag or watching_channel.drops_enabled)
-                and not (exclude_rewards and campaign.is_reward)
+                and not (exclude_rewards and isinstance(campaign, RewardCampaign))
             ):
                 campaigns.append(campaign)
 

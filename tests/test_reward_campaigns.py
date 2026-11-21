@@ -11,7 +11,7 @@ import pytest
 
 from src.config import GQL_OPERATIONS, MAX_EXTRA_MINUTES, State
 from src.exceptions import ExitRequest, GQLException
-from src.models import DropsCampaign
+from src.models import DropsCampaign, RewardCampaign
 from src.models.channel import Channel, Stream
 from src.models.game import Game
 from src.services.inventory_service import InventoryService
@@ -77,7 +77,7 @@ def _twitch(**settings):
 
 def _build(self_data=None, *, data=None, twitch=None):
     progress = {} if self_data is None else {GROUP_ID: self_data}
-    return DropsCampaign.from_reward_campaign(twitch or _twitch(), data or _data(), progress, "uid")
+    return RewardCampaign.from_reward_campaign(twitch or _twitch(), data or _data(), progress, "uid")
 
 
 def _drop(campaign):
@@ -147,7 +147,7 @@ def test_unstarted_group_becomes_one_earnable_drop():
     twitch = _twitch()
     campaign = _build(twitch=twitch)
     drop = _drop(campaign)
-    assert campaign.id == CAMPAIGN_ID and campaign.is_reward
+    assert campaign.id == CAMPAIGN_ID and isinstance(campaign, RewardCampaign)
     assert campaign.game == Game(GTA)
     assert list(campaign.timed_drops) == [GROUP_ID]
     assert (drop.current_minutes, drop.required_minutes) == (0, 60)
@@ -369,7 +369,7 @@ async def test_refresh_apply_failure_returns_false_and_exit_propagates():
     twitch.gql_request = _gql(_progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 5}))
     service = InventoryService(twitch)
     for error, outcome in ((ValueError("x"), False), (ExitRequest(), ExitRequest)):
-        with patch.object(DropsCampaign, "apply_reward_progress", side_effect=error):
+        with patch.object(RewardCampaign, "apply_reward_progress", side_effect=error):
             if outcome is False:
                 assert await service.refresh_reward_progress([campaign], _channel(twitch)) is False
             else:
@@ -519,10 +519,14 @@ def _channels_fetch_client(tmp_path, monkeypatch, campaigns):
     client, _watched = _reloading_miner(tmp_path, monkeypatch, discovered=[2], stream_status=[OFFLINE])
     game = Game(GTA)
     client.wanted_games = [game]
-    client.inventory = [SimpleNamespace(
-        game=game, can_earn_within=lambda stamp: True, allowed_channels=[],
-        can_earn=lambda channel: True, is_reward=reward, skips_drops_flag=reward,
-    ) for reward in campaigns]
+    client.inventory = [
+        (MagicMock(spec=RewardCampaign) if reward else MagicMock(spec=DropsCampaign)) for reward in campaigns
+    ]
+    for campaign, reward in zip(client.inventory, campaigns):
+        campaign.configure_mock(
+            game=game, can_earn_within=lambda stamp: True, allowed_channels=[],
+            can_earn=lambda channel: True, skips_drops_flag=reward,
+        )
     calls = []
 
     async def live_streams(game, *, drops_enabled=True, **_):
@@ -724,7 +728,7 @@ def _pokemon(lanes=3):
 
 
 def _pick(data, progress=None, windows=None):
-    return DropsCampaign.from_reward_campaign(_twitch(), data, progress or {}, "uid", windows or {})
+    return RewardCampaign.from_reward_campaign(_twitch(), data, progress or {}, "uid", windows or {})
 
 
 def test_started_group_is_picked():

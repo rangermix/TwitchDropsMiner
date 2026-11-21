@@ -36,6 +36,7 @@ from src.exceptions import (
 from src.i18n import _
 from src.models.campaign import DropsCampaign
 from src.models.channel import Channel
+from src.models.reward_campaign import RewardCampaign
 from src.services.channel_service import ChannelService
 from src.services.game_order import TemporaryGameOrder
 from src.services.inventory_service import InventoryService
@@ -759,7 +760,7 @@ class Twitch:
                             acl_channels.update(campaign.allowed_channels)
                         else:
                             no_acl.add(campaign.game)
-                            if campaign.is_reward:
+                            if isinstance(campaign, RewardCampaign):
                                 flagless.add(campaign.game)
                 # remove all ACL channels that already exist from the other set
                 acl_channels.difference_update(new_channels)

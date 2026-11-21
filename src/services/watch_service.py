@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, NoReturn
 from src.config import CALL, GQL_OPERATIONS, WATCH_INTERVAL
 from src.exceptions import GQLException
 from src.i18n import _
+from src.models import RewardCampaign
 from src.utils import task_wrapper
 
 
@@ -212,7 +213,7 @@ class WatchService:
                 rewards = [
                     campaign
                     for campaign in self._twitch.inventory
-                    if campaign.is_reward
+                    if isinstance(campaign, RewardCampaign)
                     and campaign.game in self._twitch.wanted_games
                     and campaign.can_earn(channel)
                 ]
