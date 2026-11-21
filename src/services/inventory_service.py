@@ -201,10 +201,12 @@ class InventoryService:
             return []
 
     async def _load_reward_campaigns(self) -> list[RewardCampaign]:
-        progress, campaign_ids = await self._fetch_reward_progress()
+        progress_response, response = await self._twitch.gql_request(
+            [GQLRawQuery(REWARD_PROGRESS_QUERY), GQLRawQuery(REWARD_CAMPAIGNS_QUERY)]
+        )
+        progress, campaign_ids = self._parse_reward_progress(progress_response)
         windows, badges = await self._fetch_reward_hints()
         logger.debug("Reward windows: %s, badge rewards: %s", windows, badges)
-        response = await self._twitch.gql_request(GQLRawQuery(REWARD_CAMPAIGNS_QUERY))
         user_id = (await self._twitch.get_auth()).user_id
         campaigns: list[RewardCampaign] = []
         # shortcut: game-specific reward campaigns may need an account link, skipped
@@ -238,7 +240,9 @@ class InventoryService:
         """Poll reward progress once for these campaigns; False means the caller should fall back."""
         revisions = {campaign.id: campaign.progress_revision for campaign in campaigns}
         try:
-            progress, _ = await asyncio.wait_for(self._fetch_reward_progress(), timeout=5)
+            progress, _campaign_ids = await asyncio.wait_for(
+                self._fetch_reward_progress(), timeout=5
+            )
             for campaign in campaigns:
                 if (
                     self._twitch._campaigns.get(campaign.id) is not campaign

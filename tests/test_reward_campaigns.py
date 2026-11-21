@@ -121,6 +121,8 @@ def _progress_response(self_data):
 def _gql(progress, *, campaigns=None, windows=NO_WINDOWS, badges=()):
     """Answer by operation: raw reward queries and the persisted ClaimDrop."""
     async def request(op):
+        if isinstance(op, list):
+            return [await request(single) for single in op]
         if "operationName" in op:
             assert op["operationName"] == "DropsPage_ClaimDropRewards"
             return {"data": {"claimDropRewards": {"status": "ELIGIBLE_FOR_ALL"}}}
@@ -996,3 +998,13 @@ async def test_loading_marks_badge_rewards_from_the_hints_query():
     twitch.gql_request = _gql(_progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 5}), windows=None)
     [campaign] = await InventoryService(twitch).fetch_reward_campaigns()
     assert _types(campaign) == ["UNKNOWN"]
+
+
+@pytest.mark.asyncio
+async def test_loading_batches_progress_and_campaigns_into_one_request():
+    twitch = _twitch()
+    twitch.gql_request = _gql(_progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 5}))
+    assert len(await InventoryService(twitch).fetch_reward_campaigns()) == 1
+    batch, hints = (call.args[0] for call in twitch.gql_request.await_args_list)
+    assert [op["query"].split()[1] for op in batch] == ["RewardCampaignProgress", "RewardCampaigns"]
+    assert "RewardCampaignHints" in hints["query"] and twitch.gql_request.await_count == 2

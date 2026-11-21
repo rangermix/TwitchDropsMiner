@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timedelta, timezone
 from functools import partial
 from time import monotonic, time
-from typing import TYPE_CHECKING, Any, Final, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal, overload
 from uuid import uuid4
 
 import aiohttp
@@ -1071,6 +1071,12 @@ class Twitch:
         """Get authentication state (validates token if needed)."""
         await self._auth_state.validate()
         return self._auth_state
+
+    @overload
+    async def gql_request(self, ops: GQLRequest) -> JsonType: ...
+
+    @overload
+    async def gql_request(self, ops: list[GQLRequest]) -> list[JsonType]: ...
 
     async def gql_request(self, ops: GQLRequest | list[GQLRequest]) -> JsonType | list[JsonType]:
         """
