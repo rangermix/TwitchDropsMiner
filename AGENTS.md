@@ -860,15 +860,20 @@ progress to an ignored drop while the miner intentionally targets another reward
   only at the goal. Twitch resetting 60 -> 1 at a new window was observed live; what it shows
   after the final grant is assumed. A stale reading that reaches the extra-minute cutoff is
   remembered per group (`RewardLedger.stale`) so a rebuild with the same reading counts the
-  group as done, until the reading changes. A goal that cannot finish before the campaign ends
-  is unmineable (start time at `endsAt`) but not shown as claimed. A grant Twitch makes without a claim is announced once (print with the grant
-  number, notifications, history entry per grant, `announce_new_grants`). Announced counts
-  live per group in `InventoryService._reward_ledger` (`RewardLedger`), so reloads and failed
-  loads keep them; a real claim sets a pending flag so no tick announces it, takes the next
-  history number, and the first non-`CLAIMABLE` reading becomes the new baseline; announcement
-  errors only log a warning; a group's first sighting starts at its current count. Nothing is announced while the
-  reading is `CLAIMABLE`: a real claim announces itself and counts as that grant. This relies
-  on `grantCount` rising when the goal is reached (the live run saw 0 -> 1 at 60/60).
+  group as done, until the reading changes (a missing window from a failed hints query is
+  ignored in that comparison). A goal that cannot finish before the campaign ends is
+  unmineable (`RewardCampaign.mineable_drop_ids`; start time at `endsAt`) but not shown as
+  claimed. Groups whose categories or rewards are malformed (no category ID, a reward without
+  ID or name) are skipped, not the campaign. A reward drop's claim is quiet (`quiet_claim`):
+  it prints, notifies and records nothing itself. Every announcement (print with the grant
+  number, notifications, history entry `<dropid>#<grantCount>`, `announce_new_grants`) comes
+  from a `grantCount` rise. Announced counts live per group in
+  `InventoryService._reward_ledger` (`RewardLedger`), so reloads and failed loads keep them.
+  A group's first sighting with a real reading (`grantCount` an int) starts at its current
+  count; a missing group or reading leaves the ledger untouched. A claim that Twitch does not
+  count in `grantCount` is not announced (claims were never seen live). Announcement errors
+  only log a warning. This relies on `grantCount` rising when the goal is reached (the live
+  run saw 0 -> 1 at 60/60).
   A reading without
   a minute increase bumps the estimate until the extra-minute cutoff switches channels. Reward
   categories also add live channels without the drops flag in CHANNELS_FETCH.
