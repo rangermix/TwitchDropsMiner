@@ -861,7 +861,24 @@ progress to an ignored drop while the miner intentionally targets another reward
   after the final grant is assumed. A stale reading that reaches the extra-minute cutoff is
   remembered per group (`RewardLedger.stale`) so a rebuild with the same reading counts the
   group as done, until the reading changes (a missing window from a failed hints query is
-  ignored in that comparison). A goal that cannot finish before the campaign ends is
+  ignored in that comparison). A below-goal or missing reading that stays unchanged to the
+  extra-minute cutoff (Twitch is not crediting the group) is remembered in
+  `RewardLedger.uncredited` as (signature, until, held). The first cutoff stores a pending
+  entry (not held, until 6 hours ahead) and the next reload mines the group again; a second
+  cutoff with the same reading makes it a hold, with until at most `UNCREDITED_RETRY` (6
+  hours) ahead and never later than the last start that can still finish before the campaign
+  ends, with one cutoff of slack. A rebuild with that reading holds the group until then, or
+  until the reading changes (a missing window is ignored either way), and does not show it
+  as claimed. An entry past its until is dropped, pending ones too. On a rebuild, a missing
+  reading keeps an entry recorded from a real one; the ticks of a campaign built without a
+  reading replace a pending entry (one extra cycle before the hold). Only a mineable state is held: granted, unfinishable
+  and waiting-window states stay as they were. A held group that has no reading keeps its
+  lane (rank 3), so the campaign does not cycle through every unstarted lane. A missing
+  reading on a tick records nothing for a campaign built from a real reading. Recording
+  happens only in the two no-credit bump paths, never for `CLAIMABLE` or the error fallback.
+  `InventoryService.clear_cached_state` resets the whole ledger in place (logout, account
+  change, Clear All Cache); the next load reseeds `announced` from the current grant counts.
+  A goal that cannot finish before the campaign ends is
   unmineable (`RewardCampaign.mineable_drop_ids`; start time at `endsAt`) but not shown as
   claimed. Groups whose categories or rewards are malformed (a category without an int-like
   ID or a name, a reward without ID or name, a non-dict `thumbnailImage`) are skipped, not

@@ -160,6 +160,12 @@ and keep **Other reward** ticked in **Settings → Mining → Reward types**, wh
 the GTA DVD Chest. Twitch only reports whether a reward is a badge (such as Pokemon's
 Pikachu badge) once the campaign has progress, so until then its rewards count as
 **Other reward**. For badge campaigns keep both **Other reward** and **Chat badge** ticked.
+Twitch's announcement of the Pokemon chat badges says an evolution progresses only once the
+earlier badge is equipped in the Drops panel below chat; TDM cannot see or change that. A
+goal Twitch does not credit in two attempts of 15 minutes is paused for up to 6 hours and
+then tried again. Watching Twitch yourself on the same account while TDM mines can pause a
+goal the same way. After equipping a badge, use **Clear All Cache** or restart TDM to try
+it at once.
 Daily goals wait in Inventory until Twitch opens the next window. A goal that can no longer
 be finished before the campaign ends stays unmineable and is not shown as claimed. Subscription goals and
 game-specific reward campaigns are not mined. Compare progress with Twitch inventory.
