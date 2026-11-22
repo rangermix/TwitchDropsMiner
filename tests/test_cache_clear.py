@@ -248,3 +248,17 @@ async def test_refresh_endpoints_return_409_during_shutdown(endpoint, expected_k
     assert exc_info.value.status_code == 409
     assert exc_info.value.detail == "Twitch client is shutting down"
     twitch_client.request_inventory_refresh.assert_called_once_with(**expected_kwargs)
+
+
+def test_clear_cached_state_resets_the_whole_reward_ledger_in_place():
+    twitch = _make_cache_test_client()[0]
+    service = InventoryService(twitch)
+    ledger = service._reward_ledger
+    ledger.announced["group"] = 3
+    ledger.stale["group"] = (None,) * 4
+    ledger.uncredited["group"] = ((None,) * 4, None, True)
+
+    service.clear_cached_state()
+
+    assert service._reward_ledger is ledger
+    assert not ledger.announced and not ledger.stale and not ledger.uncredited

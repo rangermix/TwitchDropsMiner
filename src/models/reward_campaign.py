@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
@@ -14,6 +15,15 @@ if TYPE_CHECKING:
     from src.config.constants import JsonType
     from src.core.client import Twitch
     from src.models.channel import Channel
+    from src.models.drop import TimedDrop
+
+logger = logging.getLogger("TwitchDrops")
+
+# A hold on a group Twitch never credits ends after this, so it never locks the group out
+# (Twitch's goals are daily).
+UNCREDITED_RETRY = timedelta(hours=6)
+# Signature of a group with no reading yet, so the same comparison works for it.
+NO_READING: tuple[object, ...] = (None, None, None, None)
 
 
 def _wait_state(
@@ -43,6 +53,14 @@ class RewardLedger:
     announced: dict[str, int] = field(default_factory=dict)
     # Groups whose stale at-goal reading ran into the extra-minute cutoff: reading signature.
     stale: dict[str, tuple[object, ...]] = field(default_factory=dict)
+    # Groups Twitch did not credit through the extra-minute cutoff: (reading signature, until,
+    # held). The first cutoff stores a pending entry (held False, until = now + the retry
+    # period), so the next reload still mines the group. A second cutoff with the same reading
+    # makes it a hold (held True, until = the retry time), and a rebuild holds the group until
+    # then. An entry past its until is dropped.
+    uncredited: dict[str, tuple[tuple[object, ...], datetime, bool]] = field(
+        default_factory=dict
+    )
 
 
 class RewardCampaign(DropsCampaign):
@@ -52,6 +70,8 @@ class RewardCampaign(DropsCampaign):
     reward_grants: int = 0
     # End of the current window, so a tick can tell a stale at-goal reading from a grant.
     window_end: str | None = None
+    # Whether the campaign was built from a real reading (a later missing one is not news).
+    built_with_reading: bool = False
     # Twitch's own grant has no claim to announce it, so grants are tracked here.
     _ledger: RewardLedger
 
@@ -177,6 +197,11 @@ class RewardCampaign(DropsCampaign):
             group, (_, granted, wait) = entry
             progress = progress_by_group.get(group["id"])
             if progress is None:
+                held = ledger.uncredited.get(group["id"])
+                # A held lane stays chosen: Twitch credits whichever lane the account can
+                # progress, so cycling through every unstarted lane would only retry them all.
+                if held is not None and held[2] and wait == held[1]:
+                    return 3
                 return 3 if not granted and wait is None else 5
             if not granted:
                 return 0 if wait is None else 1
@@ -245,6 +270,7 @@ class RewardCampaign(DropsCampaign):
         )
         campaign.reward_grants = (cls._grant_count(progress) if progress else None) or 0
         campaign.window_end = windows.get(group["id"])
+        campaign.built_with_reading = progress is not None
         # The ledger is shared by the service across reloads: a group seen for the first
         # time starts at its current count, so grants that already existed are not news.
         campaign._ledger = ledger
@@ -279,12 +305,30 @@ class RewardCampaign(DropsCampaign):
                 # The same stale at-goal reading already ran into the extra-minute cutoff.
                 return goal, True, None
             del ledger.stale[group["id"]]
+        entry = ledger.uncredited.get(group["id"])
+        if entry is not None and state is not None:
+            signature, until, held = entry
+            current = NO_READING if progress is None else cls._reading_signature(progress, window_end)
+            # A missing reading is no news about one that was really seen.
+            keeps = (progress is None and signature != NO_READING) or cls._matches_hold(
+                signature, current
+            )
+            if until <= datetime.now(timezone.utc) or not keeps:
+                del ledger.uncredited[group["id"]]
+            elif held and not state[1] and state[2] is None:
+                # Mineable now but not credited: the drop starts when the retry is due.
+                return state[0], False, until
         return state
 
     @staticmethod
     def _same_reading(remembered: tuple[object, ...], current: tuple[object, ...]) -> bool:
         # A missing window (the hints query failed) must not forget a stale reading.
         return remembered == current or (current[-1] is None and remembered[:-1] == current[:-1])
+
+    @classmethod
+    def _matches_hold(cls, held: tuple[object, ...], current: tuple[object, ...]) -> bool:
+        # The hold may have been recorded while the hints query failed (window None).
+        return cls._same_reading(held, current) or (held[-1] is None and held[:-1] == current[:-1])
 
     @staticmethod
     def _reading_signature(progress: JsonType, window_end: str | None) -> tuple[object, ...]:
@@ -314,12 +358,53 @@ class RewardCampaign(DropsCampaign):
         for number in range(announced + 1, self.reward_grants + 1):
             await drop.announce_grant(number)
 
+    def _track_uncredited(
+        self, drop: TimedDrop, signature: tuple[object, ...], crossed: bool, stale: bool
+    ) -> None:
+        """Forget a hold once the reading changed; hold on a second cutoff with the same reading."""
+        ledger = self._ledger.uncredited
+        now = datetime.now(timezone.utc)
+        entry = ledger.get(drop.id)
+        if entry is not None and (entry[1] <= now or not self._matches_hold(entry[0], signature)):
+            del ledger[drop.id]
+            entry = None
+        # A stale at-goal reading has its own memo (ledger.stale).
+        if not crossed or stale:
+            return
+        if entry is None:
+            ledger[drop.id] = (signature, now + UNCREDITED_RETRY, False)
+            return
+        if entry[2]:
+            return
+        # Never skip the last attempt that can still finish before the campaign ends (one
+        # cutoff of slack, since a retry may spend that long without credit).
+        retry_at = min(
+            now + UNCREDITED_RETRY,
+            self.ends_at - timedelta(
+                minutes=drop.required_minutes - drop.real_current_minutes + MAX_EXTRA_MINUTES
+            ),
+        )
+        if retry_at <= now:
+            return
+        for gid in [g for g, (_, until, _) in ledger.items() if until <= now]:
+            del ledger[gid]
+        ledger[drop.id] = (signature, retry_at, True)
+        logger.info(
+            'Twitch did not credit "%s" in two attempts of %d minutes; retrying after %s',
+            self.name, MAX_EXTRA_MINUTES, retry_at.astimezone().strftime("%Y-%m-%d %H:%M"),
+        )
+
     def apply_reward_progress(self, progress: JsonType | None, channel: Channel) -> None:
         """Apply a fresh reward group reading to this campaign's single drop."""
         drop = next(iter(self.drops))
         if progress is None:
             # No observation (only building a campaign reads a missing group as 0).
+            before = drop.extra_current_minutes
             self.bump_minutes(channel)
+            if not self.built_with_reading:
+                self._track_uncredited(
+                    drop, NO_READING, before < MAX_EXTRA_MINUTES <= drop.extra_current_minutes, False
+                )
             return
         gid = drop.id
         grants = self._grant_count(progress)
@@ -357,6 +442,7 @@ class RewardCampaign(DropsCampaign):
         if remembered is not None and (not stale or not self._same_reading(remembered, signature)):
             # The reading changed (minutes, grant count, new window): mine it again.
             del self._ledger.stale[gid]
+        crossed = False
         if state is None or state[1] or state[2]:
             # Finished window or unknown status: rebuild from Twitch.
             self._twitch.request_inventory_refresh()
@@ -373,7 +459,12 @@ class RewardCampaign(DropsCampaign):
         else:
             # Twitch may not credit this watch: estimate until the extra-minute cutoff
             # switches channels.
+            before = drop.extra_current_minutes
             self.bump_minutes(channel)
+            # shortcut: a cutoff reached by a fallback bump (failed progress query) is not
+            # counted, so a flaky poll keeps the old reload loop; count it there if that shows up.
+            crossed = before < MAX_EXTRA_MINUTES <= drop.extra_current_minutes
+        self._track_uncredited(drop, signature, crossed, stale)
         if stale and drop.extra_current_minutes >= MAX_EXTRA_MINUTES:
             # No minute change all the way to the cutoff: a rebuild with this same reading
             # treats the group as done instead of mining it again.

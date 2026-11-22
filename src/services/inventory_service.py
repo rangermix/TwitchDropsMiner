@@ -105,6 +105,13 @@ class InventoryService:
         self._twitch.gui.set_games(set())
         self._twitch.gui.broadcast_wanted_items()
 
+        # In place, campaigns share the ledger. A replaced account or Clear All Cache must not
+        # inherit another account's grants, stale readings or holds; a load reseeds announced.
+        for part in (
+            self._reward_ledger.announced, self._reward_ledger.stale, self._reward_ledger.uncredited
+        ):
+            part.clear()
+
         if self._twitch._mnt_task is not None and not self._twitch._mnt_task.done():
             self._twitch._mnt_task.cancel()
         self._twitch._mnt_task = None

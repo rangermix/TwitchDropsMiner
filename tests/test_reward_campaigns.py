@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import re
 from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
@@ -10,15 +11,18 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from src.config import GQL_OPERATIONS, MAX_EXTRA_MINUTES, State
+from src.config.reward_priority import RewardPriority
 from src.exceptions import ExitRequest, GQLException
 from src.models import DropsCampaign, RewardCampaign
 from src.models.channel import Channel, Stream
 from src.models.game import Game
 from src.models.reward_campaign import RewardLedger
 from src.services.inventory_service import InventoryService
+from src.services.stream_selector import StreamSelector
 from src.services.watch_service import WatchService
 from src.utils.async_helpers import AwaitableValue
 from src.web.managers.inventory import InventoryManager
+from tests.test_priority_fallback import _settings
 from tests.test_watched_channel_recovery import OFFLINE, _reloading_miner
 
 
@@ -1449,6 +1453,255 @@ def test_stale_reading_at_the_cutoff_is_remembered_until_the_reading_changes():
     assert not ledger.stale
 
 
+# A group Twitch never credits: held after two cutoffs instead of looping every 30 minutes
+BELOW = {"status": "IN_PROGRESS", "currentMinutesWatched": 10, "grantCount": 0}
+BELOW_SIGNATURE = ("IN_PROGRESS", 0, 10, None)
+
+
+def _uncredited_build(twitch, ledger, reading, data=None, windows=None):
+    return RewardCampaign.from_reward_campaign(
+        twitch, data or _data(), {} if reading is None else {GROUP_ID: reading}, "uid",
+        windows, None, None, ledger,
+    )
+
+
+def _run_to_cutoff(campaign, twitch, reading):
+    channel = _channel(twitch)
+    for _ in range(MAX_EXTRA_MINUTES):
+        campaign.apply_reward_progress(reading, channel)
+
+
+def _hold(twitch, ledger, reading, **kwargs):
+    """Two cutoffs, each on a rebuilt campaign like two inventory reloads."""
+    for _ in range(2):
+        _run_to_cutoff(_uncredited_build(twitch, ledger, reading, **kwargs), twitch, reading)
+
+
+def _assert_held(campaign, at_least=timedelta(hours=5, minutes=55), at_most=timedelta(hours=6)):
+    drop = _drop(campaign)
+    assert not drop.can_earn()
+    assert not drop.is_claimed
+    assert at_least < drop.starts_at - datetime.now(timezone.utc) <= at_most
+
+
+@pytest.mark.parametrize("reading", [BELOW, None])
+def test_two_uncredited_cutoffs_hold_the_group_on_rebuild(reading):
+    twitch, ledger = _twitch(), RewardLedger()
+    _hold(twitch, ledger, reading)
+    _assert_held(_uncredited_build(twitch, ledger, reading))
+    assert GROUP_ID in ledger.uncredited and not ledger.stale
+
+
+def test_one_uncredited_cutoff_is_mined_again():
+    twitch, ledger = _twitch(), RewardLedger()
+    _run_to_cutoff(_uncredited_build(twitch, ledger, BELOW), twitch, BELOW)
+    assert _drop(_uncredited_build(twitch, ledger, BELOW)).can_earn()
+    assert ledger.uncredited[GROUP_ID][2] is False
+
+
+def test_the_hold_is_logged_once_on_the_second_cutoff(caplog):
+    twitch, ledger = _twitch(), RewardLedger()
+    with caplog.at_level("INFO", logger="TwitchDrops"):
+        _run_to_cutoff(_uncredited_build(twitch, ledger, BELOW), twitch, BELOW)
+        assert "did not credit" not in caplog.text
+        campaign = _uncredited_build(twitch, ledger, BELOW)
+        _run_to_cutoff(campaign, twitch, BELOW)
+        _run_to_cutoff(campaign, twitch, BELOW)
+    assert caplog.text.count("did not credit") == 1
+    assert re.search(r"retrying after \d{4}-\d\d-\d\d \d\d:\d\d$", caplog.messages[-1])
+
+
+def test_a_reading_that_rises_before_the_cutoff_records_nothing():
+    twitch, ledger = _twitch(), RewardLedger()
+    campaign = _uncredited_build(twitch, ledger, BELOW)
+    channel = _channel(twitch)
+    for _ in range(5):
+        campaign.apply_reward_progress(BELOW, channel)
+    risen = {**BELOW, "currentMinutesWatched": 11}
+    for _ in range(MAX_EXTRA_MINUTES - 1):
+        campaign.apply_reward_progress(risen, channel)
+    assert not ledger.uncredited
+
+
+@pytest.mark.parametrize("changed", [
+    {**BELOW, "currentMinutesWatched": 11},
+    {**BELOW, "grantCount": 1},
+])
+def test_a_changed_reading_clears_the_hold_on_rebuild(changed):
+    twitch, ledger = _twitch(), RewardLedger()
+    _hold(twitch, ledger, BELOW)
+    assert _drop(_uncredited_build(twitch, ledger, changed)).can_earn()
+    assert not ledger.uncredited
+
+
+@pytest.mark.parametrize("cutoffs", [1, 2])
+def test_a_changed_reading_on_a_tick_clears_pending_and_hold(cutoffs):
+    twitch, ledger = _twitch(), RewardLedger()
+    for _ in range(cutoffs - 1):
+        _run_to_cutoff(_uncredited_build(twitch, ledger, BELOW), twitch, BELOW)
+    campaign = _uncredited_build(twitch, ledger, BELOW)
+    _run_to_cutoff(campaign, twitch, BELOW)
+    assert ledger.uncredited
+    campaign.apply_reward_progress({**BELOW, "currentMinutesWatched": 12}, _channel(twitch))
+    assert not ledger.uncredited
+
+
+def test_an_expired_hold_is_mined_again_and_can_hold_again(caplog):
+    twitch, ledger = _twitch(), RewardLedger()
+    _hold(twitch, ledger, BELOW)
+    signature = ledger.uncredited[GROUP_ID][0]
+    ledger.uncredited[GROUP_ID] = (signature, datetime.now(timezone.utc) - timedelta(minutes=1), True)
+    assert _drop(_uncredited_build(twitch, ledger, BELOW)).can_earn()
+    assert not ledger.uncredited
+    with caplog.at_level("INFO", logger="TwitchDrops"):
+        _hold(twitch, ledger, BELOW)
+    assert caplog.text.count("did not credit") == 1
+    _assert_held(_uncredited_build(twitch, ledger, BELOW))
+
+
+def test_an_expired_hold_met_on_a_tick_gives_way_to_a_new_pending_cutoff():
+    twitch, ledger = _twitch(), RewardLedger()
+    campaign = _uncredited_build(twitch, ledger, BELOW)
+    ledger.uncredited[GROUP_ID] = (BELOW_SIGNATURE, datetime.now(timezone.utc) - timedelta(minutes=1), True)
+    _run_to_cutoff(campaign, twitch, BELOW)
+    assert ledger.uncredited[GROUP_ID][2] is False
+
+
+def test_setting_a_hold_prunes_expired_holds_of_other_groups():
+    twitch, ledger = _twitch(), RewardLedger()
+    past = datetime.now(timezone.utc) - timedelta(hours=1)
+    ledger.uncredited["old"] = (BELOW_SIGNATURE, past, True)
+    ledger.uncredited["old pending"] = (BELOW_SIGNATURE, past, False)
+    _hold(twitch, ledger, BELOW)
+    assert set(ledger.uncredited) == {GROUP_ID}
+
+
+def test_the_retry_never_skips_the_last_finishable_attempt():
+    twitch, ledger = _twitch(), RewardLedger()
+    data = {**_data(), "endsAt": _iso(timedelta(hours=3))}
+    _hold(twitch, ledger, BELOW, data=data)
+    # 50 minutes are left to watch (10 of 60 done) plus one cutoff of slack: at most 1h55.
+    _assert_held(
+        _uncredited_build(twitch, ledger, BELOW, data),
+        at_least=timedelta(hours=1, minutes=50), at_most=timedelta(hours=1, minutes=55),
+    )
+
+
+def test_no_hold_when_the_last_finishable_start_has_passed():
+    twitch, ledger = _twitch(), RewardLedger()
+    ledger.uncredited[GROUP_ID] = (BELOW_SIGNATURE, datetime.now(timezone.utc) + timedelta(hours=6), False)
+    campaign = _uncredited_build(twitch, ledger, BELOW)
+    campaign.ends_at = datetime.now(timezone.utc) + timedelta(minutes=30)
+    # Called directly: a tick never gets here, because an unfinishable goal is not bumped.
+    campaign._track_uncredited(_drop(campaign), BELOW_SIGNATURE, True, False)
+    assert ledger.uncredited[GROUP_ID][2] is False
+    assert _drop(_uncredited_build(twitch, ledger, BELOW)).can_earn()
+
+
+def test_a_hold_survives_a_failed_hints_query():
+    twitch, ledger = _twitch(), RewardLedger()
+    window = {GROUP_ID: _iso(timedelta(hours=1))}
+    for _ in range(2):
+        campaign = _uncredited_build(twitch, ledger, BELOW, windows=window)
+        campaign.window_end = window[GROUP_ID]
+        _run_to_cutoff(campaign, twitch, BELOW)
+    _assert_held(_uncredited_build(twitch, ledger, BELOW))
+
+
+def test_a_hold_recorded_without_a_window_matches_a_rebuild_with_one():
+    twitch, ledger = _twitch(), RewardLedger()
+    _hold(twitch, ledger, BELOW)
+    window = {GROUP_ID: _iso(timedelta(hours=1))}
+    _assert_held(_uncredited_build(twitch, ledger, BELOW, windows=window))
+
+
+def test_a_missing_reading_on_a_tick_of_a_campaign_built_with_one_records_nothing():
+    twitch, ledger = _twitch(), RewardLedger()
+    for _ in range(2):
+        _run_to_cutoff(_uncredited_build(twitch, ledger, BELOW), twitch, None)
+    assert not ledger.uncredited
+
+
+def test_claimable_reaching_the_cutoff_records_nothing():
+    twitch, ledger = _twitch(), RewardLedger()
+    claimable = {"status": "CLAIMABLE", "currentMinutesWatched": 60, "grantCount": 0}
+    campaign = _uncredited_build(twitch, ledger, claimable)
+    _run_to_cutoff(campaign, twitch, claimable)
+    assert not ledger.uncredited and not ledger.stale
+
+
+def test_stale_at_goal_reading_records_only_the_stale_memo():
+    twitch, ledger = _twitch(), RewardLedger()
+    window = {GROUP_ID: _iso(-timedelta(minutes=2))}
+    campaign = RewardCampaign.from_reward_campaign(
+        twitch, _data(), {GROUP_ID: GRANTED}, "uid", window, None, None, ledger
+    )
+    _run_to_cutoff(campaign, twitch, GRANTED)
+    assert ledger.stale and not ledger.uncredited
+
+
+def test_a_hold_does_not_change_a_granted_state():
+    twitch, ledger = _twitch(), RewardLedger()
+    signature = RewardCampaign._reading_signature(GRANTED, None)
+    ledger.uncredited[GROUP_ID] = (signature, datetime.now(timezone.utc) + timedelta(hours=6), True)
+    drop = _drop(_uncredited_build(twitch, ledger, GRANTED))
+    assert drop.is_claimed
+    assert drop.starts_at < datetime.now(timezone.utc)
+
+
+def test_a_hold_does_not_change_a_waiting_window():
+    twitch, ledger = _twitch(), RewardLedger()
+    window = {GROUP_ID: _iso(timedelta(hours=1))}
+    signature = RewardCampaign._reading_signature(GRANTED, window[GROUP_ID])
+    ledger.uncredited[GROUP_ID] = (signature, datetime.now(timezone.utc) + timedelta(hours=6), True)
+    drop = _drop(_uncredited_build(twitch, ledger, GRANTED, windows=window))
+    assert drop.starts_at - datetime.now(timezone.utc) < timedelta(hours=2)
+
+
+def test_an_expired_pending_entry_is_replaced_by_a_new_one():
+    twitch, ledger = _twitch(), RewardLedger()
+    campaign = _uncredited_build(twitch, ledger, BELOW)
+    stamp = datetime.now(timezone.utc) - timedelta(minutes=1)
+    ledger.uncredited[GROUP_ID] = (BELOW_SIGNATURE, stamp, False)
+    _run_to_cutoff(campaign, twitch, BELOW)
+    # Without the expiry this second cutoff would turn the old pending entry into a hold.
+    assert ledger.uncredited[GROUP_ID][2] is False
+    assert ledger.uncredited[GROUP_ID][1] > datetime.now(timezone.utc)
+
+
+@pytest.mark.parametrize("cutoffs", [1, 2])
+def test_a_missing_reading_keeps_an_entry_recorded_from_a_real_one(cutoffs):
+    twitch, ledger = _twitch(), RewardLedger()
+    for _ in range(cutoffs):
+        _run_to_cutoff(_uncredited_build(twitch, ledger, BELOW), twitch, BELOW)
+    entry = ledger.uncredited[GROUP_ID]
+    rebuilt = _uncredited_build(twitch, ledger, None)
+    assert ledger.uncredited[GROUP_ID] == entry
+    if cutoffs == 2:
+        _assert_held(rebuilt)
+
+
+def test_a_held_lane_stays_chosen_over_unstarted_lanes():
+    twitch, ledger = _twitch(), RewardLedger()
+    data = _data([_group(), _group("g2")])
+    _hold(twitch, ledger, None, data=data)
+    rebuilt = _uncredited_build(twitch, ledger, None, data)
+    assert list(rebuilt.timed_drops) == [GROUP_ID]
+    _assert_held(rebuilt)
+
+
+def test_a_held_reward_campaign_is_not_a_wanted_game():
+    twitch, ledger = _twitch(), RewardLedger()
+    settings = _settings(
+        GTA["displayName"], mining_benefits=dict.fromkeys(RewardPriority.TYPES, True)
+    )
+    fresh = _uncredited_build(twitch, ledger, None)
+    assert [g.name for g in StreamSelector().get_wanted_games(settings, [fresh])]
+    _hold(twitch, ledger, None)
+    held = _uncredited_build(twitch, ledger, None)
+    assert StreamSelector().get_wanted_games(settings, [held]) == []
+
+
 # Malformed groups and parsers
 @pytest.mark.parametrize("bad", [
     {"id": "bad1", "categories": [GTA], "rewards": [{"id": "x", "name": "x"}]},
@@ -1637,3 +1890,14 @@ def test_group_that_game_or_the_drop_build_cannot_read_is_skipped(change):
 def test_valid_group_shapes_are_still_picked(change):
     group = {**_group("ok"), **change}
     assert list(_build(data=_data([group])).timed_drops) == ["ok"]
+
+
+def test_a_load_after_the_ledger_is_cleared_announces_no_existing_grant():
+    twitch, ledger = _twitch(), RewardLedger()
+    ledger.announced[GROUP_ID] = 0
+    for part in (ledger.announced, ledger.stale, ledger.uncredited):
+        part.clear()
+    campaign = _granted_build(2, twitch, ledger=ledger)
+    asyncio.run(campaign.announce_new_grants())
+    assert ledger.announced[GROUP_ID] == 2
+    twitch.print.assert_not_called()
