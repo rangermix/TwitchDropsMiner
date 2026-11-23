@@ -857,8 +857,14 @@ progress to an ignored drop while the miner intentionally targets another reward
   the drop has a claim id; the existing claim loop then claims it. After the stored window
   end (`window_end`) Twitch keeps the old at-goal reading until the next window starts: that
   is stale, so it counts as no new minutes and does not reload; a `grantCount` rise reloads
-  only at the goal. Twitch resetting 60 -> 1 at a new window was observed live; what it shows
-  after the final grant is assumed. A stale reading that reaches the extra-minute cutoff is
+  only at the goal. Twitch resetting 60 -> 1 at a new window was observed live. After the
+  final grant Twitch drops the campaign from the in-progress list (every reading missing) and
+  lists it in `completedRewardCampaigns` with status `COMPLETED` (`REWARD_COMPLETED_QUERY`,
+  optional like the hints). A campaign listed there with status `COMPLETED` is not built,
+  unless the picked group has a real reading that is mineable or claimable now
+  (`RewardCampaign.mineable_from_reading`); a failed or unusable list skips nothing. The tick
+  path does not read the list, so a final grant mid-session is skipped from the next reload
+  on. A stale reading that reaches the extra-minute cutoff is
   remembered per group (`RewardLedger.stale`) so a rebuild with the same reading counts the
   group as done, until the reading changes (a missing window from a failed hints query is
   ignored in that comparison). A below-goal or missing reading that stays unchanged to the
@@ -915,9 +921,10 @@ Persisted operations are defined in `src/config/operations.py` as `GQL_OPERATION
 - **AvailableDrops** - Check which campaigns a channel qualifies for (badge validation)
 - **NotificationsDelete** - Delete Twitch notifications
 
-Open Reward Campaigns use three raw `GQLRawQuery` operations, `REWARD_CAMPAIGNS_QUERY`,
-`REWARD_PROGRESS_QUERY` and `REWARD_HINTS_QUERY` (optional window and badge hints with
-their own 5 s timeout); they have no persisted hashes.
+Open Reward Campaigns use four raw `GQLRawQuery` operations, `REWARD_CAMPAIGNS_QUERY`,
+`REWARD_PROGRESS_QUERY`, `REWARD_HINTS_QUERY` (optional window and badge hints) and
+`REWARD_COMPLETED_QUERY` (optional completed list); the two optional ones run concurrently,
+each with its own 5 s timeout. They have no persisted hashes.
 
 ### Channel Selection Priority
 

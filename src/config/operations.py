@@ -24,7 +24,7 @@ query FollowedLiveChannels {
 }
 """
 
-# Open Reward Campaigns have no persisted hashes; the three queries below are plain inline queries.
+# Open Reward Campaigns have no persisted hashes; the four queries below are plain inline queries.
 REWARD_CAMPAIGNS_QUERY = """
 query RewardCampaigns {
     rewardCampaignsAvailableToUser {
@@ -68,6 +68,19 @@ query RewardCampaignHints {
                     rewards { id dropDetail { badge { setID } } }
                 }
             }
+        }
+    }
+}
+"""
+
+# After the final grant Twitch drops a campaign from viewerRewardDropCampaignsInProgress and
+# lists it here with status COMPLETED (live probe; no other status seen). Its own query, like
+# the hints, so a rejection only loses this list.
+REWARD_COMPLETED_QUERY = """
+query CompletedRewardCampaigns {
+    currentUser {
+        inventory {
+            completedRewardCampaigns { id status }
         }
     }
 }

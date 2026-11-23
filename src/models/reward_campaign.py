@@ -336,6 +336,20 @@ class RewardCampaign(DropsCampaign):
                 progress.get("currentMinutesWatched"), window_end)
 
     @property
+    def mineable_from_reading(self) -> bool:
+        """Whether the picked group has a real reading that can be mined (or claimed) now.
+
+        Started groups that can be mined now are picked first, so this covers every group.
+        Granted, waiting, held and unfinishable groups start later or count as claimed.
+        """
+        drop = next(iter(self.timed_drops.values()))
+        return (
+            self.built_with_reading
+            and not drop.is_claimed
+            and drop.starts_at <= datetime.now(timezone.utc)
+        )
+
+    @property
     def mineable_drop_ids(self) -> frozenset[str]:
         # A goal that cannot finish before the campaign ends starts at its end (_unfinishable).
         return frozenset(

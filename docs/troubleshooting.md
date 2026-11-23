@@ -166,7 +166,9 @@ goal Twitch does not credit in two attempts of 15 minutes is paused for up to 6 
 then tried again. Watching Twitch yourself on the same account while TDM mines can pause a
 goal the same way. After equipping a badge, use **Clear All Cache** or restart TDM to try
 it at once.
-Daily goals wait in Inventory until Twitch opens the next window. A goal that can no longer
+Daily goals wait in Inventory until Twitch opens the next window. Once Twitch lists a
+campaign as completed, after its last grant, TDM stops mining it and leaves it out of
+Inventory. A goal that can no longer
 be finished before the campaign ends stays unmineable and is not shown as claimed. Subscription goals and
 game-specific reward campaigns are not mined. Compare progress with Twitch inventory.
 

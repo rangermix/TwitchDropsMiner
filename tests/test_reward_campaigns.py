@@ -123,7 +123,7 @@ def _progress_response(self_data):
     ]}}}}
 
 
-def _gql(progress, *, campaigns=None, windows=NO_WINDOWS, badges=()):
+def _gql(progress, *, campaigns=None, windows=NO_WINDOWS, badges=(), completed=()):
     """Answer by operation: raw reward queries and the persisted ClaimDrop."""
     async def request(op):
         if isinstance(op, list):
@@ -143,8 +143,16 @@ def _gql(progress, *, campaigns=None, windows=NO_WINDOWS, badges=()):
                     for g, end in windows.items()
                 ]},
             ]}}}}
+        if "CompletedRewardCampaigns" in op["query"]:
+            if completed is None:
+                raise GQLException("unknown field completedRewardCampaigns")
+            return _completed_response([{"id": c, "status": "COMPLETED"} for c in completed])
         return campaigns if campaigns is not None else {"data": {"rewardCampaignsAvailableToUser": [_data()]}}
     return AsyncMock(side_effect=request)
+
+
+def _completed_response(entries):
+    return {"data": {"currentUser": {"inventory": {"completedRewardCampaigns": entries}}}}
 
 
 def _claims(twitch):
@@ -1028,9 +1036,10 @@ async def test_loading_batches_progress_and_campaigns_into_one_request():
     twitch = _twitch()
     twitch.gql_request = _gql(_progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 5}))
     assert len(await InventoryService(twitch).fetch_reward_campaigns()) == 1
-    batch, hints = (call.args[0] for call in twitch.gql_request.await_args_list)
+    batch, hints, completed = (call.args[0] for call in twitch.gql_request.await_args_list)
     assert [op["query"].split()[1] for op in batch] == ["RewardCampaignProgress", "RewardCampaigns"]
-    assert "RewardCampaignHints" in hints["query"] and twitch.gql_request.await_count == 2
+    assert "RewardCampaignHints" in hints["query"] and twitch.gql_request.await_count == 3
+    assert "CompletedRewardCampaigns" in completed["query"]
 
 
 # Goals that cannot be finished before the campaign ends
@@ -1901,3 +1910,122 @@ def test_a_load_after_the_ledger_is_cleared_announces_no_existing_grant():
     asyncio.run(campaign.announce_new_grants())
     assert ledger.announced[GROUP_ID] == 2
     twitch.print.assert_not_called()
+
+
+# Campaigns Twitch lists in completedRewardCampaigns
+EMPTY_PROGRESS = {"data": {"currentUser": {"inventory": {"viewerRewardDropCampaignsInProgress": []}}}}
+
+
+async def _load(progress=EMPTY_PROGRESS, *, data=None, service=None, **gql):
+    twitch = service._twitch if service else _twitch()
+    campaigns = {"data": {"rewardCampaignsAvailableToUser": [data or _data()]}}
+    twitch.gql_request = _gql(progress, campaigns=campaigns, **gql)
+    return await (service or InventoryService(twitch)).fetch_reward_campaigns()
+
+
+@pytest.mark.parametrize("reading", [
+    None,  # after the final grant Twitch drops the campaign from the in-progress list
+    {"status": "FULFILLED", "grantCount": 2, "nextEligibleAt": None},
+    {"status": "CLAIMED", "grantCount": 2, "nextEligibleAt": _iso(timedelta(hours=3))},
+    GRANTED,
+], ids=["missing", "fulfilled", "waiting", "granted"])
+@pytest.mark.asyncio
+async def test_completed_campaign_without_an_earnable_reading_is_not_built(reading):
+    progress = EMPTY_PROGRESS if reading is None else _progress_response(reading)
+    assert await _load(progress, completed=(CAMPAIGN_ID,)) == []
+
+
+@pytest.mark.asyncio
+async def test_completed_campaign_whose_reading_is_held_or_unfinishable_is_not_built():
+    service = InventoryService(_twitch())
+    until = datetime.now(timezone.utc) + timedelta(hours=1)
+    service._reward_ledger.uncredited[GROUP_ID] = (BELOW_SIGNATURE, until, True)
+    assert await _load(_progress_response(BELOW), service=service, completed=(CAMPAIGN_ID,)) == []
+    ending = {**_data(), "endsAt": _iso(timedelta(minutes=30))}
+    assert await _load(_progress_response(BELOW), data=ending, completed=(CAMPAIGN_ID,)) == []
+
+
+@pytest.mark.parametrize("reading", [
+    {"status": "IN_PROGRESS", "currentMinutesWatched": 5, "grantCount": 1},
+    {"status": "CLAIMABLE", "currentMinutesWatched": 60},
+    {"status": "CLAIMED", "grantCount": 1, "nextEligibleAt": _iso(-timedelta(minutes=5))},
+], ids=["in-progress", "claimable", "next-window-open"])
+@pytest.mark.asyncio
+async def test_completed_campaign_with_an_earnable_reading_is_still_mined(reading):
+    [campaign] = await _load(_progress_response(reading), completed=(CAMPAIGN_ID,))
+    assert campaign.mineable_from_reading and not _drop(campaign).is_claimed
+
+
+@pytest.mark.asyncio
+async def test_campaign_not_listed_as_completed_is_mined_from_a_missing_reading():
+    [campaign] = await _load(completed=("another-campaign",))
+    assert _drop(campaign).current_minutes == 0 and _drop(campaign).can_earn(ignore_channel_status=True)
+
+
+@pytest.mark.parametrize("status", [None, "ACTIVE", "completed", "EXPIRED"])
+@pytest.mark.asyncio
+async def test_only_status_completed_skips_a_campaign(status):
+    twitch = _twitch()
+    plain = _gql(EMPTY_PROGRESS)
+
+    async def request(op):
+        if "query" in op and "CompletedRewardCampaigns" in op["query"]:
+            return _completed_response([{"id": CAMPAIGN_ID, "status": status}])
+        return await plain(op)
+
+    twitch.gql_request = request
+    assert [c.id for c in await InventoryService(twitch).fetch_reward_campaigns()] == [CAMPAIGN_ID]
+
+
+@pytest.mark.asyncio
+async def test_a_failed_completed_list_leaves_loading_unchanged(caplog):
+    with caplog.at_level("WARNING", logger="TwitchDrops"):
+        [campaign] = await _load(completed=None)
+    assert _drop(campaign).current_minutes == 0 and not _drop(campaign).is_claimed
+    assert "Completed Open Reward Campaigns are unavailable" in caplog.text
+    assert "completedRewardCampaigns" not in caplog.text  # no error text or body
+
+
+@pytest.mark.parametrize("response", [
+    None, {}, {"data": None}, {"data": {"currentUser": None}},
+    {"data": {"currentUser": {"inventory": None}}},
+    {"data": {"currentUser": {"inventory": {}}}},
+    _completed_response(None), _completed_response(5), _completed_response("x"),
+])
+@pytest.mark.asyncio
+async def test_unusable_completed_list_skips_nothing(response):
+    twitch = _twitch()
+    twitch.gql_request = AsyncMock(return_value=response)
+    assert await InventoryService(twitch)._fetch_completed_rewards() == set()
+
+
+def test_completed_list_keeps_only_usable_completed_ids():
+    entries = [None, "x", [CAMPAIGN_ID], {"id": ""}, {"id": 5, "status": "COMPLETED"},
+               {"status": "COMPLETED"}, {"id": "no-status"}, {"id": "a", "status": "COMPLETED"}]
+    assert InventoryService._parse_completed_rewards(_completed_response(entries)) == {"a"}
+
+
+@pytest.mark.asyncio
+async def test_hints_and_completed_list_load_concurrently(monkeypatch):
+    end = _iso(timedelta(minutes=30))
+    plain = _gql(_progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 5}),
+                 windows={GROUP_ID: end})
+    completed_sent = asyncio.Event()
+
+    async def request(op):
+        # The hints reply waits for the completed query, so it only arrives when both run at once.
+        if "query" in op and "RewardCampaignHints" in op["query"]:
+            await completed_sent.wait()
+        if "query" in op and "CompletedRewardCampaigns" in op["query"]:
+            completed_sent.set()
+        return await plain(op)
+
+    twitch = _twitch()
+    twitch.gql_request = request
+    real_wait_for = asyncio.wait_for
+    monkeypatch.setattr(
+        "src.services.inventory_service.asyncio.wait_for",
+        lambda awaitable, timeout: real_wait_for(awaitable, {5: 1, 15: 5}[timeout]),
+    )
+    [campaign] = await InventoryService(twitch).fetch_reward_campaigns()
+    assert campaign.window_end == end

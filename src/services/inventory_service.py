@@ -19,6 +19,7 @@ from src.config import GQL_OPERATIONS
 from src.config.constants import GQLRawQuery
 from src.config.operations import (
     REWARD_CAMPAIGNS_QUERY,
+    REWARD_COMPLETED_QUERY,
     REWARD_HINTS_QUERY,
     REWARD_PROGRESS_QUERY,
 )
@@ -217,6 +218,29 @@ class InventoryService:
             logger.info("Reward hints are unavailable; a granted goal is treated as done")
             return {}, set()
 
+    @staticmethod
+    def _parse_completed_rewards(response: JsonType) -> set[str]:
+        """Return the IDs of reward campaigns Twitch lists with status COMPLETED."""
+        completed = response["data"]["currentUser"]["inventory"]["completedRewardCampaigns"]
+        return {
+            entry["id"]
+            for entry in _as_list(completed)
+            if _has_id(entry) and entry.get("status") == "COMPLETED"
+        }
+
+    async def _fetch_completed_rewards(self) -> set[str]:
+        """Return completed reward campaign IDs; any failure only loses this list."""
+        try:
+            response = await asyncio.wait_for(
+                self._twitch.gql_request(GQLRawQuery(REWARD_COMPLETED_QUERY)), timeout=5
+            )
+            return self._parse_completed_rewards(response)
+        except ExitRequest:
+            raise
+        except REWARD_ERRORS:
+            logger.warning("Completed Open Reward Campaigns are unavailable; none are skipped")
+            return set()
+
     async def fetch_reward_campaigns(self) -> list[RewardCampaign]:
         """Build watch-based sitewide Open Reward Campaigns; failures never block regular drops."""
         try:
@@ -233,8 +257,13 @@ class InventoryService:
             [GQLRawQuery(REWARD_PROGRESS_QUERY), GQLRawQuery(REWARD_CAMPAIGNS_QUERY)]
         )
         progress, campaign_ids = self._parse_reward_progress(progress_response)
-        windows, badges = await self._fetch_reward_hints()
-        logger.debug("Reward windows: %s, badge rewards: %s", windows, badges)
+        # Concurrent, so two slow optional queries stay within the 15 s bound of the whole load.
+        (windows, badges), completed = await asyncio.gather(
+            self._fetch_reward_hints(), self._fetch_completed_rewards()
+        )
+        logger.debug(
+            "Reward windows: %s, badge rewards: %s, completed: %s", windows, badges, completed
+        )
         user_id = (await self._twitch.get_auth()).user_id
         campaigns: list[RewardCampaign] = []
         # shortcut: game-specific reward campaigns may need an account link, skipped
@@ -249,9 +278,14 @@ class InventoryService:
                     self._twitch, data, progress, user_id, windows, campaign_ids, badges,
                     self._reward_ledger,
                 )
-                if campaign is not None:
-                    self._log_reward_progress(campaign, progress)
-                    campaigns.append(campaign)
+                if campaign is None:
+                    continue
+                if data["id"] in completed and not campaign.mineable_from_reading:
+                    # Twitch lists it as completed and no group reading says otherwise.
+                    logger.debug("Open Reward Campaign %s is completed", campaign.name)
+                    continue
+                self._log_reward_progress(campaign, progress)
+                campaigns.append(campaign)
             # Deliberately not REWARD_ERRORS: only a malformed campaign is skipped here; network
             # errors, timeouts and exit requests belong to the caller.
             except (KeyError, TypeError, ValueError, AttributeError):
