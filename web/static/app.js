@@ -1253,7 +1253,9 @@ function renderInventory() {
                 drop.benefits.forEach(benefit => {
                     benefitsList.appendChild(
                         makeElement('div', { class: 'benefit-item' }, '', el => {
-                            el.appendChild(makeImageElement(benefit.image_url, benefit.name, 'benefit-icon'));
+                            if (benefit.image_url) {
+                                el.appendChild(makeImageElement(benefit.image_url, benefit.name, 'benefit-icon'));
+                            }
                             el.appendChild(makeElement('div', { class: 'benefit-info' }, '', el2 => {
                                 el2.appendChild(makeElement('span', { class: 'benefit-name' }, benefit.name));
                                 const labels = t.gui?.inventory?.filters || {};

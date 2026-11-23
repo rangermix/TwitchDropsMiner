@@ -42,7 +42,6 @@ query RewardCampaigns {
 REWARD_PROGRESS_QUERY = """
 query RewardCampaignProgress {
     currentUser {
-        id
         inventory {
             viewerRewardDropCampaignsInProgress {
                 id

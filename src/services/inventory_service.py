@@ -10,11 +10,14 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
+from functools import partial
 from typing import TYPE_CHECKING, Any, TypeVar
 
+import aiohttp
 from dateutil.parser import isoparse
 
 from src.api import GQLClient
+from src.api.gql_client import private_gql_discovery
 from src.config import GQL_OPERATIONS
 from src.config.constants import GQLRawQuery
 from src.config.operations import (
@@ -55,7 +58,8 @@ def _has_id(entry: object) -> bool:
 
 
 # Failures a malformed or slow reward reply can raise; none may block regular drops.
-REWARD_ERRORS = (MinerException, KeyError, TypeError, ValueError, AttributeError, TimeoutError)
+REWARD_ERRORS = (MinerException, aiohttp.ClientError, KeyError, IndexError, TypeError,
+                 ValueError, AttributeError, TimeoutError)
 
 
 class InventoryService:
@@ -110,7 +114,9 @@ class InventoryService:
         # In place, campaigns share the ledger. A replaced account or Clear All Cache must not
         # inherit another account's grants, stale readings or holds; a load reseeds announced.
         for part in (
-            self._reward_ledger.announced, self._reward_ledger.stale, self._reward_ledger.uncredited
+            self._reward_ledger.announced, self._reward_ledger.stale, self._reward_ledger.uncredited,
+            self._reward_ledger.pending_history, self._reward_ledger.pending_alerts,
+            self._reward_ledger.claim_attempts,
         ):
             part.clear()
 
@@ -174,7 +180,8 @@ class InventoryService:
 
     async def _fetch_reward_progress(self) -> tuple[dict[str, JsonType], dict[str, str]]:
         """Query the viewer's reward group progress (see _parse_reward_progress)."""
-        response = await self._twitch.gql_request(GQLRawQuery(REWARD_PROGRESS_QUERY))
+        with private_gql_discovery():
+            response = await self._twitch.gql_request(GQLRawQuery(REWARD_PROGRESS_QUERY))
         return self._parse_reward_progress(response)
 
     @staticmethod
@@ -249,7 +256,8 @@ class InventoryService:
         """Build watch-based sitewide Open Reward Campaigns; failures never block regular drops."""
         try:
             # The GQL client retries some service errors without a cap, so bound the whole call.
-            return await asyncio.wait_for(self._load_reward_campaigns(), timeout=15)
+            with private_gql_discovery():
+                return await asyncio.wait_for(self._load_reward_campaigns(), timeout=15)
         except ExitRequest:
             raise
         except REWARD_ERRORS:
@@ -262,15 +270,26 @@ class InventoryService:
         )
         progress, campaign_ids = self._parse_reward_progress(progress_response)
         # Concurrent, so two slow optional queries stay within the 15 s bound of the whole load.
-        (windows, badges), completed = await asyncio.gather(
-            self._fetch_reward_hints(), self._fetch_completed_reward_campaigns()
-        )
+        hints_task = asyncio.create_task(self._fetch_reward_hints())
+        completed_task = asyncio.create_task(self._fetch_completed_reward_campaigns())
+        try:
+            (windows, badges), completed = await asyncio.gather(hints_task, completed_task)
+        finally:
+            # gather propagates a child's exception while its sibling may still be running.
+            hints_task.cancel()
+            completed_task.cancel()
+            await asyncio.gather(hints_task, completed_task, return_exceptions=True)
         logger.debug(
-            "Reward windows: %s, badge rewards: %s, completed campaigns: %d",
-            windows, badges, len(completed),
+            "Reward inventory: %d group readings, %d windows, %d badges, %d completed campaigns",
+            len(progress), len(windows), len(badges), len(completed),
         )
         user_id = (await self._twitch.get_auth()).user_id
         campaigns: list[RewardCampaign] = []
+        build_campaign = partial(
+            RewardCampaign.from_reward_campaign, self._twitch, progress_by_group=progress,
+            user_id=user_id, windows=windows, campaign_ids=campaign_ids,
+            badge_rewards=badges, ledger=self._reward_ledger,
+        )
         # shortcut: game-specific reward campaigns may need an account link, skipped
         # until one is verified to progress without it.
         for data in response["data"]["rewardCampaignsAvailableToUser"] or []:
@@ -279,30 +298,33 @@ class InventoryService:
             try:
                 if not data.get("isSitewide"):
                     continue
-                campaign = RewardCampaign.from_reward_campaign(
-                    self._twitch, data, progress, user_id, windows, campaign_ids, badges,
-                    self._reward_ledger,
-                )
+                campaign = build_campaign(data)
                 if campaign is None:
                     continue
+                # A newly finished group can lose selection to another lane on the same load.
+                # Keep its real grant count and reward metadata before discarding that lane.
+                for group in data["rewardGroups"]:
+                    if not _has_id(group):
+                        continue
+                    gid = group["id"]
+                    if gid in campaign.timed_drops or gid not in self._reward_ledger.announced:
+                        continue
+                    reading = progress.get(gid)
+                    if reading and reading.get("grantCount") != self._reward_ledger.announced[gid]:
+                        previous = build_campaign({**data, "rewardGroups": [group]})
+                        if previous is not None:
+                            previous.queue_new_grants()
                 if data["id"] in completed and not campaign.earnable_from_reading:
                     # Built, then dropped: Twitch lists it as completed and no reading says otherwise.
+                    campaign.queue_new_grants()
                     logger.debug("Open Reward Campaign %s is completed", campaign.name)
                     continue
-                self._log_reward_progress(campaign, progress)
                 campaigns.append(campaign)
             # Deliberately not REWARD_ERRORS: only a malformed campaign is skipped here; network
             # errors, timeouts and exit requests belong to the caller.
             except (KeyError, TypeError, ValueError, AttributeError):
-                logger.warning("Open Reward Campaign %s could not be read", data.get("id"))
+                logger.warning("Skipping a broken Open Reward Campaign")
         return campaigns
-
-    @staticmethod
-    def _log_reward_progress(campaign: DropsCampaign, progress: dict[str, JsonType]) -> None:
-        drop_id = next(iter(campaign.timed_drops))
-        logger.debug(
-            "Reward progress %s (%s): %s", campaign.name, campaign.game, progress.get(drop_id)
-        )
 
     async def refresh_reward_progress(
         self,
@@ -320,9 +342,10 @@ class InventoryService:
             progress, _campaign_ids = await asyncio.wait_for(
                 self._fetch_reward_progress(), timeout=5
             )
-            if is_current is not None and not is_current():
-                return True
             for campaign in campaigns:
+                # Announcing a previous campaign's grants may have yielded during a switch.
+                if is_current is not None and not is_current():
+                    return True
                 if (
                     self._twitch._campaigns.get(campaign.id) is not campaign
                     or campaign.progress_revision != revisions[campaign.id]
@@ -331,9 +354,8 @@ class InventoryService:
                     continue
                 try:
                     drop_id = next(iter(campaign.timed_drops))
-                    self._log_reward_progress(campaign, progress)
                     campaign.apply_reward_progress(progress.get(drop_id), channel)
-                    await self._announce_reward_grants(campaign)
+                    await campaign.announce_new_grants()
                 except ExitRequest:
                     raise
                 except REWARD_ERRORS:
@@ -474,18 +496,8 @@ class InventoryService:
         # Announced only now, so the GUI and notification awaits cannot interleave with the rebuild.
         for campaign in campaigns:
             if isinstance(campaign, RewardCampaign):
-                await self._announce_reward_grants(campaign)
-
-    @staticmethod
-    async def _announce_reward_grants(campaign: RewardCampaign) -> None:
-        """Announce new grants; a failing history write, GUI or notification only warns."""
-        try:
-            await campaign.announce_new_grants()
-        except ExitRequest:
-            raise
-        except Exception:
-            # Broad on purpose: announcements are side effects that must not stop a reload.
-            logger.warning("Reward grant announcement for %s failed", campaign.name, exc_info=True)
+                campaign.queue_new_grants()
+        await self._reward_ledger.announce_pending()
 
     def get_active_campaign(
         self, channel: Channel | None = None, *, exclude_rewards: bool = False
@@ -515,7 +527,8 @@ class InventoryService:
         campaigns: list[DropsCampaign] = []
         for campaign in self._twitch.inventory:
             if (
-                campaign.can_earn(watching_channel)
+                campaign.game in self._twitch.wanted_games
+                and campaign.can_earn(watching_channel)
                 and campaign.can_progress_on(watching_channel)
                 and not (exclude_rewards and isinstance(campaign, RewardCampaign))
             ):
@@ -525,7 +538,6 @@ class InventoryService:
             campaigns.sort(key=lambda c: c.remaining_minutes)
             policy = RewardPriority(self._twitch.settings)
             if policy.enabled:
-                campaigns = [campaign for campaign in campaigns if campaign.game in self._twitch.wanted_games]
                 selected = {name.lower() for name in self._twitch.settings.games_to_watch}
                 campaigns.sort(key=lambda campaign: (
                     0 if campaign.game.name.lower() in selected else 1, policy.campaign_key(campaign),

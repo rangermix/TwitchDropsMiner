@@ -27,6 +27,8 @@ logger = logging.getLogger("TwitchDrops")
 
 
 class DropsCampaign:
+    drop_type: type[TimedDrop] = TimedDrop
+
     def __init__(self, twitch: Twitch, data: JsonType, claimed_benefits: dict[str, datetime]):
         self._twitch: Twitch = twitch
         # Shared progress updates can affect every eligible sibling drop.
@@ -49,7 +51,7 @@ class DropsCampaign:
             else []
         )
         self.timed_drops: dict[str, TimedDrop] = {
-            drop_data["id"]: TimedDrop(self, drop_data, claimed_benefits)
+            drop_data["id"]: self.drop_type(self, drop_data, claimed_benefits)
             for drop_data in data["timeBasedDrops"]
         }
         self._drop_ignore_cache_key: (

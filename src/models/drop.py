@@ -34,6 +34,9 @@ def remove_dimensions(url: str) -> str:
 
 
 class BaseDrop:
+    # Sitewide reward groups have an event title and separate names for their rewards.
+    ignore_name_aliases: tuple[str, ...] = ()
+
     def __init__(
         self, campaign: DropsCampaign, data: JsonType, claimed_benefits: dict[str, datetime]
     ):
@@ -185,6 +188,7 @@ class BaseDrop:
 
     # Reward drops announce grants from grantCount, not from the claim (see RewardCampaign).
     quiet_claim: bool = False
+    single_attempt_claim: bool = False
 
     async def claim(self) -> bool:
         result = await self._claim()
@@ -254,20 +258,22 @@ class BaseDrop:
         if not self.can_claim:
             return False
         try:
-            response = await self._twitch.gql_request(
-                GQL_OPERATIONS["ClaimDrop"].with_variables(
-                    {"input": {"dropInstanceID": self.claim_id}}
-                )
+            operation = GQL_OPERATIONS["ClaimDrop"].with_variables(
+                {"input": {"dropInstanceID": self.claim_id}}
             )
+            operation.single_attempt = self.single_attempt_claim
+            response = await self._twitch.gql_request(operation)
         except GQLException:
             # regardless of the error, we have to assume
             # the claiming operation has potentially failed
             return False
-        data = response["data"]
+        data = response.get("data") if isinstance(response, dict) else None
+        if not isinstance(data, dict):
+            return False
         if "errors" in data and data["errors"]:
             return False
         elif "claimDropRewards" in data:
-            if not data["claimDropRewards"]:
+            if not isinstance(data["claimDropRewards"], dict):
                 return False
             # Sitewide reward claims may answer without a status; treat as unconfirmed.
             elif data["claimDropRewards"].get("status") in (
@@ -428,11 +434,13 @@ class TimedDrop(BaseDrop):
         self._on_state_changed()
         return result
 
-    async def announce_grant(self, number: int) -> None:
-        """Run the claim's follow-up for a reward Twitch granted without a claim."""
-        await self._announce_claim(f"#{number}")
+    def record_grant(self, number: int) -> bool:
         # A daily goal repeats under one drop ID, so each grant gets its own history entry.
-        self._twitch.drop_history.record(self, self.campaign, f"{self.id}#{number}")
+        return self._twitch.drop_history.record(self, self.campaign, f"{self.id}#{number}")
+
+    async def announce_grant(self, number: int) -> None:
+        """Notify about a reward Twitch has already granted."""
+        await self._announce_claim(f"#{number}")
 
     def display(self, *, countdown: bool = True, subone: bool = False) -> None:
         """Display this drop in the GUI with progress information."""

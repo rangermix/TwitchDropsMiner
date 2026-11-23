@@ -80,10 +80,9 @@ class InventoryManager:
                 {
                     "name": benefit.name,
                     "type": benefit.type.name,
-                    "image_url": str(benefit.image_url),
+                    "image_url": str(benefit.image_url) if benefit.image_url else None,
                 }
                 for benefit in drop.benefits
-                if benefit.image_url
             ],
             "starts_at": drop.starts_at.isoformat(),
             "ends_at": drop.ends_at.isoformat(),

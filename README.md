@@ -27,6 +27,7 @@ services operated for other users are outside its support scope.
   reward artwork and live drop progress.
   Starting in v2.6.0, the queue's information button explains which ordering rules apply.
 - Track campaigns and rewards, and ignore drops you do not want.
+- Source builds from current `main` also track [watch-based Open Reward Campaigns](docs/troubleshooting.md#no-campaigns-or-no-progress).
 - Skip channels while Twitch reports an active ban, including temporary bans.
 - Optionally [prefer channels you follow](docs/usage.md#prefer-channels-you-follow)
   when otherwise equally ranked channels offer the same drops.

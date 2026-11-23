@@ -12,6 +12,7 @@ import pytest
 
 from src.config import GQL_OPERATIONS, MAX_EXTRA_MINUTES, State
 from src.config.reward_priority import RewardPriority
+from src.config.settings import default_settings
 from src.exceptions import ExitRequest, GQLException
 from src.models import DropsCampaign, RewardCampaign
 from src.models.channel import Channel, Stream
@@ -61,6 +62,7 @@ def _data(groups=None, sitewide=True):
 
 
 def _twitch(**settings):
+    settings.setdefault("mining_benefits", default_settings["mining_benefits"].copy())
     twitch = SimpleNamespace(
         settings=SimpleNamespace(
             allow_unlinked_campaigns=False, drop_name_blacklist=[], telegram_bot_token="",
@@ -639,7 +641,9 @@ async def test_dashboard_serializes_reward_campaign_without_images_or_link():
     serialized = manager._serialize_campaign(campaign)
     json.dumps(serialized)
     assert serialized["link_url"] == "" and serialized["game_name"] == "Grand Theft Auto VI"
-    assert serialized["drops"][0]["benefits"] == []
+    assert serialized["drops"][0]["benefits"] == [
+        {"name": "GTA DVD Chest", "type": "UNKNOWN", "image_url": None},
+    ]
     assert serialized["drops"][0]["current_minutes"] == 12
 
 

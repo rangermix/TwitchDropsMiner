@@ -39,7 +39,7 @@ from src.models.channel import Channel
 from src.models.reward_campaign import RewardCampaign
 from src.services.channel_service import ChannelService
 from src.services.game_order import TemporaryGameOrder
-from src.services.inventory_service import InventoryService
+from src.services.inventory_service import REWARD_ERRORS, InventoryService
 from src.services.maintenance import MaintenanceService
 from src.services.message_handlers import MessageHandlerService
 from src.services.release_service import ReleaseService
@@ -62,6 +62,7 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("TwitchDrops")
+REWARD_DIRECTORY_TIMEOUT = 5
 gql_logger = logging.getLogger("TwitchDrops.gql")
 
 
@@ -788,7 +789,16 @@ class Twitch:
                     # Reward campaigns progress on any live channel in the category. Added
                     # after the lookup above, so a drops-enabled Channel is kept (set.update
                     # leaves an equal existing element in place).
-                    new_channels.update(await self.get_live_streams(game, drops_enabled=False))
+                    try:
+                        found = await asyncio.wait_for(
+                            self.get_live_streams(game, drops_enabled=False), timeout=REWARD_DIRECTORY_TIMEOUT
+                        )
+                    except ExitRequest:
+                        raise
+                    except REWARD_ERRORS:
+                        logger.warning("Open Reward Campaign channel directory is unavailable")
+                        continue
+                    new_channels.update(found)
                 # Optional: followed channels outside each game's top directory results.
                 known_ids = {channel.id for channel in new_channels}
                 if (watched := self.watching_channel.get_with_default(None)) is not None:

@@ -4,6 +4,7 @@ import asyncio
 
 import pytest
 
+from src.config.settings import default_settings
 from src.models.game import Game
 from tests.test_reward_campaigns import GTA, _build, _channel, _regular
 from tests.test_watched_channel_recovery import OFFLINE, _reloading_miner
@@ -18,6 +19,7 @@ def _live(client, channel_id, viewers, *, drops_enabled):
 def _fetching_client(tmp_path, monkeypatch, *, regular, reward):
     """CHANNELS_FETCH then CHANNEL_SWITCH for GTA; the watched channel 1 has gone offline."""
     client, _watched = _reloading_miner(tmp_path, monkeypatch, discovered=[], stream_status=[OFFLINE])
+    client.settings.mining_benefits = default_settings["mining_benefits"].copy()
     client.wanted_games = [Game(GTA)]
     client.inventory = [
         *([_regular(client, game=GTA)] if regular else []),
