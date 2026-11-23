@@ -858,13 +858,14 @@ progress to an ignored drop while the miner intentionally targets another reward
   end (`window_end`) Twitch keeps the old at-goal reading until the next window starts: that
   is stale, so it counts as no new minutes and does not reload; a `grantCount` rise reloads
   only at the goal. Twitch resetting 60 -> 1 at a new window was observed live. After the
-  final grant Twitch drops the campaign from the in-progress list (every reading missing) and
-  lists it in `completedRewardCampaigns` with status `COMPLETED` (`REWARD_COMPLETED_QUERY`,
-  optional like the hints). A campaign listed there with status `COMPLETED` is not built,
-  unless the picked group has a real reading that is mineable or claimable now
-  (`RewardCampaign.mineable_from_reading`); a failed or unusable list skips nothing. The tick
-  path does not read the list, so a final grant mid-session is skipped from the next reload
-  on. A stale reading that reaches the extra-minute cutoff is
+  final grant, observed once on a sitewide campaign, Twitch dropped the campaign from the
+  in-progress list (every reading missing) and listed it in `completedRewardCampaigns` with
+  status `COMPLETED` (`REWARD_COMPLETED_QUERY`, optional like the hints). A campaign listed
+  there with status `COMPLETED` is built and then dropped from the load, unless the picked
+  group has a real reading that can be mined or claimed now
+  (`RewardCampaign.earnable_from_reading`); a failed or unusable list drops nothing. The tick
+  path does not read the list, so a final grant mid-session stops mining from the next
+  reload on, once Twitch lists the campaign. A stale reading that reaches the extra-minute cutoff is
   remembered per group (`RewardLedger.stale`) so a rebuild with the same reading counts the
   group as done, until the reading changes (a missing window from a failed hints query is
   ignored in that comparison). A below-goal or missing reading that stays unchanged to the

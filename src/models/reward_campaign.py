@@ -336,7 +336,7 @@ class RewardCampaign(DropsCampaign):
                 progress.get("currentMinutesWatched"), window_end)
 
     @property
-    def mineable_from_reading(self) -> bool:
+    def earnable_from_reading(self) -> bool:
         """Whether the picked group has a real reading that can be mined (or claimed) now.
 
         Started groups that can be mined now are picked first, so this covers every group.
@@ -444,8 +444,9 @@ class RewardCampaign(DropsCampaign):
             self._twitch.request_inventory_refresh()
             return
         # A reading at the goal after the window passed is Twitch's old one: no new minutes,
-        # not a grant to reload for. Observed live: a new window resets 60 -> 1; what Twitch
-        # shows after the final grant is assumed to be the same old reading.
+        # not a grant to reload for. Observed live: a new window resets 60 -> 1. After the final
+        # grant (seen once on a sitewide campaign) Twitch dropped the campaign from the in-progress
+        # list, so ticks got no reading; the next reload skips it through the completed list.
         state = self.reward_state(progress, drop.required_minutes, self.ends_at, self.window_end)
         stale = (
             progress.get("status") == "IN_PROGRESS"

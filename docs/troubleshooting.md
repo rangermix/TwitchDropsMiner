@@ -168,9 +168,10 @@ goal the same way. After equipping a badge, use **Clear All Cache** or restart T
 it at once.
 Daily goals wait in Inventory until Twitch opens the next window. Once Twitch lists a
 campaign as completed, after its last grant, TDM stops mining it and leaves it out of
-Inventory. A goal that can no longer
-be finished before the campaign ends stays unmineable and is not shown as claimed. Subscription goals and
-game-specific reward campaigns are not mined. Compare progress with Twitch inventory.
+Inventory, unless Twitch still reports progress on it that can be earned now. A goal that
+can no longer be finished before the campaign ends stays unmineable and is not shown as
+claimed. Subscription goals and game-specific reward campaigns are not mined. Compare
+progress with Twitch inventory.
 
 Check the campaign on Twitch and work through these conditions:
 

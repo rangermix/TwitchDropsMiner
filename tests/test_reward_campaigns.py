@@ -1953,7 +1953,7 @@ async def test_completed_campaign_whose_reading_is_held_or_unfinishable_is_not_b
 @pytest.mark.asyncio
 async def test_completed_campaign_with_an_earnable_reading_is_still_mined(reading):
     [campaign] = await _load(_progress_response(reading), completed=(CAMPAIGN_ID,))
-    assert campaign.mineable_from_reading and not _drop(campaign).is_claimed
+    assert campaign.earnable_from_reading and not _drop(campaign).is_claimed
 
 
 @pytest.mark.asyncio
@@ -1979,10 +1979,11 @@ async def test_only_status_completed_skips_a_campaign(status):
 
 @pytest.mark.asyncio
 async def test_a_failed_completed_list_leaves_loading_unchanged(caplog):
-    with caplog.at_level("WARNING", logger="TwitchDrops"):
+    with caplog.at_level("INFO", logger="TwitchDrops"):
         [campaign] = await _load(completed=None)
     assert _drop(campaign).current_minutes == 0 and not _drop(campaign).is_claimed
-    assert "Completed Open Reward Campaigns are unavailable" in caplog.text
+    [record] = [r for r in caplog.records if "Completed Open Reward Campaigns" in r.getMessage()]
+    assert record.levelname == "INFO"  # like the hints: no warning on every reload
     assert "completedRewardCampaigns" not in caplog.text  # no error text or body
 
 
@@ -1996,13 +1997,13 @@ async def test_a_failed_completed_list_leaves_loading_unchanged(caplog):
 async def test_unusable_completed_list_skips_nothing(response):
     twitch = _twitch()
     twitch.gql_request = AsyncMock(return_value=response)
-    assert await InventoryService(twitch)._fetch_completed_rewards() == set()
+    assert await InventoryService(twitch)._fetch_completed_reward_campaigns() == set()
 
 
 def test_completed_list_keeps_only_usable_completed_ids():
     entries = [None, "x", [CAMPAIGN_ID], {"id": ""}, {"id": 5, "status": "COMPLETED"},
                {"status": "COMPLETED"}, {"id": "no-status"}, {"id": "a", "status": "COMPLETED"}]
-    assert InventoryService._parse_completed_rewards(_completed_response(entries)) == {"a"}
+    assert InventoryService._parse_completed_reward_campaigns(_completed_response(entries)) == {"a"}
 
 
 @pytest.mark.asyncio
@@ -2029,3 +2030,52 @@ async def test_hints_and_completed_list_load_concurrently(monkeypatch):
     )
     [campaign] = await InventoryService(twitch).fetch_reward_campaigns()
     assert campaign.window_end == end
+
+
+@pytest.mark.asyncio
+async def test_completed_campaign_with_a_stale_at_goal_reading_stays_built():
+    # Boundary: 60/60 after its window ended reads as a window open now, so the completed list
+    # does not drop it; the stale-reading ledger handles it as before.
+    progress = _progress_response({"status": "IN_PROGRESS", "currentMinutesWatched": 60, "grantCount": 1})
+    windows = {GROUP_ID: _iso(-timedelta(hours=1))}
+    [listed] = await _load(progress, windows=windows, completed=(CAMPAIGN_ID,))
+    [unlisted] = await _load(progress, windows=windows)
+    assert listed.earnable_from_reading and not _drop(listed).is_claimed
+    assert _drop(listed).current_minutes == _drop(unlisted).current_minutes == 0
+
+
+@pytest.mark.asyncio
+async def test_a_completed_campaign_leaves_the_inventory_and_the_wanted_games():
+    from collections import deque
+
+    twitch = _twitch()
+    twitch._drops, twitch.inventory, twitch._mnt_triggers, twitch._mnt_task = {}, [], deque(), None
+    twitch._state = State.IDLE
+    twitch.gui.inv.add_campaign = AsyncMock()
+    twitch._maintenance_service = SimpleNamespace(run_maintenance_task=AsyncMock())
+    service = InventoryService(twitch)
+    settings = _settings(GTA["displayName"], mining_benefits=dict.fromkeys(RewardPriority.TYPES, True))
+
+    def load(completed):
+        rewards = _gql(EMPTY_PROGRESS, completed=completed)
+
+        async def request(op):
+            if op is GQL_OPERATIONS["Inventory"]:
+                return {"data": {"currentUser": {"inventory": {
+                    "dropCampaignsInProgress": [], "gameEventDrops": []}}}}
+            if isinstance(op, list) or "query" in op:
+                return await rewards(op)
+            return {"data": {"currentUser": {"dropCampaigns": []}}}
+
+        twitch.gql_request = request
+        return service.fetch_inventory()
+
+    await load(())
+    assert [c.id for c in twitch.inventory] == [CAMPAIGN_ID]
+    assert [g.name for g in StreamSelector().get_wanted_games(settings, twitch.inventory)] == [
+        GTA["displayName"]
+    ]
+    await load((CAMPAIGN_ID,))
+    assert twitch.inventory == [] and CAMPAIGN_ID not in twitch._campaigns
+    assert StreamSelector().get_wanted_games(settings, twitch.inventory) == []
+    await twitch._mnt_task
