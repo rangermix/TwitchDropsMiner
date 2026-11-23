@@ -63,24 +63,27 @@ class DropHistory:
     def __init__(self, data_dir: Path) -> None:
         self._path = data_dir / HISTORY_FILENAME
         self._entries: list[HistoryEntry] = []
+        self._dirty = False
         self._load()
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
-    def record(self, drop: TimedDrop, campaign: DropsCampaign) -> None:
+    def record(
+        self, drop: TimedDrop, campaign: DropsCampaign, entry_id: str | None = None
+    ) -> bool:
         """
         Persist a claimed drop to history.
         Call this immediately after ``await drop.claim()`` returns.
-        Duplicate entries (same drop.id) are silently ignored.
+        Return whether the entry is saved. A duplicate retries a previous failed disk write.
         """
-        drop_id: str = drop.id
+        drop_id: str = entry_id or drop.id
 
         # Skip if this drop was already recorded (e.g. restart replaying events)
         if any(e["id"] == drop_id for e in self._entries):
             logger.debug(f"Drop {drop_id} already in history, skipping.")
-            return
+            return self._save() if self._dirty else True
 
         # Collect reward names; fall back gracefully if the API shape differs
         benefits: list[str] = []
@@ -106,8 +109,10 @@ class DropHistory:
         }
 
         self._entries.append(entry)
-        self._save()
-        logger.info(f"Recorded drop: {entry['game']} — {entry['drop_name']}")
+        saved = self._save()
+        if saved:
+            logger.info(f"Recorded drop: {entry['game']} — {entry['drop_name']}")
+        return saved
 
     def get_entries(
         self,
@@ -234,7 +239,7 @@ class DropHistory:
         except (json.JSONDecodeError, OSError) as exc:
             logger.error(f"Failed to load drop history: {exc}")
 
-    def _save(self) -> None:
+    def _save(self) -> bool:
         """
         Write the current state to disk atomically.
         Writes to a .tmp file first, then renames it over the real file.
@@ -253,5 +258,9 @@ class DropHistory:
                 )
             # Atomic rename — on POSIX this is guaranteed by the OS
             tmp.replace(self._path)
+            self._dirty = False
+            return True
         except OSError as exc:
+            self._dirty = True
             logger.error(f"Failed to save drop history: {exc}")
+            return False

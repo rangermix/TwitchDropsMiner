@@ -151,6 +151,7 @@
             "ignored_keyword_reason": "Ігнорується через ключове слово: {keyword}",
             "ignored_precondition_reason": "Ігнорується, оскільки залежить від {drop}",
             "skipped_branch_reason": "Пропущено, оскільки від цього дропу не залежить жодна доступна для майнінгу нагорода.",
+            "reward_grants": "Отримано разів: {count}",
             "filters": {
                 "active": "Активні",
                 "not_linked": "Не пов'язані",

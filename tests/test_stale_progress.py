@@ -63,13 +63,13 @@ def mining_state():
         watching_channel=selected,
         request_games_update=MagicMock(),
         print=MagicMock(),
-        drop_history=MagicMock(),
+        drop_history=MagicMock(), inventory=[], wanted_games=[],
     )
     twitch.gui.broadcast_wanted_items_now = AsyncMock()
     campaign = make_campaign(twitch)
     channel.game = campaign.game
     twitch._drops = dict(campaign.timed_drops)
-    twitch._inventory_service = SimpleNamespace(get_active_campaign=lambda watched: campaign)
+    twitch._inventory_service = SimpleNamespace(get_active_campaign=lambda watched, **kw: campaign)
     return twitch, channel, campaign
 
 
@@ -265,7 +265,7 @@ async def test_repeated_claim_does_not_suppress_fresh_poll(mining_state):
 async def test_fallback_uses_only_unchanged_campaign_state(mining_state, response, change):
     twitch, channel, campaign = mining_state
     current = [campaign]
-    twitch._inventory_service.get_active_campaign = lambda watched: current[0]
+    twitch._inventory_service.get_active_campaign = lambda watched, **kw: current[0]
 
     async def observe(request):
         if change == "observation":

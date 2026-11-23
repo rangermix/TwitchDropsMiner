@@ -26,7 +26,9 @@ GAME = {"id": "1", "name": "Test Game"}
 
 def _client():
     game = Game(GAME)
-    campaign = SimpleNamespace(game=game, can_earn=lambda channel: True)
+    campaign = SimpleNamespace(
+        game=game, can_earn=lambda channel: True, can_progress_on=lambda channel: channel.drops_enabled,
+    )
     client = SimpleNamespace(
         gui=SimpleNamespace(channels=MagicMock()),
         gql_request=AsyncMock(),
@@ -497,7 +499,7 @@ async def test_discovery_removes_banned_topics_and_tasks_before_tracking_cap(
     client.wanted_games = [game]
     client.inventory = [SimpleNamespace(
         game=game, can_earn_within=lambda stamp: True, allowed_channels=[],
-        can_earn=lambda channel: True,
+        can_earn=lambda channel: True, can_progress_on=lambda channel: channel.drops_enabled,
     )]
     banned, allowed, extra = [_channel(client, index) for index in (1, 2, 3)]
     banned.viewers = 1000

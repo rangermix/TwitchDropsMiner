@@ -151,6 +151,7 @@
             "ignored_keyword_reason": "Ignoré à cause du mot-clé : {keyword}",
             "ignored_precondition_reason": "Ignoré car il dépend de {drop}",
             "skipped_branch_reason": "Passé car aucune récompense obtenable ne dépend de ce drop.",
+            "reward_grants": "Nombre d'obtentions : {count}",
             "filters": {
                 "active": "Actif",
                 "not_linked": "Non lié",

@@ -151,6 +151,7 @@
             "ignored_keyword_reason": "キーワードにより無視: {keyword}",
             "ignored_precondition_reason": "{drop} に依存するため無視",
             "skipped_branch_reason": "マイニング可能な報酬がこのドロップに依存していないためスキップ。",
+            "reward_grants": "獲得回数: {count}",
             "filters": {
                 "active": "アクティブ",
                 "not_linked": "未連携",

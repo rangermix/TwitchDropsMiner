@@ -24,6 +24,67 @@ query FollowedLiveChannels {
 }
 """
 
+# Open Reward Campaigns have no persisted hashes; the four queries below are plain inline queries.
+REWARD_CAMPAIGNS_QUERY = """
+query RewardCampaigns {
+    rewardCampaignsAvailableToUser {
+        id name status startsAt endsAt isSitewide
+        rewardGroups {
+            id
+            unlockRequirements { minuteWatchedGoal subsGoal }
+            categories { id displayName slug boxArtURL }
+            rewards { id name thumbnailImage { image1xURL } }
+        }
+    }
+}
+"""
+
+REWARD_PROGRESS_QUERY = """
+query RewardCampaignProgress {
+    currentUser {
+        inventory {
+            viewerRewardDropCampaignsInProgress {
+                id
+                rewardGroups { id self { status currentMinutesWatched grantCount nextEligibleAt } }
+            }
+        }
+    }
+}
+"""
+
+# `currentWindow` and `dropDetail.badge` are accepted under viewerRewardDropCampaignsInProgress
+# (live probe 2026-11-21). `dropDetail` is rejected on rewardCampaignsAvailableToUser rewards,
+# so badge info only exists once a campaign is in progress. These hints stay in their own
+# query so a future rejection only loses them and never the progress reading.
+REWARD_HINTS_QUERY = """
+query RewardCampaignHints {
+    currentUser {
+        inventory {
+            viewerRewardDropCampaignsInProgress {
+                rewardGroups {
+                    id
+                    self { currentWindow { expiresAt } }
+                    rewards { id dropDetail { badge { setID } } }
+                }
+            }
+        }
+    }
+}
+"""
+
+# After the final grant Twitch drops a campaign from viewerRewardDropCampaignsInProgress and
+# lists it here with status COMPLETED (live probe; no other status seen). Its own query, like
+# the hints, so a rejection only loses this list.
+REWARD_COMPLETED_QUERY = """
+query CompletedRewardCampaigns {
+    currentUser {
+        inventory {
+            completedRewardCampaigns { id status }
+        }
+    }
+}
+"""
+
 
 GQL_OPERATIONS: dict[str, GQLOperation] = {
     # returns stream information for a particular channel

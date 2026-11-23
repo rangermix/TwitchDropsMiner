@@ -17,6 +17,9 @@ class DropPolicyItem(Protocol):
     def name(self) -> str: ...
 
     @property
+    def ignore_name_aliases(self) -> Sequence[str]: ...
+
+    @property
     def is_claimed(self) -> bool: ...
 
     @property
@@ -75,13 +78,13 @@ class DropIgnorePolicy:
             seen.add(folded)
         return normalized
 
-    def matching_keyword(self, drop_name: str) -> str | None:
+    def matching_keyword(self, drop_name: str, *aliases: str) -> str | None:
         """Return the first configured case-insensitive substring match."""
-        folded_name = drop_name.casefold()
+        folded_names = [name.casefold() for name in (drop_name, *aliases)]
         for keyword, folded_keyword in zip(
             self.keywords, self._folded_keywords, strict=True
         ):
-            if folded_keyword in folded_name:
+            if any(folded_keyword in name for name in folded_names):
                 return keyword
         return None
 
@@ -93,7 +96,7 @@ class DropIgnorePolicy:
         for drop in drops:
             if drop.is_claimed:
                 continue
-            if (keyword := self.matching_keyword(drop.name)) is not None:
+            if (keyword := self.matching_keyword(drop.name, *drop.ignore_name_aliases)) is not None:
                 reasons[drop.id] = DropIgnoreReason("keyword", keyword)
 
         # Preconditions are AND-based. One ignored unclaimed prerequisite makes

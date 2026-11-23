@@ -13,6 +13,7 @@ from contextvars import ContextVar
 from itertools import chain
 from typing import TYPE_CHECKING, overload
 
+from src.config.constants import GQLOperation
 from src.exceptions import GQLException, MinerException
 from src.utils import ExponentialBackoff, RateLimiter
 
@@ -104,7 +105,11 @@ class GQLClient:
         RuntimeError
             If the retry loop is broken unexpectedly
         """
-        private = _private_discovery.get()
+        single_attempt = any(
+            isinstance(op, GQLOperation) and op.single_attempt
+            for op in (ops if isinstance(ops, list) else [ops])
+        )
+        private = _private_discovery.get() or single_attempt
         if not private:
             gql_logger.debug("GQL Request: %s", ops)
         backoff = ExponentialBackoff(maximum=60)
@@ -118,12 +123,16 @@ class GQLClient:
                 if auth_state.browser_active is True:
                     browser = auth_state._twitch._browser
                     assert browser is not None
-                    response_json = await browser.gql(ops)
+                    if single_attempt:
+                        response_json = await browser.gql(ops, single_attempt=True)
+                    else:
+                        response_json = await browser.gql(ops)
                 else:
                     async with self.http_client.request(
                         "POST",
                         "https://gql.twitch.tv/gql",
                         json=ops,
+                        single_attempt=single_attempt,
                         headers=auth_state.headers(user_agent=self._client_type.USER_AGENT, gql=True),
                     ) as response:
                         response_json = await response.json()
@@ -134,6 +143,12 @@ class GQLClient:
 
             # Normalize to list for unified error handling
             response_list = response_json if isinstance(response_json, list) else [response_json]
+
+            if single_attempt:
+                if any(not isinstance(row, dict) or row.get("errors") or row.get("error")
+                       for row in response_list):
+                    raise GQLException("Mutation response was not confirmed")
+                return orig_response
 
             force_retry: bool = False
             for response_json in response_list:

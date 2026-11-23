@@ -151,6 +151,7 @@
             "ignored_keyword_reason": "Anahtar kelime nedeniyle yoksayıldı: {keyword}",
             "ignored_precondition_reason": "{drop} drop'una bağlı olduğu için yoksayıldı",
             "skipped_branch_reason": "Madenciliği yapılabilir hiçbir ödül bu drop'a bağlı olmadığı için atlandı.",
+            "reward_grants": "Kazanılma sayısı: {count}",
             "filters": {
                 "active": "Aktif",
                 "not_linked": "Bağlı Değil",

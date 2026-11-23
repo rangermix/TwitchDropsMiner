@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timedelta, timezone
 from functools import partial
 from time import monotonic, time
-from typing import TYPE_CHECKING, Any, Final, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal, overload
 from uuid import uuid4
 
 import aiohttp
@@ -36,9 +36,10 @@ from src.exceptions import (
 from src.i18n import _
 from src.models.campaign import DropsCampaign
 from src.models.channel import Channel
+from src.models.reward_campaign import RewardCampaign
 from src.services.channel_service import ChannelService
 from src.services.game_order import TemporaryGameOrder
-from src.services.inventory_service import InventoryService
+from src.services.inventory_service import REWARD_ERRORS, InventoryService
 from src.services.maintenance import MaintenanceService
 from src.services.message_handlers import MessageHandlerService
 from src.services.release_service import ReleaseService
@@ -61,6 +62,7 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("TwitchDrops")
+REWARD_DIRECTORY_TIMEOUT = 5
 gql_logger = logging.getLogger("TwitchDrops.gql")
 
 
@@ -750,13 +752,17 @@ class Twitch:
                 # NOTE: we consider only campaigns that can be progressed
                 # NOTE: we use another set so that we can set them online separately
                 no_acl: set[Game] = set()
+                flagless: set[Game] = set()
                 acl_channels: set[Channel] = set()
                 next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
                 for campaign in self.inventory:
                     if campaign.game in self.wanted_games and campaign.can_earn_within(next_hour):
                         if campaign.allowed_channels:
                             acl_channels.update(campaign.allowed_channels)
+                        elif isinstance(campaign, RewardCampaign):
+                            flagless.add(campaign.game)
                         else:
+                            # Only regular campaigns need the drops-enabled lookup.
                             no_acl.add(campaign.game)
                 # remove all ACL channels that already exist from the other set
                 acl_channels.difference_update(new_channels)
@@ -767,7 +773,32 @@ class Twitch:
                 for game in no_acl:
                     # for every campaign without an ACL, for it's game,
                     # add a list of live channels with drops enabled
-                    new_channels.update(await self.get_live_streams(game, drops_enabled=True))
+                    found = await self.get_live_streams(game, drops_enabled=True)
+                    # A channel kept from a fetch without the drops filter has the same
+                    # broadcast: record that drops are enabled, keeping the old object.
+                    kept = {channel: channel for channel in new_channels}
+                    for channel in found:
+                        old = kept.get(channel)
+                        if (
+                            old is not None and old._stream is not None
+                            and old._stream == channel._stream and old._stream.game == game
+                        ):
+                            old._stream.drops_enabled = True
+                    new_channels.update(found)
+                for game in flagless:
+                    # Reward campaigns progress on any live channel in the category. Added
+                    # after the lookup above, so a drops-enabled Channel is kept (set.update
+                    # leaves an equal existing element in place).
+                    try:
+                        found = await asyncio.wait_for(
+                            self.get_live_streams(game, drops_enabled=False), timeout=REWARD_DIRECTORY_TIMEOUT
+                        )
+                    except ExitRequest:
+                        raise
+                    except REWARD_ERRORS:
+                        logger.warning("Open Reward Campaign channel directory is unavailable")
+                        continue
+                    new_channels.update(found)
                 # Optional: followed channels outside each game's top directory results.
                 known_ids = {channel.id for channel in new_channels}
                 if (watched := self.watching_channel.get_with_default(None)) is not None:
@@ -793,8 +824,7 @@ class Twitch:
                 ordered_channels: list[Channel] = sorted(
                     unbanned_channels, key=ChannelService.get_viewers_key, reverse=True
                 )
-                ordered_channels.sort(key=lambda ch: ch.acl_based, reverse=True)
-                ordered_channels.sort(key=self._channel_service.get_mining_priority)
+                ordered_channels.sort(key=self._channel_service.get_selection_priority)
                 self._channel_service.prioritize_followed(ordered_channels)
                 # ensure that we won't end up with more channels than we can handle
                 # NOTE: we trim from the end because that's where the non-priority,
@@ -907,7 +937,7 @@ class Twitch:
                             self.exit_manual_mode("No channels available for manual game")
                 # Auto-select best channel based on priority, also right after manual mode ends
                 if new_watching is None and not self.is_manual_mode():
-                    ordered = sorted(channels.values(), key=self._channel_service.get_mining_priority)
+                    ordered = sorted(channels.values(), key=self._channel_service.get_selection_priority)
                     self._channel_service.prioritize_followed(ordered)
                     for channel in ordered:
                         if self.can_watch(channel) and self.should_switch(channel):
@@ -1051,6 +1081,12 @@ class Twitch:
         """Get authentication state (validates token if needed)."""
         await self._auth_state.validate()
         return self._auth_state
+
+    @overload
+    async def gql_request(self, ops: GQLRequest) -> JsonType: ...
+
+    @overload
+    async def gql_request(self, ops: list[GQLRequest]) -> list[JsonType]: ...
 
     async def gql_request(self, ops: GQLRequest | list[GQLRequest]) -> JsonType | list[JsonType]:
         """

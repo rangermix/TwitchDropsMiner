@@ -21,6 +21,7 @@ from src.config.operations import FOLLOWED_LIVE_QUERY
 from src.config.reward_priority import RewardPriority
 from src.exceptions import ExitRequest, GQLException, MinerException
 from src.models.channel import Channel
+from src.models.reward_campaign import RewardCampaign
 from src.services.game_order import TemporaryGameOrder
 from src.utils import chunk
 
@@ -127,6 +128,25 @@ class ChannelService:
             return key
         return (self._manual_rank(channel, order), *key)
 
+    def get_selection_priority(self, channel: Channel) -> tuple[tuple[float, ...], bool, int]:
+        """Mining priority, then ACL channels, then channels that progress more wanted campaigns.
+
+        In a game with a reward and a regular campaign, a channel without the drops flag
+        progresses only the reward campaign, so a drops-enabled channel goes first.
+        """
+        earnable = [
+            campaign for campaign in self._twitch.inventory
+            if campaign.game in self._twitch.wanted_games and campaign.can_earn(channel)
+        ]
+        # Only a reward campaign makes flagless channels watchable, so other games keep
+        # their viewer order.
+        progressable = (
+            sum(campaign.can_progress_on(channel) for campaign in earnable)
+            if any(isinstance(campaign, RewardCampaign) for campaign in earnable)
+            else 0
+        )
+        return (self.get_mining_priority(channel), not channel.acl_based, -progressable)
+
     def prioritize_followed(self, channels: list[Channel]) -> None:
         """Promote follows within matching priority, ACL and eligible-drop groups."""
         if not self._follow_tie_break():
@@ -163,7 +183,7 @@ class ChannelService:
             (campaign.id, drop.id)
             for campaign in self._twitch.inventory
             if campaign.game in self._twitch.wanted_games
-            and (campaign.game.is_special() or channel.drops_enabled)
+            and campaign.can_progress_on(channel)
             for drop in campaign.mineable_watch_drops
             if drop.can_earn(channel)
         )
@@ -258,7 +278,7 @@ class ChannelService:
         return min(
             (order.rank(campaign.game.name) for campaign in self._twitch.inventory
              if campaign.game in wanted and campaign.can_earn(channel)
-             and (campaign.game.is_special() or channel.drops_enabled)),
+             and campaign.can_progress_on(channel)),
             default=order.rank(None),
         )
 
@@ -275,7 +295,7 @@ class ChannelService:
             if channel.online and not channel.banned
             and campaign.game in self._twitch.wanted_games
             and campaign.can_earn(channel)
-            and (campaign.game.is_special() or channel.drops_enabled)]
+            and campaign.can_progress_on(channel)]
         selected = [campaign for campaign in candidates if campaign.game.name.lower() in selected_names]
         tier = 0 if not fallback or selected else 1
         if not policy.enabled:

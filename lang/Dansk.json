@@ -151,6 +151,7 @@
             "ignored_keyword_reason": "Ignoreret på grund af nøgleordet: {keyword}",
             "ignored_precondition_reason": "Ignoreret, fordi dette drop afhænger af {drop}",
             "skipped_branch_reason": "Sprunget over, fordi ingen drop, der kan optjenes, afhænger af dette drop.",
+            "reward_grants": "Antal gange optjent: {count}",
             "filters": {
                 "active": "Aktiv",
                 "not_linked": "Ikke forbundet",
