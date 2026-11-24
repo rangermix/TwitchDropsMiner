@@ -1,5 +1,6 @@
 """Container Firefox login stays manual, isolated and verified before capture."""
 
+import asyncio
 import json
 import os
 from pathlib import Path
@@ -24,7 +25,7 @@ async def test_firefox_profile_disables_password_saving_before_login(tmp_path, m
             owned.append(path)
 
     monkeypatch.setattr("src.auth.container_login.BrowserIsolation", Isolation)
-    browser = LoginFirefox({})
+    browser = LoginFirefox({}, "firefox")
     browser.executable = "firefox"
 
     async def launch():
@@ -48,7 +49,7 @@ async def test_firefox_manual_login_has_no_automation_and_runs_as_browser_uid(tm
     launch = AsyncMock(return_value=process)
     monkeypatch.setattr("asyncio.create_subprocess_exec", launch)
     monkeypatch.setattr("src.auth.container_login.loopback_port", lambda: 12345)
-    browser = LoginFirefox({"DISPLAY": ":private"})
+    browser = LoginFirefox({"DISPLAY": ":private"}, "firefox")
     browser.profile, browser.executable = tmp_path, "firefox"
     browser.isolation = SimpleNamespace(options={"user": 10001, "group": 10001, "extra_groups": []})
     browser.check_ready = AsyncMock()
@@ -73,7 +74,7 @@ async def test_firefox_manual_login_has_no_automation_and_runs_as_browser_uid(tm
     {"moz:profile": None}, {"browserVersion": "142.0"}, {"browserVersion": "unknown"},
 ])
 def test_firefox_rejects_foreign_capture_or_unsupported_protocol(tmp_path, change):
-    browser = LoginFirefox({})
+    browser = LoginFirefox({}, "firefox")
     browser.profile, browser.process = tmp_path, SimpleNamespace(pid=123)
     capabilities = {"moz:processID": 123, "moz:profile": str(tmp_path), "browserVersion": "160.0"}
     browser.require_owner({"capabilities": capabilities})
@@ -90,7 +91,7 @@ def test_firefox_rejects_foreign_capture_or_unsupported_protocol(tmp_path, chang
     ("empty", "LOGIN_MISSING"), ("malformed", "BROWSER_PROTOCOL"), ("crash", "BROWSER_START"),
 ])
 async def test_firefox_capture_waits_for_normal_close_and_requires_twitch_cookie(tmp_path, monkeypatch, fault, code):
-    browser = LoginFirefox({})
+    browser = LoginFirefox({}, "firefox")
     browser.profile = tmp_path
     browser.process = SimpleNamespace(wait=AsyncMock(return_value=1 if fault == "crash" else 0))
     cookie = {"name": "auth-token", "domain": "evil.invalid" if fault == "foreign" else ".twitch.tv",
@@ -119,8 +120,8 @@ async def test_firefox_capture_waits_for_normal_close_and_requires_twitch_cookie
 
 
 @pytest.mark.asyncio
-async def test_firefox_cleanup_removes_profile_and_closes_protocol_on_stop_failure(tmp_path, monkeypatch):
-    browser = LoginFirefox({})
+async def test_firefox_closes_protocol_on_stop_failure(tmp_path, monkeypatch):
+    browser = LoginFirefox({}, "firefox")
     browser.profile = tmp_path
     browser.remote = SimpleNamespace(close=AsyncMock())
     browser.http = SimpleNamespace(close=AsyncMock())
@@ -133,12 +134,52 @@ async def test_firefox_cleanup_removes_profile_and_closes_protocol_on_stop_failu
     assert browser.remote is browser.http is None
 
 
-@pytest.mark.parametrize("firefox", [None, "/usr/bin/firefox"])
-def test_default_login_prefers_installed_firefox_without_changing_chromium_fallback(monkeypatch, firefox):
+@pytest.mark.asyncio
+@pytest.mark.parametrize("versions,selected", [
+    ({}, "chromium"),
+    ({"firefox": (b"Mozilla Firefox 143.0", 0)}, "firefox"),
+    ({"firefox-esr": (b"Mozilla Firefox 153.4.0esr", 0)}, "firefox-esr"),
+    ({"firefox": (b"Mozilla Firefox 140.3.0esr", 0)}, "chromium"),
+    ({"firefox": (b"Mozilla Firefox 140.3.0esr", 0), "firefox-esr": (b"Mozilla Firefox 153.4.0esr", 0)}, "firefox-esr"),
+    ({"firefox": (b"Mozilla Firefox 143.0", 1)}, "chromium"),
+    ({"firefox": (b"unexpected output", 0)}, "chromium"),
+])
+async def test_login_selects_supported_firefox_before_displaying_sign_in(monkeypatch, versions, selected):
     monkeypatch.setattr("src.auth.container_login.shutil.which",
-                        lambda command: firefox if command in ("firefox", "firefox-esr") else "/usr/bin/chromium")
-    browser = create_login_browser({"DISPLAY": ":private"})
-    assert type(browser) is (LoginFirefox if firefox else LoginChromium)
+                        lambda command: f"/usr/bin/{command}" if command in (*versions, "chromium") else None)
+    options = {"user": 10001, "group": 10001, "extra_groups": []}
+    monkeypatch.setattr("src.auth.container_login.BrowserIsolation", lambda: SimpleNamespace(options=options))
+    environment = {"DISPLAY": ":private"}
+
+    async def launch(executable, flag, **kwargs):
+        assert flag == "--version" and kwargs["env"] == environment
+        assert {key: kwargs[key] for key in options} == options
+        output, returncode = versions[Path(executable).name]
+        return SimpleNamespace(communicate=AsyncMock(return_value=(output, b"")), returncode=returncode)
+
+    probe = AsyncMock(side_effect=launch)
+    monkeypatch.setattr("asyncio.create_subprocess_exec", probe)
+    browser = await create_login_browser(environment)
+    assert browser.executable == f"/usr/bin/{selected}"
+    assert type(browser) is (LoginChromium if selected == "chromium" else LoginFirefox)
+    if not versions:
+        probe.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("interruption", [TimeoutError, asyncio.CancelledError])
+async def test_interrupted_firefox_version_probe_drains_group_after_leader_exits(monkeypatch, interruption):
+    process = SimpleNamespace(communicate=AsyncMock(side_effect=interruption), returncode=0)
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", AsyncMock(return_value=process))
+    stop = AsyncMock()
+    monkeypatch.setattr("src.auth.container_login.OwnedChromium.finish_stop", stop)
+    probe = LoginFirefox.supports("firefox", {}, SimpleNamespace(options={}))
+    if interruption is TimeoutError:
+        assert not await probe
+    else:
+        with pytest.raises(asyncio.CancelledError):
+            await probe
+    stop.assert_awaited_once_with(process)
 
 
 def test_standard_image_includes_firefox_and_chromium():

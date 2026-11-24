@@ -563,17 +563,19 @@ progress to an ignored drop while the miner intentionally targets another reward
 
 ### Authentication and integrated browser login
 
-- Current source builds prefer `LoginFirefox` when Firefox is installed; Alpine
+- Current source builds prefer `LoginFirefox` when Firefox 143 or newer is available.
+  Check the version under the browser UID before opening the sign-in window. Alpine
   Chromium can reject fresh Twitch login as unsupported. The image includes both:
-  Firefox handles manual sign-in, Chromium retains SDK issuance/renewal. Firefox
-  uses a private profile with password saving disabled and runs as `tdm-browser`.
+  Firefox handles manual sign-in, Chromium retains SDK issuance and renewal over a
+  private pipe on POSIX. Firefox runs with a private profile and password saving
+  disabled as `tdm-browser`.
   Do not enable BiDi/Marionette during sign-in. Manual Finish/window close flushes
   the profile before reopening it with loopback BiDi; validate both PID and profile
   from `session.new` before reading cookies, then use the shared `FirefoxExporter`
   and all existing account/catalog/server-issuance checks. Firefox requires manual
   Finish; preserve Chromium's completion extension for the fallback path. Keep
-  profile/process/protocol cleanup cancellation-safe. Source hosts without Firefox
-  retain Chromium login. Regression: `tests/test_container_firefox.py`.
+  profile/process/protocol cleanup cancellation-safe. Source hosts without a compatible
+  Firefox retain Chromium login. Regression: `tests/test_container_firefox.py`.
 - The temporary interactive Chromium profile disables password saving before startup.
   Its bundled completion extension observes only Twitch login-cookie presence, closes
   the owned profile's windows normally, and never exports cookie values. Treat this as

@@ -5,10 +5,11 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import shutil
 import socket
 import tempfile
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from pathlib import Path
 from typing import Any
@@ -357,11 +358,33 @@ class LoginChromium:
 class LoginFirefox(LoginChromium):
     """Manual Firefox sign-in, followed by owned BiDi capture after normal close."""
 
-    def __init__(self, environment: dict[str, str]):
+    MIN_MAJOR = 143
+
+    def __init__(self, environment: dict[str, str], executable: str):
         super().__init__(environment)
-        self.executable = shutil.which("firefox") or shutil.which("firefox-esr")
+        self.executable = executable
         self.http: aiohttp.ClientSession | None = None
         self.remote: DevToolsConnection | None = None
+
+    @classmethod
+    async def supports(cls, executable: str, environment: dict[str, str], isolation: BrowserIsolation) -> bool:
+        try:
+            process = await asyncio.create_subprocess_exec(
+                executable, "--version", env=environment, start_new_session=True,
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL, **isolation.options,
+            )
+        except OSError:
+            return False
+        try:
+            output, _ = await asyncio.wait_for(process.communicate(), 5)
+        except TimeoutError:
+            await OwnedChromium.finish_stop(process)
+            return False
+        except asyncio.CancelledError:
+            await OwnedChromium.finish_stop(process)
+            raise
+        version = re.search(rb"(?m)^Mozilla Firefox ([0-9]+)(?:\.|\s|$)", output)
+        return process.returncode == 0 and version is not None and int(version[1]) >= cls.MIN_MAJOR
 
     def prepare_profile(self) -> None:
         assert self.profile is not None and self.isolation is not None
@@ -408,7 +431,7 @@ class LoginFirefox(LoginChromium):
                 or Path(capabilities["moz:profile"]).resolve() != self.profile.resolve()):
             raise SessionError("BROWSER_OWNER")
         version = str(capabilities.get("browserVersion", "")).split(".")[0]
-        if not version.isdecimal() or int(version) < 143:
+        if not version.isdecimal() or int(version) < self.MIN_MAJOR:
             raise SessionError("BROWSER_START")
 
     async def check_ready(self) -> None:
@@ -456,17 +479,22 @@ class LoginFirefox(LoginChromium):
                 self.http = None
 
 
-def create_login_browser(environment: dict[str, str]) -> LoginChromium:
-    """Prefer Firefox for fresh login; Chromium remains the renewal browser."""
-    firefox = LoginFirefox(environment)
-    return firefox if firefox.executable else LoginChromium(environment)
+async def create_login_browser(environment: dict[str, str]) -> LoginChromium:
+    """Choose a compatible sign-in browser before asking for credentials."""
+    isolation = BrowserIsolation()
+    for command in ("firefox", "firefox-esr"):
+        executable = shutil.which(command)
+        if executable and await LoginFirefox.supports(executable, environment, isolation):
+            return LoginFirefox(environment, executable)
+    return LoginChromium(environment)
 
 
 class ContainerLogin:
     """One shared temporary login attempt, automatically replaced by verified mining."""
 
     def __init__(self, controller: SessionController, *, on_change: Callable[[], None] = lambda: None,
-                 desktop_factory: Callable = ContainerDesktop, browser_factory: Callable = create_login_browser):
+                 desktop_factory: Callable = ContainerDesktop,
+                 browser_factory: Callable[[dict[str, str]], Awaitable[LoginChromium]] = create_login_browser):
         self.controller, self.on_change = controller, on_change
         self.desktop_factory, self.browser_factory = desktop_factory, browser_factory
         self.state, self.attempt = "idle", 0
@@ -508,7 +536,7 @@ class ContainerLogin:
         try:
             async with self.desktop_factory() as desktop:
                 self.desktop = desktop
-                async with self.browser_factory(desktop.environment) as browser:
+                async with await self.browser_factory(desktop.environment) as browser:
                     self.browser = browser
                     try:
                         self.change("sign_in")
