@@ -46,7 +46,8 @@ STREAK_SHARE_ATTEMPTS = 2
 STREAK_SHARE_TIMEOUT = 30
 # visits kept (and saved); twice the idle list's 20-login cap, oldest dropped first
 IDLE_VISITS_KEPT = 40
-# used-up share keys saved, oldest dropped first; a streak's count rises once per stream
+# share keys saved (used up, or refused with their try count), oldest dropped first; a streak's
+# count rises once per stream
 IDLE_SHARES_KEPT = 100
 # raw queries with an operation name, which must match the name inside the query
 MILESTONES_OPERATION = "ViewerMilestones"
@@ -70,8 +71,9 @@ class Visit:
 class IdleWatchService:
     def __init__(self, twitch: Twitch, visits_path: Path | None = None) -> None:
         self._twitch = twitch
-        # visits_path keeps the finished visits and used-up share keys across restarts, with the
-        # account they belong to (None: not known yet, taken by the first account that idle watches)
+        # visits_path keeps the finished visits and the share keys (used up, or refused with their try
+        # count) across restarts, with the account they belong to (None: not known yet, taken by the
+        # first account that idle watches)
         self._visits_path = visits_path
         self._account: int | None = None
         # broadcast id -> channel id of finished visits
@@ -79,7 +81,8 @@ class IdleWatchService:
         # watch streak sharing: attempts per (milestone id, count); a key with all attempts used
         # is done (shared, or sent with an unknown outcome)
         self._share_tries: dict[tuple[str, int | None], int] = {}
-        # the file exists but could not be read: it is never written and no share is sent
+        # the file exists but could not be read or has a damaged share entry: it is never written
+        # and no share is sent
         self._load_failed = False
         self._load()
         # what the file holds; only a successful write updates it, so a failed one is retried
@@ -234,7 +237,7 @@ class IdleWatchService:
         return {"user_id": self._account, "visits": dict(self.visited), "shares": keys[-IDLE_SHARES_KEPT:]}
 
     def _save(self) -> bool:
-        """Write the account, visits and used-up share keys when they differ from the last successful write.
+        """Write the account, visits and share keys when they differ from the last successful write.
 
         True when the file holds them (or there is no file).
         """
