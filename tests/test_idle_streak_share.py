@@ -1,6 +1,7 @@
 """Idle watch: sharing watch streaks."""
 
 import asyncio
+import json
 import logging
 import time
 from types import SimpleNamespace
@@ -14,6 +15,7 @@ from src.api.http_client import HTTPClient
 from src.auth.session_bundle import SessionError
 from src.config import ClientType, State
 from src.exceptions import GQLException, MinerException, RequestException
+from src.services import idle_watch as idle_mod
 from src.services.idle_watch import (
     STREAK_SHARE_ATTEMPTS,
     STREAK_SHARE_CHECK_SECONDS,
@@ -56,7 +58,7 @@ def make_gql(reads, shares=None):
     return AsyncMock(side_effect=gql)
 
 
-def setup(rows=None, *, share=True, active=True, gql=None, online=True):
+def setup(rows=None, *, share=True, active=True, gql=None, online=True, visits_path=None):
     channel = SimpleNamespace(id=123, name="A", login="a", online=online, banned=False)
     tw = SimpleNamespace(
         channels={123: channel},
@@ -67,7 +69,7 @@ def setup(rows=None, *, share=True, active=True, gql=None, online=True):
         can_watch=MagicMock(return_value=False),
         is_mining_time=MagicMock(return_value=True),
     )
-    svc = IdleWatchService(tw)
+    svc = IdleWatchService(tw, visits_path)
     svc._task = MagicMock(done=lambda: not active)
     svc.poke = MagicMock()
     return svc, tw
@@ -669,3 +671,60 @@ async def test_a_refusal_of_a_missing_value_does_not_block_the_count():
     svc._share_checked -= STREAK_SHARE_CHECK_SECONDS
     await svc.share_streaks()
     assert len(shares(tw)) == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("restart", [True, False], ids=["restart", "reset"])
+async def test_unknown_outcome_share_is_not_resent_after_a_restart_or_reset(tmp_path, restart):
+    # a timed-out share may have been posted; the next run reads the milestone as shareable again
+    path = tmp_path / "idle_visits.json"
+    gql = make_gql([read([milestone()])], [TimeoutError()])
+    svc, tw = setup(gql=gql, visits_path=path)
+    await svc.share_streaks()
+    if restart:
+        svc, _ = setup(gql=gql, visits_path=path)
+    else:
+        svc.reset()
+    await svc.share_streaks()
+    assert len(shares(tw)) == 1
+    assert len(reads(tw)) == 2
+
+
+@pytest.mark.asyncio
+async def test_share_key_is_saved_before_the_share_is_sent(tmp_path):
+    # a crash during the request must not lose the record of the share
+    path = tmp_path / "idle_visits.json"
+    on_disk = []
+
+    async def gql(op):
+        if isinstance(op, list):
+            return [read([milestone()])]
+        on_disk.append(json.loads(path.read_text(encoding="utf-8"))["shares"])
+        return share_ok()
+
+    svc, _ = setup(gql=AsyncMock(side_effect=gql), visits_path=path)
+    await svc.share_streaks()
+    assert on_disk == [[["m1", 9]]]
+
+
+@pytest.mark.asyncio
+async def test_refused_share_is_removed_from_the_file(tmp_path):
+    path = tmp_path / "idle_visits.json"
+    svc, tw = setup(gql=make_gql([read([milestone()])], [REFUSED, SHARE_OK]), visits_path=path)
+    await svc.share_streaks()
+    assert json.loads(path.read_text(encoding="utf-8"))["shares"] == []
+    restarted, _ = setup(gql=tw.gql_request, visits_path=path)
+    await restarted.share_streaks()
+    assert len(shares(tw)) == 2  # the refused share keeps its second try across the restart
+
+
+def test_saved_share_keys_are_capped_oldest_first(tmp_path):
+    path = tmp_path / "idle_visits.json"
+    svc, _ = setup(visits_path=path)
+    for n in range(idle_mod.IDLE_SHARES_KEPT + 5):
+        svc._share_tries[(f"m{n}", n)] = STREAK_SHARE_ATTEMPTS
+    svc._share_tries[("refused", 1)] = 1
+    svc._save()
+    saved = json.loads(path.read_text(encoding="utf-8"))["shares"]
+    assert len(saved) == idle_mod.IDLE_SHARES_KEPT
+    assert saved[0] == ["m5", 5] and saved[-1] == [f"m{idle_mod.IDLE_SHARES_KEPT + 4}", idle_mod.IDLE_SHARES_KEPT + 4]

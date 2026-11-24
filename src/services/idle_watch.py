@@ -44,6 +44,8 @@ STREAK_SHARE_ATTEMPTS = 2
 STREAK_SHARE_TIMEOUT = 30
 # visits kept (and saved); twice the idle list's 20-login cap, oldest dropped first
 IDLE_VISITS_KEPT = 40
+# used-up share keys saved, oldest dropped first; a streak's count rises once per stream
+IDLE_SHARES_KEPT = 100
 # raw queries with an operation name, which must match the name inside the query
 MILESTONES_OPERATION = "ViewerMilestones"
 MILESTONES_QUERY = (
@@ -66,10 +68,19 @@ class Visit:
 class IdleWatchService:
     def __init__(self, twitch: Twitch, visits_path: Path | None = None) -> None:
         self._twitch = twitch
-        # broadcast id -> channel id of finished visits, kept across restarts in visits_path
+        # visits_path keeps the finished visits and used-up share keys across restarts, with the
+        # account they belong to (None: not known yet, taken by the first account that idle watches)
         self._visits_path = visits_path
-        self.visited: dict[int, int] = self._load_visits()
-        self._saved_visits = dict(self.visited)
+        self._account: int | None = None
+        # broadcast id -> channel id of finished visits
+        self.visited: dict[int, int] = {}
+        # watch streak sharing: attempts per (milestone id, count); a key with all attempts used
+        # is done (shared, or sent with an unknown outcome)
+        self._share_tries: dict[tuple[str, int | None], int] = {}
+        self._load()
+        # what the file holds; only a successful write updates it, so a failed one is retried
+        self._saved = self._payload()
+        self._save_failed = False
         self.visit: Visit | None = None
         # when the loop last stopped, so a visit does not count the time spent mining drops
         self._paused_at: float | None = None
@@ -87,9 +98,7 @@ class IdleWatchService:
         self._claiming: set[str] = set()
         # the last claim on the watched channel failed; the tick reads its points again
         self._claim_failed = False
-        # watch streak sharing: attempts per (milestone id, count), last read, early-check request;
-        # a key with all attempts used is done (shared, or sent with an unknown outcome)
-        self._share_tries: dict[tuple[str, int | None], int] = {}
+        # watch streak share check: last read, early-check request
         self._share_checked: float | None = None
         self._share_now = False
         # the channel the loop chose to watch, and the visit it last announced
@@ -126,20 +135,17 @@ class IdleWatchService:
             self._paused_at = time.monotonic()
 
     def reset(self) -> None:
-        """Forget the previous account's visits, balances, claims and lookups."""
-        self.visited.clear()
-        self._saved_visits = {}
-        if self._visits_path is not None:
-            try:
-                self._visits_path.unlink(missing_ok=True)
-            except OSError as exc:
-                logger.warning("Idle visits file could not be removed (%s)", type(exc).__name__)
+        """Forget the session's balances, claims and lookups on an auth change.
+
+        Visits and share keys stay: they belong to an account, and the next idle entry drops them
+        when another account logged in (see _use_account).
+        """
         self.visit = None
         self._last_visit = None
         self._paused_at = None
         self.balances.clear()
         self._claimed.clear()
-        self._share_tries.clear()
+        self._claim_failed = False
         self._share_checked = None
         self._share_now = False
         self._skipped.clear()
@@ -149,36 +155,71 @@ class IdleWatchService:
     def poke(self) -> None:
         self._wake.set()
 
-    def _load_visits(self) -> dict[int, int]:
-        """The saved visits; a missing file is empty, an unreadable one is empty with a warning."""
+    def _load(self) -> None:
+        """Read the saved account, visits and share keys; a missing file is empty, an unreadable one
+        is empty with a warning."""
         if self._visits_path is None:
-            return {}
+            return
         try:
             raw = json.loads(self._visits_path.read_text(encoding="utf8"))
             if not isinstance(raw, dict):
                 raise ValueError
+            # a file from before the account and shares were kept holds the visits alone
+            account, saved, keys = (
+                (raw.get("user_id"), raw["visits"], raw.get("shares", [])) if "visits" in raw else (None, raw, [])
+            )
+            if account is not None and (type(account) is not int or account <= 0):
+                raise ValueError
+            if not isinstance(saved, dict) or not isinstance(keys, list):
+                raise ValueError
             visits = {}
-            for broadcast, channel_id in raw.items():
+            for broadcast, channel_id in saved.items():
                 if not (broadcast.isascii() and broadcast.isdigit()) or type(channel_id) is not int:
                     raise ValueError
                 visits[int(broadcast)] = channel_id
+            tries: dict[tuple[str, int | None], int] = {}
+            for key in keys:
+                if not (
+                    type(key) is list and len(key) == 2 and type(key[0]) is str and key[0]
+                    and (key[1] is None or type(key[1]) is int)
+                ):
+                    raise ValueError
+                tries[(key[0], key[1])] = STREAK_SHARE_ATTEMPTS
         except FileNotFoundError:
-            return {}
+            return
         except (OSError, ValueError) as exc:
             # exception type only: the file is not echoed into the log
             logger.warning("Idle visits file unreadable (%s), starting empty", type(exc).__name__)
-            return {}
-        return visits
-
-    def _save_visits(self) -> None:
-        """Write the visits when they changed since the last write (or failed write)."""
-        if self._visits_path is None or self.visited == self._saved_visits:
             return
-        self._saved_visits = dict(self.visited)
+        self._account, self.visited, self._share_tries = account, visits, tries
+
+    def _payload(self) -> dict[str, object]:
+        used = [[mid, value] for (mid, value), tries in self._share_tries.items() if tries >= STREAK_SHARE_ATTEMPTS]
+        return {"user_id": self._account, "visits": dict(self.visited), "shares": used[-IDLE_SHARES_KEPT:]}
+
+    def _save(self) -> None:
+        """Write the account, visits and used-up share keys when they differ from the last successful write."""
+        payload = self._payload()
+        if self._visits_path is None or payload == self._saved:
+            return
         try:
-            json_save(self._visits_path, self.visited)
+            json_save(self._visits_path, payload)
         except OSError as exc:
-            logger.warning("Idle visits could not be saved (%s)", type(exc).__name__)
+            # once per failing streak: the next tick tries again
+            if not self._save_failed:
+                logger.warning("Idle visits could not be saved (%s)", type(exc).__name__)
+            self._save_failed = True
+            return
+        self._saved, self._save_failed = payload, False
+
+    def _use_account(self, account: int | None) -> None:
+        """Drop the visits and share keys of another account than the one logged in."""
+        if account is None or account == self._account:
+            return
+        if self._account is not None:
+            self.visited.clear()
+            self._share_tries.clear()
+        self._account = account
 
     def show_status(self) -> None:
         """Re-show "Idle watching <channel>" while the loop's channel is still watched."""
@@ -191,6 +232,7 @@ class IdleWatchService:
         # the last drop's progress panel does not belong to an idle channel
         tw.gui.clear_drop()
         self.watched = None
+        self._use_account(tw.logged_in_user_id())
         # each idle entry retries the logins the previous run gave up on
         self._skipped.clear()
         self._ban_ends.clear()
@@ -239,7 +281,7 @@ class IdleWatchService:
             # no response body: the exception type is enough to diagnose
             logger.warning("Idle channel lookup failed (%s), retrying", type(exc).__name__)
         channel = self.pick(self.live_channels(), time.monotonic())
-        self._save_visits()
+        self._save()
         if self._hand_to_drops(channel):
             # no watch, balance read or claim on a channel drops can use
             return True
@@ -448,8 +490,10 @@ class IdleWatchService:
         if self._share_done(milestone_id, value) or not self._may_share(channel):
             return False
         # Until a reply says Twitch refused it, the outcome is unknown and the share may be posted:
-        # all attempts are used before sending, so a failure, timeout or cancellation is never resent.
+        # all attempts are used and saved before sending, so a failure, timeout, cancellation or
+        # restart never resends it. A failed save still sends: the attempts in memory hold this run.
         self._share_tries[key] = STREAK_SHARE_ATTEMPTS
+        self._save()
         op = GQLRawQuery(
             SHARE_MILESTONE_MUTATION,
             {"input": {"channelID": str(channel.id), "milestoneID": milestone_id}},
@@ -471,6 +515,7 @@ class IdleWatchService:
         if isinstance(code, str) and code and result.get("milestone") is None:  # type: ignore[union-attr]
             # an error code and no milestone: Twitch refused it, so one more try in a later check is safe
             self._share_tries[key] = tries + 1
+            self._save()
             logger.warning("Watch streak share on %s was not accepted (%s)", channel.name, code)
             return True
         # anything but the shared milestone back is an unknown outcome: not resent, and not reported as shared

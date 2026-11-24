@@ -605,14 +605,16 @@ async def test_authentication_change_drains_idle_task_and_forgets_account_state(
     svc._skipped.add("x")
     svc._claimed.add("c")
     svc._seen_list = ["x"]
-    (tmp_path / "idle_visits.json").write_text('{"10": 1}', encoding="utf-8")
+    svc._share_tries[("m1", 9)] = idle_mod.STREAK_SHARE_ATTEMPTS
+    (tmp_path / "idle_visits.json").write_text('{"user_id": 1, "visits": {"10": 1}, "shares": []}', encoding="utf-8")
     async with client.authentication_change():
         assert cleaned.is_set() and task.done()
     assert not svc.active
-    assert (svc.balances, svc.visited, svc.visit, svc._skipped, svc._claimed, svc._seen_list) == (
-        {}, {}, None, set(), set(), None,
-    )
-    assert not (tmp_path / "idle_visits.json").exists()  # visits belong to the account
+    assert (svc.balances, svc.visit, svc._skipped, svc._claimed, svc._seen_list) == ({}, None, set(), set(), None)
+    # visits and shares stay with their account: the next idle entry drops them for another one
+    assert svc.visited == {10: 1}
+    assert svc._share_tries == {("m1", 9): idle_mod.STREAK_SHARE_ATTEMPTS}
+    assert (tmp_path / "idle_visits.json").exists()
 
 
 @pytest.mark.asyncio
@@ -990,12 +992,12 @@ async def test_visits_survive_a_restart_and_are_written_on_change_only(tmp_path,
     monkeypatch.setattr(idle_mod, "json_save", lambda *a, **k: (saves.append(a[1]), real_save(*a, **k)))
     a, b = visit_channels()
     svc, _ = run_service({1: a, 2: b}, idle=["a", "b"], visits_path=path)
-    await idle_entry(svc)  # visit of a starts: nothing visited yet
-    assert saves == []
+    await idle_entry(svc)  # visit of a starts: nothing visited yet, the file is bound to the account
+    assert json.loads(path.read_text(encoding="utf-8")) == {"user_id": 1, "visits": {}, "shares": []}
     svc.visit.done = True
     await idle_entry(svc, ticks=3)  # a visited, b's visit runs for three ticks
-    assert json.loads(path.read_text(encoding="utf-8")) == {"10": 1}
-    assert len(saves) == 1
+    assert json.loads(path.read_text(encoding="utf-8")) == {"user_id": 1, "visits": {"10": 1}, "shares": []}
+    assert len(saves) == 2
     restarted, _ = service({1: a, 2: b}, idle=["a", "b"], visits_path=path)
     assert restarted.visited == {10: 1}
     assert restarted.pick([a, b], 0) is b  # a's broadcast is not visited again after the restart
@@ -1003,6 +1005,10 @@ async def test_visits_survive_a_restart_and_are_written_on_change_only(tmp_path,
 
 @pytest.mark.parametrize("contents", [
     "not json", "[1, 2]", '{"x": 1}', '{"10": true}', '{"10": "1"}', '{"-1": 1}', bytes([0xFF, 0xFE]),
+    '{"visits": []}', '{"visits": {"x": 1}}', '{"visits": {}, "user_id": "1"}', '{"visits": {}, "user_id": true}',
+    '{"visits": {}, "user_id": 0}', '{"visits": {}, "shares": {}}', '{"visits": {}, "shares": [["m1"]]}',
+    '{"visits": {}, "shares": [["", 9]]}', '{"visits": {}, "shares": [["m1", "9"]]}',
+    '{"visits": {}, "shares": [["m1", true]]}', '{"visits": {}, "shares": [[1, 9]]}',
 ])
 def test_corrupt_visits_file_starts_empty_with_one_warning(tmp_path, caplog, contents):
     path = tmp_path / "idle_visits.json"
@@ -1025,13 +1031,46 @@ def test_missing_visits_file_starts_empty_without_a_warning(tmp_path, caplog):
     assert caplog.records == []
 
 
-def test_reset_removes_the_visits_file(tmp_path):
+def test_reset_keeps_the_accounts_visits_shares_and_file(tmp_path):
     path = tmp_path / "idle_visits.json"
-    path.write_text('{"10": 1}', encoding="utf-8")
+    path.write_text('{"user_id": 1, "visits": {"10": 1}, "shares": [["m1", 9], ["m2", null]]}', encoding="utf-8")
     svc, _ = service(visits_path=path)
     assert svc.visited == {10: 1}
+    attempts = idle_mod.STREAK_SHARE_ATTEMPTS
+    assert svc._share_tries == {("m1", 9): attempts, ("m2", None): attempts}
     svc.reset()
-    assert svc.visited == {} and not path.exists()
+    assert svc.visited == {10: 1} and path.exists()
+    assert svc._share_tries == {("m1", 9): attempts, ("m2", None): attempts}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("account,kept", [(1, True), (2, False)])
+async def test_visits_and_shares_are_kept_for_their_account_only(tmp_path, account, kept):
+    path = tmp_path / "idle_visits.json"
+    path.write_text('{"user_id": 1, "visits": {"10": 1}, "shares": [["m1", 9]]}', encoding="utf-8")
+    a, b = visit_channels()
+    svc, tw = run_service({1: a, 2: b}, idle=["a", "b"], visits_path=path)
+    tw.logged_in_user_id = lambda: account
+    await idle_entry(svc)
+    assert (10 in svc.visited) is kept
+    assert (("m1", 9) in svc._share_tries) is kept
+    assert tw._watching is (b if kept else a)  # a's broadcast was visited by account 1
+    saved = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+    if not kept:
+        assert saved == {"user_id": 2, "visits": {}, "shares": []}
+
+
+@pytest.mark.asyncio
+async def test_a_file_without_an_account_is_taken_by_the_first_account(tmp_path):
+    # files written before the account was stored hold the visits alone
+    path = tmp_path / "idle_visits.json"
+    path.write_text('{"10": 1}', encoding="utf-8")
+    a, b = visit_channels()
+    svc, tw = run_service({1: a, 2: b}, idle=["a", "b"], visits_path=path)
+    assert svc.visited == {10: 1}
+    await idle_entry(svc)
+    assert tw._watching is b
+    assert json.loads(path.read_text(encoding="utf-8")) == {"user_id": 1, "visits": {"10": 1}, "shares": []}
 
 
 def test_visited_stays_bounded_for_channels_that_left_the_list_while_untracked(tmp_path):
@@ -1064,3 +1103,24 @@ async def test_unwritable_visits_file_warns_and_keeps_idle_watching(tmp_path, mo
     assert warnings.count("Idle visits could not be saved (PermissionError)") == 1
     assert "secret path" not in caplog.text
     assert tw._watching is a
+
+
+@pytest.mark.asyncio
+async def test_failed_visits_save_is_retried_until_it_succeeds(tmp_path, monkeypatch, caplog):
+    path = tmp_path / "idle_visits.json"
+    real_save = idle_mod.json_save
+    failures = [PermissionError(), PermissionError()]
+
+    def flaky(*args, **kwargs):
+        if failures:
+            raise failures.pop(0)
+        real_save(*args, **kwargs)
+
+    monkeypatch.setattr(idle_mod, "json_save", flaky)
+    a, b = visit_channels()
+    svc, _ = run_service({1: a, 2: b}, idle=["a", "b"], visits_path=path)
+    svc.visited = {99: 7}
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        await idle_entry(svc, ticks=3)
+    assert caplog.messages.count("Idle visits could not be saved (PermissionError)") == 1
+    assert json.loads(path.read_text(encoding="utf-8"))["visits"] == {"99": 7}
