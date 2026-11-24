@@ -209,14 +209,11 @@ async def test_unexpected_points_error_is_logged_like_process_drops(caplog):
 
 
 @pytest.mark.asyncio
-async def test_raw_message_logged_once_at_debug_without_balance(caplog):
+async def test_points_message_is_not_logged(caplog):
     svc, _, _ = setup()
     with caplog.at_level(logging.DEBUG, logger="TwitchDrops"):
         await svc.process_points(1, earned("WATCH"))
-        await svc.process_points(1, earned("WATCH"))
-    raw = [r for r in caplog.records if r.levelno == logging.DEBUG and "points-earned" in r.getMessage()]
-    assert len(raw) == 1
-    assert "1510" not in raw[0].getMessage() and "WATCH" in raw[0].getMessage()
+    assert "points-earned" not in caplog.text and "1510" not in caplog.text
 
 
 @pytest.mark.asyncio

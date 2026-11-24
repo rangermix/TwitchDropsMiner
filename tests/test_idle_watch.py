@@ -23,7 +23,7 @@ from src.services.message_handlers import MessageHandlerService
 def fake(cid, broadcast, *, online=True, banned=False, login=None):
     return SimpleNamespace(
         id=cid, login=login or f"c{cid}", online=online, banned=banned, ban_expires_at=None,
-        _stream=SimpleNamespace(broadcast_id=broadcast),
+        broadcast_id=broadcast,
     )
 
 
@@ -38,6 +38,7 @@ def service(channels=None, idle=(), gql=None, visits_path=None):
         _message_handler_service=handlers,
         _channel_service=SimpleNamespace(filter_banned_channels=AsyncMock(side_effect=list)),
     )
+    twitch._add_channel_topics = lambda channels: Twitch._add_channel_topics(twitch, channels)
     return IdleWatchService(twitch, visits_path), twitch
 
 
@@ -183,7 +184,7 @@ async def test_banned_new_channel_is_not_added_and_gets_no_topics():
 def loop_service(live, *, mining=True, idle=("c1",)):
     svc, tw = service(idle=idle)
     tw.is_mining_time = MagicMock(side_effect=lambda: mining() if callable(mining) else mining)
-    tw._auth_state = SimpleNamespace(_logged_in=SimpleNamespace(is_set=lambda: True))
+    tw.logged_in_user_id = lambda: 1
     tw.watching_channel = SimpleNamespace(
         get_with_default=lambda d: tw._watching or d, set=lambda c: setattr(tw, "_watching", c),
     )
@@ -265,8 +266,8 @@ def client_stub(*, flag, mining=True, logged_in=True, idle=("c1",)):
     client._state = State.IDLE
     client._state_change = MagicMock()
     client._idle_watch_allowed = flag
-    client._idle_watch = MagicMock()
-    client._idle_watch.allowed.return_value = mining and logged_in and bool(idle)
+    client.idle_watch = MagicMock()
+    client.idle_watch.allowed.return_value = mining and logged_in and bool(idle)
     client.stop_watching = MagicMock()
     client.watching_channel = SimpleNamespace(get_with_default=lambda d: d)
     client.can_watch = MagicMock(return_value=False)
@@ -277,7 +278,7 @@ def client_stub(*, flag, mining=True, logged_in=True, idle=("c1",)):
 def test_idle_branch_enters_idle_watch_only_when_allowed(flag, ok):
     client = client_stub(flag=flag)
     client._idle_watch_step()
-    assert client._idle_watch.enter.called is ok
+    assert client.idle_watch.enter.called is ok
     assert client.stop_watching.called is (not ok)
 
 
@@ -285,14 +286,14 @@ def test_idle_branch_enters_idle_watch_only_when_allowed(flag, ok):
 def test_idle_branch_stops_when_a_condition_fails(kw):
     client = client_stub(flag=True, **kw)
     client._idle_watch_step()
-    client._idle_watch.enter.assert_not_called()
+    client.idle_watch.enter.assert_not_called()
     client.stop_watching.assert_called_once()
 
 
 def test_leaving_idle_stops_the_loop():
     client = client_stub(flag=True)
     client.change_state(State.INVENTORY_FETCH)
-    client._idle_watch.stop.assert_called_once()
+    client.idle_watch.stop.assert_called_once()
     assert client._idle_watch_allowed is False
     client.change_state(State.IDLE, idle_watch=True)
     assert client._idle_watch_allowed is True
@@ -315,29 +316,29 @@ def test_nothing_to_mine_entries_allow_idle_watch():
 def test_idle_channel_online_event_pokes():
     tw = MagicMock()
     tw.settings.idle_channels = ["c1"]
-    tw._idle_watch.active = True
+    tw.idle_watch.active = True
     tw.watching_channel.get_with_default.return_value = None
     tw.can_watch.return_value = False
     handler = MessageHandlerService(tw)
     listed = SimpleNamespace(login="c1", name="C1", display=MagicMock())
     other = SimpleNamespace(login="zz", name="ZZ", display=MagicMock())
     handler.on_channel_update(listed, None, object())
-    tw._idle_watch.poke.assert_called_once()
+    tw.idle_watch.poke.assert_called_once()
     handler.on_channel_update(other, None, object())
-    tw._idle_watch.poke.assert_called_once()
-    tw._idle_watch.active = False
+    tw.idle_watch.poke.assert_called_once()
+    tw.idle_watch.active = False
     handler.on_channel_update(listed, None, object())
-    tw._idle_watch.poke.assert_called_once()
+    tw.idle_watch.poke.assert_called_once()
 
 
 def test_idle_entry_without_flag_stops_a_running_loop():
     client = client_stub(flag=True)
     client.change_state(State.IDLE)
-    client._idle_watch.stop.assert_called_once()
-    client._idle_watch.stop.reset_mock()
+    client.idle_watch.stop.assert_called_once()
+    client.idle_watch.stop.reset_mock()
     client._idle_watch_allowed = False
     client._idle_watch_step()
-    client._idle_watch.stop.assert_called_once()
+    client.idle_watch.stop.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -387,7 +388,7 @@ async def test_whole_request_failure_is_not_a_skip():
 def handler_twitch(*, active, can_watch=True, should_switch=True, watching=None):
     tw = MagicMock()
     tw.settings.idle_channels = ["c1"]
-    tw._idle_watch.active = active
+    tw.idle_watch.active = active
     tw.watching_channel.get_with_default.return_value = watching
     tw.can_watch.return_value = can_watch
     tw.should_switch.return_value = should_switch
@@ -424,7 +425,7 @@ def test_idle_watched_channel_offline_or_update_pokes_instead_of_switch(after):
     tw, handler = handler_twitch(active=True, can_watch=False, watching=idle)
     handler.on_channel_update(idle, stream(), stream() if after else None)
     tw.change_state.assert_not_called()
-    tw._idle_watch.poke.assert_called_once()
+    tw.idle_watch.poke.assert_called_once()
     tw, handler = handler_twitch(active=False, can_watch=False, watching=idle)
     handler.on_channel_update(idle, stream(), stream() if after else None)
     tw.change_state.assert_called_once_with(State.CHANNEL_SWITCH)
@@ -434,7 +435,7 @@ def test_idle_watched_channel_becoming_mineable_pokes_the_loop():
     idle = SimpleNamespace(login="c1", name="C1", display=MagicMock())
     tw, handler = handler_twitch(active=True, can_watch=True, watching=idle)
     handler.on_channel_update(idle, stream(), stream())
-    tw._idle_watch.poke.assert_called_once()
+    tw.idle_watch.poke.assert_called_once()
     tw.watch.assert_not_called()
 
 
@@ -478,16 +479,16 @@ def test_idle_list_change_reruns_idle_step_without_games_update():
     # RT3: the client side of an idle_channels edit
     client = client_stub(flag=True)
     client._games_update_pending = False
-    client._idle_watch.active = True
+    client.idle_watch.active = True
     client.idle_channels_changed()
     client._state_change.set.assert_called_once()
-    client._idle_watch.poke.assert_called_once()
+    client.idle_watch.poke.assert_called_once()
     assert client._games_update_pending is False
     client = client_stub(flag=False)
     client._state = State.CHANNEL_SWITCH
     client.idle_channels_changed()
     client._state_change.set.assert_not_called()
-    client._idle_watch.poke.assert_not_called()
+    client.idle_watch.poke.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -525,7 +526,7 @@ def test_pending_state_activation_stops_idle_watch(pending):
     else:
         client._activate_pending_games_update()
     assert client._state is (State.INVENTORY_FETCH if pending == "inventory" else State.GAMES_UPDATE)
-    client._idle_watch.stop.assert_called_once()
+    client.idle_watch.stop.assert_called_once()
     assert client._idle_watch_allowed is False
 
 
@@ -574,7 +575,7 @@ async def test_idle_start_clears_drop_panel_and_rerun_keeps_idle_status(monkeypa
 def test_idle_branch_rerun_reshows_idle_status():
     client = client_stub(flag=True)
     client._idle_watch_step()
-    client._idle_watch.show_status.assert_called_once()
+    client.idle_watch.show_status.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -584,7 +585,7 @@ async def test_authentication_change_drains_idle_task_and_forgets_account_state(
 
     client = miner(tmp_path, monkeypatch)
     client.websocket.stop = AsyncMock()
-    svc = client._idle_watch
+    svc = client.idle_watch
     entered, cleaned = asyncio.Event(), asyncio.Event()
 
     async def run():
@@ -651,7 +652,7 @@ def run_service(channels=None, idle=(), gql=None, visits_path=None):
     """A real track()/pick() loop on the fake client, one tick per wait (IDLE_TICK_SECONDS stays 30)."""
     svc, tw = service(channels, idle=idle, gql=gql, visits_path=visits_path)
     tw.is_mining_time = MagicMock(return_value=True)
-    tw._auth_state = SimpleNamespace(_logged_in=SimpleNamespace(is_set=lambda: True))
+    tw.logged_in_user_id = lambda: 1
     tw._watching = None
     tw.watching_channel = SimpleNamespace(get_with_default=lambda d: tw._watching or d)
     tw.watch = MagicMock(side_effect=lambda c, update_status=True: setattr(tw, "_watching", c))
@@ -891,7 +892,7 @@ def stopping_client(*, can_watch, active=True):
     idle = SimpleNamespace(id=1, login="c1")
     client.watching_channel = SimpleNamespace(get_with_default=lambda d: idle)
     client.can_watch = MagicMock(return_value=can_watch)
-    client._idle_watch.active = active
+    client.idle_watch.active = active
     return client
 
 
@@ -900,7 +901,7 @@ def test_leaving_idle_watching_releases_the_idle_channel(state):
     # FR8: otherwise refresh_watched_channel carries it into the CHANNELS_FETCH candidates
     client = stopping_client(can_watch=False)
     client.change_state(state)
-    client._idle_watch.stop.assert_called_once()
+    client.idle_watch.stop.assert_called_once()
     client.stop_watching.assert_called_once()
 
 

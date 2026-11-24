@@ -141,7 +141,7 @@ class MessageHandlerService:
         is_watching_this: bool = watching_channel is not None and watching_channel == channel
         # While idle watching, the idle loop owns the watch: it picks the next idle channel,
         # and a drop channel goes through CHANNEL_SWITCH, which stops the loop.
-        idle_watching: bool = self._twitch._idle_watch.active
+        idle_watching: bool = self._twitch.idle_watch.active
 
         # Channel going from OFFLINE to ONLINE
         if stream_before is None and stream_after is not None:
@@ -151,14 +151,14 @@ class MessageHandlerService:
             else:
                 logger.info(f"{channel.name} goes ONLINE")
             if idle_watching and channel.login in self._twitch.settings.idle_channels:
-                self._twitch._idle_watch.poke()
+                self._twitch.idle_watch.poke()
 
         # Channel going from ONLINE to OFFLINE
         elif stream_before is not None and stream_after is None:
             if is_watching_this:
                 self._twitch.print(_.t["status"]["goes_offline"].format(channel=channel.name))
                 if idle_watching:
-                    self._twitch._idle_watch.poke()
+                    self._twitch.idle_watch.poke()
                 else:
                     self._twitch.change_state(State.CHANNEL_SWITCH)
             else:
@@ -175,7 +175,7 @@ class MessageHandlerService:
                 # The idle channel's title or tags changed; the loop re-checks it (and hands
                 # it to drops if it became mineable) without restarting idle watching.
                 logger.info(f"{channel.name} status updated {drops_status}")
-                self._twitch._idle_watch.poke()
+                self._twitch.idle_watch.poke()
             elif is_watching_this and not self._twitch.can_watch(channel):
                 # Watching this channel but can't watch it anymore
                 logger.info(f"{channel.name} status updated, switching... {drops_status}")

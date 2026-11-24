@@ -11,8 +11,8 @@ import pytest
 
 from src.api.gql_client import GQLClient
 from src.api.http_client import HTTPClient
-from src.config import ClientType, State
 from src.auth.session_bundle import SessionError
+from src.config import ClientType, State
 from src.exceptions import GQLException, MinerException, RequestException
 from src.services.idle_watch import (
     STREAK_SHARE_ATTEMPTS,

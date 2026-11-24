@@ -21,7 +21,7 @@ from src.web import app as web_app_module
 def _make_cache_test_client() -> tuple[Any, dict[str, object], MagicMock, MagicMock]:
     """Build a Twitch instance with real state containers and mocked I/O."""
     twitch: Any = object.__new__(Twitch)
-    twitch._idle_watch = MagicMock(active=False)
+    twitch.idle_watch = MagicMock(active=False)
     settings: dict[str, object] = {
         "language": "English",
         "games_to_watch": ["Game A"],
@@ -159,7 +159,7 @@ async def test_inventory_replacement_removes_stale_campaign_lookup_entries():
 
 def _make_refresh_test_client(state: State = State.IDLE) -> Twitch:
     twitch = object.__new__(Twitch)
-    twitch._idle_watch = MagicMock(active=False)
+    twitch.idle_watch = MagicMock(active=False)
     twitch.settings = SimpleNamespace(mining_hours={"mode": "always"})
     twitch._state = state
     twitch._state_change = asyncio.Event()

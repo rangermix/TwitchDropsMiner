@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import copy
 import json
 import logging
 import time
@@ -19,7 +18,7 @@ from typing import TYPE_CHECKING
 
 import aiohttp
 
-from src.config import GQL_OPERATIONS, MAX_CHANNELS, GQLRawQuery, State, WebsocketTopic
+from src.config import GQL_OPERATIONS, MAX_CHANNELS, GQLRawQuery, State
 from src.exceptions import ExitRequest, GQLException, MinerException
 from src.i18n import _
 from src.models.channel import Channel
@@ -30,7 +29,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
 
-    from src.config import GQLOperation, GQLQuery, GQLRequest, JsonType
+    from src.config import GQLRequest, JsonType
     from src.core.client import Twitch
 
 
@@ -86,7 +85,6 @@ class IdleWatchService:
         self._claimed: set[str] = set()
         # claim ids with a request in flight, so a repeated message does not send twice
         self._claiming: set[str] = set()
-        self._raw_logged = False
         # watch streak sharing: (milestone id, value) shared this run, attempts per key, last read, early-check request
         self._shared: set[tuple[str, str | None]] = set()
         self._share_tries: dict[tuple[str, str | None], int] = {}
@@ -104,7 +102,7 @@ class IdleWatchService:
         tw = self._twitch
         return (
             tw.is_mining_time()
-            and tw._auth_state._logged_in.is_set()
+            and tw.logged_in_user_id() is not None
             and bool(tw.settings.idle_channels)
         )
 
@@ -276,22 +274,19 @@ class IdleWatchService:
         """Send op (or a batch); failures are logged as one warning without the response body."""
         name = name or op["operationName"]  # type: ignore[index,call-overload]
         try:
-            response = await self._twitch.gql_request(op)
+            response = await (self._send_split(op) if isinstance(op, list) else self._twitch.gql_request(op))
         except ExitRequest:
             raise
-        except GQLException as exc:
-            if isinstance(op, list) and len(op) > 1:
-                # one unrecognised error in one entry fails the whole batch: send each entry on its own
-                singles = [await self._gql([o], name) for o in op]
-                return [a[0] if isinstance(a, list) and a else None for a in singles]
-            logger.warning("Twitch request %s failed (%s)", name, type(exc).__name__)
-            return None
         except (MinerException, aiohttp.ClientError, TimeoutError) as exc:
             logger.warning("Twitch request %s failed (%s)", name, type(exc).__name__)
             return None
         if isinstance(op, list):
             # a batch answers with a list; its entries are checked by the caller
             usable = isinstance(response, list)
+            for answer in response:
+                if answer is None:
+                    # _send_split's mark for an entry its own GQL error failed
+                    logger.warning("Twitch request %s failed (GQLException)", name)
         else:
             usable = isinstance(response, dict) and not response.get("errors")
         if usable:
@@ -477,7 +472,6 @@ class IdleWatchService:
         if not isinstance(data, dict):
             return
         if msg_type == "points-earned":
-            self._log_raw(message)
             await self._points_earned(data)
         elif msg_type == "claim-available":
             claim = data.get("claim")
@@ -486,16 +480,6 @@ class IdleWatchService:
             channel_id = self._channel_id(claim.get("channel_id"))
             if channel_id is not None and (channel := self._idle_watched(channel_id)) is not None:
                 await self.claim(channel, claim["id"])
-
-    def _log_raw(self, message: JsonType) -> None:
-        if self._raw_logged:
-            return
-        self._raw_logged = True
-        raw = copy.deepcopy(message)
-        balance = raw["data"].get("balance")
-        if isinstance(balance, dict):
-            balance.pop("balance", None)
-        logger.debug("Raw points-earned message: %s", raw)
 
     @staticmethod
     def _channel_id(value: object) -> str | None:
@@ -534,9 +518,9 @@ class IdleWatchService:
 
     @staticmethod
     def _broadcast_id(channel: Channel) -> int:
-        stream = channel._stream
-        assert stream is not None  # live channels are online
-        return stream.broadcast_id
+        broadcast_id = channel.broadcast_id
+        assert broadcast_id is not None  # live channels are online
+        return broadcast_id
 
     def pick(self, live: list[Channel], now: float) -> Channel | None:
         ids = {c.id: self._broadcast_id(c) for c in live}
@@ -568,25 +552,26 @@ class IdleWatchService:
         channels = (by_login.get(login) for login in self._twitch.settings.idle_channels)
         return [c for c in channels if c is not None and c.online and not c.banned]
 
-    async def _lookup(self, batch: list[str]) -> Sequence[JsonType | None]:
-        """Answers for batch, in order; a hard GQL error in a batch is narrowed to the logins that cause it."""
-        ops: list[GQLOperation | GQLQuery | GQLRawQuery] = [
-            GQL_OPERATIONS["GetStreamInfo"].with_variables({"channel": n}) for n in batch
-        ]
+    async def _send_split(self, ops: list[GQLRequest]) -> Sequence[JsonType | None]:
+        """Answers for a batch, in order; a GQL error in a batch is narrowed to the entries that cause it (None)."""
         try:
             response = await self._twitch.gql_request(ops)
         except GQLException:
             # gql_request raises for the whole batch when one answer has an unrecognised error
-            if len(batch) == 1:
+            if len(ops) == 1:
                 raise
             answers: list[JsonType | None] = []
-            for login in batch:
+            for op in ops:
                 try:
-                    answers.extend(await self._lookup([login]))
+                    answers.extend(await self._send_split([op]))
                 except GQLException:
                     answers.append(None)  # the caller logs the skip
             return answers
         return response if isinstance(response, list) else [response]
+
+    async def _lookup(self, batch: list[str]) -> Sequence[JsonType | None]:
+        ops: list[GQLRequest] = [GQL_OPERATIONS["GetStreamInfo"].with_variables({"channel": n}) for n in batch]
+        return await self._send_split(ops)
 
     async def track(self) -> list[Channel]:
         """Look up listed logins not tracked yet and add them; whole-request failures propagate."""
@@ -635,19 +620,10 @@ class IdleWatchService:
             allowed = await twitch._channel_service.filter_banned_channels(new)
             banned = {c.id for c in new} - {c.id for c in allowed}
             new = allowed
-        topics: list[WebsocketTopic] = []
-        handlers = twitch._message_handler_service
         for channel in new:
             twitch.channels[channel.id] = channel
             twitch.gui.channels.display(channel, add=True)
-            topics.append(WebsocketTopic(
-                "Channel", "StreamState", channel.id, handlers.process_stream_state,
-            ))
-            topics.append(WebsocketTopic(
-                "Channel", "StreamUpdate", channel.id, handlers.process_stream_update,
-            ))
-        if topics:
-            twitch.websocket.add_topics(topics)
+        twitch._add_channel_topics(new)
         by_login = {c.login: c for c in twitch.channels.values()} | resolved
         for login in logins:
             channel = by_login.get(login)

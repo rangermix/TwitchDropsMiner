@@ -378,6 +378,12 @@ class Channel:
         return None
 
     @property
+    def broadcast_id(self) -> int | None:
+        if self._stream is not None:
+            return self._stream.broadcast_id
+        return None
+
+    @property
     def viewers(self) -> int | None:
         if self._stream is not None:
             return self._stream.viewers

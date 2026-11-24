@@ -327,7 +327,7 @@ async def test_final_wanted_claim_recalculates_policy_and_releases_priority(stri
         mining_benefits={"BADGE": True, "DIRECT_ENTITLEMENT": False},
     )
     twitch = object.__new__(Twitch)
-    twitch._idle_watch = MagicMock(active=False)
+    twitch.idle_watch = MagicMock(active=False)
     twitch.settings = settings
     twitch.gui = MagicMock()
     twitch.drop_history = MagicMock()

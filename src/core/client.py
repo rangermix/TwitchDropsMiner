@@ -134,7 +134,7 @@ class Twitch:
         self._message_handler_service: MessageHandlerService = MessageHandlerService(self)
         self._inventory_service: InventoryService = InventoryService(self)
         self._watch_service: WatchService = WatchService(self)
-        self._idle_watch: IdleWatchService = IdleWatchService(self, DATA_DIR / "idle_visits.json")
+        self.idle_watch: IdleWatchService = IdleWatchService(self, DATA_DIR / "idle_visits.json")
         self._idle_watch_allowed: bool = False
         self._stream_selector: StreamSelector = StreamSelector()
         # Drop history
@@ -227,7 +227,7 @@ class Twitch:
         try:
             # The idle loop is its own task, not a child of _run: drain it with the others.
             self._idle_watch_allowed = False
-            idle_task = self._idle_watch.stop()
+            idle_task = self.idle_watch.stop()
             tasks = [task for task in (self._run_task, self._schedule_task, self._watching_task, self._mnt_task,
                                        idle_task)
                      if task is not None and task is not asyncio.current_task()]
@@ -247,7 +247,7 @@ class Twitch:
             self._inventory_loaded = False
             if self._state is not State.EXIT:
                 self._state = State.IDLE
-            self._idle_watch.reset()
+            self.idle_watch.reset()
             self._changing_auth = False
             self._resume_mining.set()
 
@@ -319,6 +319,12 @@ class Twitch:
         # this allows aiohttp to safely close the session
         await asyncio.sleep(start_time + 0.5 - time())
 
+    def logged_in_user_id(self) -> int | None:
+        """The account's user id while logged in, otherwise None."""
+        if not self._auth_state._logged_in.is_set():
+            return None
+        return getattr(self._auth_state, "user_id", None)
+
     def wait_until_login(self) -> abc.Coroutine[Any, Any, Literal[True]]:
         """Wait until the user is logged in."""
         return self._auth_state._logged_in.wait()
@@ -334,8 +340,8 @@ class Twitch:
             self._state = state
             self._idle_watch_allowed = idle_watch and state is State.IDLE
             if not self._idle_watch_allowed:
-                was_idle_watching = self._idle_watch.active
-                self._idle_watch.stop()
+                was_idle_watching = self.idle_watch.active
+                self.idle_watch.stop()
                 # The stopped loop leaves its idle channel watched; CHANNELS_FETCH would carry it
                 # as a drop candidate. A channel drops can use stays (the loop's own handover).
                 if (
@@ -350,8 +356,8 @@ class Twitch:
         """Re-run the IDLE step for an edited idle list; drop mining needs no games update."""
         if self._state is State.IDLE:
             self._state_change.set()
-            if self._idle_watch.active:
-                self._idle_watch.poke()
+            if self.idle_watch.active:
+                self.idle_watch.poke()
 
     def request_games_update(self) -> bool:
         """Queue a mining-policy recalculation without racing the active state step."""
@@ -552,6 +558,19 @@ class Twitch:
         """Print a message in the GUI."""
         self.gui.print(message, collapse_key=collapse_key)
 
+    def _add_channel_topics(self, channels: abc.Iterable[Channel]) -> None:
+        """Subscribe to the stream state and stream updates of channels."""
+        topics: list[WebsocketTopic] = []
+        for channel in channels:
+            topics.append(WebsocketTopic(
+                "Channel", "StreamState", channel.id, self._message_handler_service.process_stream_state,
+            ))
+            topics.append(WebsocketTopic(
+                "Channel", "StreamUpdate", channel.id, self._message_handler_service.process_stream_update,
+            ))
+        if topics:
+            self.websocket.add_topics(topics)
+
     def _remove_channel_topics(self, channels: abc.Iterable[Channel]) -> None:
         """Retire websocket topics and outstanding stream checks for channels."""
         topics_to_remove: list[str] = []
@@ -622,7 +641,7 @@ class Twitch:
                     "User", "Drops", auth_state.user_id, self._message_handler_service.process_drops
                 ),
                 WebsocketTopic(
-                    "User", "CommunityPoints", auth_state.user_id, self._idle_watch.process_points
+                    "User", "CommunityPoints", auth_state.user_id, self.idle_watch.process_points
                 ),
                 WebsocketTopic(
                     "User",
@@ -876,25 +895,7 @@ class Twitch:
                 # Batch update GUI - prevents flickering from individual adds
                 self.gui.channels.batch_update(ordered_channels)
                 # subscribe to these channel's state updates
-                to_add_topics: list[WebsocketTopic] = []
-                for channel_id in channels:
-                    to_add_topics.append(
-                        WebsocketTopic(
-                            "Channel",
-                            "StreamState",
-                            channel_id,
-                            self._message_handler_service.process_stream_state,
-                        )
-                    )
-                    to_add_topics.append(
-                        WebsocketTopic(
-                            "Channel",
-                            "StreamUpdate",
-                            channel_id,
-                            self._message_handler_service.process_stream_update,
-                        )
-                    )
-                self.websocket.add_topics(to_add_topics)
+                self._add_channel_topics(channels.values())
                 # websocket events reach the tracked object, so the manual target must use it
                 if self._manual_target_channel is not None:
                     self._manual_target_channel = channels.get(
@@ -927,7 +928,6 @@ class Twitch:
                     unbanned_channels,
                     banned_channels,
                     retained_channels,
-                    to_add_topics,
                     ordered_channels,
                     watching_channel,
                 )
@@ -1013,12 +1013,12 @@ class Twitch:
             await self._state_change.wait()
 
     def _idle_watch_step(self) -> None:
-        if self._idle_watch_allowed and self._idle_watch.allowed():
-            self._idle_watch.enter()
+        if self._idle_watch_allowed and self.idle_watch.allowed():
+            self.idle_watch.enter()
             # a re-run of the IDLE branch just wrote "Idle" over "Idle watching <channel>"
-            self._idle_watch.show_status()
+            self.idle_watch.show_status()
         else:
-            self._idle_watch.stop()
+            self.idle_watch.stop()
             self.stop_watching()
 
     def can_watch(self, channel: Channel) -> bool:

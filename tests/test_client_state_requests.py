@@ -9,7 +9,7 @@ def _client(*, state: State, inventory_loaded: bool) -> Twitch:
     client = object.__new__(Twitch)
     client._state = state
     client._state_change = MagicMock()
-    client._idle_watch = MagicMock(active=False)
+    client.idle_watch = MagicMock(active=False)
     client._schedule_changed = MagicMock()
     client.settings = SimpleNamespace(mining_hours={"mode": "always"})
     client._games_update_pending = False
