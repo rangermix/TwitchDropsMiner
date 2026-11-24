@@ -163,13 +163,18 @@ class IdleWatchService:
         self._wake.set()
 
     def _load(self) -> None:
-        """Read the saved account, visits and share keys; a missing file is empty, malformed entries are skipped.
+        """Read the saved account, visits and share keys; a missing file is empty, bad visit entries are skipped.
 
-        A file that cannot be read or parsed as a whole may hold used share keys: it is left as it is,
-        visits stay in memory and no share is sent for the rest of this run.
+        A file that cannot be read or parsed as a whole, or that has a damaged share entry, may hold used
+        share keys: it is left as it is, its readable visits stay in memory and no share is sent for the
+        rest of this run.
         """
         if self._visits_path is None:
             return
+        account: int | None = None
+        visits: dict[int, int] = {}
+        tries: dict[tuple[str, int | None], int] = {}
+        skipped, damaged = 0, None
         try:
             raw = json.loads(self._visits_path.read_text(encoding="utf8"))
             # newer fields without "visits" are not the old flat format: the file is damaged
@@ -183,39 +188,43 @@ class IdleWatchService:
                 raise ValueError
             if not isinstance(saved, dict) or not isinstance(keys, list):
                 raise ValueError
+            for broadcast, channel_id in saved.items():
+                if broadcast.isascii() and broadcast.isdigit() and type(channel_id) is int:
+                    visits[int(broadcast)] = channel_id
+                else:
+                    skipped += 1
+            for key in keys:
+                # [id, count] is used up; [id, count, tries] was refused and has tries left
+                if not (
+                    type(key) is list and len(key) in (2, 3) and type(key[0]) is str and key[0]
+                    and (key[1] is None or type(key[1]) is int)
+                    and (len(key) == 2 or (type(key[2]) is int and 0 < key[2] < STREAK_SHARE_ATTEMPTS))
+                ):
+                    damaged = "damaged share entry"
+                    break
+                tries[(key[0], key[1])] = key[2] if len(key) == 3 else STREAK_SHARE_ATTEMPTS
         except FileNotFoundError:
             return
-        except (OSError, ValueError) as exc:
-            self._load_failed = True
+        except (OSError, ValueError, RecursionError) as exc:
             # exception type only: the file is not echoed into the log
-            logger.warning(
-                "Idle visits file unreadable (%s): fix or delete it and restart; until then visits are not"
-                " saved and no watch streak is shared", type(exc).__name__,
-            )
-            return
-        skipped = 0
-        visits = {}
-        for broadcast, channel_id in saved.items():
-            if broadcast.isascii() and broadcast.isdigit() and type(channel_id) is int:
-                visits[int(broadcast)] = channel_id
-            else:
-                skipped += 1
-        tries: dict[tuple[str, int | None], int] = {}
-        for key in keys:
-            if (
-                type(key) is list and len(key) == 2 and type(key[0]) is str and key[0]
-                and (key[1] is None or type(key[1]) is int)
-            ):
-                tries[(key[0], key[1])] = STREAK_SHARE_ATTEMPTS
-            else:
-                skipped += 1
+            account, visits, tries, skipped, damaged = None, {}, {}, 0, type(exc).__name__
         if skipped:
             logger.warning("Idle visits file: %d invalid entries skipped", skipped)
+        if damaged is not None:
+            self._load_failed = True
+            logger.warning(
+                "Idle visits file unreadable (%s): fix or delete it and restart; until then visits are not"
+                " saved and no watch streak is shared", damaged,
+            )
         self._account, self.visited, self._share_tries = account, visits, tries
 
     def _payload(self) -> dict[str, object]:
-        used = [[mid, value] for (mid, value), tries in self._share_tries.items() if tries >= STREAK_SHARE_ATTEMPTS]
-        return {"user_id": self._account, "visits": dict(self.visited), "shares": used[-IDLE_SHARES_KEPT:]}
+        # a refused key keeps its try count, so a restart gives it only the tries it has left
+        keys = [
+            [mid, value] if tries >= STREAK_SHARE_ATTEMPTS else [mid, value, tries]
+            for (mid, value), tries in self._share_tries.items() if tries
+        ]
+        return {"user_id": self._account, "visits": dict(self.visited), "shares": keys[-IDLE_SHARES_KEPT:]}
 
     def _save(self) -> bool:
         """Write the account, visits and used-up share keys when they differ from the last successful write.

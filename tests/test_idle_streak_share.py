@@ -707,14 +707,26 @@ async def test_share_key_is_saved_before_the_share_is_sent(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_refused_share_is_removed_from_the_file(tmp_path):
+async def test_a_refused_share_gets_exactly_one_more_try_across_restarts(tmp_path):
     path = tmp_path / "idle_visits.json"
-    svc, tw = setup(gql=make_gql([read([milestone()])], [REFUSED, SHARE_OK]), visits_path=path)
+    gql = make_gql([read([milestone()])], [REFUSED])
+    svc, tw = setup(gql=gql, visits_path=path)
     await svc.share_streaks()
-    assert json.loads(path.read_text(encoding="utf-8"))["shares"] == []
-    restarted, _ = setup(gql=tw.gql_request, visits_path=path)
-    await restarted.share_streaks()
-    assert len(shares(tw)) == 2  # the refused share keeps its second try across the restart
+    assert json.loads(path.read_text(encoding="utf-8"))["shares"] == [["m1", 9, 1]]  # its try count is kept
+    for _ in range(3):
+        svc, _ = setup(gql=gql, visits_path=path)
+        await svc.share_streaks()
+    assert len(shares(tw)) == 2
+    assert json.loads(path.read_text(encoding="utf-8"))["shares"] == [["m1", 9]]
+
+
+@pytest.mark.asyncio
+async def test_an_old_file_without_try_counts_still_blocks_its_shares(tmp_path):
+    path = tmp_path / "idle_visits.json"
+    path.write_text('{"user_id": null, "visits": {}, "shares": [["m1", 9]]}', encoding="utf-8")
+    svc, tw = setup(visits_path=path)
+    await svc.share_streaks()
+    assert shares(tw) == []
 
 
 def test_saved_share_keys_are_capped_oldest_first(tmp_path):
@@ -726,7 +738,8 @@ def test_saved_share_keys_are_capped_oldest_first(tmp_path):
     svc._save()
     saved = json.loads(path.read_text(encoding="utf-8"))["shares"]
     assert len(saved) == idle_mod.IDLE_SHARES_KEPT
-    assert saved[0] == ["m5", 5] and saved[-1] == [f"m{idle_mod.IDLE_SHARES_KEPT + 4}", idle_mod.IDLE_SHARES_KEPT + 4]
+    # a refused key is kept with its try count and takes a slot like a used one
+    assert saved[0] == ["m6", 6] and saved[-1] == ["refused", 1, 1]
 
 
 @pytest.mark.asyncio
@@ -786,3 +799,26 @@ async def test_unreadable_visits_file_blocks_shares_and_writes_for_the_run(tmp_p
     assert caplog.messages[0].startswith("Idle visits file unreadable (")
     assert "fix or delete" in caplog.messages[0]
     assert "secret path" not in caplog.text and "m1" not in caplog.text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("entry", [
+    '["m", "9"]', '["m", 9.0]', '["m", true]', '["", 9]', '[1, 9]', '["m"]', '{"m": 9}', 'null',
+    '["m", 9, 0]', '["m", 9, 2]', '["m", 9, "1"]', '["m", 9, true]', '["m", 9, 1, 1]',
+])
+async def test_a_damaged_share_entry_keeps_visits_but_blocks_shares_and_writes(tmp_path, caplog, entry):
+    # the entry's share history is unknown: a share it recorded could go out again
+    path = tmp_path / "idle_visits.json"
+    path.write_text('{"user_id": 5, "visits": {"1": 123}, "shares": [["ok", 3], ' + entry + "]}", encoding="utf-8")
+    before = path.read_bytes()
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        svc, tw = setup(rows=[milestone("m")], visits_path=path)
+        svc._use_account(5)
+        assert svc.visited == {1: 123}
+        await svc.share_streaks()
+        svc.visited[2] = 123
+        assert svc._save() is False
+    assert shares(tw) == []
+    assert path.read_bytes() == before
+    assert len(caplog.messages) == 1
+    assert caplog.messages[0].startswith("Idle visits file unreadable (damaged share entry)")

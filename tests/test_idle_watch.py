@@ -995,11 +995,15 @@ async def test_visits_survive_a_restart_and_are_written_on_change_only(tmp_path,
     "not json", '{"user_id": 1, "visits": {"10": 1}, "sha', "[1, 2]", "null", bytes([0xFF, 0xFE]),
     '{"visits": []}', '{"visits": {}, "user_id": "1"}', '{"visits": {}, "user_id": true}',
     '{"visits": {}, "user_id": 0}', '{"visits": {}, "shares": {}}', "permission", "directory",
+    # numbers or nesting Python's parser refuses
+    "huge key", "deep nesting",
     # without "visits" but with the newer fields it is not the old flat format
     '{"user_id": 1, "shares": [["m1", 9]]}', '{"Visits": {"10": 1}, "shares": [["m1", 9]]}',
 ], ids=repr)
 def test_unreadable_visits_file_is_kept_and_visits_stay_in_memory(tmp_path, monkeypatch, caplog, contents):
     path = tmp_path / "idle_visits.json"
+    contents = {"huge key": '{"user_id": 1, "visits": {"' + "1" * 5000 + '": 1}, "shares": []}',
+                "deep nesting": "[" * 100000}.get(contents, contents)
     if contents == "directory":
         path.mkdir()
     elif contents == "permission":
@@ -1032,14 +1036,12 @@ def test_unreadable_visits_file_is_kept_and_visits_stay_in_memory(tmp_path, monk
     # a bad visit next to a good one
     ('{"user_id": 1, "visits": {"10": 1, "x": 2, "-1": 3, " 12": 4, "13": "5", "14": true}, "shares": [["m1", 9]]}',
      {10: 1}, {("m1", 9)}, 5),
-    # a bad share next to a good one
-    # (a repeated key is not counted as invalid)
-    ('{"user_id": 1, "visits": {"10": 1}, "shares": [["m1", 9], ["m2", "9"], ["m3", true], ["", 9], [1, 9],'
-     ' ["m4"], ["m5", 9, 1], {"m6": 9}, ["m7", null], ["m1", 9]]}',
-     {10: 1}, {("m1", 9), ("m7", None)}, 7),
+    # good shares, a repeated key and a refused one with its try count are not invalid
+    ('{"user_id": 1, "visits": {"10": 1, "x": 2}, "shares": [["m1", 9], ["m7", null], ["m1", 9], ["m5", 9, 1]]}',
+     {10: 1}, {("m1", 9), ("m7", None)}, 1),
     # the old flat format with a bad entry
     ('{"10": 1, "x": 2, "11": true}', {10: 1}, set(), 2),
-], ids=["visit", "share", "flat"])
+], ids=["visit", "shares", "flat"])
 def test_malformed_entries_are_skipped_and_the_rest_kept(tmp_path, caplog, contents, visits, keys, skipped):
     path = tmp_path / "idle_visits.json"
     path.write_text(contents, encoding="utf-8")
