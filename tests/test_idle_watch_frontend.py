@@ -13,7 +13,8 @@ from tests.test_telegram_frontend import run_javascript
 
 ROOT = Path(__file__).resolve().parents[1]
 pytestmark = pytest.mark.skipif(NODE is None, reason="Node.js is required for frontend tests")
-IDLE_FUNCTIONS = ["makeElement", "renderIdleChannels", "saveIdleChannels", "addIdleChannel"]
+IDLE_FUNCTIONS = ["makeElement", "renderIdleChannels", "saveIdleChannels", "addIdleChannel",
+                  "handleDragStart", "handleDragOver", "dragOverRows", "pointerPastMiddle", "handleDrop"]
 
 # REWARD_DOM supplies the fake DOM; add the idle controls and the state the functions read.
 IDLE_DOM = REWARD_DOM + r"""
@@ -50,6 +51,59 @@ assert.deepEqual(names(), ['alpha', '<b>x</b>', 'gamma']);
 const row = rowOf('<b>x</b>');
 assert.ok(row.textContent.includes('<b>x</b>'), 'name is text');
 assert.ok(row.children.every(child => child.tag !== 'b'), 'no element created from the name');
+""")
+
+
+def test_rows_use_the_sortable_pattern_and_disable_arrows_at_the_ends():
+    run_idle(r"""
+renderIdleChannels();
+const row = rowOf('beta');
+assert.ok(row.classes.has('sortable-item'));
+assert.equal(row.draggable, true);
+const [handle, number, name, up, down, remove] = row.children;
+assert.ok(handle.classes.has('drag-handle') && handle.attrs['aria-hidden'] === 'true');
+assert.ok(number.classes.has('priority-number'));
+assert.equal(number.textContent, '2');
+assert.ok(name.classes.has('game-name'));
+assert.equal(name.textContent, 'beta');
+assert.deepEqual([up, down].map(b => b.attrs.class), ['small-btn', 'small-btn']);
+assert.equal(remove.attrs.class, 'remove-btn');
+assert.deepEqual(['alpha', 'beta', 'gamma'].map(n => rowOf(n).children[1].textContent), ['1', '2', '3']);
+const arrows = n => rowOf(n).children.filter(b => ['up', 'down'].includes(b.dataset.action)).map(b => b.disabled);
+assert.deepEqual(arrows('alpha'), [true, false]);
+assert.deepEqual(arrows('beta'), [false, false]);
+assert.deepEqual(arrows('gamma'), [false, true]);
+""")
+
+
+def test_drag_reorders_and_saves_the_new_order_but_not_during_a_save():
+    run_idle(r"""
+const calls = [];
+global.fetch = async (url, options) => {
+    const body = JSON.parse(options.body); calls.push(body);
+    return {ok: true, json: async () => ({success: true, settings: {idle_channels: body.idle_channels}})};
+};
+renderIdleChannels();
+const event = target => ({target, preventDefault() {}, dataTransfer: {setData() {}, effectAllowed: '', dropEffect: ''}});
+const dragged = rowOf('gamma');
+handleDragStart(event(dragged));
+handleDragOver(event(rowOf('alpha')));
+assert.deepEqual(names(), ['gamma', 'alpha', 'beta']);
+dragged.events.dragend(event(dragged)); await tick();
+assert.deepEqual(calls.pop(), {idle_channels: ['gamma', 'alpha', 'beta']});
+assert.deepEqual(names(), ['gamma', 'alpha', 'beta']);
+// dropping a row back where it was sends nothing
+const same = rowOf('gamma');
+handleDragStart(event(same));
+same.events.dragend(event(same)); await tick();
+assert.equal(calls.length, 0);
+// rows are not draggable while a save is in flight
+let finish;
+global.fetch = () => new Promise(resolve => { finish = resolve; });
+const pending = saveIdleChannels(['alpha']);
+assert.ok(rowOf('gamma').draggable === false);
+finish({ok: false}); await pending;
+assert.ok(rowOf('gamma').draggable === true);
 """)
 
 
