@@ -1318,12 +1318,36 @@ with this policy when reviewing proposals or documenting deployment options.
 - ✅ Docker deployment - containerized on the user's own home hardware
 - ✅ Remote access - access to the user's home-hosted instance
 - ✅ Headless operation - no display server required
+- ✅ Idle watching - watches the user's listed channels when nothing can be mined
 
 **NOT supported:**
 
 - Multi-account support
-- Channel points mining
+- Channel points mining while a drop can be mined, or on channels the user did not list
 - Desktop GUI
+
+### Idle Watching
+
+`IdleWatchService` (`src/services/idle_watch.py`) watches the channels in the
+`idle_channels` setting (lowercase logins, at most 20, validated by
+`IdleChannelSettings`) only after the two "nothing to mine" IDLE entries; any state
+change stops it and releases its channel. It never claims, shares or watches for
+points while a drop can be mined.
+
+- Visits: each live listed channel gets one visit of `IDLE_VISIT_SECONDS` per
+  broadcast, then the highest live channel in list order is watched. Finished visits
+  persist in `data/idle_visits.json` (last `IDLE_VISITS_KEPT`); `reset()` clears them
+  on an account change. Banned channels are skipped; a timed ban is retried when it ends.
+- Bonus claim: `ClaimCommunityPoints` only while idle watching and only with
+  `claim_channel_points` on; a claim counts only when Twitch accepts it.
+- Streak share: `shareViewerMilestone` posts a visible notice in the streamer's chat
+  under the user's name, so it is sent with `single_attempt` and its tries are used
+  up before sending. An unknown outcome (no reply, timeout, 5xx, unconfirmed reply,
+  or an auth renewal) is never resent; only an explicit `error` object in the reply
+  allows one more try. Needs `share_watch_streaks` on.
+- The `CommunityPoints` user topic is subscribed at login (`BASE_TOPICS = 3`), so at
+  most 198 channels are tracked, drop and idle channels together. Idle channels over
+  the limit are skipped with a warning.
 
 ### Claimed Drop History
 

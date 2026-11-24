@@ -34,7 +34,7 @@ Twitch OAuth login, persistent local data, and Docker support.
 
 Read [README.md](./README.md) for setup and user behavior, and
 [AGENTS.md](./AGENTS.md) for architecture and detailed implementation constraints.
-The current scope excludes multiple accounts, channel-points mining, and a desktop
+The current scope excludes multiple accounts, channel-points mining outside idle watching, and a desktop
 GUI. Campaigns reported as Not Linked are skipped by default; users may explicitly
 allow mining attempts without guaranteeing progress, claims, or reward delivery. Discuss proposed scope changes before implementing
 them; opening a feature request does not itself approve a change in scope.

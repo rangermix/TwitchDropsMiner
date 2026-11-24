@@ -45,7 +45,7 @@ STREAK_SHARE_ATTEMPTS = 2
 STREAK_SHARE_TIMEOUT = 30
 # visits kept (and saved); twice the idle list's 20-login cap, oldest dropped first
 IDLE_VISITS_KEPT = 40
-# the design doc's strings plus an operation name; the share mutation is unverified until seen live
+# raw queries with an operation name, which must match the name inside the query
 MILESTONES_OPERATION = "ViewerMilestones"
 MILESTONES_QUERY = (
     "query ViewerMilestones($login:String!){ user(login:$login){ channel{ id self{ viewerMilestones{ id category value state shareStatus }}}}}"
