@@ -399,6 +399,10 @@ FAILED_CLAIMS = [
     {"data": {"claimCommunityPoints": {"error": None}}},
     {"data": {"claimCommunityPoints": {"error": None, "claim": None}}},
     {"data": {"claimCommunityPoints": None}},
+    # a claim object counts only with its id
+    {"data": {"claimCommunityPoints": {"error": None, "claim": {}}}},
+    {"data": {"claimCommunityPoints": {"error": None, "claim": {"id": ""}}}},
+    {"data": {"claimCommunityPoints": {"error": None, "claim": {"id": 5}}}},
 ]
 
 

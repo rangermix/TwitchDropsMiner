@@ -409,8 +409,9 @@ class IdleWatchService:
             error = result.get("error") if isinstance(result, dict) else True
         except (KeyError, TypeError):
             result, error = None, True
-        if not isinstance(result, dict) or error is not None or not isinstance(result.get("claim"), dict):
-            # an error code (for example an already claimed bonus) or no claim object instead of the claim
+        claim = result.get("claim") if isinstance(result, dict) else None
+        if error is not None or not isinstance(claim, dict) or not isinstance(claim.get("id"), str) or not claim["id"]:
+            # an error code (for example an already claimed bonus) or no claim with an id instead of the claim
             code = error.get("code") if isinstance(error, dict) else error
             logger.warning(
                 "Twitch request ClaimCommunityPoints was not accepted%s",

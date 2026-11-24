@@ -1350,7 +1350,7 @@ Other code reaches the service through the public `Twitch.idle_watch`.
   whole sets `_load_failed`: the file is never written, visits stay in memory and no
   share is sent this run.
 - Bonus claim: `ClaimCommunityPoints` only while idle watching and only with
-  `claim_channel_points` on. A claim counts only when the reply has a `claim` object
+  `claim_channel_points` on. A claim counts only when the reply has a `claim` object with an id
   and no error; after a failed claim the tick runs `refresh_points()` again, at most
   `CLAIM_RETRIES` (2) times per watched channel, until the claim succeeds, the read
   shows no open bonus or the channel changes. A success or a channel change resets
