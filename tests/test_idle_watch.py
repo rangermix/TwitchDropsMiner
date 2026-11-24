@@ -573,7 +573,7 @@ def test_idle_branch_rerun_reshows_idle_status():
 
 
 @pytest.mark.asyncio
-async def test_authentication_change_drains_idle_task_and_forgets_account_state(tmp_path, monkeypatch):
+async def test_authentication_change_drains_idle_task_and_keeps_account_state(tmp_path, monkeypatch):
     from tests.test_session_lifecycle import miner
 
     client = miner(tmp_path, monkeypatch)
@@ -1111,3 +1111,16 @@ async def test_failed_visits_save_is_retried_until_it_succeeds(tmp_path, monkeyp
         await idle_entry(svc, ticks=3)
     assert caplog.messages.count("Idle visits could not be saved (PermissionError)") == 1
     assert json.loads(path.read_text(encoding="utf-8"))["visits"] == {"99": 7}
+
+
+@pytest.mark.asyncio
+async def test_loop_ends_when_its_pick_can_be_mined():
+    a = fake(1, 10, login="c1")
+    a.name = "A"
+    svc, tw = loop_service([a])
+    tw.can_watch = MagicMock(side_effect=lambda c: c is a)
+    svc.enter()
+    await asyncio.wait_for(svc._task, 1)
+    tw.change_state.assert_called_once_with(State.CHANNEL_SWITCH)
+    tw.watch.assert_not_called()
+    tw.gql_request.assert_not_called()

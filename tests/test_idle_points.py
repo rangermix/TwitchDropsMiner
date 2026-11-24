@@ -428,7 +428,8 @@ async def test_claim_retry_stops_when_the_bonus_is_gone():
 async def test_claim_retry_stops_on_a_channel_change():
     a = SimpleNamespace(id=123, name="A", login="a", online=True, banned=False, broadcast_id=77)
     b = SimpleNamespace(id=7, name="B", login="b", online=True, banned=False, broadcast_id=78)
-    gql = AsyncMock(side_effect=[context(), FAILED_CLAIMS[1], context(None)])
+    # b's points read fails, so only the channel change can end a's retry
+    gql = AsyncMock(side_effect=[context(), FAILED_CLAIMS[1], TimeoutError()])
     svc, tw, current = tick_setup(gql, a, b)
     svc.visited = {77: 123, 78: 7}  # both visited: the pick is the first live channel
     await svc._tick()
