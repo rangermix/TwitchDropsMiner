@@ -328,3 +328,25 @@ def test_share_markup_and_translations_exist():
         settings = json.loads(locale.read_text(encoding="utf-8"))["gui"]["settings"]
         for key in ("share_watch_streaks", "share_watch_streaks_help", "share_watch_streaks_save_error"):
             assert settings[key].strip(), (locale.name, key)
+
+
+def test_a_reply_with_another_list_is_a_failed_save():
+    run_idle(r"""
+renderIdleChannels();
+global.fetch = async () => ({ok: true, json: async () => ({success: true, settings: {idle_channels: ['other']}})});
+assert.equal(await saveIdleChannels(['beta', 'alpha', 'gamma']), false);
+assert.equal(error().hidden, false);
+assert.equal(error().textContent, 'Idle save failed');
+assert.deepEqual(names(), ['alpha', 'beta', 'gamma']);
+assert.deepEqual(state.settings.idle_channels, ['alpha', 'beta', 'gamma']);
+""")
+
+
+def test_a_partial_settings_reply_keeps_the_idle_list():
+    run_javascript(CLAIM_FUNCTIONS, CLAIM_SETUP + r"""
+state.settings.idle_channels = ['alpha', 'beta'];
+updateSettingsUI({prefer_followed_channels: true}, false, ['prefer_followed_channels']);
+assert.deepEqual(state.settings.idle_channels, ['alpha', 'beta']);
+updateSettingsUI({idle_channels: ['gamma']}, true);  // an authoritative reply replaces it
+assert.deepEqual(state.settings.idle_channels, ['gamma']);
+""")
