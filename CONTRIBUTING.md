@@ -327,6 +327,10 @@ original from GitHub. Attach images to the PR rather than committing them to the
 branch, unless the PR intentionally updates a published documentation image such as
 `screenshot.png`. Update screenshots when later revisions change the visible result.
 
+Changes that do not alter the dashboard's appearance need no screenshots; write
+`Not applicable` in the template. Never post images of code, diffs, test output or
+logs: reviewers read the diff, and validation results belong in the PR as text.
+
 If you cannot attach images directly (for example from the command line), push them to
 a separate screenshots-only branch of your **public** fork instead, never to the topic
 branch, and link them from the PR description. For example, use a `pr-screenshots`
