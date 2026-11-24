@@ -724,3 +724,34 @@ def test_saved_share_keys_are_capped_oldest_first(tmp_path):
     saved = json.loads(path.read_text(encoding="utf-8"))["shares"]
     assert len(saved) == idle_mod.IDLE_SHARES_KEPT
     assert saved[0] == ["m5", 5] and saved[-1] == [f"m{idle_mod.IDLE_SHARES_KEPT + 4}", idle_mod.IDLE_SHARES_KEPT + 4]
+
+
+@pytest.mark.asyncio
+async def test_share_is_skipped_when_its_key_cannot_be_saved(tmp_path, monkeypatch, caplog):
+    # an unrecorded share could be sent again after a restart: it is not sent at all
+    real_save = idle_mod.json_save
+    failing = [True]
+
+    def save(*args, **kwargs):
+        if failing[0]:
+            raise PermissionError("secret path")
+        real_save(*args, **kwargs)
+
+    monkeypatch.setattr(idle_mod, "json_save", save)
+    path = tmp_path / "idle_visits.json"
+    svc, tw = setup(visits_path=path)
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        await svc.share_streaks()
+    assert shares(tw) == []
+    assert caplog.messages == [
+        "Idle visits could not be saved (PermissionError)",
+        "Watch streak share on A skipped: it could not be recorded",
+    ]
+    assert "secret path" not in caplog.text
+    failing[0] = False  # the disk works again: the next check sends it once
+    svc._share_checked -= STREAK_SHARE_CHECK_SECONDS
+    await svc.share_streaks()
+    svc._share_checked -= STREAK_SHARE_CHECK_SECONDS
+    await svc.share_streaks()
+    assert len(shares(tw)) == 1
+    assert json.loads(path.read_text(encoding="utf-8"))["shares"] == [["m1", 9]]

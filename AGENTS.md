@@ -1346,11 +1346,14 @@ Other code reaches the service through the public `Twitch.idle_watch`.
   visits format) is taken by the first account. A failed write is retried each tick.
 - Bonus claim: `ClaimCommunityPoints` only while idle watching and only with
   `claim_channel_points` on. A claim counts only when the reply has a `claim` object
-  and no error; after a failed claim the tick runs `refresh_points()` again until the
-  claim succeeds, the read shows no open bonus or the channel changes.
+  and no error; after a failed claim the tick runs `refresh_points()` again, at most
+  `CLAIM_RETRIES` (2) times per watched channel, until the claim succeeds, the read
+  shows no open bonus or the channel changes. A success or a channel change resets
+  the count; after the last retry only `claim-available` retries the claim.
 - Streak share: `shareViewerMilestone` posts a visible notice in the streamer's chat
   under the user's name, so it is sent with `single_attempt`, and its key
-  (milestone id, count as one int) is used up and saved before sending. An unknown
+  (milestone id, count as one int) is used up and saved before sending; when that
+  save fails the share is skipped, not sent. An unknown
   outcome (no reply, timeout, 5xx, unconfirmed reply, or an auth renewal) is never
   resent, also not after a restart. Only an `error` with a non-empty string `code`
   and a null `milestone` allows one more try. A count without a usable value matches

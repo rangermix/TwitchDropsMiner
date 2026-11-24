@@ -438,3 +438,49 @@ async def test_claim_retry_stops_on_a_channel_change():
     await svc._tick()
     assert names(tw) == ["ChannelPointsContext", "ClaimCommunityPoints", "ChannelPointsContext"]
     assert sent(tw)[2]["variables"] == {"channelLogin": "b"}
+
+
+@pytest.mark.asyncio
+async def test_claim_retries_stop_after_two_per_channel():
+    # a bonus Twitch keeps offering and refusing is read again twice, then left to claim-available
+    svc, tw, _ = tick_setup(AsyncMock(side_effect=[context(), FAILED_CLAIMS[1]] * 3))
+    for _ in range(5):
+        await svc._tick()
+    assert names(tw) == ["ChannelPointsContext", "ClaimCommunityPoints"] * 3
+
+
+@pytest.mark.asyncio
+async def test_a_successful_claim_resets_the_retry_count():
+    replies = [
+        context(), FAILED_CLAIMS[1],  # tick 1: the claim fails
+        context(), CLAIM_OK,  # tick 2: first retry succeeds
+        FAILED_CLAIMS[1],  # claim-available for a new bonus fails
+        context("abc"), FAILED_CLAIMS[1],  # tick 3: retry 1 of the new bonus
+        context("abc"), FAILED_CLAIMS[1],  # tick 4: retry 2
+    ]
+    svc, tw, _ = tick_setup(AsyncMock(side_effect=replies))
+    await svc._tick()
+    await svc._tick()
+    await svc.process_points(1, claim_msg())
+    for _ in range(3):
+        await svc._tick()
+    assert names(tw) == [
+        "ChannelPointsContext", "ClaimCommunityPoints", "ChannelPointsContext", "ClaimCommunityPoints",
+        "ClaimCommunityPoints",
+        "ChannelPointsContext", "ClaimCommunityPoints", "ChannelPointsContext", "ClaimCommunityPoints",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_a_channel_change_resets_the_retry_count():
+    a = SimpleNamespace(id=123, name="A", login="a", online=True, banned=False, broadcast_id=77)
+    b = SimpleNamespace(id=7, name="B", login="b", online=True, banned=False, broadcast_id=78)
+    svc, tw, current = tick_setup(AsyncMock(side_effect=[context(), FAILED_CLAIMS[1]] * 6), a, b)
+    svc.visited = {77: 123, 78: 7}
+    for _ in range(4):
+        await svc._tick()  # a: one claim and two retries, then nothing
+    current["live"] = [b]
+    for _ in range(4):
+        await svc._tick()  # b: the same again
+    assert names(tw) == ["ChannelPointsContext", "ClaimCommunityPoints"] * 6
+    assert [o["variables"] for o in sent(tw)[6::2]] == [{"channelLogin": "b"}] * 3

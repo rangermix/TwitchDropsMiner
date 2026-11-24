@@ -39,6 +39,8 @@ IDLE_VISIT_SECONDS = 420
 IDLE_TICK_SECONDS = 30
 STREAK_REASON = "WATCH_STREAK"
 CLAIM_REASON = "CLAIM"
+# tick retries of a failed bonus claim per watched channel; after them claim-available retries it
+CLAIM_RETRIES = 2
 STREAK_SHARE_CHECK_SECONDS = 300
 STREAK_SHARE_ATTEMPTS = 2
 STREAK_SHARE_TIMEOUT = 30
@@ -96,8 +98,10 @@ class IdleWatchService:
         self._claimed: set[str] = set()
         # claim ids with a request in flight, so a repeated message does not send twice
         self._claiming: set[str] = set()
-        # the last claim on the watched channel failed; the tick reads its points again
+        # the last claim on the watched channel failed; the tick reads its points again, at most
+        # CLAIM_RETRIES times until a claim succeeds or the channel changes
         self._claim_failed = False
+        self._claim_retries = 0
         # watch streak share check: last read, early-check request
         self._share_checked: float | None = None
         self._share_now = False
@@ -146,6 +150,7 @@ class IdleWatchService:
         self.balances.clear()
         self._claimed.clear()
         self._claim_failed = False
+        self._claim_retries = 0
         self._share_checked = None
         self._share_now = False
         self._skipped.clear()
@@ -197,11 +202,14 @@ class IdleWatchService:
         used = [[mid, value] for (mid, value), tries in self._share_tries.items() if tries >= STREAK_SHARE_ATTEMPTS]
         return {"user_id": self._account, "visits": dict(self.visited), "shares": used[-IDLE_SHARES_KEPT:]}
 
-    def _save(self) -> None:
-        """Write the account, visits and used-up share keys when they differ from the last successful write."""
+    def _save(self) -> bool:
+        """Write the account, visits and used-up share keys when they differ from the last successful write.
+
+        True when the file holds them (or there is no file).
+        """
         payload = self._payload()
         if self._visits_path is None or payload == self._saved:
-            return
+            return True
         try:
             json_save(self._visits_path, payload)
         except OSError as exc:
@@ -209,8 +217,9 @@ class IdleWatchService:
             if not self._save_failed:
                 logger.warning("Idle visits could not be saved (%s)", type(exc).__name__)
             self._save_failed = True
-            return
+            return False
         self._saved, self._save_failed = payload, False
+        return True
 
     def _use_account(self, account: int | None) -> None:
         """Drop the visits and share keys of another account than the one logged in."""
@@ -300,12 +309,14 @@ class IdleWatchService:
             if channel is not self.watched:
                 self._claimed.clear()
                 self._claim_failed = False
+                self._claim_retries = 0
             self.watched = channel
             tw.watch(channel, update_status=False)
             self._show_status(channel)
             await self.refresh_points(channel)
-        elif self._claim_failed:
+        elif self._claim_failed and self._claim_retries < CLAIM_RETRIES:
             # the last bonus claim failed: a fresh read finds the bonus again, once per tick
+            self._claim_retries += 1
             await self.refresh_points(channel)
         await self.share_streaks()
         return False
@@ -389,6 +400,7 @@ class IdleWatchService:
             )
             return
         self._claim_failed = False
+        self._claim_retries = 0
         self._claimed.add(claim_id)
         logger.info("Claimed channel points bonus on %s", channel.name)
 
@@ -491,9 +503,17 @@ class IdleWatchService:
             return False
         # Until a reply says Twitch refused it, the outcome is unknown and the share may be posted:
         # all attempts are used and saved before sending, so a failure, timeout, cancellation or
-        # restart never resends it. A failed save still sends: the attempts in memory hold this run.
+        # restart never resends it.
         self._share_tries[key] = STREAK_SHARE_ATTEMPTS
-        self._save()
+        if not self._save():
+            # unrecorded, a restart could send it again: one lost share beats a double notice.
+            # Nothing was sent, so a later check may try once the file can be written.
+            if tries:
+                self._share_tries[key] = tries
+            else:
+                del self._share_tries[key]
+            logger.warning("Watch streak share on %s skipped: it could not be recorded", channel.name)
+            return True
         op = GQLRawQuery(
             SHARE_MILESTONE_MUTATION,
             {"input": {"channelID": str(channel.id), "milestoneID": milestone_id}},
