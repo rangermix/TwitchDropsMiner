@@ -312,6 +312,8 @@ class IdleWatchService:
             return False
         # normal selection takes the channel over; a watched one is not stopped
         logger.info("Idle watching stopped: a drop channel can be watched")
+        # the loop ends by itself, so stop() finds it done: the visit clock stops here
+        self._pause()
         self._twitch.change_state(State.CHANNEL_SWITCH)
         return True
 

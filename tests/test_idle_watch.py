@@ -1209,3 +1209,32 @@ async def test_idle_re_entry_forgets_the_previous_pick_before_the_loop_runs():
                 if not isinstance(c.args[0], list) and c.args[0]["operationName"] == "ClaimCommunityPoints"]
     task = svc.stop()
     await asyncio.gather(task, return_exceptions=True)
+
+
+@pytest.mark.asyncio
+async def test_a_hand_over_to_drops_pauses_the_visit_clock(monkeypatch):
+    # 60 s of a visit, a hand-over to drops, idle again 10 minutes later: 360 s of the visit are left
+    now = [1000.0]
+    monkeypatch.setattr(idle_mod, "time", SimpleNamespace(monotonic=lambda: now[0]))
+    a, b = fake(1, 10, login="c1"), fake(2, 20, login="c2")
+    a.name, b.name = "A", "B"
+    svc, tw = loop_service([a, b], idle=("c1", "c2"))
+    svc.enter()
+    await asyncio.sleep(0.02)
+    assert (svc.visit.channel_id, svc.visit.started) == (1, 1000.0)
+    now[0] = 1060.0
+    tw.can_watch.side_effect = lambda c: c is a
+    svc.poke()
+    await asyncio.sleep(0.02)
+    assert not svc.active  # handed over; the client's stop() finds the task done
+    svc.stop()
+    now[0] = 1060.0 + 600
+    tw.can_watch.side_effect = None
+    tw.can_watch.return_value = False
+    svc.enter()
+    await asyncio.sleep(0.02)
+    task = svc.stop()
+    await asyncio.gather(task, return_exceptions=True)
+    assert 10 not in svc.visited
+    assert svc.visit is not None and svc.visit.channel_id == 1
+    assert now[0] - svc.visit.started == 60.0
