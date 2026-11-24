@@ -672,7 +672,10 @@ class IdleWatchService:
                 and now - visit.started < IDLE_VISIT_SECONDS
             ):
                 return next(c for c in live if c.id == visit.channel_id)
-            self.visited[visit.broadcast_id] = visit.channel_id
+            # a channel missing from live (offline, or a failed lookup) cut the visit short: not recorded,
+            # so the same stream gets its full visit once it is tracked again
+            if visit.done or now - visit.started >= IDLE_VISIT_SECONDS or visit.channel_id in ids:
+                self.visited[visit.broadcast_id] = visit.channel_id
             self.visit = None
         # A visit is forgotten only when its channel is live with another broadcast, or is
         # tracked but no longer listed; a channel missing for a tick (or untracked after a

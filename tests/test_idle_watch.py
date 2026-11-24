@@ -737,14 +737,25 @@ def test_visits_survive_a_tick_without_live_channels():
     assert svc.visit is None  # points watch, not a fresh round of visits
 
 
-def test_channel_missing_for_one_tick_is_not_visited_twice():
+def test_a_visit_cut_short_by_a_missing_channel_is_not_recorded():
+    # a failed lookup after the hourly reload leaves the visited channel out of live for a tick
     svc, _ = service()
     a, b = fake(1, 10), fake(2, 20)
     svc.pick([a, b], 0)
-    assert svc.pick([b], 5) is b  # a missing: its visit ends
+    assert svc.pick([b], 5) is b  # a missing: its visit stops, b's starts
+    assert 10 not in svc.visited
     svc.visit.done = True
-    assert svc.pick([a, b], 6) is a
-    assert svc.visit is None  # same broadcast of a: no second visit
+    assert svc.pick([a, b], 6) is a  # same broadcast of a: it gets its full visit
+    assert (svc.visit.channel_id, svc.visit.started) == (1, 6)
+    assert svc.visited == {20: 2}
+    solo, _ = service()
+    assert solo.pick([a], 0) is a
+    assert solo.pick([], 60) is None
+    assert solo.visit is None and solo.visited == {}
+    assert solo.pick([a], 90) is a
+    assert (solo.visit.channel_id, solo.visit.started) == (1, 90)
+    assert solo.pick([a], 90 + IDLE_VISIT_SECONDS) is a
+    assert solo.visit is None and solo.visited == {10: 1}  # finished after its full time
 
 
 def answers_by_login(table):
