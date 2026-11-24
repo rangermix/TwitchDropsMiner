@@ -1181,3 +1181,31 @@ async def test_loop_ends_when_its_pick_can_be_mined():
     tw.change_state.assert_called_once_with(State.CHANNEL_SWITCH)
     tw.watch.assert_not_called()
     tw.gql_request.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_idle_re_entry_forgets_the_previous_pick_before_the_loop_runs():
+    # the last run handed its pick to drops, which kept watching it; the next entry must not treat it as idle watched
+    a = fake(1, 10, login="c1")
+    a.name = "A"
+    svc, tw = loop_service([a])
+    tw.settings.claim_channel_points = True
+    svc.enter()
+    await asyncio.sleep(0.02)
+    assert svc.watched is a
+    tw.can_watch.return_value = True  # a drop can use a: the running loop hands it over and ends
+    svc.poke()
+    await asyncio.sleep(0.02)
+    assert not svc.active and tw._watching is a and svc.watched is a
+    svc.stop()
+    tw.can_watch.return_value = False
+    tw.gui.status.reset_mock()
+    tw.gql_request.reset_mock()
+    svc.enter()  # CHANNEL_SWITCH found nothing: idle entry, then show_status() before the loop's first step
+    svc.show_status()
+    await svc.process_points(1, {"type": "claim-available", "data": {"claim": {"id": "abc", "channel_id": "1"}}})
+    tw.gui.status.update.assert_not_called()
+    assert not [c for c in tw.gql_request.call_args_list
+                if not isinstance(c.args[0], list) and c.args[0]["operationName"] == "ClaimCommunityPoints"]
+    task = svc.stop()
+    await asyncio.gather(task, return_exceptions=True)

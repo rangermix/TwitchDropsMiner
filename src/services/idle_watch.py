@@ -125,6 +125,11 @@ class IdleWatchService:
 
     def enter(self) -> None:
         if not self.active:
+            # a pick handed to drops stays watched: until the loop picks again it is not idle watched
+            self.watched = None
+            self._claimed.clear()
+            self._claim_failed = False
+            self._claim_retries = 0
             self._task = asyncio.create_task(self._run())
 
     def stop(self) -> asyncio.Task[None] | None:
