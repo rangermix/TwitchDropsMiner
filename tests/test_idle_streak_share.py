@@ -761,13 +761,13 @@ async def test_share_is_skipped_when_its_key_cannot_be_saved(tmp_path, monkeypat
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("failure", ["permission", "truncated", "wrong shape"])
+@pytest.mark.parametrize("failure", ["permission", "truncated", "wrong shape", "no visits key"])
 async def test_unreadable_visits_file_blocks_shares_and_writes_for_the_run(tmp_path, monkeypatch, caplog, failure):
     # the file may hold used share keys the service cannot see: sending could post a share twice,
     # and writing would replace the keys
     path = tmp_path / "idle_visits.json"
     good = '{"user_id": 5, "visits": {"1": 123}, "shares": [["m1", 9]]}'
-    path.write_text({"truncated": good[:-3], "wrong shape": "[1, 2]"}.get(failure, good), encoding="utf-8")
+    path.write_text({"truncated": good[:-3], "wrong shape": "[1, 2]", "no visits key": good.replace('"visits": {"1": 123}, ', "")}.get(failure, good), encoding="utf-8")
     before = path.read_bytes()
     if failure == "permission":
         def denied(self, *args, **kwargs):

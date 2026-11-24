@@ -172,7 +172,8 @@ class IdleWatchService:
             return
         try:
             raw = json.loads(self._visits_path.read_text(encoding="utf8"))
-            if not isinstance(raw, dict):
+            # newer fields without "visits" are not the old flat format: the file is damaged
+            if not isinstance(raw, dict) or ("visits" not in raw and ("user_id" in raw or "shares" in raw)):
                 raise ValueError
             # a file from before the account and shares were kept holds the visits alone
             account, saved, keys = (

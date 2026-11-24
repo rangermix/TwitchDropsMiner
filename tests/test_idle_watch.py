@@ -995,6 +995,8 @@ async def test_visits_survive_a_restart_and_are_written_on_change_only(tmp_path,
     "not json", '{"user_id": 1, "visits": {"10": 1}, "sha', "[1, 2]", "null", bytes([0xFF, 0xFE]),
     '{"visits": []}', '{"visits": {}, "user_id": "1"}', '{"visits": {}, "user_id": true}',
     '{"visits": {}, "user_id": 0}', '{"visits": {}, "shares": {}}', "permission", "directory",
+    # without "visits" but with the newer fields it is not the old flat format
+    '{"user_id": 1, "shares": [["m1", 9]]}', '{"Visits": {"10": 1}, "shares": [["m1", 9]]}',
 ], ids=repr)
 def test_unreadable_visits_file_is_kept_and_visits_stay_in_memory(tmp_path, monkeypatch, caplog, contents):
     path = tmp_path / "idle_visits.json"
