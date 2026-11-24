@@ -7,6 +7,8 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.config.settings import IdleChannelSettings, Settings
+from src.core.client import Twitch
+from src.web.gui_manager import WebGUIManager
 from src.web.managers.settings import SettingsManager
 from tests.test_diagnostics import diagnostic_miner
 
@@ -46,7 +48,7 @@ def test_invalid_idle_channels_in_file_do_not_block_load(tmp_path, monkeypatch, 
 
 
 def test_hand_edited_list_keeps_valid_entries(tmp_path, monkeypatch, caplog):
-    # F4: one bad entry must not drop the whole list
+    # one bad entry must not drop the whole list
     path = tmp_path / "settings.json"
     entries = ["Good", "bad-name", "good", 5, "Kelvin"] + [f"c{i}" for i in range(25)]
     path.write_text(json.dumps({"idle_channels": entries}), encoding="utf-8")
@@ -71,7 +73,7 @@ def test_valid_list_loads_without_warning(tmp_path, monkeypatch, caplog):
 
 @pytest.mark.parametrize("raw,warned", [('"false"', True), ("0", True), ("null", True), ("false", False)])
 def test_non_bool_claim_setting_loads_as_default_with_one_warning(tmp_path, monkeypatch, caplog, raw, warned):
-    # RT11: the value already falls back to True (merge_json); the warning was missing
+    # the value already falls back to True (merge_json); the warning was missing
     path = tmp_path / "settings.json"
     path.write_text(f'{{"claim_channel_points": {raw}}}', encoding="utf-8")
     monkeypatch.setattr("src.config.settings.SETTINGS_PATH", path)
@@ -111,7 +113,7 @@ def test_share_watch_streaks_requires_strict_bool_and_saves():
 
 @pytest.mark.parametrize("login", ["Kelvin", "café", " foo", "foo​"])
 def test_normalize_rejects_non_ascii_before_lowering(login):
-    # F6: the Kelvin sign lowercases to an ASCII "k"
+    # the Kelvin sign lowercases to an ASCII "k"
     with pytest.raises(ValueError, match="invalid_idle_channels"):
         IdleChannelSettings.normalize([login])
 
@@ -133,7 +135,7 @@ def _update(manager, data):
 
 
 def test_settings_update_saves_and_reruns_idle_step_without_games_update(caplog):
-    # RT3: list edits must not restart channel cleanup and refetch while mining
+    # list edits must not restart channel cleanup and refetch while mining
     manager, stored, on_change, console = _manager()
     idle_change = manager._on_idle_channels_change
     with caplog.at_level(logging.DEBUG, logger="TwitchDrops"):
@@ -154,12 +156,36 @@ def test_settings_update_saves_and_reruns_idle_step_without_games_update(caplog)
     idle_change.assert_not_called()
 
 
-def test_gui_manager_wires_idle_list_changes_to_the_client():
-    import inspect
+def test_gui_manager_passes_idle_list_changes_to_the_client():
+    twitch = MagicMock(spec=Twitch)
+    twitch.settings = SimpleNamespace(idle_channels=[], save=MagicMock())
+    gui = WebGUIManager(twitch)
+    _update(gui.settings, {"idle_channels": ["Foo"]})
+    assert twitch.settings.idle_channels == ["foo"]
+    twitch.idle_channels_changed.assert_called_once_with()
+    twitch.request_games_update.assert_not_called()
+    _update(gui.settings, {"idle_channels": ["foo"]})  # unchanged: no idle step re-run
+    twitch.idle_channels_changed.assert_called_once_with()
 
-    from src.web import gui_manager
 
-    assert "on_idle_channels_change=lambda: self._twitch.idle_channels_changed()" in inspect.getsource(gui_manager)
+@pytest.mark.parametrize("share", [True, False])
+def test_idle_settings_survive_save_and_reload(tmp_path, monkeypatch, share):
+    path = tmp_path / "settings.json"
+    monkeypatch.setattr("src.config.settings.SETTINGS_PATH", path)
+    settings = Settings()
+    settings.idle_channels = ["Foo", " bar "]
+    settings.claim_channel_points = not share
+    settings.share_watch_streaks = share
+    settings.save()
+    reloaded = Settings()
+    assert reloaded.idle_channels == ["foo", "bar"]
+    assert reloaded.claim_channel_points is (not share)
+    assert reloaded.share_watch_streaks is share
+    saved = path.read_text(encoding="utf-8")
+    reloaded.idle_channels = ["bad-name"]
+    with pytest.raises(ValueError, match="invalid_idle_channels"):
+        reloaded.save()
+    assert path.read_text(encoding="utf-8") == saved
 
 
 def test_claim_channel_points_requires_strict_bool():

@@ -113,7 +113,7 @@ async def test_streak_reason_ends_visit():
 
 @pytest.mark.asyncio
 async def test_one_info_per_claim(caplog):
-    # F3: the successful claim logs the INFO line; the CLAIM points-earned only DEBUG
+    # the successful claim logs the INFO line; the CLAIM points-earned only DEBUG
     svc, _, _ = setup()
     with caplog.at_level(logging.DEBUG, logger="TwitchDrops"):
         await svc.process_points(1, claim_msg())
@@ -127,7 +127,7 @@ async def test_one_info_per_claim(caplog):
 
 @pytest.mark.asyncio
 async def test_failed_claim_logs_no_info_and_is_retried(caplog):
-    # F1: a failed request must not mark the claim as done
+    # a failed request must not mark the claim as done
     gql = AsyncMock(side_effect=[TimeoutError(), CLAIM_OK, CLAIM_OK])
     svc, tw, _ = setup(gql=gql)
     with caplog.at_level(logging.INFO, logger="TwitchDrops"):
@@ -182,7 +182,6 @@ async def test_claim_in_flight_is_sent_once():
 
 @pytest.mark.asyncio
 async def test_bool_balance_is_ignored():
-    # F7
     svc, _, _ = setup()
     await svc.process_points(1, earned("WATCH", balance=True))
     assert svc.balances == {}
@@ -190,7 +189,7 @@ async def test_bool_balance_is_ignored():
 
 @pytest.mark.asyncio
 async def test_no_claim_on_a_channel_drops_can_use():
-    # RT1: a mineable channel is not idle watched, even if the loop has not noticed yet
+    # a mineable channel is not idle watched, even if the loop has not noticed yet
     svc, tw, _ = setup()
     tw.can_watch.return_value = True
     await svc.process_points(1, claim_msg())
@@ -201,7 +200,7 @@ async def test_no_claim_on_a_channel_drops_can_use():
 
 @pytest.mark.asyncio
 async def test_unexpected_points_error_is_logged_like_process_drops(caplog):
-    # RT5: process_points runs as a websocket callback task; task_wrapper logs the traceback
+    # process_points runs as a websocket callback task; task_wrapper logs the traceback
     # (then re-raises into that task, exactly as for process_drops)
     svc, _, _ = setup()
     svc._points_earned = AsyncMock(side_effect=RuntimeError("boom"))
@@ -268,7 +267,7 @@ async def test_gql_failures_log_one_warning_without_body(caplog):
 
 @pytest.mark.asyncio
 async def test_numeric_channel_id_in_points_messages():
-    # FR6: both message types normalise the channel id the same way
+    # both message types normalise the channel id the same way
     svc, tw, _ = setup()
     svc.visit = Visit(123, 10, 0.0)
     await svc.process_points(1, earned("WATCH_STREAK", channel_id=123))

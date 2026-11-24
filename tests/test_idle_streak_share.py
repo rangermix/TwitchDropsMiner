@@ -153,7 +153,7 @@ async def test_refused_share_retries_once_then_stops(caplog):
     {"errors": [{"message": "boom"}]},
 ], ids=repr)
 async def test_unknown_outcome_uses_up_all_attempts(caplog, failure):
-    # item 1 (fable round): a share that may have been posted is never resent
+    # a share that may have been posted is never resent
     svc, tw = setup(gql=make_gql([read([milestone()])], [failure, SHARE_OK]))
     with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
         for _ in range(3):
@@ -247,7 +247,7 @@ def sent_shares(browser):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("message", ["service timeout", "service unavailable", "context deadline exceeded", "service error"])
 async def test_one_share_attempt_sends_the_mutation_once(monkeypatch, caplog, message):
-    # item 1: a retryable error reply on a share is a failed attempt, never a resend
+    # a retryable error reply on a share is a failed attempt, never a resend
     replies = [{"errors": [{"message": message}]}] * 2 + [SHARE_OK]
 
     async def answer(op, single_attempt=False):
@@ -268,7 +268,7 @@ async def test_one_share_attempt_sends_the_mutation_once(monkeypatch, caplog, me
 
 @pytest.mark.asyncio
 async def test_read_answer_for_another_channel_is_skipped():
-    # item 2: answers are matched to channels by the channel id they carry, not by position alone
+    # answers are matched to channels by the channel id they carry, not by position alone
     svc, tw = setup(gql=make_gql([read([milestone("m1")], "999"), read([milestone("m2")], "456")]))
     add_channel(tw)
     await svc.share_streaks()
@@ -346,7 +346,7 @@ async def test_state_change_during_a_share_stops_the_next_channel(flip):
 
 @pytest.mark.asyncio
 async def test_failed_batch_falls_back_to_one_read_per_channel(caplog):
-    # item 4: one channel's unrecognised error must not hide the other channels' streaks
+    # one channel's unrecognised error must not hide the other channels' streaks
     async def gql(op):
         if isinstance(op, list):
             if len(op) > 1 or op[0]["variables"]["login"] == "a":
@@ -378,7 +378,7 @@ async def test_no_fallback_for_a_single_read_or_a_transport_failure(error, two):
 
 @pytest.mark.asyncio
 async def test_raw_ops_carry_their_operation_name():
-    # item 5: the name is sent and matches the one in the query text
+    # the name is sent and matches the one in the query text
     svc, tw = setup()
     await svc.share_streaks()
     [[read_op]] = reads(tw)
@@ -391,7 +391,6 @@ async def test_raw_ops_carry_their_operation_name():
 
 @pytest.mark.asyncio
 async def test_request_warnings_use_a_neutral_prefix(caplog):
-    # item 6
     svc, _ = setup(gql=make_gql([read([milestone()])], [{"errors": [{"message": "x"}]}]))
     with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
         await svc.share_streaks()
@@ -400,7 +399,7 @@ async def test_request_warnings_use_a_neutral_prefix(caplog):
 
 @pytest.mark.asyncio
 async def test_a_higher_value_of_the_same_streak_is_shared_again():
-    # item 7: Twitch may keep the id while the count rises
+    # Twitch may keep the id while the count rises
     current = [read([milestone(value="9")])]
     svc, tw = setup(gql=make_gql(current))
     await svc.share_streaks()
@@ -426,7 +425,7 @@ async def test_refusals_of_one_value_do_not_block_the_next_value():
 
 @pytest.mark.asyncio
 async def test_early_check_request_waits_for_a_live_channel():
-    # item 8: a request that finds no live channel is kept for the next tick
+    # a request that finds no live channel is kept for the next tick
     svc, tw = setup(online=False)
     svc._share_checked = time.monotonic()
     svc._share_now = True
@@ -453,12 +452,9 @@ async def test_share_without_a_usable_value_logs_no_count(caplog, value):
     assert caplog.messages == ["Shared watch streak on A"]
 
 
-# Fable review round
-
-
 @pytest.mark.asyncio
 async def test_share_with_a_5xx_through_the_real_http_and_gql_clients_is_sent_once(monkeypatch, caplog):
-    # item 1: a 5xx may come after Twitch applied the share; neither the clients nor a later check resend it
+    # a 5xx may come after Twitch applied the share; neither the clients nor a later check resend it
     monkeypatch.setattr("src.api.http_client.asyncio.sleep", AsyncMock())
     monkeypatch.setattr("src.api.gql_client.asyncio.sleep", AsyncMock())
 
@@ -487,7 +483,7 @@ async def test_share_with_a_5xx_through_the_real_http_and_gql_clients_is_sent_on
 
 @pytest.mark.asyncio
 async def test_share_hanging_past_the_check_timeout_is_not_resent(monkeypatch, caplog):
-    # item 7: the 30 s wait cancels the share mid-request; its outcome is unknown
+    # the 30 s wait cancels the share mid-request; its outcome is unknown
     monkeypatch.setattr("src.services.idle_watch.STREAK_SHARE_TIMEOUT", 0.05)
     hang = asyncio.Event()
 
@@ -526,7 +522,7 @@ async def test_share_hanging_past_the_check_timeout_is_not_resent(monkeypatch, c
     {},
 ], ids=repr)
 async def test_unexpected_share_reply_warns_and_is_not_resent(caplog, reply):
-    # item 5: only the milestone coming back counts as a confirmed share
+    # only the milestone coming back counts as a confirmed share
     svc, tw = setup(gql=make_gql([read([milestone()])], [reply]))
     with caplog.at_level(logging.INFO, logger="TwitchDrops"):
         for _ in range(2):
@@ -540,7 +536,7 @@ async def test_unexpected_share_reply_warns_and_is_not_resent(caplog, reply):
 
 @pytest.mark.asyncio
 async def test_one_share_per_channel_per_check():
-    # item 6: two shareable milestones on one channel go out in two checks, never as a burst
+    # two shareable milestones on one channel go out in two checks, never as a burst
     svc, tw = setup(rows=[milestone("m1"), milestone("m2")])
     add_channel(tw)
     tw.gql_request = make_gql([read([milestone("m1"), milestone("m2")]), read([milestone("m3")], "456")])
@@ -564,7 +560,7 @@ async def test_a_skipped_milestone_does_not_use_the_channels_share():
 
 @pytest.mark.asyncio
 async def test_int_and_string_values_are_one_key():
-    # item 6: Twitch sends value as a string; an int of the same count must not share again
+    # Twitch sends value as a string; an int of the same count must not share again
     current = [read([milestone(value=9)])]
     svc, tw = setup(gql=make_gql(current))
     await svc.share_streaks()
@@ -577,7 +573,7 @@ async def test_int_and_string_values_are_one_key():
 
 @pytest.mark.asyncio
 async def test_a_list_reply_to_a_single_share_is_rejected(caplog):
-    # item 8: only a batch may answer with a list
+    # only a batch may answer with a list
     svc, tw = setup(gql=make_gql([read([milestone()])], [[SHARE_OK]]))
     with caplog.at_level(logging.INFO, logger="TwitchDrops"):
         await svc.share_streaks()

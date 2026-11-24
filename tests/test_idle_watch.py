@@ -382,9 +382,6 @@ async def test_whole_request_failure_is_not_a_skip():
     assert gql.await_count == 2
 
 
-# --- final review fixes ---
-
-
 def handler_twitch(*, active, can_watch=True, should_switch=True, watching=None):
     tw = MagicMock()
     tw.settings.idle_channels = ["c1"]
@@ -401,7 +398,7 @@ def stream():
 
 @pytest.mark.parametrize("before", [None, "live"])
 def test_drop_channel_event_while_idle_hands_over_to_channel_switch(before):
-    # RT1a: online, or a title/tag update that makes a channel mineable
+    # online, or a title/tag update that makes a channel mineable
     tw, handler = handler_twitch(active=True, watching=SimpleNamespace(login="c1"))
     drop = SimpleNamespace(login="d", name="D", display=MagicMock())
     handler.on_channel_update(drop, stream() if before else None, stream())
@@ -420,7 +417,7 @@ def test_drop_channel_event_without_idle_watches_directly(before):
 
 @pytest.mark.parametrize("after", [None, "live"])
 def test_idle_watched_channel_offline_or_update_pokes_instead_of_switch(after):
-    # RT4: offline, and a title/tag change of the idle channel that drops cannot use
+    # offline, and a title/tag change of the idle channel that drops cannot use
     idle = SimpleNamespace(login="c1", name="C1", display=MagicMock())
     tw, handler = handler_twitch(active=True, can_watch=False, watching=idle)
     handler.on_channel_update(idle, stream(), stream() if after else None)
@@ -441,7 +438,7 @@ def test_idle_watched_channel_becoming_mineable_pokes_the_loop():
 
 @pytest.mark.asyncio
 async def test_loop_hands_a_mineable_watched_channel_to_drops(monkeypatch, caplog):
-    # RT1b: the loop must not take the watch back from a drop channel
+    # the loop must not take the watch back from a drop channel
     monkeypatch.setattr(idle_mod, "IDLE_TICK_SECONDS", 0.01)
     a, drop = fake(1, 10, login="c1"), fake(9, 90, login="d")
     a.name, drop.name = "A", "D"
@@ -459,7 +456,7 @@ async def test_loop_hands_a_mineable_watched_channel_to_drops(monkeypatch, caplo
 
 
 def test_base_topics_match_the_user_topics_subscribed_at_login():
-    # RT2: every User topic subscribed in _run must be counted in BASE_TOPICS
+    # every User topic subscribed in _run must be counted in BASE_TOPICS
     from src.config import (
         BASE_TOPICS,
         MAX_TOPICS,
@@ -476,7 +473,7 @@ def test_base_topics_match_the_user_topics_subscribed_at_login():
 
 
 def test_idle_list_change_reruns_idle_step_without_games_update():
-    # RT3: the client side of an idle_channels edit
+    # the client side of an idle_channels edit
     client = client_stub(flag=True)
     client._games_update_pending = False
     client.idle_watch.active = True
@@ -493,7 +490,6 @@ def test_idle_list_change_reruns_idle_step_without_games_update():
 
 @pytest.mark.asyncio
 async def test_unexpected_tick_error_is_logged_and_the_loop_continues(monkeypatch, caplog):
-    # RT5
     monkeypatch.setattr(idle_mod, "IDLE_TICK_SECONDS", 0.01)
     a = fake(1, 10)
     a.name = "A"
@@ -514,7 +510,6 @@ async def test_unexpected_tick_error_is_logged_and_the_loop_continues(monkeypatc
 
 @pytest.mark.parametrize("pending", ["inventory", "games"])
 def test_pending_state_activation_stops_idle_watch(pending):
-    # RT7
     client = client_stub(flag=True)
     client.settings = SimpleNamespace(mining_hours={"mode": "always"})
     client._paused = False
@@ -532,7 +527,7 @@ def test_pending_state_activation_stops_idle_watch(pending):
 
 @pytest.mark.asyncio
 async def test_poke_during_a_tick_is_not_lost(monkeypatch):
-    # RT8: a poke that arrives during track() must run another tick at once
+    # a poke that arrives during track() must run another tick at once
     monkeypatch.setattr(idle_mod, "IDLE_TICK_SECONDS", 5)
     a = fake(1, 10)
     a.name = "A"
@@ -554,7 +549,6 @@ async def test_poke_during_a_tick_is_not_lost(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_idle_start_clears_drop_panel_and_rerun_keeps_idle_status(monkeypatch):
-    # RT9
     monkeypatch.setattr(idle_mod, "IDLE_TICK_SECONDS", 5)
     a = fake(1, 10)
     a.name = "A"
@@ -580,7 +574,6 @@ def test_idle_branch_rerun_reshows_idle_status():
 
 @pytest.mark.asyncio
 async def test_authentication_change_drains_idle_task_and_forgets_account_state(tmp_path, monkeypatch):
-    # RT6 and RT10
     from tests.test_session_lifecycle import miner
 
     client = miner(tmp_path, monkeypatch)
@@ -619,7 +612,6 @@ async def test_authentication_change_drains_idle_task_and_forgets_account_state(
 
 @pytest.mark.asyncio
 async def test_short_batch_reply_skips_unanswered_logins(caplog):
-    # F5
     gql = AsyncMock(return_value=[user(1, "a", live=False)])
     svc, _ = service(idle=["a", "b", "c"], gql=gql)
     with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
@@ -645,9 +637,6 @@ async def test_banned_logins_warn_once(caplog):
     assert sorted(r.getMessage() for r in banned) == [
         "Idle channel b skipped: banned", "Idle channel c skipped: banned",
     ]
-
-
-# --- second final review fixes (FR) ---
 
 
 def run_service(channels=None, idle=(), gql=None, visits_path=None):
@@ -678,7 +667,7 @@ async def idle_entry(svc, ticks=1):
 
 @pytest.mark.asyncio
 async def test_over_cap_login_warns_once_by_count_and_is_retried_on_the_next_idle_entry(caplog):
-    # FR1: CHANNEL_SWITCH "no channel" keeps the drop channels tracked, so the cap can be full
+    # CHANNEL_SWITCH "no channel" keeps the drop channels tracked, so the cap can be full
     filler = {1000 + i: fake(1000 + i, 1) for i in range(MAX_CHANNELS)}
     gql = AsyncMock(return_value=[user(1, "secretlogin", live=False)])
     svc, tw = run_service(filler, idle=["secretlogin"], gql=gql)
@@ -713,7 +702,7 @@ async def test_lifted_ban_is_retried_on_the_next_idle_entry():
 
 @pytest.mark.asyncio
 async def test_visit_clock_pauses_while_the_loop_is_stopped(monkeypatch):
-    # FR2a: 60 s of a visit, then an hour of drops, must leave 360 s of the visit
+    # 60 s of a visit, then an hour of drops, must leave 360 s of the visit
     now = [1000.0]
     monkeypatch.setattr(idle_mod, "time", SimpleNamespace(monotonic=lambda: now[0]))
     a, b = fake(1, 10, login="c1"), fake(2, 20, login="c2")
@@ -738,7 +727,7 @@ async def test_visit_clock_pauses_while_the_loop_is_stopped(monkeypatch):
 
 
 def test_visits_survive_a_tick_without_live_channels():
-    # FR2b: a failed track() after a full cleanup leaves no live channel for a tick
+    # a failed track() after a full cleanup leaves no live channel for a tick
     svc, _ = service()
     a, b = fake(1, 10), fake(2, 20)
     svc.visited = {10: 1, 20: 2}
@@ -748,7 +737,6 @@ def test_visits_survive_a_tick_without_live_channels():
 
 
 def test_channel_missing_for_one_tick_is_not_visited_twice():
-    # FR2c
     svc, _ = service()
     a, b = fake(1, 10), fake(2, 20)
     svc.pick([a, b], 0)
@@ -770,7 +758,7 @@ def answers_by_login(table):
 
 @pytest.mark.asyncio
 async def test_hard_gql_error_in_a_batch_skips_only_the_failing_login(caplog):
-    # FR3: gql_request raises GQLException for the whole batch on an unrecognised error
+    # gql_request raises GQLException for the whole batch on an unrecognised error
     from src.exceptions import GQLException
 
     gql = answers_by_login({
@@ -827,7 +815,6 @@ async def test_numeric_user_id_is_accepted():
 
 @pytest.mark.asyncio
 async def test_visit_start_is_logged_once_across_loop_restarts(caplog):
-    # FR7
     a = fake(1, 10, login="c1")
     a.name = "A"
     svc, _ = loop_service([a])
@@ -900,7 +887,7 @@ def stopping_client(*, can_watch, active=True):
 
 @pytest.mark.parametrize("state", [State.INVENTORY_FETCH, State.CHANNEL_SWITCH, State.IDLE])
 def test_leaving_idle_watching_releases_the_idle_channel(state):
-    # FR8: otherwise refresh_watched_channel carries it into the CHANNELS_FETCH candidates
+    # otherwise refresh_watched_channel carries it into the CHANNELS_FETCH candidates
     client = stopping_client(can_watch=False)
     client.change_state(state)
     client.idle_watch.stop.assert_called_once()
@@ -908,7 +895,7 @@ def test_leaving_idle_watching_releases_the_idle_channel(state):
 
 
 def test_leaving_idle_watching_keeps_a_channel_drops_can_use():
-    # the loop's own handover (RT1) leaves a drop channel watched for CHANNEL_SWITCH
+    # the loop's own handover leaves a drop channel watched for CHANNEL_SWITCH
     client = stopping_client(can_watch=True)
     client.change_state(State.CHANNEL_SWITCH)
     client.stop_watching.assert_not_called()
