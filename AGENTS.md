@@ -840,7 +840,7 @@ progress to an ignored drop while the miner intentionally targets another reward
   Playlist/transport, lifecycle, and controlled-clock regressions live in
   `tests/test_playlist_watch.py`, `tests/test_watch_transport.py`, and
   `tests/test_watch_poll_cadence.py`.
-- A sitewide watch-based Open Reward Campaign maps one group to a drop in `RewardCampaign`.
+- Since v2.7.0, a sitewide watch-based Open Reward Campaign maps one group to a drop in `RewardCampaign`.
   An actionable `CLAIMABLE` group takes priority. Other started groups are ranked by availability: mineable now,
   then waiting for the next window, then at the goal inside an open window; then unstarted
   groups that can be mined, then finished ones (`CLAIMED`/`FULFILLED`). Twitch grants a reached goal and keeps it `IN_PROGRESS`, so it

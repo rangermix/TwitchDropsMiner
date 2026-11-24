@@ -1,3 +1,20 @@
+# Release Notes - v2.7.0
+
+TDM now supports watch-based sitewide Open Reward Campaigns, including the daily
+GTA DVD Chest from the GTAVI Launch Celebration.
+
+- Add the campaign’s category to **Settings → Games → Mining list** and enable its
+  reward type. For the GTA DVD Chest, select **Grand Theft Auto VI** and **Other reward**.
+- Inventory shows **Times earned** for repeat rewards. Daily goals wait for the next
+  eligible window. Each newly observed grant gets its own history entry and can
+  trigger your configured claim alerts.
+- If Twitch leaves watch progress unchanged through two 15-minute attempts, TDM
+  pauses that goal for up to six hours so other selected games can progress.
+- Rewards without artwork keep their names and types in Inventory and its filters.
+
+Support covers watch goals on sitewide campaigns. Subscription goals and
+game-specific Open Reward Campaigns are outside this release’s scope.
+
 # Release Notes - v2.6.0
 
 This release adds an optional preference for channels you follow, new-version

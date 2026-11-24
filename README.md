@@ -27,7 +27,8 @@ services operated for other users are outside its support scope.
   reward artwork and live drop progress.
   Starting in v2.6.0, the queue's information button explains which ordering rules apply.
 - Track campaigns and rewards, and ignore drops you do not want.
-- Source builds from current `main` also track [watch-based Open Reward Campaigns](docs/troubleshooting.md#no-campaigns-or-no-progress).
+- Starting in v2.7.0, track [watch-based Open Reward Campaigns](docs/troubleshooting.md#no-campaigns-or-no-progress)
+  and see how many times you have earned a repeat reward.
 - Skip channels while Twitch reports an active ban, including temporary bans.
 - Optionally [prefer channels you follow](docs/usage.md#prefer-channels-you-follow)
   when otherwise equally ranked channels offer the same drops.
@@ -92,7 +93,7 @@ eligible stream when it detects the broadcast has ended.
 With Docker installed, choose one setup below. Shell examples use Bash
 (Linux, macOS, or WSL).
 
-The v2.6.0 image includes an init process to clean up exited child processes.
+Docker images since v2.6.0 include an init process to clean up exited child processes.
 The examples retain `--init` and `init: true` for compatibility with v2.5.0 and older
 images.
 
@@ -101,13 +102,13 @@ images.
 Pull and start the published image:
 
 ```bash
-docker pull rangermix/twitch-drops-miner:2.6.0
+docker pull rangermix/twitch-drops-miner:2.7.0
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.6.0
+  rangermix/twitch-drops-miner:2.7.0
 ```
 
 ### Docker Compose
@@ -118,7 +119,7 @@ inside it. Set `TZ` to your home internet connection's timezone:
 ```yaml
 services:
   twitch-drops-miner:
-    image: rangermix/twitch-drops-miner:2.6.0
+    image: rangermix/twitch-drops-miner:2.7.0
     container_name: twitch-drops-miner
     init: true
     stop_grace_period: 30s
