@@ -646,6 +646,12 @@ progress to an ignored drop while the miner intentionally targets another reward
 - The renewal worker rotates SDK state, normally five minutes before expiry, with
   bounded retries and same-account/freshness validation. Mining GraphQL stays in
   Python. Preserve safe-read retry rules; never replay ambiguous mutations.
+- Resolve the current `SessionTransport` proxy at each `OwnedChromium` launch for
+  server SDK issuance and renewal. Accept one HTTP or HTTPS proxy endpoint and put
+  only its address in the browser arguments. Supply Basic credentials over the owned
+  browser control channel only for challenges from that proxy. Keep credentials out
+  of process arguments, diagnostics and the interactive browser. The embedded
+  sign-in browser and desktop helper follow their own network routes.
 - On POSIX, `OwnedChromium` (renewal/SDK issuance, run as root) uses
   `--remote-debugging-pipe` and never opens a DevTools TCP port: CDP has no
   authentication, and the `tdm-browser` login UID shares loopback. A small exec

@@ -62,8 +62,7 @@ control port.
 
 Set `TZ` to match the timezone of your home internet connection, for example
 `TZ=Australia/Sydney`. A mismatched timezone can cause Twitch to reject the browser.
-Keep the host clock correct. If the miner uses a proxy, the interactive browser uses
-the container’s network; use consistent network routing for login and mining.
+Keep the host clock correct.
 
 ## Desktop helper fallback
 
@@ -258,6 +257,18 @@ The session and renewal state in `data/imported-session.json` are credentials. K
 the data mount private and back it up only while the miner is stopped. Run one miner
 per data directory. Graceful shutdown closes owned browser processes and removes
 their temporary profiles; an abrupt host crash cannot guarantee profile cleanup.
+
+## Proxy routing
+
+Current source builds use the proxy saved under **Settings → General** for server
+verification and automatic renewal. Enter one HTTP or HTTPS proxy URL. If your
+proxy requires Basic authentication, include the username and password in the URL.
+TDM supplies these credentials only when that proxy requests authentication. Use a
+proxy you trust. New settings apply the next time the server browser starts.
+
+The embedded sign-in browser follows the container’s network. The desktop helper
+signs in using its computer’s network. Keep the sign-in and miner routes to Twitch
+consistent.
 
 ## Dashboard access and source installations
 

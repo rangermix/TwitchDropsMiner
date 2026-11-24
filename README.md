@@ -171,6 +171,8 @@ TDM renews the session automatically using a private verification browser, separ
 from the sign-in viewer. Linux/macOS use a private pipe for this browser's control
 connection; v2.5.0 preserves it through display wrappers. Windows uses loopback.
 See [session renewal](docs/authentication.md).
+In current source builds, the saved proxy also applies to server verification and
+renewal. See [proxy routing](docs/authentication.md#proxy-routing).
 **Settings → Account & Maintenance → Log out of Twitch** clears this miner’s session
 and opens sign in again for account replacement.
 See [authentication](docs/authentication.md) and [troubleshooting](docs/troubleshooting.md).

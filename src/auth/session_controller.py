@@ -35,9 +35,7 @@ class SessionController:
         self.issuer = issuer or SDKIssuer(OwnedChromium(
             shutil.which("chromium") or shutil.which("chromium-browser") or "chromium",
             no_sandbox=os.name == "posix" and os.geteuid() == 0,
-            # Renewal runs inside Chromium, which needs the proxy as well, not only SessionTransport.
-            proxy=lambda: transport.proxy() if callable(transport.proxy) else transport.proxy,
-        ), diagnostics=getattr(transport, "diagnostics", None))
+        ), diagnostics=getattr(transport, "diagnostics", None), proxy=transport.proxy_url)
         self.activation, self.on_change = activation, on_change
         self._lock = asyncio.Lock()
         self._wake = asyncio.Event()

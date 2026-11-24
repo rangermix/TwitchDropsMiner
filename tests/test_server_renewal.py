@@ -300,28 +300,29 @@ async def test_cancel_during_sdk_wait_closes_owned_target_and_browser():
 
 
 @pytest.mark.asyncio
-async def test_owned_browser_uses_current_proxy_without_bypass(monkeypatch):
-    from src.auth import server_renewal
+async def test_sdk_issuer_uses_current_proxy_for_bootstrap_and_renewal():
+    from src.auth.server_renewal import SDKIssuer
 
-    calls = []
-    process = SimpleNamespace(pid=123, returncode=0, wait=AsyncMock(return_value=0))
+    seed = ServerSeed.from_dict(seed_data(), now=1000)
+    settings = iter(("http://proxy-one.test:8080", "https://proxy-two.test:8443", None))
+    routes = []
+    async with sdk_peer() as (browser, commands, _, _):
+        start = browser.start
 
-    async def spawn(*args, **kwargs):
-        calls.append(args)
-        return process
+        @asynccontextmanager
+        async def capture_route(*, proxy=None):
+            routes.append(proxy.origin if proxy is not None else None)
+            async with start() as targets:
+                yield targets
 
-    monkeypatch.setattr(asyncio, "create_subprocess_exec", spawn)
-    monkeypatch.setattr(server_renewal.OwnedChromium, "wait_ready", AsyncMock(return_value="http://127.0.0.1:1234"))
-    proxy = ["http://proxy-one.test:8080"]
-    browser = server_renewal.OwnedChromium("test-chromium", proxy=lambda: proxy[0])
-    for _ in range(2):
-        async with browser.start():
-            pass
-        proxy[0] = "http://proxy-two.test:8080"
-    assert [next(arg for arg in args if arg.startswith("--proxy-server=")) for args in calls] == [
-        "--proxy-server=http://proxy-one.test:8080",
-        "--proxy-server=http://proxy-two.test:8080",
-    ]
+        browser.start = capture_route
+        issuer = SDKIssuer(browser, clock=lambda: 1000, proxy=lambda: next(settings))
+        await issuer.bootstrap(seed.bundle.headers["authorization"].removeprefix("OAuth "))
+        await issuer.issue(seed)
+        await issuer.issue(seed, initial=True)
+
+    assert routes == ["http://proxy-one.test:8080", "https://proxy-two.test:8443", None]
+    assert all("handleAuthRequests" not in params for method, params in commands if method == "Fetch.enable")
 
 
 @pytest.mark.asyncio
@@ -364,13 +365,14 @@ async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatc
     if platform == "posix":
         monkeypatch.setattr("os.killpg", lambda pid, sig: stopped.append((pid, sig)))
     browser = server_renewal.OwnedChromium("test-chromium", no_sandbox=True)
+    proxy = server_renewal.BrowserProxy.from_setting("https://proxy-user:synthetic-pw@proxy.test:9443")
     if platform == "posix":
         monkeypatch.setattr(browser, "wait_pipe", AsyncMock())  # The fake process never speaks CDP.
     if outcome == "startup_timeout":
         monkeypatch.setattr(browser, "wait_pipe" if platform == "posix" else "wait_ready", AsyncMock(side_effect=TimeoutError))
     descriptors = set(os.listdir("/dev/fd")) if os.path.isdir("/dev/fd") else None
     try:
-        async with browser.start() as owned:
+        async with browser.start(proxy=proxy) as owned:
             if platform == "posix":
                 assert isinstance(owned, DevToolsPipe)
             else:
@@ -387,6 +389,8 @@ async def test_owned_browser_always_stops_process_and_removes_profile(monkeypatc
     process.wait.assert_awaited()
     assert all(not profile.exists() for profile in profiles)
     args, kwargs = calls[0]
+    assert "--proxy-server=https://proxy.test:9443" in args
+    assert "proxy-user" not in repr(args) and "synthetic-pw" not in repr(args)
     assert ("--headless=new" in args) is not displayed
     # Only a Linux host missing xvfb-run is told to install it; Windows is always headless.
     headless_fallback = platform == "posix" and sys.platform.startswith("linux") and not displayed
