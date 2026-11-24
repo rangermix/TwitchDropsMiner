@@ -145,7 +145,9 @@ async def test_inventory_replacement_removes_stale_campaign_lookup_entries():
         _maintenance_service=SimpleNamespace(run_maintenance_task=AsyncMock()),
     )
 
-    await InventoryService(cast(Twitch, twitch)).fetch_inventory()
+    service = InventoryService(cast(Twitch, twitch))
+    service.fetch_reward_campaigns = AsyncMock(return_value=[])
+    await service.fetch_inventory()
     assert twitch._campaigns == {}
     assert twitch._drops == {}
     assert twitch.inventory == []
@@ -246,3 +248,17 @@ async def test_refresh_endpoints_return_409_during_shutdown(endpoint, expected_k
     assert exc_info.value.status_code == 409
     assert exc_info.value.detail == "Twitch client is shutting down"
     twitch_client.request_inventory_refresh.assert_called_once_with(**expected_kwargs)
+
+
+def test_clear_cached_state_resets_the_whole_reward_ledger_in_place():
+    twitch = _make_cache_test_client()[0]
+    service = InventoryService(twitch)
+    ledger = service._reward_ledger
+    ledger.announced["group"] = 3
+    ledger.stale["group"] = (None,) * 4
+    ledger.uncredited["group"] = ((None,) * 4, None, True)
+
+    service.clear_cached_state()
+
+    assert service._reward_ledger is ledger
+    assert not ledger.announced and not ledger.stale and not ledger.uncredited

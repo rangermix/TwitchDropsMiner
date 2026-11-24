@@ -35,3 +35,17 @@ for (const locale of locales) {
         [NODE, "-"], input=script, capture_output=True, text=True, encoding="utf-8"
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_header_and_login_share_the_drop_logo():
+    root = Path(__file__).resolve().parents[1] / "web"
+    logo = '<img class="brand-icon" src="/static/logo.svg?v=__APP_VERSION__" alt="" width="40" height="40">'
+    for page in ("index.html", "login.html"):
+        html = (root / page).read_text(encoding="utf-8")
+        assert html.count(logo) == 1, page
+        assert '<link rel="icon" type="image/png" href="/static/favicon.png?v=__APP_VERSION__">' in html, page
+    # The logo is public on the login page; keep it a passive image.
+    svg = (root / "static" / "logo.svg").read_text(encoding="utf-8").lower()
+    assert svg.startswith("<svg ")
+    for active in ("<script", "foreignobject", "href", " on"):
+        assert active not in svg, active

@@ -161,7 +161,8 @@ class AuthMiddleware:
     """Guard HTTP and Engine.IO before either application handles the request."""
 
     PUBLIC = {"/login", "/healthz", "/api/auth/status", "/api/auth/login",
-              "/static/auth.js", "/static/auth.css", "/static/styles.css", "/static/favicon.png"}
+              "/static/auth.js", "/static/auth.css", "/static/styles.css", "/static/favicon.png",
+              "/static/logo.svg"}
     host_warned_at = float("-inf")
     # The noVNC viewer is a fixed same-origin page and keeps its upstream asset policy.
     CSP = (b"default-src 'self'; script-src 'self' https://cdn.socket.io; "

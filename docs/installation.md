@@ -1,6 +1,6 @@
 # Installation
 
-Run TDM on your own computer or home server with Docker. The v2.6.0 image
+Run TDM on your own computer or home server with Docker. The v2.7.0 image
 includes the dashboard's Twitch login browser, optional desktop-helper access, and
 automatic session renewal.
 No desktop or display is needed on the server. Older images use their release's
@@ -11,13 +11,13 @@ authentication instructions.
 Pull and start the published image:
 
 ```bash
-docker pull rangermix/twitch-drops-miner:2.6.0
+docker pull rangermix/twitch-drops-miner:2.7.0
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.6.0
+  rangermix/twitch-drops-miner:2.7.0
 ```
 
 Open [http://localhost:8080](http://localhost:8080). From another computer on your home
@@ -28,8 +28,8 @@ Since version 2.4.0, TDM checks dashboard host names. Custom names such as `nas.
 [allowed host names](dashboard-access.md#allowed-host-names) before updating an
 installation that uses a custom address.
 
-The data mount keeps settings and login credentials outside the container. The v2.6.0
-image includes an init process to clean up exited child processes. The commands retain
+The data mount keeps settings and login credentials outside the container. Images since
+v2.6.0 include an init process to clean up exited child processes. The commands retain
 Docker's `--init` for compatibility with older images. The shutdown timeout gives TDM
 time to close its temporary renewal browser when stopped.
 Only the dashboard port is needed; do not publish a browser or browser-control port.
@@ -73,7 +73,7 @@ timezone of your home internet connection before starting:
 ```yaml
 services:
   twitch-drops-miner:
-    image: rangermix/twitch-drops-miner:2.6.0
+    image: rangermix/twitch-drops-miner:2.7.0
     container_name: twitch-drops-miner
     init: true
     stop_grace_period: 30s
@@ -94,7 +94,7 @@ Start it from that folder:
 docker compose pull && docker compose up -d
 ```
 
-This example pins `2.6.0`, like the Docker quick start. Change the image tag to choose
+This example pins `2.7.0`, like the Docker quick start. Change the image tag to choose
 another release, or use `latest` to select the current stable image whenever you
 pull and recreate. The restart policy does not update images automatically.
 
@@ -181,7 +181,9 @@ For more Compose options, see the [Docker Compose documentation](https://docs.do
 
 Install Python 3.12 or newer and [uv](https://docs.astral.sh/uv/). The miner host also
 needs a Chromium executable named `chromium` or `chromium-browser` on its `PATH` for
-automatic renewal. On Linux, also install `xvfb` and `xauth` (for example
+automatic renewal. Current source builds prefer Firefox 143+ (`firefox` or `firefox-esr`
+on `PATH`) for embedded sign-in. Chromium handles sign-in when a compatible Firefox is unavailable.
+On Linux, also install `xvfb` and `xauth` (for example
 `sudo apt install xvfb xauth` on Debian or Ubuntu) so `xvfb-run` is available. Without
 it the renewal browser runs headless and the miner logs a warning each time it starts;
 Twitch can reject the session it issues, reported as `reason=headless_fallback`. The
@@ -272,7 +274,7 @@ docker compose pull && docker compose up -d
 
 Compose pulls the selected image and recreates the service when its image or
 configuration changes, preserving its mounts. There is no need to remove the service
-manually. A version tag such as `2.6.0` stays on that release until you change it.
+manually. A version tag such as `2.7.0` stays on that release until you change it.
 
 For the repository's Compose file, run this from your original Git clone on the
 branch you intend to update:

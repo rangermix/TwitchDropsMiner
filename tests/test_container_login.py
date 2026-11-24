@@ -98,7 +98,7 @@ def attempt():
     desktop = Desktop()
     browsers = []
 
-    def create(environment):
+    async def create(environment):
         browser = Browser(environment)
         browsers.append(browser)
         return browser

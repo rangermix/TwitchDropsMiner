@@ -1253,7 +1253,9 @@ function renderInventory() {
                 drop.benefits.forEach(benefit => {
                     benefitsList.appendChild(
                         makeElement('div', { class: 'benefit-item' }, '', el => {
-                            el.appendChild(makeImageElement(benefit.image_url, benefit.name, 'benefit-icon'));
+                            if (benefit.image_url) {
+                                el.appendChild(makeImageElement(benefit.image_url, benefit.name, 'benefit-icon'));
+                            }
                             el.appendChild(makeElement('div', { class: 'benefit-info' }, '', el2 => {
                                 el2.appendChild(makeElement('span', { class: 'benefit-name' }, benefit.name));
                                 const labels = t.gui?.inventory?.filters || {};
@@ -1268,6 +1270,11 @@ function renderInventory() {
             dropItem.appendChild(benefitsList);
             dropItem.appendChild(makeDropProgressBar(drop));
             dropItem.appendChild(makeElement('div', {}, `${drop.current_minutes} / ${drop.required_minutes} minutes (${dropPercent(drop)}%)`));
+            if (Number.isInteger(drop.reward_grants)) {
+                const grantsTemplate = t.gui?.inventory?.reward_grants || 'Times earned: {count}';
+                dropItem.appendChild(makeElement('div', { class: 'drop-reward-grants' },
+                    grantsTemplate.replace('{count}', String(drop.reward_grants))));
+            }
             if (drop.is_claimed) {
                 dropItem.appendChild(makeElement('div', {}, `✓ ${claimedText}`));
             } else if (policyStatus) {

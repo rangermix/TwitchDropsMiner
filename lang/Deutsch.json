@@ -151,6 +151,7 @@
             "ignored_keyword_reason": "Wegen Schlüsselwort ignoriert: {keyword}",
             "ignored_precondition_reason": "Ignoriert, weil dieser Drop von {drop} abhängt",
             "skipped_branch_reason": "Übersprungen, weil keine erspielbare Belohnung von diesem Drop abhängt.",
+            "reward_grants": "Anzahl erhalten: {count}",
             "filters": {
                 "active": "Aktiv",
                 "not_linked": "Nicht Verbunden",
