@@ -65,6 +65,7 @@ def setup(rows=None, *, share=True, active=True, gql=None, online=True):
         gui=SimpleNamespace(status=MagicMock()),
         watching_channel=SimpleNamespace(get_with_default=lambda d: channel),
         can_watch=MagicMock(return_value=False),
+        is_mining_time=MagicMock(return_value=True),
     )
     svc = IdleWatchService(tw)
     svc._task = MagicMock(done=lambda: not active)
@@ -605,3 +606,12 @@ async def test_share_failure_raised_by_single_attempt_is_a_warning_not_a_crash(c
         await svc.share_streaks()
     assert caplog.messages == [f"Twitch request ShareViewerMilestone failed ({type(error).__name__})"]
     assert svc._share_tries == {("m1", "9"): STREAK_SHARE_ATTEMPTS}
+
+
+@pytest.mark.asyncio
+async def test_no_share_while_paused_or_outside_mining_hours():
+    # can_watch is False then too, so the drops check alone would let the share through
+    svc, tw = setup()
+    tw.is_mining_time.return_value = False
+    await svc.share_streaks()
+    assert shares(tw) == []

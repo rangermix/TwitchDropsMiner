@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from src.config import State
 from src.services.idle_watch import IdleWatchService, Visit
 
 
@@ -25,6 +26,7 @@ def setup(*, active=True, claim=True, watched=None, gql=None):
         gui=SimpleNamespace(status=MagicMock()),
         watching_channel=SimpleNamespace(get_with_default=lambda d: watched),
         can_watch=MagicMock(return_value=False),
+        is_mining_time=MagicMock(return_value=True),
     )
     svc = IdleWatchService(tw)
     svc._task = MagicMock(done=lambda: not active)
@@ -320,3 +322,119 @@ async def test_list_reply_to_a_single_claim_is_rejected(caplog):
         await svc.process_points(1, claim_msg())
     assert "abc" not in svc._claimed
     assert caplog.messages == ["Twitch request ClaimCommunityPoints returned errors"]
+
+
+def context(claim_id="x"):
+    claim = {"id": claim_id} if claim_id else None
+    return {"data": {"community": {"channel": {"self": {"communityPoints": {
+        "balance": 900, "availableClaim": claim,
+    }}}}}}
+
+
+def tick_setup(gql, *live):
+    """A real _tick on a fake client: live channels in list order, track() a no-op."""
+    live = live or (SimpleNamespace(id=123, name="A", login="a", online=True, banned=False, broadcast_id=77),)
+    current = {"live": list(live), "watching": None}
+    tw = SimpleNamespace(
+        channels={c.id: c for c in live},
+        settings=SimpleNamespace(idle_channels=[c.login for c in live], claim_channel_points=True,
+                                 share_watch_streaks=False),
+        gql_request=gql,
+        gui=SimpleNamespace(status=MagicMock()),
+        watching_channel=SimpleNamespace(get_with_default=lambda d: current["watching"] or d),
+        can_watch=MagicMock(return_value=False),
+        is_mining_time=MagicMock(return_value=True),
+        stop_watching=MagicMock(),
+        change_state=MagicMock(),
+        watch=MagicMock(side_effect=lambda c, update_status=True: current.__setitem__("watching", c)),
+    )
+    svc = IdleWatchService(tw)
+    svc._task = MagicMock(done=lambda: False)
+    svc.track = AsyncMock()
+    svc.live_channels = lambda: current["live"]
+    return svc, tw, current
+
+
+def names(tw):
+    return [o["operationName"] for o in sent(tw)]
+
+
+@pytest.mark.asyncio
+async def test_tick_hands_a_picked_channel_drops_can_use_to_drops_unwatched(caplog):
+    # the pick can be mined: no watch, balance read or claim before CHANNEL_SWITCH takes it
+    svc, tw, _ = tick_setup(AsyncMock(side_effect=[context(), CLAIM_OK]))
+    tw.can_watch.return_value = True
+    with caplog.at_level(logging.INFO, logger="TwitchDrops"):
+        assert await svc._tick() is True
+    assert sent(tw) == []
+    tw.watch.assert_not_called()
+    tw.change_state.assert_called_once_with(State.CHANNEL_SWITCH)
+    assert "Idle watching stopped: a drop channel can be watched" in caplog.messages
+
+
+@pytest.mark.asyncio
+async def test_claim_and_points_read_refuse_a_channel_drops_can_use():
+    svc, tw, watched = setup(gql=AsyncMock(side_effect=[context(), CLAIM_OK]))
+    tw.can_watch.return_value = True
+    await svc.claim(watched, "x")
+    await svc.refresh_points(watched)
+    assert sent(tw) == []
+
+
+@pytest.mark.asyncio
+async def test_no_claim_while_paused_or_outside_mining_hours():
+    # can_watch is False then too, so the drops check alone would let the claim through
+    svc, tw, watched = setup(gql=AsyncMock(side_effect=[context(), CLAIM_OK]))
+    tw.is_mining_time.return_value = False
+    await svc.process_points(1, claim_msg())
+    await svc.claim(watched, "x")
+    await svc.refresh_points(watched)
+    assert "ClaimCommunityPoints" not in names(tw)
+
+
+FAILED_CLAIMS = [
+    TimeoutError(),
+    {"data": {"claimCommunityPoints": {"error": {"code": "INTERNAL"}}}},
+    {"data": {"claimCommunityPoints": {}}},
+    {"data": {"claimCommunityPoints": {"error": None}}},
+    {"data": {"claimCommunityPoints": {"error": None, "claim": None}}},
+    {"data": {"claimCommunityPoints": None}},
+]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure", FAILED_CLAIMS, ids=repr)
+async def test_failed_claim_is_retried_on_the_next_tick_until_it_succeeds(failure):
+    gql = AsyncMock(side_effect=[context(), failure, context(), CLAIM_OK])
+    svc, tw, _ = tick_setup(gql)
+    await svc._tick()
+    assert names(tw) == ["ChannelPointsContext", "ClaimCommunityPoints"]
+    assert "x" not in svc._claimed
+    await svc._tick()
+    await svc._tick()  # claimed: no further read
+    assert names(tw) == ["ChannelPointsContext", "ClaimCommunityPoints"] * 2
+    assert "x" in svc._claimed
+
+
+@pytest.mark.asyncio
+async def test_claim_retry_stops_when_the_bonus_is_gone():
+    gql = AsyncMock(side_effect=[context(), FAILED_CLAIMS[1], context(None)])
+    svc, tw, _ = tick_setup(gql)
+    for _ in range(3):
+        await svc._tick()
+    assert names(tw) == ["ChannelPointsContext", "ClaimCommunityPoints", "ChannelPointsContext"]
+
+
+@pytest.mark.asyncio
+async def test_claim_retry_stops_on_a_channel_change():
+    a = SimpleNamespace(id=123, name="A", login="a", online=True, banned=False, broadcast_id=77)
+    b = SimpleNamespace(id=7, name="B", login="b", online=True, banned=False, broadcast_id=78)
+    gql = AsyncMock(side_effect=[context(), FAILED_CLAIMS[1], context(None)])
+    svc, tw, current = tick_setup(gql, a, b)
+    svc.visited = {77: 123, 78: 7}  # both visited: the pick is the first live channel
+    await svc._tick()
+    current["live"] = [b]  # a goes offline
+    await svc._tick()
+    await svc._tick()
+    assert names(tw) == ["ChannelPointsContext", "ClaimCommunityPoints", "ChannelPointsContext"]
+    assert sent(tw)[2]["variables"] == {"channelLogin": "b"}

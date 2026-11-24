@@ -85,6 +85,8 @@ class IdleWatchService:
         self._claimed: set[str] = set()
         # claim ids with a request in flight, so a repeated message does not send twice
         self._claiming: set[str] = set()
+        # the last claim on the watched channel failed; the tick reads its points again
+        self._claim_failed = False
         # watch streak sharing: (milestone id, value) shared this run, attempts per key, last read, early-check request
         self._shared: set[tuple[str, str | None]] = set()
         self._share_tries: dict[tuple[str, str | None], int] = {}
@@ -199,11 +201,7 @@ class IdleWatchService:
         while True:
             # cleared before the awaits, so a poke during the tick runs one more tick
             self._wake.clear()
-            watching = tw.watching_channel.get_with_default(None)
-            if watching is not None and tw.can_watch(watching):
-                # Drops won: normal selection takes the channel over; the watch is not stopped.
-                logger.info("Idle watching stopped: a drop channel can be watched")
-                tw.change_state(State.CHANNEL_SWITCH)
+            if self._hand_to_drops(tw.watching_channel.get_with_default(None)):
                 return
             if not self.allowed():
                 self._pause()
@@ -211,7 +209,8 @@ class IdleWatchService:
                 logger.info("Idle watching stopped")
                 return
             try:
-                await self._tick()
+                if await self._tick():
+                    return
             except ExitRequest:
                 # shutting down: end the loop quietly, like task_wrapper does for other tasks
                 return
@@ -221,7 +220,17 @@ class IdleWatchService:
             with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(self._wake.wait(), IDLE_TICK_SECONDS)
 
-    async def _tick(self) -> None:
+    def _hand_to_drops(self, channel: Channel | None) -> bool:
+        """Hand a channel drops can use to CHANNEL_SWITCH, which ends idle watching; True if handed over."""
+        if channel is None or not self._twitch.can_watch(channel):
+            return False
+        # normal selection takes the channel over; a watched one is not stopped
+        logger.info("Idle watching stopped: a drop channel can be watched")
+        self._twitch.change_state(State.CHANNEL_SWITCH)
+        return True
+
+    async def _tick(self) -> bool:
+        """One idle step; True when it handed the pick to drops and the loop must end."""
         tw = self._twitch
         try:
             await self.track()
@@ -232,6 +241,9 @@ class IdleWatchService:
             logger.warning("Idle channel lookup failed (%s), retrying", type(exc).__name__)
         channel = self.pick(self.live_channels(), time.monotonic())
         self._save_visits()
+        if self._hand_to_drops(channel):
+            # no watch, balance read or claim on a channel drops can use
+            return True
         if self.visit is not self._last_visit:
             if self._last_visit is not None:
                 logger.info("Idle visit ended: broadcast %s", self._last_visit.broadcast_id)
@@ -246,11 +258,16 @@ class IdleWatchService:
                 logger.info("Idle watching switched to %s", channel.name)
             if channel is not self.watched:
                 self._claimed.clear()
+                self._claim_failed = False
             self.watched = channel
             tw.watch(channel, update_status=False)
             self._show_status(channel)
             await self.refresh_points(channel)
+        elif self._claim_failed:
+            # the last bonus claim failed: a fresh read finds the bonus again, once per tick
+            await self.refresh_points(channel)
         await self.share_streaks()
+        return False
 
     def _show_status(self, channel: Channel) -> None:
         points = self.balances.get(channel.id)
@@ -295,9 +312,13 @@ class IdleWatchService:
         return None
 
     async def claim(self, channel: Channel, claim_id: str) -> None:
+        tw = self._twitch
         if (
             not claim_id
-            or not self._twitch.settings.claim_channel_points
+            or not tw.settings.claim_channel_points
+            # paused, outside mining hours, or a channel drops can use: no claim
+            or not tw.is_mining_time()
+            or tw.can_watch(channel)
             or claim_id in self._claimed
             or claim_id in self._claiming
         ):
@@ -309,7 +330,8 @@ class IdleWatchService:
             ))
         finally:
             self._claiming.discard(claim_id)
-        # a failed request stays unclaimed, so the next claim-available or refresh retries it
+        # a failed claim stays unclaimed: the next tick reads the points again and retries it
+        self._claim_failed = True
         if response is None:
             return
         try:
@@ -317,19 +339,22 @@ class IdleWatchService:
             error = result.get("error") if isinstance(result, dict) else True
         except (KeyError, TypeError):
             result, error = None, True
-        if not isinstance(result, dict) or error is not None:
-            # the reply carries an error code (for example an already claimed bonus) instead of the claim
+        if not isinstance(result, dict) or error is not None or not isinstance(result.get("claim"), dict):
+            # an error code (for example an already claimed bonus) or no claim object instead of the claim
             code = error.get("code") if isinstance(error, dict) else error
             logger.warning(
                 "Twitch request ClaimCommunityPoints was not accepted%s",
                 f" ({code})" if isinstance(code, str) else "",
             )
             return
+        self._claim_failed = False
         self._claimed.add(claim_id)
         logger.info("Claimed channel points bonus on %s", channel.name)
 
     async def refresh_points(self, channel: Channel) -> None:
         """Read the balance of a newly watched channel and claim a bonus that is already open."""
+        if self._twitch.can_watch(channel):
+            return
         try:
             response = await asyncio.wait_for(
                 self._gql(GQL_OPERATIONS["ChannelPointsContext"].with_variables({"channelLogin": channel.login})),
@@ -343,6 +368,8 @@ class IdleWatchService:
             balance, available = points["balance"], points["availableClaim"]
         except (KeyError, TypeError):
             return
+        # this read decides again whether a bonus is open
+        self._claim_failed = False
         if isinstance(balance, int) and not isinstance(balance, bool):
             self.balances[channel.id] = balance
             self._show_status(channel)
@@ -407,6 +434,8 @@ class IdleWatchService:
             self.active
             and tw.settings.share_watch_streaks
             and channel in self.live_channels()
+            # can_watch is False while paused or outside mining hours too
+            and tw.is_mining_time()
             and not tw.can_watch(channel)
         )
 
