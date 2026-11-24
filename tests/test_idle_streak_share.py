@@ -498,7 +498,7 @@ async def test_share_hanging_past_the_check_timeout_is_not_resent(monkeypatch, c
     with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
         await asyncio.wait_for(svc.share_streaks(), 2)
     assert caplog.messages == ["Watch streak share check timed out"]
-    assert svc._share_tries == {("m1", "9"): STREAK_SHARE_ATTEMPTS}
+    assert svc._share_tries == {("m1", 9): STREAK_SHARE_ATTEMPTS}
     svc._share_checked -= STREAK_SHARE_CHECK_SECONDS
     await asyncio.wait_for(svc.share_streaks(), 2)
     assert len(shares(tw)) == 1
@@ -514,6 +514,12 @@ async def test_share_hanging_past_the_check_timeout_is_not_resent(monkeypatch, c
     {"data": {"shareViewerMilestone": {"milestone": {}, "error": None}}},
     {"data": {"shareViewerMilestone": None}},
     {"data": {"shareViewerMilestone": {"milestone": {"id": "m1"}, "error": "odd"}}},
+    {"data": {"shareViewerMilestone": {"milestone": None, "error": {}}}},
+    {"data": {"shareViewerMilestone": {"milestone": None, "error": {"code": None}}}},
+    {"data": {"shareViewerMilestone": {"milestone": None, "error": {"code": ""}}}},
+    {"data": {"shareViewerMilestone": {"milestone": None, "error": {"code": 5}}}},
+    {"data": {"shareViewerMilestone": {"milestone": {"id": "m1"}, "error": {"code": "X"}}}},
+    {"data": {"shareViewerMilestone": {"milestone": {}, "error": {"code": "X"}}}},
     {"data": None},
     {},
 ], ids=repr)
@@ -549,7 +555,7 @@ async def test_one_share_per_channel_per_check():
 async def test_a_skipped_milestone_does_not_use_the_channels_share():
     # a milestone already shared is passed over, so the next one on the channel goes out in the same check
     svc, tw = setup(rows=[milestone("m1"), milestone("m2")])
-    svc._shared.add(("m1", "9"))
+    svc._share_tries[("m1", 9)] = STREAK_SHARE_ATTEMPTS
     await svc.share_streaks()
     assert [op["variables"]["input"]["milestoneID"] for op in shares(tw)] == ["m2"]
 
@@ -564,7 +570,7 @@ async def test_int_and_string_values_are_one_key():
     svc._share_checked -= STREAK_SHARE_CHECK_SECONDS
     await svc.share_streaks()
     assert len(shares(tw)) == 1
-    assert svc._shared == {("m1", "9")}
+    assert svc._share_tries == {("m1", 9): STREAK_SHARE_ATTEMPTS}
 
 
 @pytest.mark.asyncio
@@ -587,11 +593,11 @@ async def test_refused_share_through_the_gql_client_still_gets_one_more_try(capl
     svc, _ = setup(gql=GQLClient(MagicMock(), auth, ClientType.WEB).request)
     with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
         await svc.share_streaks()
-        assert svc._share_tries == {("m1", "9"): 1}
+        assert svc._share_tries == {("m1", 9): 1}
         svc._share_checked -= STREAK_SHARE_CHECK_SECONDS
         await svc.share_streaks()
     assert caplog.messages == ["Watch streak share on A was not accepted (NOT_ALLOWED)"]
-    assert ("m1", "9") in svc._shared
+    assert svc._share_tries[("m1", 9)] == STREAK_SHARE_ATTEMPTS
 
 
 @pytest.mark.asyncio
@@ -605,7 +611,7 @@ async def test_share_failure_raised_by_single_attempt_is_a_warning_not_a_crash(c
     with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
         await svc.share_streaks()
     assert caplog.messages == [f"Twitch request ShareViewerMilestone failed ({type(error).__name__})"]
-    assert svc._share_tries == {("m1", "9"): STREAK_SHARE_ATTEMPTS}
+    assert svc._share_tries == {("m1", 9): STREAK_SHARE_ATTEMPTS}
 
 
 @pytest.mark.asyncio
@@ -615,3 +621,51 @@ async def test_no_share_while_paused_or_outside_mining_hours():
     tw.is_mining_time.return_value = False
     await svc.share_streaks()
     assert shares(tw) == []
+
+
+@pytest.mark.parametrize("raw,value", [
+    (9, 9), ("9", 9), (" 9", 9), ("9 ", 9), ("09", 9), (9.0, 9), ("0", 0),
+    (None, None), (True, None), (9.5, None), (float("nan"), None), (float("inf"), None),
+    ("+9", None), ("-1", None), ("9_0", None), ("\u0669", None), ("9.0", None), ("", None), ("x", None),
+    (["9"], None), ({"n": 9}, None),
+])
+def test_streak_value_is_one_canonical_count(raw, value):
+    assert IdleWatchService._streak_value(raw) == value
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("first,second", [
+    ("9", 9.0), (9.0, "9"), ("9", " 9"), (" 9", "9"), ("09", 9), (9, "09"),
+    ("9", None), (None, "9"), ("9", "x"), ("x", "9"), (None, None),
+], ids=repr)
+async def test_one_milestone_in_two_spellings_is_shared_once(first, second):
+    # a missing or unusable value matches the id at any value, in either order
+    def row(value):
+        r = milestone()
+        if value is None:
+            del r["value"]
+        else:
+            r["value"] = value
+        return r
+
+    current = [read([row(first)])]
+    svc, tw = setup(gql=make_gql(current))
+    await svc.share_streaks()
+    current[0] = read([row(second)])
+    svc._share_checked -= STREAK_SHARE_CHECK_SECONDS
+    await svc.share_streaks()
+    assert len(shares(tw)) == 1
+
+
+@pytest.mark.asyncio
+async def test_a_refusal_of_a_missing_value_does_not_block_the_count():
+    # only a used-up key blocks the id; one refusal leaves the next try open
+    row = milestone()
+    del row["value"]
+    current = [read([row])]
+    svc, tw = setup(gql=make_gql(current, [REFUSED, SHARE_OK]))
+    await svc.share_streaks()
+    current[0] = read([milestone(value="9")])
+    svc._share_checked -= STREAK_SHARE_CHECK_SECONDS
+    await svc.share_streaks()
+    assert len(shares(tw)) == 2

@@ -87,9 +87,9 @@ class IdleWatchService:
         self._claiming: set[str] = set()
         # the last claim on the watched channel failed; the tick reads its points again
         self._claim_failed = False
-        # watch streak sharing: (milestone id, value) shared this run, attempts per key, last read, early-check request
-        self._shared: set[tuple[str, str | None]] = set()
-        self._share_tries: dict[tuple[str, str | None], int] = {}
+        # watch streak sharing: attempts per (milestone id, count), last read, early-check request;
+        # a key with all attempts used is done (shared, or sent with an unknown outcome)
+        self._share_tries: dict[tuple[str, int | None], int] = {}
         self._share_checked: float | None = None
         self._share_now = False
         # the channel the loop chose to watch, and the visit it last announced
@@ -139,7 +139,6 @@ class IdleWatchService:
         self._paused_at = None
         self.balances.clear()
         self._claimed.clear()
-        self._shared.clear()
         self._share_tries.clear()
         self._share_checked = None
         self._share_now = False
@@ -441,12 +440,12 @@ class IdleWatchService:
 
     async def _share(self, channel: Channel, milestone: JsonType) -> bool:
         """Send one share unless it is done, used up or no longer allowed; True when it was sent."""
-        milestone_id, raw_value = milestone["id"], milestone.get("value")
-        # a streak can keep its id while its count rises: each value is its own share; 9 and "9" are one
-        value = str(raw_value) if isinstance(raw_value, (str, int)) and not isinstance(raw_value, bool) else None
+        milestone_id = milestone["id"]
+        # a streak can keep its id while its count rises: each count is its own share
+        value = self._streak_value(milestone.get("value"))
         key = (milestone_id, value)
         tries = self._share_tries.get(key, 0)
-        if key in self._shared or tries >= STREAK_SHARE_ATTEMPTS or not self._may_share(channel):
+        if self._share_done(milestone_id, value) or not self._may_share(channel):
             return False
         # Until a reply says Twitch refused it, the outcome is unknown and the share may be posted:
         # all attempts are used before sending, so a failure, timeout or cancellation is never resent.
@@ -468,16 +467,13 @@ class IdleWatchService:
         except (KeyError, TypeError):
             result = None
         error = result.get("error") if isinstance(result, dict) else None
-        if isinstance(error, dict):
-            # an explicit error object: Twitch refused it, so one more try in a later check is safe
+        code = error.get("code") if isinstance(error, dict) else None
+        if isinstance(code, str) and code and result.get("milestone") is None:  # type: ignore[union-attr]
+            # an error code and no milestone: Twitch refused it, so one more try in a later check is safe
             self._share_tries[key] = tries + 1
-            code = error.get("code")
-            logger.warning(
-                "Watch streak share on %s was not accepted%s", channel.name, f" ({code})" if isinstance(code, str) else "",
-            )
+            logger.warning("Watch streak share on %s was not accepted (%s)", channel.name, code)
             return True
         # anything but the shared milestone back is an unknown outcome: not resent, and not reported as shared
-        self._shared.add(key)
         shared = result.get("milestone") if isinstance(result, dict) and error is None else None
         if not isinstance(shared, dict) or shared.get("id") != milestone_id:
             logger.warning("Watch streak share on %s returned an unexpected reply", channel.name)
@@ -486,6 +482,28 @@ class IdleWatchService:
         else:
             logger.info("Shared watch streak on %s (%s streams)", channel.name, value)
         return True
+
+    @staticmethod
+    def _streak_value(raw: object) -> int | None:
+        """A streak count as one int (9, "9", " 9", "09" and 9.0 are one count); None when unusable."""
+        if isinstance(raw, bool):
+            return None
+        if isinstance(raw, int):
+            return raw
+        if isinstance(raw, float):
+            return int(raw) if raw.is_integer() else None
+        if isinstance(raw, str) and (text := raw.strip()).isascii() and text.isdigit():
+            return int(text)
+        return None
+
+    def _share_done(self, milestone_id: str, value: int | None) -> bool:
+        """Whether this milestone count has used all its attempts.
+
+        A count without a usable value cannot be told apart from the counts of the same id, so it
+        matches them both ways: one lost share beats a second notice in the streamer's chat.
+        """
+        used = {v for (mid, v), tries in self._share_tries.items() if mid == milestone_id and tries >= STREAK_SHARE_ATTEMPTS}
+        return value in used or (bool(used) and (value is None or None in used))
 
     @task_wrapper
     async def process_points(self, user_id: int, message: JsonType) -> None:
