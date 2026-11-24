@@ -55,7 +55,7 @@ def _reloading_miner(tmp_path, monkeypatch, *, discovered, stream_status):
     client.wanted_games = [game]
     client.inventory = [SimpleNamespace(
         game=game, can_earn_within=lambda stamp: True, allowed_channels=[],
-        can_earn=lambda channel: True,
+        can_earn=lambda channel: True, can_progress_on=lambda channel: channel.drops_enabled,
     )]
     client.gql_request = AsyncMock(side_effect=stream_status)
     client.get_live_streams = AsyncMock(return_value=[_channel(client, i) for i in discovered])

@@ -563,6 +563,19 @@ progress to an ignored drop while the miner intentionally targets another reward
 
 ### Authentication and integrated browser login
 
+- Current source builds prefer `LoginFirefox` when Firefox 143 or newer is available.
+  Check the version under the browser UID before opening the sign-in window. Alpine
+  Chromium can reject fresh Twitch login as unsupported. The image includes both:
+  Firefox handles manual sign-in, Chromium retains SDK issuance and renewal over a
+  private pipe on POSIX. Firefox runs with a private profile and password saving
+  disabled as `tdm-browser`.
+  Do not enable BiDi/Marionette during sign-in. Manual Finish/window close flushes
+  the profile before reopening it with loopback BiDi; validate both PID and profile
+  from `session.new` before reading cookies, then use the shared `FirefoxExporter`
+  and all existing account/catalog/server-issuance checks. Firefox requires manual
+  Finish; preserve Chromium's completion extension for the fallback path. Keep
+  profile/process/protocol cleanup cancellation-safe. Source hosts without a compatible
+  Firefox retain Chromium login. Regression: `tests/test_container_firefox.py`.
 - The temporary interactive Chromium profile disables password saving before startup.
   Its bundled completion extension observes only Twitch login-cookie presence, closes
   the owned profile's windows normally, and never exports cookie values. Treat this as
@@ -619,8 +632,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   restore legacy cookies after explicit logout. Version 3 atomically persists a
   logged-out marker with cleared session/SDK state; successful login clears it.
 - `ContainerLogin` owns one temporary attempt with a 15-minute interactive timeout.
-  Launch ordinary Chromium at Twitch sign in without remote automation, close its
-  window normally to flush storage, then reopen the owned profile for CDP capture.
+  Launch the selected browser at Twitch sign in without remote automation, close its
+  window normally to flush storage, then reopen the owned profile for CDP/BiDi capture.
   Verify the browser PID before reading credentials. Finish sign in uses EWMH close;
   the window X works too. Profiles and all owned processes must be drained through
   cancellation, startup failures, timeout and shutdown. Never attach another profile.
@@ -666,7 +679,7 @@ progress to an ignored drop while the miner intentionally targets another reward
   closed on mounts that ignore chmod or give the browser ownership. Keep temporary
   display/profile directories owned by the browser UID. Root-only SDK profiles remain
   unreadable to it. Retain tests for file-access isolation and pre-login password setup.
-- Docker includes Chromium, Xvfb, openbox, x11vnc, xdotool, noVNC and timezone data.
+- Docker includes Firefox, Chromium, Xvfb, openbox, x11vnc, xdotool, noVNC and timezone data.
   Set `TZ` to the home internet connection’s timezone. Use init, shared memory and
   a cleanup grace period. Only the dashboard port is published. Display numbers are
   allocated by Xvfb to avoid stale fixed-display locks after engine restarts.
@@ -840,6 +853,85 @@ progress to an ignored drop while the miner intentionally targets another reward
   Playlist/transport, lifecycle, and controlled-clock regressions live in
   `tests/test_playlist_watch.py`, `tests/test_watch_transport.py`, and
   `tests/test_watch_poll_cadence.py`.
+- Since v2.7.0, a sitewide watch-based Open Reward Campaign maps one group to a drop in `RewardCampaign`.
+  An actionable `CLAIMABLE` group takes priority. Other started groups are ranked by availability: mineable now,
+  then waiting for the next window, then at the goal inside an open window; then unstarted
+  groups that can be mined, then finished ones (`CLAIMED`/`FULFILLED`). Twitch grants a reached goal and keeps it `IN_PROGRESS`, so it
+  counts as granted until its window ends. Groups that also need a subscription goal
+  (`subsGoal`) are skipped. Window ends and badge rewards come from `REWARD_HINTS_QUERY`
+  (optional, separate so a rejected field only loses the hints): a reward Twitch reports as
+  a badge gets `BADGE`, otherwise it stays `UNKNOWN` ("Other reward"), so the Reward types
+  filter applies. A disabled reward type cannot make a flagless stream watchable.
+  Missing artwork preserves the benefit's name and type in Inventory and its filters.
+  Ignore keywords match the campaign title and each reward name independently.
+  The claim ID uses the in-progress campaign's ID when Twitch lists one.
+  Progress and campaign discovery share one request. Debug logs report aggregate counts.
+  Keep account-specific reward responses out of raw GraphQL logs on both reloads and ticks.
+  On the progress tick, `InventoryService.refresh_reward_progress` reads all earnable reward
+  campaigns with one query; `get_active_campaign(exclude_rewards=True)` then keeps the
+  CurrentDrop query for regular campaigns. A goal reached inside a known window (or with an
+  unknown window end) reloads the inventory once, and a `CLAIMABLE` reading reloads it until
+  the drop has a claim id. A confirmed claim triggers lane reselection. A claim with an
+  uncertain outcome waits for evidence of a new earning cycle before another attempt.
+  After the stored window
+  end (`window_end`) Twitch keeps the old at-goal reading until the next window starts: that
+  is stale, so it counts as no new minutes and does not reload; a `grantCount` rise reloads
+  only at the goal. Twitch resetting 60 -> 1 at a new window was observed live. After the
+  final grant, observed once on a sitewide campaign, Twitch dropped the campaign from the
+  in-progress list (every reading missing) and listed it in `completedRewardCampaigns` with
+  status `COMPLETED` (`REWARD_COMPLETED_QUERY`, optional like the hints). A campaign listed
+  there with status `COMPLETED` is built and then dropped from the load, unless the picked
+  group has a real reading that can be mined or claimed now
+  (`RewardCampaign.earnable_from_reading`); a failed or unusable list drops nothing. The tick
+  path does not read the list, so a final grant mid-session stops mining from the next
+  reload on, once Twitch lists the campaign. A stale reading that reaches the extra-minute cutoff is
+  remembered per group (`RewardLedger.stale`) so a rebuild with the same reading counts the
+  group as done, until the reading changes (a missing window from a failed hints query is
+  ignored in that comparison). A below-goal or missing reading that stays unchanged to the
+  extra-minute cutoff (Twitch is not crediting the group) is remembered in
+  `RewardLedger.uncredited` as (signature, until, held). The first cutoff stores a pending
+  entry (not held, until 6 hours ahead) and the next reload mines the group again; a second
+  cutoff with the same reading makes it a hold, with until at most `UNCREDITED_RETRY` (6
+  hours) ahead and never later than the last start that can still finish before the campaign
+  ends, with one cutoff of slack. A rebuild with that reading holds the group until then, or
+  until the reading changes (a missing window is ignored either way), and does not show it
+  as claimed. An entry past its until is dropped, pending ones too. On a rebuild, a missing
+  reading keeps an entry recorded from a real one; the ticks of a campaign built without a
+  reading replace a pending entry (one extra cycle before the hold). Only a mineable state is held: granted, unfinishable
+  and waiting-window states stay as they were. A held group that has no reading keeps its
+  lane (rank 3), so the campaign does not cycle through every unstarted lane. A missing
+  reading on a tick records nothing for a campaign built from a real reading. Recording
+  happens only in the two no-credit bump paths, never for `CLAIMABLE` or the error fallback.
+  `InventoryService.clear_cached_state` resets the whole ledger in place (logout, account
+  change, Clear All Cache); the next load reseeds `announced` from the current grant counts.
+  Validate each reward campaign before replacing regular inventory. A malformed lane only
+  excludes that lane. Measure available watch time from the latest of now, campaign start
+  and the next available window. A goal that cannot finish before the campaign ends is
+  unmineable (`RewardCampaign.mineable_drop_ids`; start time at `endsAt`) but not shown as
+  claimed. Groups whose categories or rewards are malformed (a category without an int-like
+  ID or a name, a reward without ID or name, a non-dict `thumbnailImage`) are skipped, not
+  the campaign. A reward drop's claim is quiet (`quiet_claim`):
+  it prints, notifies and records nothing itself. Every announcement (print with the grant
+  number, notifications, history entry `<dropid>#<grantCount>`, `announce_new_grants`) comes
+  from a `grantCount` rise. Announced counts live per group in
+  `InventoryService._reward_ledger` (`RewardLedger`), so reloads and failed loads keep them.
+  A group's first sighting with a real reading (`grantCount` an int) starts at its current
+  count; a missing group or reading leaves the ledger untouched at load. A group not in
+  progress at load is seeded by the first tick reading below its goal, so its first grant is
+  announced; a first reading already at the goal (restart) is not. A claim that Twitch does not
+  count in `grantCount` is not announced (claims were never seen live). Preserve confirmed
+  increases when a campaign leaves Inventory or switches lanes. Keep pending grants on
+  reload, clear them on account change, and never repeat a notification of uncertain outcome.
+  Announcement errors log a fixed warning. This relies on `grantCount` rising when the goal is reached (the live
+  run saw 0 -> 1 at 60/60).
+  A reading without
+  a minute increase bumps the estimate until the extra-minute cutoff switches channels. Reward
+  categories also add live channels without the drops flag in CHANNELS_FETCH. A failed
+  optional directory lookup preserves regular channels already found. Recheck the watched
+  broadcast before applying each reward reading after an awaited notification.
+  Inventory shows Twitch's `grantCount` as "Times earned" (`reward_grants`; no total is available).
+  Regression coverage: `tests/test_reward_campaigns.py`, `tests/test_reward_channel_choice.py`
+  and `tests/test_reward_grants_frontend.py`.
 
 ### GraphQL Operations
 
@@ -855,13 +947,20 @@ Persisted operations are defined in `src/config/operations.py` as `GQL_OPERATION
 - **AvailableDrops** - Check which campaigns a channel qualifies for (badge validation)
 - **NotificationsDelete** - Delete Twitch notifications
 
+Open Reward Campaigns use four raw `GQLRawQuery` operations, `REWARD_CAMPAIGNS_QUERY`,
+`REWARD_PROGRESS_QUERY`, `REWARD_HINTS_QUERY` (optional window and badge hints) and
+`REWARD_COMPLETED_QUERY` (optional completed list); the two optional ones run concurrently,
+each with its own 5 s timeout. They have no persisted hashes.
+
 ### Channel Selection Priority
 
 1. Selected channel (if user clicked one)
 2. ACL-based channels over directory channels
 3. Game priority order (from settings)
-4. Viewer count (descending)
-5. Maximum 199 channels tracked simultaneously
+4. More wanted campaigns progressable on the channel, at equal priority and ACL status
+   (`ChannelService.get_selection_priority()`, also used by `should_switch()`)
+5. Viewer count (descending)
+6. Maximum 199 channels tracked simultaneously
 
 ### Maintenance Task
 
@@ -1080,8 +1179,9 @@ protocol rejection; preserve rejection and target-cleanup assertions.
   `uv`, update `src/version.py`, `pyproject.toml`, and `uv.lock` together, and validate all
   three before creating a release branch or tag. Release notes read `GEMINI_API_KEY`
   from the step environment and send it as a header, never as an argument or URL.
-  Preserve existing data-volume/session migration instructions. Prepare versioned
-  frontend cache keys through the authorized release workflow before deployment.
+  Keep data preservation and session recovery instructions in the current installation
+  and authentication guides. Prepare versioned frontend cache keys through the
+  authorized release workflow before deployment.
   Keep current Docker/helper examples and Settings-tab paths aligned in release
   documentation. Distinguish historical release behavior from current features and
   disclose host-name migration requirements without claiming live Twitch acceptance.

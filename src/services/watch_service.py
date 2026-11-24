@@ -10,12 +10,14 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import suppress
+from functools import partial
 from time import monotonic
 from typing import TYPE_CHECKING, NoReturn
 
 from src.config import CALL, GQL_OPERATIONS, WATCH_INTERVAL
 from src.exceptions import GQLException
 from src.i18n import _
+from src.models import RewardCampaign
 from src.utils import task_wrapper
 
 
@@ -77,8 +79,8 @@ class WatchService:
             # Respect the user's selection using the campaign's category.
             campaign.game in wanted_games
             and campaign.can_earn(channel)
-            # Special campaigns may progress without the channel's drops flag.
-            and (campaign.game.is_special() or channel.drops_enabled)
+            # Special and reward campaigns may progress without the channel's drops flag.
+            and campaign.can_progress_on(channel)
             for campaign in self._twitch.inventory
         )
 
@@ -91,6 +93,7 @@ class WatchService:
         - The currently watched channel can no longer progress a wanted campaign
         - The channel's game has higher priority than the watching channel's game
         - The channel has the same game priority but is ACL-based and watching isn't
+        - Same priority and ACL status, but the channel progresses more wanted campaigns
 
         Args:
             channel: The channel to evaluate as a switch candidate
@@ -103,8 +106,8 @@ class WatchService:
             return True
 
         channels = self._twitch._channel_service
-        channel_order = (channels.get_mining_priority(channel), not channel.acl_based)
-        watching_order = (channels.get_mining_priority(watching_channel), not watching_channel.acl_based)
+        channel_order = channels.get_selection_priority(channel)
+        watching_order = channels.get_selection_priority(watching_channel)
         if channel_order != watching_order:
             return channel_order < watching_order
         return channels.prefer_followed_switch(channel, watching_channel)
@@ -207,15 +210,36 @@ class WatchService:
                 # Reconcile with Twitch on a bounded cadence even if websocket updates stop.
                 handled: bool = False
 
+                # Reward campaigns are read from their own progress query, so the
+                # CurrentDrop fallback skips them while that query works.
+                rewards = [
+                    campaign
+                    for campaign in self._twitch.inventory
+                    if isinstance(campaign, RewardCampaign)
+                    and campaign.game in self._twitch.wanted_games
+                    and campaign.can_earn(channel)
+                ]
+                rewards_ok = bool(rewards) and await (
+                    self._twitch._inventory_service.refresh_reward_progress(
+                        rewards, channel, partial(channel._watch_current, stream)
+                    )
+                )
+                if not channel._watch_current(stream):
+                    continue
+
                 # Solution 1: use GQL to query for the currently mined drop status
                 progress_snapshot = {
                     drop_id: (drop, drop.campaign.progress_revision)
                     for drop_id, drop in self._twitch._drops.items()
                 }
-                fallback_campaign = self._twitch._inventory_service.get_active_campaign(channel)
+                fallback_campaign = self._twitch._inventory_service.get_active_campaign(
+                    channel, exclude_rewards=rewards_ok
+                )
                 fallback_revision = (
                     fallback_campaign.progress_revision if fallback_campaign is not None else None
                 )
+                if rewards_ok and fallback_campaign is None:
+                    continue
                 try:
                     context = await asyncio.wait_for(
                         self._twitch.gql_request(
@@ -257,7 +281,9 @@ class WatchService:
                 # Solution 2: If GQL fails, figure out which campaign we're most likely mining
                 # right now, and then bump up the minutes on it's drops
                 if not handled:
-                    active_campaign = self._twitch._inventory_service.get_active_campaign(channel)
+                    active_campaign = self._twitch._inventory_service.get_active_campaign(
+                        channel, exclude_rewards=rewards_ok
+                    )
                     if active_campaign is not None:
                         if (
                             active_campaign is not fallback_campaign

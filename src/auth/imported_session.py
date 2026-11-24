@@ -490,7 +490,7 @@ class ImportedSession:
         if self._stopping:
             raise ExitRequest()
 
-    async def gql(self, operations: Any) -> Any:
+    async def gql(self, operations: Any, *, single_attempt: bool = False) -> Any:
         if self._login is None:
             raise SessionError("AUTH")
         batch = isinstance(operations, list)
@@ -518,7 +518,7 @@ class ImportedSession:
                     if self._stopping:
                         raise ExitRequest() from None
                     candidates = body if batch else [body]
-                    if retries >= len(self._RETRY_DELAYS) or not all(self._safe_read(op) for op in candidates):
+                    if single_attempt or retries >= len(self._RETRY_DELAYS) or not all(self._safe_read(op) for op in candidates):
                         raise
                     delay = self._RETRY_DELAYS[retries]
                     retries += 1
@@ -527,6 +527,8 @@ class ImportedSession:
                     if error.code != "AUTH":
                         raise
                     self._rejected = True
+                    if single_attempt:
+                        raise
                     continue
                 else:
                     rows = response if batch else [response]
@@ -541,6 +543,8 @@ class ImportedSession:
                             results[index] = row
                     if rejected:
                         self._rejected = True
+                        if single_attempt:
+                            raise SessionError("AUTH")
                     pending = rejected
             if delay is not None:
                 # Renewal/admission changes and stop must not wait behind this delay.

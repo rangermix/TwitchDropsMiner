@@ -151,6 +151,7 @@
             "ignored_keyword_reason": "Ignorat din cauza cuvântului-cheie: {keyword}",
             "ignored_precondition_reason": "Ignorat deoarece depinde de {drop}",
             "skipped_branch_reason": "Omis deoarece nicio recompensă ce poate fi minată nu depinde de acest drop.",
+            "reward_grants": "Număr de obțineri: {count}",
             "filters": {
                 "active": "Activ",
                 "not_linked": "Neconectat",

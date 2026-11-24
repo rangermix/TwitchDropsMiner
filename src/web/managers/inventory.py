@@ -7,6 +7,8 @@ import logging
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any
 
+from src.models import RewardCampaign
+
 
 if TYPE_CHECKING:
     from src.models import DropsCampaign, TimedDrop
@@ -78,13 +80,13 @@ class InventoryManager:
                 {
                     "name": benefit.name,
                     "type": benefit.type.name,
-                    "image_url": str(benefit.image_url),
+                    "image_url": str(benefit.image_url) if benefit.image_url else None,
                 }
                 for benefit in drop.benefits
-                if benefit.image_url
             ],
             "starts_at": drop.starts_at.isoformat(),
             "ends_at": drop.ends_at.isoformat(),
+            "reward_grants": drop.campaign.reward_grants if isinstance(drop.campaign, RewardCampaign) else None,
         }
 
     def _serialize_campaign(self, campaign: DropsCampaign) -> dict[str, Any] | None:

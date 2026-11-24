@@ -151,6 +151,7 @@
             "ignored_keyword_reason": "因关键词而忽略：{keyword}",
             "ignored_precondition_reason": "因依赖 {drop} 而忽略",
             "skipped_branch_reason": "已跳过，因为没有可挖取的奖励依赖此掉落。",
+            "reward_grants": "已获得次数: {count}",
             "filters": {
                 "active": "活动中",
                 "not_linked": "未关联",

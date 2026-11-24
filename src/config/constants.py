@@ -74,6 +74,9 @@ class State(Enum):
 class GQLOperation(JsonType):
     """GraphQL operation with persisted query hash."""
 
+    # Local transport policy on the operation copy. It is never part of the JSON body.
+    single_attempt: bool = False
+
     def __init__(self, name: str, sha256: str, *, variables: JsonType | None = None):
         super().__init__(
             operationName=name,

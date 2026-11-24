@@ -17,7 +17,7 @@ import aiohttp
 from yarl import URL
 
 from src.config import COOKIES_PATH
-from src.exceptions import ExitRequest, RequestInvalid
+from src.exceptions import ExitRequest, RequestException, RequestInvalid
 from src.i18n import _
 from src.utils import ExponentialBackoff
 
@@ -143,6 +143,7 @@ class HTTPClient:
         url: URL | str,
         *,
         invalidate_after: datetime | None = None,
+        single_attempt: bool = False,
         **kwargs,
     ) -> abc.AsyncIterator[aiohttp.ClientResponse]:
         """
@@ -178,6 +179,8 @@ class HTTPClient:
 
         if self.settings.proxy and "proxy" not in kwargs:
             kwargs["proxy"] = self.settings.proxy
+        if single_attempt:
+            kwargs["allow_redirects"] = False
 
         logger.debug("Request: %s", method)
         session_timeout = timedelta(seconds=session.timeout.total or 0)
@@ -201,6 +204,10 @@ class HTTPClient:
                 assert response is not None
                 logger.debug("Response status: %s", response.status)
 
+                if single_attempt and response.status != 200:
+                    if self._diagnostics is not None:
+                        self._diagnostics.record_http(method, url, response.status)
+                    raise RequestException("Unconfirmed HTTP response")
                 if response.status < 500:
                     # Pre-read the response to avoid getting errors outside the context manager
                     raw_response = await response.read()
@@ -217,6 +224,8 @@ class HTTPClient:
                 # SSL verification failures should not be retried
                 if self._diagnostics is not None:
                     self._diagnostics.record(self._diagnostics.endpoint(url, method), outcome="tls")
+                if single_attempt:
+                    raise RequestException("Unconfirmed HTTP response") from None
                 raise
             except (
                 aiohttp.ClientConnectionError,
@@ -227,9 +236,15 @@ class HTTPClient:
                 if self._diagnostics is not None:
                     self._diagnostics.record(self._diagnostics.endpoint(url, method),
                                              outcome="timeout" if isinstance(error, TimeoutError) else "connection")
+                if single_attempt:
+                    raise RequestException("Unconfirmed HTTP response") from None
                 if backoff.steps > 1:
                     # Don't show quick retries to the user
                     self.gui.print(_.t["error"]["no_connection"].format(seconds=round(delay)))
+            except (aiohttp.ClientError, ValueError):
+                if single_attempt:
+                    raise RequestException("Unconfirmed HTTP response") from None
+                raise
             finally:
                 if response is not None:
                     response.release()
