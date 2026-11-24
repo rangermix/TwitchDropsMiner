@@ -202,7 +202,9 @@ class IdleWatchService:
                 ):
                     damaged = "damaged share entry"
                     break
-                tries[(key[0], key[1])] = key[2] if len(key) == 3 else STREAK_SHARE_ATTEMPTS
+                # a repeated key (a hand-edited or merged file) keeps its highest count
+                k = (key[0], key[1])
+                tries[k] = max(tries.get(k, 0), key[2] if len(key) == 3 else STREAK_SHARE_ATTEMPTS)
         except FileNotFoundError:
             return
         except (OSError, ValueError, RecursionError) as exc:

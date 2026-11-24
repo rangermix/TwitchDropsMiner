@@ -822,3 +822,15 @@ async def test_a_damaged_share_entry_keeps_visits_but_blocks_shares_and_writes(t
     assert path.read_bytes() == before
     assert len(caplog.messages) == 1
     assert caplog.messages[0].startswith("Idle visits file unreadable (damaged share entry)")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("keys", ['[["m1", 9], ["m1", 9, 1]]', '[["m1", 9, 1], ["m1", 9]]'], ids=["used first", "refused first"])
+async def test_a_repeated_share_key_keeps_its_highest_try_count(tmp_path, keys):
+    # a hand-edited or merged file: the used-up entry wins, so the share is not sent again
+    path = tmp_path / "idle_visits.json"
+    path.write_text('{"user_id": null, "visits": {}, "shares": ' + keys + "}", encoding="utf-8")
+    svc, tw = setup(visits_path=path)
+    assert svc._share_tries == {("m1", 9): STREAK_SHARE_ATTEMPTS}
+    await svc.share_streaks()
+    assert shares(tw) == []
