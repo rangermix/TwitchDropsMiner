@@ -8,9 +8,11 @@ import pytest
 from aiohttp import web
 
 from src.auth.browser_session import BrowserSession
+from src.auth.imported_session import ImportedSession
 from src.auth.session_bundle import SessionError
-from src.config import GQL_OPERATIONS, ClientType
+from src.config import GQL_OPERATIONS, ClientType, GQLRawQuery
 from src.exceptions import ExitRequest
+from src.services.idle_watch import SHARE_MILESTONE_MUTATION, SHARE_MILESTONE_OPERATION
 from tests.test_session_lifecycle import miner
 from tests.test_imported_session import bundle_data, catalog
 
@@ -299,3 +301,40 @@ async def test_definitively_rejected_mutation_is_not_replayed_after_later_transp
         finally:
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
+
+
+def share_op():
+    return GQLRawQuery(
+        SHARE_MILESTONE_MUTATION, {"input": {"channelID": "123", "milestoneID": "m1"}}, SHARE_MILESTONE_OPERATION,
+    )
+
+
+def test_watch_streak_share_is_not_a_safe_read():
+    assert ImportedSession._safe_read(share_op()) is False
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure", [503, 502, "timeout"])
+async def test_watch_streak_share_is_sent_once_on_a_transient_failure(tmp_path, monkeypatch, failure):
+    # the deployed transport: a share that may have been posted is never replayed
+    async with running_miner(tmp_path, monkeypatch) as (client, peer, _clock):
+        assert isinstance(client._browser, ImportedSession)
+        op = share_op()
+        delays = immediate_delays(client._browser, monkeypatch)
+        http = client._browser._transport._http
+        request = http.request
+        attempts = []
+
+        def send(*args, **kwargs):
+            attempts.append(kwargs["json"])
+            if failure == "timeout":
+                raise TimeoutError("private transport details")
+            return request(*args, **kwargs)
+
+        monkeypatch.setattr(http, "request", send)
+        if failure != "timeout":
+            peer.responses.extend([failure, {"data": {"mustNotReplay": True}}])
+        with pytest.raises(SessionError, match="REQUEST"):
+            await client.gql_request(op, retry=False)
+        assert attempts == [op]
+        assert delays == []

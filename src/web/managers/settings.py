@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from src.config.reward_priority import RewardPriority
 from src.config.settings import (
+    IdleChannelSettings,
     InventoryFilterSettings,
     MiningHoursSettings,
     NotificationEventSettings,
@@ -56,12 +57,14 @@ class SettingsManager:
         console: ConsoleOutputManager,
         on_change: Callable[[], None] | None = None,
         on_games_change: Callable[[], None] | None = None,
+        on_idle_channels_change: Callable[[], None] | None = None,
     ):
         self._broadcaster = broadcaster
         self._settings = settings
         self._console = console
         self._on_change = on_change
         self._on_games_change = on_games_change
+        self._on_idle_channels_change = on_idle_channels_change
         self._available_games: list[str] = []
         # Console lines and side effects of applied fields, run only after a successful save.
         self._pending_effects: list[Callable[[], None]] = []
@@ -182,6 +185,15 @@ class SettingsManager:
         prefer_followed = settings_data.get("prefer_followed_channels")
         if prefer_followed is not None and not isinstance(prefer_followed, bool):
             raise ValueError("invalid_prefer_followed_channels")
+        claim_points = settings_data.get("claim_channel_points")
+        if claim_points is not None and not isinstance(claim_points, bool):
+            raise ValueError("invalid_claim_channel_points")
+        share_streaks = settings_data.get("share_watch_streaks")
+        if share_streaks is not None and not isinstance(share_streaks, bool):
+            raise ValueError("invalid_share_watch_streaks")
+        idle_channels = settings_data.get("idle_channels")
+        if idle_channels is not None:
+            idle_channels = IdleChannelSettings.normalize(idle_channels)
         language = settings_data.get("language")
         if language is not None and language not in _.get_languages():
             raise ValueError("invalid_language")
@@ -211,6 +223,15 @@ class SettingsManager:
         should_trigger_update |= self.check_and_update_setting(
             "drop_name_blacklist", drop_name_blacklist, True
         )
+        # Log the count only: the channel names stay out of the console. Drop mining does
+        # not use this list, so it re-runs the idle step instead of a games update.
+        self.check_and_update_setting(
+            "idle_channels", idle_channels, False,
+            lambda _names: self._on_idle_channels_change() if self._on_idle_channels_change else None,
+            log_formatter=lambda names: f"{len(names)} channels",
+        )
+        self.check_and_update_setting("claim_channel_points", claim_points)
+        self.check_and_update_setting("share_watch_streaks", share_streaks)
         should_trigger_update |= self.check_and_update_setting(
             "dark_mode", settings_data.get("dark_mode")
         )

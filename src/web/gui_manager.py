@@ -64,6 +64,7 @@ class WebGUIManager:
             self._broadcaster, twitch.settings, self.output, on_change=on_settings_change,
             # A changed saved Mining list becomes the new default order.
             on_games_change=lambda: self._twitch.clear_game_order(),
+            on_idle_channels_change=lambda: self._twitch.idle_channels_changed(),
         )
 
         # Selected channel tracking (set by web client)

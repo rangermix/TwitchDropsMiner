@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextlib
+import logging
 import re
 from copy import deepcopy
 from dataclasses import dataclass
@@ -10,6 +12,9 @@ from yarl import URL
 from src.config import DEFAULT_LANG, SETTINGS_PATH
 from src.config.reward_priority import RewardPriority
 from src.utils import DropIgnorePolicy, json_load, json_save, merge_json
+
+
+logger = logging.getLogger("TwitchDrops")
 
 
 class InventoryFilters(TypedDict):
@@ -31,7 +36,10 @@ default_settings = {
     "dark_mode": False,
     "discord_webhook_url": "",
     "drop_name_blacklist": [],
+    "claim_channel_points": True,
+    "share_watch_streaks": True,
     "games_to_watch": [],
+    "idle_channels": [],
     "language": DEFAULT_LANG,
     "last_notified_releases": {"telegram": "", "discord": ""},
     "prefer_followed_channels": False,
@@ -93,6 +101,32 @@ class MiningHoursSettings:
         return dict(value)
 
 
+class IdleChannelSettings:
+    """Validate the channels watched when nothing can be mined."""
+
+    LOGIN = re.compile(r"[a-z0-9_]{1,25}")
+    MAX_CHANNELS = 20
+
+    @classmethod
+    def normalize(cls, value: Any) -> list[str]:
+        # ASCII is checked before lower(): the Kelvin sign would lowercase to an ASCII "k".
+        if type(value) is not list or any(type(item) is not str or not item.isascii() for item in value):
+            raise ValueError("invalid_idle_channels")
+        logins = list(dict.fromkeys(item.strip().lower() for item in value))
+        if len(logins) > cls.MAX_CHANNELS or any(cls.LOGIN.fullmatch(login) is None for login in logins):
+            raise ValueError("invalid_idle_channels")
+        return logins
+
+    @classmethod
+    def salvage(cls, value: Any) -> list[str]:
+        """Keep the valid entries of a hand-edited list, by the normalize rules, capped."""
+        logins: list[str] = []
+        for item in value if type(value) is list else []:
+            with contextlib.suppress(ValueError):
+                logins += cls.normalize([item])
+        return list(dict.fromkeys(logins))[: cls.MAX_CHANNELS]
+
+
 class NotificationEventSettings:
     """Validate which events send Discord and Telegram notifications."""
 
@@ -147,7 +181,10 @@ class Settings:
     dark_mode: bool
     discord_webhook_url: str
     drop_name_blacklist: list[str]
+    claim_channel_points: bool
+    share_watch_streaks: bool
     games_to_watch: list[str]
+    idle_channels: list[str]
     language: str
     last_notified_releases: dict[str, str]
     reward_priority: list[str]
@@ -179,6 +216,20 @@ class Settings:
         if "mining_hours" in settings:
             settings["mining_hours"] = MiningHoursSettings.normalize(settings["mining_hours"])
         settings["reward_priority"] = RewardPriority.normalize(settings.get("reward_priority", []))
+        # Drops outrank this optional list: a bad hand-edited value must not block startup.
+        raw_idle = settings.get("idle_channels", [])
+        try:
+            settings["idle_channels"] = IdleChannelSettings.normalize(raw_idle)
+        except ValueError:
+            kept = IdleChannelSettings.salvage(raw_idle)
+            settings["idle_channels"] = kept
+            # the count only: channel names stay out of the logs
+            logger.warning("Ignoring invalid idle_channels entries in settings; kept %d channels", len(kept))
+        if not isinstance(settings.get("claim_channel_points", True), bool):
+            # merge_json below replaces the wrong type with the default (on)
+            logger.warning("Ignoring invalid claim_channel_points in settings; using the default (on)")
+        if not isinstance(settings.get("share_watch_streaks", True), bool):
+            logger.warning("Ignoring invalid share_watch_streaks in settings; using the default (on)")
         # Early builds stored a single release version. Preserve their announce-once behavior.
         last_notified = settings.pop("last_notified_release", None)
         if isinstance(last_notified, str) and "last_notified_releases" not in settings:
@@ -197,6 +248,7 @@ class Settings:
     def save(self) -> None:
         self.reward_priority = RewardPriority.normalize(self.reward_priority)
         self.mining_hours = MiningHoursSettings.normalize(self.mining_hours)
+        self.idle_channels = IdleChannelSettings.normalize(self.idle_channels)
         self.drop_name_blacklist = DropIgnorePolicy.normalize_keywords(
             self.drop_name_blacklist
         )

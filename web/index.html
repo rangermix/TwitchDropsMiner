@@ -364,6 +364,32 @@
                         <p id="prefer-followed-error" class="help-text" role="alert" hidden></p>
                     </section>
                     <section class="settings-section">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="claim-channel-points" aria-describedby="claim-channel-points-help" />
+                            <span id="claim-channel-points-label">Claim channel points bonus while idle watching</span>
+                        </label>
+                        <p id="claim-channel-points-help" class="help-text">Claims the channel points bonus only while the miner is idle watching one of your listed channels.</p>
+                        <p id="claim-channel-points-error" class="help-text" role="alert" hidden></p>
+                    </section>
+                    <section class="settings-section">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="share-watch-streaks" aria-describedby="share-watch-streaks-help" />
+                            <span id="share-watch-streaks-label">Share watch streaks while idle watching</span>
+                        </label>
+                        <p id="share-watch-streaks-help" class="help-text">Shares a watch streak once Twitch allows it, only while the miner is idle watching your listed channels. Twitch posts a visible watch streak notice in that streamer's chat under your name.</p>
+                        <p id="share-watch-streaks-error" class="help-text" role="alert" hidden></p>
+                    </section>
+                    <section class="settings-section" id="idle-channels-section">
+                        <h2 id="idle-channels-title">Idle watching channels</h2>
+                        <p id="idle-channels-help" class="help-text">When nothing can be mined, the miner watches these channels for their watch streak and channel points. Use lowercase Twitch logins, at most 20. The order sets the channel points priority.</p>
+                        <div id="idle-channels-list" class="reward-type-list"></div>
+                        <div class="checkbox-label">
+                            <input type="text" id="idle-channel-input" maxlength="25" autocomplete="off" aria-label="Idle watching channels" />
+                            <button type="button" id="idle-channel-add">Add</button>
+                        </div>
+                        <p id="idle-channels-error" class="help-text" role="alert" hidden></p>
+                    </section>
+                    <section class="settings-section">
                         <h2 id="settings-drop-blacklist-header">Ignored Drop Keywords</h2>
                         <p id="settings-drop-blacklist-help" class="help-text">Enter one keyword per line. Matching
                             drops and their dependent branches will not be mined.</p>
@@ -522,7 +548,7 @@
                 <ul>
                     <li>Stream-less drop mining - saves bandwidth</li>
                     <li>Game priority and exclusion lists</li>
-                    <li>Tracks up to 199 channels simultaneously</li>
+                    <li>Tracks up to 198 channels simultaneously</li>
                     <li>Automatic channel switching</li>
                     <li>Real-time progress tracking</li>
                 </ul>

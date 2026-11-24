@@ -10,6 +10,8 @@ from src.config import DEFAULT_LANG, LANG_PATH
 class StatusMessages(TypedDict):
     terminated: str
     watching: str
+    idle_watching: str
+    idle_watching_points: str
     mining_resumed: str
     goes_online: str
     goes_offline: str
@@ -309,6 +311,19 @@ class GUISettings(TypedDict):
     prefer_followed_channels: str
     prefer_followed_channels_help: str
     prefer_followed_channels_save_error: str
+    idle_channels: str
+    idle_channels_help: str
+    idle_channels_add: str
+    idle_channels_remove: str
+    idle_channels_up: str
+    idle_channels_down: str
+    idle_channels_save_error: str
+    claim_channel_points: str
+    claim_channel_points_help: str
+    claim_channel_points_save_error: str
+    share_watch_streaks: str
+    share_watch_streaks_help: str
+    share_watch_streaks_save_error: str
     general: GUISettingsGeneral
     tab_mining: str
     tab_games: str

@@ -18,7 +18,7 @@ from pydantic import BaseModel, StrictBool, field_validator
 
 from src.config.paths import DATA_DIR
 from src.config.reward_priority import RewardPriority
-from src.config.settings import InventoryFilterSettings, MiningHoursSettings
+from src.config.settings import IdleChannelSettings, InventoryFilterSettings, MiningHoursSettings
 from src.services.game_order import TemporaryGameOrder
 from src.version import __version__
 from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
@@ -89,6 +89,9 @@ class SettingsUpdate(BaseModel):
     priority_list_only: bool | None = None
     prefer_followed_channels: StrictBool | None = None
     reward_priority: list[str] | None = None
+    idle_channels: list[str] | None = None
+    claim_channel_points: StrictBool | None = None
+    share_watch_streaks: StrictBool | None = None
     proxy: str | None = None
     connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
@@ -106,6 +109,11 @@ class SettingsUpdate(BaseModel):
     @classmethod
     def validate_reward_priority(cls, value: list[str] | None) -> list[str] | None:
         return RewardPriority.normalize(value) if value is not None else None
+
+    @field_validator("idle_channels")
+    @classmethod
+    def validate_idle_channels(cls, value: list[str] | None) -> list[str] | None:
+        return IdleChannelSettings.normalize(value) if value is not None else None
 
     @field_validator("mining_hours")
     @classmethod

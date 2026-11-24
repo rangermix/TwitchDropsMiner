@@ -143,6 +143,7 @@ class HTTPClient:
         url: URL | str,
         *,
         invalidate_after: datetime | None = None,
+        retry: bool = True,
         single_attempt: bool = False,
         **kwargs,
     ) -> abc.AsyncIterator[aiohttp.ClientResponse]:
@@ -157,6 +158,9 @@ class HTTPClient:
             Request URL
         invalidate_after : datetime | None, optional
             Datetime after which the request should not be retried
+        retry : bool
+            False raises on a 5xx reply or a connection error instead of sending again,
+            for requests that may already have reached the server and must not repeat
         **kwargs
             Additional arguments passed to aiohttp.ClientSession.request
 
@@ -171,6 +175,8 @@ class HTTPClient:
             If the application is closing
         RequestInvalid
             If the request expires during retry loop
+        RequestException
+            If a retry=False request got a 5xx reply
         aiohttp.ClientConnectorCertificateError
             If SSL verification fails
         """
@@ -219,6 +225,8 @@ class HTTPClient:
 
                 if self._diagnostics is not None:
                     self._diagnostics.record_http(method, url, response.status)
+                if not retry:
+                    raise RequestException(f"HTTP {response.status}")
                 self.gui.print(_.t["error"]["site_down"].format(seconds=round(delay)))
             except aiohttp.ClientConnectorCertificateError:
                 # SSL verification failures should not be retried
@@ -238,6 +246,8 @@ class HTTPClient:
                                              outcome="timeout" if isinstance(error, TimeoutError) else "connection")
                 if single_attempt:
                     raise RequestException("Unconfirmed HTTP response") from None
+                if not retry:
+                    raise
                 if backoff.steps > 1:
                     # Don't show quick retries to the user
                     self.gui.print(_.t["error"]["no_connection"].format(seconds=round(delay)))

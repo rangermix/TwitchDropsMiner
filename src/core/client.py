@@ -39,6 +39,7 @@ from src.models.channel import Channel
 from src.models.reward_campaign import RewardCampaign
 from src.services.channel_service import ChannelService
 from src.services.game_order import TemporaryGameOrder
+from src.services.idle_watch import IdleWatchService
 from src.services.inventory_service import REWARD_ERRORS, InventoryService
 from src.services.maintenance import MaintenanceService
 from src.services.message_handlers import MessageHandlerService
@@ -133,6 +134,8 @@ class Twitch:
         self._message_handler_service: MessageHandlerService = MessageHandlerService(self)
         self._inventory_service: InventoryService = InventoryService(self)
         self._watch_service: WatchService = WatchService(self)
+        self._idle_watch: IdleWatchService = IdleWatchService(self, DATA_DIR / "idle_visits.json")
+        self._idle_watch_allowed: bool = False
         self._stream_selector: StreamSelector = StreamSelector()
         # Drop history
         self.drop_history: DropHistory = DropHistory(DATA_DIR)
@@ -222,7 +225,11 @@ class Twitch:
         self._changing_auth = True
         self._resume_mining.clear()
         try:
-            tasks = [task for task in (self._run_task, self._schedule_task, self._watching_task, self._mnt_task)
+            # The idle loop is its own task, not a child of _run: drain it with the others.
+            self._idle_watch_allowed = False
+            idle_task = self._idle_watch.stop()
+            tasks = [task for task in (self._run_task, self._schedule_task, self._watching_task, self._mnt_task,
+                                       idle_task)
                      if task is not None and task is not asyncio.current_task()]
             for task in tasks:
                 task.cancel()
@@ -240,6 +247,7 @@ class Twitch:
             self._inventory_loaded = False
             if self._state is not State.EXIT:
                 self._state = State.IDLE
+            self._idle_watch.reset()
             self._changing_auth = False
             self._resume_mining.set()
 
@@ -315,12 +323,35 @@ class Twitch:
         """Wait until the user is logged in."""
         return self._auth_state._logged_in.wait()
 
-    def change_state(self, state: State) -> None:
-        """Change the current state of the miner."""
+    def change_state(self, state: State, *, idle_watch: bool = False) -> None:
+        """Change the current state of the miner.
+
+        idle_watch is only honoured for IDLE: it marks "nothing can be mined", so the
+        idle service may watch the owner's listed channels.
+        """
         if self._state is not State.EXIT:
             # prevent state changing once we switch to exit state
             self._state = state
+            self._idle_watch_allowed = idle_watch and state is State.IDLE
+            if not self._idle_watch_allowed:
+                was_idle_watching = self._idle_watch.active
+                self._idle_watch.stop()
+                # The stopped loop leaves its idle channel watched; CHANNELS_FETCH would carry it
+                # as a drop candidate. A channel drops can use stays (the loop's own handover).
+                if (
+                    was_idle_watching
+                    and (watching := self.watching_channel.get_with_default(None)) is not None
+                    and not self.can_watch(watching)
+                ):
+                    self.stop_watching()
         self._state_change.set()
+
+    def idle_channels_changed(self) -> None:
+        """Re-run the IDLE step for an edited idle list; drop mining needs no games update."""
+        if self._state is State.IDLE:
+            self._state_change.set()
+            if self._idle_watch.active:
+                self._idle_watch.poke()
 
     def request_games_update(self) -> bool:
         """Queue a mining-policy recalculation without racing the active state step."""
@@ -339,8 +370,8 @@ class Twitch:
             and self._inventory_loaded
             and self._state not in (State.INVENTORY_FETCH, State.EXIT)
         ):
-            self._state = State.GAMES_UPDATE
-            self._state_change.set()
+            # change_state, not a bare assignment: leaving IDLE must stop idle watching
+            self.change_state(State.GAMES_UPDATE)
 
     def request_inventory_refresh(self, *, clear_cache: bool = False) -> bool:
         """Queue an inventory refresh without racing the active state-machine step.
@@ -366,8 +397,8 @@ class Twitch:
             and self._state is not State.EXIT
             and self.is_mining_time()
         ):
-            self._state = State.INVENTORY_FETCH
-            self._state_change.set()
+            # change_state, not a bare assignment: leaving IDLE must stop idle watching
+            self.change_state(State.INVENTORY_FETCH)
 
     def get_change_state_callable(self, state: State) -> abc.Callable[[], None]:
         """Return a callable that changes state when invoked (deferred call for GUI usage)."""
@@ -591,6 +622,9 @@ class Twitch:
                     "User", "Drops", auth_state.user_id, self._message_handler_service.process_drops
                 ),
                 WebsocketTopic(
+                    "User", "CommunityPoints", auth_state.user_id, self._idle_watch.process_points
+                ),
+                WebsocketTopic(
                     "User",
                     "Notifications",
                     auth_state.user_id,
@@ -616,7 +650,7 @@ class Twitch:
                     self.gui.status.update(_.t["gui"]["status"]["idle"])
                 else:
                     self.gui.status.update(self._closed_status())
-                self.stop_watching()
+                self._idle_watch_step()
                 # clear the flag and wait until it's set again
                 self._state_change.clear()
             elif self._state is State.INVENTORY_FETCH:
@@ -742,7 +776,7 @@ class Twitch:
                         _.t["status"]["no_campaign"],
                         collapse_key="status.no_campaign",
                     )
-                    self.change_state(State.IDLE)
+                    self.change_state(State.IDLE, idle_watch=True)
             elif self._state is State.CHANNELS_FETCH:
                 self.gui.status.update(_.t["gui"]["status"]["gathering"])
                 # start with all current channels, keep them in memory for smooth update
@@ -966,7 +1000,7 @@ class Twitch:
                 else:
                     # No channels available to watch
                     self.print(_.t["status"]["no_channel"])
-                    self.change_state(State.IDLE)
+                    self.change_state(State.IDLE, idle_watch=True)
             elif self._state is State.EXIT:
                 self.gui.status.update(_.t["gui"]["status"]["exiting"])
                 # we've been requested to exit the application
@@ -977,6 +1011,15 @@ class Twitch:
             self._activate_pending_inventory_refresh()
             self._activate_pending_games_update()
             await self._state_change.wait()
+
+    def _idle_watch_step(self) -> None:
+        if self._idle_watch_allowed and self._idle_watch.allowed():
+            self._idle_watch.enter()
+            # a re-run of the IDLE branch just wrote "Idle" over "Idle watching <channel>"
+            self._idle_watch.show_status()
+        else:
+            self._idle_watch.stop()
+            self.stop_watching()
 
     def can_watch(self, channel: Channel) -> bool:
         """Delegate to WatchService."""
@@ -1083,12 +1126,14 @@ class Twitch:
         return self._auth_state
 
     @overload
-    async def gql_request(self, ops: GQLRequest) -> JsonType: ...
+    async def gql_request(self, ops: GQLRequest, *, retry: bool = True) -> JsonType: ...
 
     @overload
-    async def gql_request(self, ops: list[GQLRequest]) -> list[JsonType]: ...
+    async def gql_request(self, ops: list[GQLRequest], *, retry: bool = True) -> list[JsonType]: ...
 
-    async def gql_request(self, ops: GQLRequest | list[GQLRequest]) -> JsonType | list[JsonType]:
+    async def gql_request(
+        self, ops: GQLRequest | list[GQLRequest], *, retry: bool = True,
+    ) -> JsonType | list[JsonType]:
         """
         Execute GraphQL request(s).
 
@@ -1096,7 +1141,7 @@ class Twitch:
         """
         self._ensure_api_clients()
         assert self._gql_client is not None
-        return await self._gql_client.request(ops)
+        return await self._gql_client.request(ops, retry=retry)
 
     async def fetch_campaigns(
         self, campaigns_chunk: list[tuple[str, JsonType]]

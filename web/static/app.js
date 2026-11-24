@@ -1474,12 +1474,23 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     if (!authoritative && !changedFields.includes('mining_benefits') && state.settings.mining_benefits) {
         settings = {...settings, mining_benefits: state.settings.mining_benefits};
     }
+    // Same for the idle watching list and the claim toggle: a partial reply must not undo a confirmed write.
+    for (const key of ['idle_channels', 'claim_channel_points', 'share_watch_streaks']) {
+        if (!authoritative && !changedFields.includes(key) && state.settings[key] !== undefined) {
+            settings = {...settings, [key]: state.settings[key]};
+        }
+    }
     settings = reconcileMiningOptIns(settings, authoritative, changedFields);
     state.settings = reconcileNotificationEvents(settings);
     const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
     if (allowUnlinked && !allowUnlinked.disabled) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
     const preferFollowed = document.getElementById('prefer-followed-channels');
     if (preferFollowed && !preferFollowed.disabled) preferFollowed.checked = settings.prefer_followed_channels === true;
+    const claimPoints = document.getElementById('claim-channel-points');
+    if (claimPoints && !claimPoints.disabled) claimPoints.checked = settings.claim_channel_points !== false;
+    const shareStreaks = document.getElementById('share-watch-streaks');
+    if (shareStreaks && !shareStreaks.disabled) shareStreaks.checked = settings.share_watch_streaks !== false;
+    if (typeof renderIdleChannels === 'function') renderIdleChannels(settings.idle_channels || []);
     renderNotificationEvents();
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('priority-list-only').checked = settings.priority_list_only !== false;
@@ -2727,6 +2738,7 @@ async function saveBooleanSetting(key, inputId, errorId, message) {
             ...state.settings,
             allow_unlinked_campaigns: data.settings.allow_unlinked_campaigns,
             prefer_followed_channels: data.settings.prefer_followed_channels,
+            [key]: data.settings[key],
             mining_opt_ins_revision: data.settings.mining_opt_ins_revision,
         }, false, [key]);
     } catch (failure) {
@@ -2734,7 +2746,9 @@ async function saveBooleanSetting(key, inputId, errorId, message) {
         error.hidden = false;
     } finally {
         input.disabled = false;
-        input.checked = state.settings[key] === true;
+        // these two default to on, so a rollback before the server value is known keeps them on.
+        input.checked = (key === 'claim_channel_points' || key === 'share_watch_streaks')
+            ? state.settings[key] !== false : state.settings[key] === true;
     }
 }
 
@@ -2748,6 +2762,118 @@ function onPreferFollowedChange() {
     return saveBooleanSetting('prefer_followed_channels', 'prefer-followed-channels', 'prefer-followed-error',
         state.translations.gui?.settings?.prefer_followed_channels_save_error ||
         'Could not save the followed channels option. Please try again.');
+}
+
+function onClaimChannelPointsChange() {
+    return saveBooleanSetting('claim_channel_points', 'claim-channel-points', 'claim-channel-points-error',
+        state.translations.gui?.settings?.claim_channel_points_save_error ||
+        'Could not save the channel points option. Please try again.');
+}
+
+function onShareWatchStreaksChange() {
+    return saveBooleanSetting('share_watch_streaks', 'share-watch-streaks', 'share-watch-streaks-error',
+        state.translations.gui?.settings?.share_watch_streaks_save_error ||
+        'Could not save the watch streak option. Please try again.');
+}
+
+const idleChannelPattern = /^[a-z0-9_]{1,25}$/;
+const idleChannelLimit = 20;
+let idleChannelsSaving = false;
+
+function renderIdleChannels(list = state.settings.idle_channels || []) {
+    const container = document.getElementById('idle-channels-list');
+    if (!container) return;
+    const t = state.translations.gui?.settings || {};
+    for (const [id, key] of Object.entries({'idle-channels-title': 'idle_channels',
+        'idle-channels-help': 'idle_channels_help', 'idle-channel-add': 'idle_channels_add'}))
+        if (t[key]) {
+            const element = document.getElementById(id);
+            if (element) element.textContent = t[key];
+        }
+    const label = (key, fallback, channel) => (t[key] || fallback).replace('{channel}', channel);
+    // Rebuilding the rows drops keyboard focus; remember the control and restore it afterwards.
+    const active = document.activeElement?.closest?.('.idle-channel-row');
+    const focused = active && active.parentNode === container
+        ? { channel: active.dataset.channel, action: document.activeElement.dataset.action } : null;
+    container.replaceChildren();
+    list.forEach((channel, index) => {
+        const row = makeElement('div', { class: 'sortable-item idle-channel-row' });
+        row.dataset.channel = channel;
+        // Not disabled while a save is in flight: that would drop focus; saveIdleChannels ignores the click.
+        const button = (text, name, disabled, kind, action) => {
+            const el = makeElement('button', { type: 'button', 'aria-label': name }, text);
+            el.dataset.action = kind;
+            el.disabled = disabled;
+            el.addEventListener('click', action);
+            return el;
+        };
+        const moved = delta => () => {
+            const next = [...list];
+            next.splice(index + delta, 0, next.splice(index, 1)[0]);
+            return saveIdleChannels(next);
+        };
+        row.replaceChildren(
+            makeElement('span', { class: 'idle-channel-name' }, channel),
+            button('▲', label('idle_channels_up', 'Move {channel} up', channel), index === 0, 'up', moved(-1)),
+            button('▼', label('idle_channels_down', 'Move {channel} down', channel),
+                index === list.length - 1, 'down', moved(1)),
+            button('✕', label('idle_channels_remove', 'Remove {channel}', channel), false, 'remove',
+                () => saveIdleChannels(list.filter(item => item !== channel))));
+        container.appendChild(row);
+    });
+    if (!focused) return;
+    // The moved row's control may now be disabled (top or bottom): fall back to its opposite arrow.
+    const row = [...container.children].find(item => item.dataset.channel === focused.channel);
+    const buttons = row ? [...row.children].filter(item => item.dataset.action) : [];
+    const order = [focused.action, focused.action === 'up' ? 'down' : 'up'];
+    const target = order.map(kind => buttons.find(item => item.dataset.action === kind && !item.disabled))
+        .find(Boolean) ?? document.getElementById('idle-channel-input');
+    target?.focus();
+}
+
+async function saveIdleChannels(next) {
+    if (idleChannelsSaving) return false;
+    const error = document.getElementById('idle-channels-error');
+    const message = state.translations.gui?.settings?.idle_channels_save_error ||
+        'Could not save the idle watching channels. Please try again.';
+    error.hidden = true;
+    idleChannelsSaving = true;
+    renderIdleChannels();
+    let saved = false;
+    try {
+        const response = await fetch('/api/settings', {method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({idle_channels: next})});
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || JSON.stringify(data.settings?.idle_channels) !== JSON.stringify(next))
+            throw new Error(message);
+        updateSettingsUI(data.settings, false, ['idle_channels']);
+        saved = true;
+    } catch (_) {
+        reportSettingsError(error, message);
+        error.hidden = false;
+    } finally {
+        idleChannelsSaving = false;
+        renderIdleChannels(); // shows the confirmed list: a failed save rolls back
+    }
+    return saved;
+}
+
+async function addIdleChannel() {
+    const input = document.getElementById('idle-channel-input');
+    const current = state.settings.idle_channels || [];
+    // ASCII before toLowerCase, like the server: the Kelvin sign would lowercase to an ASCII "k".
+    const login = /^[\x00-\x7f]*$/.test(input.value)
+        ? input.value.trim().toLowerCase() // the server stores logins stripped and lowercase
+        : '';
+    if (!idleChannelPattern.test(login) || current.includes(login) || current.length >= idleChannelLimit) {
+        const error = document.getElementById('idle-channels-error');
+        reportSettingsError(error, state.translations.gui?.settings?.idle_channels_save_error ||
+            'Could not save the idle watching channels. Please try again.');
+        error.hidden = false;
+        return;
+    }
+    if (await saveIdleChannels([...current, login])) input.value = '';
 }
 
 async function onNotificationEventChange(event) {
@@ -2924,6 +3050,23 @@ function applyTranslations(t) {
         if (preferFollowedHelp) preferFollowedHelp.textContent = t.gui.settings.prefer_followed_channels_help;
         const preferFollowedError = document.getElementById('prefer-followed-error');
         if (preferFollowedError && !preferFollowedError.hidden) preferFollowedError.textContent = t.gui.settings.prefer_followed_channels_save_error;
+        const claimLabel = document.getElementById('claim-channel-points-label');
+        if (claimLabel) claimLabel.textContent = t.gui.settings.claim_channel_points;
+        const claimHelp = document.getElementById('claim-channel-points-help');
+        if (claimHelp) claimHelp.textContent = t.gui.settings.claim_channel_points_help;
+        const claimError = document.getElementById('claim-channel-points-error');
+        if (claimError && !claimError.hidden) claimError.textContent = t.gui.settings.claim_channel_points_save_error;
+        const shareLabel = document.getElementById('share-watch-streaks-label');
+        if (shareLabel) shareLabel.textContent = t.gui.settings.share_watch_streaks;
+        const shareHelp = document.getElementById('share-watch-streaks-help');
+        if (shareHelp) shareHelp.textContent = t.gui.settings.share_watch_streaks_help;
+        const shareError = document.getElementById('share-watch-streaks-error');
+        if (shareError && !shareError.hidden) shareError.textContent = t.gui.settings.share_watch_streaks_save_error;
+        const idleError = document.getElementById('idle-channels-error');
+        if (idleError && !idleError.hidden) idleError.textContent = t.gui.settings.idle_channels_save_error;
+        const idleInput = document.getElementById('idle-channel-input');
+        if (idleInput) idleInput.setAttribute('aria-label', t.gui.settings.idle_channels);
+        if (typeof renderIdleChannels === 'function') renderIdleChannels();
         if (typeof renderRewardPriority === 'function') renderRewardPriority();
 
         const dropBlacklistHeader = document.getElementById('settings-drop-blacklist-header');
@@ -3133,7 +3276,7 @@ function applyTranslations(t) {
             const featuresItems = t.gui.help.features_items || [
                 'Stream-less drop mining - saves bandwidth',
                 'Game priority and exclusion lists',
-                'Tracks up to 199 channels simultaneously',
+                'Tracks up to 198 channels simultaneously',
                 'Automatic channel switching',
                 'Real-time progress tracking'
             ];
@@ -3472,6 +3615,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('drop-name-blacklist').addEventListener('change', saveSettings);
     document.getElementById('allow-unlinked-campaigns').addEventListener('change', onUnlinkedMiningChange);
     document.getElementById('prefer-followed-channels').addEventListener('change', onPreferFollowedChange);
+    document.getElementById('claim-channel-points').addEventListener('change', onClaimChannelPointsChange);
+    document.getElementById('share-watch-streaks').addEventListener('change', onShareWatchStreaksChange);
+    document.getElementById('idle-channel-add').addEventListener('click', addIdleChannel);
+    document.getElementById('idle-channel-input').addEventListener('keydown', event => {
+        if (event.key === 'Enter') addIdleChannel();
+    });
     document.querySelectorAll('.notification-event')
         .forEach(input => input.addEventListener('change', onNotificationEventChange));
     // Proxy uses a manual "Set Proxy" button instead of auto-save

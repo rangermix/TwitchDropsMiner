@@ -255,6 +255,18 @@ still be claimed through existing notifications or work already underway. It doe
 not guarantee Twitch-side progress. Reload the dashboard after upgrading to load the
 versioned frontend controls.
 
+## Idle watching
+
+**Settings -> Mining -> Idle watching channels** lists Twitch channels (lowercase logins, at most 20) that TDM watches when nothing can be mined. Idle watching runs only when no drop can be mined and only inside mining hours.
+
+- Each live listed channel gets one visit of up to 7 minutes per stream, to count toward its watch streak. Finished visits are kept in `data/idle_visits.json`, so a restart does not repeat them; changing the account clears them.
+- A listed channel where the account is banned is skipped. After a timeout ends, TDM tries the channel again without waiting for the next idle start.
+- After the visits, TDM watches the highest live listed channel for channel points. The order of the list is the priority.
+- **Claim channel points bonus while idle watching** (on by default) claims the channel points bonus. It claims only while idle watching, never while mining drops.
+- **Share watch streaks while idle watching** (on by default) shares a watch streak once Twitch marks it shareable, once per milestone, for live listed channels. The check runs about every 5 minutes and right after a watch streak message. Twitch posts a visible watch streak notice in the streamer's chat under your name, and a share may give bonus channel points. Sharing happens only while idle watching, never while mining drops. A share whose outcome is unknown (no reply, a timeout or a server error) is not sent again; only a share Twitch refuses is tried once more. The share request is unverified until seen live; the live test also checks that Twitch marks a shared streak as shared afterwards.
+- Streak counting, the bonus claim (`ClaimCommunityPoints`) and the websocket points messages are untested until they are seen live. Treat them as unverified.
+- TDM tracks at most 198 channels, drop and idle channels together: the channel points topic takes one websocket slot. Idle channels over that limit are skipped with a warning and retried the next time idle watching starts.
+
 ## Pause mining
 
 Select **Pause** in the status bar and choose **For 10 minutes**, **For 1 hour**,
