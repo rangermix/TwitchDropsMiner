@@ -79,6 +79,8 @@ class IdleWatchService:
         # watch streak sharing: attempts per (milestone id, count); a key with all attempts used
         # is done (shared, or sent with an unknown outcome)
         self._share_tries: dict[tuple[str, int | None], int] = {}
+        # the file exists but could not be read: it is never written and no share is sent
+        self._load_failed = False
         self._load()
         # what the file holds; only a successful write updates it, so a failed one is retried
         self._saved = self._payload()
@@ -161,8 +163,11 @@ class IdleWatchService:
         self._wake.set()
 
     def _load(self) -> None:
-        """Read the saved account, visits and share keys; a missing file is empty, an unreadable one
-        is empty with a warning."""
+        """Read the saved account, visits and share keys; a missing file is empty, malformed entries are skipped.
+
+        A file that cannot be read or parsed as a whole may hold used share keys: it is left as it is,
+        visits stay in memory and no share is sent for the rest of this run.
+        """
         if self._visits_path is None:
             return
         try:
@@ -177,25 +182,34 @@ class IdleWatchService:
                 raise ValueError
             if not isinstance(saved, dict) or not isinstance(keys, list):
                 raise ValueError
-            visits = {}
-            for broadcast, channel_id in saved.items():
-                if not (broadcast.isascii() and broadcast.isdigit()) or type(channel_id) is not int:
-                    raise ValueError
-                visits[int(broadcast)] = channel_id
-            tries: dict[tuple[str, int | None], int] = {}
-            for key in keys:
-                if not (
-                    type(key) is list and len(key) == 2 and type(key[0]) is str and key[0]
-                    and (key[1] is None or type(key[1]) is int)
-                ):
-                    raise ValueError
-                tries[(key[0], key[1])] = STREAK_SHARE_ATTEMPTS
         except FileNotFoundError:
             return
         except (OSError, ValueError) as exc:
+            self._load_failed = True
             # exception type only: the file is not echoed into the log
-            logger.warning("Idle visits file unreadable (%s), starting empty", type(exc).__name__)
+            logger.warning(
+                "Idle visits file unreadable (%s): fix or delete it and restart; until then visits are not"
+                " saved and no watch streak is shared", type(exc).__name__,
+            )
             return
+        skipped = 0
+        visits = {}
+        for broadcast, channel_id in saved.items():
+            if broadcast.isascii() and broadcast.isdigit() and type(channel_id) is int:
+                visits[int(broadcast)] = channel_id
+            else:
+                skipped += 1
+        tries: dict[tuple[str, int | None], int] = {}
+        for key in keys:
+            if (
+                type(key) is list and len(key) == 2 and type(key[0]) is str and key[0]
+                and (key[1] is None or type(key[1]) is int)
+            ):
+                tries[(key[0], key[1])] = STREAK_SHARE_ATTEMPTS
+            else:
+                skipped += 1
+        if skipped:
+            logger.warning("Idle visits file: %d invalid entries skipped", skipped)
         self._account, self.visited, self._share_tries = account, visits, tries
 
     def _payload(self) -> dict[str, object]:
@@ -207,6 +221,8 @@ class IdleWatchService:
 
         True when the file holds them (or there is no file).
         """
+        if self._load_failed:
+            return False
         payload = self._payload()
         if self._visits_path is None or payload == self._saved:
             return True
@@ -433,7 +449,7 @@ class IdleWatchService:
         """At most every 5 minutes, or when a streak was just earned, share watch streaks Twitch allows."""
         now = time.monotonic()
         due = self._share_now or self._share_checked is None or now - self._share_checked >= STREAK_SHARE_CHECK_SECONDS
-        if not self.active or not self._twitch.settings.share_watch_streaks or not due:
+        if not self.active or not self._twitch.settings.share_watch_streaks or not due or self._load_failed:
             return
         live = self.live_channels()
         if not live:

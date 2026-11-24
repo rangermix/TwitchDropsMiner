@@ -4,6 +4,7 @@ import asyncio
 import inspect
 import json
 import logging
+import pathlib
 import re
 import time
 from datetime import datetime, timezone
@@ -991,24 +992,65 @@ async def test_visits_survive_a_restart_and_are_written_on_change_only(tmp_path,
 
 
 @pytest.mark.parametrize("contents", [
-    "not json", "[1, 2]", '{"x": 1}', '{"10": true}', '{"10": "1"}', '{"-1": 1}', bytes([0xFF, 0xFE]),
-    '{"visits": []}', '{"visits": {"x": 1}}', '{"visits": {}, "user_id": "1"}', '{"visits": {}, "user_id": true}',
-    '{"visits": {}, "user_id": 0}', '{"visits": {}, "shares": {}}', '{"visits": {}, "shares": [["m1"]]}',
-    '{"visits": {}, "shares": [["", 9]]}', '{"visits": {}, "shares": [["m1", "9"]]}',
-    '{"visits": {}, "shares": [["m1", true]]}', '{"visits": {}, "shares": [[1, 9]]}',
-])
-def test_corrupt_visits_file_starts_empty_with_one_warning(tmp_path, caplog, contents):
+    "not json", '{"user_id": 1, "visits": {"10": 1}, "sha', "[1, 2]", "null", bytes([0xFF, 0xFE]),
+    '{"visits": []}', '{"visits": {}, "user_id": "1"}', '{"visits": {}, "user_id": true}',
+    '{"visits": {}, "user_id": 0}', '{"visits": {}, "shares": {}}', "permission", "directory",
+], ids=repr)
+def test_unreadable_visits_file_is_kept_and_visits_stay_in_memory(tmp_path, monkeypatch, caplog, contents):
     path = tmp_path / "idle_visits.json"
-    if isinstance(contents, bytes):
+    if contents == "directory":
+        path.mkdir()
+    elif contents == "permission":
+        path.write_text('{"user_id": 1, "visits": {"10": 1}, "shares": []}', encoding="utf-8")
+
+        def denied(self, *args, **kwargs):
+            raise PermissionError("secret path")
+        monkeypatch.setattr(pathlib.Path, "read_text", denied)
+    elif isinstance(contents, bytes):
         path.write_bytes(contents)
     else:
         path.write_text(contents, encoding="utf-8")
+    before = None if path.is_dir() else path.read_bytes()
     with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
         svc, _ = service(visits_path=path)
-    assert svc.visited == {}
-    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
-    assert len(warnings) == 1
-    assert warnings[0].startswith("Idle visits file unreadable (")  # exception type only, no file contents
+        assert svc.visited == {}
+        svc._use_account(1)
+        svc.visited[20] = 2
+        assert svc._save() is False  # not written: the file is left for the owner to fix or delete
+        assert svc._save() is False
+    assert svc.visited == {20: 2}  # in memory, so this run does not revisit the broadcast
+    assert (None if path.is_dir() else path.read_bytes()) == before
+    assert len(caplog.messages) == 1  # once, with the exception type only and no file contents
+    assert caplog.messages[0].startswith("Idle visits file unreadable (")
+    assert "fix or delete" in caplog.messages[0]
+    assert "secret path" not in caplog.text
+
+
+@pytest.mark.parametrize(("contents", "visits", "keys", "skipped"), [
+    # a bad visit next to a good one
+    ('{"user_id": 1, "visits": {"10": 1, "x": 2, "-1": 3, " 12": 4, "13": "5", "14": true}, "shares": [["m1", 9]]}',
+     {10: 1}, {("m1", 9)}, 5),
+    # a bad share next to a good one
+    # (a repeated key is not counted as invalid)
+    ('{"user_id": 1, "visits": {"10": 1}, "shares": [["m1", 9], ["m2", "9"], ["m3", true], ["", 9], [1, 9],'
+     ' ["m4"], ["m5", 9, 1], {"m6": 9}, ["m7", null], ["m1", 9]]}',
+     {10: 1}, {("m1", 9), ("m7", None)}, 7),
+    # the old flat format with a bad entry
+    ('{"10": 1, "x": 2, "11": true}', {10: 1}, set(), 2),
+], ids=["visit", "share", "flat"])
+def test_malformed_entries_are_skipped_and_the_rest_kept(tmp_path, caplog, contents, visits, keys, skipped):
+    path = tmp_path / "idle_visits.json"
+    path.write_text(contents, encoding="utf-8")
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        svc, _ = service(visits_path=path)
+    assert svc.visited == visits
+    assert {key for key, tries in svc._share_tries.items() if tries >= idle_mod.STREAK_SHARE_ATTEMPTS} == keys
+    assert caplog.messages == [f"Idle visits file: {skipped} invalid entries skipped"]
+    svc._use_account(1)
+    svc.visited[20] = 2
+    assert svc._save() is True  # the file is usable: it is rewritten with the valid entries
+    saved = json.loads(path.read_text(encoding="utf-8"))
+    assert saved["visits"] == {**{str(b): c for b, c in visits.items()}, "20": 2}
 
 
 def test_missing_visits_file_starts_empty_without_a_warning(tmp_path, caplog):

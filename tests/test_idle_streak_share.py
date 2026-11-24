@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import pathlib
 import time
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
@@ -755,3 +756,31 @@ async def test_share_is_skipped_when_its_key_cannot_be_saved(tmp_path, monkeypat
     await svc.share_streaks()
     assert len(shares(tw)) == 1
     assert json.loads(path.read_text(encoding="utf-8"))["shares"] == [["m1", 9]]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure", ["permission", "truncated", "wrong shape"])
+async def test_unreadable_visits_file_blocks_shares_and_writes_for_the_run(tmp_path, monkeypatch, caplog, failure):
+    # the file may hold used share keys the service cannot see: sending could post a share twice,
+    # and writing would replace the keys
+    path = tmp_path / "idle_visits.json"
+    good = '{"user_id": 5, "visits": {"1": 123}, "shares": [["m1", 9]]}'
+    path.write_text({"truncated": good[:-3], "wrong shape": "[1, 2]"}.get(failure, good), encoding="utf-8")
+    before = path.read_bytes()
+    if failure == "permission":
+        def denied(self, *args, **kwargs):
+            raise PermissionError("secret path")
+        monkeypatch.setattr(pathlib.Path, "read_text", denied)
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        svc, tw = setup(visits_path=path)
+        svc._use_account(5)
+        for _ in range(3):
+            await svc.share_streaks()  # every call is due: a blocked check never runs
+        svc.visited[2] = 123
+        assert svc._save() is False
+    assert shares(tw) == []
+    assert path.read_bytes() == before
+    assert len(caplog.messages) == 1
+    assert caplog.messages[0].startswith("Idle visits file unreadable (")
+    assert "fix or delete" in caplog.messages[0]
+    assert "secret path" not in caplog.text and "m1" not in caplog.text
