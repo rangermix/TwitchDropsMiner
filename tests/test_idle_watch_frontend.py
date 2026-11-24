@@ -1,6 +1,7 @@
 """Settings > Mining: idle watching channel list and channel points claim toggle."""
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -212,6 +213,10 @@ def test_markup_and_translations_exist():
                      'id="idle-channels-list" class="reward-type-list ordered"',
                      'id="idle-channel-input"', 'id="idle-channel-add"', 'id="idle-channels-error"'):
         assert fragment in html, fragment
+    # the static English text shown before the translations load is the English translation
+    english = json.loads((ROOT / "lang" / "English.json").read_text(encoding="utf-8"))["gui"]["settings"]
+    for element, key in (("idle-channels-title", "idle_channels"), ("idle-channels-help", "idle_channels_help")):
+        assert re.search(rf'id="{element}"[^>]*>{re.escape(english[key])}<', html), key
     keys = ("idle_channels", "idle_channels_help", "idle_channels_add", "idle_channels_remove", "idle_channels_up",
             "idle_channels_down", "idle_channels_save_error", "claim_channel_points", "claim_channel_points_help",
             "claim_channel_points_save_error")
