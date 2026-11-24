@@ -1332,22 +1332,37 @@ with this policy when reviewing proposals or documenting deployment options.
 `idle_channels` setting (lowercase logins, at most 20, validated by
 `IdleChannelSettings`) only after the two "nothing to mine" IDLE entries; any state
 change stops it and releases its channel. It never claims, shares or watches for
-points while a drop can be mined.
+points while a drop can be mined: a pick that `can_watch()` accepts goes to
+CHANNEL_SWITCH before it is watched. Claims and shares also need `is_mining_time()`.
+Other code reaches the service through the public `Twitch.idle_watch`.
 
 - Visits: each live listed channel gets one visit of `IDLE_VISIT_SECONDS` per
-  broadcast, then the highest live channel in list order is watched. Finished visits
-  persist in `data/idle_visits.json` (last `IDLE_VISITS_KEPT`); `reset()` clears them
-  on an account change. Banned channels are skipped; a timed ban is retried when it ends.
+  broadcast, then the highest live channel in list order is watched. Banned channels
+  are skipped; a timed ban is retried when it ends.
+- `data/idle_visits.json` holds `user_id`, the finished visits (last
+  `IDLE_VISITS_KEPT`) and the used-up share keys (last `IDLE_SHARES_KEPT`). An auth
+  change keeps them (`reset()` clears only session state); the next idle entry drops
+  them when another account is logged in. A file without `user_id` (the older flat
+  visits format) is taken by the first account. A failed write is retried each tick.
 - Bonus claim: `ClaimCommunityPoints` only while idle watching and only with
-  `claim_channel_points` on; a claim counts only when Twitch accepts it.
+  `claim_channel_points` on. A claim counts only when the reply has a `claim` object
+  and no error; after a failed claim the tick runs `refresh_points()` again until the
+  claim succeeds, the read shows no open bonus or the channel changes.
 - Streak share: `shareViewerMilestone` posts a visible notice in the streamer's chat
-  under the user's name, so it is sent with `single_attempt` and its tries are used
-  up before sending. An unknown outcome (no reply, timeout, 5xx, unconfirmed reply,
-  or an auth renewal) is never resent; only an explicit `error` object in the reply
-  allows one more try. Needs `share_watch_streaks` on.
+  under the user's name, so it is sent with `single_attempt`, and its key
+  (milestone id, count as one int) is used up and saved before sending. An unknown
+  outcome (no reply, timeout, 5xx, unconfirmed reply, or an auth renewal) is never
+  resent, also not after a restart. Only an `error` with a non-empty string `code`
+  and a null `milestone` allows one more try. A count without a usable value matches
+  any count of the same milestone id. Needs `share_watch_streaks`, which is off by
+  default.
 - The `CommunityPoints` user topic is subscribed at login (`BASE_TOPICS = 3`), so at
   most 198 channels are tracked, drop and idle channels together. Idle channels over
   the limit are skipped with a warning.
+- Extra requests while idle watching: the watch loop's per-minute `CurrentDrop` for
+  the watched channel, `ChannelBanStatus` for newly tracked idle channels, and
+  `GetStreamInfo` plus `ChannelPointsContext` again after each hourly reload drops
+  the idle channels.
 
 ### Claimed Drop History
 
