@@ -149,9 +149,8 @@ If TDM 2.2.0 says it is watching but Twitch inventory does not advance, update t
 requests without downloading stream audio or video. A Watching label or accepted
 telemetry alone does not establish progress; compare with Twitch inventory.
 
-Source builds from current `main` support watch-based sitewide Open Reward Campaigns.
-The v2.6.0 release supports regular campaigns only. Twitch lists Open
-Reward Campaigns, such as GTAVI Launch Celebration, separately on its Drops page. Each campaign's
+Starting in v2.7.0, TDM supports watch-based sitewide Open Reward Campaigns.
+Twitch lists these campaigns, such as GTAVI Launch Celebration, separately on its Drops page. Each campaign's
 watch goal appears in Inventory under its first listed category, for example the daily
 GTA DVD Chest of GTAVI Launch Celebration under **Grand Theft Auto VI**. Inventory shows
 **Times earned** for repeat grants. A reward without artwork still appears under its name
