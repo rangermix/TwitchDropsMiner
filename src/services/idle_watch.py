@@ -349,7 +349,8 @@ class IdleWatchService:
     def _idle_watched(self, channel_id: object) -> Channel | None:
         """The channel being idle watched, if channel_id is it and the loop is running."""
         watched = self._twitch.watching_channel.get_with_default(None)
-        if not self.active or watched is None or str(watched.id) != str(channel_id):
+        # only the loop's own pick: at idle entry the last drop channel is still watched until the first pick
+        if not self.active or watched is None or watched is not self.watched or str(watched.id) != str(channel_id):
             return None
         # a channel drops can use is mined, not idle watched, even before the loop hands it over
         return None if self._twitch.can_watch(watched) else watched

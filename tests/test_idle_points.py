@@ -31,6 +31,7 @@ def setup(*, active=True, claim=True, watched=None, gql=None):
     svc = IdleWatchService(tw)
     svc._task = MagicMock(done=lambda: not active)
     svc.poke = MagicMock()
+    svc.watched = watched  # the loop's pick
     return svc, tw, watched
 
 
@@ -484,3 +485,19 @@ async def test_a_channel_change_resets_the_retry_count():
         await svc._tick()  # b: the same again
     assert names(tw) == ["ChannelPointsContext", "ClaimCommunityPoints"] * 6
     assert [o["variables"] for o in sent(tw)[6::2]] == [{"channelLogin": "b"}] * 3
+
+
+@pytest.mark.asyncio
+async def test_a_leftover_channel_the_loop_did_not_pick_gets_no_claim_or_points():
+    # idle entry: the drop channel watched before is still watching_channel until the loop's first pick
+    leftover = SimpleNamespace(id=555, name="X", login="x", online=True, banned=False)
+    svc, tw, _ = setup(watched=leftover)
+    svc.watched = None
+    await svc.process_points(1, claim_msg(channel_id="555"))
+    await svc.process_points(1, earned("WATCH", channel_id="555", balance=777))
+    assert sent(tw) == []
+    assert svc.balances == {}
+    tw.gui.status.update.assert_not_called()
+    svc.watched = leftover  # once the loop picked it, it is idle watched
+    await svc.process_points(1, claim_msg(channel_id="555"))
+    assert [op["operationName"] for op in sent(tw)] == ["ClaimCommunityPoints"]
