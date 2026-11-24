@@ -1343,7 +1343,12 @@ Other code reaches the service through the public `Twitch.idle_watch`.
   `IDLE_VISITS_KEPT`) and the used-up share keys (last `IDLE_SHARES_KEPT`). An auth
   change keeps them (`reset()` clears only session state); the next idle entry drops
   them when another account is logged in. A file without `user_id` (the older flat
-  visits format) is taken by the first account. A failed write is retried each tick.
+  visits format) is taken by the first account. The file keeps one account, so
+  switching A, B, A loses A's share keys and an unknown-outcome share of A can be
+  sent again. A failed write is retried each tick. `_load()` skips invalid entries
+  (one warning with the count); a file that exists but cannot be read or parsed as a
+  whole sets `_load_failed`: the file is never written, visits stay in memory and no
+  share is sent this run.
 - Bonus claim: `ClaimCommunityPoints` only while idle watching and only with
   `claim_channel_points` on. A claim counts only when the reply has a `claim` object
   and no error; after a failed claim the tick runs `refresh_points()` again, at most
@@ -1365,7 +1370,7 @@ Other code reaches the service through the public `Twitch.idle_watch`.
 - Extra requests while idle watching: the watch loop's per-minute `CurrentDrop` for
   the watched channel, `ChannelBanStatus` for newly tracked idle channels, and
   `GetStreamInfo` plus `ChannelPointsContext` again after each hourly reload drops
-  the idle channels.
+  the idle channels (CHANNELS_CLEANUP keeps an online one that streams a wanted game).
 
 ### Claimed Drop History
 
