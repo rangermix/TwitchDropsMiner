@@ -12,6 +12,7 @@ from src.api.http_client import HTTPClient
 from src.config import ClientType, GQLRawQuery, State
 from src.exceptions import GQLException, RequestException
 
+
 OK = {"data": {"x": 1}}
 
 
