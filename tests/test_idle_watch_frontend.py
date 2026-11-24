@@ -97,12 +97,14 @@ const same = rowOf('gamma');
 handleDragStart(event(same));
 same.events.dragend(event(same)); await tick();
 assert.equal(calls.length, 0);
-// rows are not draggable while a save is in flight
+// while a save is in flight the pending order shows and rows are not draggable
 let finish;
 global.fetch = () => new Promise(resolve => { finish = resolve; });
-const pending = saveIdleChannels(['alpha']);
+const pending = saveIdleChannels(['beta', 'gamma', 'alpha']);
+assert.deepEqual(names(), ['beta', 'gamma', 'alpha']);
 assert.ok(rowOf('gamma').draggable === false);
 finish({ok: false}); await pending;
+assert.deepEqual(names(), ['gamma', 'alpha', 'beta']); // the failed save shows the saved order again
 assert.ok(rowOf('gamma').draggable === true);
 """)
 
@@ -205,7 +207,9 @@ def test_claim_toggle_saves_like_prefer_followed():
 
 def test_markup_and_translations_exist():
     html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
-    for fragment in ('id="claim-channel-points"', 'id="claim-channel-points-error"', 'id="idle-channels-list"',
+    for fragment in ('id="claim-channel-points"', 'id="claim-channel-points-error"',
+                     # "ordered" shows the drag handle, the move cursor and the hover like the other ordered lists
+                     'id="idle-channels-list" class="reward-type-list ordered"',
                      'id="idle-channel-input"', 'id="idle-channel-add"', 'id="idle-channels-error"'):
         assert fragment in html, fragment
     keys = ("idle_channels", "idle_channels_help", "idle_channels_add", "idle_channels_remove", "idle_channels_up",

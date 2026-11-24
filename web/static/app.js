@@ -2850,7 +2850,7 @@ async function saveIdleChannels(next) {
         'Could not save the idle watching channels. Please try again.';
     error.hidden = true;
     idleChannelsSaving = true;
-    renderIdleChannels();
+    renderIdleChannels(next); // the pending order, so a moved row does not jump back while saving
     let saved = false;
     try {
         const response = await fetch('/api/settings', {method: 'POST', headers: {'Content-Type': 'application/json'},
