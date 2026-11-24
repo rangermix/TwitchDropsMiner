@@ -181,7 +181,9 @@ For more Compose options, see the [Docker Compose documentation](https://docs.do
 
 Install Python 3.12 or newer and [uv](https://docs.astral.sh/uv/). The miner host also
 needs a Chromium executable named `chromium` or `chromium-browser` on its `PATH` for
-automatic renewal. On Linux, also install `xvfb` and `xauth` (for example
+automatic renewal. Current source builds prefer Firefox 143+ (`firefox` or `firefox-esr`
+on `PATH`) for embedded sign-in. Chromium handles sign-in when a compatible Firefox is unavailable.
+On Linux, also install `xvfb` and `xauth` (for example
 `sudo apt install xvfb xauth` on Debian or Ubuntu) so `xvfb-run` is available. Without
 it the renewal browser runs headless and the miner logs a warning each time it starts;
 Twitch can reject the session it issues, reported as `reason=headless_fallback`. The

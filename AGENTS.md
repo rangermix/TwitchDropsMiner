@@ -563,6 +563,19 @@ progress to an ignored drop while the miner intentionally targets another reward
 
 ### Authentication and integrated browser login
 
+- Current source builds prefer `LoginFirefox` when Firefox 143 or newer is available.
+  Check the version under the browser UID before opening the sign-in window. Alpine
+  Chromium can reject fresh Twitch login as unsupported. The image includes both:
+  Firefox handles manual sign-in, Chromium retains SDK issuance and renewal over a
+  private pipe on POSIX. Firefox runs with a private profile and password saving
+  disabled as `tdm-browser`.
+  Do not enable BiDi/Marionette during sign-in. Manual Finish/window close flushes
+  the profile before reopening it with loopback BiDi; validate both PID and profile
+  from `session.new` before reading cookies, then use the shared `FirefoxExporter`
+  and all existing account/catalog/server-issuance checks. Firefox requires manual
+  Finish; preserve Chromium's completion extension for the fallback path. Keep
+  profile/process/protocol cleanup cancellation-safe. Source hosts without a compatible
+  Firefox retain Chromium login. Regression: `tests/test_container_firefox.py`.
 - The temporary interactive Chromium profile disables password saving before startup.
   Its bundled completion extension observes only Twitch login-cookie presence, closes
   the owned profile's windows normally, and never exports cookie values. Treat this as
@@ -619,8 +632,8 @@ progress to an ignored drop while the miner intentionally targets another reward
   restore legacy cookies after explicit logout. Version 3 atomically persists a
   logged-out marker with cleared session/SDK state; successful login clears it.
 - `ContainerLogin` owns one temporary attempt with a 15-minute interactive timeout.
-  Launch ordinary Chromium at Twitch sign in without remote automation, close its
-  window normally to flush storage, then reopen the owned profile for CDP capture.
+  Launch the selected browser at Twitch sign in without remote automation, close its
+  window normally to flush storage, then reopen the owned profile for CDP/BiDi capture.
   Verify the browser PID before reading credentials. Finish sign in uses EWMH close;
   the window X works too. Profiles and all owned processes must be drained through
   cancellation, startup failures, timeout and shutdown. Never attach another profile.
@@ -666,7 +679,7 @@ progress to an ignored drop while the miner intentionally targets another reward
   closed on mounts that ignore chmod or give the browser ownership. Keep temporary
   display/profile directories owned by the browser UID. Root-only SDK profiles remain
   unreadable to it. Retain tests for file-access isolation and pre-login password setup.
-- Docker includes Chromium, Xvfb, openbox, x11vnc, xdotool, noVNC and timezone data.
+- Docker includes Firefox, Chromium, Xvfb, openbox, x11vnc, xdotool, noVNC and timezone data.
   Set `TZ` to the home internet connection’s timezone. Use init, shared memory and
   a cleanup grace period. Only the dashboard port is published. Display numbers are
   allocated by Xvfb to avoid stale fixed-display locks after engine restarts.

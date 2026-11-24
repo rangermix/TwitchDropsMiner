@@ -5,16 +5,18 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import shutil
 import socket
 import tempfile
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
 import aiohttp
 
+from src.auth.firefox_session import FirefoxExporter, FirefoxPage
 from src.auth.server_renewal import OwnedChromium
 from src.auth.session_bundle import SessionError
 from src.auth.session_controller import SessionController
@@ -239,16 +241,7 @@ class LoginChromium:
         self.isolation = BrowserIsolation()
         self.profile = self.isolation.directory("tdm-login-")
         try:
-            preferences = self.profile / "Default"
-            preferences.mkdir(mode=0o700)
-            self.isolation.own(preferences)
-            preferences = preferences / "Preferences"
-            preferences.write_text(json.dumps({
-                "credentials_enable_service": False,
-                "profile": {"password_manager_enabled": False},
-            }), encoding="utf-8")
-            preferences.chmod(0o600)
-            self.isolation.own(preferences)
+            self.prepare_profile()
             (self.profile / "tmp").mkdir(mode=0o700)
             self.isolation.own(self.profile / "tmp")
             await self.launch()
@@ -256,6 +249,19 @@ class LoginChromium:
         except BaseException:
             await self.close()
             raise
+
+    def prepare_profile(self) -> None:
+        assert self.profile is not None and self.isolation is not None
+        preferences = self.profile / "Default"
+        preferences.mkdir(mode=0o700)
+        self.isolation.own(preferences)
+        preferences = preferences / "Preferences"
+        preferences.write_text(json.dumps({
+            "credentials_enable_service": False,
+            "profile": {"password_manager_enabled": False},
+        }), encoding="utf-8")
+        preferences.chmod(0o600)
+        self.isolation.own(preferences)
 
     async def __aexit__(self, *_args):
         await self.close()
@@ -349,11 +355,146 @@ class LoginChromium:
             self.profile = None
 
 
+class LoginFirefox(LoginChromium):
+    """Manual Firefox sign-in, followed by owned BiDi capture after normal close."""
+
+    MIN_MAJOR = 143
+
+    def __init__(self, environment: dict[str, str], executable: str):
+        super().__init__(environment)
+        self.executable = executable
+        self.http: aiohttp.ClientSession | None = None
+        self.remote: DevToolsConnection | None = None
+
+    @classmethod
+    async def supports(cls, executable: str, environment: dict[str, str], isolation: BrowserIsolation) -> bool:
+        try:
+            process = await asyncio.create_subprocess_exec(
+                executable, "--version", env=environment, start_new_session=True,
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL, **isolation.options,
+            )
+        except OSError:
+            return False
+        try:
+            output, _ = await asyncio.wait_for(process.communicate(), 5)
+        except TimeoutError:
+            await OwnedChromium.finish_stop(process)
+            return False
+        except asyncio.CancelledError:
+            await OwnedChromium.finish_stop(process)
+            raise
+        version = re.search(rb"(?m)^Mozilla Firefox ([0-9]+)(?:\.|\s|$)", output)
+        return process.returncode == 0 and version is not None and int(version[1]) >= cls.MIN_MAJOR
+
+    def prepare_profile(self) -> None:
+        assert self.profile is not None and self.isolation is not None
+        preferences = self.profile / "user.js"
+        preferences.write_text('\n'.join(
+            f'user_pref({json.dumps(name)}, {json.dumps(value)});' for name, value in {
+                "signon.rememberSignons": False,
+                "browser.shell.checkDefaultBrowser": False,
+                "browser.aboutwelcome.enabled": False,
+                "browser.startup.homepage_override.mstone": "ignore",
+            }.items()
+        ), encoding="utf-8")
+        preferences.chmod(0o600)
+        self.isolation.own(preferences)
+
+    async def launch(self, *, capture: bool = False) -> None:
+        assert self.profile is not None and self.executable is not None
+        args = [self.executable, "--no-remote", "--profile", str(self.profile)]
+        if capture:
+            port = loopback_port()
+            self.address = f"http://127.0.0.1:{port}"
+            args.extend(["--remote-debugging-port", str(port), "about:blank"])
+        else:
+            args.append("https://www.twitch.tv/login")
+        self.process = await asyncio.create_subprocess_exec(
+            *args, env={**self.environment, "HOME": str(self.profile),
+                        **{name: str(self.profile / "tmp") for name in ("TMPDIR", "TMP", "TEMP")}},
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL, start_new_session=True,
+            **(self.isolation.options if self.isolation else {}),
+        )
+        if capture:
+            await self.check_ready()
+        else:
+            await asyncio.sleep(.1)
+            if self.process.returncode is not None:
+                raise SessionError("BROWSER_START")
+
+    def require_owner(self, data: Any) -> None:
+        capabilities = data.get("capabilities") if isinstance(data, dict) else None
+        if (not isinstance(capabilities, dict) or self.process is None or self.profile is None
+                or type(capabilities.get("moz:processID")) is not int
+                or capabilities["moz:processID"] != self.process.pid
+                or not isinstance(capabilities.get("moz:profile"), str)
+                or Path(capabilities["moz:profile"]).resolve() != self.profile.resolve()):
+            raise SessionError("BROWSER_OWNER")
+        version = str(capabilities.get("browserVersion", "")).split(".")[0]
+        if not version.isdecimal() or int(version) < self.MIN_MAJOR:
+            raise SessionError("BROWSER_START")
+
+    async def check_ready(self) -> None:
+        self.http = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5), trust_env=False)
+        async with asyncio.timeout(20):  # type: ignore[attr-defined]
+            while self.process is not None and self.process.returncode is None:
+                try:
+                    socket = await self.http.ws_connect(self.address.replace("http:", "ws:") + "/session",
+                        max_msg_size=16 * 1024 * 1024, timeout=aiohttp.ClientWSTimeout(ws_close=1))
+                except (aiohttp.ClientError, OSError, TimeoutError):
+                    await asyncio.sleep(.1)
+                    continue
+                self.remote = DevToolsConnection(socket, extra_events=FirefoxPage.EVENTS)
+                self.require_owner(await self.remote.command("session.new", {"capabilities": {}}, timeout=5))
+                return
+        raise SessionError("BROWSER_START")
+
+    async def capture(self):
+        assert self.process is not None
+        if await self.process.wait() != 0:
+            raise SessionError("BROWSER_START")
+        await self.launch(capture=True)
+        assert self.remote is not None
+        data = await self.remote.command("storage.getCookies", {
+            "filter": {"name": "auth-token"},
+            "partition": {"type": "storageKey", "userContext": "default"},
+        }, timeout=5)
+        if not isinstance(data, dict) or not isinstance(data.get("cookies"), list):
+            raise SessionError("BROWSER_PROTOCOL")
+        if not any(isinstance(cookie, dict) and cookie.get("name") == "auth-token"
+                   and cookie.get("domain") in (".twitch.tv", "twitch.tv", "www.twitch.tv")
+                   and FirefoxPage.string(cookie.get("value")) for cookie in data["cookies"]):
+            raise SessionError("LOGIN_MISSING")
+        return await FirefoxExporter(self.address, self.remote, timeout=120).capture_seed()
+
+    async def _close(self) -> None:
+        try:
+            await super()._close()
+        finally:
+            if self.remote is not None:
+                await self.remote.close()
+                self.remote = None
+            if self.http is not None:
+                await self.http.close()
+                self.http = None
+
+
+async def create_login_browser(environment: dict[str, str]) -> LoginChromium:
+    """Choose a compatible sign-in browser before asking for credentials."""
+    isolation = BrowserIsolation()
+    for command in ("firefox", "firefox-esr"):
+        executable = shutil.which(command)
+        if executable and await LoginFirefox.supports(executable, environment, isolation):
+            return LoginFirefox(environment, executable)
+    return LoginChromium(environment)
+
+
 class ContainerLogin:
     """One shared temporary login attempt, automatically replaced by verified mining."""
 
     def __init__(self, controller: SessionController, *, on_change: Callable[[], None] = lambda: None,
-                 desktop_factory: Callable = ContainerDesktop, browser_factory: Callable = LoginChromium):
+                 desktop_factory: Callable = ContainerDesktop,
+                 browser_factory: Callable[[dict[str, str]], Awaitable[LoginChromium]] = create_login_browser):
         self.controller, self.on_change = controller, on_change
         self.desktop_factory, self.browser_factory = desktop_factory, browser_factory
         self.state, self.attempt = "idle", 0
@@ -395,7 +536,7 @@ class ContainerLogin:
         try:
             async with self.desktop_factory() as desktop:
                 self.desktop = desktop
-                async with self.browser_factory(desktop.environment) as browser:
+                async with await self.browser_factory(desktop.environment) as browser:
                     self.browser = browser
                     try:
                         self.change("sign_in")

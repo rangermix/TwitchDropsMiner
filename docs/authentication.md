@@ -1,7 +1,11 @@
 # Twitch login
 
-TDM shows an interactive Chromium browser inside its dashboard by default when no valid
-Twitch session is available. It runs in the miner’s Docker container. An optional
+TDM shows an interactive browser inside its dashboard by default when no valid
+Twitch session is available. Current source builds prefer Firefox for sign-in, avoiding
+Twitch's unsupported-browser rejection observed with Alpine Chromium. Chromium still
+handles server verification and renewal. The published v2.7.0 image uses Chromium for
+both. Build from current source to use Firefox for sign-in.
+The browser runs in the miner’s Docker container. An optional
 [desktop helper](#desktop-helper-fallback) lets you sign in on your own computer if
 Twitch rejects the embedded browser. Both paths use the dashboard port and the same
 server-side session verification and automatic renewal.
@@ -11,9 +15,9 @@ server-side session verification and automatic renewal.
 1. Open the TDM dashboard. If dashboard password protection is enabled, unlock it first.
 2. Sign in to Twitch in the browser shown there and complete email verification or
    two-factor authentication as requested by Twitch.
-3. The browser closes automatically after Twitch sets its login cookie, whether scoped
-   to `www.twitch.tv` or `.twitch.tv`. If it stays
-   open after you finish verification, select **Finish sign in** or close its X button.
+3. After Twitch confirms sign-in and you finish verification, select **Finish sign in**
+   or close the browser's X button. Chromium may close automatically after Twitch sets
+   its login cookie; Firefox requires this manual close.
 4. Wait while TDM verifies the account, campaign access and renewable session. The
    normal dashboard appears automatically after verification and browser cleanup.
 
@@ -49,11 +53,11 @@ the change; a failed sign-in needs a new attempt.
 ## Docker and timezone
 
 Use the `rangermix/twitch-drops-miner:2.7.0` image or build the current source.
-The image includes Chromium, Xvfb, a window manager and noVNC. It does not need a
-display on the home server or NAS. Only the dashboard port is published; VNC and
-login-browser control remain on container loopback addresses. Docker images since
-v2.5.0 and Linux/macOS source builds control the session-renewal browser over a private
-pipe. Windows source builds use loopback; the older 2.3.2 image also uses a loopback
+Both include Chromium, Xvfb, a window manager and noVNC. The current source image
+also includes Firefox. A home server or NAS can run either image without a display.
+Only the dashboard port is published. VNC and login-browser control remain on container
+loopback addresses. Docker images since v2.5.0 and Linux/macOS source builds control
+the session-renewal browser over a private pipe. Windows source builds use loopback; the older 2.3.2 image also uses a loopback
 control port.
 
 Set `TZ` to match the timezone of your home internet connection, for example
@@ -277,6 +281,8 @@ A source installation using the embedded browser additionally needs Linux, a roo
 at `/usr/share/novnc`, and timezone data. The desktop helper is an alternative for
 interactive sign-in, but the miner host still needs Chromium for server-side
 verification and renewal. See [source installation](installation.md#run-from-source).
+Install Firefox 143 or newer (`firefox` or `firefox-esr` on `PATH`) to use it for
+embedded sign-in. Chromium handles sign-in when a compatible Firefox is unavailable.
 
 [All guides](README.md) · [Next: Games and drops](usage.md)
 
