@@ -339,6 +339,8 @@ class IdleWatchService:
         elif channel is not tw.watching_channel.get_with_default(None) or channel is not self.watched:
             if self.watched is not None:
                 logger.info("Idle watching switched to %s", channel.name)
+            # a re-watch of the same pick after a failed claim reads again only as a counted retry
+            retry = channel is self.watched and self._claim_failed
             if channel is not self.watched:
                 self._claimed.clear()
                 self._claim_failed = False
@@ -346,7 +348,9 @@ class IdleWatchService:
             self.watched = channel
             tw.watch(channel, update_status=False)
             self._show_status(channel)
-            await self.refresh_points(channel)
+            if not retry or self._claim_retries < CLAIM_RETRIES:
+                self._claim_retries += retry
+                await self.refresh_points(channel)
         elif self._claim_failed and self._claim_retries < CLAIM_RETRIES:
             # the last bonus claim failed: a fresh read finds the bonus again, once per tick
             self._claim_retries += 1

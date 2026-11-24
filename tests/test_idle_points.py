@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.config import State
-from src.services.idle_watch import IdleWatchService, Visit
+from src.services.idle_watch import CLAIM_RETRIES, IdleWatchService, Visit
 
 
 def chan(cid=123, name="A"):
@@ -505,3 +505,17 @@ async def test_a_leftover_channel_the_loop_did_not_pick_gets_no_claim_or_points(
     svc.watched = leftover  # once the loop picked it, it is idle watched
     await svc.process_points(1, claim_msg(channel_id="555"))
     assert [op["operationName"] for op in sent(tw)] == ["ClaimCommunityPoints"]
+
+
+@pytest.mark.asyncio
+async def test_a_re_watch_of_the_same_pick_counts_as_a_claim_retry():
+    # whatever clears watching_channel, the failed claim is retried at most CLAIM_RETRIES times
+    async def gql(op):
+        return context() if op["operationName"] == "ChannelPointsContext" else FAILED_CLAIMS[1]
+    svc, tw, current = tick_setup(AsyncMock(side_effect=gql))
+    for _ in range(8):
+        current["watching"] = None
+        await svc._tick()
+    claims = [op for op in sent(tw) if op["operationName"] == "ClaimCommunityPoints"]
+    assert len(claims) == 1 + CLAIM_RETRIES
+    assert current["watching"] is not None  # it is still watched again each tick
