@@ -54,7 +54,8 @@ async def test_playlist_polling_preserves_minute_progress_cadence(
         gui=SimpleNamespace(progress=progress),
         gql_request=gql_request,
         _drops={'drop': drop},
-        _inventory_service=SimpleNamespace(get_active_campaign=lambda watched: campaign),
+        _inventory_service=SimpleNamespace(get_active_campaign=lambda watched, **kw: campaign),
+        inventory=[], wanted_games=[],
     )
     service = WatchService(twitch)
 
@@ -123,7 +124,8 @@ async def test_blocked_progress_query_is_drained_and_playlist_polling_resumes(mo
         gui=SimpleNamespace(progress=SimpleNamespace(minute_almost_done=lambda: True)),
         gql_request=gql_request,
         _drops={},
-        _inventory_service=SimpleNamespace(get_active_campaign=lambda watched: campaign),
+        _inventory_service=SimpleNamespace(get_active_campaign=lambda watched, **kw: campaign),
+        inventory=[], wanted_games=[],
     )
     service = WatchService(twitch)
 

@@ -5,6 +5,7 @@ from src.models.campaign import DropsCampaign
 from src.models.channel import Channel, Stream
 from src.models.drop import BaseDrop, TimedDrop, remove_dimensions
 from src.models.game import Game
+from src.models.reward_campaign import RewardCampaign
 
 
 __all__ = [
@@ -15,6 +16,7 @@ __all__ = [
     "TimedDrop",
     "remove_dimensions",
     "DropsCampaign",
+    "RewardCampaign",
     "Channel",
     "Stream",
 ]

@@ -242,6 +242,7 @@ class GUIInventory(TypedDict):
     ignored_keyword_reason: str
     ignored_precondition_reason: str
     skipped_branch_reason: str
+    reward_grants: str
     filters: GUIInvFilters
 
 

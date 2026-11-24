@@ -149,6 +149,32 @@ If TDM 2.2.0 says it is watching but Twitch inventory does not advance, update t
 requests without downloading stream audio or video. A Watching label or accepted
 telemetry alone does not establish progress; compare with Twitch inventory.
 
+Starting in v2.7.0, TDM supports watch-based sitewide Open Reward Campaigns.
+Twitch lists these campaigns, such as GTAVI Launch Celebration, separately on its Drops page. Each campaign's
+watch goal appears in Inventory under its first listed category, for example the daily
+GTA DVD Chest of GTAVI Launch Celebration under **Grand Theft Auto VI**. Inventory shows
+**Times earned** for repeat grants. A reward without artwork still appears under its name
+and reward type. When a campaign has several watch goals, TDM processes a claimable reward
+first, then prefers the track Twitch reports in progress. For parallel tracks, such as
+Pokemon Evolutions, start the
+track you want on Twitch first. Add that category to **Settings → Games → Mining list**
+and keep **Other reward** ticked in **Settings → Mining → Reward types**, which covers
+the GTA DVD Chest. Twitch only reports whether a reward is a badge (such as Pokemon's
+Pikachu badge) once the campaign has progress, so until then its rewards count as
+**Other reward**. For badge campaigns keep both **Other reward** and **Chat badge** ticked.
+Twitch's announcement of the Pokemon chat badges says an evolution progresses only once the
+earlier badge is equipped in the Drops panel below chat; TDM cannot see or change that. A
+goal Twitch does not credit in two attempts of 15 minutes is paused for up to 6 hours and
+then tried again. Watching Twitch yourself on the same account while TDM mines can pause a
+goal the same way. After equipping a badge, use **Clear All Cache** or restart TDM to try
+it at once.
+Daily goals wait in Inventory until Twitch opens the next window. Once Twitch lists a
+campaign as completed, after its last grant, TDM stops mining it and leaves it out of
+Inventory, unless Twitch still reports progress on it that can be earned now. A goal that
+can no longer be finished before the campaign ends stays unmineable and is not shown as
+claimed. Subscription goals and game-specific reward campaigns are not mined. Compare
+progress with Twitch inventory.
+
 Check the campaign on Twitch and work through these conditions:
 
 1. The Twitch account is linked to the correct game account and is eligible for the

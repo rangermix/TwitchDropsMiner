@@ -345,6 +345,7 @@
             "ignored_keyword_reason": "Ignored by keyword: {keyword}",
             "ignored_precondition_reason": "Ignored because it depends on {drop}",
             "skipped_branch_reason": "Skipped because no mineable reward depends on this drop.",
+            "reward_grants": "Times earned: {count}",
             "filters": {
                 "active": "Active",
                 "not_linked": "Not Linked",

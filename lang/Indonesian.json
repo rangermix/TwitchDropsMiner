@@ -151,6 +151,7 @@
             "ignored_keyword_reason": "Diabaikan karena kata kunci: {keyword}",
             "ignored_precondition_reason": "Diabaikan karena bergantung pada {drop}",
             "skipped_branch_reason": "Dilewati karena tidak ada hadiah yang dapat ditambang yang bergantung pada drop ini.",
+            "reward_grants": "Jumlah diperoleh: {count}",
             "filters": {
                 "active": "Aktif",
                 "not_linked": "Tidak Terhubung",

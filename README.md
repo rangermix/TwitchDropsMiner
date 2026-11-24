@@ -16,7 +16,7 @@ from a web dashboard. Run it on your own computer or home server. This hobby pro
 supports personal use on your own hardware and home network; third-party hosting and
 services operated for other users are outside its support scope.
 
-![Twitch Drops Miner web dashboard](./screenshot.png)
+![Twitch Drops Miner web dashboard in light and dark mode](./screenshot.png)
 
 - Choose and prioritize games, or let TDM discover available campaigns.
 - [Mine other eligible games as fallback](docs/usage.md#choose-games-and-priorities)
@@ -27,6 +27,8 @@ services operated for other users are outside its support scope.
   reward artwork and live drop progress.
   Starting in v2.6.0, the queue's information button explains which ordering rules apply.
 - Track campaigns and rewards, and ignore drops you do not want.
+- Starting in v2.7.0, track [watch-based Open Reward Campaigns](docs/troubleshooting.md#no-campaigns-or-no-progress)
+  and see how many times you have earned a repeat reward.
 - Skip channels while Twitch reports an active ban, including temporary bans.
 - Optionally [prefer channels you follow](docs/usage.md#prefer-channels-you-follow)
   when otherwise equally ranked channels offer the same drops.
@@ -91,7 +93,7 @@ eligible stream when it detects the broadcast has ended.
 With Docker installed, choose one setup below. Shell examples use Bash
 (Linux, macOS, or WSL).
 
-The v2.6.0 image includes an init process to clean up exited child processes.
+Docker images since v2.6.0 include an init process to clean up exited child processes.
 The examples retain `--init` and `init: true` for compatibility with v2.5.0 and older
 images.
 
@@ -100,13 +102,13 @@ images.
 Pull and start the published image:
 
 ```bash
-docker pull rangermix/twitch-drops-miner:2.6.0
+docker pull rangermix/twitch-drops-miner:2.7.0
 docker run -d \
   --name twitch-drops-miner --init --stop-timeout 30 --shm-size 256m \
   -p 8080:8080 -e TZ=Australia/Sydney \
   -v "${PWD}/data:/app/data" \
   --restart unless-stopped \
-  rangermix/twitch-drops-miner:2.6.0
+  rangermix/twitch-drops-miner:2.7.0
 ```
 
 ### Docker Compose
@@ -117,7 +119,7 @@ inside it. Set `TZ` to your home internet connection's timezone:
 ```yaml
 services:
   twitch-drops-miner:
-    image: rangermix/twitch-drops-miner:2.6.0
+    image: rangermix/twitch-drops-miner:2.7.0
     container_name: twitch-drops-miner
     init: true
     stop_grace_period: 30s
@@ -270,7 +272,7 @@ or [buying the maintainer a coffee](https://buymeacoffee.com/rangermix).
 <!-- contributors:start -->
 | Contributor | Merged pull requests |
 | --- | --- |
-| [@0zLloen](https://github.com/0zLloen) | [#152](https://github.com/rangermix/TwitchDropsMiner/pull/152) · [#185](https://github.com/rangermix/TwitchDropsMiner/pull/185) · [#191](https://github.com/rangermix/TwitchDropsMiner/pull/191) · [#188](https://github.com/rangermix/TwitchDropsMiner/pull/188) · [#192](https://github.com/rangermix/TwitchDropsMiner/pull/192) · [#193](https://github.com/rangermix/TwitchDropsMiner/pull/193) · [#194](https://github.com/rangermix/TwitchDropsMiner/pull/194) · [#186](https://github.com/rangermix/TwitchDropsMiner/pull/186) · [#189](https://github.com/rangermix/TwitchDropsMiner/pull/189) · [#175](https://github.com/rangermix/TwitchDropsMiner/pull/175) · [#176](https://github.com/rangermix/TwitchDropsMiner/pull/176) · [#202](https://github.com/rangermix/TwitchDropsMiner/pull/202) · [#200](https://github.com/rangermix/TwitchDropsMiner/pull/200) · [#201](https://github.com/rangermix/TwitchDropsMiner/pull/201) · [#204](https://github.com/rangermix/TwitchDropsMiner/pull/204) · [#207](https://github.com/rangermix/TwitchDropsMiner/pull/207) · [#216](https://github.com/rangermix/TwitchDropsMiner/pull/216) · [#222](https://github.com/rangermix/TwitchDropsMiner/pull/222) · [#215](https://github.com/rangermix/TwitchDropsMiner/pull/215) · [#226](https://github.com/rangermix/TwitchDropsMiner/pull/226) · [#224](https://github.com/rangermix/TwitchDropsMiner/pull/224) · [#223](https://github.com/rangermix/TwitchDropsMiner/pull/223) · [#209](https://github.com/rangermix/TwitchDropsMiner/pull/209) |
+| [@0zLloen](https://github.com/0zLloen) | [#152](https://github.com/rangermix/TwitchDropsMiner/pull/152) · [#185](https://github.com/rangermix/TwitchDropsMiner/pull/185) · [#191](https://github.com/rangermix/TwitchDropsMiner/pull/191) · [#188](https://github.com/rangermix/TwitchDropsMiner/pull/188) · [#192](https://github.com/rangermix/TwitchDropsMiner/pull/192) · [#193](https://github.com/rangermix/TwitchDropsMiner/pull/193) · [#194](https://github.com/rangermix/TwitchDropsMiner/pull/194) · [#186](https://github.com/rangermix/TwitchDropsMiner/pull/186) · [#189](https://github.com/rangermix/TwitchDropsMiner/pull/189) · [#175](https://github.com/rangermix/TwitchDropsMiner/pull/175) · [#176](https://github.com/rangermix/TwitchDropsMiner/pull/176) · [#202](https://github.com/rangermix/TwitchDropsMiner/pull/202) · [#200](https://github.com/rangermix/TwitchDropsMiner/pull/200) · [#201](https://github.com/rangermix/TwitchDropsMiner/pull/201) · [#204](https://github.com/rangermix/TwitchDropsMiner/pull/204) · [#207](https://github.com/rangermix/TwitchDropsMiner/pull/207) · [#216](https://github.com/rangermix/TwitchDropsMiner/pull/216) · [#222](https://github.com/rangermix/TwitchDropsMiner/pull/222) · [#215](https://github.com/rangermix/TwitchDropsMiner/pull/215) · [#226](https://github.com/rangermix/TwitchDropsMiner/pull/226) · [#224](https://github.com/rangermix/TwitchDropsMiner/pull/224) · [#223](https://github.com/rangermix/TwitchDropsMiner/pull/223) · [#209](https://github.com/rangermix/TwitchDropsMiner/pull/209) · [#237](https://github.com/rangermix/TwitchDropsMiner/pull/237) · [#229](https://github.com/rangermix/TwitchDropsMiner/pull/229) |
 | [@3lb0z0](https://github.com/3lb0z0) | [#110](https://github.com/rangermix/TwitchDropsMiner/pull/110) |
 | [@andreluisfc](https://github.com/andreluisfc) | [#76](https://github.com/rangermix/TwitchDropsMiner/pull/76) |
 | [@birdhimself](https://github.com/birdhimself) | [#41](https://github.com/rangermix/TwitchDropsMiner/pull/41) |
@@ -280,7 +282,8 @@ or [buying the maintainer a coffee](https://buymeacoffee.com/rangermix).
 | [@EthanBlazkowicz](https://github.com/EthanBlazkowicz) | [#33](https://github.com/rangermix/TwitchDropsMiner/pull/33) · [#196](https://github.com/rangermix/TwitchDropsMiner/pull/196) |
 | [@Klages](https://github.com/Klages) | [#94](https://github.com/rangermix/TwitchDropsMiner/pull/94) · [#95](https://github.com/rangermix/TwitchDropsMiner/pull/95) · [#183](https://github.com/rangermix/TwitchDropsMiner/pull/183) |
 | [@Knight-sys](https://github.com/Knight-sys) | [#3](https://github.com/rangermix/TwitchDropsMiner/pull/3) |
-| [@rangermix](https://github.com/rangermix) | [#1](https://github.com/rangermix/TwitchDropsMiner/pull/1) · [#2](https://github.com/rangermix/TwitchDropsMiner/pull/2) · [#7](https://github.com/rangermix/TwitchDropsMiner/pull/7) · [#8](https://github.com/rangermix/TwitchDropsMiner/pull/8) · [#9](https://github.com/rangermix/TwitchDropsMiner/pull/9) · [#13](https://github.com/rangermix/TwitchDropsMiner/pull/13) · [#20](https://github.com/rangermix/TwitchDropsMiner/pull/20) · [#24](https://github.com/rangermix/TwitchDropsMiner/pull/24) · [#29](https://github.com/rangermix/TwitchDropsMiner/pull/29) · [#32](https://github.com/rangermix/TwitchDropsMiner/pull/32) · [#45](https://github.com/rangermix/TwitchDropsMiner/pull/45) · [#74](https://github.com/rangermix/TwitchDropsMiner/pull/74) · [#79](https://github.com/rangermix/TwitchDropsMiner/pull/79) · [#80](https://github.com/rangermix/TwitchDropsMiner/pull/80) · [#84](https://github.com/rangermix/TwitchDropsMiner/pull/84) · [#86](https://github.com/rangermix/TwitchDropsMiner/pull/86) · [#88](https://github.com/rangermix/TwitchDropsMiner/pull/88) · [#93](https://github.com/rangermix/TwitchDropsMiner/pull/93) · [#89](https://github.com/rangermix/TwitchDropsMiner/pull/89) · [#90](https://github.com/rangermix/TwitchDropsMiner/pull/90) · [#91](https://github.com/rangermix/TwitchDropsMiner/pull/91) · [#92](https://github.com/rangermix/TwitchDropsMiner/pull/92) · [#104](https://github.com/rangermix/TwitchDropsMiner/pull/104) · [#105](https://github.com/rangermix/TwitchDropsMiner/pull/105) · [#116](https://github.com/rangermix/TwitchDropsMiner/pull/116) · [#119](https://github.com/rangermix/TwitchDropsMiner/pull/119) · [#120](https://github.com/rangermix/TwitchDropsMiner/pull/120) · [#124](https://github.com/rangermix/TwitchDropsMiner/pull/124) · [#125](https://github.com/rangermix/TwitchDropsMiner/pull/125) · [#126](https://github.com/rangermix/TwitchDropsMiner/pull/126) · [#127](https://github.com/rangermix/TwitchDropsMiner/pull/127) · [#131](https://github.com/rangermix/TwitchDropsMiner/pull/131) · [#133](https://github.com/rangermix/TwitchDropsMiner/pull/133) · [#145](https://github.com/rangermix/TwitchDropsMiner/pull/145) · [#146](https://github.com/rangermix/TwitchDropsMiner/pull/146) · [#149](https://github.com/rangermix/TwitchDropsMiner/pull/149) · [#153](https://github.com/rangermix/TwitchDropsMiner/pull/153) · [#154](https://github.com/rangermix/TwitchDropsMiner/pull/154) · [#159](https://github.com/rangermix/TwitchDropsMiner/pull/159) · [#160](https://github.com/rangermix/TwitchDropsMiner/pull/160) · [#161](https://github.com/rangermix/TwitchDropsMiner/pull/161) · [#164](https://github.com/rangermix/TwitchDropsMiner/pull/164) · [#167](https://github.com/rangermix/TwitchDropsMiner/pull/167) · [#169](https://github.com/rangermix/TwitchDropsMiner/pull/169) · [#203](https://github.com/rangermix/TwitchDropsMiner/pull/203) · [#211](https://github.com/rangermix/TwitchDropsMiner/pull/211) · [#228](https://github.com/rangermix/TwitchDropsMiner/pull/228) |
+| [@rangermix](https://github.com/rangermix) | [#1](https://github.com/rangermix/TwitchDropsMiner/pull/1) · [#2](https://github.com/rangermix/TwitchDropsMiner/pull/2) · [#7](https://github.com/rangermix/TwitchDropsMiner/pull/7) · [#8](https://github.com/rangermix/TwitchDropsMiner/pull/8) · [#9](https://github.com/rangermix/TwitchDropsMiner/pull/9) · [#13](https://github.com/rangermix/TwitchDropsMiner/pull/13) · [#20](https://github.com/rangermix/TwitchDropsMiner/pull/20) · [#24](https://github.com/rangermix/TwitchDropsMiner/pull/24) · [#29](https://github.com/rangermix/TwitchDropsMiner/pull/29) · [#32](https://github.com/rangermix/TwitchDropsMiner/pull/32) · [#45](https://github.com/rangermix/TwitchDropsMiner/pull/45) · [#74](https://github.com/rangermix/TwitchDropsMiner/pull/74) · [#79](https://github.com/rangermix/TwitchDropsMiner/pull/79) · [#80](https://github.com/rangermix/TwitchDropsMiner/pull/80) · [#84](https://github.com/rangermix/TwitchDropsMiner/pull/84) · [#86](https://github.com/rangermix/TwitchDropsMiner/pull/86) · [#88](https://github.com/rangermix/TwitchDropsMiner/pull/88) · [#93](https://github.com/rangermix/TwitchDropsMiner/pull/93) · [#89](https://github.com/rangermix/TwitchDropsMiner/pull/89) · [#90](https://github.com/rangermix/TwitchDropsMiner/pull/90) · [#91](https://github.com/rangermix/TwitchDropsMiner/pull/91) · [#92](https://github.com/rangermix/TwitchDropsMiner/pull/92) · [#104](https://github.com/rangermix/TwitchDropsMiner/pull/104) · [#105](https://github.com/rangermix/TwitchDropsMiner/pull/105) · [#116](https://github.com/rangermix/TwitchDropsMiner/pull/116) · [#119](https://github.com/rangermix/TwitchDropsMiner/pull/119) · [#120](https://github.com/rangermix/TwitchDropsMiner/pull/120) · [#124](https://github.com/rangermix/TwitchDropsMiner/pull/124) · [#125](https://github.com/rangermix/TwitchDropsMiner/pull/125) · [#126](https://github.com/rangermix/TwitchDropsMiner/pull/126) · [#127](https://github.com/rangermix/TwitchDropsMiner/pull/127) · [#131](https://github.com/rangermix/TwitchDropsMiner/pull/131) · [#133](https://github.com/rangermix/TwitchDropsMiner/pull/133) · [#145](https://github.com/rangermix/TwitchDropsMiner/pull/145) · [#146](https://github.com/rangermix/TwitchDropsMiner/pull/146) · [#149](https://github.com/rangermix/TwitchDropsMiner/pull/149) · [#153](https://github.com/rangermix/TwitchDropsMiner/pull/153) · [#154](https://github.com/rangermix/TwitchDropsMiner/pull/154) · [#159](https://github.com/rangermix/TwitchDropsMiner/pull/159) · [#160](https://github.com/rangermix/TwitchDropsMiner/pull/160) · [#161](https://github.com/rangermix/TwitchDropsMiner/pull/161) · [#164](https://github.com/rangermix/TwitchDropsMiner/pull/164) · [#167](https://github.com/rangermix/TwitchDropsMiner/pull/167) · [#169](https://github.com/rangermix/TwitchDropsMiner/pull/169) · [#203](https://github.com/rangermix/TwitchDropsMiner/pull/203) · [#211](https://github.com/rangermix/TwitchDropsMiner/pull/211) · [#228](https://github.com/rangermix/TwitchDropsMiner/pull/228) · [#239](https://github.com/rangermix/TwitchDropsMiner/pull/239) |
+| [@Rotograph](https://github.com/Rotograph) | [#234](https://github.com/rangermix/TwitchDropsMiner/pull/234) |
 | [@Sean-Destefano](https://github.com/Sean-Destefano) | [#49](https://github.com/rangermix/TwitchDropsMiner/pull/49) |
 | [@SimpliAj](https://github.com/SimpliAj) | [#72](https://github.com/rangermix/TwitchDropsMiner/pull/72) |
 | [@Stein-N](https://github.com/Stein-N) | [#71](https://github.com/rangermix/TwitchDropsMiner/pull/71) |

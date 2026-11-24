@@ -345,6 +345,7 @@
             "ignored_keyword_reason": "Figyelmen kívül hagyva e kulcsszó miatt: {keyword}",
             "ignored_precondition_reason": "Figyelmen kívül hagyva, mert ettől függ: {drop}",
             "skipped_branch_reason": "Kihagyva, mert egyetlen megszerezhető jutalom sem függ ettől a droptól.",
+            "reward_grants": "Megszerzések száma: {count}",
             "filters": {
                 "active": "Aktív",
                 "not_linked": "Nincs összekapcsolva",

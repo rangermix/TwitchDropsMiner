@@ -3,8 +3,8 @@
 TDM shows an interactive browser inside its dashboard by default when no valid
 Twitch session is available. Current source builds prefer Firefox for sign-in, avoiding
 Twitch's unsupported-browser rejection observed with Alpine Chromium. Chromium still
-handles server verification and renewal. The published v2.6.0 image uses Chromium for
-sign-in too; rebuild from current source to use Firefox until a new image is released.
+handles server verification and renewal. The published v2.7.0 image uses Chromium for
+both. Build from current source to use Firefox for sign-in.
 The browser runs in the miner’s Docker container. An optional
 [desktop helper](#desktop-helper-fallback) lets you sign in on your own computer if
 Twitch rejects the embedded browser. Both paths use the dashboard port and the same
@@ -52,13 +52,12 @@ the change; a failed sign-in needs a new attempt.
 
 ## Docker and timezone
 
-Use the `rangermix/twitch-drops-miner:2.6.0` image or build the current source.
-The current source image includes Firefox, Chromium, Xvfb, a window manager and noVNC.
-It does not need a
-display on the home server or NAS. Only the dashboard port is published; VNC and
-login-browser control remain on container loopback addresses. Docker images since
-v2.5.0 and Linux/macOS source builds control the session-renewal browser over a private
-pipe. Windows source builds use loopback; the older 2.3.2 image also uses a loopback
+Use the `rangermix/twitch-drops-miner:2.7.0` image or build the current source.
+Both include Chromium, Xvfb, a window manager and noVNC. The current source image
+also includes Firefox. A home server or NAS can run either image without a display.
+Only the dashboard port is published. VNC and login-browser control remain on container
+loopback addresses. Docker images since v2.5.0 and Linux/macOS source builds control
+the session-renewal browser over a private pipe. Windows source builds use loopback; the older 2.3.2 image also uses a loopback
 control port.
 
 Set `TZ` to match the timezone of your home internet connection, for example
@@ -76,17 +75,17 @@ not guarantee successful sign-in.
 
 Download the helper matching your **miner version** from the sign-in screen or its
 [GitHub release](https://github.com/rangermix/TwitchDropsMiner/releases). The
-[v2.6.0 release](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.6.0)
+[v2.7.0 release](https://github.com/rangermix/TwitchDropsMiner/releases/tag/v2.7.0)
 includes the archives below.
 Choose the platform of the computer where you will run the helper, which may differ
 from your miner server:
 
-| Computer | v2.6.0 archive |
+| Computer | v2.7.0 archive |
 | --- | --- |
-| Windows x64 | `tdm-login-helper-2.6.0-windows-x64.tar.gz` |
-| Linux x64 | `tdm-login-helper-2.6.0-linux-x64.tar.gz` |
-| macOS Apple silicon (arm64) | `tdm-login-helper-2.6.0-macos-arm64.tar.gz` |
-| macOS Intel (x64) | `tdm-login-helper-2.6.0-macos-x64.tar.gz` |
+| Windows x64 | `tdm-login-helper-2.7.0-windows-x64.tar.gz` |
+| Linux x64 | `tdm-login-helper-2.7.0-linux-x64.tar.gz` |
+| macOS Apple silicon (arm64) | `tdm-login-helper-2.7.0-macos-arm64.tar.gz` |
+| macOS Intel (x64) | `tdm-login-helper-2.7.0-macos-x64.tar.gz` |
 
 Extract the archive to a folder before running it. Install a native Chrome, Chromium,
 or Firefox 143+ browser on that computer; the helper does not include a browser.
@@ -283,7 +282,7 @@ at `/usr/share/novnc`, and timezone data. The desktop helper is an alternative f
 interactive sign-in, but the miner host still needs Chromium for server-side
 verification and renewal. See [source installation](installation.md#run-from-source).
 Install Firefox 143 or newer (`firefox` or `firefox-esr` on `PATH`) to use it for
-embedded sign-in. Without Firefox, source installations retain the Chromium login path.
+embedded sign-in. Chromium handles sign-in when a compatible Firefox is unavailable.
 
 [All guides](README.md) · [Next: Games and drops](usage.md)
 
