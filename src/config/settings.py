@@ -37,7 +37,8 @@ default_settings = {
     "discord_webhook_url": "",
     "drop_name_blacklist": [],
     "claim_channel_points": True,
-    "share_watch_streaks": True,
+    # off by default: a share posts a visible notice in the streamer's chat under the user's name
+    "share_watch_streaks": False,
     "games_to_watch": [],
     "idle_channels": [],
     "language": DEFAULT_LANG,
@@ -228,8 +229,8 @@ class Settings:
         if not isinstance(settings.get("claim_channel_points", True), bool):
             # merge_json below replaces the wrong type with the default (on)
             logger.warning("Ignoring invalid claim_channel_points in settings; using the default (on)")
-        if not isinstance(settings.get("share_watch_streaks", True), bool):
-            logger.warning("Ignoring invalid share_watch_streaks in settings; using the default (on)")
+        if not isinstance(settings.get("share_watch_streaks", False), bool):
+            logger.warning("Ignoring invalid share_watch_streaks in settings; using the default (off)")
         # Early builds stored a single release version. Preserve their announce-once behavior.
         last_notified = settings.pop("last_notified_release", None)
         if isinstance(last_notified, str) and "last_notified_releases" not in settings:

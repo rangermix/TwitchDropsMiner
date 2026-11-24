@@ -29,7 +29,8 @@ def test_defaults(tmp_path, monkeypatch):
     settings = Settings()
     assert settings.idle_channels == []
     assert settings.claim_channel_points is True
-    assert settings.share_watch_streaks is True
+    # off until the owner turns it on: it posts a visible notice in the streamer's chat
+    assert settings.share_watch_streaks is False
 
 
 def test_invalid_idle_channels_in_file_do_not_block_load(tmp_path, monkeypatch, caplog):
@@ -80,15 +81,20 @@ def test_non_bool_claim_setting_loads_as_default_with_one_warning(tmp_path, monk
     assert len([r for r in caplog.records if r.levelno == logging.WARNING]) == (1 if warned else 0)
 
 
-@pytest.mark.parametrize("raw,warned", [('"false"', True), ("0", True), ("null", True), ("false", False)])
-def test_non_bool_share_setting_loads_as_default_with_one_warning(tmp_path, monkeypatch, caplog, raw, warned):
+@pytest.mark.parametrize("raw,value,warned", [
+    ('"true"', False, True), ("1", False, True), ("null", False, True), ('"false"', False, True),
+    ("false", False, False), ("true", True, False),
+])
+def test_non_bool_share_setting_loads_as_default_with_one_warning(tmp_path, monkeypatch, caplog, raw, value, warned):
+    # every non-bool falls back to the default (off); a saved bool keeps its value
     path = tmp_path / "settings.json"
     path.write_text(f'{{"share_watch_streaks": {raw}}}', encoding="utf-8")
     monkeypatch.setattr("src.config.settings.SETTINGS_PATH", path)
     with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
         settings = Settings()
-    assert settings.share_watch_streaks is warned
-    assert len([r for r in caplog.records if r.levelno == logging.WARNING]) == (1 if warned else 0)
+    assert settings.share_watch_streaks is value
+    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert warnings == (["Ignoring invalid share_watch_streaks in settings; using the default (off)"] if warned else [])
 
 
 def test_share_watch_streaks_requires_strict_bool_and_saves():
@@ -177,5 +183,5 @@ def test_diagnostics_report_counts_only(tmp_path):
     snapshot = miner.diagnostics.snapshot(miner)
     assert snapshot["settings"]["idle_channels_total"] == 1
     assert snapshot["settings"]["claim_channel_points"] is True
-    assert snapshot["settings"]["share_watch_streaks"] is True
+    assert snapshot["settings"]["share_watch_streaks"] is False
     assert "secretname" not in json.dumps(snapshot)

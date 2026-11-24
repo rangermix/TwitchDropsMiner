@@ -316,7 +316,7 @@ class Diagnostics:
                 "games_to_watch_total": len(settings.games_to_watch),
                 "idle_channels_total": len(getattr(settings, "idle_channels", [])),
                 "claim_channel_points": self.flag(getattr(settings, "claim_channel_points", True)),
-                "share_watch_streaks": self.flag(getattr(settings, "share_watch_streaks", True)),
+                "share_watch_streaks": self.flag(getattr(settings, "share_watch_streaks", False)),
                 "ignored_keywords": [self.reference(word) for word in settings.drop_name_blacklist[:self.MAX_SETTINGS_ITEMS]],
                 "ignored_keywords_total": len(settings.drop_name_blacklist),
                 "mining_benefits": {key: value for key, value in settings.mining_benefits.items()

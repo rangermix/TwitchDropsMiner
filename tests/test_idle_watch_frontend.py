@@ -225,14 +225,16 @@ def test_claim_rollback_before_load_keeps_the_default_on():
 """)
 
 
-def test_share_toggle_saves_and_keeps_the_default_on_rollback():
+def test_share_toggle_saves_and_keeps_the_default_off_on_rollback():
     run_javascript(CLAIM_FUNCTIONS + ["onShareWatchStreaksChange"], SETUP + r"""
 state.translations.gui.settings.share_watch_streaks_save_error = '<b>Share save failed</b>';
 const share = document.getElementById('share-watch-streaks');
 const shareError = document.getElementById('share-watch-streaks-error');
 (async () => {
     updateSettingsUI({});
-    assert.equal(share.checked, true, 'on unless the server says false');
+    assert.equal(share.checked, false, 'off unless the server says true');
+    updateSettingsUI({share_watch_streaks: true}, true);
+    assert.equal(share.checked, true);
     updateSettingsUI({share_watch_streaks: false}, true);
     assert.equal(share.checked, false);
     share.checked = true;
@@ -243,12 +245,12 @@ const shareError = document.getElementById('share-watch-streaks-error');
     await onShareWatchStreaksChange();
     assert.equal(share.checked, true);
     assert.equal(state.settings.share_watch_streaks, true);
-    // a failed save before the server value is known keeps the default (on) and shows the literal error
+    // a failed save before the server value is known keeps the default (off) and shows the literal error
     state.settings = {};
-    share.checked = false;
+    share.checked = true;
     global.fetch = async () => ({ok: false});
     await onShareWatchStreaksChange();
-    assert.equal(share.checked, true);
+    assert.equal(share.checked, false);
     assert.equal(shareError.hidden, false);
     assert.equal(shareError.textContent, '<b>Share save failed</b>');
 })().catch(error => { console.error(error); process.exitCode = 1; });

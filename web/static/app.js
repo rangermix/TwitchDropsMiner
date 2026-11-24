@@ -1489,7 +1489,7 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     const claimPoints = document.getElementById('claim-channel-points');
     if (claimPoints && !claimPoints.disabled) claimPoints.checked = settings.claim_channel_points !== false;
     const shareStreaks = document.getElementById('share-watch-streaks');
-    if (shareStreaks && !shareStreaks.disabled) shareStreaks.checked = settings.share_watch_streaks !== false;
+    if (shareStreaks && !shareStreaks.disabled) shareStreaks.checked = settings.share_watch_streaks === true;
     if (typeof renderIdleChannels === 'function') renderIdleChannels(settings.idle_channels || []);
     renderNotificationEvents();
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
@@ -2746,9 +2746,8 @@ async function saveBooleanSetting(key, inputId, errorId, message) {
         error.hidden = false;
     } finally {
         input.disabled = false;
-        // these two default to on, so a rollback before the server value is known keeps them on.
-        input.checked = (key === 'claim_channel_points' || key === 'share_watch_streaks')
-            ? state.settings[key] !== false : state.settings[key] === true;
+        // the claim toggle defaults to on, so a rollback before the server value is known keeps it on.
+        input.checked = key === 'claim_channel_points' ? state.settings[key] !== false : state.settings[key] === true;
     }
 }
 
