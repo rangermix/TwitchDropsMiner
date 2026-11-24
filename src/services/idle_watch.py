@@ -271,18 +271,18 @@ class IdleWatchService:
         return None if self._twitch.can_watch(watched) else watched
 
     async def _gql(
-        self, op: GQLRequest | list[GQLRequest], name: str | None = None, *, retry: bool = True,
+        self, op: GQLRequest | list[GQLRequest], name: str | None = None,
     ) -> JsonType | Sequence[JsonType | None] | None:
         """Send op (or a batch); failures are logged as one warning without the response body."""
         name = name or op["operationName"]  # type: ignore[index,call-overload]
         try:
-            response = await self._twitch.gql_request(op, retry=retry)
+            response = await self._twitch.gql_request(op)
         except ExitRequest:
             raise
         except GQLException as exc:
             if isinstance(op, list) and len(op) > 1:
                 # one unrecognised error in one entry fails the whole batch: send each entry on its own
-                singles = [await self._gql([o], name, retry=retry) for o in op]
+                singles = [await self._gql([o], name) for o in op]
                 return [a[0] if isinstance(a, list) and a else None for a in singles]
             logger.warning("Twitch request %s failed (%s)", name, type(exc).__name__)
             return None
@@ -427,15 +427,16 @@ class IdleWatchService:
         # Until a reply says Twitch refused it, the outcome is unknown and the share may be posted:
         # all attempts are used before sending, so a failure, timeout or cancellation is never resent.
         self._share_tries[key] = STREAK_SHARE_ATTEMPTS
-        # sent once (retry=False): a resend could post a second notice in the streamer's chat
-        response = await self._gql(
-            GQLRawQuery(
-                SHARE_MILESTONE_MUTATION,
-                {"input": {"channelID": str(channel.id), "milestoneID": milestone_id}},
-                SHARE_MILESTONE_OPERATION,
-            ),
-            retry=False,
+        op = GQLRawQuery(
+            SHARE_MILESTONE_MUTATION,
+            {"input": {"channelID": str(channel.id), "milestoneID": milestone_id}},
+            SHARE_MILESTONE_OPERATION,
         )
+        # Sent once: a resend could post a second notice in the streamer's chat. The imported
+        # session does not replay it after an auth renewal either, so that share is lost, not
+        # resent: one lost share beats a double notice.
+        op.single_attempt = True
+        response = await self._gql(op)
         if response is None:
             return True  # _gql logged it
         try:

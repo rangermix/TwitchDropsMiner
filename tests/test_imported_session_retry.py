@@ -304,9 +304,11 @@ async def test_definitively_rejected_mutation_is_not_replayed_after_later_transp
 
 
 def share_op():
-    return GQLRawQuery(
+    query = GQLRawQuery(
         SHARE_MILESTONE_MUTATION, {"input": {"channelID": "123", "milestoneID": "m1"}}, SHARE_MILESTONE_OPERATION,
     )
+    query.single_attempt = True
+    return query
 
 
 def test_watch_streak_share_is_not_a_safe_read():
@@ -335,6 +337,6 @@ async def test_watch_streak_share_is_sent_once_on_a_transient_failure(tmp_path, 
         if failure != "timeout":
             peer.responses.extend([failure, {"data": {"mustNotReplay": True}}])
         with pytest.raises(SessionError, match="REQUEST"):
-            await client.gql_request(op, retry=False)
+            await client.gql_request(op)
         assert attempts == [op]
         assert delays == []

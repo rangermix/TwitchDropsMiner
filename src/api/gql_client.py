@@ -13,7 +13,7 @@ from contextvars import ContextVar
 from itertools import chain
 from typing import TYPE_CHECKING, overload
 
-from src.config.constants import GQLOperation
+from src.config.constants import GQLOperation, GQLRawQuery
 from src.exceptions import GQLException, MinerException
 from src.utils import ExponentialBackoff, RateLimiter
 
@@ -79,14 +79,12 @@ class GQLClient:
         self._qgl_limiter = RateLimiter(capacity=5, window=1)
 
     @overload
-    async def request(self, ops: GQLRequest, *, retry: bool = True) -> JsonType: ...
+    async def request(self, ops: GQLRequest) -> JsonType: ...
 
     @overload
-    async def request(self, ops: list[GQLRequest], *, retry: bool = True) -> list[JsonType]: ...
+    async def request(self, ops: list[GQLRequest]) -> list[JsonType]: ...
 
-    async def request(
-        self, ops: GQLRequest | list[GQLRequest], *, retry: bool = True,
-    ) -> JsonType | list[JsonType]:
+    async def request(self, ops: GQLRequest | list[GQLRequest]) -> JsonType | list[JsonType]:
         """
         Execute one or more GraphQL operations.
 
@@ -94,11 +92,6 @@ class GQLClient:
         ----------
         ops : GQLRequest | list[GQLRequest]
             Single operation or list of operations to execute
-        retry : bool
-            False sends ops once: a retryable GQL error raises GQLException, and a 5xx
-            reply or connection error raises instead of being resent by the HTTP client.
-            The imported-session transport still replays an op Twitch rejected for auth
-            before running it (no data, integrity or OAuth error) after a renewal.
 
         Returns
         -------
@@ -113,7 +106,7 @@ class GQLClient:
             If the retry loop is broken unexpectedly
         """
         single_attempt = any(
-            isinstance(op, GQLOperation) and op.single_attempt
+            isinstance(op, (GQLOperation, GQLRawQuery)) and op.single_attempt
             for op in (ops if isinstance(ops, list) else [ops])
         )
         private = _private_discovery.get() or single_attempt
@@ -121,7 +114,7 @@ class GQLClient:
             gql_logger.debug("GQL Request: %s", ops)
         backoff = ExponentialBackoff(maximum=60)
         # Flag to retry the request once for specific errors
-        single_retry: bool = retry
+        single_retry: bool = True
 
         for delay in backoff:
             async with self._qgl_limiter:
@@ -138,7 +131,6 @@ class GQLClient:
                     async with self.http_client.request(
                         "POST",
                         "https://gql.twitch.tv/gql",
-                        retry=retry,
                         json=ops,
                         single_attempt=single_attempt,
                         headers=auth_state.headers(user_agent=self._client_type.USER_AGENT, gql=True),
@@ -159,8 +151,7 @@ class GQLClient:
                 return orig_response
 
             force_retry: bool = False
-            op_list = ops if isinstance(ops, list) else [ops]
-            for index, response_json in enumerate(response_list):
+            for response_json in response_list:
                 # GQL error handling
                 if "errors" in response_json:
                     for error_dict in response_json["errors"]:
@@ -174,7 +165,7 @@ class GQLClient:
                                 else:
                                     logger.error(
                                         f"Retrying a {error_dict['message']} for "
-                                        f"{self._operation_name(response_json, op_list, index)}"
+                                        f"{response_json['extensions']['operationName']}"
                                     )
                                 single_retry = False
                                 if delay < 5:
@@ -190,7 +181,7 @@ class GQLClient:
                                     data_dict = data_dict[key]
                                 data_dict[path[-1]] = None
                                 break
-                            elif retry and error_dict["message"] in (
+                            elif error_dict["message"] in (
                                 "service timeout",
                                 "service unavailable",
                                 "context deadline exceeded",
@@ -211,15 +202,6 @@ class GQLClient:
             await asyncio.sleep(delay)
 
         raise RuntimeError("Retry loop was broken")
-
-    @staticmethod
-    def _operation_name(response_json: JsonType, ops: list[GQLRequest], index: int) -> str:
-        """The failed operation's name for a log line; a reply need not echo it in "extensions"."""
-        extensions = response_json.get("extensions")
-        name = extensions.get("operationName") if isinstance(extensions, dict) else None
-        if not isinstance(name, str) and index < len(ops) and isinstance(ops[index], dict):
-            name = ops[index].get("operationName")
-        return name if isinstance(name, str) else "unknown"
 
     @staticmethod
     def merge_data(primary_data: JsonType, secondary_data: JsonType) -> JsonType:

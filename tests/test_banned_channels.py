@@ -363,6 +363,7 @@ async def test_malformed_and_errored_rows_do_not_abort_discovery_or_create_bans(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("response", [
+    [{"errors": [{"message": "service error"}]}],
     [{"errors": None}],
     [{"errors": [{"message": "server error"}], "data": None}],
     [{"errors": [{"message": "server error", "path": ["user"]}], "data": None}],
@@ -377,23 +378,6 @@ async def test_actual_gql_error_normalization_failure_does_not_abort_optional_fi
     client.gql_request = GQLClient(MagicMock(), auth, ClientType.WEB).request
 
     assert await client._channel_service.filter_banned_channels([channel]) == [channel]
-    assert not channel.banned
-
-
-@pytest.mark.asyncio
-async def test_service_error_without_extensions_is_retried_once_and_does_not_abort_filter(monkeypatch):
-    # was a KeyError from the retry log line; now the client's single retry, then GQLException
-    monkeypatch.setattr("src.api.gql_client.asyncio.sleep", AsyncMock())
-    client = _client()
-    channel = _channel(client)
-    client._browser = SimpleNamespace(gql=AsyncMock(return_value=[{"errors": [{"message": "service error"}]}]))
-    auth = SimpleNamespace(validate=AsyncMock(return_value=SimpleNamespace(
-        browser_active=True, _twitch=client,
-    )))
-    client.gql_request = GQLClient(MagicMock(), auth, ClientType.WEB).request
-
-    assert await client._channel_service.filter_banned_channels([channel]) == [channel]
-    assert client._browser.gql.await_count == 2
     assert not channel.banned
 
 

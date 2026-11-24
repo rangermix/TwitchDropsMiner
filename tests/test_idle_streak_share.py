@@ -12,7 +12,8 @@ import pytest
 from src.api.gql_client import GQLClient
 from src.api.http_client import HTTPClient
 from src.config import ClientType, State
-from src.exceptions import GQLException, MinerException
+from src.auth.session_bundle import SessionError
+from src.exceptions import GQLException, MinerException, RequestException
 from src.services.idle_watch import (
     STREAK_SHARE_ATTEMPTS,
     STREAK_SHARE_CHECK_SECONDS,
@@ -40,10 +41,11 @@ def make_gql(reads, shares=None):
     """Answers a batch of reads with `reads` (one per login) and a share with the next of `shares`."""
     shares = list(shares or [SHARE_OK])
 
-    async def gql(op, retry=True):
+    async def gql(op):
         if isinstance(op, list):
+            assert not any(getattr(o, "single_attempt", False) for o in op)  # reads may be resent
             return reads
-        assert retry is False  # a share is never resent by the client
+        assert op.single_attempt is True  # a share is never resent by the client
         assert "shareViewerMilestone" in op["query"]
         item = shares.pop(0) if len(shares) > 1 else shares[0]
         if isinstance(item, Exception):
@@ -245,7 +247,7 @@ async def test_one_share_attempt_sends_the_mutation_once(monkeypatch, caplog, me
     # item 1: a retryable error reply on a share is a failed attempt, never a resend
     replies = [{"errors": [{"message": message}]}] * 2 + [SHARE_OK]
 
-    async def answer(op):
+    async def answer(op, single_attempt=False):
         return [read([milestone()])] if isinstance(op, list) else replies.pop(0)
 
     client, browser = real_client(monkeypatch, answer)
@@ -308,10 +310,10 @@ async def test_guards_are_checked_again_before_each_share(flip):
     svc, tw = setup()
     inner = make_gql([read([milestone()])])
 
-    async def gql(op, retry=True):
+    async def gql(op):
         if isinstance(op, list):
             flip(svc, tw, tw.channels[123])
-        return await inner(op, retry=retry)
+        return await inner(op)
 
     tw.gql_request = AsyncMock(side_effect=gql)
     await svc.share_streaks()
@@ -328,8 +330,8 @@ async def test_state_change_during_a_share_stops_the_next_channel(flip):
     second = tw.channels[456]
     inner = make_gql([read([milestone("m1")]), read([milestone("m2")], "456")])
 
-    async def gql(op, retry=True):
-        result = await inner(op, retry=retry)
+    async def gql(op):
+        result = await inner(op)
         if not isinstance(op, list):
             flip(svc, tw, second)
         return result
@@ -342,7 +344,7 @@ async def test_state_change_during_a_share_stops_the_next_channel(flip):
 @pytest.mark.asyncio
 async def test_failed_batch_falls_back_to_one_read_per_channel(caplog):
     # item 4: one channel's unrecognised error must not hide the other channels' streaks
-    async def gql(op, retry=True):
+    async def gql(op):
         if isinstance(op, list):
             if len(op) > 1 or op[0]["variables"]["login"] == "a":
                 raise GQLException("bad entry")
@@ -486,7 +488,7 @@ async def test_share_hanging_past_the_check_timeout_is_not_resent(monkeypatch, c
     monkeypatch.setattr("src.services.idle_watch.STREAK_SHARE_TIMEOUT", 0.05)
     hang = asyncio.Event()
 
-    async def gql(op, retry=True):
+    async def gql(op):
         if isinstance(op, list):
             return [read([milestone()])]
         await hang.wait()
@@ -572,3 +574,34 @@ async def test_a_list_reply_to_a_single_share_is_rejected(caplog):
         await svc.share_streaks()
     assert caplog.messages == ["Twitch request ShareViewerMilestone returned errors"]
     assert len(shares(tw)) == 1
+
+@pytest.mark.asyncio
+async def test_refused_share_through_the_gql_client_still_gets_one_more_try(caplog):
+    # the refusal is nested in data; the single_attempt reply check only rejects top-level errors
+    replies = [[read([milestone()])], REFUSED, [read([milestone()])], share_ok()]
+    browser = SimpleNamespace(gql=AsyncMock(side_effect=replies))
+    auth = SimpleNamespace(validate=AsyncMock(return_value=SimpleNamespace(
+        browser_active=True, _twitch=SimpleNamespace(_browser=browser),
+    )))
+    svc, _ = setup(gql=GQLClient(MagicMock(), auth, ClientType.WEB).request)
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        await svc.share_streaks()
+        assert svc._share_tries == {("m1", "9"): 1}
+        svc._share_checked -= STREAK_SHARE_CHECK_SECONDS
+        await svc.share_streaks()
+    assert caplog.messages == ["Watch streak share on A was not accepted (NOT_ALLOWED)"]
+    assert ("m1", "9") in svc._shared
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("error", [
+    RequestException("Unconfirmed HTTP response"),
+    GQLException("Mutation response was not confirmed"),
+    SessionError("REQUEST"),
+], ids=lambda e: type(e).__name__)
+async def test_share_failure_raised_by_single_attempt_is_a_warning_not_a_crash(caplog, error):
+    svc, tw = setup(gql=make_gql([read([milestone()])], [error]))
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        await svc.share_streaks()
+    assert caplog.messages == [f"Twitch request ShareViewerMilestone failed ({type(error).__name__})"]
+    assert svc._share_tries == {("m1", "9"): STREAK_SHARE_ATTEMPTS}

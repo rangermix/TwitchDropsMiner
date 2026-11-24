@@ -122,6 +122,9 @@ class GQLQuery(JsonType):
 class GQLRawQuery(JsonType):
     """Raw GraphQL query operation without persisted query hash."""
 
+    # Local transport policy on the operation copy. It is never part of the JSON body.
+    single_attempt: bool = False
+
     def __init__(self, query: str, variables: JsonType | None = None, operation_name: str | None = None):
         super().__init__(query=query)
         if variables is not None:

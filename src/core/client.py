@@ -1126,14 +1126,12 @@ class Twitch:
         return self._auth_state
 
     @overload
-    async def gql_request(self, ops: GQLRequest, *, retry: bool = True) -> JsonType: ...
+    async def gql_request(self, ops: GQLRequest) -> JsonType: ...
 
     @overload
-    async def gql_request(self, ops: list[GQLRequest], *, retry: bool = True) -> list[JsonType]: ...
+    async def gql_request(self, ops: list[GQLRequest]) -> list[JsonType]: ...
 
-    async def gql_request(
-        self, ops: GQLRequest | list[GQLRequest], *, retry: bool = True,
-    ) -> JsonType | list[JsonType]:
+    async def gql_request(self, ops: GQLRequest | list[GQLRequest]) -> JsonType | list[JsonType]:
         """
         Execute GraphQL request(s).
 
@@ -1141,7 +1139,7 @@ class Twitch:
         """
         self._ensure_api_clients()
         assert self._gql_client is not None
-        return await self._gql_client.request(ops, retry=retry)
+        return await self._gql_client.request(ops)
 
     async def fetch_campaigns(
         self, campaigns_chunk: list[tuple[str, JsonType]]
