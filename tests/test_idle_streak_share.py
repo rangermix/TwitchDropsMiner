@@ -519,6 +519,8 @@ async def test_share_hanging_past_the_check_timeout_is_not_resent(monkeypatch, c
     {"data": {"shareViewerMilestone": {"milestone": None, "error": {"code": 5}}}},
     {"data": {"shareViewerMilestone": {"milestone": {"id": "m1"}, "error": {"code": "X"}}}},
     {"data": {"shareViewerMilestone": {"milestone": {}, "error": {"code": "X"}}}},
+    # an error without the milestone field is malformed, not a refusal
+    {"data": {"shareViewerMilestone": {"error": {"code": "X"}}}},
     {"data": None},
     {},
 ], ids=repr)

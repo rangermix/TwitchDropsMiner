@@ -548,7 +548,7 @@ class IdleWatchService:
             result = None
         error = result.get("error") if isinstance(result, dict) else None
         code = error.get("code") if isinstance(error, dict) else None
-        if isinstance(code, str) and code and result.get("milestone") is None:  # type: ignore[union-attr]
+        if isinstance(code, str) and code and "milestone" in result and result["milestone"] is None:
             # an error code and no milestone: Twitch refused it, so one more try in a later check is safe
             self._share_tries[key] = tries + 1
             self._save()
