@@ -420,6 +420,8 @@ class TestConnectionAndRefreshBounds(unittest.TestCase):
             ("minimum_refresh_interval_minutes", 1441),
             ("connection_quality", 0),
             ("connection_quality", 7),
+            ("connection_quality", True),
+            ("minimum_refresh_interval_minutes", True),
         ):
             with self.subTest(key=key, value=value), self.assertRaises(ValidationError):
                 SettingsUpdate(**{key: value})
