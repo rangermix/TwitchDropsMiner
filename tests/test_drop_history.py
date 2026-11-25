@@ -205,3 +205,34 @@ def test_save_is_disabled_when_bad_file_cannot_be_moved(tmp_path, monkeypatch):
     history = _fresh_history(tmp_path)
     assert history.record(_MockDrop(), _MockCampaign()) is False
     assert target.read_text(encoding="utf-8") == "{broken"
+
+
+def test_existing_bad_file_is_not_overwritten(tmp_path):
+    (tmp_path / "drop_history.json.bad").write_text("first", encoding="utf-8")
+    (tmp_path / "drop_history.json").write_text("{second", encoding="utf-8")
+    _fresh_history(tmp_path)
+    assert (tmp_path / "drop_history.json.bad").read_text(encoding="utf-8") == "first"
+    assert (tmp_path / "drop_history.json.bad.1").read_text(encoding="utf-8") == "{second"
+
+
+def test_unreadable_file_is_left_untouched_and_saving_stays_disabled(tmp_path, monkeypatch, caplog):
+    target = tmp_path / "drop_history.json"
+    content = json.dumps({"version": HISTORY_VERSION, "entries": [{"id": "x"}]})
+    target.write_text(content, encoding="utf-8")
+    real_open = Path.open
+
+    def deny(self, *args, **kwargs):
+        if self == target:
+            raise PermissionError("held open")
+        return real_open(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", deny)
+    history = _fresh_history(tmp_path)
+    monkeypatch.undo()
+    assert not (tmp_path / "drop_history.json.bad").exists()
+    # A duplicate id keeps reporting the failed write instead of claiming success.
+    assert history.record(_MockDrop(), _MockCampaign()) is False
+    assert history.record(_MockDrop(), _MockCampaign()) is False
+    history.clear()
+    assert "cleared" not in caplog.text
+    assert target.read_text(encoding="utf-8") == content

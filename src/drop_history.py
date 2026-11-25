@@ -215,8 +215,8 @@ class DropHistory:
     def clear(self) -> None:
         """Delete all history entries from memory and disk."""
         self._entries = []
-        self._save()
-        logger.warning("Drop history cleared.")
+        if self._save():
+            logger.warning("Drop history cleared.")
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -237,7 +237,11 @@ class DropHistory:
                 raise ValueError("entries is not a list")
         except (ValueError, OSError) as exc:
             logger.error(f"Failed to load drop history: {exc}")
-            self._quarantine()
+            if isinstance(exc, OSError):
+                # The content is unknown and may be valid: never move or overwrite it.
+                self._disable_saving(exc)
+            else:
+                self._quarantine()
             return
         self._entries = entries
         logger.debug(f"Loaded {len(self._entries)} history entries.")
@@ -245,13 +249,21 @@ class DropHistory:
     def _quarantine(self) -> None:
         """Move an unusable file aside so the next save cannot overwrite it."""
         bad = self._path.with_name(self._path.name + ".bad")
+        for n in range(1, 1000):
+            if not bad.exists():
+                break
+            bad = self._path.with_name(f"{self._path.name}.bad.{n}")
         try:
             self._path.replace(bad)
             logger.error(f"Moved unusable drop history to {bad}")
         except OSError as exc:
-            # Without the move the next save would destroy the file: keep it untouched.
-            self._save_disabled = True
-            logger.error(f"Cannot move drop history aside ({exc}); history will not be saved this run.")
+            self._disable_saving(exc)
+
+    def _disable_saving(self, exc: OSError) -> None:
+        # Saving would destroy a file that could not be read or moved: keep it untouched.
+        self._save_disabled = True
+        self._dirty = True
+        logger.error(f"Drop history file left untouched ({exc}); history will not be saved this run.")
 
     def _save(self) -> bool:
         """
