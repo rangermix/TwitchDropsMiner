@@ -216,6 +216,10 @@ names and includes a UTF-8 byte-order mark for spreadsheet compatibility.
 **Clear** deletes all local history, including records hidden by a filter. It does
 not change your Twitch account or take away rewards.
 
+If `drop_history.json` cannot be used (damaged, unknown version), the miner moves it to
+`drop_history.json.bad` (numbered if one exists) and starts an empty history. If the file
+cannot be read or moved, it is left untouched and history is not saved until restart.
+
 ## Refreshing and clearing cache
 
 Use **Reload Campaigns** (in the Inventory filter bar or beside the Mining list's **Add
@@ -228,6 +232,12 @@ password protection.
 Clearing cache is useful for recovery; it cannot correct inaccurate campaign details
 returned by Twitch. If progress or eligibility still looks wrong, follow
 [Troubleshooting](troubleshooting.md).
+
+## Settings limits
+
+Connection quality accepts 1 to 6 and the minimum refresh interval 1 to 1440 minutes. A
+hand-edited `settings.json` value outside the range is clamped; a non-number falls back to
+the default. A saved language that is no longer installed falls back to the default.
 
 [All guides](README.md) · [Telegram notifications](notifications.md)
 
