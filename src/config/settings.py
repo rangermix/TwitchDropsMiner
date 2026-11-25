@@ -193,12 +193,12 @@ class Settings:
             ("minimum_refresh_interval_minutes", 1, 1440),
         ):
             value = settings.get(key, default_settings[key])
-            if isinstance(value, bool) or not isinstance(value, int) or not low <= value <= high:
-                logger.warning(
-                    f"Invalid {key} {value!r} in settings (expected {low}-{high}), "
-                    f"using {default_settings[key]}"
-                )
+            if isinstance(value, bool) or not isinstance(value, int):
+                logger.warning(f"Invalid {key} {value!r} in settings, using {default_settings[key]}")
                 settings[key] = default_settings[key]
+            elif not low <= value <= high:
+                logger.warning(f"{key} {value!r} is outside {low}-{high}, clamping")
+                settings[key] = min(max(value, low), high)
         merge_json(settings, default_settings)
         settings.pop("allow_helper_connection", None)
         for key, value in settings.items():

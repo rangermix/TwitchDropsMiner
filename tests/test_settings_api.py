@@ -464,17 +464,16 @@ class TestConnectionAndRefreshBounds(unittest.TestCase):
                 settings = Settings()
         return settings, logs.output
 
-    def test_load_falls_back_for_invalid_values(self):
-        for value in (0, -3, "30", True, 1441):
-            with self.subTest(value=value):
-                settings, logs = self._load({"minimum_refresh_interval_minutes": value})
-                self.assertEqual(settings.minimum_refresh_interval_minutes, 30)
-                self.assertEqual(len(logs), 2)
-        for value in (0, 7, "3", False):
-            with self.subTest(quality=value):
-                settings, logs = self._load({"connection_quality": value})
-                self.assertEqual(settings.connection_quality, default_settings["connection_quality"])
-                self.assertEqual(len(logs), 2)
+    def test_load_clamps_out_of_range_and_defaults_wrong_types(self):
+        for key, default, low, high in (
+            ("minimum_refresh_interval_minutes", 30, 1, 1440),
+            ("connection_quality", default_settings["connection_quality"], 1, 6),
+        ):
+            for value, expected in ((0, low), (-3, low), (high + 1, high), ("30", default), (True, default), (1.5, default)):
+                with self.subTest(key=key, value=value):
+                    settings, logs = self._load({key: value})
+                    self.assertEqual(getattr(settings, key), expected)
+                    self.assertEqual(len(logs), 2)
 
     def test_load_keeps_valid_values(self):
         settings, logs = self._load({"minimum_refresh_interval_minutes": 45, "connection_quality": 3})
