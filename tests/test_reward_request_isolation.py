@@ -194,7 +194,7 @@ def test_one_enabled_benefit_keeps_mixed_reward_watchable():
 
 
 @pytest.mark.asyncio
-async def test_failed_regular_game_lookup_does_not_stop_other_games(tmp_path, monkeypatch):
+async def test_failed_regular_game_lookup_does_not_stop_other_games(tmp_path, monkeypatch, caplog):
     client, _ = _channels_fetch_client(tmp_path, monkeypatch, [False])
     gta_lookup = client.get_live_streams
     broken = Game(OTHER)
@@ -215,6 +215,7 @@ async def test_failed_regular_game_lookup_does_not_stop_other_games(tmp_path, mo
 
     client.get_live_streams = directory
     await _run_client(client)
+    assert any("Game: other-game" in message for message in caplog.messages)
     assert len(lookups) == 2
     assert client.watching_channel.get_with_default(None) is client.channels[2]
 
@@ -224,3 +225,11 @@ async def test_game_directory_without_game_returns_empty_list():
     twitch = _twitch()
     twitch.gql_request = AsyncMock(return_value={"data": {"game": None}})
     assert await ChannelService(twitch).get_live_streams(Game(OTHER)) == []
+
+
+@pytest.mark.asyncio
+async def test_exit_request_in_regular_game_lookup_propagates(tmp_path, monkeypatch):
+    client, _ = _channels_fetch_client(tmp_path, monkeypatch, [False])
+    client.get_live_streams = AsyncMock(side_effect=ExitRequest())
+    with pytest.raises(ExitRequest):
+        await _run_client(client)
