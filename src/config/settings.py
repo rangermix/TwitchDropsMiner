@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 from copy import deepcopy
 from dataclasses import dataclass
@@ -10,6 +11,9 @@ from yarl import URL
 from src.config import DEFAULT_LANG, SETTINGS_PATH
 from src.config.reward_priority import RewardPriority
 from src.utils import DropIgnorePolicy, json_load, json_save, merge_json
+
+
+logger = logging.getLogger("TwitchDrops")
 
 
 class InventoryFilters(TypedDict):
@@ -183,6 +187,18 @@ class Settings:
         last_notified = settings.pop("last_notified_release", None)
         if isinstance(last_notified, str) and "last_notified_releases" not in settings:
             settings["last_notified_releases"] = {"telegram": last_notified, "discord": last_notified}
+        # bool is an int subclass; a hand-edited true must not pass as 1.
+        for key, low, high in (
+            ("connection_quality", 1, 6),
+            ("minimum_refresh_interval_minutes", 1, 1440),
+        ):
+            value = settings.get(key, default_settings[key])
+            if isinstance(value, bool) or not isinstance(value, int) or not low <= value <= high:
+                logger.warning(
+                    f"Invalid {key} {value!r} in settings (expected {low}-{high}), "
+                    f"using {default_settings[key]}"
+                )
+                settings[key] = default_settings[key]
         merge_json(settings, default_settings)
         settings.pop("allow_helper_connection", None)
         for key, value in settings.items():

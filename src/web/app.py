@@ -14,7 +14,7 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, StrictBool, field_validator
+from pydantic import BaseModel, Field, StrictBool, field_validator
 
 from src.config.paths import DATA_DIR
 from src.config.reward_priority import RewardPriority
@@ -90,8 +90,8 @@ class SettingsUpdate(BaseModel):
     prefer_followed_channels: StrictBool | None = None
     reward_priority: list[str] | None = None
     proxy: str | None = None
-    connection_quality: int | None = None
-    minimum_refresh_interval_minutes: int | None = None
+    connection_quality: int | None = Field(default=None, ge=1, le=6)
+    minimum_refresh_interval_minutes: int | None = Field(default=None, ge=1, le=1440)
     discord_webhook_url: str | None = None
     discord_remove_webhook: StrictBool | None = None
     telegram_bot_token: str | None = None
