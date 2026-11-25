@@ -18,9 +18,12 @@ import time
 from collections.abc import AsyncIterator, Callable, Mapping
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, suppress
 from dataclasses import dataclass, field
+from ipaddress import IPv6Address
 from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Protocol
+
+from yarl import URL
 
 from src.auth.browser_session import BrowserSession
 from src.auth.imported_session import SessionTransport
@@ -41,7 +44,7 @@ class BrowserTargets(Protocol):
 
 
 class BrowserOwner(Protocol):
-    def start(self) -> AbstractAsyncContextManager[BrowserTargets]: ...
+    def start(self, *, proxy: BrowserProxy | None = None) -> AbstractAsyncContextManager[BrowserTargets]: ...
 
 
 @dataclass(frozen=True)
@@ -57,6 +60,40 @@ class SDKBootstrap:
         return cls(MappingProxyType({"authorization": f"OAuth {token}",
             "client-id": ClientType.WEB.CLIENT_ID, "x-device-id": secrets.token_hex(16),
             "client-session-id": secrets.token_hex(16)}))
+
+
+@dataclass(frozen=True)
+class BrowserProxy:
+    """One browser proxy endpoint with credentials kept out of launch arguments."""
+
+    origin: str
+    username: str | None = field(repr=False)
+    password: str = field(repr=False)
+
+    @classmethod
+    def from_setting(cls, value: str | None) -> BrowserProxy | None:
+        if not value:
+            return None
+        try:
+            if any(char.isspace() or char in "\\?#" or ord(char) < 32 for char in value):
+                raise ValueError
+            url = URL(value)
+            host, port = url.raw_host, url.port
+            if (url.scheme not in ("http", "https") or not host or port is None
+                    or not 1 <= port <= 65535 or url.raw_path != "/"
+                    or url.raw_authority.endswith(":")):
+                raise ValueError
+            if ":" in host:
+                # Reject scoped IPv6, which has different proxy URL handling.
+                if "%" in host:
+                    raise ValueError
+                IPv6Address(host)
+            elif not re.fullmatch(r"[a-z0-9_-]+(?:\.[a-z0-9_-]+)*\.?", host):
+                # Chromium's flag accepts proxy lists and a direct:// fallback.
+                raise ValueError
+            return cls(str(url.origin()), url.user, url.password or "")
+        except (ValueError, UnicodeError):
+            raise SessionError("CONFIG") from None
 
 
 class OwnedChromium:
@@ -152,7 +189,7 @@ class OwnedChromium:
                 await self.finish_stop(process)
 
     @asynccontextmanager
-    async def start(self) -> AsyncIterator[BrowserTargets]:
+    async def start(self, *, proxy: BrowserProxy | None = None) -> AsyncIterator[BrowserTargets]:
         with tempfile.TemporaryDirectory(prefix="tdm-renew-") as directory:
             profile = Path(directory)
             args = [
@@ -165,6 +202,8 @@ class OwnedChromium:
             ]
             if self.no_sandbox:
                 args.insert(1, "--no-sandbox")
+            if proxy is not None:
+                args.append(f"--proxy-server={proxy.origin}")
             display_runner = shutil.which("xvfb-run") if os.name == "posix" else None
             display_args: list[str] = []
             # macOS Chromium never uses X, so only Linux is told to install xvfb.
@@ -228,13 +267,30 @@ class SDKExchange:
 
     URL = "https://gql.twitch.tv/integrity"
 
-    def __init__(self, diagnostics: Diagnostics | None = None):
+    def __init__(self, diagnostics: Diagnostics | None = None, *, proxy: BrowserProxy | None = None):
         self.diagnostics = diagnostics
+        self.proxy_auth = proxy if proxy is not None and proxy.username is not None else None
+        self.proxy_attempts: set[str] = set()
         self.posts: set[str] = set()
         self.responses: dict[str, dict[str, Any]] = {}
         self.cached: set[str] = set()
         self.loaded = asyncio.Event()
         self.proof: asyncio.Future[Any] = asyncio.get_running_loop().create_future()
+
+    async def respond_to_auth(self, protocol: CaptureProtocol, params: dict[str, Any]) -> None:
+        request_id = params["requestId"]
+        challenge = params["authChallenge"]
+        response = {"response": "CancelAuth"}
+        proxy = self.proxy_auth
+        if (proxy is not None and proxy.username is not None
+                and challenge.get("source") == "Proxy" and challenge.get("origin") == proxy.origin
+                and challenge.get("scheme", "").lower() == "basic"
+                and request_id not in self.proxy_attempts and len(self.proxy_attempts) < 16):
+            self.proxy_attempts.add(request_id)
+            response = {"response": "ProvideCredentials", "username": proxy.username, "password": proxy.password}
+        await protocol.command("Fetch.continueWithAuth", {
+            "requestId": request_id, "authChallengeResponse": response,
+        })
 
     async def run(self, protocol: CaptureProtocol) -> None:
         while True:
@@ -245,11 +301,16 @@ class SDKExchange:
             request_id = params.get("requestId")
             if len(self.posts) + len(self.responses) + len(self.cached) > 256:
                 raise SessionError("CAPTURE_LIMIT")
-            if method == "Fetch.requestPaused":
+            if method == "Fetch.authRequired":
+                await self.respond_to_auth(protocol, params)
+            elif method == "Fetch.requestPaused":
                 request = params["request"]
                 if (request.get("url") != BrowserSession.PAGE or request.get("method") != "GET"
                         or params.get("resourceType") != "Document"):
-                    raise SessionError("SDK_PAGE")
+                    if self.proxy_auth is None:
+                        raise SessionError("SDK_PAGE")
+                    await protocol.command("Fetch.continueRequest", {"requestId": request_id})
+                    continue
                 await protocol.command("Fetch.fulfillRequest", {
                     "requestId": request_id, "responseCode": 200,
                     "responseHeaders": [{"name": "Content-Type", "value": "text/html; charset=utf-8"}],
@@ -342,10 +403,11 @@ class SDKAcquisition:
         }
 
     async def run(self, protocol: CaptureProtocol, bundle: SessionBundle | SDKBootstrap,
-                  cookie: SDKCookie | None = None, *, initial: bool = False) -> ServerSeed:
+                  cookie: SDKCookie | None = None, *, initial: bool = False,
+                  proxy: BrowserProxy | None = None) -> ServerSeed:
         try:
             async with asyncio.timeout(self.timeout):  # type: ignore[attr-defined]
-                exchange = SDKExchange(self.diagnostics)
+                exchange = SDKExchange(self.diagnostics, proxy=proxy)
                 events = asyncio.create_task(exchange.run(protocol))
                 acquire = asyncio.create_task(self.acquire(protocol, exchange, bundle, cookie, initial=initial))
                 try:
@@ -376,9 +438,13 @@ class SDKAcquisition:
             previous_cookie.require_fresh(self.clock())
             await protocol.command("Network.setCookies", {"cookies": [previous_cookie.to_browser_cookie()]})
         await protocol.command("Page.enable")
-        await protocol.command("Fetch.enable", {"patterns": [{
-            "urlPattern": BrowserSession.PAGE, "resourceType": "Document", "requestStage": "Request",
-        }]})
+        if exchange.proxy_auth is None:
+            await protocol.command("Fetch.enable", {"patterns": [{
+                "urlPattern": BrowserSession.PAGE, "resourceType": "Document", "requestStage": "Request",
+            }]})
+        else:
+            # The SDK and its subrequests can trigger the proxy challenge.
+            await protocol.command("Fetch.enable", {"handleAuthRequests": True})
         await protocol.command("Page.navigate", {"url": BrowserSession.PAGE})
         await exchange.loaded.wait()
         result = await protocol.command("Runtime.evaluate", {"expression": "navigator.userAgent", "returnByValue": True})
@@ -422,9 +488,9 @@ class SDKIssuer:
     """Renew only fresh SDK seeds in an owned temporary server browser."""
 
     def __init__(self, browser: BrowserOwner, *, clock: Callable[[], float] = time.time, timeout: float = 120,
-                 diagnostics: Diagnostics | None = None):
+                 diagnostics: Diagnostics | None = None, proxy: Callable[[], str | None] = lambda: None):
         self.browser, self.clock, self.timeout = browser, clock, timeout
-        self.diagnostics = diagnostics
+        self.diagnostics, self.proxy = diagnostics, proxy
 
     @property
     def headless_fallback(self) -> bool:
@@ -432,20 +498,21 @@ class SDKIssuer:
 
     async def issue(self, seed: ServerSeed, *, initial: bool = False) -> ServerSeed:
         seed.cookie.require_fresh(self.clock())
-        async with (
-            self.browser.start() as browser,
-            browser.target(extra_events=SDKAcquisition.EVENTS) as protocol,
-        ):
-            return await SDKAcquisition(clock=self.clock, timeout=self.timeout, diagnostics=self.diagnostics).run(
-                protocol, seed.bundle, seed.cookie, initial=initial,
-            )
+        return await self.acquire(seed.bundle, seed.cookie, initial=initial)
 
     async def bootstrap(self, token: str) -> ServerSeed:
-        context = SDKBootstrap.from_token(token)
-        async with (self.browser.start() as browser,
-                    browser.target(extra_events=SDKAcquisition.EVENTS) as protocol):
+        return await self.acquire(SDKBootstrap.from_token(token), initial=True)
+
+    async def acquire(self, context: SessionBundle | SDKBootstrap, cookie: SDKCookie | None = None,
+                      *, initial: bool) -> ServerSeed:
+        proxy = BrowserProxy.from_setting(self.proxy())
+        events = SDKAcquisition.EVENTS
+        if proxy is not None and proxy.username is not None:
+            events = events | {"Fetch.authRequired"}
+        browser_session = self.browser.start(proxy=proxy) if proxy is not None else self.browser.start()
+        async with (browser_session as browser, browser.target(extra_events=events) as protocol):
             return await SDKAcquisition(clock=self.clock, timeout=self.timeout, diagnostics=self.diagnostics).run(
-                protocol, context, initial=True,
+                protocol, context, cookie, initial=initial, proxy=proxy,
             )
 
 

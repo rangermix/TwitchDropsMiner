@@ -1,3 +1,13 @@
+# Release Notes - v2.7.1
+
+This patch fixes embedded Twitch sign-in and makes server-side session verification and renewal use the configured proxy.
+
+- **Embedded sign-in:** TDM prefers Firefox 143 or newer and falls back to Chromium when compatible Firefox is unavailable. After Twitch confirms sign-in in Firefox, select **Finish sign in** or close the embedded browser window. ([#235](https://github.com/rangermix/TwitchDropsMiner/pull/235))
+- **Proxy support:** The server-side Chromium browser now uses the HTTP or HTTPS proxy saved in **Settings → General** for token verification and renewal, including proxies that require Basic authentication. Embedded sign-in still follows the container's network. CI and a local authenticated proxy smoke test passed; live Twitch sign-in and renewal through a proxy were not verified. ([#231](https://github.com/rangermix/TwitchDropsMiner/pull/231))
+- **Documentation:** The README now includes an updated project logo and light and dark dashboard screenshots. ([#229](https://github.com/rangermix/TwitchDropsMiner/pull/229))
+
+To update, follow the [installation and update guide](https://github.com/rangermix/TwitchDropsMiner/wiki/Installation) and keep your existing data mount so your settings and valid sessions are preserved.
+
 # Release Notes - v2.7.0
 
 TDM now supports watch-based sitewide Open Reward Campaigns, including the daily
