@@ -773,7 +773,12 @@ class Twitch:
                 for game in no_acl:
                     # for every campaign without an ACL, for it's game,
                     # add a list of live channels with drops enabled
-                    found = await self.get_live_streams(game, drops_enabled=True)
+                    try:
+                        found = await self.get_live_streams(game, drops_enabled=True)
+                    except REWARD_ERRORS:
+                        # One failing lookup must not take the whole miner down.
+                        logger.warning(f"Channel directory for {game} is unavailable")
+                        continue
                     # A channel kept from a fetch without the drops filter has the same
                     # broadcast: record that drops are enabled, keeping the old object.
                     kept = {channel: channel for channel in new_channels}
