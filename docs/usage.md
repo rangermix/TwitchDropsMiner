@@ -271,8 +271,8 @@ use goes to drop mining instead.
   shares watch streaks until the file is fixed or deleted and TDM restarts.
 - Twitch counts a stream that starts less than 30 minutes after the channel's last
   stream ended as the same stream. When such a restart follows a visit that got its
-  watch streak bonus or ran its full 7 minutes, TDM skips the visit. When the visit
-  was cut short, the restart gets a visit. TDM remembers this only while it runs.
+  watch streak bonus, TDM skips the visit. Otherwise the restart gets a visit, also
+  when TDM did not see the channel go offline. TDM remembers this only while it runs.
 - A listed channel where the account is banned is skipped. After a timeout ends, TDM
   tries the channel again without waiting for the next idle start.
 - After the visits, TDM watches the highest live listed channel for channel points. The

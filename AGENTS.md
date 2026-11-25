@@ -1344,10 +1344,13 @@ Other code reaches the service through the public `Twitch.idle_watch`.
   timed ban is retried when it ends.
 - Restarts: Twitch counts a stream that starts within `RESTART_SECONDS` (30 minutes)
   of the last one's end as the same stream. `_skip_restarts()` records such a new
-  broadcast as visited when the channel's previous broadcast had a visit that ran to
-  the end (done or full time). The gap is counted from the last `pick()` that saw the
-  old broadcast live, so an unsure gap gives a visit, never a missed one. `_seen` and
-  `_finished` are in memory only and cleared on an account switch.
+  broadcast as visited when the channel's previous broadcast had a visit that got the
+  streak bonus (`visit.done`; a full visit without it proves nothing) and the channel
+  was missing from the previous `pick()`. A new broadcast of a channel that stayed
+  "live" may follow a lost stream-down, so it gets a visit. The gap is counted from
+  the last `pick()` that saw the old broadcast live, on the monotonic clock (a host
+  suspend shortens it). `_seen`, `_finished` and `_last_pick` are in memory only;
+  an account switch clears the first two.
 - `data/idle_visits.json` holds `user_id`, the finished visits (last
   `IDLE_VISITS_KEPT`) and the share keys (last `IDLE_SHARES_KEPT`): `[id, count]` is
   used up, `[id, count, tries]` was refused and has tries left. An auth

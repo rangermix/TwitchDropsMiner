@@ -755,18 +755,26 @@ def test_restart_within_30_minutes_after_a_finished_visit_gets_no_visit():
     assert svc.visited[21] == 2
 
 
-def test_restart_after_a_visit_that_ran_its_full_time_gets_no_visit():
+def test_restart_after_a_full_visit_without_the_bonus_gets_a_visit():
+    # only the bonus proves the stream was counted
     def full_time(svc):
         svc.pick([fake(1, 10), fake(2, 20)], IDLE_VISIT_SECONDS)
 
     picked, svc = restarted(full_time, 5 * 60, last_live=IDLE_VISIT_SECONDS + 10)
-    assert picked.id == 1 and svc.visit is None
+    assert picked.id == 2 and svc.visit.broadcast_id == 21
 
 
 def test_restart_after_a_cut_short_visit_gets_a_visit():
-    # the bonus is still owed: Twitch paid it seconds after such a restart
+    # the bonus is still owed; a live log showed it 11 seconds after such a restart
     picked, svc = restarted(cut_short, 9 * 60)
     assert picked.id == 2 and svc.visit.broadcast_id == 21
+
+
+def test_restart_after_an_app_restart_gets_a_visit():
+    # the restart memory is not saved: an unknown gap gives a visit
+    svc, _ = service()
+    svc.visited = {10: 1, 20: 2}
+    assert svc.pick([fake(1, 10), fake(2, 21)], 0).id == 2
 
 
 @pytest.mark.parametrize(("gap", "visited"), [(RESTART_SECONDS - 1, False), (RESTART_SECONDS, True)])
@@ -783,14 +791,17 @@ def test_a_chain_of_quick_restarts_is_one_stream():
     assert svc.visit is None and svc.visited[22] == 2
 
 
-def test_new_broadcast_without_going_offline_after_a_done_visit_gets_no_visit():
+def test_new_broadcast_of_a_channel_that_never_went_offline_gets_a_visit():
+    # with a lost stream-down the old broadcast stays "live" and a new stream hours later
+    # shows up as a broadcast change: the gap is unknown, so it gets a visit
     svc, _ = service()
     first, b = fake(1, 10), fake(2, 20)
     svc.visited = {10: 1}
     svc.pick([first, b], 0)
     svc.visit.done = True
-    assert svc.pick([first, fake(2, 21)], 5) is first
-    assert svc.visit is None
+    svc.pick([first, b], 5)
+    assert svc.pick([first, fake(2, 21)], 35).id == 2
+    assert svc.visit.broadcast_id == 21
 
 
 def test_account_switch_forgets_finished_streams():

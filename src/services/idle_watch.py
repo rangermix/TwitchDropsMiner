@@ -82,9 +82,10 @@ class IdleWatchService:
         # broadcast id -> channel id of finished visits
         self.visited: dict[int, int] = {}
         # in memory only, for restarts: channel id -> (broadcast id, time) when pick() last saw it live,
-        # and channel id -> the broadcast whose visit ran to the end (bonus or full time)
+        # channel id -> the broadcast whose visit got the watch streak bonus, and the last pick() time
         self._seen: dict[int, tuple[int, float]] = {}
         self._finished: dict[int, int] = {}
+        self._last_pick: float | None = None
         # watch streak sharing: attempts per (milestone id, count); a key with all attempts used
         # is done (shared, or sent with an unknown outcome)
         self._share_tries: dict[tuple[str, int | None], int] = {}
@@ -688,19 +689,23 @@ class IdleWatchService:
         return broadcast_id
 
     def _skip_restarts(self, live: list[Channel], ids: dict[int, int], now: float) -> None:
-        """Record as visited a new broadcast that continues a stream whose visit ran to the end.
+        """Record as visited a new broadcast that continues a stream whose visit got the streak bonus.
 
-        The gap is counted from the last pick() that saw the old broadcast live, which is never after it
-        ended, so an unsure gap only gives a visit too many.
+        Only the bonus proves the stream was counted: a full visit without it gives the restart a visit.
+        The channel must have been missing from the previous pick(): a restart is seen offline first (a
+        stream-up is applied only after ONLINE_DELAY), while a new broadcast of a channel that stayed
+        "live" may follow a lost stream-down and be a new stream. The gap is counted from the last pick()
+        that saw the old broadcast live, which is never after it ended.
         """
         visit = self.visit
-        if visit is not None and (visit.done or now - visit.started >= IDLE_VISIT_SECONDS):
+        if visit is not None and visit.done:
             self._finished[visit.channel_id] = visit.broadcast_id
         for channel in live:
             broadcast_id, seen = ids[channel.id], self._seen.get(channel.id)
             if (
                 seen is not None
                 and seen[0] != broadcast_id
+                and seen[1] != self._last_pick
                 and broadcast_id not in self.visited
                 and self._finished.get(channel.id) == seen[0]
                 and now - seen[1] < RESTART_SECONDS
@@ -709,6 +714,7 @@ class IdleWatchService:
                 self._finished[channel.id] = broadcast_id
                 logger.info("Idle visit skipped: %s restarted its stream", channel.name)
             self._seen[channel.id] = (broadcast_id, now)
+        self._last_pick = now
 
     def pick(self, live: list[Channel], now: float) -> Channel | None:
         ids = {c.id: self._broadcast_id(c) for c in live}
