@@ -406,10 +406,6 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         console.print.assert_called_once_with(f"Setting changed: language = {other_language}")
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class TestConnectionAndRefreshBounds(unittest.TestCase):
     def test_model_rejects_out_of_range_values(self):
         from pydantic import ValidationError
@@ -482,3 +478,7 @@ class TestConnectionAndRefreshBounds(unittest.TestCase):
         self.assertEqual(settings.minimum_refresh_interval_minutes, 45)
         self.assertEqual(settings.connection_quality, 3)
         self.assertEqual(len(logs), 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

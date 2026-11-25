@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import codecs
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -236,3 +237,21 @@ def test_unreadable_file_is_left_untouched_and_saving_stays_disabled(tmp_path, m
     history.clear()
     assert "cleared" not in caplog.text
     assert target.read_text(encoding="utf-8") == content
+
+
+def test_non_dict_entries_are_moved_aside(tmp_path):
+    target = tmp_path / "drop_history.json"
+    target.write_text(json.dumps({"version": HISTORY_VERSION, "entries": [1, "x"]}), encoding="utf-8")
+    history = _fresh_history(tmp_path)
+    assert history.total_count == 0
+    assert (tmp_path / "drop_history.json.bad").exists()
+    assert history.record(_MockDrop(), _MockCampaign()) is True
+
+
+def test_valid_file_with_utf8_bom_is_loaded(tmp_path):
+    target = tmp_path / "drop_history.json"
+    data = {"version": HISTORY_VERSION, "entries": [{"id": "old", "claimed_at": "2026-01-01T00:00:00+00:00"}]}
+    target.write_bytes(codecs.BOM_UTF8 + json.dumps(data).encode("utf-8"))
+    history = _fresh_history(tmp_path)
+    assert history.total_count == 1
+    assert not (tmp_path / "drop_history.json.bad").exists()

@@ -212,11 +212,13 @@ class DropHistory:
             counts[month] = counts.get(month, 0) + 1
         return dict(sorted(counts.items()))
 
-    def clear(self) -> None:
-        """Delete all history entries from memory and disk."""
+    def clear(self) -> bool:
+        """Delete all history entries from memory and disk; return whether the file was written."""
         self._entries = []
-        if self._save():
-            logger.warning("Drop history cleared.")
+        if not self._save():
+            return False
+        logger.warning("Drop history cleared.")
+        return True
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -228,13 +230,14 @@ class DropHistory:
             logger.debug(f"No history file at {self._path}, starting fresh.")
             return
         try:
-            with self._path.open("r", encoding="utf-8") as f:
+            # utf-8-sig: a file saved by a Windows editor starts with a BOM
+            with self._path.open("r", encoding="utf-8-sig") as f:
                 data = json.load(f)
             if not isinstance(data, dict) or data.get("version") != HISTORY_VERSION:
                 raise ValueError("not a version 1 history file")
             entries = data.get("entries", [])
-            if not isinstance(entries, list):
-                raise ValueError("entries is not a list")
+            if not isinstance(entries, list) or not all(isinstance(e, dict) for e in entries):
+                raise ValueError("entries is not a list of objects")
         except (ValueError, OSError) as exc:
             logger.error(f"Failed to load drop history: {exc}")
             if isinstance(exc, OSError):

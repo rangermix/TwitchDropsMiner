@@ -485,7 +485,8 @@ async def clear_history():
     if not twitch_client:
         raise HTTPException(status_code=503, detail="Twitch client not initialized")
 
-    twitch_client.drop_history.clear()
+    if not twitch_client.drop_history.clear():
+        raise HTTPException(status_code=500, detail="history_not_saved")
     return {"success": True}
 
 
