@@ -2634,7 +2634,8 @@ function readBoundedInt(id) {
     return clamped;
 }
 
-async function saveSettings() {    const settings = {
+async function saveSettings() {
+    const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
         inventory_list_view: state.settings.inventory_list_view === true,
         language: document.getElementById('language').value,
