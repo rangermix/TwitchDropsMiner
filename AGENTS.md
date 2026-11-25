@@ -1351,8 +1351,9 @@ Other code reaches the service through the public `Twitch.idle_watch`.
   stream-down), or one that changes broadcast without looking offline, has an unknown
   gap and gets a visit. The gap is counted from the last `pick()` that saw the old
   broadcast live, on the monotonic clock (a host suspend shortens it). A stale live
-  state corrected on the same object (a stream check after a title change) still
-  counts as seen offline at the correction. `_seen` and `_finished` are in memory
+  state corrected on the same object (the watch loop's `check_online()` after a
+  failed watch, or a stream check after a title change) still counts as seen
+  offline at the correction. `_seen` and `_finished` are in memory
   only and cleared on an account switch.
 - `data/idle_visits.json` holds `user_id`, the finished visits (last
   `IDLE_VISITS_KEPT`) and the share keys (last `IDLE_SHARES_KEPT`): `[id, count]` is

@@ -707,6 +707,8 @@ class IdleWatchService:
             if channel is None or channel_id in ids:
                 continue
             if tracked.get(channel_id) is channel:
+                # shortcut: a stale "live" corrected on the same object (check_online() after a failed
+                # watch or a title change) counts as seen offline; track the stream's end time if that matters
                 self._seen[channel_id] = (broadcast_id, seen_at, None)  # seen offline
             else:
                 del self._seen[channel_id]

@@ -738,6 +738,8 @@ def restarted(finish, gap, last_live=100):
     finish(svc)
     svc.pick([first, b], last_live)
     assert svc.pick([first], last_live + 30) is first
+    tw.channels[2] = fake(2, 20, online=False)  # a cleanup recreates it while offline
+    assert svc.pick([first], last_live + 45) is first
     tw.channels[2] = fake(2, 21)
     return svc.pick([first, tw.channels[2]], last_live + gap), svc, tw
 
@@ -817,8 +819,8 @@ def test_new_broadcast_of_a_channel_that_never_went_offline_gets_a_visit():
     svc.pick([first, b], 0)
     svc.visit.done = True
     svc.pick([first, b], 5)
-    tw.channels[2] = b2 = fake(2, 21)
-    assert svc.pick([first, b2], 35) is b2
+    b.broadcast_id = 21  # a stream-up check updates the same object
+    assert svc.pick([first, b], 35) is b
     assert svc.visit.broadcast_id == 21
 
 
