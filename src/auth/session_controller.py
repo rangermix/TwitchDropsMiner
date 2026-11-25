@@ -31,10 +31,11 @@ class SessionController:
                  activation: Callable[[], AbstractAsyncContextManager] = nullcontext,
                  on_change: Callable[[], None] = lambda: None):
         self.session, self.clock = session, clock
+        transport = session._transport
         self.issuer = issuer or SDKIssuer(OwnedChromium(
             shutil.which("chromium") or shutil.which("chromium-browser") or "chromium",
             no_sandbox=os.name == "posix" and os.geteuid() == 0,
-        ), diagnostics=getattr(session._transport, "diagnostics", None))
+        ), diagnostics=getattr(transport, "diagnostics", None), proxy=transport.proxy_url)
         self.activation, self.on_change = activation, on_change
         self._lock = asyncio.Lock()
         self._wake = asyncio.Event()

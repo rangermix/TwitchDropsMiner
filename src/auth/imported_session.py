@@ -87,6 +87,9 @@ class SessionTransport:
         self.diagnostics = diagnostics
         self._http: aiohttp.ClientSession | None = None
 
+    def proxy_url(self) -> str | None:
+        return self.proxy() if callable(self.proxy) else self.proxy
+
     async def request(self, method: str, url: str, *, headers: dict[str, str], body: Any = None) -> Any:
         if (method, url) not in {
             ("GET", BrowserSession.VALIDATE_URL), ("POST", BrowserSession.GQL_URL),
@@ -98,7 +101,7 @@ class SessionTransport:
             )
         try:
             async with self._http.request(
-                method, url, headers=headers, json=body, proxy=self.proxy() if callable(self.proxy) else self.proxy, allow_redirects=False,
+                method, url, headers=headers, json=body, proxy=self.proxy_url(), allow_redirects=False,
             ) as response:
                 if response.status != 200 and self.diagnostics is not None:
                     self.diagnostics.record_http(method, url, response.status, operations=body)

@@ -89,6 +89,18 @@ async def test_independent_issued_account_must_match_capture(controller):
     assert not session.path.exists()
 
 
+def test_default_issuer_uses_current_session_transport_proxy(controller):
+    _, session, _, _ = controller
+    proxy = ["http://session-proxy.test:8080"]
+    session._transport.proxy = lambda: proxy[0]
+    created = SessionController(session)
+    assert created.issuer.proxy() == "http://session-proxy.test:8080"
+    proxy[0] = "https://new-proxy.test:8443"
+    assert created.issuer.proxy() == "https://new-proxy.test:8443"
+    session._transport.proxy = None
+    assert created.issuer.proxy() is None
+
+
 @pytest.mark.asyncio
 async def test_logout_clears_credentials_and_survives_legacy_cookie_deletion_failure(controller):
     control, session, clock, issuer = controller
