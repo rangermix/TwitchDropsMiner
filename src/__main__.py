@@ -120,7 +120,7 @@ if __name__ == "__main__":
                 try:
                     await asyncio.wait_for(web_server_task, timeout=5.0)
                     logger.info("Web server task completed gracefully")
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.warning("Web server didn't exit in time, forcing cancellation")
                     web_server_task.cancel()
                     try:

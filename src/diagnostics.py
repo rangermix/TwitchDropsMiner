@@ -16,7 +16,7 @@ import stat
 import sys
 import tempfile
 from collections import OrderedDict, deque
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from itertools import islice
 from pathlib import Path
 from time import monotonic
@@ -130,7 +130,7 @@ class Diagnostics:
                     try:
                         parsed = isoparse(item)
                         if parsed.tzinfo is not None:
-                            return parsed.astimezone(timezone.utc).isoformat()
+                            return parsed.astimezone(UTC).isoformat()
                     except (ValueError, OverflowError):
                         pass
                 if key == "message" and item.startswith(("{", "[")) and len(item) <= self.MAX_BODY_BYTES:
@@ -201,7 +201,7 @@ class Diagnostics:
         self.apis.move_to_end(key)
         entry["count"] += 1
         entry["samples"].append({
-            "at": datetime.now(timezone.utc).isoformat(),
+            "at": datetime.now(UTC).isoformat(),
             "status": status if type(status) is int and 100 <= status <= 599 else None,
             "outcome": outcome if outcome in {"response", "timeout", "connection", "tls", "decode", "truncated"} else "response",
             "body_bytes": body_bytes if type(body_bytes) is int and body_bytes >= 0 else None,
@@ -287,7 +287,7 @@ class Diagnostics:
                 } for drop in drops],
             })
         snapshot = {
-            "schema_version": 1, "app_version": __version__, "created_at": datetime.now(timezone.utc).isoformat(),
+            "schema_version": 1, "app_version": __version__, "created_at": datetime.now(UTC).isoformat(),
             "runtime": {"python": platform.python_version(),
                         "platform": sys.platform if sys.platform in {"win32", "linux", "darwin"} else "other",
                         "docker": Path("/.dockerenv").exists(),
@@ -324,7 +324,7 @@ class Diagnostics:
                 "id": self.reference(channel.id), "name": self.reference(channel.name),
                 "online": self.flag(channel.online), "acl": self.flag(channel.acl_based),
                 "banned": self.flag(channel.banned), "ban_permanent": self.flag(channel.ban_permanent),
-                "ban_expires_at": datetime.fromtimestamp(channel.ban_expires_at, timezone.utc).isoformat()
+                "ban_expires_at": datetime.fromtimestamp(channel.ban_expires_at, UTC).isoformat()
                 if channel.ban_expires_at is not None else None,
                 "game": self.reference(channel.game.name) if channel.game else None,
             } for channel in list(channels.values())[:1000]],
@@ -396,7 +396,7 @@ class Diagnostics:
             directory.chmod(0o700)
             if stat.S_IMODE(directory.stat().st_mode) != 0o700:
                 raise OSError("diagnostics_permissions")
-        filename = "diagnosis-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + secrets.token_hex(6) + ".json"
+        filename = "diagnosis-" + datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "-" + secrets.token_hex(6) + ".json"
         encoded = self._encode(snapshot)
         fd, temporary = tempfile.mkstemp(prefix=".diagnosis-", dir=directory)
         try:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 
@@ -41,7 +41,7 @@ class RewardPriority:
         return self.drop_key(drop) if drop.can_earn() else (len(self.TYPES), drop.ends_at.timestamp())
 
     def campaign_key(self, campaign: DropsCampaign) -> tuple[int, float]:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return min((self.drop_key(drop) for drop in campaign.mineable_watch_drops
                     if not drop.is_claimed and drop.starts_at <= now < drop.ends_at and drop.can_earn()),
                    default=(len(self.TYPES), float("inf")))

@@ -10,7 +10,7 @@ import asyncio
 import logging
 from collections import abc
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 import aiohttp
@@ -194,7 +194,7 @@ class HTTPClient:
             elif (
                 invalidate_after is not None
                 # Account for expiration landing during the request
-                and datetime.now(timezone.utc) >= (invalidate_after - session_timeout)
+                and datetime.now(UTC) >= (invalidate_after - session_timeout)
             ):
                 raise RequestInvalid()
 
@@ -227,11 +227,7 @@ class HTTPClient:
                 if single_attempt:
                     raise RequestException("Unconfirmed HTTP response") from None
                 raise
-            except (
-                aiohttp.ClientConnectionError,
-                asyncio.TimeoutError,
-                aiohttp.ClientPayloadError,
-            ) as error:
+            except (TimeoutError, aiohttp.ClientConnectionError, aiohttp.ClientPayloadError) as error:
                 # Connection problems, retry with backoff
                 if self._diagnostics is not None:
                     self._diagnostics.record(self._diagnostics.endpoint(url, method),

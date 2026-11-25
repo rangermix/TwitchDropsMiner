@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from src.config.reward_priority import RewardPriority
 from src.config.settings import Settings
@@ -111,7 +111,7 @@ class StreamSelector:
         queued_ids: set[int] = set()
         games_to_watch = settings.games_to_watch
         mining_benefits = settings.mining_benefits
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         next_hour = now + timedelta(hours=1)
 
         for game_name in games_to_watch:

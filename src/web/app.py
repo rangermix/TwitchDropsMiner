@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 from urllib.parse import quote
@@ -300,7 +300,9 @@ async def verify_proxy(request: ProxyVerifyRequest):
         # Test connection to Twitch
         async with (
             aiohttp.ClientSession() as session,
-            session.get("https://www.twitch.tv", proxy=proxy_url, timeout=10) as response,
+            session.get(
+                "https://www.twitch.tv", proxy=proxy_url, timeout=aiohttp.ClientTimeout(total=10)
+            ) as response,
         ):
             if twitch_client is not None:
                 twitch_client.diagnostics.record_http("GET", "https://www.twitch.tv", response.status)
@@ -497,8 +499,8 @@ def _parse_history_since(since: str | None) -> datetime | None:
         # Accept both a bare date (YYYY-MM-DD) and a full ISO timestamp
         parsed = datetime.fromisoformat(since)
         if parsed.tzinfo is None:
-            return parsed.replace(tzinfo=timezone.utc)
-        return parsed.astimezone(timezone.utc)
+            return parsed.replace(tzinfo=UTC)
+        return parsed.astimezone(UTC)
     except (ValueError, TypeError):
         return None
 
