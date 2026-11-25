@@ -157,3 +157,51 @@ def test_corrupt_history_file_does_not_crash(tmp_path):
 
     history = _fresh_history(tmp_path)
     assert history.total_count == 0
+
+
+def _record_after_bad_file(tmp_path, content):
+    target = tmp_path / "drop_history.json"
+    target.write_text(content, encoding="utf-8")
+    history = _fresh_history(tmp_path)
+    assert history.total_count == 0
+    history.record(_MockDrop(), _MockCampaign())
+    return target, tmp_path / "drop_history.json.bad"
+
+
+def test_truncated_file_is_kept_aside_not_overwritten(tmp_path):
+    content = '{"version": 1, "entries": [{"id": "old"'
+    target, bad = _record_after_bad_file(tmp_path, content)
+    assert bad.read_text(encoding="utf-8") == content
+    assert len(json.loads(target.read_text(encoding="utf-8"))["entries"]) == 1
+
+
+def test_unusable_file_shapes_are_moved_aside(tmp_path):
+    for content in ("[]", json.dumps({"version": HISTORY_VERSION + 1, "entries": []}),
+                    json.dumps({"version": HISTORY_VERSION, "entries": {}})):
+        folder = tmp_path / str(abs(hash(content)))
+        folder.mkdir()
+        _, bad = _record_after_bad_file(folder, content)
+        assert bad.read_text(encoding="utf-8") == content
+
+
+def test_valid_file_is_loaded_without_bad_copy(tmp_path):
+    (tmp_path / "drop_history.json").write_text(
+        json.dumps({"version": HISTORY_VERSION, "entries": [{"id": "x"}]}), encoding="utf-8")
+    assert _fresh_history(tmp_path).total_count == 1
+    assert not (tmp_path / "drop_history.json.bad").exists()
+
+
+def test_save_is_disabled_when_bad_file_cannot_be_moved(tmp_path, monkeypatch):
+    target = tmp_path / "drop_history.json"
+    target.write_text("{broken", encoding="utf-8")
+    real_replace = Path.replace
+
+    def replace(self, dest):
+        if self == target:
+            raise PermissionError("held open")
+        return real_replace(self, dest)
+
+    monkeypatch.setattr(Path, "replace", replace)
+    history = _fresh_history(tmp_path)
+    assert history.record(_MockDrop(), _MockCampaign()) is False
+    assert target.read_text(encoding="utf-8") == "{broken"

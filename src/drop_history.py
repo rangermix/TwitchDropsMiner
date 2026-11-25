@@ -16,6 +16,7 @@ import csv
 import io
 import json
 import logging
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict
@@ -64,6 +65,7 @@ class DropHistory:
         self._path = data_dir / HISTORY_FILENAME
         self._entries: list[HistoryEntry] = []
         self._dirty = False
+        self._save_disabled = False
         self._load()
 
     # ------------------------------------------------------------------
@@ -228,16 +230,28 @@ class DropHistory:
         try:
             with self._path.open("r", encoding="utf-8") as f:
                 data = json.load(f)
-            if data.get("version") == HISTORY_VERSION:
-                self._entries = data.get("entries", [])
-                logger.debug(f"Loaded {len(self._entries)} history entries.")
-            else:
-                # Future versions may add a migration path here
-                logger.warning(
-                    f"Unknown history version {data.get('version')}, ignoring file."
-                )
-        except (json.JSONDecodeError, OSError) as exc:
+            if not isinstance(data, dict) or data.get("version") != HISTORY_VERSION:
+                raise ValueError("not a version 1 history file")
+            entries = data.get("entries", [])
+            if not isinstance(entries, list):
+                raise ValueError("entries is not a list")
+        except (ValueError, OSError) as exc:
             logger.error(f"Failed to load drop history: {exc}")
+            self._quarantine()
+            return
+        self._entries = entries
+        logger.debug(f"Loaded {len(self._entries)} history entries.")
+
+    def _quarantine(self) -> None:
+        """Move an unusable file aside so the next save cannot overwrite it."""
+        bad = self._path.with_name(self._path.name + ".bad")
+        try:
+            self._path.replace(bad)
+            logger.error(f"Moved unusable drop history to {bad}")
+        except OSError as exc:
+            # Without the move the next save would destroy the file: keep it untouched.
+            self._save_disabled = True
+            logger.error(f"Cannot move drop history aside ({exc}); history will not be saved this run.")
 
     def _save(self) -> bool:
         """
@@ -246,6 +260,8 @@ class DropHistory:
         This ensures the history file is never left in a half-written state
         even if the process is killed during the write.
         """
+        if self._save_disabled:
+            return False
         try:
             self._path.parent.mkdir(parents=True, exist_ok=True)
             tmp = self._path.with_suffix(".json.tmp")
@@ -256,6 +272,8 @@ class DropHistory:
                     ensure_ascii=False,
                     indent=2,
                 )
+                f.flush()
+                os.fsync(f.fileno())
             # Atomic rename — on POSIX this is guaranteed by the OS
             tmp.replace(self._path)
             self._dirty = False
