@@ -729,15 +729,17 @@ async def test_visit_clock_pauses_while_the_loop_is_stopped(monkeypatch):
 
 def restarted(finish, gap, last_live=100):
     """First listed channel 1 (already visited) and channel 2, whose visit ends by finish, is last seen live
-    at last_live and is back with a new broadcast gap seconds later; returns the pick and the service."""
-    svc, _ = service()
+    at last_live, is seen offline while still tracked, and comes back gap seconds later with a new broadcast
+    on a new Channel (the 30-minute cleanup recreates idle channels); returns the pick, service and twitch."""
     first, b = fake(1, 10), fake(2, 20)
+    svc, tw = service({1: first, 2: b}, idle=["c1", "c2"])
     svc.visited = {10: 1}
     assert svc.pick([first, b], 0) is b
     finish(svc)
     svc.pick([first, b], last_live)
     assert svc.pick([first], last_live + 30) is first
-    return svc.pick([first, fake(2, 21)], last_live + gap), svc
+    tw.channels[2] = fake(2, 21)
+    return svc.pick([first, tw.channels[2]], last_live + gap), svc, tw
 
 
 def done(svc):
@@ -750,7 +752,7 @@ def cut_short(svc):
 
 def test_restart_within_30_minutes_after_a_finished_visit_gets_no_visit():
     # Twitch counts a broadcast that starts within 30 minutes of the last one's end as the same stream
-    picked, svc = restarted(done, 13 * 60)
+    picked, svc, _ = restarted(done, 13 * 60)
     assert picked.id == 1 and svc.visit is None
     assert svc.visited[21] == 2
 
@@ -760,13 +762,13 @@ def test_restart_after_a_full_visit_without_the_bonus_gets_a_visit():
     def full_time(svc):
         svc.pick([fake(1, 10), fake(2, 20)], IDLE_VISIT_SECONDS)
 
-    picked, svc = restarted(full_time, 5 * 60, last_live=IDLE_VISIT_SECONDS + 10)
+    picked, svc, _ = restarted(full_time, 5 * 60, last_live=IDLE_VISIT_SECONDS + 10)
     assert picked.id == 2 and svc.visit.broadcast_id == 21
 
 
 def test_restart_after_a_cut_short_visit_gets_a_visit():
     # the bonus is still owed; a live log showed it 11 seconds after such a restart
-    picked, svc = restarted(cut_short, 9 * 60)
+    picked, svc, _ = restarted(cut_short, 9 * 60)
     assert picked.id == 2 and svc.visit.broadcast_id == 21
 
 
@@ -779,42 +781,75 @@ def test_restart_after_an_app_restart_gets_a_visit():
 
 @pytest.mark.parametrize(("gap", "visited"), [(RESTART_SECONDS - 1, False), (RESTART_SECONDS, True)])
 def test_restart_gap_is_counted_from_the_last_tick_that_saw_the_stream_live(gap, visited):
-    picked, svc = restarted(done, gap)
+    picked, _, _ = restarted(done, gap)
     assert (picked.id == 2) is visited
 
 
 def test_a_chain_of_quick_restarts_is_one_stream():
-    picked, svc = restarted(done, 60)
+    picked, svc, tw = restarted(done, 60)
     assert picked.id == 1
-    assert svc.pick([fake(1, 10)], 200) is not None
-    assert svc.pick([fake(1, 10), fake(2, 22)], 260).id == 1
+    first = tw.channels[1]
+    assert svc.pick([first], 200) is first
+    tw.channels[2] = fake(2, 22)
+    assert svc.pick([first, tw.channels[2]], 260) is first
     assert svc.visit is None and svc.visited[22] == 2
+
+
+def test_same_broadcast_back_after_a_missing_tick_is_no_restart(caplog):
+    first, b = fake(1, 10), fake(2, 20)
+    svc, _ = service({1: first, 2: b}, idle=["c1", "c2"])
+    svc.visited = {10: 1}
+    svc.pick([first, b], 0)
+    svc.visit.done = True
+    svc.pick([first], 30)  # a failed lookup leaves it out for a tick
+    with caplog.at_level(logging.INFO, logger="TwitchDrops"):
+        assert svc.pick([first, b], 60) is first
+    assert svc.visited == {10: 1, 20: 2}
+    assert "skipped" not in caplog.text
 
 
 def test_new_broadcast_of_a_channel_that_never_went_offline_gets_a_visit():
     # with a lost stream-down the old broadcast stays "live" and a new stream hours later
     # shows up as a broadcast change: the gap is unknown, so it gets a visit
-    svc, _ = service()
     first, b = fake(1, 10), fake(2, 20)
+    svc, tw = service({1: first, 2: b}, idle=["c1", "c2"])
     svc.visited = {10: 1}
     svc.pick([first, b], 0)
     svc.visit.done = True
     svc.pick([first, b], 5)
-    assert svc.pick([first, fake(2, 21)], 35).id == 2
+    tw.channels[2] = b2 = fake(2, 21)
+    assert svc.pick([first, b2], 35) is b2
     assert svc.visit.broadcast_id == 21
 
 
-def test_account_switch_forgets_finished_streams():
-    svc, _ = service()
+def test_channel_dropped_while_it_still_looked_live_gets_a_visit_on_return():
+    # a lost stream-down keeps it "live" until a cleanup drops it and the lookup finds it offline:
+    # when the stream ended is unknown
     first, b = fake(1, 10), fake(2, 20)
+    svc, tw = service({1: first, 2: b}, idle=["c1", "c2"])
+    svc.visited = {10: 1}
+    svc.pick([first, b], 0)
+    svc.visit.done = True
+    svc.pick([first, b], 5)
+    tw.channels[2] = fake(2, 20, online=False)  # cleanup, then re-tracked offline
+    assert svc.pick([first], 35) is first
+    tw.channels[2] = b2 = fake(2, 21)
+    assert svc.pick([first, b2], 600) is b2
+
+
+def test_account_switch_forgets_finished_streams():
+    first, b = fake(1, 10), fake(2, 20)
+    svc, tw = service({1: first, 2: b}, idle=["c1", "c2"])
     svc._use_account(1)
     svc.visited = {10: 1}
     svc.pick([first, b], 0)
     svc.visit.done = True
     svc.pick([first, b], 5)
+    svc.pick([first], 35)  # seen offline
     svc._use_account(2)
     svc.visited = {10: 1}
-    assert svc.pick([first, fake(2, 21)], 10).id == 2  # the other account has not had this stream's bonus
+    tw.channels[2] = b2 = fake(2, 21)
+    assert svc.pick([first, b2], 60) is b2  # the other account has not had this stream's bonus
 
 
 def test_visits_survive_a_tick_without_live_channels():

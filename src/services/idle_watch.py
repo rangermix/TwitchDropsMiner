@@ -81,11 +81,13 @@ class IdleWatchService:
         self._account: int | None = None
         # broadcast id -> channel id of finished visits
         self.visited: dict[int, int] = {}
-        # in memory only, for restarts: channel id -> (broadcast id, time) when pick() last saw it live,
-        # channel id -> the broadcast whose visit got the watch streak bonus, and the last pick() time
-        self._seen: dict[int, tuple[int, float]] = {}
+        # in memory only, for restarts: channel id -> (broadcast id, time, Channel) when pick() last saw it
+        # live, Channel None once it was seen offline; channel id -> the broadcast whose visit got the
+        # watch streak bonus.
+        # shortcut: monotonic time stops while the host suspends, which shortens the gap; use wall time
+        # if TDM must run on a host that sleeps
+        self._seen: dict[int, tuple[int, float, Channel | None]] = {}
         self._finished: dict[int, int] = {}
-        self._last_pick: float | None = None
         # watch streak sharing: attempts per (milestone id, count); a key with all attempts used
         # is done (shared, or sent with an unknown outcome)
         self._share_tries: dict[tuple[str, int | None], int] = {}
@@ -692,29 +694,35 @@ class IdleWatchService:
         """Record as visited a new broadcast that continues a stream whose visit got the streak bonus.
 
         Only the bonus proves the stream was counted: a full visit without it gives the restart a visit.
-        The channel must have been missing from the previous pick(): a restart is seen offline first (a
-        stream-up is applied only after ONLINE_DELAY), while a new broadcast of a channel that stayed
-        "live" may follow a lost stream-down and be a new stream. The gap is counted from the last pick()
-        that saw the old broadcast live, which is never after it ended.
+        The old broadcast must have been seen offline while its Channel was still tracked; one dropped by
+        a cleanup while it still looked live (maybe after a lost stream-down) has an unknown end, and a
+        new broadcast of a channel that never looked offline may be a new stream: both get a visit. The
+        gap is counted from the last pick() that saw the old broadcast live.
         """
         visit = self.visit
         if visit is not None and visit.done:
             self._finished[visit.channel_id] = visit.broadcast_id
+        tracked = self._twitch.channels
+        for channel_id, (broadcast_id, seen_at, channel) in list(self._seen.items()):
+            if channel is None or channel_id in ids:
+                continue
+            if tracked.get(channel_id) is channel:
+                self._seen[channel_id] = (broadcast_id, seen_at, None)  # seen offline
+            else:
+                del self._seen[channel_id]
         for channel in live:
             broadcast_id, seen = ids[channel.id], self._seen.get(channel.id)
             if (
                 seen is not None
+                and seen[2] is None
                 and seen[0] != broadcast_id
-                and seen[1] != self._last_pick
-                and broadcast_id not in self.visited
                 and self._finished.get(channel.id) == seen[0]
                 and now - seen[1] < RESTART_SECONDS
             ):
                 self.visited[broadcast_id] = channel.id
                 self._finished[channel.id] = broadcast_id
                 logger.info("Idle visit skipped: %s restarted its stream", channel.name)
-            self._seen[channel.id] = (broadcast_id, now)
-        self._last_pick = now
+            self._seen[channel.id] = (broadcast_id, now, channel)
 
     def pick(self, live: list[Channel], now: float) -> Channel | None:
         ids = {c.id: self._broadcast_id(c) for c in live}

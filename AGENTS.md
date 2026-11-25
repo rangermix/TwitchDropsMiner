@@ -1345,12 +1345,15 @@ Other code reaches the service through the public `Twitch.idle_watch`.
 - Restarts: Twitch counts a stream that starts within `RESTART_SECONDS` (30 minutes)
   of the last one's end as the same stream. `_skip_restarts()` records such a new
   broadcast as visited when the channel's previous broadcast had a visit that got the
-  streak bonus (`visit.done`; a full visit without it proves nothing) and the channel
-  was missing from the previous `pick()`. A new broadcast of a channel that stayed
-  "live" may follow a lost stream-down, so it gets a visit. The gap is counted from
-  the last `pick()` that saw the old broadcast live, on the monotonic clock (a host
-  suspend shortens it). `_seen`, `_finished` and `_last_pick` are in memory only;
-  an account switch clears the first two.
+  streak bonus (`visit.done`; a full visit without it proves nothing) and a `pick()`
+  saw the old broadcast offline while its `Channel` object was still tracked. A
+  channel dropped by a cleanup while it still looked live (maybe after a lost
+  stream-down), or one that changes broadcast without looking offline, has an unknown
+  gap and gets a visit. The gap is counted from the last `pick()` that saw the old
+  broadcast live, on the monotonic clock (a host suspend shortens it). A stale live
+  state corrected on the same object (a stream check after a title change) still
+  counts as seen offline at the correction. `_seen` and `_finished` are in memory
+  only and cleared on an account switch.
 - `data/idle_visits.json` holds `user_id`, the finished visits (last
   `IDLE_VISITS_KEPT`) and the share keys (last `IDLE_SHARES_KEPT`): `[id, count]` is
   used up, `[id, count, tries]` was refused and has tries left. An auth
