@@ -2624,13 +2624,22 @@ async function onMiningHoursChange() {
     }
 }
 
-async function saveSettings() {
-    const settings = {
+// The server rejects values outside the input's min/max, which would fail every autosave.
+function readBoundedInt(id) {
+    const input = document.getElementById(id);
+    const value = parseInt(input.value);
+    if (Number.isNaN(value)) return value;
+    const clamped = Math.min(Math.max(value, parseInt(input.min) || value), parseInt(input.max) || value);
+    input.value = clamped;
+    return clamped;
+}
+
+async function saveSettings() {    const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
         inventory_list_view: state.settings.inventory_list_view === true,
         language: document.getElementById('language').value,
-        connection_quality: parseInt(document.getElementById('connection-quality').value),
-        minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
+        connection_quality: readBoundedInt('connection-quality'),
+        minimum_refresh_interval_minutes: readBoundedInt('minimum-refresh-interval'),
         games_to_watch: state.settings.games_to_watch || [],
         drop_name_blacklist: parseDropNameBlacklist(
             document.getElementById('drop-name-blacklist')?.value

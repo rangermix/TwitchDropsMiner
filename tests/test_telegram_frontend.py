@@ -35,6 +35,8 @@ def run_javascript(names: list[str], script: str) -> None:
         for dependency in ['applyGameWatchEdit', 'reconcileGameWatchSettings']:
             if dependency not in names:
                 names.append(dependency)
+    if 'saveSettings' in names and 'readBoundedInt' not in names:
+        names.append('readBoundedInt')
     if 'saveSettings' in names and 'queueSettingsWrite' not in names:
         names.append('queueSettingsWrite')
     for name in names:

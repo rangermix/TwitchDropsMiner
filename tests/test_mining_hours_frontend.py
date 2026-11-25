@@ -82,7 +82,7 @@ function updateSettingsUI(settings) { state.settings = settings; }
 def test_other_settings_saves_do_not_overwrite_a_schedule_save_in_flight():
     source = APP_JS.read_text(encoding="utf-8")
     script = '\n'.join(extract_javascript_function(source, name) for name in (
-        'applyGameWatchEdit', 'reconcileGameWatchSettings', 'queueSettingsWrite'))
+        'applyGameWatchEdit', 'reconcileGameWatchSettings', 'queueSettingsWrite', 'readBoundedInt'))
     script += "\nasync " + extract_javascript_function(source, "saveSettings") + r"""
 const assert = require('node:assert/strict');
 const gameWatchWrites={confirmed:null,draft:null,pending:[],tail:Promise.resolve(),revision:0};
