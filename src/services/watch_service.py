@@ -166,7 +166,7 @@ class WatchService:
         Args:
             delay: Time in seconds to sleep
         """
-        with suppress(asyncio.TimeoutError):
+        with suppress(TimeoutError):
             await asyncio.wait_for(self._twitch._watching_restart.wait(), timeout=delay)
         self._twitch._watching_restart.clear()
 
