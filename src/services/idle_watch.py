@@ -36,6 +36,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger("TwitchDrops")
 
 IDLE_VISIT_SECONDS = 420
+# Twitch counts a stream for the watch streak only when it starts at least 30 minutes after the
+# last one ended: a restart within that gap is the same stream
+RESTART_SECONDS = 1800
 IDLE_TICK_SECONDS = 30
 STREAK_REASON = "WATCH_STREAK"
 CLAIM_REASON = "CLAIM"
@@ -78,6 +81,10 @@ class IdleWatchService:
         self._account: int | None = None
         # broadcast id -> channel id of finished visits
         self.visited: dict[int, int] = {}
+        # in memory only, for restarts: channel id -> (broadcast id, time) when pick() last saw it live,
+        # and channel id -> the broadcast whose visit ran to the end (bonus or full time)
+        self._seen: dict[int, tuple[int, float]] = {}
+        self._finished: dict[int, int] = {}
         # watch streak sharing: attempts per (milestone id, count); a key with all attempts used
         # is done (shared, or sent with an unknown outcome)
         self._share_tries: dict[tuple[str, int | None], int] = {}
@@ -264,6 +271,8 @@ class IdleWatchService:
         if self._account is not None:
             self.visited.clear()
             self._share_tries.clear()
+            self._seen.clear()
+            self._finished.clear()
         self._account = account
 
     def show_status(self) -> None:
@@ -678,8 +687,32 @@ class IdleWatchService:
         assert broadcast_id is not None  # live channels are online
         return broadcast_id
 
+    def _skip_restarts(self, live: list[Channel], ids: dict[int, int], now: float) -> None:
+        """Record as visited a new broadcast that continues a stream whose visit ran to the end.
+
+        The gap is counted from the last pick() that saw the old broadcast live, which is never after it
+        ended, so an unsure gap only gives a visit too many.
+        """
+        visit = self.visit
+        if visit is not None and (visit.done or now - visit.started >= IDLE_VISIT_SECONDS):
+            self._finished[visit.channel_id] = visit.broadcast_id
+        for channel in live:
+            broadcast_id, seen = ids[channel.id], self._seen.get(channel.id)
+            if (
+                seen is not None
+                and seen[0] != broadcast_id
+                and broadcast_id not in self.visited
+                and self._finished.get(channel.id) == seen[0]
+                and now - seen[1] < RESTART_SECONDS
+            ):
+                self.visited[broadcast_id] = channel.id
+                self._finished[channel.id] = broadcast_id
+                logger.info("Idle visit skipped: %s restarted its stream", channel.name)
+            self._seen[channel.id] = (broadcast_id, now)
+
     def pick(self, live: list[Channel], now: float) -> Channel | None:
         ids = {c.id: self._broadcast_id(c) for c in live}
+        self._skip_restarts(live, ids, now)
         visit = self.visit
         if visit is not None:
             if (

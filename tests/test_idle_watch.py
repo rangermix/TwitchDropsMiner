@@ -17,13 +17,13 @@ from src.config import MAX_CHANNELS, State, WebsocketTopic
 from src.core.client import Twitch
 from src.services import idle_watch as idle_mod
 from src.services.channel_service import ChannelService
-from src.services.idle_watch import IDLE_VISIT_SECONDS, IdleWatchService
+from src.services.idle_watch import IDLE_VISIT_SECONDS, RESTART_SECONDS, IdleWatchService
 from src.services.message_handlers import MessageHandlerService
 
 
 def fake(cid, broadcast, *, online=True, banned=False, login=None):
     return SimpleNamespace(
-        id=cid, login=login or f"c{cid}", online=online, banned=banned, ban_expires_at=None,
+        id=cid, login=login or f"c{cid}", name=login or f"c{cid}", online=online, banned=banned, ban_expires_at=None,
         broadcast_id=broadcast,
     )
 
@@ -725,6 +725,85 @@ async def test_visit_clock_pauses_while_the_loop_is_stopped(monkeypatch):
     assert svc.visit is not None and svc.visit.channel_id == 1
     assert now[0] - svc.visit.started == 60.0
     assert tw._watching is a
+
+
+def restarted(finish, gap, last_live=100):
+    """First listed channel 1 (already visited) and channel 2, whose visit ends by finish, is last seen live
+    at last_live and is back with a new broadcast gap seconds later; returns the pick and the service."""
+    svc, _ = service()
+    first, b = fake(1, 10), fake(2, 20)
+    svc.visited = {10: 1}
+    assert svc.pick([first, b], 0) is b
+    finish(svc)
+    svc.pick([first, b], last_live)
+    assert svc.pick([first], last_live + 30) is first
+    return svc.pick([first, fake(2, 21)], last_live + gap), svc
+
+
+def done(svc):
+    svc.visit.done = True
+
+
+def cut_short(svc):
+    pass  # the channel goes offline before the bonus comes and before its full time
+
+
+def test_restart_within_30_minutes_after_a_finished_visit_gets_no_visit():
+    # Twitch counts a broadcast that starts within 30 minutes of the last one's end as the same stream
+    picked, svc = restarted(done, 13 * 60)
+    assert picked.id == 1 and svc.visit is None
+    assert svc.visited[21] == 2
+
+
+def test_restart_after_a_visit_that_ran_its_full_time_gets_no_visit():
+    def full_time(svc):
+        svc.pick([fake(1, 10), fake(2, 20)], IDLE_VISIT_SECONDS)
+
+    picked, svc = restarted(full_time, 5 * 60, last_live=IDLE_VISIT_SECONDS + 10)
+    assert picked.id == 1 and svc.visit is None
+
+
+def test_restart_after_a_cut_short_visit_gets_a_visit():
+    # the bonus is still owed: Twitch paid it seconds after such a restart
+    picked, svc = restarted(cut_short, 9 * 60)
+    assert picked.id == 2 and svc.visit.broadcast_id == 21
+
+
+@pytest.mark.parametrize(("gap", "visited"), [(RESTART_SECONDS - 1, False), (RESTART_SECONDS, True)])
+def test_restart_gap_is_counted_from_the_last_tick_that_saw_the_stream_live(gap, visited):
+    picked, svc = restarted(done, gap)
+    assert (picked.id == 2) is visited
+
+
+def test_a_chain_of_quick_restarts_is_one_stream():
+    picked, svc = restarted(done, 60)
+    assert picked.id == 1
+    assert svc.pick([fake(1, 10)], 200) is not None
+    assert svc.pick([fake(1, 10), fake(2, 22)], 260).id == 1
+    assert svc.visit is None and svc.visited[22] == 2
+
+
+def test_new_broadcast_without_going_offline_after_a_done_visit_gets_no_visit():
+    svc, _ = service()
+    first, b = fake(1, 10), fake(2, 20)
+    svc.visited = {10: 1}
+    svc.pick([first, b], 0)
+    svc.visit.done = True
+    assert svc.pick([first, fake(2, 21)], 5) is first
+    assert svc.visit is None
+
+
+def test_account_switch_forgets_finished_streams():
+    svc, _ = service()
+    first, b = fake(1, 10), fake(2, 20)
+    svc._use_account(1)
+    svc.visited = {10: 1}
+    svc.pick([first, b], 0)
+    svc.visit.done = True
+    svc.pick([first, b], 5)
+    svc._use_account(2)
+    svc.visited = {10: 1}
+    assert svc.pick([first, fake(2, 21)], 10).id == 2  # the other account has not had this stream's bonus
 
 
 def test_visits_survive_a_tick_without_live_channels():
