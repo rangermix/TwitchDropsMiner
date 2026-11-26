@@ -394,11 +394,18 @@
                             <option value="smart" data-points-text="strategy_smart">Smart: of the two most voted outcomes, the one with fewer points when their votes are close, otherwise most voted</option>
                             <option value="most_voted" data-points-text="strategy_most_voted">Most voted: the outcome with the most users</option>
                             <option value="high_odds" data-points-text="strategy_high_odds">High odds: the outcome with the fewest points</option>
-                            <option value="favourite" data-points-text="strategy_favourite">Favourite: the outcome with the most points</option>
+                            <option value="favourite" data-points-text="strategy_favourite">Favourite: the outcome with the most points placed</option>
+                            <option value="fixed" data-points-text="strategy_fixed">Fixed: the outcome with the number set below</option>
                         </select>
                     </label>
                     <p id="points-setting-prediction_strategy-help" class="help-text" data-points-text="prediction_strategy_help">How the outcome is chosen. No strategy is known to beat the other viewers on average.</p>
                     <p id="points-setting-prediction_strategy-error" class="help-text" role="alert" hidden></p>
+                    <label>
+                        <span data-points-text="prediction_fixed_option">Outcome number for Fixed</span>
+                        <input type="number" id="points-setting-prediction_fixed_option" data-points-setting="prediction_fixed_option" min="1" max="10" step="1" inputmode="numeric" aria-describedby="points-setting-prediction_fixed_option-help" />
+                    </label>
+                    <p id="points-setting-prediction_fixed_option-help" class="help-text" data-points-text="prediction_fixed_option_help">Fixed bets on this outcome, counted from 1 in the order Twitch lists them. With fewer outcomes the bet is skipped.</p>
+                    <p id="points-setting-prediction_fixed_option-error" class="help-text" role="alert" hidden></p>
                     <label>
                         <span data-points-text="prediction_percent">Stake in percent of the balance</span>
                         <input type="number" id="points-setting-prediction_percent" data-points-setting="prediction_percent" min="1" max="100" step="1" inputmode="numeric" aria-describedby="points-setting-prediction_percent-help" />
@@ -411,6 +418,46 @@
                     </label>
                     <p id="points-setting-prediction_max_points-help" class="help-text" data-points-text="prediction_max_points_help">The stake never exceeds this, from 10 to 250000. A stake below 10 points is skipped.</p>
                     <p id="points-setting-prediction_max_points-error" class="help-text" role="alert" hidden></p>
+                    <label>
+                        <span data-points-text="prediction_min_balance">Lowest balance to bet</span>
+                        <input type="number" id="points-setting-prediction_min_balance" data-points-setting="prediction_min_balance" min="0" max="10000000" step="1" inputmode="numeric" aria-describedby="points-setting-prediction_min_balance-help" />
+                    </label>
+                    <p id="points-setting-prediction_min_balance-help" class="help-text" data-points-text="prediction_min_balance_help">No bet while the channel's points balance is below this, from 0 to 10000000. 0 turns the check off.</p>
+                    <p id="points-setting-prediction_min_balance-error" class="help-text" role="alert" hidden></p>
+                    <label>
+                        <span data-points-text="prediction_min_voters">Fewest voters to bet</span>
+                        <input type="number" id="points-setting-prediction_min_voters" data-points-setting="prediction_min_voters" min="0" max="1000000" step="1" inputmode="numeric" aria-describedby="points-setting-prediction_min_voters-help" />
+                    </label>
+                    <p id="points-setting-prediction_min_voters-help" class="help-text" data-points-text="prediction_min_voters_help">No bet unless at least this many users have voted, over all outcomes, from 0 to 1000000. 0 turns the check off.</p>
+                    <p id="points-setting-prediction_min_voters-error" class="help-text" role="alert" hidden></p>
+                    <label>
+                        <span data-points-text="prediction_min_odds">Lowest odds to bet</span>
+                        <input type="number" id="points-setting-prediction_min_odds" data-points-setting="prediction_min_odds" min="1" max="100" step="0.01" inputmode="decimal" aria-describedby="points-setting-prediction_min_odds-help" />
+                    </label>
+                    <p id="points-setting-prediction_min_odds-help" class="help-text" data-points-text="prediction_min_odds_help">No bet unless the chosen outcome pays at least this many points per point staked (all points divided by its points), from 1 to 100. An outcome without points counts as infinite odds; with no points at all the odds are unknown and the bet is skipped. 1 turns the check off.</p>
+                    <p id="points-setting-prediction_min_odds-error" class="help-text" role="alert" hidden></p>
+                    <label>
+                        <span data-points-text="prediction_timing">Bet time</span>
+                        <select id="points-setting-prediction_timing" data-points-setting="prediction_timing" aria-describedby="points-setting-prediction_timing-help">
+                            <option value="before_close" data-points-text="timing_before_close">Before close: a set number of seconds before the window closes</option>
+                            <option value="after_open" data-points-text="timing_after_open">After open: a set number of seconds after the prediction opens</option>
+                            <option value="percent" data-points-text="timing_percent">Percent: a share of the window after the prediction opens</option>
+                        </select>
+                    </label>
+                    <p id="points-setting-prediction_timing-help" class="help-text" data-points-text="prediction_timing_help">When the bet is placed, never later than 1 second before the window closes. The time is set when the prediction is first seen; a later change does not move a bet that is already waiting.</p>
+                    <p id="points-setting-prediction_timing-error" class="help-text" role="alert" hidden></p>
+                    <label>
+                        <span data-points-text="prediction_delay_seconds">Seconds for the bet time</span>
+                        <input type="number" id="points-setting-prediction_delay_seconds" data-points-setting="prediction_delay_seconds" min="0" max="3600" step="1" inputmode="numeric" aria-describedby="points-setting-prediction_delay_seconds-help" />
+                    </label>
+                    <p id="points-setting-prediction_delay_seconds-help" class="help-text" data-points-text="prediction_delay_seconds_help">Seconds before the close (Before close) or after the open (After open), from 0 to 3600. Percent does not use it.</p>
+                    <p id="points-setting-prediction_delay_seconds-error" class="help-text" role="alert" hidden></p>
+                    <label>
+                        <span data-points-text="prediction_timer_percent">Percent of the window</span>
+                        <input type="number" id="points-setting-prediction_timer_percent" data-points-setting="prediction_timer_percent" min="1" max="99" step="1" inputmode="numeric" aria-describedby="points-setting-prediction_timer_percent-help" />
+                    </label>
+                    <p id="points-setting-prediction_timer_percent-help" class="help-text" data-points-text="prediction_timer_percent_help">Share of the window after which the bet is placed with Percent, from 1 to 99. The other times do not use it.</p>
+                    <p id="points-setting-prediction_timer_percent-error" class="help-text" role="alert" hidden></p>
                 </section>
             </div>
         </div>

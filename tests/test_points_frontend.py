@@ -100,6 +100,9 @@ def test_every_points_option_has_a_control_matching_the_server_keys():
     for key, (low, high) in PointsSettings.RANGES.items():
         assert f'data-points-setting="{key}" min="{low}" max="{high}"' in HTML, key
         assert re.search(rf"{key}: \{{default: \d+, min: {low}, max: {high}\}}", POINTS_SETTINGS_JS), key
+    for key, (low, high) in PointsSettings.NUMBERS.items():
+        assert f'data-points-setting="{key}" min="{low:g}" max="{high:g}" step="0.01"' in HTML, key
+        assert re.search(rf"{key}: \{{default: {default_settings[key]}, min: {low:g}, max: {high:g}, decimals: 2\}}", POINTS_SETTINGS_JS), key
     for key in keys:
         default = default_settings[key]
         assert re.search(rf"{key}: \{{default: {re.escape(json.dumps(default))}", POINTS_SETTINGS_JS.replace("'", '"')), key
@@ -276,6 +279,13 @@ for (const key of ['follow_raids', 'join_chat', 'predictions_enabled']) assert.e
 assert.equal(control('prediction_strategy').value, 'smart');
 assert.equal(control('prediction_percent').value, '5');
 assert.equal(control('prediction_max_points').value, '1000');
+for (const [key, value] of [['prediction_min_balance', '0'], ['prediction_min_voters', '0'], ['prediction_min_odds', '1'],
+        ['prediction_timing', 'before_close'], ['prediction_delay_seconds', '6'], ['prediction_timer_percent', '50'],
+        ['prediction_fixed_option', '1']]) assert.equal(control(key).value, value, key);
+renderPointsSettings({prediction_min_odds: 2.5, prediction_timing: 'percent', prediction_fixed_option: 4});
+assert.equal(control('prediction_min_odds').value, '2.5');
+assert.equal(control('prediction_timing').value, 'percent');
+assert.equal(control('prediction_fixed_option').value, '4');
 renderPointsSettings({idle_priority: 'subscribed', follow_raids: true, claim_moments: false, prediction_percent: 40,
     prediction_max_points: 'bad'});
 assert.equal(control('idle_priority').value, 'subscribed');
@@ -291,9 +301,18 @@ assert.equal(control('prediction_max_points').value, '1000', 'a wrong type falls
     ("prediction_percent", "250", 100), ("prediction_percent", "0", 1), ("prediction_percent", "-7", 1),
     ("prediction_percent", "12.9", 12), ("prediction_max_points", "5", 10), ("prediction_max_points", "9999999", 250000),
     ("prediction_max_points", "2500", 2500), ("prediction_max_points", "1e3", 1000 + 0),
+    ("prediction_min_balance", "-5", 0), ("prediction_min_balance", "99999999", 10_000_000),
+    ("prediction_min_balance", "300", 300), ("prediction_min_voters", "2000000", 1_000_000),
+    ("prediction_min_voters", "7.9", 7), ("prediction_delay_seconds", "-1", 0), ("prediction_delay_seconds", "4000", 3600),
+    ("prediction_delay_seconds", "12", 12), ("prediction_timer_percent", "0", 1), ("prediction_timer_percent", "100", 99),
+    ("prediction_timer_percent", "75", 75), ("prediction_fixed_option", "0", 1), ("prediction_fixed_option", "11", 10),
+    ("prediction_fixed_option", "3", 3),
+    # the odds keep two decimals, clamp to 1..100 and a value that rounds to the default sends nothing
+    ("prediction_min_odds", "2.456", 2.46), ("prediction_min_odds", "2.5", 2.5), ("prediction_min_odds", "0.5", 1),
+    ("prediction_min_odds", "150", 100), ("prediction_min_odds", "1.004", 1), ("prediction_min_odds", "1e1", 10),
 ])
 def test_number_inputs_clamp_before_saving(key, shown, sent):
-    expect_request = sent != {"prediction_percent": 5, "prediction_max_points": 1000}[key]
+    expect_request = sent != default_settings[key]
     run_points(f"""
 const key = {json.dumps(key)};
 const calls = [];

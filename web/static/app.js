@@ -2811,6 +2811,13 @@ const POINTS_SETTINGS = {
     prediction_strategy: {default: 'smart'},
     prediction_percent: {default: 5, min: 1, max: 100},
     prediction_max_points: {default: 1000, min: 10, max: 250000},
+    prediction_min_balance: {default: 0, min: 0, max: 10000000},
+    prediction_min_voters: {default: 0, min: 0, max: 1000000},
+    prediction_min_odds: {default: 1.0, min: 1, max: 100, decimals: 2},
+    prediction_timing: {default: 'before_close'},
+    prediction_delay_seconds: {default: 6, min: 0, max: 3600},
+    prediction_timer_percent: {default: 50, min: 1, max: 99},
+    prediction_fixed_option: {default: 1, min: 1, max: 10},
 };
 let pointsPauseBusy = false;
 
@@ -2924,7 +2931,9 @@ async function savePointsSetting(key) {
     if (typeof spec.default === 'boolean') requested = input.checked;
     else if (spec.min === undefined) requested = input.value;
     else {
-        const number = input.value.trim() === '' ? NaN : Math.trunc(Number(input.value));
+        const typed = input.value.trim() === '' ? NaN : Number(input.value);
+        // whole numbers, or rounded to the decimals of the spec (the odds)
+        const number = spec.decimals === undefined ? Math.trunc(typed) : Number(typed.toFixed(spec.decimals));
         // clamp before saving, so the shown value is the saved one
         requested = Number.isFinite(number) ? Math.min(spec.max, Math.max(spec.min, number)) : confirmed;
     }

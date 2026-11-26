@@ -517,10 +517,28 @@ class GUIPoints(TypedDict):
     strategy_most_voted: str
     strategy_high_odds: str
     strategy_favourite: str
+    strategy_fixed: str
+    prediction_fixed_option: str
+    prediction_fixed_option_help: str
     prediction_percent: str
     prediction_percent_help: str
     prediction_max_points: str
     prediction_max_points_help: str
+    prediction_min_balance: str
+    prediction_min_balance_help: str
+    prediction_min_voters: str
+    prediction_min_voters_help: str
+    prediction_min_odds: str
+    prediction_min_odds_help: str
+    prediction_timing: str
+    prediction_timing_help: str
+    timing_before_close: str
+    timing_after_open: str
+    timing_percent: str
+    prediction_delay_seconds: str
+    prediction_delay_seconds_help: str
+    prediction_timer_percent: str
+    prediction_timer_percent_help: str
     reasons: GUIPointsReasons
 
 
