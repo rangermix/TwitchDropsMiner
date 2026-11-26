@@ -1486,9 +1486,12 @@ live in `gui.points` (English text in every locale until translated).
   `NICK <login>`, `JOIN #<channel>` and `PONG`; the login comes from one
   `currentUser { login }` read per account and must match `[a-z0-9_]{1,25}`. It leaves on
   a switch or stop by closing the socket, reconnects with `ExponentialBackoff` up to
-  `CHAT_BACKOFF_MAX` (300 s) while still wanted (checked before every connect), treats
-  600 s of silence or a `NOTICE *` as a lost connection, and logs only exception types,
-  never the token or IRC lines.
+  `CHAT_BACKOFF_MAX` (300 s) while still wanted (checked before every connect), and
+  resets the backoff only after a connection stayed up `CHAT_STABLE_SECONDS` (60). 600 s
+  of silence is a lost connection. A `NOTICE *` (refused login) stores `(login, token)`
+  in `_refused`: no connect with that pair again, so only a new token, `reset()` (auth
+  change) or a `follow()` while `join_chat` is off (the settings change pokes a tick)
+  allows the next try. It logs only exception types, never the token or IRC lines.
 - The `CommunityPoints` user topic is subscribed at login (`BASE_TOPICS = 3`), so at
   most 198 channels are tracked, drop and idle channels together. Idle channels over
   the limit are skipped with a warning. The event topics above are extra and live only

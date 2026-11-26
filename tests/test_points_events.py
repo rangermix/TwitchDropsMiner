@@ -848,15 +848,77 @@ async def test_chat_reconnects_with_backoff_and_never_logs_the_token(monkeypatch
     monkeypatch.setattr(chat_mod.asyncio, "sleep", fast_sleep)
     error = aiohttp.ClientConnectionError(f"refused for oauth:{TOKEN}")
     login_error = MinerException(f"auth failed {TOKEN}")
-    refused = FakeChat([text(":tmi.twitch.tv NOTICE * :Login authentication failed")])
-    svc, tw, a, _, session, chat = chat_setup([error, refused, login_error, FakeChat([text(WELCOME)]), RuntimeError("closed")])
+    svc, tw, a, _, session, chat = chat_setup([error, login_error, FakeChat([text(WELCOME)]), RuntimeError("closed")])
     with caplog.at_level(logging.DEBUG):
         await chat._run(a)
-    assert session.ws_connect.call_count == 5
-    assert all(0 < s <= chat_mod.CHAT_BACKOFF_MAX for s in sleeps) and len(sleeps) == 4
-    assert "ClientConnectionError" in caplog.text and "refused the login" in caplog.text and "MinerException" in caplog.text
+    assert session.ws_connect.call_count == 4
+    assert all(0 < s <= chat_mod.CHAT_BACKOFF_MAX for s in sleeps) and len(sleeps) == 3
+    assert "ClientConnectionError" in caplog.text and "MinerException" in caplog.text
     assert TOKEN not in caplog.text
     assert logged(tw) == ["chat_joined", "chat_left"]
+
+
+@pytest.mark.asyncio
+async def test_chat_backoff_starts_over_only_after_a_stable_connection(monkeypatch):
+    sleeps, clock = [], [0.0]
+
+    async def fast_sleep(delay):
+        sleeps.append(delay)
+
+    class Held(FakeChat):
+        """Stays up for the given seconds, then closes."""
+
+        def __init__(self, seconds):
+            super().__init__([text(WELCOME)])
+            self.seconds = seconds
+
+        async def receive(self, timeout=None):
+            if self.messages:
+                return self.messages.pop(0)
+            clock[0] += self.seconds
+            return CLOSED
+
+    monkeypatch.setattr(chat_mod.asyncio, "sleep", fast_sleep)
+    monkeypatch.setattr(chat_mod.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr("src.utils.backoff.random.uniform", lambda a, b: 1)  # no variance
+    stable = chat_mod.CHAT_STABLE_SECONDS
+    # joins that drop at once (also after 59 s) keep the wait growing; one that stayed up 60 s starts it over
+    svc, tw, a, _, session, chat = chat_setup([Held(0), Held(0), Held(stable - 1), Held(stable), Held(0), RuntimeError()])
+    await chat._run(a)
+    assert sleeps == [1, 2, 4, 1, 2]
+
+
+@pytest.mark.asyncio
+async def test_chat_refused_login_is_not_retried_until_the_account_token_or_setting_changes(monkeypatch, caplog):
+    sleeps = []
+
+    async def fast_sleep(delay):
+        sleeps.append(delay)
+
+    monkeypatch.setattr(chat_mod.asyncio, "sleep", fast_sleep)
+    notice = ":tmi.twitch.tv NOTICE * :Login authentication failed"
+    svc, tw, a, _, session, chat = chat_setup([FakeChat([text(notice)]) for _ in range(4)])
+    with caplog.at_level(logging.DEBUG):
+        await chat._run(a)
+        assert session.ws_connect.call_count == 1 and sleeps == []
+        assert "refused the login" in caplog.text and TOKEN not in caplog.text and "NOTICE" not in caplog.text
+        await chat._run(a)  # the next tick: the same account and token are not sent again
+        chat.follow(None)  # a switch or pause with the option still on keeps the refusal
+        await chat._run(a)
+        assert session.ws_connect.call_count == 1
+        tw.get_auth.return_value = SimpleNamespace(access_token="renewed-token")
+        await chat._run(a)  # a new token
+        assert session.ws_connect.call_count == 2
+        await chat._run(a)  # refused again: blocked with the new token too
+        assert session.ws_connect.call_count == 2
+        tw.settings.join_chat = False
+        chat.follow(None)  # the tick with the option off
+        tw.settings.join_chat = True
+        await chat._run(a)
+        assert session.ws_connect.call_count == 3
+        chat.reset()  # an account change
+        await chat._run(a)
+        assert session.ws_connect.call_count == 4 and sleeps == []
 
 
 @pytest.mark.asyncio
@@ -888,7 +950,7 @@ async def test_chat_does_not_connect_when_not_wanted(case):
 @pytest.mark.parametrize("login", [None, "", "Me", "me\r\nPRIVMSG #a :hi", "x" * 26])
 async def test_chat_needs_a_valid_account_login(login):
     svc, tw, a, _, session, chat = chat_setup([FakeChat([])], login=login)
-    assert await chat._session(a) is False
+    assert await chat._session(a) is True  # retried with the backoff, like a lost connection
     session.ws_connect.assert_not_called()
 
 

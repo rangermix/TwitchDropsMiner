@@ -365,7 +365,10 @@ use goes to drop mining instead.
   chat websocket with your session, and leaves it when TDM switches channels, stops idle
   watching or pauses channel points. TDM never sends chat messages. Twitch lists no
   channel points for chat, so this only shows you in the chat's viewer list. A lost
-  connection is retried with a growing wait of at most 5 minutes.
+  connection is retried with a growing wait of at most 5 minutes; the wait starts over
+  only after a connection stayed up for a minute. When Twitch refuses the chat login,
+  TDM does not try again until the account or its session token changes, or until
+  `join_chat` is turned off and on again.
 - Raids, moments, predictions and chat follow the same rules as the bonus claim: only
   while idle watching, only on listed live channels, and never on a channel that drops
   can use, while channel points are paused or outside mining hours. TDM follows their
