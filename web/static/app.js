@@ -3079,6 +3079,8 @@ const idleOptionsOpen = new Set();
 let idleOptionsSaving = false;
 // login -> options changed while a save was in flight ({} clears them); sent after it, the last change wins
 const idleOptionsQueued = new Map();
+// the same for the change being sent; it stays on top of the confirmed options until the reply
+let idleOptionsInFlight = new Map();
 let followImportBusy = false;
 
 function globalChannelOption(name) {
@@ -3298,7 +3300,7 @@ async function addIdleChannel() {
 // The confirmed options with the queued changes on top: what the next save sends and the panels show.
 function withQueuedOptions(confirmed) {
     const next = {...confirmed};
-    for (const [login, options] of idleOptionsQueued) {
+    for (const [login, options] of [...idleOptionsInFlight, ...idleOptionsQueued]) {
         if (Object.keys(options).length) next[login] = options;
         else delete next[login];
     }
@@ -3318,6 +3320,7 @@ async function saveChannelOptions(channel, chosen) {
     let saved = false;
     while (idleOptionsQueued.size) {
         const next = withQueuedOptions(state.settings.idle_channel_options || {});
+        idleOptionsInFlight = new Map(idleOptionsQueued);
         idleOptionsQueued.clear();
         saved = false;
         try {
@@ -3329,10 +3332,12 @@ async function saveChannelOptions(channel, chosen) {
                 throw new Error(message);
             updateSettingsUI(data.settings, false, ['idle_channel_options']);
             saved = true;
+            error.hidden = true;
         } catch (_) {
             reportSettingsError(error, message);
             error.hidden = false;
         }
+        idleOptionsInFlight = new Map();
     }
     idleOptionsSaving = false;
     renderIdleChannels();

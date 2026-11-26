@@ -359,3 +359,44 @@ assert.deepEqual(state.settings.idle_channels, ['alpha', 'beta']);
 updateSettingsUI({idle_channels: ['gamma']}, true);  // an authoritative reply replaces it
 assert.deepEqual(state.settings.idle_channels, ['gamma']);
 """)
+
+
+def test_a_later_successful_queued_save_hides_the_error():
+    run_idle(r"""
+state.settings.idle_channel_options = {};
+let calls = 0, release;
+global.fetch = async (url, options) => {
+    calls += 1;
+    if (calls === 1) { await new Promise(resolve => { release = resolve; }); return {ok: false}; }
+    const sent = JSON.parse(options.body).idle_channel_options;
+    return {ok: true, json: async () => ({success: true, settings: {idle_channel_options: sent}})};
+};
+const first = saveChannelOptions('alpha', {favorite: true});
+await tick();
+await saveChannelOptions('beta', {favorite: true});  // queued behind the first
+release();
+assert.equal(await first, true);
+assert.equal(calls, 2);
+assert.equal(error().hidden, true);
+""")
+
+
+def test_the_change_in_flight_survives_a_rerender_until_the_reply():
+    run_idle(r"""
+state.settings.idle_channel_options = {};
+let release, sent = [];
+global.fetch = async (url, options) => {
+    sent.push(JSON.parse(options.body).idle_channel_options);
+    if (sent.length === 1) await new Promise(resolve => { release = resolve; });
+    const body = sent[sent.length - 1];
+    return {ok: true, json: async () => ({success: true, settings: {idle_channel_options: body}})};
+};
+const first = saveChannelOptions('alpha', {favorite: true});
+await tick();
+assert.deepEqual(withQueuedOptions(state.settings.idle_channel_options), {alpha: {favorite: true}});
+await saveChannelOptions('beta', {favorite: true});
+release();
+await first;
+assert.deepEqual(sent[1], {alpha: {favorite: true}, beta: {favorite: true}});
+assert.deepEqual(withQueuedOptions({}), {});  // nothing stays after the replies
+""")
