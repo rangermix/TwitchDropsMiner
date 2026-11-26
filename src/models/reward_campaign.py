@@ -31,6 +31,18 @@ NO_READING: tuple[object, ...] = (None, None, None, None)
 MAX_GQL_INT = 2**31 - 1
 
 
+def _reward_image(reward: JsonType, campaign: JsonType) -> str | None:
+    """First usable artwork: reward thumbnail, reward banner, then the campaign image.
+
+    Some rewards (GTA DVD Chest) have no thumbnail. Malformed fallbacks are ignored.
+    """
+    for image in (reward.get("thumbnailImage"), reward.get("bannerImage"), campaign.get("image")):
+        url = image.get("image1xURL") if isinstance(image, dict) else None
+        if isinstance(url, str) and url.strip():
+            return url
+    return None
+
+
 def _reward_timestamp(value: object, *, assume_utc: bool = False) -> datetime | None:
     if not isinstance(value, str):
         return None
@@ -376,9 +388,7 @@ class RewardCampaign(DropsCampaign):
                                     "distributionType": (
                                         "BADGE" if reward["id"] in (badge_rewards or ()) else None
                                     ),
-                                    "imageAssetURL": (reward.get("thumbnailImage") or {}).get(
-                                        "image1xURL"
-                                    ),
+                                    "imageAssetURL": _reward_image(reward, data),
                                 }
                             }
                             for reward in group["rewards"]
