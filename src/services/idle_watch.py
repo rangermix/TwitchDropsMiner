@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 
 import aiohttp
 
+from src.api.gql_client import private_gql_discovery
 from src.config import GQL_OPERATIONS, MAX_CHANNELS, GQLRawQuery, State
 from src.exceptions import ExitRequest, GQLException, MinerException
 from src.i18n import _
@@ -39,6 +40,10 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("TwitchDrops")
+# a failed AvailableDrops read of a new idle channel; anything else is a bug and propagates
+DROPS_READ_ERRORS = (
+    MinerException, aiohttp.ClientError, TimeoutError, KeyError, TypeError, IndexError, ValueError,
+)
 
 IDLE_VISIT_SECONDS = 420
 # Twitch counts a stream for the watch streak only when it starts at least 30 minutes after the
@@ -927,6 +932,26 @@ class IdleWatchService:
         ops: list[GQLRequest] = [GQL_OPERATIONS["GetStreamInfo"].with_variables({"channel": n}) for n in batch]
         return await self._send_split(ops)
 
+    async def _check_drops(self, channels: list[Channel]) -> None:
+        """Set the drops flag of new live channels from AvailableDrops; False when the read fails."""
+        live = [c for c in channels if c._stream is not None]
+        with private_gql_discovery():
+            results = await asyncio.gather(
+                *(c.fetch_drops_enabled(c.game) for c in live), return_exceptions=True,
+            )
+        failed: list[str] = []
+        for channel, result in zip(live, results, strict=True):
+            if isinstance(result, BaseException):
+                if not isinstance(result, DROPS_READ_ERRORS) or isinstance(result, ExitRequest):
+                    raise result
+                failed.append(type(result).__name__)
+            if channel._stream is not None:
+                # a false True would hand the channel to drop mining; CHANNELS_FETCH still finds a real one
+                channel._stream.drops_enabled = result is True
+        if failed:
+            logger.warning("Drops check failed for %d idle channels (%s), treated as without drops",
+                           len(failed), failed[0])
+
     async def track(self) -> list[Channel]:
         """Look up listed logins not tracked yet and add them; whole-request failures propagate."""
         twitch = self._twitch
@@ -959,7 +984,8 @@ class IdleWatchService:
                     (c for c in new if c.id == channel_id), None,
                 )
                 if channel is None:
-                    channel = Channel(twitch, id=channel_id, login=login)
+                    # the stream's default drops flag is True: every later stream check asks AvailableDrops
+                    channel = Channel(twitch, id=channel_id, login=login, verify_drops=True)
                     if user.get("stream"):
                         channel.external_update(user, [])
                     new.append(channel)
@@ -974,6 +1000,7 @@ class IdleWatchService:
             allowed = await twitch._channel_service.filter_banned_channels(new)
             banned = {c.id for c in new} - {c.id for c in allowed}
             new = allowed
+        await self._check_drops(new)
         for channel in new:
             twitch.channels[channel.id] = channel
             twitch.gui.channels.display(channel, add=True)
