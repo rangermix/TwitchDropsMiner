@@ -268,7 +268,8 @@ idle watching also runs while a drop is mined. TDM then watches one listed chann
 to the drop channel, on a second watch of its own. It uses only listed channels that
 drops cannot use and whose current stream lists no drops campaign at all, earnable or
 not (TDM asks Twitch when the stream starts and again every 15 minutes, so a campaign
-that starts mid-stream can go unnoticed for up to 15 minutes; while the first check has
+that starts mid-stream can go unnoticed for up to 15 minutes, or longer while the repeat
+check keeps failing, because the last answer is kept; while the first check has
 no answer, or failed, the channel is not used, and a failed check is retried after 2
 minutes). Drop mining keeps its channel, and the second watch is designed
 not to take drop progress (the drops checks above); this has not run live. While drop

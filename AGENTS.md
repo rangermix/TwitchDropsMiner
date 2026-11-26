@@ -1554,7 +1554,8 @@ live in `gui.points`, translated in every locale.
   on for the channel (`option()`: its override, else the global setting) while the loop runs
   and points are not paused: `predictions-channel-v1.<id>` (`predictions_enabled`) and
   `community-moments-channel-v1.<id>` (`claim_moments`) for every live listed channel,
-  `predictions-user-v1.<user>` while any of them has predictions on, and
+  `predictions-user-v1.<user>` while any of them has predictions on or a placed bet waits
+  for its result (`Predictions.open_bets`), and
   `raid.<id>` (`follow_raids`) for `watched` only (the side channel in side mode). A turned-off option, an offline or
   unlisted channel or a new pick drops its topics on the next tick; `stop()` (right away,
   so the next state has the room) and the end of `_run` (unless a newer run replaced it)

@@ -857,7 +857,7 @@ class IdleWatchService:
 
         The loop runs, points are not paused, mining time, the option is on, and the channel is
         listed, live, not banned and not one drops can use; in side mode also not the drop channel
-        and with drops off (side_candidate).
+        and its stream lists no drops campaign (side_candidate).
         """
         tw = self._twitch
         return (
