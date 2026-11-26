@@ -119,7 +119,7 @@ def test_normalize_rejects_non_ascii_before_lowering(login):
 
 
 def _manager():
-    stored = SimpleNamespace(idle_channels=[], claim_channel_points=True, share_watch_streaks=True, save=MagicMock())
+    stored = SimpleNamespace(idle_channels=[], idle_channel_options={}, claim_channel_points=True, share_watch_streaks=True, save=MagicMock())
     on_change = MagicMock()
     console = MagicMock()
     manager = SettingsManager(SimpleNamespace(emit=AsyncMock()), stored, console, on_change)
@@ -158,7 +158,7 @@ def test_settings_update_saves_and_reruns_idle_step_without_games_update(caplog)
 
 def test_gui_manager_passes_idle_list_changes_to_the_client():
     twitch = MagicMock(spec=Twitch)
-    twitch.settings = SimpleNamespace(idle_channels=[], save=MagicMock())
+    twitch.settings = SimpleNamespace(idle_channels=[], idle_channel_options={}, save=MagicMock())
     gui = WebGUIManager(twitch)
     _update(gui.settings, {"idle_channels": ["Foo"]})
     assert twitch.settings.idle_channels == ["foo"]
