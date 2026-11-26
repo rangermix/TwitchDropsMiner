@@ -14,7 +14,7 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, StrictBool, StrictInt, ValidationInfo, field_validator
+from pydantic import BaseModel, StrictBool, StrictFloat, StrictInt, ValidationInfo, field_validator
 
 from src.config.paths import DATA_DIR
 from src.config.reward_priority import RewardPriority
@@ -106,6 +106,13 @@ class SettingsUpdate(BaseModel):
     prediction_strategy: str | None = None
     prediction_percent: StrictInt | None = None
     prediction_max_points: StrictInt | None = None
+    prediction_min_balance: StrictInt | None = None
+    prediction_min_voters: StrictInt | None = None
+    prediction_min_odds: StrictInt | StrictFloat | None = None
+    prediction_timing: str | None = None
+    prediction_delay_seconds: StrictInt | None = None
+    prediction_timer_percent: StrictInt | None = None
+    prediction_fixed_option: StrictInt | None = None
     claim_moments: StrictBool | None = None
     join_chat: StrictBool | None = None
     proxy: str | None = None

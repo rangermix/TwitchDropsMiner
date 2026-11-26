@@ -428,15 +428,32 @@ def test_amount(balance, percent, maximum, expected):
     assert PredictionStrategy.amount(balance, percent, maximum) == expected
 
 
-@pytest.mark.parametrize(("created", "window", "expected"), [
-    (-60, 120, 54),
-    (0, 3, 0),  # less than the delay left: bet right away
-    (-600, 120, 0),
-])
-def test_delay(created, window, expected):
+def delay_of(event, timing="before_close", seconds=6, percent=50):
+    return pred_mod.Predictions._delay(event, timing, seconds, percent)
+
+
+def started(created, window):
     start = (datetime.now(timezone.utc) + timedelta(seconds=created)).isoformat()
-    delay = pred_mod.Predictions._delay({"created_at": start, "prediction_window_seconds": window})
-    assert delay == pytest.approx(expected, abs=1)
+    return {"created_at": start, "prediction_window_seconds": window}
+
+
+@pytest.mark.parametrize(("created", "window", "timing", "seconds", "percent", "expected"), [
+    (-60, 120, "before_close", 6, 50, 54),
+    (0, 3, "before_close", 6, 50, 0),  # less than the delay left: bet right away
+    (-600, 120, "before_close", 6, 50, 0),
+    (0, 120, "before_close", 0, 50, 119),  # never later than 1 second before the lock
+    (0, 120, "before_close", 5000, 50, 0),
+    (-10, 120, "after_open", 30, 50, 20),
+    (-50, 120, "after_open", 30, 50, 0),  # already past
+    (0, 120, "after_open", 3600, 50, 119),  # too long: just before the lock
+    (-10, 120, "after_open", 0, 50, 0),
+    (0, 120, "percent", 6, 25, 30),
+    (-40, 120, "percent", 6, 25, 0),
+    (0, 120, "percent", 6, 99, 118.8),
+    (0, 1, "percent", 6, 50, 0),  # a 1 second window: the clamp is the start
+])
+def test_delay(created, window, timing, seconds, percent, expected):
+    assert delay_of(started(created, window), timing, seconds, percent) == pytest.approx(expected, abs=1)
 
 
 @pytest.mark.parametrize("event", [
@@ -447,13 +464,14 @@ def test_delay(created, window, expected):
     {"created_at": "2026-11-26T12:00:00Z", "prediction_window_seconds": "60"},
     {"created_at": "2026-11-26T12:00:00Z", "prediction_window_seconds": True},
 ])
-def test_delay_of_a_malformed_event_is_none(event):
-    assert pred_mod.Predictions._delay(event) is None
+@pytest.mark.parametrize("timing", ["before_close", "after_open", "percent"])
+def test_delay_of_a_malformed_event_is_none(event, timing):
+    assert delay_of(event, timing) is None
 
 
 def test_delay_reads_nanosecond_timestamps():
     start = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.123456789Z")
-    assert pred_mod.Predictions._delay({"created_at": start, "prediction_window_seconds": 60}) == pytest.approx(54, abs=2)
+    assert delay_of({"created_at": start, "prediction_window_seconds": 60}) == pytest.approx(54, abs=2)
 
 
 # --- predictions ---
@@ -486,12 +504,11 @@ async def test_a_bet_is_placed_once_with_the_stake_and_single_attempt():
 
 
 @pytest.mark.asyncio
-async def test_the_bet_uses_the_latest_outcomes_and_the_max_points(monkeypatch):
-    monkeypatch.setattr(pred_mod, "PREDICTION_DELAY_SECONDS", 0.95)
-    svc, tw, *_ = setup(reply=BET_OK, prediction_strategy="most_voted", prediction_max_points=300)
+async def test_the_bet_uses_the_latest_outcomes_and_the_max_points():
+    svc, tw, *_ = setup(reply=BET_OK, prediction_delay_seconds=1, prediction_strategy="most_voted", prediction_max_points=300)
     svc.balances[2] = 10**7
-    await svc.events.predictions.process_event(2, event(window=1, ago=0, pairs=((10, 1), (20, 1))))
-    await svc.events.predictions.process_event(2, event(window=1, ago=0, pairs=((30, 1), (20, 1))))
+    await svc.events.predictions.process_event(2, event(window=2, ago=0.95, pairs=((10, 1), (20, 1))))
+    await svc.events.predictions.process_event(2, event(window=2, ago=0.95, pairs=((30, 1), (20, 1))))
     await asyncio.sleep(0.2)
     [op] = sent(tw)
     assert op["variables"]["input"]["outcomeID"] == "o0"
@@ -500,11 +517,10 @@ async def test_the_bet_uses_the_latest_outcomes_and_the_max_points(monkeypatch):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("status", ["LOCKED", "CANCELED", "RESOLVED"])
-async def test_an_event_that_ends_before_the_timer_gets_no_bet(monkeypatch, status):
-    monkeypatch.setattr(pred_mod, "PREDICTION_DELAY_SECONDS", 0.95)
-    svc, tw, *_ = setup(reply=BET_OK)
-    await svc.events.predictions.process_event(1, event(window=1, ago=0))
-    await svc.events.predictions.process_event(1, event(status=status, window=1, ago=0))
+async def test_an_event_that_ends_before_the_timer_gets_no_bet(status):
+    svc, tw, *_ = setup(reply=BET_OK, prediction_delay_seconds=1)
+    await svc.events.predictions.process_event(1, event(window=2, ago=0.95))
+    await svc.events.predictions.process_event(1, event(status=status, window=2, ago=0.95))
     await asyncio.sleep(0.2)
     assert sent(tw) == []
     assert svc.events.predictions._timers == {}
@@ -514,7 +530,7 @@ async def test_an_event_that_ends_before_the_timer_gets_no_bet(monkeypatch, stat
 async def test_a_status_change_seen_only_at_send_time_refuses_the_bet():
     svc, tw, *_ = setup(reply=BET_OK)
     preds = svc.events.predictions
-    message = event(window=1, ago=0)
+    message = event(window=2, ago=0.95)
     await preds.process_event(1, message)
     message["data"]["event"]["status"] = "LOCKED"  # the stored object changed without a message
     await preds.bet("e1")
@@ -664,34 +680,32 @@ def made(event_id="e1"):
 
 
 @pytest.mark.asyncio
-async def test_a_bet_the_account_made_elsewhere_stops_the_bet(monkeypatch):
-    monkeypatch.setattr(pred_mod, "PREDICTION_DELAY_SECONDS", 0.95)
-    svc, tw, *_ = setup(reply=BET_OK)
+async def test_a_bet_the_account_made_elsewhere_stops_the_bet():
+    svc, tw, *_ = setup(reply=BET_OK, prediction_delay_seconds=1)
     preds = svc.events.predictions
     await preds.process_result(42, made("e2"))  # before the event is seen
-    await preds.process_event(1, event("e2", window=1, ago=0))
-    await preds.process_event(1, event("e1", window=1, ago=0))
+    await preds.process_event(1, event("e2", window=2, ago=0.95))
+    await preds.process_event(1, event("e1", window=2, ago=0.95))
     await preds.process_result(42, made("e1"))  # while its timer runs
     await preds.process_result(42, made("e3"))
     await preds.process_result(42, made(""))  # no id: ignored
     await asyncio.sleep(0.2)
-    await preds.process_event(1, event("e1", window=1, ago=0))
+    await preds.process_event(1, event("e1", window=2, ago=0.95))
     await preds.bet("e1")
     assert sent(tw) == [] and logged(tw) == []
     assert preds._timers == {} and set(preds._handled) == {"e1", "e2", "e3"}
-    await preds.process_event(1, event("e4", window=1, ago=0))  # another event still gets its bet
+    await preds.process_event(1, event("e4", window=2, ago=0.95))  # another event still gets its bet
     await asyncio.sleep(0.2)
     assert len(sent(tw)) == 1
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("status", ["LOCKED", "CANCELED", "RESOLVED"])
-async def test_a_late_active_after_the_end_gets_no_bet(monkeypatch, status):
-    monkeypatch.setattr(pred_mod, "PREDICTION_DELAY_SECONDS", 0.95)
-    svc, tw, *_ = setup(reply=BET_OK)
+async def test_a_late_active_after_the_end_gets_no_bet(status):
+    svc, tw, *_ = setup(reply=BET_OK, prediction_delay_seconds=1)
     preds = svc.events.predictions
-    await preds.process_event(1, event(status=status, window=1, ago=0))  # never seen ACTIVE before
-    await preds.process_event(1, event(window=1, ago=0))
+    await preds.process_event(1, event(status=status, window=2, ago=0.95))  # never seen ACTIVE before
+    await preds.process_event(1, event(window=2, ago=0.95))
     await asyncio.sleep(0.2)
     await preds.bet("e1")
     assert sent(tw) == [] and preds._timers == {} and "e1" in preds._handled
@@ -715,13 +729,12 @@ async def test_an_event_without_a_usable_window_is_logged_as_skipped_once(change
 
 
 @pytest.mark.asyncio
-async def test_a_later_update_with_a_usable_window_still_gets_the_bet(monkeypatch):
-    monkeypatch.setattr(pred_mod, "PREDICTION_DELAY_SECONDS", 0.95)
-    svc, tw, *_ = setup(reply=BET_OK)
-    bad = event(window=1, ago=0)
+async def test_a_later_update_with_a_usable_window_still_gets_the_bet():
+    svc, tw, *_ = setup(reply=BET_OK, prediction_delay_seconds=1)
+    bad = event(window=2, ago=0.95)
     bad["data"]["event"]["created_at"] = None
     await svc.events.predictions.process_event(1, bad)
-    await svc.events.predictions.process_event(1, event(window=1, ago=0))
+    await svc.events.predictions.process_event(1, event(window=2, ago=0.95))
     await asyncio.sleep(0.2)
     assert len(sent(tw)) == 1
     assert logged(tw) == ["bet_skipped", "bet_placed"]
@@ -782,15 +795,14 @@ async def test_other_results_are_ignored(message):
 
 
 @pytest.mark.asyncio
-async def test_stop_cancels_pending_bets_and_a_new_run_can_bet_on_the_same_open_event(monkeypatch):
-    monkeypatch.setattr(pred_mod, "PREDICTION_DELAY_SECONDS", 0.95)
-    svc, tw, *_ = setup(reply=BET_OK)
-    await svc.events.predictions.process_event(1, event(window=1, ago=0))
+async def test_stop_cancels_pending_bets_and_a_new_run_can_bet_on_the_same_open_event():
+    svc, tw, *_ = setup(reply=BET_OK, prediction_delay_seconds=1)
+    await svc.events.predictions.process_event(1, event(window=2, ago=0.95))
     svc.stop()
     await asyncio.sleep(0.2)
     assert sent(tw) == []
     svc._task = MagicMock(done=lambda: False)
-    await svc.events.predictions.process_event(1, event(window=1, ago=0))
+    await svc.events.predictions.process_event(1, event(window=2, ago=0.95))
     await asyncio.sleep(0.2)
     assert len(sent(tw)) == 1
 
@@ -1106,3 +1118,85 @@ async def test_stop_leaves_the_chat():
     svc._chat = MagicMock()
     svc.stop()
     svc._chat.leave.assert_called_once()
+
+
+# --- prediction options: filters, fixed option, timing ---
+
+
+def refusal(preds, tw, message):
+    channel, ev = tw.channels[1], message["data"]["event"]
+    return preds._refusal(channel, ev)
+
+
+@pytest.mark.parametrize(("options", "pairs", "balance", "expected"), [
+    ({"prediction_min_balance": 1000}, ((10, 1), (20, 1)), 1000, "ok"),
+    ({"prediction_min_balance": 1001}, ((10, 1), (20, 1)), 1000, "balance below minimum"),
+    ({"prediction_min_voters": 30}, ((10, 1), (20, 1)), 1000, "ok"),
+    ({"prediction_min_voters": 31}, ((10, 1), (20, 1)), 1000, "too few voters"),
+    ({"prediction_min_voters": 0}, ((0, 0), (0, 0)), 1000, "ok"),  # no voters, no minimum
+    ({"prediction_min_voters": 1}, ((0, 0), (0, 0)), 1000, "too few voters"),
+    # odds of the chosen outcome (most_voted: the first): 150 / 50 = 3
+    ({"prediction_min_odds": 3}, ((10, 50), (5, 100)), 1000, "ok"),  # exactly the minimum
+    ({"prediction_min_odds": 3.01}, ((10, 50), (5, 100)), 1000, "odds below minimum"),
+    ({"prediction_min_odds": 1.0}, ((10, 100), (5, 0)), 1000, "ok"),  # 1.0 never blocks
+    ({"prediction_min_odds": 1.0}, ((10, 0), (5, 0)), 1000, "ok"),
+    ({"prediction_min_odds": 50}, ((10, 0), (5, 100)), 1000, "ok"),  # no points on the choice: infinite
+    ({"prediction_min_odds": 1.5}, ((10, 0), (5, 0)), 1000, "odds unknown"),  # no points at all
+    ({"prediction_min_odds": 1.5}, ((10, 100), (5, 0)), 1000, "odds below minimum"),  # odds 1
+    ({"prediction_strategy": "fixed", "prediction_fixed_option": 2}, ((10, 1), (20, 1)), 1000, "ok"),
+    ({"prediction_strategy": "fixed", "prediction_fixed_option": 3}, ((10, 1), (20, 1)), 1000, "option 3 not offered"),
+    ({"prediction_strategy": "fixed", "prediction_fixed_option": 1}, ((10, 1),), 1000, "fewer than two outcomes"),
+])
+@pytest.mark.asyncio
+async def test_prediction_filters_and_fixed_option(options, pairs, balance, expected):
+    svc, tw, *_ = setup(reply=BET_OK, **{"prediction_strategy": "most_voted"} | options)
+    svc.balances[1] = balance
+    result = refusal(svc.events.predictions, tw, event(window=600, ago=0, pairs=pairs))
+    assert (result if isinstance(result, str) else "ok") == expected
+
+
+@pytest.mark.asyncio
+async def test_fixed_option_picks_the_outcome_by_position_not_by_counts():
+    svc, tw, *_ = setup(reply=BET_OK, prediction_strategy="fixed", prediction_fixed_option=2)
+    outcome_id, index, _ = refusal(svc.events.predictions, tw, event(window=600, ago=0, pairs=((99, 99), (1, 1), (50, 50))))
+    assert (outcome_id, index) == ("o1", 1)
+
+
+@pytest.mark.asyncio
+async def test_a_filter_refusal_logs_a_skip_and_sends_nothing():
+    svc, tw, *_ = setup(reply=BET_OK, prediction_min_voters=500)
+    await svc.events.predictions.process_event(1, event())
+    await settle()
+    assert sent(tw) == [] and logged(tw) == ["bet_skipped"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("timing", "extra", "ago", "window"), [
+    ("before_close", {"prediction_delay_seconds": 1}, 0.95, 2),
+    ("after_open", {"prediction_delay_seconds": 1}, 0.95, 60),
+    ("percent", {"prediction_timer_percent": 50}, 0.95, 2),
+])
+async def test_every_timing_mode_sends_one_bet(timing, extra, ago, window):
+    svc, tw, *_ = setup(reply=BET_OK, prediction_timing=timing, **extra)
+    preds = svc.events.predictions
+    await preds.process_event(1, event(window=window, ago=ago))
+    await preds.process_event(1, event(window=window, ago=ago))  # more updates: one timer
+    assert len(preds._timers) == 1
+    await asyncio.sleep(0.3)
+    await preds.process_event(1, event(window=window, ago=ago))
+    await preds.bet("e1")  # a second fire of the timer
+    await preds.bet("e1")
+    assert len(sent(tw)) == 1 and logged(tw) == ["bet_placed"]
+
+
+@pytest.mark.asyncio
+async def test_a_settings_change_does_not_move_an_armed_timer():
+    svc, tw, *_ = setup(reply=BET_OK, prediction_timing="after_open", prediction_delay_seconds=30)
+    preds = svc.events.predictions
+    await preds.process_event(1, event(window=120, ago=0))
+    tw.settings.prediction_delay_seconds = 0
+    tw.settings.prediction_timing = "before_close"
+    await preds.process_event(1, event(window=120, ago=0))
+    await asyncio.sleep(0.2)
+    assert sent(tw) == [] and "e1" in preds._timers
+    preds.clear()

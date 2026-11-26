@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 import secrets
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
@@ -25,8 +26,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("TwitchDrops")
 
-# the bet is placed this long before the prediction window ends, from the outcomes seen last
-PREDICTION_DELAY_SECONDS = 6
 # Twitch takes 10..250000 points per prediction
 MIN_BET = 10
 NOT_ALLOWED = "not allowed now"
@@ -43,10 +42,13 @@ class PredictionStrategy:
         return value if type(value) is int and value > 0 else 0
 
     @classmethod
-    def choose(cls, strategy: str, outcomes: list[JsonType]) -> int | None:
+    def choose(cls, strategy: str, outcomes: list[JsonType], fixed: int = 1) -> int | None:
         """Index of the outcome to bet on, None with fewer than two outcomes.
 
-        most_voted: most users. favourite: most points. high_odds: fewest points (the largest payout
+        fixed: the outcome number `fixed` (1-based, in the order Twitch sends them), None when
+        there are fewer.
+
+        most_voted: most users. favourite: most points placed. high_odds: fewest points (the largest payout
         per point). smart: of the two outcomes with the most users (a tie keeps the earlier one), the one
         with fewer points (a tie keeps the earlier one) when their user split is within SMART_GAP
         percentage points (no users counts as an even split), otherwise most_voted.
@@ -56,6 +58,8 @@ class PredictionStrategy:
         users = [cls._count(o, "total_users") for o in outcomes]
         points = [cls._count(o, "total_points") for o in outcomes]
         indexes = range(len(outcomes))
+        if strategy == "fixed":
+            return fixed - 1 if fixed <= len(outcomes) else None
         if strategy == "smart":
             # stable sort: a tie keeps the earlier outcome
             first, second = sorted(indexes, key=lambda i: -users[i])[:2]
@@ -71,6 +75,18 @@ class PredictionStrategy:
             return min(indexes, key=points.__getitem__)
         return max(indexes, key=users.__getitem__)
 
+    @classmethod
+    def odds(cls, outcomes: list[JsonType], index: int) -> float | None:
+        """Payout per point of the outcome at index: all points over its points.
+
+        An outcome without points is infinite when others have points and unknown when none has.
+        """
+        total = sum(cls._count(o, "total_points") for o in outcomes)
+        own = cls._count(outcomes[index], "total_points")
+        if own:
+            return total / own
+        return math.inf if total else None
+
     @staticmethod
     def amount(balance: int, percent: int, maximum: int) -> int:
         """The stake: percent of the balance, rounded down, at most maximum and never above the balance."""
@@ -78,7 +94,10 @@ class PredictionStrategy:
 
 
 class Predictions:
-    """Bet once per prediction event on live listed channels, PREDICTION_DELAY_SECONDS before it locks.
+    """Bet once per prediction event on live listed channels, at the time `prediction_timing` sets.
+
+    The timer is armed on the first ACTIVE update with the timing settings of that moment; a later
+    settings change does not move an armed timer. The bet uses the outcomes seen last.
 
     Events come from the `predictions-channel-v1` topic; `predictions-user-v1` reports bets the account
     made (`prediction-made`, also from a browser: no bet from TDM then) and the results of TDM's bets.
@@ -148,7 +167,8 @@ class Predictions:
         self._latest[event_id] = (channel, event)
         if event_id in self._timers:
             return
-        delay = self._delay(event)
+        st = self._twitch.settings
+        delay = self._delay(event, st.prediction_timing, st.prediction_delay_seconds, st.prediction_timer_percent)
         if delay is None:
             # not handled: a later update can still bring a usable window
             if event_id not in self._no_window and self._service.may_act(channel, "predictions_enabled"):
@@ -175,8 +195,12 @@ class Predictions:
         return title if isinstance(title, str) else ""
 
     @staticmethod
-    def _delay(event: JsonType) -> float | None:
-        """Seconds until PREDICTION_DELAY_SECONDS before the window ends; None for a malformed event."""
+    def _delay(event: JsonType, timing: str, seconds: int, percent: int) -> float | None:
+        """Seconds until the bet is due; None for a malformed event.
+
+        Offset from the event's start: before_close window - seconds, after_open seconds, percent
+        window * percent / 100. Never later than 1 second before the window ends, never in the past.
+        """
         window = event.get("prediction_window_seconds")
         created = event.get("created_at")
         if type(window) is not int or window <= 0 or not isinstance(created, str):
@@ -187,7 +211,13 @@ class Predictions:
             return None
         if start.tzinfo is None:
             return None
-        remaining = (start - datetime.now(timezone.utc)).total_seconds() + window - PREDICTION_DELAY_SECONDS
+        if timing == "after_open":
+            offset = seconds
+        elif timing == "percent":
+            offset = window * percent / 100
+        else:
+            offset = window - seconds
+        remaining = (start - datetime.now(timezone.utc)).total_seconds() + min(offset, window - 1)
         return max(remaining, 0.0)
 
     async def _fire(self, event_id: str, delay: float) -> None:
@@ -205,18 +235,31 @@ class Predictions:
         balance = self._service.balances.get(channel.id)
         if balance is None:
             return "balance unknown"
-        amount = PredictionStrategy.amount(balance, tw.settings.prediction_percent, tw.settings.prediction_max_points)
+        st = tw.settings
+        if balance < st.prediction_min_balance:
+            return "balance below minimum"
+        amount = PredictionStrategy.amount(balance, st.prediction_percent, st.prediction_max_points)
         if amount < MIN_BET:
             return "stake below 10 points"
         outcomes = event.get("outcomes")
         if not isinstance(outcomes, list) or not all(isinstance(o, dict) for o in outcomes):
             return "no outcomes"
-        index = PredictionStrategy.choose(tw.settings.prediction_strategy, outcomes)
+        if sum(PredictionStrategy._count(o, "total_users") for o in outcomes) < st.prediction_min_voters:
+            return "too few voters"
+        index = PredictionStrategy.choose(st.prediction_strategy, outcomes, st.prediction_fixed_option)
         if index is None:
+            if st.prediction_strategy == "fixed" and len(outcomes) >= 2:
+                return f"option {st.prediction_fixed_option} not offered"
             return "fewer than two outcomes"
         outcome_id = outcomes[index].get("id")
         if not isinstance(outcome_id, str) or not outcome_id:
             return "no outcome id"
+        if st.prediction_min_odds > 1.0:
+            odds = PredictionStrategy.odds(outcomes, index)
+            if odds is None:
+                return "odds unknown"
+            if odds < st.prediction_min_odds:
+                return "odds below minimum"
         return outcome_id, index, amount
 
     async def bet(self, event_id: str) -> None:

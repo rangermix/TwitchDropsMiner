@@ -14,7 +14,9 @@ from src.services.idle_watch import CLAIM_RETRIES, IdleWatchService, Visit
 POINTS_OPTIONS = {
     "idle_priority": "list", "idle_streak_first": True, "streak_recovery": True, "follow_raids": False,
     "predictions_enabled": False, "prediction_strategy": "smart", "prediction_percent": 5,
-    "prediction_max_points": 1000, "claim_moments": False, "join_chat": False,
+    "prediction_max_points": 1000, "prediction_min_balance": 0, "prediction_min_voters": 0,
+    "prediction_min_odds": 1.0, "prediction_timing": "before_close", "prediction_delay_seconds": 6,
+    "prediction_timer_percent": 50, "prediction_fixed_option": 1, "claim_moments": False, "join_chat": False,
 }
 
 

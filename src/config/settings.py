@@ -51,6 +51,13 @@ default_settings = {
     "prediction_strategy": "smart",
     "prediction_percent": 5,
     "prediction_max_points": 1000,
+    "prediction_min_balance": 0,
+    "prediction_min_voters": 0,
+    "prediction_min_odds": 1.0,
+    "prediction_timing": "before_close",
+    "prediction_delay_seconds": 6,
+    "prediction_timer_percent": 50,
+    "prediction_fixed_option": 1,
     "claim_moments": True,
     "join_chat": False,
     "language": DEFAULT_LANG,
@@ -145,15 +152,23 @@ class PointsSettings:
 
     CHOICES: ClassVar[dict[str, tuple[str, ...]]] = {
         "idle_priority": ("list", "points_low", "points_high", "subscribed"),
-        "prediction_strategy": ("smart", "most_voted", "high_odds", "favourite"),
+        "prediction_strategy": ("smart", "most_voted", "high_odds", "favourite", "fixed"),
+        "prediction_timing": ("before_close", "after_open", "percent"),
     }
     # inclusive bounds; Twitch takes 10..250000 points per prediction
     RANGES: ClassVar[dict[str, tuple[int, int]]] = {
         "prediction_percent": (1, 100),
         "prediction_max_points": (10, 250000),
+        "prediction_min_balance": (0, 10_000_000),
+        "prediction_min_voters": (0, 1_000_000),
+        "prediction_delay_seconds": (0, 3600),
+        "prediction_timer_percent": (1, 99),
+        "prediction_fixed_option": (1, 10),
     }
+    # inclusive bounds of the options that take an int or a float
+    NUMBERS: ClassVar[dict[str, tuple[float, float]]] = {"prediction_min_odds": (1.0, 100.0)}
     FLAGS = ("idle_streak_first", "streak_recovery", "follow_raids", "predictions_enabled", "claim_moments", "join_chat")
-    KEYS = (*CHOICES, *RANGES, *FLAGS)
+    KEYS = (*CHOICES, *RANGES, *NUMBERS, *FLAGS)
 
     @classmethod
     def normalize(cls, key: str, value: Any) -> Any:
@@ -163,6 +178,10 @@ class PointsSettings:
         elif key in cls.RANGES:
             low, high = cls.RANGES[key]
             valid = type(value) is int and low <= value <= high
+        elif key in cls.NUMBERS:
+            floor, ceiling = cls.NUMBERS[key]
+            # a NaN fails both comparisons
+            valid = type(value) in (int, float) and floor <= value <= ceiling
         else:
             valid = key in cls.FLAGS and type(value) is bool
         if not valid:
@@ -250,6 +269,13 @@ class Settings:
     prediction_strategy: str
     prediction_percent: int
     prediction_max_points: int
+    prediction_min_balance: int
+    prediction_min_voters: int
+    prediction_min_odds: float
+    prediction_timing: str
+    prediction_delay_seconds: int
+    prediction_timer_percent: int
+    prediction_fixed_option: int
     claim_moments: bool
     join_chat: bool
     language: str

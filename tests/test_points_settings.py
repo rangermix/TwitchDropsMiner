@@ -22,6 +22,13 @@ DEFAULTS = {
     "prediction_strategy": "smart",
     "prediction_percent": 5,
     "prediction_max_points": 1000,
+    "prediction_min_balance": 0,
+    "prediction_min_voters": 0,
+    "prediction_min_odds": 1.0,
+    "prediction_timing": "before_close",
+    "prediction_delay_seconds": 6,
+    "prediction_timer_percent": 50,
+    "prediction_fixed_option": 1,
     "claim_moments": True,
     "join_chat": False,
 }
@@ -29,11 +36,17 @@ DEFAULTS = {
 VALID = [
     ("idle_priority", v) for v in ("list", "points_low", "points_high", "subscribed")
 ] + [
-    ("prediction_strategy", v) for v in ("smart", "most_voted", "high_odds", "favourite")
+    ("prediction_strategy", v) for v in ("smart", "most_voted", "high_odds", "favourite", "fixed")
 ] + [
     ("prediction_percent", 1), ("prediction_percent", 100),
     ("prediction_max_points", 10), ("prediction_max_points", 250000),
-] + [(key, value) for key in PointsSettings.FLAGS for value in (True, False)]
+    ("prediction_min_balance", 0), ("prediction_min_balance", 10_000_000),
+    ("prediction_min_voters", 0), ("prediction_min_voters", 1_000_000),
+    ("prediction_min_odds", 1.0), ("prediction_min_odds", 100.0), ("prediction_min_odds", 2), ("prediction_min_odds", 1.25),
+    ("prediction_delay_seconds", 0), ("prediction_delay_seconds", 3600),
+    ("prediction_timer_percent", 1), ("prediction_timer_percent", 99),
+    ("prediction_fixed_option", 1), ("prediction_fixed_option", 10),
+] + [("prediction_timing", v) for v in ("before_close", "after_open", "percent")] + [(key, value) for key in PointsSettings.FLAGS for value in (True, False)]
 
 INVALID = [
     ("idle_priority", "LIST"), ("idle_priority", "points"), ("idle_priority", ""), ("idle_priority", 1),
@@ -43,6 +56,20 @@ INVALID = [
     ("prediction_percent", True), ("prediction_percent", 5.0), ("prediction_percent", "5"),
     ("prediction_max_points", 9), ("prediction_max_points", 250001), ("prediction_max_points", False),
     ("prediction_max_points", 1000.0),
+    ("prediction_min_balance", -1), ("prediction_min_balance", 10_000_001), ("prediction_min_balance", True),
+    ("prediction_min_balance", 5.0), ("prediction_min_balance", "5"),
+    ("prediction_min_voters", -1), ("prediction_min_voters", 1_000_001), ("prediction_min_voters", False),
+    ("prediction_min_voters", 5.0), ("prediction_min_voters", "5"),
+    ("prediction_min_odds", 0.99), ("prediction_min_odds", 100.01), ("prediction_min_odds", 0), ("prediction_min_odds", True),
+    ("prediction_min_odds", False), ("prediction_min_odds", "2"), ("prediction_min_odds", float("nan")),
+    ("prediction_min_odds", float("inf")),
+    ("prediction_delay_seconds", -1), ("prediction_delay_seconds", 3601), ("prediction_delay_seconds", True),
+    ("prediction_delay_seconds", 6.0), ("prediction_delay_seconds", "6"),
+    ("prediction_timer_percent", 0), ("prediction_timer_percent", 100), ("prediction_timer_percent", True),
+    ("prediction_timer_percent", 50.0), ("prediction_timer_percent", "50"),
+    ("prediction_fixed_option", 0), ("prediction_fixed_option", 11), ("prediction_fixed_option", True),
+    ("prediction_fixed_option", 1.0), ("prediction_fixed_option", "1"),
+    ("prediction_timing", "Percent"), ("prediction_timing", "after"), ("prediction_timing", 1),
 ] + [(key, value) for key in PointsSettings.FLAGS for value in (1, 0, "true", None)]
 
 
@@ -81,22 +108,35 @@ def _load(tmp_path, monkeypatch, caplog, raw):
 
 def test_invalid_hand_edited_values_load_as_defaults_with_one_warning_each(tmp_path, monkeypatch, caplog):
     raw = {"idle_priority": "loudest", "prediction_percent": 0, "prediction_max_points": True,
-           "prediction_strategy": "favorite", "join_chat": "yes", "claim_moments": 0}
+           "prediction_strategy": "favorite", "join_chat": "yes", "claim_moments": 0,
+           "prediction_min_balance": -1, "prediction_min_voters": True, "prediction_min_odds": "2",
+           "prediction_timing": "late", "prediction_delay_seconds": 3601, "prediction_timer_percent": 100,
+           "prediction_fixed_option": 11}
     settings = _load(tmp_path, monkeypatch, caplog, raw)
     assert {key: getattr(settings, key) for key in DEFAULTS} == DEFAULTS
     assert sorted(r.getMessage() for r in caplog.records if r.levelno == logging.WARNING) == [
         "Ignoring invalid claim_moments in settings; using the default (on)",
         "Ignoring invalid idle_priority in settings; using the default (list)",
         "Ignoring invalid join_chat in settings; using the default (off)",
+        "Ignoring invalid prediction_delay_seconds in settings; using the default (6)",
+        "Ignoring invalid prediction_fixed_option in settings; using the default (1)",
         "Ignoring invalid prediction_max_points in settings; using the default (1000)",
+        "Ignoring invalid prediction_min_balance in settings; using the default (0)",
+        "Ignoring invalid prediction_min_odds in settings; using the default (1.0)",
+        "Ignoring invalid prediction_min_voters in settings; using the default (0)",
         "Ignoring invalid prediction_percent in settings; using the default (5)",
         "Ignoring invalid prediction_strategy in settings; using the default (smart)",
+        "Ignoring invalid prediction_timer_percent in settings; using the default (50)",
+        "Ignoring invalid prediction_timing in settings; using the default (before_close)",
     ]
 
 
 def test_valid_values_load_without_warning(tmp_path, monkeypatch, caplog):
     raw = {"idle_priority": "subscribed", "prediction_percent": 100, "prediction_max_points": 10,
-           "prediction_strategy": "high_odds", "join_chat": True, "idle_streak_first": False}
+           "prediction_strategy": "fixed", "join_chat": True, "idle_streak_first": False,
+           "prediction_min_balance": 500, "prediction_min_voters": 20, "prediction_min_odds": 1.5,
+           "prediction_timing": "percent", "prediction_delay_seconds": 0, "prediction_timer_percent": 99,
+           "prediction_fixed_option": 10}
     settings = _load(tmp_path, monkeypatch, caplog, raw)
     assert {key: getattr(settings, key) for key in raw} == raw
     assert not caplog.records
@@ -109,7 +149,9 @@ def test_options_survive_save_and_reload_and_an_invalid_one_is_not_saved(tmp_pat
     changed = {"idle_priority": "points_low", "idle_streak_first": False, "streak_recovery": False,
                "follow_raids": True, "predictions_enabled": True, "prediction_strategy": "favourite",
                "prediction_percent": 100, "prediction_max_points": 250000, "claim_moments": False,
-               "join_chat": True}
+               "join_chat": True, "prediction_min_balance": 500, "prediction_min_voters": 20,
+               "prediction_min_odds": 2.25, "prediction_timing": "after_open", "prediction_delay_seconds": 3600,
+               "prediction_timer_percent": 1, "prediction_fixed_option": 10}
     for key, value in changed.items():
         setattr(settings, key, value)
     settings.save()
@@ -162,6 +204,13 @@ def test_manager_saves_and_reruns_the_idle_step_without_a_games_update():
     manager._on_idle_channels_change.assert_not_called()
 
 
+@pytest.mark.parametrize("odds", [1, 2, 1.25, 100.0])
+def test_manager_accepts_an_int_or_a_float_min_odds(odds):
+    manager, stored = _manager()
+    _update(manager, {"prediction_min_odds": odds, "prediction_fixed_option": 3, "prediction_timing": "percent"})
+    assert (stored.prediction_min_odds, stored.prediction_fixed_option, stored.prediction_timing) == (odds, 3, "percent")
+
+
 def test_manager_restores_every_option_when_the_save_fails():
     manager, stored = _manager()
     # the rollback snapshot covers keys in default_settings, which the stub carries as attributes
@@ -178,6 +227,13 @@ class TestAPI:
         {"prediction_percent": 101}, {"prediction_max_points": 9}, {"prediction_max_points": 5.5},
         {"idle_priority": "loudest"}, {"prediction_strategy": "favorite"}, {"join_chat": 1},
         {"follow_raids": "true"},
+        {"prediction_min_balance": -1}, {"prediction_min_balance": True}, {"prediction_min_balance": 5.5},
+        {"prediction_min_voters": 1_000_001}, {"prediction_min_voters": "1"}, {"prediction_min_voters": False},
+        {"prediction_min_odds": 0.5}, {"prediction_min_odds": 101}, {"prediction_min_odds": True},
+        {"prediction_min_odds": "2"}, 
+        {"prediction_timing": "soon"}, {"prediction_delay_seconds": 3601}, {"prediction_delay_seconds": 1.5},
+        {"prediction_timer_percent": 0}, {"prediction_timer_percent": 100}, {"prediction_timer_percent": True},
+        {"prediction_fixed_option": 0}, {"prediction_fixed_option": 11}, {"prediction_fixed_option": "2"},
     ])
     def test_rejects_invalid_options(self, client, body):  # noqa: F811
         browser, _twitch = client
