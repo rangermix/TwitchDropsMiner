@@ -19,9 +19,7 @@ from src.services import idle_watch as idle_mod
 from src.services.channel_service import ChannelService
 from src.services.idle_watch import IDLE_VISIT_SECONDS, RESTART_SECONDS, IdleWatchService
 from src.services.message_handlers import MessageHandlerService
-
-
-POINTS_OPTIONS = {"idle_priority": "list", "idle_streak_first": True, "streak_recovery": True}
+from tests.test_idle_points import POINTS_OPTIONS
 
 
 def fake(cid, broadcast, *, online=True, banned=False, login=None):

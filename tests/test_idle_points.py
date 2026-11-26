@@ -10,7 +10,12 @@ from src.config import State
 from src.services.idle_watch import CLAIM_RETRIES, IdleWatchService, Visit
 
 
-POINTS_OPTIONS = {"idle_priority": "list", "idle_streak_first": True, "streak_recovery": True}
+# the event features are off here; tests/test_points_events.py turns them on
+POINTS_OPTIONS = {
+    "idle_priority": "list", "idle_streak_first": True, "streak_recovery": True, "follow_raids": False,
+    "predictions_enabled": False, "prediction_strategy": "smart", "prediction_percent": 5,
+    "prediction_max_points": 1000, "claim_moments": False, "join_chat": False,
+}
 
 
 def chan(cid=123, name="A"):

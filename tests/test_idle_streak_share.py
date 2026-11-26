@@ -22,9 +22,7 @@ from src.services.idle_watch import (
     STREAK_SHARE_CHECK_SECONDS,
     IdleWatchService,
 )
-
-
-POINTS_OPTIONS = {"idle_priority": "list", "idle_streak_first": True, "streak_recovery": True}
+from tests.test_idle_points import POINTS_OPTIONS
 
 
 def milestone(mid="m1", *, category="WATCH_STREAK", state="ACTIVE", share="CAN_SHARE", value="9"):
