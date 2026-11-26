@@ -21,7 +21,7 @@ POINTS_SETTINGS_JS = re.search(r"const POINTS_SETTINGS = \{.*?\n\};", APP_JS, re
 IDLE_FUNCTIONS = ["makeElement", "renderIdleChannels", "saveIdleChannels", "addIdleChannel",
                   "handleDragStart", "handleDragOver", "dragOverRows", "pointerPastMiddle", "handleDrop",
                   "globalChannelOption", "findOption", "readChannelOptions", "sortedJson", "labelled",
-                  "buildChannelOptionsPanel", "saveChannelOptions", "importFollows"]
+                  "buildChannelOptionsPanel", "withQueuedOptions", "saveChannelOptions", "importFollows"]
 
 # REWARD_DOM supplies the fake DOM; add the idle controls and the state the functions read.
 IDLE_DOM = REWARD_DOM + POINTS_SETTINGS_JS + OPTION_CONSTANTS + r"""

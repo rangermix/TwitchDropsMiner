@@ -182,22 +182,89 @@ assert.equal(error.textContent, 'Options failed');
 """)
 
 
-def test_a_second_change_while_saving_is_not_sent_and_the_list_shows_the_confirmed_state():
-    run(r"""
+QUEUE_FETCH = r"""
+const pending = [];
+global.fetch = (url, options) => {
+    calls.push(JSON.parse(options.body));
+    return new Promise(resolve => pending.push(resolve));
+};
+const answer = (ok, options) => pending.shift()(ok
+    ? {ok: true, json: async () => ({success: true, settings: {idle_channel_options: options}})}
+    : {ok: false, status: 500});
+"""
+
+
+def test_changes_while_saving_are_queued_and_sent_after_it_with_the_last_change_winning():
+    run(QUEUE_FETCH + r"""
+state.settings.idle_channel_options = {};
+renderIdleChannels();
+open('alpha').events.click();
+open('beta').events.click();
+option('beta', 'chat').value = 'on';
+option('beta', 'chat').events.change();
+// while it is in flight: two changes of alpha (the last wins) and one more of beta
+option('alpha', 'raids').value = 'on';
+option('alpha', 'raids').events.change();
+option('alpha', 'raids').value = 'off';
+option('alpha', 'raids').events.change();
+option('beta', 'moments').value = 'on';
+option('beta', 'moments').events.change();
+assert.equal(calls.length, 1);
+answer(true, {beta: {chat: true}});
+await tick(); await tick();
+// one save after the first, on top of the confirmed options
+assert.deepEqual(calls, [{idle_channel_options: {beta: {chat: true}}},
+    {idle_channel_options: {beta: {chat: true, moments: true}, alpha: {raids: false}}}]);
+assert.equal(option('alpha', 'raids').value, 'off');  // not reset to the confirmed value meanwhile
+answer(true, {beta: {chat: true, moments: true}, alpha: {raids: false}});
+await tick(); await tick();
+assert.deepEqual(state.settings.idle_channel_options, {beta: {chat: true, moments: true}, alpha: {raids: false}});
+assert.equal(option('alpha', 'raids').value, 'off');
+assert.equal(option('beta', 'moments').value, 'on');
+assert.equal(calls.length, 2);
+""")
+
+
+def test_a_failed_queued_save_rolls_back_to_the_confirmed_options():
+    run(QUEUE_FETCH + r"""
+state.translations.gui.points = {channel_options_save_error: 'Options failed'};
 state.settings.idle_channel_options = {};
 renderIdleChannels();
 open('beta').events.click();
-let finish;
-global.fetch = (url, options) => { calls.push(JSON.parse(options.body)); return new Promise(resolve => { finish = resolve; }); };
 option('beta', 'chat').value = 'on';
 option('beta', 'chat').events.change();
 option('beta', 'raids').value = 'on';
 option('beta', 'raids').events.change();
-assert.equal(calls.length, 1);
-finish({ok: true, json: async () => ({success: true, settings: {idle_channel_options: {beta: {chat: true}}}})});
+answer(true, {beta: {chat: true}});
+await tick(); await tick();
+assert.deepEqual(calls[1], {idle_channel_options: {beta: {chat: true, raids: true}}});
+answer(false);
 await tick(); await tick();
 assert.deepEqual(state.settings.idle_channel_options, {beta: {chat: true}});
 assert.equal(option('beta', 'raids').value, 'default');
+assert.equal(option('beta', 'chat').value, 'on');
+assert.equal(document.getElementById('idle-channels-error').hidden, false);
+""")
+
+
+def test_a_queued_change_after_a_failed_save_goes_on_top_of_the_confirmed_options():
+    run(QUEUE_FETCH + r"""
+state.settings.idle_channel_options = {gamma: {bonus: true}};
+renderIdleChannels();
+open('beta').events.click();
+open('alpha').events.click();
+option('beta', 'chat').value = 'on';
+option('beta', 'chat').events.change();
+option('alpha', 'raids').value = 'on';
+option('alpha', 'raids').events.change();
+answer(false);
+await tick(); await tick();
+// beta's failed change is not sent again; alpha's queued one is
+assert.deepEqual(calls[1], {idle_channel_options: {gamma: {bonus: true}, alpha: {raids: true}}});
+answer(true, {gamma: {bonus: true}, alpha: {raids: true}});
+await tick(); await tick();
+assert.equal(option('beta', 'chat').value, 'default');
+assert.equal(option('alpha', 'raids').value, 'on');
 """)
 
 

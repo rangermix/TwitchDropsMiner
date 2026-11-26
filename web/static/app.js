@@ -3077,6 +3077,8 @@ const CHANNEL_POINTS_LIMIT = {min: 1, max: 100000000};
 // Logins whose options panel is open; the panel state survives re-renders.
 const idleOptionsOpen = new Set();
 let idleOptionsSaving = false;
+// login -> options changed while a save was in flight ({} clears them); sent after it, the last change wins
+const idleOptionsQueued = new Map();
 let followImportBusy = false;
 
 function globalChannelOption(name) {
@@ -3173,7 +3175,7 @@ function renderIdleChannels(list = state.settings.idle_channels || []) {
     const focused = active && active.parentNode === container
         ? { channel: active.dataset.channel, action: focusedElement.dataset.action, option: focusedElement.dataset.option } : null;
     const points = state.translations.gui?.points || {};
-    const allOptions = state.settings.idle_channel_options || {};
+    const allOptions = withQueuedOptions(state.settings.idle_channel_options || {});
     for (const login of [...idleOptionsOpen]) if (!list.includes(login)) idleOptionsOpen.delete(login);
     container.replaceChildren();
     list.forEach((channel, index) => {
@@ -3205,13 +3207,8 @@ function renderIdleChannels(list = state.settings.idle_channels || []) {
         });
         toggle.setAttribute('aria-expanded', String(open));
         toggle.setAttribute('aria-controls', `idle-options-${channel}`);
-        const panel = open ? buildChannelOptionsPanel(channel, options, () => {
-            const next = {...allOptions};
-            const chosen = readChannelOptions(panel);
-            if (Object.keys(chosen).length) next[channel] = chosen;
-            else delete next[channel];
-            saveChannelOptions(next);
-        }) : null;
+        const panel = open ? buildChannelOptionsPanel(channel, options,
+            () => saveChannelOptions(channel, readChannelOptions(panel))) : null;
         if (panel) panel.setAttribute('id', `idle-options-${channel}`);
         const markerText = points.channel_options_marker || 'This channel has its own options';
         row.replaceChildren(
@@ -3298,34 +3295,47 @@ async function addIdleChannel() {
     if (await saveIdleChannels([...current, login])) input.value = '';
 }
 
-// Save the whole options object; a failure shows the error and the confirmed options again.
-async function saveChannelOptions(next) {
-    if (idleOptionsSaving) {
-        renderIdleChannels();
-        return false;
+// The confirmed options with the queued changes on top: what the next save sends and the panels show.
+function withQueuedOptions(confirmed) {
+    const next = {...confirmed};
+    for (const [login, options] of idleOptionsQueued) {
+        if (Object.keys(options).length) next[login] = options;
+        else delete next[login];
     }
+    return next;
+}
+
+// Save the whole options object with channel's new options on top of the confirmed ones. A change made
+// while a save is in flight is queued and sent after it; a failure shows the error and the confirmed options.
+async function saveChannelOptions(channel, chosen) {
+    idleOptionsQueued.set(channel, chosen);
+    if (idleOptionsSaving) return false;
     const error = document.getElementById('idle-channels-error');
     const message = state.translations.gui?.points?.channel_options_save_error ||
         'Could not save the channel options. Please try again.';
     error.hidden = true;
     idleOptionsSaving = true;
     let saved = false;
-    try {
-        const response = await fetch('/api/settings', {method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({idle_channel_options: next})});
-        if (!response.ok) throw new Error(message);
-        const data = await response.json();
-        if (data.success !== true || sortedJson(data.settings?.idle_channel_options) !== sortedJson(next))
-            throw new Error(message);
-        updateSettingsUI(data.settings, false, ['idle_channel_options']);
-        saved = true;
-    } catch (_) {
-        reportSettingsError(error, message);
-        error.hidden = false;
-    } finally {
-        idleOptionsSaving = false;
-        renderIdleChannels();
+    while (idleOptionsQueued.size) {
+        const next = withQueuedOptions(state.settings.idle_channel_options || {});
+        idleOptionsQueued.clear();
+        saved = false;
+        try {
+            const response = await fetch('/api/settings', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({idle_channel_options: next})});
+            if (!response.ok) throw new Error(message);
+            const data = await response.json();
+            if (data.success !== true || sortedJson(data.settings?.idle_channel_options) !== sortedJson(next))
+                throw new Error(message);
+            updateSettingsUI(data.settings, false, ['idle_channel_options']);
+            saved = true;
+        } catch (_) {
+            reportSettingsError(error, message);
+            error.hidden = false;
+        }
     }
+    idleOptionsSaving = false;
+    renderIdleChannels();
     return saved;
 }
 
