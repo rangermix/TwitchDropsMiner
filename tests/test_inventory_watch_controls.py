@@ -75,6 +75,7 @@ def run_inventory(body):
         'reconcileGameWatchSettings', 'queueSettingsWrite', 'parseDropNameBlacklist',
         'applyInventoryViewMode', 'setInventoryViewMode', 'inventoryColumnCount'))
     functions += '\nasync ' + extract_javascript_function(source, 'addInventoryGame')
+    functions += '\n' + extract_javascript_function(source, 'readBoundedInt')
     functions += '\nasync ' + extract_javascript_function(source, 'saveSettings')
     result = subprocess.run([NODE, '-'], input=HARNESS + '\n' + functions + '\n(async()=>{\nreconcileGameWatchSettings(state.settings);\n' + body
         + '\n})().catch(error=>{console.error(error);process.exit(1)});', text=True, capture_output=True)

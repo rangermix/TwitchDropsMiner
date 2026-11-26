@@ -16,9 +16,12 @@ import csv
 import io
 import json
 import logging
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict
+
+from src.utils import quarantine_file
 
 
 if TYPE_CHECKING:
@@ -64,6 +67,7 @@ class DropHistory:
         self._path = data_dir / HISTORY_FILENAME
         self._entries: list[HistoryEntry] = []
         self._dirty = False
+        self._save_disabled = False
         self._load()
 
     # ------------------------------------------------------------------
@@ -210,11 +214,13 @@ class DropHistory:
             counts[month] = counts.get(month, 0) + 1
         return dict(sorted(counts.items()))
 
-    def clear(self) -> None:
-        """Delete all history entries from memory and disk."""
+    def clear(self) -> bool:
+        """Delete all history entries from memory and disk; return whether the file was written."""
         self._entries = []
-        self._save()
+        if not self._save():
+            return False
         logger.warning("Drop history cleared.")
+        return True
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -226,18 +232,38 @@ class DropHistory:
             logger.debug(f"No history file at {self._path}, starting fresh.")
             return
         try:
-            with self._path.open("r", encoding="utf-8") as f:
+            # utf-8-sig: a file saved by a Windows editor starts with a BOM
+            with self._path.open("r", encoding="utf-8-sig") as f:
                 data = json.load(f)
-            if data.get("version") == HISTORY_VERSION:
-                self._entries = data.get("entries", [])
-                logger.debug(f"Loaded {len(self._entries)} history entries.")
-            else:
-                # Future versions may add a migration path here
-                logger.warning(
-                    f"Unknown history version {data.get('version')}, ignoring file."
-                )
-        except (json.JSONDecodeError, OSError) as exc:
+            if not isinstance(data, dict) or data.get("version") != HISTORY_VERSION:
+                raise ValueError("not a version 1 history file")
+            entries = data.get("entries", [])
+            if not isinstance(entries, list) or not all(isinstance(e, dict) for e in entries):
+                raise ValueError("entries is not a list of objects")
+        except (ValueError, OSError) as exc:
             logger.error(f"Failed to load drop history: {exc}")
+            if isinstance(exc, OSError):
+                # The content is unknown and may be valid: never move or overwrite it.
+                self._disable_saving(exc)
+            else:
+                self._quarantine()
+            return
+        self._entries = entries
+        logger.debug(f"Loaded {len(self._entries)} history entries.")
+
+    def _quarantine(self) -> None:
+        """Move an unusable file aside so the next save cannot overwrite it."""
+        try:
+            bad = quarantine_file(self._path)
+            logger.error(f"Moved unusable drop history to {bad}")
+        except OSError as exc:
+            self._disable_saving(exc)
+
+    def _disable_saving(self, exc: OSError) -> None:
+        # Saving would destroy a file that could not be read or moved: keep it untouched.
+        self._save_disabled = True
+        self._dirty = True
+        logger.error(f"Drop history file left untouched ({exc}); history will not be saved this run.")
 
     def _save(self) -> bool:
         """
@@ -246,6 +272,8 @@ class DropHistory:
         This ensures the history file is never left in a half-written state
         even if the process is killed during the write.
         """
+        if self._save_disabled:
+            return False
         try:
             self._path.parent.mkdir(parents=True, exist_ok=True)
             tmp = self._path.with_suffix(".json.tmp")
@@ -256,6 +284,8 @@ class DropHistory:
                     ensure_ascii=False,
                     indent=2,
                 )
+                f.flush()
+                os.fsync(f.fileno())
             # Atomic rename — on POSIX this is guaranteed by the OS
             tmp.replace(self._path)
             self._dirty = False

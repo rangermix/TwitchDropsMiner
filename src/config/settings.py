@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 from copy import deepcopy
 from dataclasses import dataclass
@@ -9,7 +10,10 @@ from yarl import URL
 
 from src.config import DEFAULT_LANG, SETTINGS_PATH
 from src.config.reward_priority import RewardPriority
-from src.utils import DropIgnorePolicy, json_load, json_save, merge_json
+from src.utils import DropIgnorePolicy, json_load, json_save, merge_json, quarantine_file
+
+
+logger = logging.getLogger("TwitchDrops")
 
 
 class InventoryFilters(TypedDict):
@@ -171,7 +175,14 @@ class Settings:
     def load(self):
         # TODO: remvoe customized serde in the future
         # Migrate filters before the generic merge discards their previous key.
-        settings = json_load(SETTINGS_PATH, deepcopy(default_settings), merge=False)
+        try:
+            settings = json_load(SETTINGS_PATH, deepcopy(default_settings), merge=False)
+        except (ValueError, TypeError, KeyError):
+            # A damaged file (or a malformed typed value) must not stop startup; keep it for
+            # recovery instead of overwriting it.
+            moved = quarantine_file(SETTINGS_PATH)
+            logger.error(f"Settings file is unreadable; moved it to {moved.name} and using defaults")
+            settings = deepcopy(default_settings)
         filters = settings.get("inventory_filters")
         settings["inventory_filters"] = InventoryFilterSettings.normalize(
             filters if isinstance(filters, dict) else {}
@@ -183,6 +194,18 @@ class Settings:
         last_notified = settings.pop("last_notified_release", None)
         if isinstance(last_notified, str) and "last_notified_releases" not in settings:
             settings["last_notified_releases"] = {"telegram": last_notified, "discord": last_notified}
+        # bool is an int subclass; a hand-edited true must not pass as 1.
+        for key, low, high in (
+            ("connection_quality", 1, 6),
+            ("minimum_refresh_interval_minutes", 1, 1440),
+        ):
+            value = settings.get(key, default_settings[key])
+            if isinstance(value, bool) or not isinstance(value, int):
+                logger.warning(f"Invalid {key} {value!r} in settings, using {default_settings[key]}")
+                settings[key] = default_settings[key]
+            elif not low <= value <= high:
+                logger.warning(f"{key} {value!r} is outside {low}-{high}, clamping")
+                settings[key] = min(max(value, low), high)
         merge_json(settings, default_settings)
         settings.pop("allow_helper_connection", None)
         for key, value in settings.items():

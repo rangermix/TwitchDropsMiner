@@ -395,7 +395,9 @@ lang/                # Translation JSON files (20 languages)
   strings (`select_linked`, `game_linked`, `game_not_linked`, `game_linked_title`,
   `game_not_linked_title`) in every locale and in `GUISettings`. Coverage lives in
   `tests/test_account_link_frontend.py` and `tests/test_game_priority.py`.
-- Connection quality multiplier
+- Connection quality multiplier (1-6) and `minimum_refresh_interval_minutes` (1-1440): the
+  API takes strict integers in range, `Settings.load` clamps ints and defaults other types,
+  and `saveSettings` clamps the inputs before sending
 - Language selection
 - Proxy support (including verification)
 - Logging and dump flags from command-line arguments
@@ -1018,7 +1020,8 @@ login_text = _.t["login"]["status"]["logged_in"]  # Returns "Logged in"
 
 **Language Persistence:**
 
-- Language selection persisted in `settings.json` (DATA_DIR)
+- Language selection persisted in `settings.json` (DATA_DIR); `main()` resets an unknown saved
+  language to `DEFAULT_LANG` instead of raising
 - Dynamic language switching supported in web GUI
 - Changes take effect immediately without restart
 
@@ -1336,6 +1339,14 @@ and confirmed local deletion. Date-only filters mean midnight UTC; aware timesta
 preserve their instant. CSV attachment names use UTF-8 percent encoding with an ASCII
 fallback. History text is defined in `gui.history` for every locale and rendered as text.
 Tests cover persistence, filtering, Unicode exports, offsets, and translated UI behavior.
+An unusable file (bad JSON, non-object, unknown version, non-list entries) is moved to
+`drop_history.json.bad[.N]` before the next save; an `OSError` on read or move disables
+saving for the run so the file is never overwritten. The temp file is fsynced before rename.
+`quarantine_file()` (`src/utils/json_utils.py`) performs the `.bad[.N]` move for both drop
+history and `settings.json`: a `Settings.load()` `ValueError`/`TypeError`/`KeyError` (bad
+JSON, non-object, malformed typed value) moves the file aside and starts from defaults
+instead of exiting. `json_save` fsyncs before its atomic rename. Coverage:
+`tests/test_data_safety.py`.
 
 - Existing-session admission accepts only a bounded sole `token` field through
   dashboard-authenticated, same-origin `POST /api/session/token`. Never echo inputs.

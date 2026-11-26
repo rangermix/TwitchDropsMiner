@@ -310,3 +310,22 @@ def test_late_partial_save_reply_preserves_newer_watch_list():
 })().catch(error=>{console.error(error);process.exitCode=1;});
 """,
     )
+
+
+def test_bounded_number_inputs_are_clamped_before_saving():
+    run_javascript(
+        ["readBoundedInt"],
+        r"""
+const assert = require('node:assert/strict');
+const inputs = {q: {value: '', min: '1', max: '6'}, m: {value: '', min: '1', max: '1440'}};
+const document = {getElementById: id => inputs[id]};
+for (const [id, raw, expected] of [['q', '0', 1], ['q', '7', 6], ['q', '3', 3], ['m', '2000', 1440], ['m', '-5', 1]]) {
+    inputs[id].value = raw;
+    assert.equal(readBoundedInt(id), expected);
+    assert.equal(inputs[id].value, expected);
+}
+inputs.q.value = '';
+assert.ok(Number.isNaN(readBoundedInt('q')));
+assert.equal(inputs.q.value, '');
+""",
+    )

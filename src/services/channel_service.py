@@ -356,7 +356,7 @@ class ChannelService:
         except GQLException as exc:
             raise MinerException(f"Game: {game.slug}") from exc
 
-        if "game" in response["data"]:
+        if response["data"].get("game"):
             return [
                 Channel.from_directory(
                     self._twitch, stream_channel_data["node"], drops_enabled=drops_enabled

@@ -29,6 +29,7 @@ from .json_utils import (
     json_minify,
     json_save,
     merge_json,
+    quarantine_file,
 )
 
 # Rate limiting
@@ -66,6 +67,7 @@ __all__ = [
     "json_load",
     "json_save",
     "merge_json",
+    "quarantine_file",
     "SERIALIZE_ENV",
     # Async helpers
     "first_to_complete",

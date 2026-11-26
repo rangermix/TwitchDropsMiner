@@ -2,13 +2,14 @@
 
 import asyncio
 from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import aiohttp
 import pytest
 
 from src.exceptions import ExitRequest, MinerException
-from src.models import RewardCampaign
+from src.models import DropsCampaign, Game, RewardCampaign
+from src.services.channel_service import ChannelService
 from src.services.inventory_service import InventoryService
 from src.services.watch_service import WatchService
 from src.utils.async_helpers import AwaitableValue
@@ -16,6 +17,7 @@ from tests.test_reward_campaigns import (
     EMPTY_PROGRESS,
     GROUP_ID,
     GTA,
+    OTHER,
     _build,
     _channel,
     _channels_fetch_client,
@@ -189,3 +191,45 @@ def test_one_enabled_benefit_keeps_mixed_reward_watchable():
     assert campaign.can_earn(_channel(twitch))
     twitch.settings.mining_benefits["BADGE"] = False
     assert not campaign.can_earn(_channel(twitch))
+
+
+@pytest.mark.asyncio
+async def test_failed_regular_game_lookup_does_not_stop_other_games(tmp_path, monkeypatch, caplog):
+    client, _ = _channels_fetch_client(tmp_path, monkeypatch, [False])
+    gta_lookup = client.get_live_streams
+    broken = Game(OTHER)
+    broken_campaign = MagicMock(spec=DropsCampaign)
+    broken_campaign.configure_mock(
+        game=broken, can_earn_within=lambda stamp: True, allowed_channels=[],
+        can_earn=lambda channel: True, can_progress_on=lambda channel: channel.drops_enabled,
+    )
+    client.inventory.append(broken_campaign)
+    client.wanted_games.append(broken)
+    lookups = []
+
+    async def directory(game, *, drops_enabled):
+        lookups.append(game)
+        if game == broken:
+            raise MinerException(f"Game: {game.slug}")
+        return await gta_lookup(game, drops_enabled=drops_enabled)
+
+    client.get_live_streams = directory
+    await _run_client(client)
+    assert any("Game: other-game" in message for message in caplog.messages)
+    assert len(lookups) == 2
+    assert client.watching_channel.get_with_default(None) is client.channels[2]
+
+
+@pytest.mark.asyncio
+async def test_game_directory_without_game_returns_empty_list():
+    twitch = _twitch()
+    twitch.gql_request = AsyncMock(return_value={"data": {"game": None}})
+    assert await ChannelService(twitch).get_live_streams(Game(OTHER)) == []
+
+
+@pytest.mark.asyncio
+async def test_exit_request_in_regular_game_lookup_propagates(tmp_path, monkeypatch):
+    client, _ = _channels_fetch_client(tmp_path, monkeypatch, [False])
+    client.get_live_streams = AsyncMock(side_effect=ExitRequest())
+    with pytest.raises(ExitRequest):
+        await _run_client(client)

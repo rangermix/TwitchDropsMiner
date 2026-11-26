@@ -406,5 +406,79 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         console.print.assert_called_once_with(f"Setting changed: language = {other_language}")
 
 
+class TestConnectionAndRefreshBounds(unittest.TestCase):
+    def test_model_rejects_out_of_range_values(self):
+        from pydantic import ValidationError
+
+        for key, value in (
+            ("minimum_refresh_interval_minutes", 0),
+            ("minimum_refresh_interval_minutes", -5),
+            ("minimum_refresh_interval_minutes", 1441),
+            ("connection_quality", 0),
+            ("connection_quality", 7),
+            ("connection_quality", True),
+            ("minimum_refresh_interval_minutes", True),
+        ):
+            with self.subTest(key=key, value=value), self.assertRaises(ValidationError):
+                SettingsUpdate(**{key: value})
+        for key, value in (
+            ("minimum_refresh_interval_minutes", 1),
+            ("minimum_refresh_interval_minutes", 1440),
+            ("connection_quality", 1),
+            ("connection_quality", 6),
+        ):
+            with self.subTest(key=key, value=value):
+                self.assertEqual(getattr(SettingsUpdate(**{key: value}), key), value)
+
+    def test_endpoint_returns_422_and_saves_nothing(self):
+        from fastapi.testclient import TestClient
+
+        gui = SimpleNamespace(settings=MagicMock())
+        with patch.object(web_app, "gui_manager", gui):
+            client = TestClient(
+                web_app.app,
+                base_url="http://127.0.0.1:8080",
+                headers={"X-TDM-Request": "1", "Origin": "http://127.0.0.1:8080", "Sec-Fetch-Site": "same-origin"},
+            )
+            for body in ({"minimum_refresh_interval_minutes": 0}, {"connection_quality": 7}):
+                with self.subTest(body=body):
+                    response = client.post("/api/settings", json=body)
+                    self.assertEqual(response.status_code, 422)
+                    self.assertEqual(response.json(), {"detail": "invalid_request"})
+        gui.settings.update_settings.assert_not_called()
+
+    def _load(self, content: dict) -> tuple[Settings, list[str]]:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "settings.json"
+            path.write_text(json.dumps(content), encoding="utf-8")
+            with (
+                patch("src.config.settings.SETTINGS_PATH", path),
+                self.assertLogs("TwitchDrops", level="WARNING") as logs,
+            ):
+                # assertLogs fails without a record; the valid case adds none, so log one.
+                import logging
+
+                logging.getLogger("TwitchDrops").warning("sentinel")
+                settings = Settings()
+        return settings, logs.output
+
+    def test_load_clamps_out_of_range_and_defaults_wrong_types(self):
+        for key, default, low, high in (
+            ("minimum_refresh_interval_minutes", 30, 1, 1440),
+            ("connection_quality", default_settings["connection_quality"], 1, 6),
+        ):
+            for value, expected in ((0, low), (-3, low), (high + 1, high), ("30", default), (True, default), (1.5, default)):
+                with self.subTest(key=key, value=value):
+                    settings, logs = self._load({key: value})
+                    self.assertEqual(getattr(settings, key), expected)
+                    self.assertEqual(len(logs), 2)
+
+    def test_load_keeps_valid_values(self):
+        settings, logs = self._load({"minimum_refresh_interval_minutes": 45, "connection_quality": 3})
+        self.assertEqual(settings.minimum_refresh_interval_minutes, 45)
+        self.assertEqual(settings.connection_quality, 3)
+        self.assertEqual(len(logs), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

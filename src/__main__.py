@@ -15,7 +15,7 @@ import truststore
 if __name__ == "__main__":
     truststore.inject_into_ssl()
 
-    from src.config import FILE_FORMATTER
+    from src.config import DEFAULT_LANG, FILE_FORMATTER
     from src.config.settings import Settings
     from src.core.client import Twitch
     from src.exceptions import CaptchaRequired
@@ -56,8 +56,11 @@ if __name__ == "__main__":
     # client run
     async def main():
         # set language
-        if settings.language:
+        if settings.language in _.get_languages():
             _.set_language(settings.language)
+        else:
+            logger.warning(f"Language {settings.language!r} is not available, using the default")
+            settings.language = DEFAULT_LANG
 
         logger.info("=== TwitchDropsMiner Starting ===")
         logger.info(f"Version: {__version__}")
