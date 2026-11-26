@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from src.config import GQL_OPERATIONS
 
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Collection, Mapping
 
     from src.config import GQLRequest
     from src.core.client import Twitch
@@ -33,19 +33,39 @@ class WatchPriority:
     @staticmethod
     def order(
         live: list[Channel], mode: str, balances: Mapping[int, int], multipliers: Mapping[int, tuple[float, ...]],
+        favorites: Collection[str] = (),
     ) -> list[Channel]:
-        """live in priority order; the sort is stable, so ties keep list order.
+        """live in priority order, favorites (logins) first; the sorts are stable, so ties keep list order.
 
         points_low / points_high: known balances ascending / descending, unknown balances last.
         subscribed: channels with active multipliers first, by multiplier sum, then the rest in list order.
         """
         if mode == "points_low":
-            return sorted(live, key=lambda c: (c.id not in balances, balances.get(c.id, 0)))
-        if mode == "points_high":
-            return sorted(live, key=lambda c: (c.id not in balances, -balances.get(c.id, 0)))
-        if mode == "subscribed":
-            return sorted(live, key=lambda c: -sum(multipliers.get(c.id, ())))
-        return list(live)
+            ordered = sorted(live, key=lambda c: (c.id not in balances, balances.get(c.id, 0)))
+        elif mode == "points_high":
+            ordered = sorted(live, key=lambda c: (c.id not in balances, -balances.get(c.id, 0)))
+        elif mode == "subscribed":
+            ordered = sorted(live, key=lambda c: -sum(multipliers.get(c.id, ())))
+        else:
+            ordered = list(live)
+        return sorted(ordered, key=lambda c: c.login not in favorites) if favorites else ordered
+
+    @staticmethod
+    def stayable(
+        order: list[Channel], options: Mapping[str, Mapping[str, Any]], balances: Mapping[int, int],
+    ) -> list[Channel]:
+        """The channels the after-visit pick may stay on: not streak_only, balance below points_limit.
+
+        An unknown balance counts as below the limit.
+        """
+        def stays(channel: Channel) -> bool:
+            item = options.get(channel.login, {})
+            limit = item.get("points_limit")
+            return not item.get("streak_only") and not (
+                limit is not None and channel.id in balances and balances[channel.id] >= limit
+            )
+
+        return [c for c in order if stays(c)]
 
     @staticmethod
     def first(order: list[Channel], current: Channel | None, mode: str, balances: Mapping[int, int]) -> Channel | None:

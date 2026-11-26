@@ -41,6 +41,8 @@ default_settings = {
     "share_watch_streaks": False,
     "games_to_watch": [],
     "idle_channels": [],
+    # per-channel overrides of the options below, keyed by a listed login (ChannelOptionSettings)
+    "idle_channel_options": {},
     # channel points options of idle watching (PointsSettings); actions that spend points or are
     # visible to others are off by default
     "idle_priority": "list",
@@ -203,6 +205,70 @@ class PointsSettings:
                 logger.warning("Ignoring invalid %s in settings; using the default (%s)", key, shown)
 
 
+class ChannelOptionSettings:
+    """Validate the per-channel options of idle watching: {login: {option: value}}."""
+
+    # option key -> the global setting it overrides
+    OVERRIDES: ClassVar[dict[str, str]] = {
+        "bonus": "claim_channel_points",
+        "raids": "follow_raids",
+        "moments": "claim_moments",
+        "predictions": "predictions_enabled",
+        "streaks": "idle_streak_first",
+        "chat": "join_chat",
+    }
+    FLAGS = (*OVERRIDES, "favorite", "streak_only")
+    LIMIT = (1, 100_000_000)
+    KEYS = (*FLAGS, "points_limit")
+
+    @classmethod
+    def _valid(cls, key: str, value: Any) -> bool:
+        if key in cls.FLAGS:
+            return type(value) is bool
+        return key == "points_limit" and type(value) is int and cls.LIMIT[0] <= value <= cls.LIMIT[1]
+
+    @classmethod
+    def normalize(cls, value: Any) -> dict[str, dict[str, Any]]:
+        """Return value when it is valid; an empty per-channel object is left out."""
+        if type(value) is not dict:
+            raise ValueError("invalid_idle_channel_options")
+        result: dict[str, dict[str, Any]] = {}
+        for login, options in value.items():
+            if (
+                type(login) is not str
+                or IdleChannelSettings.LOGIN.fullmatch(login) is None
+                or type(options) is not dict
+                or any(key not in cls.KEYS or not cls._valid(key, item) for key, item in options.items())
+            ):
+                raise ValueError("invalid_idle_channel_options")
+            if options:
+                result[login] = dict(options)
+        return result
+
+    @classmethod
+    def prune(cls, options: dict[str, dict[str, Any]], logins: list[str]) -> dict[str, dict[str, Any]]:
+        """Only the options of listed logins."""
+        return {login: item for login, item in options.items() if login in logins}
+
+    @classmethod
+    def salvage(cls, value: Any) -> tuple[dict[str, dict[str, Any]], int]:
+        """Keep the valid options of a hand-edited value; the second item counts the dropped ones."""
+        if type(value) is not dict:
+            return {}, 1
+        kept: dict[str, dict[str, Any]] = {}
+        dropped = 0
+        for login, options in value.items():
+            for key, item in options.items() if type(options) is dict else ():
+                try:
+                    cls.normalize({login: {key: item}})
+                except ValueError:
+                    dropped += 1
+                else:
+                    kept.setdefault(login, {})[key] = item
+            dropped += type(options) is not dict
+        return kept, dropped
+
+
 class NotificationEventSettings:
     """Validate which events send Discord and Telegram notifications."""
 
@@ -261,6 +327,7 @@ class Settings:
     share_watch_streaks: bool
     games_to_watch: list[str]
     idle_channels: list[str]
+    idle_channel_options: dict[str, dict[str, Any]]
     idle_priority: str
     idle_streak_first: bool
     streak_recovery: bool
@@ -318,6 +385,15 @@ class Settings:
             settings["idle_channels"] = kept
             # the count only: channel names stay out of the logs
             logger.warning("Ignoring invalid idle_channels entries in settings; kept %d channels", len(kept))
+        try:
+            options = ChannelOptionSettings.normalize(settings.get("idle_channel_options", {}))
+        except ValueError:
+            options, dropped = ChannelOptionSettings.salvage(settings.get("idle_channel_options"))
+            logger.warning("Ignoring %d invalid idle_channel_options entries in settings", dropped)
+        # options of a login that is not listed are dropped without a warning, like a removed channel
+        options = ChannelOptionSettings.prune(options, cast(list[str], settings["idle_channels"]))
+        # merge_json would strip the login keys, which no template can list: it gets the default {}
+        settings.pop("idle_channel_options", None)
         if not isinstance(settings.get("claim_channel_points", True), bool):
             # merge_json below replaces the wrong type with the default (on)
             logger.warning("Ignoring invalid claim_channel_points in settings; using the default (on)")
@@ -329,6 +405,7 @@ class Settings:
         if isinstance(last_notified, str) and "last_notified_releases" not in settings:
             settings["last_notified_releases"] = {"telegram": last_notified, "discord": last_notified}
         merge_json(settings, default_settings)
+        settings["idle_channel_options"] = options
         settings.pop("allow_helper_connection", None)
         for key, value in settings.items():
             if value is URL:
@@ -343,6 +420,9 @@ class Settings:
         self.reward_priority = RewardPriority.normalize(self.reward_priority)
         self.mining_hours = MiningHoursSettings.normalize(self.mining_hours)
         self.idle_channels = IdleChannelSettings.normalize(self.idle_channels)
+        self.idle_channel_options = ChannelOptionSettings.prune(
+            ChannelOptionSettings.normalize(self.idle_channel_options), self.idle_channels,
+        )
         for key in PointsSettings.KEYS:
             PointsSettings.normalize(key, getattr(self, key))
         self.drop_name_blacklist = DropIgnorePolicy.normalize_keywords(

@@ -17,6 +17,7 @@ POINTS_OPTIONS = {
     "prediction_max_points": 1000, "prediction_min_balance": 0, "prediction_min_voters": 0,
     "prediction_min_odds": 1.0, "prediction_timing": "before_close", "prediction_delay_seconds": 6,
     "prediction_timer_percent": 50, "prediction_fixed_option": 1, "claim_moments": False, "join_chat": False,
+    "idle_channel_options": {},
 }
 
 

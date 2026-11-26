@@ -19,6 +19,7 @@ from pydantic import BaseModel, StrictBool, StrictFloat, StrictInt, ValidationIn
 from src.config.paths import DATA_DIR
 from src.config.reward_priority import RewardPriority
 from src.config.settings import (
+    ChannelOptionSettings,
     IdleChannelSettings,
     InventoryFilterSettings,
     MiningHoursSettings,
@@ -96,6 +97,7 @@ class SettingsUpdate(BaseModel):
     prefer_followed_channels: StrictBool | None = None
     reward_priority: list[str] | None = None
     idle_channels: list[str] | None = None
+    idle_channel_options: dict | None = None
     claim_channel_points: StrictBool | None = None
     share_watch_streaks: StrictBool | None = None
     idle_priority: str | None = None
@@ -137,6 +139,11 @@ class SettingsUpdate(BaseModel):
     @classmethod
     def validate_idle_channels(cls, value: list[str] | None) -> list[str] | None:
         return IdleChannelSettings.normalize(value) if value is not None else None
+
+    @field_validator("idle_channel_options")
+    @classmethod
+    def validate_idle_channel_options(cls, value: dict | None) -> dict | None:
+        return ChannelOptionSettings.normalize(value) if value is not None else None
 
     @field_validator(*PointsSettings.KEYS)
     @classmethod

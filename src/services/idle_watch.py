@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING
 import aiohttp
 
 from src.config import GQL_OPERATIONS, MAX_CHANNELS, GQLRawQuery, State
+from src.config.settings import ChannelOptionSettings
 from src.exceptions import ExitRequest, GQLException, MinerException
 from src.i18n import _
 from src.models.channel import Channel
@@ -578,7 +579,7 @@ class IdleWatchService:
         due = self._share_now or self._share_checked is None or now - self._share_checked >= STREAK_SHARE_CHECK_SECONDS
         if not self.active or not self._twitch.settings.share_watch_streaks or not due or self._load_failed:
             return
-        live = self.live_channels()
+        live = [c for c in self.live_channels() if self.option(c, "idle_streak_first")]
         if not live:
             # an early-check request waits for a check that runs
             return
@@ -625,7 +626,14 @@ class IdleWatchService:
 
     def _may_share(self, channel: Channel) -> bool:
         """The check's guards, again right before a mutation: the read and earlier shares take time."""
-        return self.may_act(channel, "share_watch_streaks")
+        return self.may_act(channel, "share_watch_streaks") and self.option(channel, "idle_streak_first") is True
+
+    def option(self, channel: Channel, setting: str) -> bool:
+        """The effective value of a bool setting on channel: its own override, else the global setting."""
+        settings = self._twitch.settings
+        key = next((k for k, name in ChannelOptionSettings.OVERRIDES.items() if name == setting), None)
+        override = settings.idle_channel_options.get(channel.login, {}).get(key) if key else None
+        return override if isinstance(override, bool) else getattr(settings, setting)
 
     def may_act(self, channel: Channel, setting: str) -> bool:
         """Whether a channel points action behind the bool setting may run on channel right now.
@@ -637,7 +645,7 @@ class IdleWatchService:
         return (
             self.active
             and not self.points_paused
-            and getattr(tw.settings, setting) is True
+            and self.option(channel, setting) is True
             and channel in self.live_channels()
             # can_watch is False while paused or outside mining hours too
             and tw.is_mining_time()
@@ -847,8 +855,9 @@ class IdleWatchService:
         settings = self._twitch.settings
         ids = {c.id: self._broadcast_id(c) for c in live}
         self._skip_restarts(live, ids, now)
-        if not settings.idle_streak_first:
-            # no visits: one in progress is dropped unrecorded, so it runs again if visits are turned back on
+        visiting = next((c for c in live if self.visit is not None and c.id == self.visit.channel_id), None)
+        if visiting is not None and not self.option(visiting, "idle_streak_first"):
+            # no visits there: one in progress is dropped unrecorded, so it runs again if visits are turned back on
             self.visit = None
         visit = self.visit
         if visit is not None:
@@ -874,21 +883,24 @@ class IdleWatchService:
         self.visited = dict(kept[-IDLE_VISITS_KEPT:])
         recovery = [(b, r) for b, r in self._recovery.items() if r[0] not in unlisted and ids.get(r[0], b) == b]
         self._recovery = dict(recovery[-IDLE_VISITS_KEPT:])
-        order = WatchPriority.order(live, settings.idle_priority, self.balances, self.multipliers)
-        if settings.idle_streak_first:
-            for channel in order:
-                if ids[channel.id] not in self.visited:
-                    self.visit = Visit(channel.id, ids[channel.id], now)
+        options = settings.idle_channel_options
+        favorites = [login for login, item in options.items() if item.get("favorite")]
+        order = WatchPriority.order(live, settings.idle_priority, self.balances, self.multipliers, favorites)
+        visitors = [c for c in order if self.option(c, "idle_streak_first")]
+        for channel in visitors:
+            if ids[channel.id] not in self.visited:
+                self.visit = Visit(channel.id, ids[channel.id], now)
+                return channel
+        if settings.streak_recovery:
+            # only after every first visit
+            for channel in visitors:
+                entry = self._recovery.get(ids[channel.id])
+                if entry is not None and entry[1] < RECOVERY_VISITS and now - entry[2] >= RECOVERY_GAP_SECONDS:
+                    self._recovery[ids[channel.id]] = (channel.id, entry[1] + 1, entry[2])
+                    self.visit = Visit(channel.id, ids[channel.id], now, recovery=True)
                     return channel
-            if settings.streak_recovery:
-                # only after every first visit
-                for channel in order:
-                    entry = self._recovery.get(ids[channel.id])
-                    if entry is not None and entry[1] < RECOVERY_VISITS and now - entry[2] >= RECOVERY_GAP_SECONDS:
-                        self._recovery[ids[channel.id]] = (channel.id, entry[1] + 1, entry[2])
-                        self.visit = Visit(channel.id, ids[channel.id], now, recovery=True)
-                        return channel
-        return WatchPriority.first(order, self.watched, settings.idle_priority, self.balances)
+        stay = WatchPriority.stayable(order, options, self.balances)
+        return WatchPriority.first(stay, self.watched, settings.idle_priority, self.balances)
 
     def _note_recovery(self, visit: Visit, full: bool, now: float) -> None:
         """Book an ended visit for streak recovery: a full first visit without the bonus earns recovery visits."""

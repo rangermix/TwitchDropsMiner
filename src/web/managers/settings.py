@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from src.config.reward_priority import RewardPriority
 from src.config.settings import (
+    ChannelOptionSettings,
     IdleChannelSettings,
     InventoryFilterSettings,
     MiningHoursSettings,
@@ -195,6 +196,9 @@ class SettingsManager:
         idle_channels = settings_data.get("idle_channels")
         if idle_channels is not None:
             idle_channels = IdleChannelSettings.normalize(idle_channels)
+        idle_options = settings_data.get("idle_channel_options")
+        if idle_options is not None:
+            idle_options = ChannelOptionSettings.normalize(idle_options)
         points_options = {
             key: PointsSettings.normalize(key, settings_data[key])
             for key in PointsSettings.KEYS
@@ -236,6 +240,18 @@ class SettingsManager:
             lambda _names: self._on_idle_channels_change() if self._on_idle_channels_change else None,
             log_formatter=lambda names: f"{len(names)} channels",
         )
+        if idle_options is not None or idle_channels is not None:
+            # removing a channel from the list removes its options
+            self.check_and_update_setting(
+                "idle_channel_options",
+                ChannelOptionSettings.prune(
+                    self._settings.idle_channel_options if idle_options is None else idle_options,
+                    self._settings.idle_channels if idle_channels is None else idle_channels,
+                ),
+                False,
+                lambda _options: self._on_idle_channels_change() if self._on_idle_channels_change else None,
+                log_formatter=lambda options: f"{len(options)} channels",
+            )
         self.check_and_update_setting("claim_channel_points", claim_points)
         self.check_and_update_setting("share_watch_streaks", share_streaks)
         for key, value in points_options.items():
