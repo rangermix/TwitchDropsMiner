@@ -1341,10 +1341,21 @@ with this policy when reviewing proposals or documenting deployment options.
 change stops it and releases its channel. It never claims, shares or watches for
 points while a drop can be mined: a pick that `can_watch()` accepts goes to
 CHANNEL_SWITCH before it is watched. Claims and shares also need `is_mining_time()`.
-Other code reaches the service through the public `Twitch.idle_watch`.
+Other code reaches the service through the public `Twitch.idle_watch`. The channel
+points options (`PointsSettings` in `src/config/settings.py`) are read on each step.
 
+- Points pause: `points_paused` is runtime only, like the drop pause. `allowed()`
+  needs it off, and `claim()`, `_may_share()` and the points read check it again.
+  `set_points_paused()` (`POST /api/points/pause`, `{"paused": bool}`, StrictBool)
+  broadcasts `points_paused_update` and re-runs the IDLE step through
+  `Twitch.idle_channels_changed()`, which acts only in IDLE, so drop mining is never
+  touched.
 - Visits: each live listed channel gets one visit of `IDLE_VISIT_SECONDS` per
-  broadcast, then the highest live channel in list order is watched. A visit is
+  broadcast, then the first live channel in priority order is watched.
+  `WatchPriority` (`src/services/idle_points.py`) orders live channels by
+  `idle_priority` for the visits and that pick (stable sort: ties keep list order,
+  unknown balances last, `subscribed` by multiplier sum). With `idle_streak_first` off
+  no visit is made and a visit in progress is dropped unrecorded. A visit is
   recorded only when it is done, ran its time or the broadcast changed; one cut short
   because its channel left the live list starts again. Banned channels are skipped; a
   timed ban is retried when it ends.
@@ -1361,6 +1372,12 @@ Other code reaches the service through the public `Twitch.idle_watch`.
   failed watch, or a stream check after a title change) still counts as seen
   offline at the correction. `_seen` and `_finished` are in memory
   only and cleared on an account switch.
+- Streak recovery (`streak_recovery`): a first visit that ran its full time without
+  `visit.done` books `_recovery[broadcast]`; after every first visit, it gets up to
+  `RECOVERY_VISITS` (2) visits with `Visit.recovery`, `RECOVERY_GAP_SECONDS` (600) from
+  the end of the last one. A recovery visit counts when it starts. A WATCH_STREAK gain
+  on the channel or a done visit ends it; entries are pruned like `visited` and live in
+  memory only.
 - `data/idle_visits.json` holds `user_id`, the finished visits (last
   `IDLE_VISITS_KEPT`) and the share keys (last `IDLE_SHARES_KEPT`): `[id, count]` is
   used up, `[id, count, tries]` was refused and has tries left. An auth
@@ -1372,14 +1389,29 @@ Other code reaches the service through the public `Twitch.idle_watch`.
   entries (one warning with the count). A file that exists but cannot be read or
   parsed as a whole, or has an invalid share entry, sets `_load_failed`: the file is
   never written, its readable visits stay in memory and no share is sent this run.
-- Bonus claim: `ClaimCommunityPoints` only while idle watching, only on the loop's
-  own pick (`watched`, not a drop channel still watched at idle entry) and only with
-  `claim_channel_points` on. A claim counts only when the reply has a `claim` object
-  with a non-empty id and no error; after a failed claim the tick runs
-  `refresh_points()` again, at most `CLAIM_RETRIES` (2) times per watched channel,
-  until the claim succeeds, the read shows no open bonus or the channel changes. A
-  success or a channel change resets the count; after the last retry only
-  `claim-available` retries the claim.
+- Bonus claim: `ClaimCommunityPoints` only while the loop runs, only on a tracked
+  channel whose login is listed and that `can_watch()` refuses, and only with
+  `claim_channel_points` on; `claim-available` is honoured for any such channel. A
+  claim counts only when the reply has a `claim` object with a non-empty id and no
+  error. Only a failure on the loop's own pick (`watched`) sets `_claim_failed`: the
+  tick then runs `refresh_points()` again, at most `CLAIM_RETRIES` (2) times per
+  watched channel, until the claim succeeds, the read shows no open bonus or the
+  channel changes. A success or a channel change resets the count; after the last
+  retry only `claim-available` retries the claim.
+- Points read: `PointsReader` reads `ChannelPointsContext` for the live listed
+  channels other than `watched` (and not `can_watch()`) in one batch every
+  `POINTS_READ_SECONDS` (300). `apply_points()` (shared with `refresh_points()`) stores
+  `balances` and `multipliers` (factor tuples), skips an answer whose
+  `community.channel.id` names another channel, and claims an open bonus. A failed or
+  partial batch waits for the next read.
+- Points tab state: `PointsManager` (`src/web/managers/points.py`) owns the last gain
+  per login, the points log (`gui.points_log`, a `ConsoleOutputManager` with event
+  `points_output` and no logger echo) and the `points_update` broadcast, sent only when
+  the state changed: `{"paused", "active", "channels": [{"login", "name", "live",
+  "balance", "last_gain": {"points", "reason", "at"} | null}]}`;
+  `initial_state.points` adds `log`. The service calls `gui.points.log(key, **values)`
+  with a `points.log.*` key (English copies in every locale until translated) and
+  keeps its English INFO line.
 - Streak share: `shareViewerMilestone` posts a visible notice in the streamer's chat
   under the user's name, so it is sent with `single_attempt`, and its key (milestone
   id, count as one int) is used up and saved before sending; when that save fails the
@@ -1391,7 +1423,8 @@ Other code reaches the service through the public `Twitch.idle_watch`.
 - The `CommunityPoints` user topic is subscribed at login (`BASE_TOPICS = 3`), so at
   most 198 channels are tracked, drop and idle channels together. Idle channels over
   the limit are skipped with a warning.
-- Extra requests while idle watching: the watch loop's per-minute `CurrentDrop` for
+- Extra requests while idle watching: the batched `ChannelPointsContext` read every
+  `POINTS_READ_SECONDS`, the watch loop's per-minute `CurrentDrop` for
   the watched channel, `ChannelBanStatus` for newly tracked idle channels, and
   `GetStreamInfo` plus `ChannelPointsContext` again after each hourly reload drops
   the idle channels (CHANNELS_CLEANUP keeps an online one that streams a wanted game).

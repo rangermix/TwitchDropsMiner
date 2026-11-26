@@ -275,18 +275,42 @@ use goes to drop mining instead.
   when TDM did not see the channel go offline. TDM remembers this only while it runs.
 - A listed channel where the account is banned is skipped. After a timeout ends, TDM
   tries the channel again without waiting for the next idle start.
-- After the visits, TDM watches the highest live listed channel for channel points. The
-  order of the list is the priority.
+- After the visits, TDM watches the first live listed channel in priority order for
+  channel points. The `idle_priority` setting picks the order, for the visits and for
+  this pick: `list` (default, the order of the list), `points_low` or `points_high`
+  (lowest or highest balance first; a channel whose balance TDM has not read yet comes
+  last), or `subscribed` (channels with an active points multiplier, such as a
+  subscription, first, largest multiplier first). Ties keep the list order. With the
+  balance orders the watched channel can change when balances pass each other.
+- `idle_streak_first` (on by default) makes the watch streak visits. Turned off, TDM
+  makes no visits and watches the first channel in priority order.
+- `streak_recovery` (on by default): a visit that ran its full 7 minutes without a watch
+  streak bonus gets up to 2 more visits in the same stream, after every other channel's
+  first visit and at least 10 minutes apart. A watch streak bonus ends them. TDM cannot
+  see whether a streak is at risk, so this is a second try, not a recovery Twitch
+  confirms. Twitch's own recovery (5 minutes of a new live stream within 24 hours of the
+  missed one) is covered by the visit every new stream gets. TDM remembers recovery
+  visits only while it runs.
+- These options have no dashboard controls yet; set them in `settings.json` or through
+  the settings API.
 - A listed channel may stream a game with drops that is not in your Mining list. Twitch
   can then credit progress on those drops while TDM idle watches the channel, and TDM
   claims a finished drop as it does every claimable drop in the inventory.
 - **Claim channel points bonus while idle watching** (on by default) claims the channel
-  points bonus. It claims only on the channel TDM idle watches, never while mining
-  drops, while paused or outside mining hours. A claim counts only when Twitch returns
-  it. After a failed claim, TDM reads the channel's points again on the next idle steps
-  (about every 30 seconds) and retries at most twice per watched channel; after that it
-  waits for Twitch's next bonus message or another channel. A successful claim allows
-  two retries again.
+  points bonus on any listed channel while idle watching, never on a channel that is not
+  listed or that a drop can use, never while mining drops, while paused or outside
+  mining hours. A claim counts only when Twitch returns it. After a failed claim on the
+  watched channel, TDM reads its points again on the next idle steps (about every 30
+  seconds) and retries at most twice per watched channel; after that it waits for
+  Twitch's next bonus message or another channel. A successful claim allows two retries
+  again. A failed claim on another listed channel is retried by the next points read.
+- About every 5 minutes while idle watching, TDM reads the channel points of the other
+  live listed channels in one request: balance, active multipliers and an open bonus,
+  which it claims. A failed or partial read waits for the next one.
+- **Pause channel points** (`POST /api/points/pause` with `{"paused": true}` or
+  `false`) stops idle watching and its watch until resumed or until TDM restarts. Drop
+  mining is not affected. The channel points log keeps its own lines (gains, claims,
+  visits, shares, pause); the dashboard tab that shows it is not built yet.
 - **Share watch streaks while idle watching** (off by default) shares a watch streak
   once Twitch marks it shareable, once per milestone, for live listed channels. The
   check runs about every 5 minutes and right after a watch streak message. Twitch posts
@@ -302,8 +326,9 @@ use goes to drop mining instead.
     a null milestone counts as a refusal; a refused share is tried once more, also after
     a restart.
 - While idle watching, TDM sends a stream lookup for listed channels it does not track
-  yet, a channel points read when it starts watching a channel, and a watch streak read
-  about every 5 minutes when sharing is on. The normal watch loop also sends its drop
+  yet, a channel points read when it starts watching a channel, one batched channel
+  points read of the other live listed channels about every 5 minutes, and a watch
+  streak read about every 5 minutes when sharing is on. The normal watch loop also sends its drop
   progress request for the watched channel every minute, and each newly tracked idle
   channel gets a ban status check. The hourly channel reload usually drops the idle
   channels (an idle channel streaming a wanted game stays tracked), so the stream lookup
