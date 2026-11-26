@@ -104,6 +104,31 @@ def test_turning_a_feature_off_removes_its_topics(option, gone):
     assert subscribed(tw) == ALL
 
 
+@pytest.mark.parametrize(("key", "option", "on_a", "every"), [
+    ("predictions", "predictions_enabled", {"predictions-user-v1.42", "predictions-channel-v1.1"},
+     {"predictions-user-v1.42", "predictions-channel-v1.1", "predictions-channel-v1.2"}),
+    ("moments", "claim_moments", {"community-moments-channel-v1.1"},
+     {"community-moments-channel-v1.1", "community-moments-channel-v1.2"}),
+    ("raids", "follow_raids", {"raid.1"}, {"raid.1"}),
+])
+@pytest.mark.asyncio
+async def test_topics_follow_the_channel_override(key, option, on_a, every):
+    off = {"predictions_enabled": False, "claim_moments": False, "follow_raids": False}
+    svc, tw, *_ = setup(**off)
+    # global off, a turned on: only a's topics of that feature
+    tw.settings.idle_channel_options = {"a": {key: True}}
+    svc.events.sync()
+    assert subscribed(tw) == on_a
+    # global on, both channels turned off: none of that feature's topics
+    setattr(tw.settings, option, True)
+    tw.settings.idle_channel_options = {"a": {key: False}, "b": {key: False}}
+    svc.events.sync()
+    assert subscribed(tw) == set()
+    tw.settings.idle_channel_options = {}
+    svc.events.sync()
+    assert subscribed(tw) == every
+
+
 def test_raid_topic_follows_the_watched_channel_and_offline_channels_lose_theirs():
     svc, tw, a, b = setup()
     svc.events.sync()

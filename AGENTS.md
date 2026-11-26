@@ -1548,10 +1548,11 @@ live in `gui.points`, translated in every locale.
   also after a restart. A count without a usable value matches any count of the same
   milestone id. Needs `share_watch_streaks`, which is off by default.
 - Event features (`PointsEvents`, `src/services/points_events.py`, owned by the service as
-  `events`): `sync()` runs on every tick and subscribes only the topics of enabled options
-  while the loop runs and points are not paused: `predictions-user-v1.<user>` and
-  `predictions-channel-v1.<id>` (`predictions_enabled`) and
+  `events`): `sync()` runs on every tick and subscribes only the topics of options that are
+  on for the channel (`option()`: its override, else the global setting) while the loop runs
+  and points are not paused: `predictions-channel-v1.<id>` (`predictions_enabled`) and
   `community-moments-channel-v1.<id>` (`claim_moments`) for every live listed channel,
+  `predictions-user-v1.<user>` while any of them has predictions on, and
   `raid.<id>` (`follow_raids`) for `watched` only (the side channel in side mode). A turned-off option, an offline or
   unlisted channel or a new pick drops its topics on the next tick; `stop()` (right away,
   so the next state has the room) and the end of `_run` (unless a newer run replaced it)
