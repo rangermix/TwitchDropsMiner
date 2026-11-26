@@ -1518,7 +1518,11 @@ live in `gui.points`, translated in every locale.
   `can_watch()` and the hand-over to drops see only a campaign this account can earn. A
   failed read sets False (one WARNING per `track()` with the exception type): a real
   drop channel is still found by CHANNELS_FETCH. Channels already tracked are reused
-  unchanged.
+  unchanged. Every later stream check of a `verify_drops` channel (idle and followed
+  channels) reads AvailableDrops within `DROPS_READ_TIMEOUT`; a failed read keeps the rest
+  of the check (live state, game), the same broadcast keeps its last checked flag and a new
+  broadcast gets False, so an AvailableDrops outage neither hides a stream going live nor
+  gives a new broadcast the default True.
 - A listed channel can stream a drops game outside the Mining list: `can_watch()` is
   False, so it is idle watched, Twitch can credit that game's drops, and the
   GAMES_UPDATE claim loop and `process_drops` claim them like any claimable drop.

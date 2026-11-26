@@ -13,9 +13,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.config import MAX_CHANNELS, State, WebsocketTopic
+from src.config import GQL_OPERATIONS, MAX_CHANNELS, State, WebsocketTopic
 from src.core.client import Twitch
 from src.models.campaign import DropsCampaign
+from src.models.channel import Channel
 from src.models.game import Game
 from src.services import idle_watch as idle_mod
 from src.services.channel_service import ChannelService
@@ -1425,9 +1426,72 @@ async def test_a_new_idle_channel_gets_its_drops_flag_from_available_drops(game,
 @pytest.mark.asyncio
 async def test_a_tracked_drop_channel_keeps_its_drops_flag():
     svc, tw = drops_service(WANTED_GAME, [])
-    existing = fake(1, 100, login="c1")
-    existing.drops_enabled = True
+    existing = Channel.from_directory(tw, {
+        "broadcaster": {"id": "1", "login": "c1", "displayName": "C1"},
+        "id": "100", "game": WANTED_GAME, "viewersCount": 5, "title": "t",
+    }, drops_enabled=True)
     tw.channels[1] = existing
     await svc.track()
-    assert tw.channels[1] is existing and existing.drops_enabled
+    assert tw.channels[1] is existing and existing.drops_enabled and not existing._verify_drops
     assert all(isinstance(c.args[0], list) for c in tw.gql_request.call_args_list)  # no AvailableDrops
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("error", [idle_mod.ExitRequest(), RuntimeError("bug")])
+async def test_a_drops_check_that_is_not_a_read_error_propagates(error):
+    svc, tw = drops_service(WANTED_GAME, [{"id": "camp"}])
+    lookup = tw.gql_request.side_effect
+
+    async def gql(ops):
+        if isinstance(ops, list):
+            return await lookup(ops)
+        raise error
+
+    tw.gql_request.side_effect = gql
+    with pytest.raises(type(error)):
+        await svc.track()
+    assert 1 not in tw.channels
+
+
+def stream_reply(game, live=True, broadcast="101"):
+    return {"data": {"user": {
+        "id": "1", "login": "c1", "displayName": "C1",
+        "stream": {"id": broadcast, "viewersCount": 5} if live else None,
+        "broadcastSettings": {"game": game, "title": "t"},
+    }}}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("start_game, start_live, start_drops, game, broadcast, enabled", [
+    (WANTED_GAME, False, [], WANTED_GAME, "101", False),  # offline when tracked, goes live while the read fails
+    (WANTED_GAME, True, [{"id": "camp"}], WANTED_GAME, "101", False),  # a new broadcast does not inherit True
+    (WANTED_GAME, True, [{"id": "camp"}], WANTED_GAME, "100", True),  # the same broadcast keeps its checked flag
+    (CHATTING, True, [], WANTED_GAME, "101", False),  # the game change still applies
+])
+async def test_a_later_stream_check_with_a_failing_drops_read_keeps_liveness(
+    start_game, start_live, start_drops, game, broadcast, enabled, caplog,
+):
+    svc, tw = drops_service(start_game, start_drops)
+    if not start_live:
+        async def offline(ops):
+            if isinstance(ops, list):
+                return [stream_reply(start_game, live=False)]
+            raise AssertionError("no drops read for an offline channel")
+        tw.gql_request.side_effect = offline
+    await idle_entry(svc)
+    channel = tw.channels[1]
+    assert channel.online is start_live
+
+    async def later(ops):
+        if ops["operationName"] == GQL_OPERATIONS["GetStreamInfo"]["operationName"]:
+            return stream_reply(game, broadcast=broadcast)
+        raise idle_mod.MinerException("secret body")
+
+    tw.gql_request.side_effect = later
+    tw.on_channel_update = MagicMock()
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        await channel.refresh_stream()
+    assert channel.online and channel.game == Game(game) and channel.drops_enabled is enabled
+    assert tw.can_watch(channel) is enabled
+    assert "Drops check failed for channel 1: MinerException" in caplog.text
+    assert "Stream check failed" not in caplog.text and "secret body" not in caplog.text
