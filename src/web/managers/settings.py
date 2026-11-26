@@ -182,6 +182,9 @@ class SettingsManager:
         prefer_followed = settings_data.get("prefer_followed_channels")
         if prefer_followed is not None and not isinstance(prefer_followed, bool):
             raise ValueError("invalid_prefer_followed_channels")
+        prefer_small = settings_data.get("prefer_small_streamers")
+        if prefer_small is not None and not isinstance(prefer_small, bool):
+            raise ValueError("invalid_prefer_small_streamers")
         language = settings_data.get("language")
         if language is not None and language not in _.get_languages():
             raise ValueError("invalid_language")
@@ -218,6 +221,10 @@ class SettingsManager:
             "prefer_followed_channels", prefer_followed, True
         )
         should_trigger_update |= follows_changed
+        small_changed = self.check_and_update_setting(
+            "prefer_small_streamers", prefer_small, True
+        )
+        should_trigger_update |= small_changed
         should_trigger_update |= self.check_and_update_setting(
             "language", language, False, self._set_language
         )
@@ -265,7 +272,7 @@ class SettingsManager:
 
         if override_changed and isinstance(requested_allow_unlinked, bool):
             self._settings.allow_unlinked_campaigns = requested_allow_unlinked
-        if override_changed or follows_changed:
+        if override_changed or follows_changed or small_changed:
             self._settings.mining_opt_ins_revision = getattr(
                 self._settings, "mining_opt_ins_revision", 0
             ) + 1

@@ -309,6 +309,9 @@ class GUISettings(TypedDict):
     prefer_followed_channels: str
     prefer_followed_channels_help: str
     prefer_followed_channels_save_error: str
+    prefer_small_streamers: str
+    prefer_small_streamers_help: str
+    prefer_small_streamers_save_error: str
     general: GUISettingsGeneral
     tab_mining: str
     tab_games: str

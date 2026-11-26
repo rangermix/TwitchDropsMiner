@@ -818,11 +818,12 @@ class Twitch:
                 self._remove_channel_topics(set(banned_channels))
                 for channel in banned_channels:
                     channel.remove()
-                # sort them descending by viewers, by priority and by game priority
+                # sort them by viewers (descending, or ascending with prefer_small_streamers),
+                # then by priority and by game priority
                 # NOTE: Viewers sort also ensures ONLINE channels are sorted to the top
                 # NOTE: We can drop using the set now, because there's no more channels being added
-                ordered_channels: list[Channel] = sorted(
-                    unbanned_channels, key=ChannelService.get_viewers_key, reverse=True
+                ordered_channels: list[Channel] = self._channel_service.sort_by_viewers(
+                    unbanned_channels
                 )
                 ordered_channels.sort(key=self._channel_service.get_selection_priority)
                 self._channel_service.prioritize_followed(ordered_channels)

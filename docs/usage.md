@@ -104,6 +104,14 @@ queue order and reward settings still take precedence. A manually chosen channel
 is protected from the follow tie-break while it stays selected. TDM checks up to
 100 live followed channels each time it reloads channels.
 
+### Prefer small streamers
+
+**Settings → Mining → Prefer small streamers** is off by default and is not yet in a
+released version. Normally TDM watches the live channel with the most viewers among
+channels of equal priority. When on, it watches the one with the fewest viewers
+instead. Priorities, campaign allowlists, followed channels and a manually chosen
+channel still take precedence; offline channels are never preferred.
+
 ### Special Events and IRL campaigns
 
 Include the campaign's category in **Mining list**. These campaigns can progress

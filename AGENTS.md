@@ -958,6 +958,11 @@ Open Reward Campaigns use four raw `GQLRawQuery` operations, `REWARD_CAMPAIGNS_Q
 `REWARD_COMPLETED_QUERY` (optional completed list); the two optional ones run concurrently,
 each with its own 5 s timeout. They have no persisted hashes.
 
+`prefer_small_streamers` (default false, StrictBool, part of the mining opt-in revision
+group with `allow_unlinked_campaigns`/`prefer_followed_channels`) only flips the viewer
+tie-break in `ChannelService.sort_by_viewers()`: fewest viewers first, offline channels
+last. Coverage: `tests/test_prefer_small_streamers.py`.
+
 ### Channel Selection Priority
 
 1. Selected channel (if user clicked one)
@@ -965,7 +970,7 @@ each with its own 5 s timeout. They have no persisted hashes.
 3. Game priority order (from settings)
 4. More wanted campaigns progressable on the channel, at equal priority and ACL status
    (`ChannelService.get_selection_priority()`, also used by `should_switch()`)
-5. Viewer count (descending)
+5. Viewer count (descending; ascending with `prefer_small_streamers`)
 6. Maximum 199 channels tracked simultaneously
 
 ### Maintenance Task
