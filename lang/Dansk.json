@@ -501,7 +501,7 @@
             "predictions_enabled_help": "Advarsel: forudsigelser bruger dine kanalpoint og kan miste dem. En tabt forudsigelse refunderes ikke.",
             "prediction_strategy": "Strategi",
             "prediction_strategy_help": "Hvordan udfaldet vælges. Ingen strategi er kendt for at slå de andre seere i gennemsnit.",
-            "strategy_smart": "Smart: høje odds, når stemmerne er tætte, ellers flest stemmer",
+            "strategy_smart": "Smart: af de to udfald med flest stemmer det med færrest point, når stemmerne er tætte, ellers flest stemmer",
             "strategy_most_voted": "Flest stemmer: udfaldet med flest brugere",
             "strategy_high_odds": "Høje odds: udfaldet med færrest point",
             "strategy_favourite": "Favorit: udfaldet med flest point",

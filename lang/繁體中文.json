@@ -501,7 +501,7 @@
             "predictions_enabled_help": "警告：預測會花費你的頻道點數，並可能輸掉。輸掉的預測不會退還。",
             "prediction_strategy": "策略",
             "prediction_strategy_help": "如何選擇結果。目前沒有已知的策略能平均勝過其他觀眾。",
-            "strategy_smart": "智慧：投票接近時選高賠率，否則選得票最多的",
+            "strategy_smart": "智慧：投票接近時選得票最多的兩個結果中點數較少的那個，否則選得票最多的",
             "strategy_most_voted": "得票最多：使用者最多的結果",
             "strategy_high_odds": "高賠率：點數最少的結果",
             "strategy_favourite": "熱門：點數最多的結果",

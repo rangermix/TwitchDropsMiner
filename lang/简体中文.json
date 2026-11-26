@@ -501,7 +501,7 @@
             "predictions_enabled_help": "警告：预测会花费你的频道积分，并可能输掉。输掉的预测不会退还。",
             "prediction_strategy": "策略",
             "prediction_strategy_help": "如何选择结果。目前没有已知的策略能平均胜过其他观众。",
-            "strategy_smart": "智能：投票接近时选高赔率，否则选得票最多的",
+            "strategy_smart": "智能：投票接近时选得票最多的两个结果中积分较少的那个，否则选得票最多的",
             "strategy_most_voted": "得票最多：用户最多的结果",
             "strategy_high_odds": "高赔率：积分最少的结果",
             "strategy_favourite": "热门：积分最多的结果",

@@ -501,7 +501,7 @@
             "predictions_enabled_help": "Advertencia: las predicciones gastan tus puntos de canal y pueden perderlos. Una predicción perdida no se reembolsa.",
             "prediction_strategy": "Estrategia",
             "prediction_strategy_help": "Cómo se elige el resultado. No se conoce ninguna estrategia que supere de media a los demás espectadores.",
-            "strategy_smart": "Inteligente: cuota alta cuando los votos están igualados, si no el más votado",
+            "strategy_smart": "Inteligente: de los dos resultados más votados, el de menos puntos cuando los votos están igualados, si no el más votado",
             "strategy_most_voted": "Más votado: el resultado con más usuarios",
             "strategy_high_odds": "Cuota alta: el resultado con menos puntos",
             "strategy_favourite": "Favorito: el resultado con más puntos",

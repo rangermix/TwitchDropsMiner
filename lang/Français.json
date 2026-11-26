@@ -501,7 +501,7 @@
             "predictions_enabled_help": "Attention : les pronostics dépensent vos points de chaîne et peuvent les faire perdre. Un pronostic perdu n'est pas remboursé.",
             "prediction_strategy": "Stratégie",
             "prediction_strategy_help": "Comment le résultat est choisi. Aucune stratégie n'est connue pour battre les autres spectateurs en moyenne.",
-            "strategy_smart": "Intelligente : cote élevée quand les votes sont serrés, sinon le plus voté",
+            "strategy_smart": "Intelligente : des deux résultats les plus votés, celui avec le moins de points quand les votes sont serrés, sinon le plus voté",
             "strategy_most_voted": "Le plus voté : le résultat avec le plus d'utilisateurs",
             "strategy_high_odds": "Cote élevée : le résultat avec le moins de points",
             "strategy_favourite": "Favori : le résultat avec le plus de points",

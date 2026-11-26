@@ -501,7 +501,7 @@
             "predictions_enabled_help": "Figyelem: az előrejelzések elköltik a csatornapontjaidat, és el is veszíthetik őket. Az elvesztett előrejelzést nem térítik vissza.",
             "prediction_strategy": "Stratégia",
             "prediction_strategy_help": "Hogyan választja ki az eredményt. Nem ismert olyan stratégia, amely átlagosan legyőzné a többi nézőt.",
-            "strategy_smart": "Okos: magas szorzó, ha a szavazatok közel vannak, egyébként a legtöbb szavazatot kapott",
+            "strategy_smart": "Okos: a két legtöbb szavazatot kapott eredmény közül a kevesebb pontú, ha a szavazatok közel vannak, egyébként a legtöbb szavazatot kapott",
             "strategy_most_voted": "Legtöbb szavazat: a legtöbb felhasználóval rendelkező eredmény",
             "strategy_high_odds": "Magas szorzó: a legkevesebb ponttal rendelkező eredmény",
             "strategy_favourite": "Favorit: a legtöbb ponttal rendelkező eredmény",

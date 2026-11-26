@@ -501,7 +501,7 @@
             "predictions_enabled_help": "警告: 予想はチャンネルポイントを消費し、失う可能性があります。外れた予想のポイントは返還されません。",
             "prediction_strategy": "戦略",
             "prediction_strategy_help": "結果の選び方です。平均してほかの視聴者に勝てることが分かっている戦略はありません。",
-            "strategy_smart": "スマート: 票が拮抗しているときは高オッズ、それ以外は最多得票",
+            "strategy_smart": "スマート: 票が拮抗しているときは得票上位2つのうちポイントが少ない方、それ以外は最多得票",
             "strategy_most_voted": "最多得票: ユーザー数が最も多い結果",
             "strategy_high_odds": "高オッズ: ポイントが最も少ない結果",
             "strategy_favourite": "本命: ポイントが最も多い結果",

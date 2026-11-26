@@ -46,9 +46,9 @@ class PredictionStrategy:
         """Index of the outcome to bet on, None with fewer than two outcomes.
 
         most_voted: most users. favourite: most points. high_odds: fewest points (the largest payout
-        per point). smart: high_odds when the user split of the two outcomes with the most users (a tie
-        keeps the earlier one) is within SMART_GAP percentage points (no users counts as an even split),
-        otherwise most_voted.
+        per point). smart: of the two outcomes with the most users (a tie keeps the earlier one), the one
+        with fewer points (a tie keeps the earlier one) when their user split is within SMART_GAP
+        percentage points (no users counts as an even split), otherwise most_voted.
         """
         if len(outcomes) < 2:
             return None
@@ -60,7 +60,10 @@ class PredictionStrategy:
             first, second = sorted(indexes, key=lambda i: -users[i])[:2]
             pair = users[first] + users[second]
             gap = abs(users[first] - users[second]) * 100 / pair if pair else 0
-            strategy = "high_odds" if gap <= SMART_GAP else "most_voted"
+            if gap <= SMART_GAP:
+                # high odds within the close pair only, in outcome order so a points tie keeps the earlier
+                return min(sorted((first, second)), key=points.__getitem__)
+            strategy = "most_voted"
         if strategy == "favourite":
             return max(indexes, key=points.__getitem__)
         if strategy == "high_odds":

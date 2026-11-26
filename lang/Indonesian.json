@@ -501,7 +501,7 @@
             "predictions_enabled_help": "Peringatan: prediksi memakai poin saluran Anda dan bisa menghilangkannya. Prediksi yang kalah tidak dikembalikan.",
             "prediction_strategy": "Strategi",
             "prediction_strategy_help": "Cara hasil dipilih. Tidak ada strategi yang diketahui mengalahkan penonton lain secara rata-rata.",
-            "strategy_smart": "Pintar: odds tinggi saat suara hampir seimbang, selain itu yang paling banyak dipilih",
+            "strategy_smart": "Pintar: dari dua hasil yang paling banyak dipilih, yang poinnya lebih sedikit saat suara hampir seimbang, selain itu yang paling banyak dipilih",
             "strategy_most_voted": "Paling banyak dipilih: hasil dengan pengguna terbanyak",
             "strategy_high_odds": "Odds tinggi: hasil dengan poin paling sedikit",
             "strategy_favourite": "Favorit: hasil dengan poin terbanyak",

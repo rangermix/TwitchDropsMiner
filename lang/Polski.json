@@ -501,7 +501,7 @@
             "predictions_enabled_help": "Ostrzeżenie: przewidywania wydają twoje punkty kanału i mogą je stracić. Przegrane przewidywanie nie jest zwracane.",
             "prediction_strategy": "Strategia",
             "prediction_strategy_help": "Jak wybierany jest wynik. Nie jest znana żadna strategia, która średnio pokonuje innych widzów.",
-            "strategy_smart": "Inteligentna: wysokie kursy, gdy głosy są wyrównane, w przeciwnym razie najwięcej głosów",
+            "strategy_smart": "Inteligentna: z dwóch wyników z największą liczbą głosów ten z mniejszą liczbą punktów, gdy głosy są wyrównane, w przeciwnym razie najwięcej głosów",
             "strategy_most_voted": "Najwięcej głosów: wynik z największą liczbą użytkowników",
             "strategy_high_odds": "Wysokie kursy: wynik z najmniejszą liczbą punktów",
             "strategy_favourite": "Faworyt: wynik z największą liczbą punktów",

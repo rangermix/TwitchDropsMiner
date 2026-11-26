@@ -501,7 +501,7 @@
             "predictions_enabled_help": "Avertisment: predicțiile îți cheltuiesc punctele de canal și le pot pierde. O predicție pierdută nu se rambursează.",
             "prediction_strategy": "Strategie",
             "prediction_strategy_help": "Cum este ales rezultatul. Nu se cunoaște nicio strategie care să-i învingă în medie pe ceilalți spectatori.",
-            "strategy_smart": "Inteligentă: cote mari când voturile sunt apropiate, altfel cel mai votat",
+            "strategy_smart": "Inteligentă: dintre cele două rezultate cele mai votate, cel cu mai puține puncte când voturile sunt apropiate, altfel cel mai votat",
             "strategy_most_voted": "Cel mai votat: rezultatul cu cei mai mulți utilizatori",
             "strategy_high_odds": "Cote mari: rezultatul cu cele mai puține puncte",
             "strategy_favourite": "Favorit: rezultatul cu cele mai multe puncte",

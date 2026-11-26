@@ -501,7 +501,7 @@
             "predictions_enabled_help": "Uyarı: tahminler kanal puanlarını harcar ve kaybedebilir. Kaybedilen tahmin iade edilmez.",
             "prediction_strategy": "Strateji",
             "prediction_strategy_help": "Sonucun nasıl seçildiği. Hiçbir stratejinin diğer izleyicileri ortalamada geçtiği bilinmiyor.",
-            "strategy_smart": "Akıllı: oylar yakınsa yüksek oran, aksi halde en çok oy alan",
+            "strategy_smart": "Akıllı: oylar yakınsa en çok oy alan iki sonuçtan daha az puanı olan, aksi halde en çok oy alan",
             "strategy_most_voted": "En çok oy: en çok kullanıcısı olan sonuç",
             "strategy_high_odds": "Yüksek oran: en az puanı olan sonuç",
             "strategy_favourite": "Favori: en çok puanı olan sonuç",

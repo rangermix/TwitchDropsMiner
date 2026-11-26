@@ -1480,10 +1480,10 @@ live in `gui.points` (English text in every locale until translated).
   sending. A reply whose `makePrediction.error` is not null is `bet_failed`, as is a
   plain `GQLException`; any other send failure (`GQLServerError`, timeout, connection,
   unconfirmed HTTP reply) is `bet_unknown`. `PredictionStrategy.choose()` needs two outcomes; counts that are not
-  positive ints count as 0; ties keep the first; `smart` = `high_odds` when the two
-  outcomes with the most users (a tie keeps the earlier) have
-  `abs(u1 - u2) * 100 / (u1 + u2) <= 20` (no users counts as even), else `most_voted`,
-  over all outcomes. Results of sent bets (`prediction-result`
+  positive ints count as 0; ties keep the first; `smart` takes the two outcomes with the
+  most users (a tie keeps the earlier) and, when `abs(u1 - u2) * 100 / (u1 + u2) <= 20`
+  (no users counts as even), bets the one of the two with fewer points (a tie keeps the
+  earlier), else `most_voted` over all outcomes. Results of sent bets (`prediction-result`
   WIN/LOSE/REFUND, kept until an auth change) go to the points log while the user topic
   is subscribed.
 - Chat presence (`ChatPresence`, `src/services/chat_presence.py`, `join_chat`): the tick

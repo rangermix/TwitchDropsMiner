@@ -351,9 +351,9 @@ use goes to drop mining instead.
     already bet on while TDM listened (for example a bet placed in a browser). TDM keeps
     this in memory only: after a restart or a new login it can bet again on a prediction
     that is still open, because Twitch reports a bet only at the moment it is placed.
-  - `prediction_strategy` picks the outcome: `smart` (default) bets on the outcome with
-    the fewest points when the two outcomes with the most users have a user split within
-    20 percentage points, otherwise on the outcome with the most users; `most_voted` picks the most
+  - `prediction_strategy` picks the outcome: `smart` (default) takes the two outcomes
+    with the most users and, when their user split is within 20 percentage points, bets
+    on the one of the two with fewer points, otherwise on the outcome with the most users; `most_voted` picks the most
     users, `high_odds` the fewest points (the largest payout per point), `favourite` the
     most points. A tie picks the first outcome.
   - The stake is `prediction_percent` (default 5) of the channel's balance, rounded

@@ -501,7 +501,7 @@
             "predictions_enabled_help": "Waarschuwing: voorspellingen kosten kanaalpunten en je kunt die verliezen. Een verloren voorspelling wordt niet terugbetaald.",
             "prediction_strategy": "Strategie",
             "prediction_strategy_help": "Hoe de uitkomst wordt gekozen. Van geen enkele strategie is bekend dat die gemiddeld beter is dan de andere kijkers.",
-            "strategy_smart": "Slim: hoge odds als de stemmen dicht bij elkaar liggen, anders de meeste stemmen",
+            "strategy_smart": "Slim: van de twee uitkomsten met de meeste stemmen die met minder punten als de stemmen dicht bij elkaar liggen, anders de meeste stemmen",
             "strategy_most_voted": "Meeste stemmen: de uitkomst met de meeste gebruikers",
             "strategy_high_odds": "Hoge odds: de uitkomst met de minste punten",
             "strategy_favourite": "Favoriet: de uitkomst met de meeste punten",

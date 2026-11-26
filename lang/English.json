@@ -501,7 +501,7 @@
             "predictions_enabled_help": "Warning: predictions spend your channel points and can lose them. A lost prediction is not refunded.",
             "prediction_strategy": "Strategy",
             "prediction_strategy_help": "How the outcome is chosen. No strategy is known to beat the other viewers on average.",
-            "strategy_smart": "Smart: high odds when the votes are close, otherwise most voted",
+            "strategy_smart": "Smart: of the two most voted outcomes, the one with fewer points when their votes are close, otherwise most voted",
             "strategy_most_voted": "Most voted: the outcome with the most users",
             "strategy_high_odds": "High odds: the outcome with the fewest points",
             "strategy_favourite": "Favourite: the outcome with the most points",

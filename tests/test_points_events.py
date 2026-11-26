@@ -390,10 +390,16 @@ def outcomes(*pairs):
     ("favourite", [(1, 0), (1, 0), (1, 0)], 0),
     ("high_odds", [(1, 30), (1, 10), (1, 10), (1, 20)], 1),
     ("smart", [(50, 10), (50, 20), (900, 30)], 2),  # 900 vs 50 (the first two are even): most_voted
-    ("smart", [(90, 30), (10, 20), (95, 50)], 1),  # 95 vs 90 (the first two are not): high_odds over all
+    # a close pair bets the one of the two with fewer points, never a third outcome
+    ("smart", [(90, 30), (10, 20), (95, 50)], 0),  # 95 vs 90: 30 < 50; the 20-point outcome is not in the pair
     ("smart", [(90, 30), (10, 20), (90, 0)], 2),  # 90 vs 90
     ("smart", [(10, 1), (61, 30), (39, 20)], 1),  # 61 vs 39, gap 22: most_voted
-    ("smart", [(10, 1), (60, 30), (40, 20)], 0),  # 60 vs 40, gap 20: high_odds over all
+    ("smart", [(10, 1), (60, 30), (40, 20)], 2),  # 60 vs 40, gap 20: fewer points of the pair
+    ("smart", [(1, 0), (45, 10), (55, 10)], 1),  # a points tie within the pair keeps the earlier outcome
+    ("smart", [(50, 10), (1, 0), (50, 10)], 0),
+    ("smart", [(5, 0), (0, 0), (5, 9), (0, 0)], 0),
+    ("smart", [(0, 0), (0, 9), (0, 5), (0, 0)], 0),  # no users: the pair is the first two
+    ("smart", [(0, 9), (0, 5), (0, 0)], 1),
     ("smart", [(100, 1), (40, 2), (60, 3), (60, 4)], 0),  # 100 vs 60 (a tie keeps the earlier 60): most_voted
 ])
 def test_strategies(strategy, pairs, expected):

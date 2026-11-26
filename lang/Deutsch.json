@@ -501,7 +501,7 @@
             "predictions_enabled_help": "Warnung: Vorhersagen verbrauchen deine Kanalpunkte und können sie verlieren. Eine verlorene Vorhersage wird nicht erstattet.",
             "prediction_strategy": "Strategie",
             "prediction_strategy_help": "Wie das Ergebnis gewählt wird. Von keiner Strategie ist bekannt, dass sie die anderen Zuschauer im Durchschnitt schlägt.",
-            "strategy_smart": "Smart: hohe Quote bei knappen Stimmen, sonst meiste Stimmen",
+            "strategy_smart": "Smart: von den zwei Ergebnissen mit den meisten Stimmen das mit weniger Punkten, wenn die Stimmen knapp sind, sonst meiste Stimmen",
             "strategy_most_voted": "Meiste Stimmen: das Ergebnis mit den meisten Nutzern",
             "strategy_high_odds": "Hohe Quote: das Ergebnis mit den wenigsten Punkten",
             "strategy_favourite": "Favorit: das Ergebnis mit den meisten Punkten",

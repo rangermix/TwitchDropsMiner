@@ -501,7 +501,7 @@
             "predictions_enabled_help": "Upozornění: předpovědi utrácejí vaše body kanálu a mohou je ztratit. Prohraná předpověď se nevrací.",
             "prediction_strategy": "Strategie",
             "prediction_strategy_help": "Jak se výsledek vybírá. Není známa žádná strategie, která by v průměru porazila ostatní diváky.",
-            "strategy_smart": "Chytrá: vysoké kurzy, když jsou hlasy vyrovnané, jinak nejvíce hlasů",
+            "strategy_smart": "Chytrá: ze dvou výsledků s nejvíce hlasy ten s méně body, když jsou hlasy vyrovnané, jinak nejvíce hlasů",
             "strategy_most_voted": "Nejvíce hlasů: výsledek s nejvíce uživateli",
             "strategy_high_odds": "Vysoké kurzy: výsledek s nejméně body",
             "strategy_favourite": "Favorit: výsledek s nejvíce body",
