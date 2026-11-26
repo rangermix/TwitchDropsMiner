@@ -55,6 +55,8 @@ RESTART_SECONDS = 1800
 IDLE_TICK_SECONDS = 30
 # the side watcher's poll, like WatchService.watch_loop: inside Twitch's rolling segment window
 SIDE_WATCH_SECONDS = 10
+# broadcasts whose AvailableDrops answer side mode keeps (20 listed channels, each with a restart)
+SIDE_DROPS_KEPT = 40
 STREAK_REASON = "WATCH_STREAK"
 CLAIM_REASON = "CLAIM"
 # tick retries of a failed bonus claim per watched channel; after them claim-available retries it
@@ -161,6 +163,9 @@ class IdleWatchService:
         # the side watcher: the channel it watches and its task
         self.side_channel: Channel | None = None
         self._side_task: asyncio.Task[None] | None = None
+        # broadcast id -> True when AvailableDrops listed no campaign at all on it (newest SIDE_DROPS_KEPT)
+        self._side_drops: dict[int, bool] = {}
+        self._side_drops_failed = False
 
     @property
     def active(self) -> bool:
@@ -184,12 +189,40 @@ class IdleWatchService:
         tw = self._twitch
         return self.allowed() and tw.settings.watch_slots == 2 and not tw._changing_auth
 
-    def side_candidate(self, channel: Channel) -> bool:
-        """Whether side mode may watch channel: drops cannot use it, it is not the drop channel and its
-        stream has drops off, so Twitch does not move drop progress to it."""
+    def _side_basic(self, channel: Channel) -> bool:
         tw = self._twitch
         drop = tw.watching_channel.get_with_default(None)
         return not channel.drops_enabled and not tw.can_watch(channel) and (drop is None or drop.id != channel.id)
+
+    def side_candidate(self, channel: Channel) -> bool:
+        """Whether side mode may watch channel: drops cannot use it, it is not the drop channel and
+        AvailableDrops listed no campaign at all on its broadcast (any campaign may take drop progress).
+
+        An unread or failed broadcast is no candidate; _read_side_drops() fills the answers."""
+        return self._side_basic(channel) and self._side_drops.get(channel.broadcast_id or 0) is True
+
+    async def _read_side_drops(self, live: list[Channel]) -> None:
+        """Read AvailableDrops once per broadcast of the live channels side mode could pick."""
+        todo = [(c, self._broadcast_id(c)) for c in live if self._side_basic(c)]
+        todo = [(c, b) for c, b in todo if b not in self._side_drops]
+        if not todo:
+            return
+        with private_gql_discovery():
+            results = await asyncio.gather(*(c.fetch_drop_campaigns() for c, _b in todo), return_exceptions=True)
+        failed: str | None = None
+        for (_c, broadcast), result in zip(todo, results, strict=True):
+            if isinstance(result, BaseException):
+                if not isinstance(result, DROPS_READ_ERRORS) or isinstance(result, ExitRequest):
+                    raise result
+                failed = failed or type(result).__name__
+                continue
+            self._side_drops[broadcast] = not result
+            while len(self._side_drops) > SIDE_DROPS_KEPT:
+                del self._side_drops[next(iter(self._side_drops))]
+        if failed is not None and not self._side_drops_failed:
+            # once per failing streak; the unread broadcasts are retried on the next tick
+            logger.warning("Drops check of second slot channels failed (%s), retrying", failed)
+        self._side_drops_failed = failed is not None
 
     def set_points_paused(self, paused: bool) -> None:
         """Pause or resume idle watching and its points actions until resumed or restarted.
@@ -298,6 +331,7 @@ class IdleWatchService:
         self.balances.clear()
         self.multipliers.clear()
         self._reader.reset()
+        self._side_drops.clear()
         self.events.reset()
         self._chat.reset()
         self._twitch.gui.points.clear()
@@ -494,7 +528,8 @@ class IdleWatchService:
             logger.warning("Idle channel lookup failed (%s), retrying", type(exc).__name__)
         live, now = self.live_channels(), time.monotonic()
         if self.side:
-            # the drop channel, channels drops can use and drops-enabled streams are never picked
+            # the drop channel, channels drops can use and streams with any drops campaign are never picked
+            await self._read_side_drops(live)
             live = [c for c in live if self.side_candidate(c)]
         channel = self.pick(live, now)
         self._save()

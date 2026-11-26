@@ -500,6 +500,10 @@ class Channel:
 
     async def fetch_drops_enabled(self, game: Game | None) -> bool:
         """Ask Twitch whether this channel offers a campaign the account can earn."""
+        return self._check_drops_enabled(await self.fetch_drop_campaigns(), game=game)
+
+    async def fetch_drop_campaigns(self) -> list[JsonType]:
+        """The drops campaigns Twitch lists on this channel now, earnable or not ([] for none)."""
         response = await self._twitch.gql_request(
             GQL_OPERATIONS["AvailableDrops"].with_variables({"channelID": str(self.id)})
         )
@@ -507,10 +511,10 @@ class Channel:
             raise MinerException("No reliable AvailableDrops response")
         campaigns = response["data"]["channel"]["viewerDropCampaigns"]
         if campaigns is None:
-            return False
+            return []
         if not isinstance(campaigns, list):
             raise MinerException("Invalid AvailableDrops campaign list")
-        return self._check_drops_enabled(campaigns, game=game)
+        return campaigns
 
     async def update_stream(self) -> bool:
         """

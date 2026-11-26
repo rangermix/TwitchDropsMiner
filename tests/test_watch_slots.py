@@ -10,9 +10,11 @@ import pytest
 import src.services.idle_watch as idle_mod
 from src.config import State
 from src.core.client import Twitch
+from src.exceptions import MinerException
+from src.models.channel import Channel
 from src.services.message_handlers import MessageHandlerService
 from src.utils.async_helpers import AwaitableValue
-from tests.test_idle_watch import client_stub, fake, loop_service
+from tests.test_idle_watch import client_stub, fake, loop_service, run_service
 from tests.test_playlist_watch import _make_channel, _playlist, _Transport
 
 
@@ -23,6 +25,8 @@ def chan(cid, login, *, drops=False):
     c.send_watch = AsyncMock(return_value=True)
     c._watch_current = MagicMock(return_value=True)
     c.check_online = MagicMock()
+    # the side mode drops check: a drops channel lists a campaign
+    c.fetch_drop_campaigns = AsyncMock(return_value=[{"id": "camp"}] if drops else [])
     return c
 
 
@@ -137,6 +141,7 @@ async def test_side_watcher_stops_on_offline_ban_end_of_mining_time_or_drops(end
     a = chan(1, "a")
     svc, tw = side_service([a])
     svc.poke = MagicMock()
+    await svc._read_side_drops([a])
     svc._side_start(a)
     await settle()
     task = svc._side_task
@@ -156,6 +161,7 @@ async def test_a_failed_side_watch_of_the_current_stream_rechecks_the_channel():
     a = chan(1, "a")
     a.send_watch.return_value = False
     svc, _ = side_service([a])
+    await svc._read_side_drops([a])
     svc._side_start(a)
     await settle()
     a.check_online.assert_called()
@@ -167,6 +173,7 @@ async def test_a_failed_side_watch_of_the_current_stream_rechecks_the_channel():
 async def test_switching_the_side_channel_stops_the_old_watcher_first():
     a, b = chan(1, "a"), chan(2, "b")
     svc, tw = side_service([a, b])
+    await svc._read_side_drops([a, b])
     svc._side_start(a)
     await settle()
     old = svc._side_task
@@ -449,3 +456,91 @@ def test_side_allowed_needs_two_slots():
 
 def test_twitch_has_the_side_step():
     assert callable(Twitch._side_watch_step)
+
+
+# --- side candidates need a broadcast without any drops campaign (real Channels through track()) ---
+
+
+def drops_answers(table):
+    """GQL fake: GetStreamInfo for listed channels 1..n, AvailableDrops per channel from table (a list is
+    used up call by call, "error" raises), an empty reply for anything else."""
+    async def gql(ops):
+        if isinstance(ops, list):
+            return [{"data": {"user": {
+                "id": str(cid), "login": f"c{cid}", "displayName": f"C{cid}",
+                "stream": {"id": str(cid * 100), "viewersCount": 5},
+                "broadcastSettings": {"game": {"id": "509658", "name": "Just Chatting"}, "title": "t"},
+            }}} for cid in (int(op["variables"]["channel"][1:]) for op in ops)]
+        if "channelID" not in ops["variables"]:  # not AvailableDrops
+            return {"data": {}}
+        answer = table[int(ops["variables"]["channelID"])]
+        if isinstance(answer, list) and answer and answer[0] in ("error", None, "empty"):
+            answer = answer.pop(0) if len(answer) > 1 else answer[0]
+            answer = [] if answer == "empty" else answer
+        if answer == "error":
+            raise MinerException("secret body")
+        return {"data": {"channel": {"viewerDropCampaigns": answer}}}
+    return gql
+
+
+def real_side_service(table, monkeypatch):
+    monkeypatch.setattr(Channel, "send_watch", AsyncMock(return_value=True))
+    svc, tw = run_service(idle=[f"c{cid}" for cid in table], gql=AsyncMock(side_effect=drops_answers(table)))
+    tw.settings.watch_slots, tw._changing_auth = 2, False
+    tw._campaigns = {}
+    tw._watching = fake(9, 90, login="drop")
+    return svc, tw
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("campaigns, side", [
+    ([], True), (None, True),
+    ([{"id": "not-earnable"}], False),  # drops_enabled stays False, but the campaign may take progress
+    ([{"id": "a"}, {"id": "b"}], False),
+])
+async def test_a_side_candidate_needs_a_broadcast_without_any_drops_campaign(campaigns, side, monkeypatch):
+    svc, tw = real_side_service({1: campaigns}, monkeypatch)
+    svc.enter(side=True)
+    await settle()
+    channel = tw.channels[1]
+    assert not channel.drops_enabled
+    assert svc.side_candidate(channel) is side
+    assert (svc.side_channel is channel) is side
+    await stopped(svc)
+
+
+@pytest.mark.asyncio
+async def test_a_failed_side_drops_read_is_retried_with_one_warning_per_streak(monkeypatch, caplog):
+    # track()'s own read succeeds; the side reads fail twice, then answer; one tick per poke
+    monkeypatch.setattr(idle_mod, "IDLE_TICK_SECONDS", 10)
+    svc, tw = real_side_service({1: ["empty", "error", "error", "empty"]}, monkeypatch)
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        svc.enter(side=True)
+        await settle()
+        assert svc.side_channel is None
+        svc.poke()
+        await settle()
+        assert svc.side_channel is None
+        svc.poke()
+        await settle()
+    assert svc.side_channel is tw.channels[1]
+    warnings = [r.getMessage() for r in caplog.records if "second slot channels" in r.getMessage()]
+    assert warnings == ["Drops check of second slot channels failed (MinerException), retrying"]
+    assert "secret body" not in caplog.text
+    reads = [c for c in tw.gql_request.await_args_list
+             if isinstance(c.args[0], dict) and "channelID" in c.args[0]["variables"]]
+    assert len(reads) == 4  # once per broadcast after the answer: no read on later ticks
+    svc.poke()
+    await settle()
+    assert len([c for c in tw.gql_request.await_args_list
+                if isinstance(c.args[0], dict) and "channelID" in c.args[0]["variables"]]) == 4
+    await stopped(svc)
+
+
+def test_side_drops_answers_are_bounded():
+    svc, _ = side_service([])
+    for broadcast in range(1000, 1000 + idle_mod.SIDE_DROPS_KEPT + 5):
+        svc._side_drops[broadcast] = True
+    a = chan(1, "a")
+    asyncio.run(svc._read_side_drops([a]))
+    assert len(svc._side_drops) == idle_mod.SIDE_DROPS_KEPT and a.broadcast_id in svc._side_drops
