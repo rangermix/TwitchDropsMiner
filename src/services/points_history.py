@@ -21,7 +21,7 @@ logger = logging.getLogger("TwitchDrops")
 HISTORY_VERSION = 1
 SAMPLES_KEPT = 288
 CHANNELS_KEPT = 20
-# a sample this close to the previous one replaces it, so 288 samples span a day or more
+# a sample this close to the start of the last bucket updates its balance, so 288 samples span a day or more
 SAMPLE_MERGE_SECONDS = 300
 SAVE_INTERVAL_SECONDS = 60
 CATEGORIES = ("watch", "bonus", "raid", "streak", "bet", "other")
@@ -148,7 +148,8 @@ class PointsHistory:
         return entry
 
     def sample(self, channel_id: int, login: str, balance: int) -> None:
-        """Record a balance; unchanged is skipped and one within 5 minutes of the last replaces it."""
+        """Record a balance; unchanged is skipped, one within 5 minutes of the last bucket's start updates its
+        balance and keeps its time (a steady stream of changes still gives one sample per bucket)."""
         samples = self.channels.get(channel_id, {}).get("samples", [])
         if samples and samples[-1][1] == balance:
             return
@@ -157,7 +158,7 @@ class PointsHistory:
             return
         samples, now = entry["samples"], int(self._now())
         if samples and now - samples[-1][0] < SAMPLE_MERGE_SECONDS:
-            samples[-1] = [now, balance]
+            samples[-1][1] = balance
         else:
             samples.append([now, balance])
             del samples[:-SAMPLES_KEPT]

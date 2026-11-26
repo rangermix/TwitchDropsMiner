@@ -27,11 +27,36 @@ def test_samples_append_skip_unchanged_and_replace_within_five_minutes():
     assert h.channels[1]["samples"] == [[1000, 100]]
     clock["wall"] -= 1000
     clock["wall"] += 299
-    h.sample(1, "a", 150)  # replaces
-    assert h.channels[1]["samples"] == [[1299, 150]]
-    clock["wall"] += 300
-    h.sample(1, "a", 160)  # appends
-    assert h.channels[1]["samples"] == [[1299, 150], [1599, 160]]
+    h.sample(1, "a", 150)  # updates the bucket, keeps its time
+    assert h.channels[1]["samples"] == [[1000, 150]]
+    clock["wall"] += 1
+    h.sample(1, "a", 160)  # 300 s after the bucket start: appends
+    assert h.channels[1]["samples"] == [[1000, 150], [1300, 160]]
+
+
+@pytest.mark.parametrize("gap", [60, 240, 299])
+def test_a_steady_stream_of_changes_gives_one_sample_per_bucket(gap):
+    h, clock = make()
+    start, balance = clock["wall"], 0
+    while clock["wall"] - start < 4 * 3600:
+        balance += 10
+        h.sample(1, "a", balance)
+        clock["wall"] += gap
+    samples = h.channels[1]["samples"]
+    times = [t for t, _ in samples]
+    per_bucket = -(-mod.SAMPLE_MERGE_SECONDS // gap) * gap  # the first change at least 300 s after the start
+    assert all(b - a == per_bucket for a, b in zip(times, times[1:]))
+    assert len(samples) == -(-4 * 3600 // per_bucket) and samples[-1][1] == balance
+    assert len(samples) > 20
+
+
+def test_bucketed_samples_are_capped_at_288():
+    h, clock = make()
+    for i in range(SAMPLES_KEPT * 5 + 7):
+        clock["wall"] += 60
+        h.sample(1, "a", i + 1)
+    samples = h.channels[1]["samples"]
+    assert len(samples) == SAMPLES_KEPT and samples[-1][1] == SAMPLES_KEPT * 5 + 7
 
 
 def test_samples_are_capped_and_the_oldest_dropped():
