@@ -547,12 +547,24 @@
             "import_follows_result": "已新增 {added} 個,{listed} 個已在清單中,{over} 個超出 20 個的上限。",
             "import_follows_error": "無法匯入已追蹤的頻道。請再試一次。",
             "import_follows_login": "請先登入 Twitch。",
+            "history_header": "歷史",
+            "history_channel": "頻道",
+            "history_empty": "清單中的頻道還沒有餘額歷史。",
+            "history_chart": "{channel} 的餘額，從 {from} 到 {to}，介於 {min} 和 {max} 點之間",
+            "history_col_source": "來源",
+            "history_col_points": "點數",
+            "history_bets": "預測",
+            "history_bet_won": "贏",
+            "history_bet_lost": "輸",
+            "history_bet_refunded": "退還",
+            "history_bet_points_won": "贏得的點數",
             "reasons": {
                 "watch": "觀看",
                 "claim": "獎勵領取",
                 "watch_streak": "觀看連勝",
                 "raid": "突襲",
-                "prediction": "預測"
+                "prediction": "預測",
+                "other": "其他"
             }
         }
     },

@@ -547,12 +547,24 @@
             "import_follows_result": "Добавлено: {added}, уже в списке: {listed}, не поместилось в лимит 20: {over}.",
             "import_follows_error": "Не удалось импортировать отслеживаемые каналы. Попробуйте ещё раз.",
             "import_follows_login": "Сначала войдите в Twitch.",
+            "history_header": "История",
+            "history_channel": "Канал",
+            "history_empty": "Для каналов из списка пока нет истории баланса.",
+            "history_chart": "Баланс канала {channel} с {from} по {to}, от {min} до {max} баллов",
+            "history_col_source": "Источник",
+            "history_col_points": "Баллы",
+            "history_bets": "Ставки",
+            "history_bet_won": "Выиграно",
+            "history_bet_lost": "Проиграно",
+            "history_bet_refunded": "Возвращено",
+            "history_bet_points_won": "Выигранные баллы",
             "reasons": {
                 "watch": "Просмотр",
                 "claim": "Получение бонуса",
                 "watch_streak": "Серия просмотров",
                 "raid": "Рейд",
-                "prediction": "Прогноз"
+                "prediction": "Прогноз",
+                "other": "Другое"
             }
         }
     },

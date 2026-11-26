@@ -547,12 +547,24 @@
             "import_follows_result": "{added} ditambahkan, {listed} sudah ada di daftar, {over} tidak muat dalam batas 20.",
             "import_follows_error": "Kanal yang diikuti tidak dapat diimpor. Silakan coba lagi.",
             "import_follows_login": "Masuk ke Twitch terlebih dahulu.",
+            "history_header": "Riwayat",
+            "history_channel": "Saluran",
+            "history_empty": "Belum ada riwayat saldo untuk saluran dalam daftar.",
+            "history_chart": "Saldo {channel} dari {from} sampai {to}, antara {min} dan {max} poin",
+            "history_col_source": "Sumber",
+            "history_col_points": "Poin",
+            "history_bets": "Taruhan",
+            "history_bet_won": "Menang",
+            "history_bet_lost": "Kalah",
+            "history_bet_refunded": "Dikembalikan",
+            "history_bet_points_won": "Poin menang",
             "reasons": {
                 "watch": "Menonton",
                 "claim": "Klaim bonus",
                 "watch_streak": "Watch streak",
                 "raid": "Raid",
-                "prediction": "Prediksi"
+                "prediction": "Prediksi",
+                "other": "Lainnya"
             }
         }
     },

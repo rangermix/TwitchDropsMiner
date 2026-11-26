@@ -547,12 +547,24 @@
             "import_follows_result": "{added} eklendi, {listed} zaten listedeydi, {over} 20 sınırına sığmadı.",
             "import_follows_error": "Takip edilen kanallar içe aktarılamadı. Lütfen tekrar deneyin.",
             "import_follows_login": "Önce Twitch'e giriş yapın.",
+            "history_header": "Geçmiş",
+            "history_channel": "Kanal",
+            "history_empty": "Listedeki kanallar için henüz bakiye geçmişi yok.",
+            "history_chart": "{channel} bakiyesi, {from} ile {to} arası, {min} ile {max} puan arasında",
+            "history_col_source": "Kaynak",
+            "history_col_points": "Puan",
+            "history_bets": "Bahisler",
+            "history_bet_won": "Kazanılan",
+            "history_bet_lost": "Kaybedilen",
+            "history_bet_refunded": "İade edilen",
+            "history_bet_points_won": "Kazanılan puan",
             "reasons": {
                 "watch": "İzleme",
                 "claim": "Bonus alma",
                 "watch_streak": "İzleme serisi",
                 "raid": "Baskın",
-                "prediction": "Tahmin"
+                "prediction": "Tahmin",
+                "other": "Diğer"
             }
         }
     },

@@ -547,12 +547,24 @@
             "import_follows_result": "أُضيف {added}، وكان {listed} موجوداً في القائمة، ولم يتسع {over} للحد البالغ 20.",
             "import_follows_error": "تعذر استيراد القنوات المتابَعة. حاول مرة أخرى.",
             "import_follows_login": "سجّل الدخول إلى Twitch أولاً.",
+            "history_header": "السجل",
+            "history_channel": "القناة",
+            "history_empty": "لا يوجد سجل رصيد بعد للقنوات في القائمة.",
+            "history_chart": "رصيد {channel} من {from} إلى {to}، بين {min} و{max} نقطة",
+            "history_col_source": "المصدر",
+            "history_col_points": "النقاط",
+            "history_bets": "الرهانات",
+            "history_bet_won": "فاز",
+            "history_bet_lost": "خسر",
+            "history_bet_refunded": "مسترد",
+            "history_bet_points_won": "النقاط المكسوبة",
             "reasons": {
                 "watch": "المشاهدة",
                 "claim": "المطالبة بالمكافأة",
                 "watch_streak": "سلسلة المشاهدة",
                 "raid": "غارة",
-                "prediction": "توقع"
+                "prediction": "توقع",
+                "other": "أخرى"
             }
         }
     },

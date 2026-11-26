@@ -547,12 +547,24 @@
             "import_follows_result": "{added} ajoutées, {listed} déjà dans la liste, {over} n'ont pas tenu dans la limite de 20.",
             "import_follows_error": "Impossible d'importer les chaînes suivies. Réessayez.",
             "import_follows_login": "Connectez-vous d'abord à Twitch.",
+            "history_header": "Historique",
+            "history_channel": "Chaîne",
+            "history_empty": "Pas encore d'historique de solde pour les chaînes de la liste.",
+            "history_chart": "Solde de {channel} de {from} à {to}, entre {min} et {max} points",
+            "history_col_source": "Source",
+            "history_col_points": "Points",
+            "history_bets": "Paris",
+            "history_bet_won": "Gagnés",
+            "history_bet_lost": "Perdus",
+            "history_bet_refunded": "Remboursés",
+            "history_bet_points_won": "Points gagnés",
             "reasons": {
                 "watch": "Visionnage",
                 "claim": "Récupération du bonus",
                 "watch_streak": "Série de visionnage",
                 "raid": "Raid",
-                "prediction": "Pronostic"
+                "prediction": "Pronostic",
+                "other": "Autre"
             }
         }
     },

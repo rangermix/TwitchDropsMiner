@@ -547,12 +547,24 @@
             "import_follows_result": "已添加 {added} 个,{listed} 个已在列表中,{over} 个超出 20 个的上限。",
             "import_follows_error": "无法导入已关注的频道。请重试。",
             "import_follows_login": "请先登录 Twitch。",
+            "history_header": "历史",
+            "history_channel": "频道",
+            "history_empty": "列表中的频道还没有余额历史。",
+            "history_chart": "{channel} 的余额，从 {from} 到 {to}，介于 {min} 和 {max} 点之间",
+            "history_col_source": "来源",
+            "history_col_points": "点数",
+            "history_bets": "预测",
+            "history_bet_won": "赢",
+            "history_bet_lost": "输",
+            "history_bet_refunded": "退还",
+            "history_bet_points_won": "赢得的点数",
             "reasons": {
                 "watch": "观看",
                 "claim": "奖励领取",
                 "watch_streak": "观看连胜",
                 "raid": "突袭",
-                "prediction": "预测"
+                "prediction": "预测",
+                "other": "其他"
             }
         }
     },

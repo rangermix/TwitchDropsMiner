@@ -547,12 +547,24 @@
             "import_follows_result": "{added} aggiunti, {listed} già in elenco, {over} non rientravano nel limite di 20.",
             "import_follows_error": "Impossibile importare i canali seguiti. Riprova.",
             "import_follows_login": "Accedi prima a Twitch.",
+            "history_header": "Cronologia",
+            "history_channel": "Canale",
+            "history_empty": "Ancora nessuna cronologia del saldo per i canali in elenco.",
+            "history_chart": "Saldo di {channel} da {from} a {to}, tra {min} e {max} punti",
+            "history_col_source": "Origine",
+            "history_col_points": "Punti",
+            "history_bets": "Scommesse",
+            "history_bet_won": "Vinte",
+            "history_bet_lost": "Perse",
+            "history_bet_refunded": "Rimborsate",
+            "history_bet_points_won": "Punti vinti",
             "reasons": {
                 "watch": "Visione",
                 "claim": "Riscatto del bonus",
                 "watch_streak": "Serie di visualizzazioni",
                 "raid": "Raid",
-                "prediction": "Previsione"
+                "prediction": "Previsione",
+                "other": "Altro"
             }
         }
     },

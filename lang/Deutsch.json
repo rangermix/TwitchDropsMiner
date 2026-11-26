@@ -547,12 +547,24 @@
             "import_follows_result": "{added} hinzugefügt, {listed} bereits in der Liste, {over} passten nicht in das Limit von 20.",
             "import_follows_error": "Die gefolgten Kanäle konnten nicht importiert werden. Bitte erneut versuchen.",
             "import_follows_login": "Bitte zuerst bei Twitch anmelden.",
+            "history_header": "Verlauf",
+            "history_channel": "Kanal",
+            "history_empty": "Noch kein Kontostandverlauf für die gelisteten Kanäle.",
+            "history_chart": "Kontostand von {channel} von {from} bis {to}, zwischen {min} und {max} Punkten",
+            "history_col_source": "Quelle",
+            "history_col_points": "Punkte",
+            "history_bets": "Wetten",
+            "history_bet_won": "Gewonnen",
+            "history_bet_lost": "Verloren",
+            "history_bet_refunded": "Erstattet",
+            "history_bet_points_won": "Gewonnene Punkte",
             "reasons": {
                 "watch": "Zuschauen",
                 "claim": "Bonus-Abholung",
                 "watch_streak": "Watch-Streak",
                 "raid": "Raid",
-                "prediction": "Vorhersage"
+                "prediction": "Vorhersage",
+                "other": "Sonstiges"
             }
         }
     },

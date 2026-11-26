@@ -547,12 +547,24 @@
             "import_follows_result": "{added} toegevoegd, {listed} stonden al in de lijst, {over} pasten niet binnen de limiet van 20.",
             "import_follows_error": "De gevolgde kanalen konden niet worden geïmporteerd. Probeer het opnieuw.",
             "import_follows_login": "Log eerst in bij Twitch.",
+            "history_header": "Geschiedenis",
+            "history_channel": "Kanaal",
+            "history_empty": "Nog geen saldogeschiedenis voor de kanalen in de lijst.",
+            "history_chart": "Saldo van {channel} van {from} tot {to}, tussen {min} en {max} punten",
+            "history_col_source": "Bron",
+            "history_col_points": "Punten",
+            "history_bets": "Voorspellingen",
+            "history_bet_won": "Gewonnen",
+            "history_bet_lost": "Verloren",
+            "history_bet_refunded": "Terugbetaald",
+            "history_bet_points_won": "Gewonnen punten",
             "reasons": {
                 "watch": "Kijken",
                 "claim": "Bonus claimen",
                 "watch_streak": "Kijkreeks",
                 "raid": "Raid",
-                "prediction": "Voorspelling"
+                "prediction": "Voorspelling",
+                "other": "Overig"
             }
         }
     },

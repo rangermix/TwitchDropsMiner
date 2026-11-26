@@ -547,12 +547,24 @@
             "import_follows_result": "{added} adăugate, {listed} erau deja în listă, {over} nu au încăput în limita de 20.",
             "import_follows_error": "Canalele urmărite nu au putut fi importate. Încearcă din nou.",
             "import_follows_login": "Conectează-te mai întâi la Twitch.",
+            "history_header": "Istoric",
+            "history_channel": "Canal",
+            "history_empty": "Încă nu există istoric al soldului pentru canalele din listă.",
+            "history_chart": "Soldul canalului {channel} de la {from} la {to}, între {min} și {max} puncte",
+            "history_col_source": "Sursă",
+            "history_col_points": "Puncte",
+            "history_bets": "Pariuri",
+            "history_bet_won": "Câștigate",
+            "history_bet_lost": "Pierdute",
+            "history_bet_refunded": "Rambursate",
+            "history_bet_points_won": "Puncte câștigate",
             "reasons": {
                 "watch": "Vizionare",
                 "claim": "Revendicare bonus",
                 "watch_streak": "Serie de vizionare",
                 "raid": "Raid",
-                "prediction": "Predicție"
+                "prediction": "Predicție",
+                "other": "Altele"
             }
         }
     },

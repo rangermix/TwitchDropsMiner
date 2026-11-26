@@ -547,12 +547,24 @@
             "import_follows_result": "Додано: {added}, вже в списку: {listed}, не вмістилося в ліміт 20: {over}.",
             "import_follows_error": "Не вдалося імпортувати канали, на які підписано. Спробуйте ще раз.",
             "import_follows_login": "Спершу увійдіть у Twitch.",
+            "history_header": "Історія",
+            "history_channel": "Канал",
+            "history_empty": "Для каналів зі списку ще немає історії балансу.",
+            "history_chart": "Баланс каналу {channel} з {from} по {to}, від {min} до {max} балів",
+            "history_col_source": "Джерело",
+            "history_col_points": "Бали",
+            "history_bets": "Ставки",
+            "history_bet_won": "Виграно",
+            "history_bet_lost": "Програно",
+            "history_bet_refunded": "Повернено",
+            "history_bet_points_won": "Виграні бали",
             "reasons": {
                 "watch": "Перегляд",
                 "claim": "Отримання бонусу",
                 "watch_streak": "Серія переглядів",
                 "raid": "Рейд",
-                "prediction": "Прогноз"
+                "prediction": "Прогноз",
+                "other": "Інше"
             }
         }
     },

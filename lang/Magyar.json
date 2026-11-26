@@ -547,12 +547,24 @@
             "import_follows_result": "{added} hozzáadva, {listed} már szerepelt a listán, {over} nem fért bele a 20-as korlátba.",
             "import_follows_error": "A követett csatornákat nem sikerült importálni. Próbáld újra.",
             "import_follows_login": "Előbb jelentkezz be a Twitchre.",
+            "history_header": "Előzmények",
+            "history_channel": "Csatorna",
+            "history_empty": "A listázott csatornákhoz még nincs egyenleg-előzmény.",
+            "history_chart": "{channel} egyenlege {from} és {to} között, {min} és {max} pont között",
+            "history_col_source": "Forrás",
+            "history_col_points": "Pontok",
+            "history_bets": "Fogadások",
+            "history_bet_won": "Nyert",
+            "history_bet_lost": "Vesztett",
+            "history_bet_refunded": "Visszatérített",
+            "history_bet_points_won": "Nyert pontok",
             "reasons": {
                 "watch": "Nézés",
                 "claim": "Bónusz begyűjtése",
                 "watch_streak": "Nézési sorozat",
                 "raid": "Raid",
-                "prediction": "Előrejelzés"
+                "prediction": "Előrejelzés",
+                "other": "Egyéb"
             }
         }
     },

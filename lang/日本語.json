@@ -547,12 +547,24 @@
             "import_follows_result": "{added}件追加、{listed}件は登録済み、{over}件は上限の20件に収まりませんでした。",
             "import_follows_error": "フォロー中のチャンネルをインポートできませんでした。もう一度お試しください。",
             "import_follows_login": "先にTwitchにログインしてください。",
+            "history_header": "履歴",
+            "history_channel": "チャンネル",
+            "history_empty": "リストのチャンネルの残高履歴はまだありません。",
+            "history_chart": "{channel} の残高、{from} から {to} まで、{min} から {max} ポイント",
+            "history_col_source": "入手元",
+            "history_col_points": "ポイント",
+            "history_bets": "予想",
+            "history_bet_won": "的中",
+            "history_bet_lost": "外れ",
+            "history_bet_refunded": "返却",
+            "history_bet_points_won": "獲得ポイント",
             "reasons": {
                 "watch": "視聴",
                 "claim": "ボーナス受け取り",
                 "watch_streak": "視聴ストリーク",
                 "raid": "レイド",
-                "prediction": "予想"
+                "prediction": "予想",
+                "other": "その他"
             }
         }
     },

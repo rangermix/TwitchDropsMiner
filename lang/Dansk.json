@@ -547,12 +547,24 @@
             "import_follows_result": "{added} tilføjet, {listed} var allerede på listen, {over} passede ikke inden for grænsen på 20.",
             "import_follows_error": "De fulgte kanaler kunne ikke importeres. Prøv igen.",
             "import_follows_login": "Log først ind på Twitch.",
+            "history_header": "Historik",
+            "history_channel": "Kanal",
+            "history_empty": "Ingen saldohistorik endnu for kanalerne på listen.",
+            "history_chart": "Saldo for {channel} fra {from} til {to}, mellem {min} og {max} point",
+            "history_col_source": "Kilde",
+            "history_col_points": "Point",
+            "history_bets": "Væddemål",
+            "history_bet_won": "Vundet",
+            "history_bet_lost": "Tabt",
+            "history_bet_refunded": "Refunderet",
+            "history_bet_points_won": "Vundne point",
             "reasons": {
                 "watch": "Visning",
                 "claim": "Bonusindløsning",
                 "watch_streak": "Watch streak",
                 "raid": "Raid",
-                "prediction": "Forudsigelse"
+                "prediction": "Forudsigelse",
+                "other": "Andet"
             }
         }
     },

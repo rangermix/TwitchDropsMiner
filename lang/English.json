@@ -547,12 +547,24 @@
             "import_follows_result": "{added} added, {listed} already listed, {over} did not fit the limit of 20.",
             "import_follows_error": "Could not import the followed channels. Please try again.",
             "import_follows_login": "Log in to Twitch first.",
+            "history_header": "History",
+            "history_channel": "Channel",
+            "history_empty": "No balance history yet for the listed channels.",
+            "history_chart": "Balance of {channel} from {from} to {to}, between {min} and {max} points",
+            "history_col_source": "Source",
+            "history_col_points": "Points",
+            "history_bets": "Bets",
+            "history_bet_won": "Won",
+            "history_bet_lost": "Lost",
+            "history_bet_refunded": "Refunded",
+            "history_bet_points_won": "Points won",
             "reasons": {
                 "watch": "Watching",
                 "claim": "Bonus claim",
                 "watch_streak": "Watch streak",
                 "raid": "Raid",
-                "prediction": "Prediction"
+                "prediction": "Prediction",
+                "other": "Other"
             }
         }
     },

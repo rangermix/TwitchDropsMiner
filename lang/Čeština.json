@@ -547,12 +547,24 @@
             "import_follows_result": "Přidáno {added}, {listed} už v seznamu bylo, {over} se nevešlo do limitu 20.",
             "import_follows_error": "Sledované kanály se nepodařilo importovat. Zkuste to znovu.",
             "import_follows_login": "Nejdřív se přihlaste k Twitchi.",
+            "history_header": "Historie",
+            "history_channel": "Kanál",
+            "history_empty": "Pro kanály v seznamu zatím není žádná historie zůstatku.",
+            "history_chart": "Zůstatek kanálu {channel} od {from} do {to}, mezi {min} a {max} body",
+            "history_col_source": "Zdroj",
+            "history_col_points": "Body",
+            "history_bets": "Sázky",
+            "history_bet_won": "Vyhrané",
+            "history_bet_lost": "Prohrané",
+            "history_bet_refunded": "Vrácené",
+            "history_bet_points_won": "Vyhrané body",
             "reasons": {
                 "watch": "Sledování",
                 "claim": "Vybrání bonusu",
                 "watch_streak": "Série sledování",
                 "raid": "Raid",
-                "prediction": "Předpověď"
+                "prediction": "Předpověď",
+                "other": "Jiné"
             }
         }
     },

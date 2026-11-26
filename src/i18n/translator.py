@@ -470,6 +470,7 @@ class GUIPointsReasons(TypedDict):
     watch_streak: str
     raid: str
     prediction: str
+    other: str
 
 
 class GUIPoints(TypedDict):
@@ -559,6 +560,17 @@ class GUIPoints(TypedDict):
     import_follows_result: str
     import_follows_error: str
     import_follows_login: str
+    history_header: str
+    history_channel: str
+    history_empty: str
+    history_chart: str
+    history_col_source: str
+    history_col_points: str
+    history_bets: str
+    history_bet_won: str
+    history_bet_lost: str
+    history_bet_refunded: str
+    history_bet_points_won: str
     reasons: GUIPointsReasons
 
 
