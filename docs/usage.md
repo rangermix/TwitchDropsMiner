@@ -325,10 +325,40 @@ use goes to drop mining instead.
     without the shared milestone) is not sent again. Only a reply with an error code and
     a null milestone counts as a refusal; a refused share is tried once more, also after
     a restart.
+- `claim_moments` (on by default) claims a community moment on a live listed channel
+  once per moment. It costs nothing and is not visible to others.
+- `follow_raids` (off by default) joins a raid that starts on the idle-watched channel,
+  once per raid. Joining is visible to the streamer. TDM does not watch the raid target:
+  it keeps watching its listed channels. Twitch may refuse the request with an integrity
+  check error; TDM logs the failure and does not retry it.
+- `predictions_enabled` (off by default) bets channel points once per prediction on live
+  listed channels, about 6 seconds before the prediction closes, using the vote counts
+  seen last. Bets spend points and are visible to the streamer.
+  - `prediction_strategy` picks the outcome: `smart` (default) bets on the outcome with
+    the fewest points when the first two outcomes have a user split within 20 percentage
+    points, otherwise on the outcome with the most users; `most_voted` picks the most
+    users, `high_odds` the fewest points (the largest payout per point), `favourite` the
+    most points. A tie picks the first outcome.
+  - The stake is `prediction_percent` (default 5) of the channel's balance, rounded
+    down, at most `prediction_max_points` (default 1000) and never more than the balance.
+    No bet is placed below 10 points, with an unknown balance, or when the prediction is
+    no longer open. Each skip and each result (won, lost, refunded) goes to the channel
+    points log. A bet is sent once: a failed or unanswered bet is not sent again. No
+    strategy is known to beat the other viewers.
+- `join_chat` (off by default) joins the chat of the idle-watched channel over Twitch's
+  chat websocket with your session, and leaves it when TDM switches channels, stops idle
+  watching or pauses channel points. TDM never sends chat messages. Twitch lists no
+  channel points for chat, so this only shows you in the chat's viewer list. A lost
+  connection is retried with a growing wait of at most 5 minutes.
+- Raids, moments, predictions and chat follow the same rules as the bonus claim: only
+  while idle watching, only on listed live channels, and never on a channel that drops
+  can use, while channel points are paused or outside mining hours. TDM follows their
+  Twitch events only while idle watching and only for the options that are on.
 - While idle watching, TDM sends a stream lookup for listed channels it does not track
   yet, a channel points read when it starts watching a channel, one batched channel
   points read of the other live listed channels about every 5 minutes, and a watch
-  streak read about every 5 minutes when sharing is on. The normal watch loop also sends its drop
+  streak read about every 5 minutes when sharing is on, and one account login read
+  when it first joins a chat. The normal watch loop also sends its drop
   progress request for the watched channel every minute, and each newly tracked idle
   channel gets a ban status check. The hourly channel reload usually drops the idle
   channels (an idle channel streaming a wanted game stays tracked), so the stream lookup
@@ -336,7 +366,8 @@ use goes to drop mining instead.
 - TDM tracks at most 198 channels, drop and idle channels together, because the channel
   points topic takes one websocket slot, also with an empty idle list. Idle channels
   over that limit are skipped with a warning and retried the next time idle watching
-  starts.
+  starts. The raid, moment and prediction events use the room that is left; when it runs
+  out, some of them are not followed and the channel points log says so once.
 
 ## Pause mining
 

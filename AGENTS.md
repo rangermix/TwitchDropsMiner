@@ -1420,10 +1420,58 @@ points options (`PointsSettings` in `src/config/settings.py`) are read on each s
   `error` with a non-empty string `code` and a null `milestone` allows one more try,
   also after a restart. A count without a usable value matches any count of the same
   milestone id. Needs `share_watch_streaks`, which is off by default.
+- Event features (`PointsEvents`, `src/services/points_events.py`, owned by the service as
+  `events`): `sync()` runs on every tick and subscribes only the topics of enabled options
+  while the loop runs and points are not paused: `predictions-user-v1.<user>` and
+  `predictions-channel-v1.<id>` (`predictions_enabled`) and
+  `community-moments-channel-v1.<id>` (`claim_moments`) for every live listed channel,
+  `raid.<id>` (`follow_raids`) for `watched` only. A turned-off option, an offline or
+  unlisted channel or a new pick drops its topics on the next tick; `stop()` (right away,
+  so the next state has the room) and the end of `_run` (unless a newer run replaced it)
+  call `_end_events()`, which removes them all, cancels open bet timers and leaves the
+  chat. New topics never take the slots of the stream topics of listed logins not tracked
+  yet (`_room()`); topics that do not fit, or a pool `MinerException`, log
+  `points.log.topic_limit` once until all fit again.
+- Every event action re-checks at send time with `may_act(channel, setting)`: loop
+  active, not points-paused, the bool option on, the channel live in `live_channels()`
+  (listed, not banned), `is_mining_time()` and not `can_watch()`. Raids also need
+  `idle_watched()` (the loop's pick, still watched). Raid, moment and prediction ids are
+  used up before sending (newest `EVENTS_KEPT` kept, cleared on an auth change), so a
+  repeated message, failure or unknown outcome is never resent. `JoinRaid` and
+  `MakePrediction` are `single_attempt`: a top-level GQL error (Twitch's
+  `IntegrityCheckFailed` on JoinRaid) raises `GQLException`, so the log code is the
+  exception type; a nested `data.<field>.error.code` is logged as is. Mutations time out
+  after `MUTATION_TIMEOUT` (30 s). `CommunityMomentCallout_Claim` answers in
+  `claimCommunityMoment`. A raid target is never watched.
+- Predictions (`src/services/predictions.py`): an ACTIVE `event-created`/`event-updated`
+  on a live listed channel starts one timer per event that fires
+  `PREDICTION_DELAY_SECONDS` (6) before `created_at + prediction_window_seconds` (at once
+  when less is left; no timer for a malformed time); later updates replace the stored
+  event, so the bet uses the last outcomes; LOCKED, RESOLVED or CANCELED cancels the
+  timer. When it fires the event is used up, and it bets only if `may_act`, the stored
+  status is ACTIVE, the balance is known and `PredictionStrategy.amount()` =
+  `min(balance * prediction_percent // 100, prediction_max_points, balance)` is at least
+  `MIN_BET` (10); otherwise `bet_skipped`. `PredictionStrategy.choose()` needs two
+  outcomes; counts that are not positive ints count as 0; ties keep the first;
+  `smart` = `high_odds` when `abs(users0 - users1) * 100 / (users0 + users1) <= 20` (no
+  users counts as even), else `most_voted`, over all outcomes. Results of TDM's own bets
+  (`prediction-result` WIN/LOSE/REFUND, kept until an auth change) go to the points log
+  while the user topic is subscribed.
+- Chat presence (`ChatPresence`, `src/services/chat_presence.py`, `join_chat`): the tick
+  calls `follow(watched)` when `may_act(watched, "join_chat")`, else `follow(None)`. One
+  aiohttp websocket to `wss://irc-ws.chat.twitch.tv:443` sends only `PASS oauth:<token>`,
+  `NICK <login>`, `JOIN #<channel>` and `PONG`; the login comes from one
+  `currentUser { login }` read per account and must match `[a-z0-9_]{1,25}`. It leaves on
+  a switch or stop by closing the socket, reconnects with `ExponentialBackoff` up to
+  `CHAT_BACKOFF_MAX` (300 s) while still wanted (checked before every connect), treats
+  600 s of silence or a `NOTICE *` as a lost connection, and logs only exception types,
+  never the token or IRC lines.
 - The `CommunityPoints` user topic is subscribed at login (`BASE_TOPICS = 3`), so at
   most 198 channels are tracked, drop and idle channels together. Idle channels over
-  the limit are skipped with a warning.
-- Extra requests while idle watching: the batched `ChannelPointsContext` read every
+  the limit are skipped with a warning. The event topics above are extra and live only
+  while the loop runs.
+- Extra requests while idle watching: the event mutations above, one `ChatPresenceLogin`
+  read per account when `join_chat` is on, the batched `ChannelPointsContext` read every
   `POINTS_READ_SECONDS`, the watch loop's per-minute `CurrentDrop` for
   the watched channel, `ChannelBanStatus` for newly tracked idle channels, and
   `GetStreamInfo` plus `ChannelPointsContext` again after each hourly reload drops
