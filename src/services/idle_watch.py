@@ -749,7 +749,7 @@ class IdleWatchService:
         due = self._share_now or self._share_checked is None or now - self._share_checked >= STREAK_SHARE_CHECK_SECONDS
         if not self.active or not self._twitch.settings.share_watch_streaks or not due or self._load_failed:
             return
-        live = [c for c in self.live_channels() if self.option(c, "idle_streak_first")]
+        live = [c for c in self.live_channels() if not self._streaks_off(c)]
         if not live:
             # an early-check request waits for a check that runs
             return
@@ -796,7 +796,12 @@ class IdleWatchService:
 
     def _may_share(self, channel: Channel) -> bool:
         """The check's guards, again right before a mutation: the read and earlier shares take time."""
-        return self.may_act(channel, "share_watch_streaks") and self.option(channel, "idle_streak_first") is True
+        return self.may_act(channel, "share_watch_streaks") and not self._streaks_off(channel)
+
+    def _streaks_off(self, channel: Channel) -> bool:
+        """The channel's own streaks option is off: no shares there. The global idle_streak_first does not
+        block a share; without an override share_watch_streaks alone decides."""
+        return self._twitch.settings.idle_channel_options.get(channel.login, {}).get("streaks") is False
 
     def option(self, channel: Channel, setting: str) -> bool:
         """The effective value of a bool setting on channel: its own override, else the global setting."""

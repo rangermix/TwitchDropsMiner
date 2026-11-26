@@ -352,6 +352,24 @@ async def test_streak_share_is_sent_when_the_channel_turns_streaks_on_over_a_glo
     assert len(shares(tw)) == 1
 
 
+@pytest.mark.asyncio
+async def test_streak_share_without_an_override_follows_share_watch_streaks_alone():
+    # as before per-channel options: the global idle_streak_first off does not block a share
+    svc, tw = share_setup()
+    tw.settings.idle_streak_first = False
+    await svc.share_streaks()
+    assert len(shares(tw)) == 1
+
+
+@pytest.mark.asyncio
+async def test_streaks_override_off_blocks_the_share_also_with_the_global_option_on():
+    svc, tw = share_setup()
+    tw.settings.idle_streak_first = True
+    tw.settings.idle_channel_options = {"a": {"streaks": False, "raids": True}}
+    await svc.share_streaks()
+    assert shares(tw) == []
+
+
 def test_streak_share_is_rechecked_right_before_sending():
     svc, tw = share_setup()
     channel = tw.channels[123]
