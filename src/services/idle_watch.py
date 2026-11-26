@@ -942,6 +942,7 @@ class IdleWatchService:
                 if not isinstance(result, READ_ERRORS) or isinstance(result, ExitRequest):
                     raise result
                 failed.append(type(result).__name__)
+            channel.drops_unverified = isinstance(result, BaseException)
             if channel._stream is not None:
                 # a false True would hand the channel to drop mining; CHANNELS_FETCH still finds a real one
                 channel._stream.drops_enabled = result is True

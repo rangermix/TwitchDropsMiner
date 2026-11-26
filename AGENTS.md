@@ -1521,8 +1521,12 @@ live in `gui.points`, translated in every locale.
   unchanged. Every later stream check of a `verify_drops` channel (idle and followed
   channels) reads AvailableDrops within `DROPS_READ_TIMEOUT`; a failed read keeps the rest
   of the check (live state, game), the same broadcast keeps its last checked flag and a new
-  broadcast gets False, so an AvailableDrops outage neither hides a stream going live nor
-  gives a new broadcast the default True.
+  broadcast gets False, so a failed drops read alone neither hides a stream going live nor
+  gives a new broadcast the default True (a GetStreamInfo slower than the outer
+  `STREAM_CHECK_TIMEOUT` still fails the whole check, as before). A failed read sets
+  `Channel.drops_unverified` (also in `track()`), and each `viewcount` event of such a
+  live channel calls `check_online()` again until a read succeeds; the WARNING is logged
+  once per failing streak.
 - A listed channel can stream a drops game outside the Mining list: `can_watch()` is
   False, so it is idle watched, Twitch can credit that game's drops, and the
   GAMES_UPDATE claim loop and `process_drops` claim them like any claimable drop.
