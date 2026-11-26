@@ -145,7 +145,10 @@ def json_load(path: Path, defaults: _JSON_T, *, merge: bool = True) -> _JSON_T:
     defaults_dict: JsonType = dict(defaults)
     if path.exists():
         with open(path, encoding="utf8") as file:
-            combined: JsonType = _remove_missing(json.load(file, object_hook=_deserialize))
+            loaded = json.load(file, object_hook=_deserialize)
+        if not isinstance(loaded, dict):
+            raise ValueError(f"{path.name} does not contain a JSON object")
+        combined: JsonType = _remove_missing(loaded)
         if merge:
             merge_json(combined, defaults_dict)
     else:
@@ -168,6 +171,24 @@ def json_save(path: Path, contents: Mapping[Any, Any], *, sort: bool = False) ->
     try:
         with os.fdopen(descriptor, "w", encoding="utf8") as file:
             json.dump(contents, file, default=_serialize, sort_keys=sort, indent=4)
+            file.flush()
+            os.fsync(file.fileno())
         temporary.replace(path)
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def quarantine_file(path: Path) -> Path:
+    """
+    Move an unreadable file aside as ``<name>.bad`` (or ``.bad.N``) so it is never overwritten.
+
+    Returns:
+        The new path. Raises ``OSError`` when the file cannot be moved.
+    """
+    target = path.with_name(f"{path.name}.bad")
+    number = 1
+    while target.exists():
+        target = path.with_name(f"{path.name}.bad.{number}")
+        number += 1
+    path.replace(target)
+    return target

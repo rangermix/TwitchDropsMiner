@@ -10,7 +10,7 @@ from yarl import URL
 
 from src.config import DEFAULT_LANG, SETTINGS_PATH
 from src.config.reward_priority import RewardPriority
-from src.utils import DropIgnorePolicy, json_load, json_save, merge_json
+from src.utils import DropIgnorePolicy, json_load, json_save, merge_json, quarantine_file
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -175,7 +175,14 @@ class Settings:
     def load(self):
         # TODO: remvoe customized serde in the future
         # Migrate filters before the generic merge discards their previous key.
-        settings = json_load(SETTINGS_PATH, deepcopy(default_settings), merge=False)
+        try:
+            settings = json_load(SETTINGS_PATH, deepcopy(default_settings), merge=False)
+        except (ValueError, TypeError, KeyError):
+            # A damaged file (or a malformed typed value) must not stop startup; keep it for
+            # recovery instead of overwriting it.
+            moved = quarantine_file(SETTINGS_PATH)
+            logger.error(f"Settings file is unreadable; moved it to {moved.name} and using defaults")
+            settings = deepcopy(default_settings)
         filters = settings.get("inventory_filters")
         settings["inventory_filters"] = InventoryFilterSettings.normalize(
             filters if isinstance(filters, dict) else {}

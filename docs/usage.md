@@ -239,6 +239,11 @@ Connection quality accepts 1 to 6 and the minimum refresh interval 1 to 1440 min
 hand-edited `settings.json` value outside the range is clamped; a non-number falls back to
 the default. A saved language that is no longer installed falls back to the default.
 
+If `settings.json` itself cannot be read (for example after a power loss during a save,
+or a manual edit that broke the JSON), TDM moves it to `settings.json.bad` (numbered if
+one exists) and starts with default settings instead of stopping. Stop the miner before
+restoring or repairing a `.bad` copy.
+
 [All guides](README.md) · [Telegram notifications](notifications.md)
 
 ## Mining hours

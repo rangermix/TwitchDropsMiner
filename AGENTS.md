@@ -1342,6 +1342,11 @@ Tests cover persistence, filtering, Unicode exports, offsets, and translated UI 
 An unusable file (bad JSON, non-object, unknown version, non-list entries) is moved to
 `drop_history.json.bad[.N]` before the next save; an `OSError` on read or move disables
 saving for the run so the file is never overwritten. The temp file is fsynced before rename.
+`quarantine_file()` (`src/utils/json_utils.py`) performs the `.bad[.N]` move for both drop
+history and `settings.json`: a `Settings.load()` `ValueError`/`TypeError`/`KeyError` (bad
+JSON, non-object, malformed typed value) moves the file aside and starts from defaults
+instead of exiting. `json_save` fsyncs before its atomic rename. Coverage:
+`tests/test_data_safety.py`.
 
 - Existing-session admission accepts only a bounded sole `token` field through
   dashboard-authenticated, same-origin `POST /api/session/token`. Never echo inputs.

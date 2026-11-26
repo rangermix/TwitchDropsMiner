@@ -21,6 +21,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict
 
+from src.utils import quarantine_file
+
 
 if TYPE_CHECKING:
     from src.models.campaign import DropsCampaign
@@ -251,13 +253,8 @@ class DropHistory:
 
     def _quarantine(self) -> None:
         """Move an unusable file aside so the next save cannot overwrite it."""
-        bad = self._path.with_name(self._path.name + ".bad")
-        for n in range(1, 1000):
-            if not bad.exists():
-                break
-            bad = self._path.with_name(f"{self._path.name}.bad.{n}")
         try:
-            self._path.replace(bad)
+            bad = quarantine_file(self._path)
             logger.error(f"Moved unusable drop history to {bad}")
         except OSError as exc:
             self._disable_saving(exc)
