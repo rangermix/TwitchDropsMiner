@@ -616,36 +616,38 @@ class Channel:
         elif needs_display:
             self.display()
 
-    def _watch_current(self, stream: Stream) -> bool:
+    def _watch_current(self, stream: Stream, *, side: bool = False) -> bool:
+        watching = self._twitch.watching_channel.get_with_default(None)
         return (
             not self.banned
             and self._twitch.is_mining_time()
             and self._stream is not None
             and self._stream.broadcast_id == stream.broadcast_id
-            and self._twitch.watching_channel.get_with_default(None) is self
+            # side: the second slot's watch (idle side mode), never on the drop channel
+            and ((watching is not self and self._twitch.idle_watch.side_channel is self) if side else watching is self)
         )
 
-    async def _send_watch_playlist(self) -> bool:
+    async def _send_watch_playlist(self, *, side: bool = False) -> bool:
         """HEAD every new media segment, without fetching audio or video bodies."""
         try:
             # HTTPClient retries network/5xx failures. Bound the entire poll as well
             # as individual requests so one missing segment cannot stall watching.
-            return await asyncio.wait_for(self._watch_playlist(), timeout=10)
+            return await asyncio.wait_for(self._watch_playlist(side=side), timeout=10)
         except ExitRequest:
             raise
         except (MinerException, aiohttp.ClientError, TimeoutError, ValueError):
             return False
 
-    async def _watch_playlist(self) -> bool:
+    async def _watch_playlist(self, *, side: bool = False) -> bool:
         stream = self._stream
-        if stream is None or not self._watch_current(stream):
+        if stream is None or not self._watch_current(stream, side=side):
             return False
         if self._watch_broadcast_id != stream.broadcast_id:
             self._watch_broadcast_id = stream.broadcast_id
             self._watched_segments.clear()
             self._last_spade_sent = None
         stream_url = await stream.get_stream_url()
-        if stream_url is None or not self._watch_current(stream):
+        if stream_url is None or not self._watch_current(stream, side=side):
             return False
         status, playlist = await asyncio.wait_for(
             self._watch_response("GET", stream_url), timeout=5
@@ -656,14 +658,14 @@ class Channel:
                 if self._stream is not None and self._stream == stream:
                     self._stream._stream_url = None
             return False
-        if not self._watch_current(stream):
+        if not self._watch_current(stream, side=side):
             return False
         segments = Stream.playlist_urls(playlist, URL(stream_url))
         if not segments:
             return False
         succeeded = True
         for url in segments:
-            if not self._watch_current(stream):
+            if not self._watch_current(stream, side=side):
                 return False
             key = str(url)
             if key in self._watched_segments:
@@ -672,7 +674,7 @@ class Channel:
                 status, _ = await asyncio.wait_for(
                     self._watch_response("HEAD", url), timeout=3
                 )
-                if not self._watch_current(stream):
+                if not self._watch_current(stream, side=side):
                     return False
                 if status == 200:
                     self._watched_segments[key] = None
@@ -695,12 +697,13 @@ class Channel:
         async with self._twitch.request(method, url, headers=headers) as response:
             return response.status, await response.text() if method == "GET" else ""
 
-    async def send_watch(self) -> bool:
+    async def send_watch(self, *, side: bool = False) -> bool:
+        """One watch poll; side is the second slot's watch of idle side mode, not the drop watch."""
         stream = self._stream
         if stream is None:
             return False
-        succeeded = await self._send_watch_playlist()
-        if not succeeded or not self._watch_current(stream):
+        succeeded = await self._send_watch_playlist(side=side)
+        if not succeeded or not self._watch_current(stream, side=side):
             return False
         now = monotonic()
         # Telemetry is auxiliary; its response does not establish Drop credit.
@@ -709,24 +712,24 @@ class Channel:
             or now - self._last_spade_sent >= WATCH_INTERVAL.total_seconds()
         ):
             self._last_spade_sent = now
-            await self._send_watch_spade()
-        return self._watch_current(stream)
+            await self._send_watch_spade(side=side)
+        return self._watch_current(stream, side=side)
 
-    async def _send_watch_spade(self) -> bool:
+    async def _send_watch_spade(self, *, side: bool = False) -> bool:
         try:
-            return await asyncio.wait_for(self._post_spade(), timeout=5)
+            return await asyncio.wait_for(self._post_spade(side=side), timeout=5)
         except ExitRequest:
             raise
         except (MinerException, aiohttp.ClientError, TimeoutError):
             return False
 
-    async def _post_spade(self) -> bool:
+    async def _post_spade(self, *, side: bool = False) -> bool:
         stream = self._stream
         if stream is None:
             return False
         if self._spade_url is None:
             self._spade_url = await self.get_spade_url()
-        if not self._watch_current(stream):
+        if not self._watch_current(stream, side=side):
             return False
         async with self._twitch.request(
             "POST", self._spade_url, data=stream._spade_payload

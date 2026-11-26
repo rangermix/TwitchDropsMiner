@@ -998,7 +998,7 @@ async def test_saving_join_chat_off_and_on_clears_a_refused_login_without_a_tick
     assert await chat._session(a) is False
     svc._task = None if loop == "stopped" else svc._task
     client = SimpleNamespace(
-        idle_watch=svc, gui=tw.gui, _state_change=MagicMock(),
+        idle_watch=svc, gui=tw.gui, _state_change=MagicMock(), _side_watch_step=MagicMock(),
         _state=State.CHANNEL_SWITCH if loop == "stopped" else State.IDLE,
     )
     tw.settings.save = MagicMock()

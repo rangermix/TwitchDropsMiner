@@ -1,5 +1,6 @@
 """
-Idle watch service: when nothing can be mined, watch the channels the owner lists.
+Idle watch service: watch the channels the owner lists, when nothing can be mined (main mode)
+or, with watch_slots 2, on a second watch next to drop mining (side mode).
 
 Each live listed channel gets one streak visit per broadcast (and up to RECOVERY_VISITS more
 when a full visit got no streak bonus), otherwise the first live listed channel in priority
@@ -47,6 +48,8 @@ IDLE_VISIT_SECONDS = 420
 # last one ended: a restart within that gap is the same stream
 RESTART_SECONDS = 1800
 IDLE_TICK_SECONDS = 30
+# the side watcher's poll, like WatchService.watch_loop: inside Twitch's rolling segment window
+SIDE_WATCH_SECONDS = 10
 STREAK_REASON = "WATCH_STREAK"
 CLAIM_REASON = "CLAIM"
 # tick retries of a failed bonus claim per watched channel; after them claim-available retries it
@@ -147,10 +150,20 @@ class IdleWatchService:
         # the channel the loop chose to watch, and the visit it last announced
         self.watched: Channel | None = None
         self._last_visit: Visit | None = None
+        # "main": the loop runs in IDLE and drives the client's watch; "side" (watch_slots 2): it runs
+        # next to drop mining and its pick is watched by the side watcher, never by the client
+        self.mode = "main"
+        # the side watcher: the channel it watches and its task
+        self.side_channel: Channel | None = None
+        self._side_task: asyncio.Task[None] | None = None
 
     @property
     def active(self) -> bool:
         return self._task is not None and not self._task.done()
+
+    @property
+    def side(self) -> bool:
+        return self.mode == "side"
 
     def allowed(self) -> bool:
         tw = self._twitch
@@ -161,10 +174,23 @@ class IdleWatchService:
             and not self.points_paused
         )
 
+    def side_allowed(self) -> bool:
+        """Whether side mode may run: allowed(), two watch slots and no authentication change."""
+        tw = self._twitch
+        return self.allowed() and tw.settings.watch_slots == 2 and not tw._changing_auth
+
+    def side_candidate(self, channel: Channel) -> bool:
+        """Whether side mode may watch channel: drops cannot use it, it is not the drop channel and its
+        stream has drops off, so Twitch does not move drop progress to it."""
+        tw = self._twitch
+        drop = tw.watching_channel.get_with_default(None)
+        return not channel.drops_enabled and not tw.can_watch(channel) and (drop is None or drop.id != channel.id)
+
     def set_points_paused(self, paused: bool) -> None:
         """Pause or resume idle watching and its points actions until resumed or restarted.
 
-        Drop mining is untouched: the IDLE step re-runs only while nothing is mined.
+        Drop mining is untouched: the IDLE step re-runs only while nothing is mined, and side mode
+        stops or starts again next to drop mining.
         """
         if paused == self.points_paused:
             return
@@ -174,8 +200,14 @@ class IdleWatchService:
         # the IDLE step stops the loop and its watch (or starts it again); a running loop is poked too
         self._twitch.idle_channels_changed()
 
-    def enter(self) -> None:
+    def enter(self, *, side: bool = False) -> None:
+        """Start the loop in main mode, or in side mode; a loop in the other mode stops first."""
+        mode = "side" if side else "main"
+        if self.active and self.mode != mode:
+            # like any stop: the visit clock pauses, and the side watcher ends before main mode watches
+            self.stop()
         if not self.active:
+            self.mode = mode
             # a pick handed to drops stays watched: until the loop picks again it is not idle watched
             self.watched = None
             self._claimed.clear()
@@ -192,9 +224,52 @@ class IdleWatchService:
         if task is not None and not task.done():
             self._pause()
             task.cancel()
+        self._side_stop()
         # right away, not when the task ends: the next state may need the topic room
         self._end_events()
         return task
+
+    def _side_start(self, channel: Channel) -> None:
+        """Watch channel in the second slot; the previous side watch ends first."""
+        self._side_stop()
+        logger.info("Idle watching %s in the second slot", channel.name)
+        self.side_channel = channel
+        self._side_task = asyncio.create_task(self._side_watch(channel))
+        self._twitch.gui.points.refresh()
+
+    def _side_stop(self) -> None:
+        task, self._side_task = self._side_task, None
+        if task is not None:
+            task.cancel()
+        if self.side_channel is not None:
+            self.side_channel = None
+            self._twitch.gui.points.refresh()
+
+    async def _side_watch(self, channel: Channel) -> None:
+        """The second watch: send_watch() on channel at the drop watch's cadence, outside its progress code.
+
+        It ends when channel goes offline, is banned, may no longer be side watched or mining time ends;
+        the loop is poked to pick again.
+        """
+        tw = self._twitch
+        try:
+            while (
+                self.side_channel is channel and tw.is_mining_time() and channel.online and not channel.banned
+                and self.side_candidate(channel)
+            ):
+                stream = channel._stream
+                started = time.monotonic()
+                succeeded = await channel.send_watch(side=True)
+                await asyncio.sleep(max(0, SIDE_WATCH_SECONDS - (time.monotonic() - started)))
+                if not succeeded and stream is not None and channel._watch_current(stream, side=True):
+                    # an ended broadcast fails here even if its stream-down event was lost
+                    channel.check_online()
+        finally:
+            if self._side_task is asyncio.current_task():
+                self._side_task = None
+                self.side_channel = None
+                self._twitch.gui.points.refresh()
+                self.poke()
 
     def _end_events(self) -> None:
         """Unsubscribe the event topics, drop open predictions and leave the chat."""
@@ -343,9 +418,10 @@ class IdleWatchService:
 
     async def _run(self) -> None:
         tw = self._twitch
-        logger.info("Idle watching started")
-        # the last drop's progress panel does not belong to an idle channel
-        tw.gui.clear_drop()
+        logger.info("Idle watching started%s", " in the second slot" if self.side else "")
+        if not self.side:
+            # the last drop's progress panel does not belong to an idle channel
+            tw.gui.clear_drop()
         self.watched = None
         self._use_account(tw.logged_in_user_id())
         if self.history.use_account(tw.logged_in_user_id()):
@@ -363,17 +439,19 @@ class IdleWatchService:
             # replaced by a new run after stop() leaves the new run's events alone
             if self._task is None or self._task is asyncio.current_task():
                 self._end_events()
+                self._side_stop()
 
     async def _loop(self) -> None:
         tw = self._twitch
         while True:
             # cleared before the awaits, so a poke during the tick runs one more tick
             self._wake.clear()
-            if self._hand_to_drops(tw.watching_channel.get_with_default(None)):
+            # side mode runs next to drop mining: it never hands the drop channel over
+            if not self.side and self._hand_to_drops(tw.watching_channel.get_with_default(None)):
                 return
-            if not self.allowed():
+            if not (self.side_allowed() if self.side else self.allowed()):
                 self._pause()
-                tw.stop_watching()
+                self._unwatch()
                 logger.info("Idle watching stopped")
                 return
             try:
@@ -410,10 +488,14 @@ class IdleWatchService:
             # no response body: the exception type is enough to diagnose
             logger.warning("Idle channel lookup failed (%s), retrying", type(exc).__name__)
         live, now = self.live_channels(), time.monotonic()
+        if self.side:
+            # the drop channel, channels drops can use and drops-enabled streams are never picked
+            live = [c for c in live if self.side_candidate(c)]
         channel = self.pick(live, now)
         self._save()
         self.history.save(tw.settings.idle_channels)
         tw.gui.points.refresh_history()
+        # side mode picks only side candidates, which drops cannot use, so this hands over in main mode only
         if self._hand_to_drops(channel):
             # no watch, balance read or claim on a channel drops can use
             return True
@@ -428,8 +510,8 @@ class IdleWatchService:
             self._last_visit = self.visit
         if channel is None:
             self.watched = None
-            tw.stop_watching()
-        elif channel is not tw.watching_channel.get_with_default(None) or channel is not self.watched:
+            self._unwatch()
+        elif not self._watching(channel) or channel is not self.watched:
             if self.watched is not None:
                 logger.info("Idle watching switched to %s", channel.name)
             # a re-watch of the same pick after a failed claim reads again only as a counted retry
@@ -439,8 +521,11 @@ class IdleWatchService:
                 self._claim_failed = False
                 self._claim_retries = 0
             self.watched = channel
-            tw.watch(channel, update_status=False)
-            self._show_status(channel)
+            if self.side:
+                self._side_start(channel)
+            else:
+                tw.watch(channel, update_status=False)
+                self._show_status(channel)
             if not retry or self._claim_retries < CLAIM_RETRIES:
                 self._claim_retries += retry
                 await self.refresh_points(channel)
@@ -456,7 +541,22 @@ class IdleWatchService:
         self._twitch.gui.points.refresh()
         return False
 
+    def _watching(self, channel: Channel) -> bool:
+        """Whether the loop's watch is on channel: the client's watch in main mode, the side watcher's in side mode."""
+        if self.side:
+            return channel is self.side_channel
+        return channel is self._twitch.watching_channel.get_with_default(None)
+
+    def _unwatch(self) -> None:
+        if self.side:
+            self._side_stop()
+        else:
+            self._twitch.stop_watching()
+
     def _show_status(self, channel: Channel) -> None:
+        if self.side:
+            # the status bar belongs to drop mining
+            return
         points = self.balances.get(channel.id)
         if points is None:
             text = _.t["status"]["idle_watching"].format(channel=channel.name)
@@ -465,10 +565,10 @@ class IdleWatchService:
         self._twitch.gui.status.update(text)
 
     def idle_watched(self, channel_id: object) -> Channel | None:
-        """The channel being idle watched, if channel_id is it and the loop is running."""
-        watched = self._twitch.watching_channel.get_with_default(None)
-        # only the loop's own pick: at idle entry the last drop channel is still watched until the first pick
-        if not self.active or watched is None or watched is not self.watched or str(watched.id) != str(channel_id):
+        """The channel being idle watched (in the second slot in side mode), if channel_id is it and the loop is running."""
+        watched = self.watched
+        # only the loop's own pick, still watched: at idle entry the last drop channel is still watched until the first pick
+        if not self.active or watched is None or not self._watching(watched) or str(watched.id) != str(channel_id):
             return None
         # a channel drops can use is mined, not idle watched, even before the loop hands it over
         return None if self._twitch.can_watch(watched) else watched
@@ -647,7 +747,8 @@ class IdleWatchService:
         """Whether a channel points action behind the bool setting may run on channel right now.
 
         The loop runs, points are not paused, mining time, the option is on, and the channel is
-        listed, live, not banned and not one drops can use.
+        listed, live, not banned and not one drops can use; in side mode also not the drop channel
+        and with drops off (side_candidate).
         """
         tw = self._twitch
         return (
@@ -658,6 +759,7 @@ class IdleWatchService:
             # can_watch is False while paused or outside mining hours too
             and tw.is_mining_time()
             and not tw.can_watch(channel)
+            and (not self.side or self.side_candidate(channel))
         )
 
     async def _share(self, channel: Channel, milestone: JsonType) -> bool:

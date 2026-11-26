@@ -333,30 +333,44 @@ class Twitch:
         """Change the current state of the miner.
 
         idle_watch is only honoured for IDLE: it marks "nothing can be mined", so the
-        idle service may watch the owner's listed channels.
+        idle service may watch the owner's listed channels (main mode). Any other state
+        stops main mode; with watch_slots 2, side mode then runs next to drop mining and
+        keeps running across these states.
         """
         if self._state is not State.EXIT:
             # prevent state changing once we switch to exit state
             self._state = state
             self._idle_watch_allowed = idle_watch and state is State.IDLE
             if not self._idle_watch_allowed:
-                was_idle_watching = self.idle_watch.active
-                self.idle_watch.stop()
-                # The stopped loop leaves its idle channel watched; CHANNELS_FETCH would carry it
-                # as a drop candidate. A channel drops can use stays (the loop's own handover).
-                if (
-                    was_idle_watching
-                    and (watching := self.watching_channel.get_with_default(None)) is not None
-                    and not self.can_watch(watching)
-                ):
-                    self.stop_watching()
+                if not (self.idle_watch.active and self.idle_watch.mode == "side"):
+                    was_idle_watching = self.idle_watch.active
+                    self.idle_watch.stop()
+                    # The stopped loop leaves its idle channel watched; CHANNELS_FETCH would carry it
+                    # as a drop candidate. A channel drops can use stays (the loop's own handover).
+                    if (
+                        was_idle_watching
+                        and (watching := self.watching_channel.get_with_default(None)) is not None
+                        and not self.can_watch(watching)
+                    ):
+                        self.stop_watching()
+                self._side_watch_step()
         self._state_change.set()
+
+    def _side_watch_step(self) -> None:
+        """Run idle watching in side mode next to drop mining while it may run (watch_slots 2), else stop side mode."""
+        idle = self.idle_watch
+        if self._state is not State.EXIT and not self._idle_watch_allowed and idle.side_allowed():
+            idle.enter(side=True)
+        elif idle.active and idle.mode == "side":
+            idle.stop()
 
     def idle_channels_changed(self) -> None:
         """Re-run the IDLE step for an edited idle option or the points pause; drop mining needs no games update."""
         self.idle_watch.settings_changed()
         # the points tab lists the idle channels, also while drops are mined
         self.gui.points.refresh()
+        # watch_slots and the points pause start or stop side mode next to drop mining
+        self._side_watch_step()
         if self._state is State.IDLE:
             self._state_change.set()
             if self.idle_watch.active:

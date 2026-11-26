@@ -25,7 +25,8 @@ def manager(idle=("a", "b", "c")):
     twitch = SimpleNamespace(
         channels={1: chan(1, "a"), 2: chan(2, "b", online=False)},
         settings=SimpleNamespace(idle_channels=list(idle)),
-        idle_watch=SimpleNamespace(balances={1: 900}, points_paused=False, active=True, history=PointsHistory()),
+        idle_watch=SimpleNamespace(balances={1: 900}, points_paused=False, active=True, history=PointsHistory(),
+                                   side_channel=None),
     )
     log = ConsoleOutputManager(broadcaster, event="points_output", echo=False)
     return PointsManager(broadcaster, twitch, log), broadcaster, twitch
@@ -39,10 +40,10 @@ def emitted(broadcaster, event):
 async def test_state_payload_lists_every_listed_channel_in_list_order():
     points, _, _ = manager()
     assert points.get_state() == {"paused": False, "active": True, "channels": [
-        {"login": "a", "name": "A", "live": True, "balance": 900, "last_gain": None},
-        {"login": "b", "name": "B", "live": False, "balance": None, "last_gain": None},
+        {"login": "a", "name": "A", "live": True, "balance": 900, "last_gain": None, "side": False},
+        {"login": "b", "name": "B", "live": False, "balance": None, "last_gain": None, "side": False},
         # listed but not tracked (yet): its login as name, offline, unknown balance
-        {"login": "c", "name": "c", "live": False, "balance": None, "last_gain": None},
+        {"login": "c", "name": "c", "live": False, "balance": None, "last_gain": None, "side": False},
     ]}
 
 

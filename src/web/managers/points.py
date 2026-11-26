@@ -57,6 +57,8 @@ class PointsManager:
         tw = self._twitch
         idle = tw.idle_watch
         by_login = {c.login: c for c in tw.channels.values()}
+        # the channel the second watch slot watches (idle side mode); the main list shows the drop watch
+        side = idle.side_channel
         channels = []
         for login in tw.settings.idle_channels:
             channel = by_login.get(login)
@@ -69,6 +71,7 @@ class PointsManager:
                 "live": channel is not None and channel.online,
                 "balance": idle.balances.get(channel_id) if channel_id is not None else None,
                 "last_gain": self._gains.get(login),
+                "side": side is not None and side.login == login,
             })
         return {"paused": idle.points_paused, "active": idle.active, "channels": channels}
 

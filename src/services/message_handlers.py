@@ -140,8 +140,10 @@ class MessageHandlerService:
         watching_channel: Channel | None = self._twitch.watching_channel.get_with_default(None)
         is_watching_this: bool = watching_channel is not None and watching_channel == channel
         # While idle watching, the idle loop owns the watch: it picks the next idle channel,
-        # and a drop channel goes through CHANNEL_SWITCH, which stops the loop.
-        idle_watching: bool = self._twitch.idle_watch.active
+        # and a drop channel goes through CHANNEL_SWITCH, which stops the loop. In side mode
+        # (watch_slots 2) the loop has its own second watch and drop mining keeps this one.
+        idle = self._twitch.idle_watch
+        idle_watching: bool = idle.active and idle.mode != "side"
 
         # Channel going from OFFLINE to ONLINE
         if stream_before is None and stream_after is not None:
@@ -150,8 +152,8 @@ class MessageHandlerService:
                 self._switch_to(channel, idle_watching)
             else:
                 logger.info(f"{channel.name} goes ONLINE")
-            if idle_watching and channel.login in self._twitch.settings.idle_channels:
-                self._twitch.idle_watch.poke()
+            if idle.active and channel.login in self._twitch.settings.idle_channels:
+                idle.poke()
 
         # Channel going from ONLINE to OFFLINE
         elif stream_before is not None and stream_after is None:
