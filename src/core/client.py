@@ -31,6 +31,8 @@ from src.diagnostics import Diagnostics
 from src.drop_history import DropHistory
 from src.exceptions import (
     ExitRequest,
+    GQLException,
+    MinerException,
     RequestException,
 )
 from src.i18n import _
@@ -627,13 +629,19 @@ class Twitch:
                     self._inventory_service.clear_cached_state()
                 # ensure the websocket is running
                 await self.websocket.start()
-                await self.fetch_inventory()
-                self._inventory_loaded = True
-                self.gui.set_games({campaign.game for campaign in self.inventory})
-                # Broadcast unwanted items (based on settings)
-                self.gui.broadcast_wanted_items()
-                # Save state on every inventory fetch
-                self.change_state(State.GAMES_UPDATE)
+                try:
+                    await self.fetch_inventory()
+                except GQLException:
+                    # The maintenance task retries shortly; keep any inventory we already have.
+                    logger.warning("Inventory fetch failed; retrying in a few minutes")
+                    self.change_state(State.GAMES_UPDATE if self._inventory_loaded else State.IDLE)
+                else:
+                    self._inventory_loaded = True
+                    self.gui.set_games({campaign.game for campaign in self.inventory})
+                    # Broadcast unwanted items (based on settings)
+                    self.gui.broadcast_wanted_items()
+                    # Save state on every inventory fetch
+                    self.change_state(State.GAMES_UPDATE)
             elif self._state is State.GAMES_UPDATE:
                 refresh_policy_ui = self._games_update_pending
                 self._games_update_pending = False
@@ -773,7 +781,14 @@ class Twitch:
                 for game in no_acl:
                     # for every campaign without an ACL, for it's game,
                     # add a list of live channels with drops enabled
-                    found = await self.get_live_streams(game, drops_enabled=True)
+                    try:
+                        found = await self.get_live_streams(game, drops_enabled=True)
+                    except ExitRequest:
+                        raise
+                    except MinerException:
+                        # One game's failed directory lookup must not stop mining the others.
+                        logger.warning(f"Channel directory for {game.name} is unavailable")
+                        continue
                     # A channel kept from a fetch without the drops filter has the same
                     # broadcast: record that drops are enabled, keeping the old object.
                     kept = {channel: channel for channel in new_channels}

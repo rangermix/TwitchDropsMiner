@@ -43,7 +43,7 @@ class MaintenanceService:
         self._twitch = twitch
 
     @task_wrapper(critical=True)
-    async def run_maintenance_task(self) -> None:
+    async def run_maintenance_task(self, retry_after: timedelta | None = None) -> None:
         """
         Execute the maintenance task loop.
 
@@ -57,9 +57,9 @@ class MaintenanceService:
         3. After reaching the next hour boundary, request inventory reload
         """
         now = datetime.now(timezone.utc)
-        next_period = now + timedelta(
+        next_period = now + (retry_after or timedelta(
             minutes=self._twitch.settings.minimum_refresh_interval_minutes
-        )
+        ))
 
         while True:
             # exit if there's no need to repeat the loop

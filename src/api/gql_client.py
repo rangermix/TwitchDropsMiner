@@ -113,8 +113,8 @@ class GQLClient:
         if not private:
             gql_logger.debug("GQL Request: %s", ops)
         backoff = ExponentialBackoff(maximum=60)
-        # Flag to retry the request once for specific errors
-        single_retry: bool = True
+        # Retry budget for specific errors; batched requests can hit several in a row
+        retries_left: int = 3
 
         for delay in backoff:
             async with self._qgl_limiter:
@@ -156,7 +156,7 @@ class GQLClient:
                 if "errors" in response_json:
                     for error_dict in response_json["errors"]:
                         if "message" in error_dict:
-                            if single_retry and error_dict["message"] in (
+                            if retries_left > 0 and error_dict["message"] in (
                                 "service error",
                                 "PersistedQueryNotFound",
                             ):
@@ -165,9 +165,9 @@ class GQLClient:
                                 else:
                                     logger.error(
                                         f"Retrying a {error_dict['message']} for "
-                                        f"{response_json['extensions']['operationName']}"
+                                        f"{response_json.get('extensions', {}).get('operationName')}"
                                     )
-                                single_retry = False
+                                retries_left -= 1
                                 if delay < 5:
                                     # Overwrite delay if too short
                                     delay = 5

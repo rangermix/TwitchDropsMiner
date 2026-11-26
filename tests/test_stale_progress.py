@@ -84,6 +84,9 @@ async def poll(twitch, on_request, *, until=30, returned_minutes=10, response="s
             raise GQLException("Test query failure")
         if response == "timeout":
             raise TimeoutError
+        if response == "no_user":
+            # A "server error" nulls the whole currentUser field.
+            return {"data": {"currentUser": None}}
         return {"data": {"currentUser": {"dropCurrentSession": {
             "dropID": "drop", "currentMinutesWatched": returned_minutes,
         } if response == "session" else None}}}
@@ -260,7 +263,7 @@ async def test_repeated_claim_does_not_suppress_fresh_poll(mining_state):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("response", ["null", "error", "timeout"])
+@pytest.mark.parametrize("response", ["null", "no_user", "error", "timeout"])
 @pytest.mark.parametrize("change", ["none", "observation", "unchanged", "replacement", "claim"])
 async def test_fallback_uses_only_unchanged_campaign_state(mining_state, response, change):
     twitch, channel, campaign = mining_state

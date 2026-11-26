@@ -247,9 +247,10 @@ class WatchService:
                         ),
                         timeout=5,
                     )
-                    drop_data: JsonType | None = context["data"]["currentUser"][
-                        "dropCurrentSession"
-                    ]
+                    # A "server error" nulls the whole currentUser field.
+                    drop_data: JsonType | None = (
+                        context["data"]["currentUser"] or {}
+                    ).get("dropCurrentSession")
                 except (GQLException, TimeoutError):
                     drop_data = None
 

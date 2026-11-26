@@ -12,6 +12,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from src.config import CALL, GQL_OPERATIONS, State
+from src.exceptions import GQLException
 from src.i18n import _
 from src.utils import task_wrapper
 
@@ -221,14 +222,18 @@ class MessageHandlerService:
 
             if watching_channel is not None:
                 for _attempt in range(8):
-                    context = await self._twitch.gql_request(
-                        GQL_OPERATIONS["CurrentDrop"].with_variables(
-                            {"channelID": str(watching_channel.id)}
+                    try:
+                        context = await self._twitch.gql_request(
+                            GQL_OPERATIONS["CurrentDrop"].with_variables(
+                                {"channelID": str(watching_channel.id)}
+                            )
                         )
-                    )
-                    drop_data: JsonType | None = context["data"]["currentUser"][
-                        "dropCurrentSession"
-                    ]
+                    except GQLException:
+                        break
+                    # A "server error" nulls the whole currentUser field.
+                    drop_data: JsonType | None = (
+                        context["data"]["currentUser"] or {}
+                    ).get("dropCurrentSession")
                     if drop_data is None or drop_data["dropID"] != drop.id:
                         break
                     await asyncio.sleep(2)

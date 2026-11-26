@@ -958,6 +958,13 @@ Open Reward Campaigns use four raw `GQLRawQuery` operations, `REWARD_CAMPAIGNS_Q
 `REWARD_COMPLETED_QUERY` (optional completed list); the two optional ones run concurrently,
 each with its own 5 s timeout. They have no persisted hashes.
 
+GQL failures stay local: one game's failed directory lookup skips that game, a failed
+CampaignDetails batch skips only that batch, and null `currentUser`/`dropCampaign`/`game`
+data never raises `TypeError`. A failed Inventory/Campaigns fetch keeps the miner running
+(previous inventory, or IDLE before the first load) and retries through the maintenance
+task after `INVENTORY_RETRY_DELAY`. Retryable GQL errors share a three-retry budget.
+Regression coverage: `tests/test_gql_resilience.py`.
+
 ### Channel Selection Priority
 
 1. Selected channel (if user clicked one)

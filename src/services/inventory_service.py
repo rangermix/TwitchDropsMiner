@@ -27,7 +27,7 @@ from src.config.operations import (
     REWARD_PROGRESS_QUERY,
 )
 from src.config.reward_priority import RewardPriority
-from src.exceptions import ExitRequest, MinerException
+from src.exceptions import ExitRequest, GQLException, MinerException
 from src.i18n import _
 from src.models import DropsCampaign, RewardCampaign
 from src.models.reward_campaign import RewardLedger
@@ -58,6 +58,9 @@ def _has_id(entry: object) -> bool:
 
 
 # Failures a malformed or slow reward reply can raise; none may block regular drops.
+# Delay before retrying an inventory fetch that Twitch rejected.
+INVENTORY_RETRY_DELAY = timedelta(minutes=2)
+
 REWARD_ERRORS = (MinerException, aiohttp.ClientError, KeyError, IndexError, TypeError,
                  ValueError, AttributeError, TimeoutError)
 
@@ -153,12 +156,19 @@ class InventoryService:
             response_list_raw if isinstance(response_list_raw, list) else [response_list_raw]
         )
 
-        fetched_data: dict[str, JsonType] = {
-            (campaign_data := response_json["data"]["user"]["dropCampaign"])["id"]: campaign_data
-            for response_json in response_list
-        }
-
-        return GQLClient.merge_data(campaign_ids, fetched_data)
+        fetched_data: dict[str, JsonType] = {}
+        for response_json in response_list:
+            # A deleted campaign or a "server error" leaves dropCampaign (or user) null.
+            user = (response_json.get("data") or {}).get("user") or {}
+            campaign_data = user.get("dropCampaign")
+            if isinstance(campaign_data, dict) and isinstance(campaign_data.get("id"), str):
+                fetched_data[campaign_data["id"]] = campaign_data
+        if missing := len(campaign_ids) - len(fetched_data.keys() & campaign_ids.keys()):
+            logger.warning(f"Skipping {missing} campaign(s) without details")
+        # Summaries alone lack drops; keep only campaigns whose details arrived.
+        return GQLClient.merge_data(
+            {cid: data for cid, data in campaign_ids.items() if cid in fetched_data}, fetched_data
+        )
 
     @staticmethod
     def _parse_reward_progress(response: JsonType) -> tuple[dict[str, JsonType], dict[str, str]]:
@@ -381,12 +391,36 @@ class InventoryService:
         5. Updates GUI with campaign information
         6. Sets up maintenance triggers for campaign timing changes
         """
+        try:
+            await self._fetch_inventory()
+        except GQLException:
+            # Retry soon through the maintenance task instead of waiting a full period.
+            self._restart_maintenance(retry_after=INVENTORY_RETRY_DELAY)
+            raise
+
+    def _restart_maintenance(self, *, retry_after: timedelta | None = None) -> None:
+        """(Re)start the maintenance task, which requests the next inventory reload."""
+        if self._twitch._mnt_task is not None and not self._twitch._mnt_task.done():
+            self._twitch._mnt_task.cancel()
+        self._twitch._mnt_task = asyncio.create_task(
+            self._twitch._maintenance_service.run_maintenance_task(retry_after)
+        )
+
+    @staticmethod
+    def _current_user(response: JsonType, operation: str) -> JsonType:
+        """Return ``data.currentUser``; a "server error" can null it with HTTP 200."""
+        current_user = (response.get("data") or {}).get("currentUser")
+        if not isinstance(current_user, dict):
+            raise GQLException(f"{operation} returned no currentUser")
+        return current_user
+
+    async def _fetch_inventory(self) -> None:
         status_update = self._twitch.gui.status.update
         status_update(_.t["gui"]["status"]["fetching_inventory"])
 
         # fetch in-progress campaigns (inventory)
         response = await self._twitch.gql_request(GQL_OPERATIONS["Inventory"])
-        inventory: JsonType = response["data"]["currentUser"]["inventory"]
+        inventory: JsonType = self._current_user(response, "Inventory")["inventory"]
         ongoing_campaigns: list[JsonType] = inventory["dropCampaignsInProgress"] or []
 
         # this contains claimed benefit edge IDs, not drop IDs
@@ -398,7 +432,9 @@ class InventoryService:
 
         # fetch general available campaigns data (campaigns)
         response = await self._twitch.gql_request(GQL_OPERATIONS["Campaigns"])
-        available_list: list[JsonType] = response["data"]["currentUser"]["dropCampaigns"] or []
+        available_list: list[JsonType] = (
+            self._current_user(response, "Campaigns")["dropCampaigns"] or []
+        )
         applicable_statuses = ("ACTIVE", "UPCOMING")
         available_campaigns: dict[str, JsonType] = {
             c["id"]: c
@@ -415,7 +451,12 @@ class InventoryService:
 
         try:
             for coro in asyncio.as_completed(fetch_campaigns_tasks):
-                chunk_campaigns_data = await coro
+                try:
+                    chunk_campaigns_data = await coro
+                except GQLException:
+                    # One failing chunk must not lose every other campaign.
+                    logger.warning("Campaign details are unavailable for one batch; skipping it")
+                    continue
                 # merge the inventory and campaigns datas together
                 inventory_data = GQLClient.merge_data(inventory_data, chunk_campaigns_data)
         finally:
@@ -487,11 +528,7 @@ class InventoryService:
             self._twitch._mnt_triggers.popleft()
 
         # NOTE: maintenance task is restarted at the end of each inventory fetch
-        if self._twitch._mnt_task is not None and not self._twitch._mnt_task.done():
-            self._twitch._mnt_task.cancel()
-        self._twitch._mnt_task = asyncio.create_task(
-            self._twitch._maintenance_service.run_maintenance_task()
-        )
+        self._restart_maintenance()
 
         # Announced only now, so the GUI and notification awaits cannot interleave with the rebuild.
         for campaign in campaigns:
