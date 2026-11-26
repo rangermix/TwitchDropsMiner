@@ -19,7 +19,7 @@ POINTS_OPTIONS = {
 
 
 def chan(cid=123, name="A"):
-    return SimpleNamespace(id=cid, name=name, login=name.lower())
+    return SimpleNamespace(id=cid, name=name, login=name.lower(), online=True, banned=False)
 
 
 CLAIM_OK = {"data": {"claimCommunityPoints": {"error": None, "claim": {"id": "x"}}}}

@@ -16,7 +16,8 @@ from src.config import (
     WebsocketTopic,
 )
 from src.exceptions import ExitRequest, MinerException
-from src.services.predictions import Predictions, error_code, remember
+from src.services.points_common import error_code, remember
+from src.services.predictions import Predictions
 from src.utils import task_wrapper
 
 

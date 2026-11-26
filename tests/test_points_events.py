@@ -11,6 +11,7 @@ import aiohttp
 import pytest
 
 import src.services.chat_presence as chat_mod
+import src.services.points_common as points_common
 import src.services.predictions as pred_mod
 from src.api.gql_client import GQLClient
 from src.config import MAX_WEBSOCKETS, WS_TOPICS_LIMIT, ClientType, WebsocketTopic
@@ -672,11 +673,31 @@ def test_account_reset_forgets_handled_ids():
     assert not svc.events._raids and not svc.events._moments and not svc.events.predictions._handled
 
 
+@pytest.mark.parametrize(("reply", "code"), [
+    ({"data": {"f": {"error": None}}}, None),
+    ({"data": {"f": {"prediction": {"id": "p"}}}}, None),  # no error key
+    ({"data": {"f": {"error": {}}}}, "unknown"),  # an empty error is still an error
+    ({"data": {"f": {"error": {"code": ""}}}}, "unknown"),
+    ({"data": {"f": {"error": {"code": "X"}}}}, "X"),
+    ({"data": {"f": {"error": "X"}}}, "unknown"),
+    ({"data": {"f": {"error": False}}}, "unknown"),
+    ({"data": {"f": {"error": []}}}, "unknown"),
+    ({"data": {"f": None}}, "unknown"),
+    ({"data": {"f": []}}, "unknown"),
+    ({"data": {}}, "unknown"),
+    ({}, "unknown"),
+    ([], "unknown"),
+    (None, "unknown"),
+])
+def test_error_code(reply, code):
+    assert points_common.error_code(reply, "f") == code
+
+
 def test_handled_ids_are_bounded():
     store = {}
-    for i in range(pred_mod.EVENTS_KEPT + 5):
-        pred_mod.remember(store, str(i))
-    assert len(store) == pred_mod.EVENTS_KEPT and "0" not in store and str(pred_mod.EVENTS_KEPT + 4) in store
+    for i in range(points_common.EVENTS_KEPT + 5):
+        points_common.remember(store, str(i))
+    assert len(store) == points_common.EVENTS_KEPT and "0" not in store and str(points_common.EVENTS_KEPT + 4) in store
 
 
 # --- chat presence ---

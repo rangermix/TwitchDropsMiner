@@ -6,9 +6,10 @@ import asyncio
 import logging
 import secrets
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from src.config import GQL_OPERATIONS
+from src.services.points_common import error_code, remember
 from src.utils import task_wrapper
 
 
@@ -29,28 +30,6 @@ PREDICTION_DELAY_SECONDS = 6
 MIN_BET = 10
 # smart: a user split of the first two outcomes within this many percentage points bets high_odds
 SMART_GAP = 20
-# event ids kept for "once per event" and for the results of placed bets, oldest dropped first
-EVENTS_KEPT = 200
-
-
-def remember(store: dict[str, Any], key: str, value: Any = None) -> None:
-    """Add key to an insertion-ordered store and keep only the newest EVENTS_KEPT."""
-    store[key] = value
-    while len(store) > EVENTS_KEPT:
-        del store[next(iter(store))]
-
-
-def error_code(response: object, field: str) -> str | None:
-    """None when the reply's data.<field> has no error, else its error code ("unknown" without one)."""
-    try:
-        result = response["data"][field]  # type: ignore[index]
-    except (KeyError, TypeError):
-        return "unknown"
-    error = result.get("error") if isinstance(result, dict) else True
-    if not error:
-        return None
-    code = error.get("code") if isinstance(error, dict) else None
-    return code if isinstance(code, str) and code else "unknown"
 
 
 class PredictionStrategy:

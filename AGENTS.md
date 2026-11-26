@@ -1398,11 +1398,13 @@ live in `gui.points` (English text in every locale until translated).
   entries (one warning with the count). A file that exists but cannot be read or
   parsed as a whole, or has an invalid share entry, sets `_load_failed`: the file is
   never written, its readable visits stay in memory and no share is sent this run.
-- Bonus claim: `ClaimCommunityPoints` only while the loop runs, only on a tracked
-  channel whose login is listed and that `can_watch()` refuses, and only with
-  `claim_channel_points` on; `claim-available` is honoured for any such channel. A
-  claim counts only when the reply has a `claim` object with a non-empty id and no
-  error. Only a failure on the loop's own pick (`watched`) sets `_claim_failed`: the
+- Bonus claim: `ClaimCommunityPoints` only when `may_act(channel,
+  "claim_channel_points")` allows it (see the event actions below: loop running, not
+  points-paused, mining time, the channel listed, live, not banned and refused by
+  `can_watch()`); `claim-available` is honoured for any such channel. A claim counts
+  only when the reply has a `claim` object with a non-empty id and a null or missing
+  `error` (`error_code()` in `src/services/points_common.py`, shared with the event
+  actions). Only a failure on the loop's own pick (`watched`) sets `_claim_failed`: the
   tick then runs `refresh_points()` again, at most `CLAIM_RETRIES` (2) times per
   watched channel, until the claim succeeds, the read shows no open bonus or the
   channel changes. A success or a channel change resets the count; after the last

@@ -152,6 +152,18 @@ async def test_claim_refused_for_a_drop_channel_an_unlisted_channel_and_a_stoppe
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("case", ["offline", "banned"])
+async def test_claim_refused_on_an_offline_or_banned_listed_channel(case):
+    # claim() uses the guards of every points action (may_act), so a listed channel must be live
+    svc, tw, _ = points_setup()
+    setattr(tw.channels[7], "online" if case == "offline" else "banned", case == "banned")
+    await svc.process_points(1, claim_msg("c1", channel_id="7"))
+    assert sent(tw) == []
+    await svc.process_points(1, claim_msg("c2"))  # the live watched channel still claims
+    assert [op["variables"]["input"]["claimID"] for op in sent(tw)] == ["c2"]
+
+
+@pytest.mark.asyncio
 async def test_a_failed_claim_on_another_channel_does_not_trigger_the_watched_retry():
     svc, tw, _ = points_setup(gql=AsyncMock(side_effect=TimeoutError()))
     await svc.process_points(1, claim_msg(channel_id="7"))

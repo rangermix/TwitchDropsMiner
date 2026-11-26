@@ -25,6 +25,7 @@ from src.i18n import _
 from src.models.channel import Channel
 from src.services.chat_presence import ChatPresence
 from src.services.idle_points import PointsReader, WatchPriority
+from src.services.points_common import error_code
 from src.services.points_events import PointsEvents
 from src.utils import chunk, json_save, task_wrapper
 
@@ -490,17 +491,13 @@ class IdleWatchService:
         """Claim a bonus on a listed channel while the loop runs; only the watched channel's failure is retried."""
         tw = self._twitch
         watched = channel is self.watched
+        # the guards of every points action: also no claim on an offline or banned listed channel, like
+        # every other action (the points read covers live channels only anyway)
         if (
             not claim_id
-            or not tw.settings.claim_channel_points
-            or not self.active
-            or self.points_paused
-            or channel.login not in tw.settings.idle_channels
-            # paused, outside mining hours, or a channel drops can use: no claim
-            or not tw.is_mining_time()
-            or tw.can_watch(channel)
             or claim_id in self._claimed
             or claim_id in self._claiming
+            or not self.may_act(channel, "claim_channel_points")
         ):
             return
         self._claiming.add(claim_id)
@@ -515,19 +512,12 @@ class IdleWatchService:
         self._claim_failed = self._claim_failed or watched
         if response is None:
             return
-        try:
-            result = response["data"]["claimCommunityPoints"]
-            error = result.get("error") if isinstance(result, dict) else True
-        except (KeyError, TypeError):
-            result, error = None, True
-        claim = result.get("claim") if isinstance(result, dict) else None
-        if error is not None or not isinstance(claim, dict) or not isinstance(claim.get("id"), str) or not claim["id"]:
+        code = error_code(response, "claimCommunityPoints")
+        # no error: the field is an object
+        claim = response["data"]["claimCommunityPoints"].get("claim") if code is None else None  # type: ignore[index,call-overload]
+        if not isinstance(claim, dict) or not isinstance(claim.get("id"), str) or not claim["id"]:
             # an error code (for example an already claimed bonus) or no claim with an id instead of the claim
-            code = error.get("code") if isinstance(error, dict) else error
-            logger.warning(
-                "Twitch request ClaimCommunityPoints was not accepted%s",
-                f" ({code})" if isinstance(code, str) else "",
-            )
+            logger.warning("Twitch request ClaimCommunityPoints was not accepted (%s)", code or "no claim")
             return
         if watched:
             self._claim_failed = False
