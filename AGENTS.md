@@ -1351,7 +1351,7 @@ and share checkboxes (same element ids as before), and the `PointsSettings` cont
 (`#points-setting-<key>`, table `POINTS_SETTINGS` in `app.js`; each saves alone
 through `savePointsSetting()`, number inputs clamp before saving). Static text carries
 `data-points-text="<gui.points key>"` and is set by `translatePoints()`; the strings
-live in `gui.points` (English text in every locale until translated).
+live in `gui.points`, translated in every locale.
 
 - Points pause: `points_paused` is runtime only, like the drop pause. `allowed()`
   needs it off, and `claim()`, `_may_share()` and the points read check it again.
@@ -1426,7 +1426,7 @@ live in `gui.points` (English text in every locale until translated).
   the state changed: `{"paused", "active", "channels": [{"login", "name", "live",
   "balance", "last_gain": {"points", "reason", "at"} | null}]}`;
   `initial_state.points` adds `log`. The service calls `gui.points.log(key, **values)`
-  with a `points.log.*` key (English copies in every locale until translated) and
+  with a `points.log.*` key (translated in every locale) and
   keeps its English INFO line.
 - Streak share: `shareViewerMilestone` posts a visible notice in the streamer's chat
   under the user's name, so it is sent with `single_attempt`, and its key (milestone
@@ -1457,7 +1457,8 @@ live in `gui.points` (English text in every locale until translated).
   `MakePrediction` are `single_attempt`: a top-level GQL error raises `GQLException`
   when every error names a refusal (Twitch's `IntegrityCheckFailed` on JoinRaid), else
   `GQLServerError` (a message in `SERVER_ERRORS` of `src/api/gql_client.py`, such as
-  `service timeout`, or none readable: the mutation may have run), so the log code is the
+  `service timeout`, compared without case and outer spaces; an `error` reply with an int
+  `status` of 500 or more; or no readable message: the mutation may have run), so the log code is the
   exception type; a nested `data.<field>.error.code` is logged as is. Mutations time out
   after `MUTATION_TIMEOUT` (30 s). `CommunityMomentCallout_Claim` answers in
   `claimCommunityMoment`. A raid target is never watched.
@@ -1476,7 +1477,8 @@ live in `gui.points` (English text in every locale until translated).
   the timer fires it bets only if `may_act`, the stored status is ACTIVE, the balance is
   known and `PredictionStrategy.amount()` =
   `min(balance * prediction_percent // 100, prediction_max_points, balance)` is at least
-  `MIN_BET` (10); otherwise `bet_skipped`. Every sent bet is kept in `_placed` before
+  `MIN_BET` (10); otherwise `bet_skipped`, except when `may_act` refuses (only an INFO
+  line). The fired event leaves `_latest`. Every sent bet is kept in `_placed` before
   sending. A reply whose `makePrediction.error` is not null is `bet_failed`, as is a
   plain `GQLException`; any other send failure (`GQLServerError`, timeout, connection,
   unconfirmed HTTP reply) is `bet_unknown`. `PredictionStrategy.choose()` needs two outcomes; counts that are not

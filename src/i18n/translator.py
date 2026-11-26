@@ -624,6 +624,7 @@ class PointsLog(TypedDict):
     bet_refunded: str
     bet_skipped: str
     bet_failed: str
+    bet_unknown: str
     raid_joined: str
     raid_failed: str
     moment_claimed: str

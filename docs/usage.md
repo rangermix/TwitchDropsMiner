@@ -344,7 +344,9 @@ use goes to drop mining instead.
   check error; TDM logs the failure and does not retry it.
 - `predictions_enabled` (off by default) bets channel points once per prediction on live
   listed channels, about 6 seconds before the prediction closes, using the vote counts
-  seen last. Bets spend points and are visible to the streamer.
+  seen last. Bets spend points and are visible to the streamer. The timing uses the
+  host clock against Twitch's start time, so keep the clock synchronised: a clock that
+  is more than a few seconds off bets too early on early counts, or not at all.
   - Once means one bet per prediction while TDM runs. TDM never sends a second bet on a
     prediction, also not after a failed or unanswered bet. It places no bet on a
     prediction that was locked, ended or canceled, or that Twitch reported the account
@@ -360,15 +362,18 @@ use goes to drop mining instead.
     down, at most `prediction_max_points` (default 1000) and never more than the balance.
     No bet is placed below 10 points, with an unknown balance, or when the prediction is
     no longer open, or when Twitch sent a prediction without a usable start time or
-    length. Each skip and each result (won, lost, refunded) goes to the channel points
-    log. A bet without an answer from Twitch (a timeout, a lost connection, or a server
+    length. Each such skip and each result (won, lost, refunded) goes to the channel
+    points log; a bet that may not be placed at that moment (paused, option off,
+    channel offline or usable for drops) is not logged there. A bet without an answer from Twitch (a timeout, a lost connection, or a server
     error such as "service timeout") is logged as possibly placed. The result of every
     bet TDM sent is logged when Twitch sends one. No strategy is known to beat the other
     viewers.
 - `join_chat` (off by default) joins the chat of the idle-watched channel over Twitch's
   chat websocket with your session, and leaves it when TDM switches channels, stops idle
   watching or pauses channel points. TDM never sends chat messages. Twitch lists no
-  channel points for chat, so this only shows you in the chat's viewer list. A lost
+  channel points for chat, so this only shows you in the chat's viewer list. While
+  joined, Twitch sends TDM every chat message of that channel, which TDM reads and
+  drops; on a busy channel that is steady network traffic. A lost
   connection is retried with a growing wait of at most 5 minutes; the wait starts over
   only after a connection stayed up for a minute. When Twitch refuses the chat login,
   TDM does not try again until the account or its session token changes, or until
