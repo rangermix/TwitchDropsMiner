@@ -1464,10 +1464,16 @@ live in `gui.points`, translated in every locale.
   after `MUTATION_TIMEOUT` (30 s). `CommunityMomentCallout_Claim` answers in
   `claimCommunityMoment`. A raid target is never watched.
 - Predictions (`src/services/predictions.py`): an ACTIVE `event-created`/`event-updated`
-  on a live listed channel starts one timer per event that fires
-  `PREDICTION_DELAY_SECONDS` (6) before `created_at + prediction_window_seconds` (at once
-  when less is left); later updates replace the stored event, so the bet uses the last
-  outcomes. An event is handled once (`_handled`, newest `EVENTS_KEPT`, kept across loop
+  on a live listed channel starts one timer per event. `Predictions._delay(event, timing,
+  seconds, percent)` gives the fire time from `created_at` (start) and
+  `prediction_window_seconds` (window), by `prediction_timing`: `before_close` (default)
+  start + window - `prediction_delay_seconds` (6), `after_open` start +
+  `prediction_delay_seconds`, `percent` start + window * `prediction_timer_percent` / 100
+  (50). Every mode is clamped to at most start + window - 1 s and at least now. The timing
+  settings are read when the timer is armed (the first ACTIVE update); a settings change
+  does not move an armed timer. Later updates replace the stored event, so the bet uses
+  the last outcomes. Every mode fires through the same `bet()`, which pops `_latest` and
+  marks the event handled before sending, so each mode sends at most one bet. An event is handled once (`_handled`, newest `EVENTS_KEPT`, kept across loop
   stops and cleared only on an auth change): when its timer fires, when a LOCKED, RESOLVED
   or CANCELED status arrives (a later ACTIVE gets no bet) and when `predictions-user-v1`
   sends `prediction-made` for it (the account bet, also from a browser). An update with no
@@ -1478,7 +1484,17 @@ live in `gui.points`, translated in every locale.
   the timer fires it bets only if `may_act`, the stored status is ACTIVE, the balance is
   known and `PredictionStrategy.amount()` =
   `min(balance * prediction_percent // 100, prediction_max_points, balance)` is at least
-  `MIN_BET` (10); otherwise `bet_skipped`, except when `may_act` refuses (only an INFO
+  `MIN_BET` (10); the filters of the latest event data also hold, checked in `_refusal` in
+  this order: `prediction_min_balance` (balance below it: "balance below minimum"),
+  `prediction_min_voters` (sum of `total_users` over all outcomes: "too few voters", 0 is
+  off), the strategy (`fixed` bets outcome number `prediction_fixed_option`, 1-based in
+  Twitch's order, "option N not offered" when there are fewer; a single outcome is "fewer
+  than two outcomes") and `prediction_min_odds` (odds = all points over the chosen
+  outcome's points; an outcome without points is infinite when the total is above 0 and
+  unknown when it is 0; with a minimum above 1.0 the odds must be known and at least the
+  minimum: "odds unknown" or "odds below minimum"; 1.0 never blocks). Bad counts count as
+  0. `prediction_min_odds` is the only float option and accepts an int or a float, not a
+  bool; otherwise `bet_skipped`, except when `may_act` refuses (only an INFO
   line). The fired event leaves `_latest`. Every sent bet is kept in `_placed` before
   sending. A reply whose `makePrediction.error` is not null is `bet_failed`, as is a
   plain `GQLException`; any other send failure (`GQLServerError`, timeout, connection,

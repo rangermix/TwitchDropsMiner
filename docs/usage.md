@@ -343,8 +343,8 @@ use goes to drop mining instead.
   it keeps watching its listed channels. Twitch may refuse the request with an integrity
   check error; TDM logs the failure and does not retry it.
 - `predictions_enabled` (off by default) bets channel points once per prediction on live
-  listed channels, about 6 seconds before the prediction closes, using the vote counts
-  seen last. Bets spend points and are visible to the streamer. The timing uses the
+  listed channels, by default 6 seconds before the prediction closes, using the vote
+  counts seen last. Bets spend points and are visible to the streamer. The timing uses the
   host clock against Twitch's start time, so keep the clock synchronised: a clock that
   is more than a few seconds off bets too early on early counts, or not at all.
   - Once means one bet per prediction while TDM runs. TDM never sends a second bet on a
@@ -357,7 +357,25 @@ use goes to drop mining instead.
     with the most users and, when their user split is within 20 percentage points, bets
     on the one of the two with fewer points, otherwise on the outcome with the most users; `most_voted` picks the most
     users, `high_odds` the fewest points (the largest payout per point), `favourite` the
-    most points. A tie picks the first outcome.
+    most points placed, `fixed` outcome number `prediction_fixed_option` (1 to 10, default
+    1, counted in the order Twitch lists the outcomes; fewer outcomes skip the bet). A tie
+    picks the first outcome.
+  - `prediction_timing` sets when the bet is placed: `before_close` (default)
+    `prediction_delay_seconds` (default 6, 0 to 3600) before the window closes,
+    `after_open` that many seconds after the prediction opens, `percent`
+    `prediction_timer_percent` (default 50, 1 to 99) percent of the window after it opens.
+    No mode bets later than 1 second before the window closes, and a time already past
+    means a bet at once. The time is set when TDM first sees the prediction; changing the
+    option later does not move a bet that is already waiting.
+  - Three filters skip a bet and write a line to the points log. All are off at their
+    default. `prediction_min_balance` (0 to 10000000, default 0) skips while the channel
+    balance is below it. `prediction_min_voters` (0 to 1000000, default 0) skips unless at
+    least that many users voted over all outcomes. `prediction_min_odds` (1 to 100,
+    default 1, two decimals) skips unless the chosen outcome pays at least that many
+    points per point staked, which is all points divided by the points of the chosen
+    outcome. An outcome without points counts as infinite odds; when no outcome has
+    points the odds are unknown and the bet is skipped. The filters use the vote counts
+    seen last, when the bet is due.
   - The stake is `prediction_percent` (default 5) of the channel's balance, rounded
     down, at most `prediction_max_points` (default 1000) and never more than the balance.
     No bet is placed below 10 points, with an unknown balance, or when the prediction is
