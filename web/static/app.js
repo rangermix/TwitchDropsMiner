@@ -15,7 +15,8 @@ const state = {
     pauseRevision: 0,
     pauseServerRevision: null,
     pauseInstance: null,
-    pauseEpoch: 0
+    pauseEpoch: 0,
+    points: {paused: false, active: false, channels: []}
 };
 
 // ==================== UI Utilities ====================
@@ -239,6 +240,7 @@ socket.on('initial_state', (data) => {
         }
     }
 
+    if (data.points) updatePointsState(data.points, true);
     if (data.settings) updateSettingsUI(data.settings, true);
     if (data.login) updateLoginStatus(data.login);
     if (data.manual_mode) updateManualModeUI(data.manual_mode);
@@ -264,6 +266,20 @@ socket.on('status_update', (data) => {
 
 socket.on('console_output', (data) => {
     addConsoleLine(data.message);
+});
+
+socket.on('points_update', (data) => {
+    updatePointsState(data);
+});
+
+socket.on('points_paused_update', (data) => {
+    if (typeof data?.paused !== 'boolean') return;
+    state.points = {...state.points, paused: data.paused};
+    renderPoints();
+});
+
+socket.on('points_output', (data) => {
+    appendLogLine('points-log', data.message);
 });
 
 socket.on('channel_add', (data) => {
@@ -403,7 +419,11 @@ function addConsoleLine(message) {
 }
 
 function addConsoleLineRaw(line) {
-    const console = document.getElementById('console-output');
+    appendLogLine('console-output', line);
+}
+
+function appendLogLine(id, line) {
+    const console = document.getElementById(id);
     const div = document.createElement('div');
     div.textContent = line;
     console.appendChild(div);
@@ -1475,7 +1495,8 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
         settings = {...settings, mining_benefits: state.settings.mining_benefits};
     }
     // Same for the idle watching list and the claim toggle: a partial reply must not undo a confirmed write.
-    for (const key of ['idle_channels', 'claim_channel_points', 'share_watch_streaks']) {
+    for (const key of ['idle_channels', 'claim_channel_points', 'share_watch_streaks',
+        ...(typeof POINTS_SETTINGS === 'undefined' ? [] : Object.keys(POINTS_SETTINGS))]) {
         if (!authoritative && !changedFields.includes(key) && state.settings[key] !== undefined) {
             settings = {...settings, [key]: state.settings[key]};
         }
@@ -1491,6 +1512,7 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     const shareStreaks = document.getElementById('share-watch-streaks');
     if (shareStreaks && !shareStreaks.disabled) shareStreaks.checked = settings.share_watch_streaks === true;
     if (typeof renderIdleChannels === 'function') renderIdleChannels(settings.idle_channels || []);
+    if (typeof renderPointsSettings === 'function') renderPointsSettings(settings);
     renderNotificationEvents();
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('priority-list-only').checked = settings.priority_list_only !== false;
@@ -2775,6 +2797,162 @@ function onShareWatchStreaksChange() {
         'Could not save the watch streak option. Please try again.');
 }
 
+// ==================== Points Tab ====================
+
+// Defaults and bounds mirror PointsSettings in src/config/settings.py; the server validates again.
+const POINTS_SETTINGS = {
+    idle_priority: {default: 'list'},
+    idle_streak_first: {default: true},
+    streak_recovery: {default: true},
+    follow_raids: {default: false},
+    claim_moments: {default: true},
+    join_chat: {default: false},
+    predictions_enabled: {default: false},
+    prediction_strategy: {default: 'smart'},
+    prediction_percent: {default: 5, min: 1, max: 100},
+    prediction_max_points: {default: 1000, min: 10, max: 250000},
+};
+let pointsPauseBusy = false;
+
+function updatePointsState(data, withLog = false) {
+    if (!data || typeof data !== 'object' || !Array.isArray(data.channels)) return;
+    state.points = {paused: data.paused === true, active: data.active === true, channels: data.channels};
+    if (withLog && Array.isArray(data.log)) {
+        const log = document.getElementById('points-log');
+        // initial_state is a full snapshot: replace the lines instead of appending to old ones
+        if (log) log.replaceChildren();
+        data.log.forEach(line => appendLogLine('points-log', line));
+    }
+    renderPoints();
+}
+
+function formatPointsGain(gain, labels) {
+    if (!gain || !Number.isInteger(gain.points)) return null;
+    const reason = String(gain.reason ?? '');
+    const key = reason.toLowerCase();
+    const label = Object.hasOwn(labels, key) ? labels[key] : reason;
+    const amount = (gain.points > 0 ? '+' : '') + gain.points.toLocaleString();
+    const at = new Date(gain.at);
+    return {text: `${amount} ${label}`.trim(), time: Number.isNaN(at.getTime()) ? '' : at.toLocaleString()};
+}
+
+function renderPoints() {
+    const tbody = document.getElementById('points-tbody');
+    if (!tbody) return;
+    const t = state.translations.gui?.points || {};
+    const {paused, active, channels} = state.points;
+    document.getElementById('points-status').textContent = paused
+        ? (t.status_paused || 'Paused: no channel points actions until resumed')
+        : active ? (t.status_active || 'Active: watching your listed channels')
+        : (t.status_inactive || 'Inactive: idle watching is not running');
+    const button = document.getElementById('points-pause-btn');
+    button.textContent = paused ? (t.resume || 'Resume channel points') : (t.pause || 'Pause channel points');
+    button.setAttribute('aria-pressed', String(paused));
+    const empty = channels.length === 0;
+    document.getElementById('points-empty').hidden = !empty;
+    document.getElementById('points-table').hidden = empty;
+    tbody.replaceChildren(...channels.map(channel => {
+        const row = makeElement('tr');
+        row.dataset.login = String(channel.login);
+        const live = channel.live === true;
+        const gain = formatPointsGain(channel.last_gain, t.reasons || {});
+        const gainCell = makeElement('td', {}, gain ? gain.text : '-');
+        if (gain?.time) gainCell.appendChild(makeElement('span', {class: 'points-gain-time'}, gain.time));
+        row.replaceChildren(
+            makeElement('td', {}, channel.name || channel.login),
+            makeElement('td', {class: live ? 'points-live' : 'points-offline'},
+                live ? (t.live || 'Live') : (t.offline || 'Offline')),
+            makeElement('td', {}, Number.isInteger(channel.balance) ? channel.balance.toLocaleString() : '-'),
+            gainCell);
+        return row;
+    }));
+}
+
+// Static text of the tab comes from data-points-text="<gui.points key>"; the dynamic parts re-render.
+function translatePoints(t) {
+    document.querySelectorAll('[data-points-text]').forEach(element => {
+        const text = t[element.dataset.pointsText];
+        if (typeof text === 'string') element.textContent = text;
+    });
+    renderPoints();
+}
+
+async function togglePointsPause() {
+    if (pointsPauseBusy) return;
+    const button = document.getElementById('points-pause-btn');
+    const error = document.getElementById('points-pause-error');
+    const message = state.translations.gui?.points?.pause_error ||
+        'Could not change the channel points pause. Please try again.';
+    pointsPauseBusy = true;
+    button.disabled = true;
+    error.hidden = true;
+    try {
+        const response = await fetch('/api/points/pause', {method: 'POST',
+            headers: {'Content-Type': 'application/json'}, body: JSON.stringify({paused: !state.points.paused})});
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || typeof data.paused !== 'boolean') throw new Error(message);
+        state.points = {...state.points, paused: data.paused};
+    } catch (_) {
+        // nothing was changed optimistically: the shown state stays the confirmed one
+        reportSettingsError(error, message);
+        error.hidden = false;
+    } finally {
+        pointsPauseBusy = false;
+        button.disabled = false;
+        renderPoints();
+    }
+}
+
+function renderPointsSettings(settings = state.settings) {
+    for (const [key, spec] of Object.entries(POINTS_SETTINGS)) {
+        const input = document.getElementById(`points-setting-${key}`);
+        if (!input || input.disabled) continue;
+        const value = typeof settings[key] === typeof spec.default ? settings[key] : spec.default;
+        if (typeof value === 'boolean') input.checked = value;
+        else input.value = String(value);
+    }
+}
+
+// Save one channel points option alone; a failure shows the error and restores the confirmed value.
+async function savePointsSetting(key) {
+    const spec = POINTS_SETTINGS[key];
+    const input = document.getElementById(`points-setting-${key}`);
+    const error = document.getElementById(`points-setting-${key}-error`);
+    const confirmed = typeof state.settings[key] === typeof spec.default ? state.settings[key] : spec.default;
+    let requested;
+    if (typeof spec.default === 'boolean') requested = input.checked;
+    else if (spec.min === undefined) requested = input.value;
+    else {
+        const number = input.value.trim() === '' ? NaN : Math.trunc(Number(input.value));
+        // clamp before saving, so the shown value is the saved one
+        requested = Number.isFinite(number) ? Math.min(spec.max, Math.max(spec.min, number)) : confirmed;
+    }
+    if (requested === confirmed) {
+        renderPointsSettings();
+        return;
+    }
+    const message = state.translations.gui?.points?.save_error ||
+        'Could not save this channel points option. Please try again.';
+    input.disabled = true;
+    error.hidden = true;
+    error.textContent = '';
+    try {
+        const response = await fetch('/api/settings', {method: 'POST',
+            headers: {'Content-Type': 'application/json'}, body: JSON.stringify({[key]: requested})});
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || data.settings?.[key] !== requested) throw new Error(message);
+        updateSettingsUI({...state.settings, [key]: data.settings[key]}, false, [key]);
+    } catch (_) {
+        reportSettingsError(error, message);
+        error.hidden = false;
+    } finally {
+        input.disabled = false;
+        renderPointsSettings();
+    }
+}
+
 const idleChannelPattern = /^[a-z0-9_]{1,25}$/;
 const idleChannelLimit = 20;
 let idleChannelsSaving = false;
@@ -2979,6 +3157,7 @@ function applyTranslations(t) {
         'main': document.querySelector('[data-tab="main"]'),
         'inventory': document.querySelector('[data-tab="inventory"]'),
         'history': document.querySelector('[data-tab="history"]'),
+        'points': document.querySelector('[data-tab="points"]'),
         'settings': document.querySelector('[data-tab="settings"]'),
         'help': document.querySelector('[data-tab="help"]')
     };
@@ -2986,7 +3165,9 @@ function applyTranslations(t) {
     if (tabButtons.main && t.gui?.tabs) tabButtons.main.textContent = t.gui.tabs.main;
     if (tabButtons.inventory && t.gui?.tabs) tabButtons.inventory.textContent = t.gui.tabs.inventory;
     if (tabButtons.history && t.gui?.tabs) tabButtons.history.textContent = t.gui.tabs.history;
+    if (tabButtons.points && t.gui?.tabs) tabButtons.points.textContent = t.gui.tabs.points;
     if (tabButtons.settings && t.gui?.tabs) tabButtons.settings.textContent = t.gui.tabs.settings;
+    if (t.gui?.points && typeof translatePoints === 'function') translatePoints(t.gui.points);
     if (tabButtons.help && t.gui?.tabs) tabButtons.help.textContent = t.gui.tabs.help;
 
     // Update Main tab - Login section
@@ -3629,6 +3810,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('prefer-followed-channels').addEventListener('change', onPreferFollowedChange);
     document.getElementById('claim-channel-points').addEventListener('change', onClaimChannelPointsChange);
     document.getElementById('share-watch-streaks').addEventListener('change', onShareWatchStreaksChange);
+    document.getElementById('points-pause-btn').addEventListener('click', togglePointsPause);
+    document.querySelectorAll('[data-points-setting]').forEach(input =>
+        input.addEventListener('change', () => savePointsSetting(input.dataset.pointsSetting)));
+    renderPoints();
+    renderPointsSettings();
     document.getElementById('idle-channel-add').addEventListener('click', addIdleChannel);
     document.getElementById('idle-channel-input').addEventListener('keydown', event => {
         if (event.key === 'Enter') addIdleChannel();

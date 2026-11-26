@@ -2859,6 +2859,7 @@ header h1 {
 .tab-button[data-tab="main"]      { --tab-icon: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='black'%3E%3Cpath%20d='M12%203%203%2010.5V21h6v-6h6v6h6V10.5L12%203Z'/%3E%3C/svg%3E"); }
 .tab-button[data-tab="inventory"] { --tab-icon: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Crect%20x='3'%20y='4'%20width='18'%20height='16'%20rx='2'/%3E%3Cpath%20d='M3%209h18M9%2013h6'/%3E%3C/svg%3E"); }
 .tab-button[data-tab="history"]   { --tab-icon: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M3%2012a9%209%200%201%200%203-6.7L3%208'/%3E%3Cpath%20d='M3%203v5h5M12%207v5l3%202'/%3E%3C/svg%3E"); }
+.tab-button[data-tab="points"] { --tab-icon: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Ccircle%20cx='12'%20cy='12'%20r='9'/%3E%3Cpath%20d='M12%207a5%205%200%200%201%205%205'/%3E%3C/svg%3E"); }
 .tab-button[data-tab="settings"]  { --tab-icon: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Ccircle%20cx='12'%20cy='12'%20r='3'/%3E%3Cpath%20d='M19.4%2015a1.7%201.7%200%200%200%20.3%201.8l.1.1a2%202%200%201%201-2.8%202.8l-.1-.1a1.7%201.7%200%200%200-1.8-.3%201.7%201.7%200%200%200-1%201.5V21a2%202%200%201%201-4%200v-.1a1.7%201.7%200%200%200-1.1-1.5%201.7%201.7%200%200%200-1.8.3l-.1.1a2%202%200%201%201-2.8-2.8l.1-.1a1.7%201.7%200%200%200%20.3-1.8%201.7%201.7%200%200%200-1.5-1H3a2%202%200%201%201%200-4h.1a1.7%201.7%200%200%200%201.5-1.1%201.7%201.7%200%200%200-.3-1.8l-.1-.1a2%202%200%201%201%202.8-2.8l.1.1a1.7%201.7%200%200%200%201.8.3H9a1.7%201.7%200%200%200%201-1.5V3a2%202%200%201%201%204%200v.1a1.7%201.7%200%200%200%201%201.5%201.7%201.7%200%200%200%201.8-.3l.1-.1a2%202%200%201%201%202.8%202.8l-.1.1a1.7%201.7%200%200%200-.3%201.8V9a1.7%201.7%200%200%200%201.5%201H21a2%202%200%201%201%200%204h-.1a1.7%201.7%200%200%200-1.5%201Z'/%3E%3C/svg%3E"); }
 .tab-button[data-tab="help"]      { --tab-icon: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Ccircle%20cx='12'%20cy='12'%20r='9'/%3E%3Cpath%20d='M9.5%209a2.5%202.5%200%201%201%203.5%202.3c-.7.4-1%201-1%201.7M12%2017h.01'/%3E%3C/svg%3E"); }
 
@@ -3208,4 +3209,25 @@ header h1 {
             max-height: none;
         }
     }
+}
+
+/* Points tab: status row, listed channels table and log reuse the settings sections and console look. */
+.points-status-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.points-status { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.points-table-wrap { overflow-x: auto; }
+.points-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.points-table th, .points-table td { padding: 8px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border-color); }
+.points-table th { color: var(--text-secondary); font-size: 12px; font-weight: 600; }
+.points-table th:nth-child(3), .points-table td:nth-child(3) { text-align: right; }
+.points-table td:first-child { overflow-wrap: anywhere; }
+.points-table .points-gain-time { display: block; color: var(--text-secondary); font-size: 12px; }
+.points-table .points-live { color: var(--success-color); }
+.points-table .points-offline { color: var(--text-secondary); }
+.points-container .points-log { height: 240px; flex: none; contain: none; margin: 0; }
+.points-container .settings-section select,
+.points-container .settings-section input[type="number"] { max-width: 100%; box-sizing: border-box; }
+@media (max-width: 480px) {
+    .points-container .settings-section select,
+    .points-container .settings-section input[type="number"] { display: block; width: 100%; margin: 6px 0 0; }
+    .points-table th, .points-table td { padding: 6px 4px; }
 }
