@@ -137,7 +137,10 @@ class Predictions:
 
     @property
     def open_bets(self) -> bool:
-        """A placed bet waits for its result on `predictions-user-v1`."""
+        """A bet was sent and no result came yet (a refused bet included: Twitch may still report one).
+
+        Kept until its result, an account change or a restart, so the result topic can stay
+        subscribed with predictions off everywhere; one topic, within most_topics()."""
         return bool(self._placed)
 
     def reset(self) -> None:

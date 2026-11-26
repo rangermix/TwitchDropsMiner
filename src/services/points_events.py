@@ -37,9 +37,9 @@ class PointsEvents:
 
     Topics, from each channel's effective option (its override, else the global one):
     `predictions-channel-v1` of every live listed channel with predictions on (plus
-    `predictions-user-v1` while any has or a placed bet waits for its result), `community-moments-channel-v1` of every live listed channel
-    with moments on, and `raid` of the idle-watched channel while raids are on for it. `sync()` on every tick adds and
-    removes them; `clear()` removes them all when the loop stops. Topics never take the room the pool
+    `predictions-user-v1` while any has or a placed bet waits for its result),
+    `community-moments-channel-v1` of every live listed channel with moments on, and `raid` of
+    the idle-watched channel while raids are on for it. `sync()` on every tick adds and removes them; `clear()` removes them all when the loop stops. Topics never take the room the pool
     keeps for the stream topics of listed channels that are not tracked yet.
     """
 
