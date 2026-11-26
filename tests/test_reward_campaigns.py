@@ -2096,6 +2096,7 @@ EVENT = {"image1xURL": "https://static-cdn.jtvnw.net/event.png"}
         ({"thumbnailImage": THUMB, "bannerImage": BANNER}, EVENT, THUMB["image1xURL"]),
         ({"thumbnailImage": None, "bannerImage": BANNER}, EVENT, BANNER["image1xURL"]),
         ({"thumbnailImage": {"image1xURL": ""}, "bannerImage": None}, EVENT, EVENT["image1xURL"]),
+        ({"thumbnailImage": {"image1xURL": " "}, "bannerImage": {"image1xURL": " "}}, EVENT, EVENT["image1xURL"]),
         ({"thumbnailImage": None, "bannerImage": "bad"}, {"image1xURL": 5}, None),
         ({"thumbnailImage": None}, None, None),
     ],
@@ -2106,3 +2107,11 @@ def test_reward_image_falls_back_to_banner_then_event_image(reward, event, expec
     data = {**_data([group]), "image": event}
     benefit = next(iter(_drop(_pick(data)).benefits))
     assert benefit.image_url == expected
+
+
+def test_reward_query_requests_fallback_images():
+    from src.config.operations import REWARD_CAMPAIGNS_QUERY
+
+    query = " ".join(REWARD_CAMPAIGNS_QUERY.split())
+    assert "isSitewide image { image1xURL }" in query
+    assert "bannerImage { image1xURL }" in query
