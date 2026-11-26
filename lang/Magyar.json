@@ -595,6 +595,7 @@
             "bet_refunded": "Visszatérített fogadás a(z) {channel} csatornán: {title}",
             "bet_skipped": "Nincs fogadás a(z) {channel} csatornán: {title}",
             "bet_failed": "A(z) {channel} csatornán tett fogadást nem fogadták el ({code})",
+            "bet_unknown": "A(z) {channel} csatornán a(z) {points} pontos fogadás talán megtörtént: {title}",
             "raid_joined": "Csatlakozott a(z) {channel} csatornáról a(z) {target} csatornára tartó raidhez",
             "raid_failed": "Nem sikerült csatlakozni a(z) {channel} csatorna raidjéhez ({code})",
             "moment_claimed": "Pillanat begyűjtve a(z) {channel} csatornán",

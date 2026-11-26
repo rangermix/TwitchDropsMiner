@@ -15,7 +15,7 @@ import src.services.points_common as points_common
 import src.services.predictions as pred_mod
 from src.api.gql_client import GQLClient
 from src.config import MAX_WEBSOCKETS, WS_TOPICS_LIMIT, ClientType, WebsocketTopic
-from src.exceptions import GQLException, MinerException
+from src.exceptions import GQLException, MinerException, RequestException
 from src.services.chat_presence import ChatPresence
 from src.services.idle_watch import IdleWatchService
 from src.services.predictions import PredictionStrategy
@@ -383,13 +383,16 @@ def outcomes(*pairs):
     ("smart", [(60, 100), (40, 50)], 1),  # gap exactly 20: still within
     ("smart", [(61, 100), (39, 50)], 0),  # gap 22: most_voted
     ("smart", [(0, 100), (0, 50)], 1),  # no users: an even split
-    # three and more outcomes; smart reads the split of the first two
+    # three and more outcomes; smart reads the split of the two outcomes with the most users
     ("most_voted", [(1, 1), (5, 1), (5, 1)], 1),
     ("favourite", [(1, 0), (1, 0), (1, 0)], 0),
     ("high_odds", [(1, 30), (1, 10), (1, 10), (1, 20)], 1),
-    ("smart", [(50, 30), (50, 20), (900, 0)], 2),  # even pair: high_odds over all outcomes
-    ("smart", [(90, 30), (10, 20), (95, 0)], 2),  # uneven pair: most_voted over all outcomes
-    ("smart", [(90, 30), (10, 20), (90, 0)], 0),
+    ("smart", [(50, 10), (50, 20), (900, 30)], 2),  # 900 vs 50 (the first two are even): most_voted
+    ("smart", [(90, 30), (10, 20), (95, 50)], 1),  # 95 vs 90 (the first two are not): high_odds over all
+    ("smart", [(90, 30), (10, 20), (90, 0)], 2),  # 90 vs 90
+    ("smart", [(10, 1), (61, 30), (39, 20)], 1),  # 61 vs 39, gap 22: most_voted
+    ("smart", [(10, 1), (60, 30), (40, 20)], 0),  # 60 vs 40, gap 20: high_odds over all
+    ("smart", [(100, 1), (40, 2), (60, 3), (60, 4)], 0),  # 100 vs 60 (a tie keeps the earlier 60): most_voted
 ])
 def test_strategies(strategy, pairs, expected):
     assert PredictionStrategy.choose(strategy, outcomes(*pairs)) == expected
@@ -591,6 +594,8 @@ async def test_malformed_outcomes_are_skipped_at_send_time():
 @pytest.mark.parametrize(("reply", "code"), [
     ({"data": {"makePrediction": {"prediction": None, "error": {"code": "NOT_ENOUGH_POINTS"}}}}, "NOT_ENOUGH_POINTS"),
     ({"data": {"makePrediction": None}}, "unknown"),
+    ({"data": {"makePrediction": {"prediction": None, "error": {}}}}, "unknown"),  # an empty error
+    ({"data": {"makePrediction": {"prediction": {"id": "p"}, "error": {"code": ""}}}}, "unknown"),
     ({}, "unknown"),
 ])
 async def test_bet_error_replies_are_logged_and_never_resent(reply, code):
@@ -613,6 +618,81 @@ async def test_a_failed_bet_request_is_not_resent():
     await settle()
     assert tw.gql_request.await_count == 1
     tw.gui.points.log.assert_called_once_with("bet_failed", channel="A", code="GQLException")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("error", [
+    TimeoutError(), aiohttp.ClientConnectionError(), aiohttp.ServerDisconnectedError(),
+    RequestException("Unconfirmed HTTP response"),
+])
+async def test_a_bet_without_an_answer_may_be_placed_and_its_result_is_logged(error):
+    svc, tw, *_ = setup()
+    tw.gql_request.side_effect = error
+    await svc.events.predictions.process_event(1, event())
+    await settle()
+    await svc.events.predictions.process_event(1, event())
+    await settle()
+    assert tw.gql_request.await_count == 1
+    tw.gui.points.log.assert_called_once_with("bet_unknown", points=50, channel="A", title="Who wins?")
+    tw.gui.points.log.reset_mock()
+    await svc.events.predictions.process_result(42, result("LOSE"))
+    tw.gui.points.log.assert_called_once_with("bet_lost", channel="A", title="Who wins?")
+
+
+def made(event_id="e1"):
+    return {"type": "prediction-made", "data": {"prediction": {
+        "event_id": event_id, "outcome_id": "o0", "points": 10, "result": None,
+    }}}
+
+
+@pytest.mark.asyncio
+async def test_a_bet_the_account_made_elsewhere_stops_the_bet(monkeypatch):
+    monkeypatch.setattr(pred_mod, "PREDICTION_DELAY_SECONDS", 0.95)
+    svc, tw, *_ = setup(reply=BET_OK)
+    preds = svc.events.predictions
+    await preds.process_result(42, made("e2"))  # before the event is seen
+    await preds.process_event(1, event("e2", window=1, ago=0))
+    await preds.process_event(1, event("e1", window=1, ago=0))
+    await preds.process_result(42, made("e1"))  # while its timer runs
+    await preds.process_result(42, made("e3"))
+    await preds.process_result(42, made(""))  # no id: ignored
+    await asyncio.sleep(0.2)
+    await preds.process_event(1, event("e1", window=1, ago=0))
+    await preds.bet("e1")
+    assert sent(tw) == [] and logged(tw) == []
+    assert preds._timers == {} and set(preds._handled) == {"e1", "e2", "e3"}
+    await preds.process_event(1, event("e4", window=1, ago=0))  # another event still gets its bet
+    await asyncio.sleep(0.2)
+    assert len(sent(tw)) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status", ["LOCKED", "CANCELED", "RESOLVED"])
+async def test_a_late_active_after_the_end_gets_no_bet(monkeypatch, status):
+    monkeypatch.setattr(pred_mod, "PREDICTION_DELAY_SECONDS", 0.95)
+    svc, tw, *_ = setup(reply=BET_OK)
+    preds = svc.events.predictions
+    await preds.process_event(1, event(status=status, window=1, ago=0))  # never seen ACTIVE before
+    await preds.process_event(1, event(window=1, ago=0))
+    await asyncio.sleep(0.2)
+    await preds.bet("e1")
+    assert sent(tw) == [] and preds._timers == {} and "e1" in preds._handled
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("change", [
+    {"created_at": "yesterday"}, {"created_at": None}, {"created_at": "2026-11-26T12:00:00"},
+    {"prediction_window_seconds": 0}, {"prediction_window_seconds": "60"},
+])
+async def test_an_event_without_a_usable_window_is_logged_as_skipped_once(change):
+    svc, tw, *_ = setup(reply=BET_OK)
+    message = event()
+    message["data"]["event"].update(change)
+    await svc.events.predictions.process_event(1, message)
+    await svc.events.predictions.process_event(1, message)
+    await settle()
+    assert sent(tw) == []
+    tw.gui.points.log.assert_called_once_with("bet_skipped", channel="A", title="Who wins?")
 
 
 def result(kind, event_id="e1", won=None):

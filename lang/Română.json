@@ -595,6 +595,7 @@
             "bet_refunded": "Pariu rambursat pe {channel}: {title}",
             "bet_skipped": "Niciun pariu pe {channel}: {title}",
             "bet_failed": "Pariul pe {channel} nu a fost acceptat ({code})",
+            "bet_unknown": "Pariul de {points} puncte pe {channel} poate să fi fost plasat: {title}",
             "raid_joined": "Te-ai alăturat raidului de la {channel} către {target}",
             "raid_failed": "Nu te-ai putut alătura raidului de la {channel} ({code})",
             "moment_claimed": "Moment revendicat pe {channel}",

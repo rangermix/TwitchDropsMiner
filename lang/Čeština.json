@@ -595,6 +595,7 @@
             "bet_refunded": "Vrácená sázka na {channel}: {title}",
             "bet_skipped": "Žádná sázka na {channel}: {title}",
             "bet_failed": "Sázka na {channel} nebyla přijata ({code})",
+            "bet_unknown": "Sázka {points} bodů na {channel} možná byla podána: {title}",
             "raid_joined": "Připojeno k raidu z {channel} na {target}",
             "raid_failed": "K raidu z {channel} se nepodařilo připojit ({code})",
             "moment_claimed": "Moment vybrán na {channel}",

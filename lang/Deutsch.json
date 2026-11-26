@@ -595,6 +595,7 @@
             "bet_refunded": "Wette bei {channel} erstattet: {title}",
             "bet_skipped": "Keine Wette bei {channel}: {title}",
             "bet_failed": "Wette bei {channel} wurde nicht angenommen ({code})",
+            "bet_unknown": "Die Wette über {points} Punkte bei {channel} wurde möglicherweise gesetzt: {title}",
             "raid_joined": "Raid von {channel} zu {target} beigetreten",
             "raid_failed": "Dem Raid von {channel} konnte nicht beigetreten werden ({code})",
             "moment_claimed": "Moment auf {channel} abgeholt",

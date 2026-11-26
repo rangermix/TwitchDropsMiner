@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from src.config import GQL_OPERATIONS
+from src.exceptions import GQLException
 from src.services.points_common import error_code, remember
 from src.utils import task_wrapper
 
@@ -28,7 +29,7 @@ logger = logging.getLogger("TwitchDrops")
 PREDICTION_DELAY_SECONDS = 6
 # Twitch takes 10..250000 points per prediction
 MIN_BET = 10
-# smart: a user split of the first two outcomes within this many percentage points bets high_odds
+# smart: a user split of the two outcomes with the most users within this many percentage points bets high_odds
 SMART_GAP = 20
 
 
@@ -45,8 +46,9 @@ class PredictionStrategy:
         """Index of the outcome to bet on, None with fewer than two outcomes.
 
         most_voted: most users. favourite: most points. high_odds: fewest points (the largest payout
-        per point). smart: high_odds when the user split of the first two outcomes is within SMART_GAP
-        percentage points (no users counts as an even split), otherwise most_voted.
+        per point). smart: high_odds when the user split of the two outcomes with the most users (a tie
+        keeps the earlier one) is within SMART_GAP percentage points (no users counts as an even split),
+        otherwise most_voted.
         """
         if len(outcomes) < 2:
             return None
@@ -54,8 +56,10 @@ class PredictionStrategy:
         points = [cls._count(o, "total_points") for o in outcomes]
         indexes = range(len(outcomes))
         if strategy == "smart":
-            pair = users[0] + users[1]
-            gap = abs(users[0] - users[1]) * 100 / pair if pair else 0
+            # stable sort: a tie keeps the earlier outcome
+            first, second = sorted(indexes, key=lambda i: -users[i])[:2]
+            pair = users[first] + users[second]
+            gap = abs(users[first] - users[second]) * 100 / pair if pair else 0
             strategy = "high_odds" if gap <= SMART_GAP else "most_voted"
         if strategy == "favourite":
             return max(indexes, key=points.__getitem__)
@@ -72,8 +76,10 @@ class PredictionStrategy:
 class Predictions:
     """Bet once per prediction event on live listed channels, PREDICTION_DELAY_SECONDS before it locks.
 
-    Events come from the `predictions-channel-v1` topic, results of placed bets from
-    `predictions-user-v1`. Every check runs again when the timer fires: the loop runs, points are not
+    Events come from the `predictions-channel-v1` topic; `predictions-user-v1` reports bets the account
+    made (`prediction-made`, also from a browser: no bet from TDM then) and the results of TDM's bets.
+    An event is handled once: when its timer fires, when it ends (not ACTIVE), when it has no usable
+    window, or when the account bet on it. Every check runs again when the timer fires: the loop runs, points are not
     paused, mining time, the channel is listed, live and not one drops can use, predictions are on,
     the event is still ACTIVE and not bet on, and 10 <= amount <= min(prediction_max_points, balance).
     """
@@ -90,9 +96,9 @@ class Predictions:
         # event id -> (channel, the latest event object) of open events seen while the loop runs
         self._latest: dict[str, tuple[Channel, JsonType]] = {}
         self._timers: dict[str, asyncio.Task[None]] = {}
-        # events whose timer fired (bet or skipped): never bet on again
+        # events that are handled (bet, skipped, ended, or bet on by the account): never bet on again
         self._handled: dict[str, None] = {}
-        # event id -> (channel name, title) of placed bets, for the result lines
+        # event id -> (channel name, title) of placed bets and bets with an unknown outcome, for the result lines
         self._placed: dict[str, tuple[str, str]] = {}
 
     def clear(self) -> None:
@@ -126,21 +132,36 @@ class Predictions:
         if channel is None:
             return
         if event.get("status") != "ACTIVE":
-            # locked, resolved or canceled: no bet any more
-            if (task := self._timers.pop(event_id, None)) is not None:
-                task.cancel()
-            self._latest.pop(event_id, None)
+            # locked, resolved or canceled: no bet any more, also not after a late ACTIVE
+            self._handle(event_id)
             return
-        if not self._service.active:
+        if not self._service.active or event_id in self._handled:
             return
         self._latest[event_id] = (channel, event)
-        if event_id in self._handled or event_id in self._timers:
+        if event_id in self._timers:
             return
         delay = self._delay(event)
         if delay is None:
-            logger.debug("Prediction %s skipped: no usable window", event_id)
+            self._handle(event_id)
+            self._skip(channel, event, "no usable window")
             return
         self._timers[event_id] = asyncio.create_task(self._fire(event_id, delay))
+
+    def _handle(self, event_id: str) -> None:
+        """Mark an event handled: its timer is cancelled and it never gets a bet."""
+        remember(self._handled, event_id)
+        if (task := self._timers.pop(event_id, None)) is not None:
+            task.cancel()
+        self._latest.pop(event_id, None)
+
+    def _skip(self, channel: Channel, event: JsonType, why: str) -> None:
+        logger.info("No bet on %s (%s)", channel.name, why)
+        self._twitch.gui.points.log("bet_skipped", channel=channel.name, title=self._title(event))
+
+    @staticmethod
+    def _title(event: JsonType) -> str:
+        title = event.get("title")
+        return title if isinstance(title, str) else ""
 
     @staticmethod
     def _delay(event: JsonType) -> float | None:
@@ -193,13 +214,12 @@ class Predictions:
         if entry is None or event_id in self._handled:
             return
         channel, event = entry
-        title = event.get("title") if isinstance(event.get("title"), str) else ""
+        title = self._title(event)
         # used up before sending: a bet is never sent twice, also not after an unknown outcome
         remember(self._handled, event_id)
         choice = self._refusal(channel, event)
         if isinstance(choice, str):
-            logger.info("No bet on %s (%s)", channel.name, choice)
-            self._twitch.gui.points.log("bet_skipped", channel=channel.name, title=title)
+            self._skip(channel, event, choice)
             return
         outcome_id, index, amount = choice
         op = GQL_OPERATIONS["MakePrediction"].with_variables({"input": {
@@ -210,6 +230,13 @@ class Predictions:
         response, code = await self._send(op, single_attempt=True)
         if response is not None:
             code = error_code(response, "makePrediction")
+        elif code != GQLException.__name__:
+            # no answer from Twitch (a timeout, a lost connection, an unconfirmed HTTP reply): the bet may
+            # have been placed, so its result is still logged; a GQLException is Twitch's own refusal
+            remember(self._placed, event_id, (channel.name, title))
+            logger.warning("Bet of %d points on %s may have been placed (%s)", amount, channel.name, code)
+            self._twitch.gui.points.log("bet_unknown", points=amount, channel=channel.name, title=title)
+            return
         if code is None:
             outcome = event["outcomes"][index].get("title")
             outcome = outcome if isinstance(outcome, str) else outcome_id
@@ -222,18 +249,26 @@ class Predictions:
 
     @task_wrapper
     async def process_result(self, user_id: int, message: JsonType) -> None:
-        """Log the result of a bet this service placed.
+        """Mark an event the account bet on as handled, and log the result of a bet this service placed.
 
-        Shape: {"type": "prediction-result", "data": {"prediction": {"event_id", "result":
+        Shapes: {"type": "prediction-made", "data": {"prediction": {"event_id", ...}}} and
+        {"type": "prediction-result", "data": {"prediction": {"event_id", "result":
         {"type": "WIN" | "LOSE" | "REFUND", "points_won": int | null}}}}
         """
-        if not isinstance(message, dict) or message.get("type") != "prediction-result":
-            return
-        data = message.get("data")
+        kind = message.get("type") if isinstance(message, dict) else None
+        data = message.get("data") if isinstance(message, dict) else None
         prediction = data.get("prediction") if isinstance(data, dict) else None
-        result = prediction.get("result") if isinstance(prediction, dict) else None
         event_id = prediction.get("event_id") if isinstance(prediction, dict) else None
-        if not isinstance(result, dict) or not isinstance(event_id, str) or event_id not in self._placed:
+        if not isinstance(prediction, dict) or not isinstance(event_id, str) or not event_id:
+            return
+        if kind == "prediction-made":
+            # the account bet on it (in a browser, or TDM itself): TDM never bets on it again
+            if event_id not in self._handled:
+                logger.debug("Prediction %s already bet on", event_id)
+            self._handle(event_id)
+            return
+        result = prediction.get("result") if kind == "prediction-result" else None
+        if not isinstance(result, dict) or event_id not in self._placed:
             return
         kind, won = result.get("type"), result.get("points_won")
         name, title = self._placed[event_id]

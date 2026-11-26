@@ -595,6 +595,7 @@
             "bet_refunded": "{channel}で賭けが返還されました: {title}",
             "bet_skipped": "{channel}では賭けなし: {title}",
             "bet_failed": "{channel}での賭けは受理されませんでした ({code})",
+            "bet_unknown": "{channel}で{points}ポイントの賭けが行われた可能性があります: {title}",
             "raid_joined": "{channel}から{target}へのレイドに参加しました",
             "raid_failed": "{channel}からのレイドに参加できませんでした ({code})",
             "moment_claimed": "{channel}でモーメントを受け取りました",

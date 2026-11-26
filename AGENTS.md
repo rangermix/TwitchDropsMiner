@@ -1457,17 +1457,26 @@ live in `gui.points` (English text in every locale until translated).
 - Predictions (`src/services/predictions.py`): an ACTIVE `event-created`/`event-updated`
   on a live listed channel starts one timer per event that fires
   `PREDICTION_DELAY_SECONDS` (6) before `created_at + prediction_window_seconds` (at once
-  when less is left; no timer for a malformed time); later updates replace the stored
-  event, so the bet uses the last outcomes; LOCKED, RESOLVED or CANCELED cancels the
-  timer. When it fires the event is used up, and it bets only if `may_act`, the stored
-  status is ACTIVE, the balance is known and `PredictionStrategy.amount()` =
+  when less is left); later updates replace the stored event, so the bet uses the last
+  outcomes. An event is handled once (`_handled`, newest `EVENTS_KEPT`, kept across loop
+  stops and cleared only on an auth change): when its timer fires, when it has no usable
+  window (`bet_skipped`), when a LOCKED, RESOLVED or CANCELED status arrives (a later
+  ACTIVE gets no bet) and when `predictions-user-v1` sends `prediction-made` for it (the
+  account bet, also from a browser). Twitch sends `prediction-made` only when the bet is
+  placed, so after a restart or an auth change an open event can get a second bet. When
+  the timer fires it bets only if `may_act`, the stored status is ACTIVE, the balance is
+  known and `PredictionStrategy.amount()` =
   `min(balance * prediction_percent // 100, prediction_max_points, balance)` is at least
-  `MIN_BET` (10); otherwise `bet_skipped`. `PredictionStrategy.choose()` needs two
-  outcomes; counts that are not positive ints count as 0; ties keep the first;
-  `smart` = `high_odds` when `abs(users0 - users1) * 100 / (users0 + users1) <= 20` (no
-  users counts as even), else `most_voted`, over all outcomes. Results of TDM's own bets
-  (`prediction-result` WIN/LOSE/REFUND, kept until an auth change) go to the points log
-  while the user topic is subscribed.
+  `MIN_BET` (10); otherwise `bet_skipped`. A reply whose `makePrediction.error` is not
+  null is `bet_failed`, as is a `GQLException`; any other send failure (timeout,
+  connection, unconfirmed HTTP reply) is `bet_unknown` and is kept in `_placed` like a
+  placed bet. `PredictionStrategy.choose()` needs two outcomes; counts that are not
+  positive ints count as 0; ties keep the first; `smart` = `high_odds` when the two
+  outcomes with the most users (a tie keeps the earlier) have
+  `abs(u1 - u2) * 100 / (u1 + u2) <= 20` (no users counts as even), else `most_voted`,
+  over all outcomes. Results of placed and unknown bets (`prediction-result`
+  WIN/LOSE/REFUND, kept until an auth change) go to the points log while the user topic
+  is subscribed.
 - Chat presence (`ChatPresence`, `src/services/chat_presence.py`, `join_chat`): the tick
   calls `follow(watched)` when `may_act(watched, "join_chat")`, else `follow(None)`. One
   aiohttp websocket to `wss://irc-ws.chat.twitch.tv:443` sends only `PASS oauth:<token>`,

@@ -595,6 +595,7 @@
             "bet_refunded": "Pari remboursé sur {channel} : {title}",
             "bet_skipped": "Aucun pari sur {channel} : {title}",
             "bet_failed": "Le pari sur {channel} n'a pas été accepté ({code})",
+            "bet_unknown": "Le pari de {points} points sur {channel} a peut-être été placé : {title}",
             "raid_joined": "Raid de {channel} vers {target} rejoint",
             "raid_failed": "Impossible de rejoindre le raid de {channel} ({code})",
             "moment_claimed": "Moment récupéré sur {channel}",

@@ -595,6 +595,7 @@
             "bet_refunded": "Ставку повернуто на {channel}: {title}",
             "bet_skipped": "Немає ставки на {channel}: {title}",
             "bet_failed": "Ставку на {channel} не прийнято ({code})",
+            "bet_unknown": "Ставку {points} балів на {channel}, можливо, зроблено: {title}",
             "raid_joined": "Приєднано до рейду з {channel} на {target}",
             "raid_failed": "Не вдалося приєднатися до рейду з {channel} ({code})",
             "moment_claimed": "Момент отримано на {channel}",

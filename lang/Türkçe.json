@@ -595,6 +595,7 @@
             "bet_refunded": "{channel} kanalında bahis iade edildi: {title}",
             "bet_skipped": "{channel} kanalında bahis yok: {title}",
             "bet_failed": "{channel} kanalındaki bahis kabul edilmedi ({code})",
+            "bet_unknown": "{channel} kanalındaki {points} puanlık bahis yapılmış olabilir: {title}",
             "raid_joined": "{channel} kanalından {target} kanalına baskına katılındı",
             "raid_failed": "{channel} kanalının baskınına katılınamadı ({code})",
             "moment_claimed": "{channel} kanalında bir an alındı",

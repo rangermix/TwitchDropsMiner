@@ -595,6 +595,7 @@
             "bet_refunded": "تم استرداد الرهان على {channel}: {title}",
             "bet_skipped": "لا رهان على {channel}: {title}",
             "bet_failed": "لم يُقبل الرهان على {channel} ({code})",
+            "bet_unknown": "ربما تم الرهان بـ {points} نقطة على {channel}: {title}",
             "raid_joined": "تم الانضمام إلى الغارة من {channel} إلى {target}",
             "raid_failed": "تعذر الانضمام إلى الغارة من {channel} ({code})",
             "moment_claimed": "تمت المطالبة بلحظة على {channel}",

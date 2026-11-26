@@ -595,6 +595,7 @@
             "bet_refunded": "Zwrócony zakład na {channel}: {title}",
             "bet_skipped": "Brak zakładu na {channel}: {title}",
             "bet_failed": "Zakład na {channel} nie został przyjęty ({code})",
+            "bet_unknown": "Zakład za {points} punktów na {channel} mógł zostać postawiony: {title}",
             "raid_joined": "Dołączono do rajdu z {channel} do {target}",
             "raid_failed": "Nie udało się dołączyć do rajdu z {channel} ({code})",
             "moment_claimed": "Odebrano moment na {channel}",

@@ -595,6 +595,7 @@
             "bet_refunded": "Væddemål refunderet på {channel}: {title}",
             "bet_skipped": "Intet væddemål på {channel}: {title}",
             "bet_failed": "Væddemål på {channel} blev ikke accepteret ({code})",
+            "bet_unknown": "Væddemålet på {points} point på {channel} er måske blevet placeret: {title}",
             "raid_joined": "Deltog i raiden fra {channel} til {target}",
             "raid_failed": "Kunne ikke deltage i raiden fra {channel} ({code})",
             "moment_claimed": "Hentede et moment på {channel}",

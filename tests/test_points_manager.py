@@ -112,7 +112,7 @@ PLACEHOLDERS = {
     "bet_placed": {"points", "outcome", "channel", "title"},
     "bet_won": {"points", "channel", "title"},
     "bet_lost": {"channel", "title"}, "bet_refunded": {"channel", "title"}, "bet_skipped": {"channel", "title"},
-    "bet_failed": {"channel", "code"},
+    "bet_failed": {"channel", "code"}, "bet_unknown": {"points", "channel", "title"},
     "raid_joined": {"channel", "target"}, "raid_failed": {"channel", "code"},
     "moment_claimed": {"channel"},
     "chat_joined": {"channel"}, "chat_left": {"channel"},

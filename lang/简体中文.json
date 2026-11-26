@@ -595,6 +595,7 @@
             "bet_refunded": "在 {channel} 的押注已退还：{title}",
             "bet_skipped": "未在 {channel} 押注：{title}",
             "bet_failed": "在 {channel} 的押注未被接受（{code}）",
+            "bet_unknown": "在 {channel} 押注的 {points} 积分可能已提交：{title}",
             "raid_joined": "已加入从 {channel} 到 {target} 的突袭",
             "raid_failed": "无法加入来自 {channel} 的突袭（{code}）",
             "moment_claimed": "已在 {channel} 领取时刻",

@@ -595,6 +595,7 @@
             "bet_refunded": "Weddenschap terugbetaald op {channel}: {title}",
             "bet_skipped": "Geen weddenschap op {channel}: {title}",
             "bet_failed": "Weddenschap op {channel} is niet geaccepteerd ({code})",
+            "bet_unknown": "Weddenschap van {points} punten op {channel} is mogelijk geplaatst: {title}",
             "raid_joined": "Meegedaan aan de raid van {channel} naar {target}",
             "raid_failed": "Kon niet meedoen aan de raid van {channel} ({code})",
             "moment_claimed": "Moment geclaimd op {channel}",

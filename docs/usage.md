@@ -340,17 +340,25 @@ use goes to drop mining instead.
 - `predictions_enabled` (off by default) bets channel points once per prediction on live
   listed channels, about 6 seconds before the prediction closes, using the vote counts
   seen last. Bets spend points and are visible to the streamer.
+  - Once means one bet per prediction while TDM runs. TDM never sends a second bet on a
+    prediction, also not after a failed or unanswered bet. It places no bet on a
+    prediction that was locked, ended or canceled, or that Twitch reported the account
+    already bet on while TDM listened (for example a bet placed in a browser). TDM keeps
+    this in memory only: after a restart or a new login it can bet again on a prediction
+    that is still open, because Twitch reports a bet only at the moment it is placed.
   - `prediction_strategy` picks the outcome: `smart` (default) bets on the outcome with
-    the fewest points when the first two outcomes have a user split within 20 percentage
-    points, otherwise on the outcome with the most users; `most_voted` picks the most
+    the fewest points when the two outcomes with the most users have a user split within
+    20 percentage points, otherwise on the outcome with the most users; `most_voted` picks the most
     users, `high_odds` the fewest points (the largest payout per point), `favourite` the
     most points. A tie picks the first outcome.
   - The stake is `prediction_percent` (default 5) of the channel's balance, rounded
     down, at most `prediction_max_points` (default 1000) and never more than the balance.
     No bet is placed below 10 points, with an unknown balance, or when the prediction is
-    no longer open. Each skip and each result (won, lost, refunded) goes to the channel
-    points log. A bet is sent once: a failed or unanswered bet is not sent again. No
-    strategy is known to beat the other viewers.
+    no longer open, or when Twitch sent a prediction without a usable start time or
+    length. Each skip and each result (won, lost, refunded) goes to the channel points
+    log. A bet without an answer from Twitch (a timeout or a lost connection) is logged as
+    possibly placed, and its result is still logged when Twitch sends one. No strategy is
+    known to beat the other viewers.
 - `join_chat` (off by default) joins the chat of the idle-watched channel over Twitch's
   chat websocket with your session, and leaves it when TDM switches channels, stops idle
   watching or pauses channel points. TDM never sends chat messages. Twitch lists no

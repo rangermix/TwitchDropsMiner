@@ -595,6 +595,7 @@
             "bet_refunded": "Taruhan dikembalikan di {channel}: {title}",
             "bet_skipped": "Tidak ada taruhan di {channel}: {title}",
             "bet_failed": "Taruhan di {channel} tidak diterima ({code})",
+            "bet_unknown": "Taruhan {points} poin di {channel} mungkin sudah dipasang: {title}",
             "raid_joined": "Bergabung ke raid dari {channel} ke {target}",
             "raid_failed": "Tidak dapat bergabung ke raid dari {channel} ({code})",
             "moment_claimed": "Momen diklaim di {channel}",
