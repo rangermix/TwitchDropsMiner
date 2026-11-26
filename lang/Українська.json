@@ -520,5 +520,29 @@
             "login_missing": "Браузер закрився без збереженого входу у Twitch. Запустіть помічник знову, завершіть вхід і перевірку, а потім закрийте лише екземпляр браузера помічника."
         },
         "chromium_help": "Шлях до Chromium (зазвичай визначається автоматично)"
+    },
+    "points": {
+        "log": {
+            "paused": "Channel points paused",
+            "resumed": "Channel points resumed",
+            "gain": "+{points} on {channel} ({reason})",
+            "bonus_claimed": "Claimed the bonus on {channel}",
+            "visit_started": "Watch streak visit on {channel}",
+            "recovery_visit_started": "Watch streak recovery visit on {channel}",
+            "visit_skipped": "No visit needed on {channel}: its stream restarted",
+            "streak_shared": "Shared the watch streak on {channel}",
+            "bet_placed": "Bet {points} points on \"{outcome}\" on {channel}: {title}",
+            "bet_won": "Won {points} points on {channel}: {title}",
+            "bet_lost": "Lost the bet on {channel}: {title}",
+            "bet_refunded": "Bet refunded on {channel}: {title}",
+            "bet_skipped": "No bet on {channel}: {title}",
+            "bet_failed": "Bet on {channel} was not accepted ({code})",
+            "raid_joined": "Joined the raid from {channel} to {target}",
+            "raid_failed": "Could not join the raid from {channel} ({code})",
+            "moment_claimed": "Claimed a moment on {channel}",
+            "chat_joined": "Joined the chat of {channel}",
+            "chat_left": "Left the chat of {channel}",
+            "topic_limit": "Too many tracked channels: some channel points events are not followed"
+        }
     }
 }

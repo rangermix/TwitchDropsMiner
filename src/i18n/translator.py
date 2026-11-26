@@ -547,6 +547,33 @@ class HelperMessages(TypedDict):
     insecure_warning: str
 
 
+class PointsLog(TypedDict):
+    paused: str
+    resumed: str
+    gain: str
+    bonus_claimed: str
+    visit_started: str
+    recovery_visit_started: str
+    visit_skipped: str
+    streak_shared: str
+    bet_placed: str
+    bet_won: str
+    bet_lost: str
+    bet_refunded: str
+    bet_skipped: str
+    bet_failed: str
+    raid_joined: str
+    raid_failed: str
+    moment_claimed: str
+    chat_joined: str
+    chat_left: str
+    topic_limit: str
+
+
+class PointsMessages(TypedDict):
+    log: PointsLog
+
+
 class Translation(TypedDict):
     helper: HelperMessages
     language_name: str
@@ -555,6 +582,7 @@ class Translation(TypedDict):
     login: LoginMessages
     error: ErrorMessages
     gui: GUIMessages
+    points: PointsMessages
 
 
 class Translator:
