@@ -76,6 +76,7 @@ class GUITabs(TypedDict):
     inventory: str
     settings: str
     help: str
+    points: str
 
 
 class GUIBrowserLogin(TypedDict):
@@ -463,6 +464,66 @@ class GUIHistory(TypedDict):
     stats_error: str
 
 
+class GUIPointsReasons(TypedDict):
+    watch: str
+    claim: str
+    watch_streak: str
+    raid: str
+    prediction: str
+
+
+class GUIPoints(TypedDict):
+    title: str
+    status_active: str
+    status_paused: str
+    status_inactive: str
+    pause: str
+    resume: str
+    pause_error: str
+    channels_header: str
+    col_channel: str
+    col_live: str
+    col_balance: str
+    col_last_gain: str
+    live: str
+    offline: str
+    no_channels: str
+    log_header: str
+    save_error: str
+    order_header: str
+    idle_priority: str
+    idle_priority_help: str
+    priority_list: str
+    priority_points_low: str
+    priority_points_high: str
+    priority_subscribed: str
+    idle_streak_first: str
+    idle_streak_first_help: str
+    streak_recovery: str
+    streak_recovery_help: str
+    actions_header: str
+    follow_raids: str
+    follow_raids_help: str
+    claim_moments: str
+    claim_moments_help: str
+    join_chat: str
+    join_chat_help: str
+    predictions_header: str
+    predictions_enabled: str
+    predictions_enabled_help: str
+    prediction_strategy: str
+    prediction_strategy_help: str
+    strategy_smart: str
+    strategy_most_voted: str
+    strategy_high_odds: str
+    strategy_favourite: str
+    prediction_percent: str
+    prediction_percent_help: str
+    prediction_max_points: str
+    prediction_max_points_help: str
+    reasons: GUIPointsReasons
+
+
 class GUIMessages(TypedDict):
     auth: GUIAuth
     history: GUIHistory
@@ -476,6 +537,7 @@ class GUIMessages(TypedDict):
     channels: GUIChannels
     inventory: GUIInventory
     settings: GUISettings
+    points: GUIPoints
     help: GUIHelp
     header: GUIHeader
     footer: GUIFooter
