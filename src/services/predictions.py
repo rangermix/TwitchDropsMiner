@@ -29,6 +29,7 @@ logger = logging.getLogger("TwitchDrops")
 PREDICTION_DELAY_SECONDS = 6
 # Twitch takes 10..250000 points per prediction
 MIN_BET = 10
+NOT_ALLOWED = "not allowed now"
 # smart: a user split of the two outcomes with the most users within this many percentage points bets high_odds
 SMART_GAP = 20
 
@@ -198,7 +199,7 @@ class Predictions:
         """(outcome id, outcome index, amount) of the bet to place, or why there is none."""
         tw = self._twitch
         if not self._service.may_act(channel, "predictions_enabled"):
-            return "not allowed now"
+            return NOT_ALLOWED
         if event.get("status") != "ACTIVE":
             return "not active"
         balance = self._service.balances.get(channel.id)
@@ -220,7 +221,8 @@ class Predictions:
 
     async def bet(self, event_id: str) -> None:
         """Place the one bet of an event, or log why not; the event is handled either way."""
-        entry = self._latest.get(event_id)
+        # the timer fired: its event is not kept after this, whatever happens
+        entry = self._latest.pop(event_id, None)
         if entry is None or event_id in self._handled:
             return
         channel, event = entry
@@ -228,6 +230,10 @@ class Predictions:
         # used up before sending: a bet is never sent twice, also not after an unknown outcome
         remember(self._handled, event_id)
         choice = self._refusal(channel, event)
+        if choice == NOT_ALLOWED:
+            # paused, option off, offline, a drop channel...: not a skipped bet, like the no-window path
+            logger.info("No bet on %s (%s)", channel.name, choice)
+            return
         if isinstance(choice, str):
             self._skip(channel, event, choice)
             return

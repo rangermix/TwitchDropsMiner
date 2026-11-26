@@ -553,7 +553,10 @@ async def test_bet_refusals_at_send_time(case):
     await preds.bet("e1")
     await preds.bet("e1")  # handled: no second try either
     assert sent(tw) == []
-    assert logged(tw) == ["bet_skipped"]
+    # a bet that may not be placed now (paused, option off, ...) is not a skipped bet in the points log
+    not_allowed = case in ("paused", "off", "can_watch", "offline", "stopped", "hours")
+    assert logged(tw) == ([] if not_allowed else ["bet_skipped"])
+    assert "e1" not in preds._latest  # the fired timer's event is not kept
 
 
 @pytest.mark.asyncio
