@@ -273,6 +273,7 @@
                 "help": "下で Discord または Telegram を設定すると適用されます。",
                 "drop_claimed": "受け取ったドロップ",
                 "new_release": "TwitchDropsMiner の新バージョン(6 時間ごとに確認)",
+                "campaign_ending": "未受け取りのドロップがあり、24 時間以内に終了する対象キャンペーン",
                 "save_error": "通知の選択を保存できませんでした。もう一度お試しください。"
             },
             "discord": {

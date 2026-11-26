@@ -527,7 +527,13 @@ lang/                # Translation JSON files (20 languages)
   not echo submitted settings. Test Connection reports success only after saving.
   Preserve localized safe Help rendering and `tests/test_discord_*` coverage.
 - `notification_events` (`NotificationEventSettings`) selects alert events for both
-  providers: `drop_claimed` (default true) and `new_release` (default false). Only an
+  providers: `drop_claimed` (default true), `new_release` and `campaign_ending` (default
+  false). `CampaignEndingAlerts` (`src/services/campaign_alert_service.py`) runs at the
+  end of building wanted games in GAMES_UPDATE; failures are logged by class name and
+  never interrupt mining. It alerts once per wanted, eligible, active, still-mineable
+  campaign ending within 24 hours, persisting alerted IDs with their end time in
+  `campaign_alerts.json` (expired entries pruned; unreadable files ignored). Coverage:
+  `tests/test_campaign_ending_alerts.py`. Only an
   explicit `drop_claimed: false` suppresses claim alerts; settings problems never block a
   claim. Partial updates merge; unknown keys or non-booleans fail before any write.
   Persist the event revision with the choices so late settings responses or broadcasts

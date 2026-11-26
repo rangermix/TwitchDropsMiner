@@ -203,7 +203,7 @@ class TestReleaseCheck(unittest.IsolatedAsyncioTestCase):
 def test_notification_events_merge_partial_updates_and_reject_unknown_values():
     current = {"drop_claimed": False, "new_release": False}
     assert NotificationEventSettings.normalize({"new_release": True}, current) == {
-        "drop_claimed": False, "new_release": True}
+        "drop_claimed": False, "new_release": True, "campaign_ending": False}
     for invalid in ({"other": True}, {"new_release": "yes"}, ["new_release"]):
         with pytest.raises(ValueError):
             NotificationEventSettings.normalize(invalid, current)
@@ -236,13 +236,13 @@ async def test_notification_settings_revision_and_cursor_persist(tmp_path, monke
     second = manager.update_settings({"notification_events": {"drop_claimed": False}})
     unchanged = manager.update_settings({"notification_events": {"drop_claimed": False}})
     await asyncio.sleep(0)
-    assert first["notification_events"] == {"drop_claimed": True, "new_release": True}
+    assert first["notification_events"] == {"drop_claimed": True, "new_release": True, "campaign_ending": False}
     assert first["notification_events_revision"] == 1
     assert second["notification_events_revision"] == 2
     assert unchanged["notification_events_revision"] == 2
     assert all("last_notified_releases" not in call.args[1] for call in broadcaster.emit.await_args_list)
     restarted = Settings()
-    assert restarted.notification_events == {"drop_claimed": False, "new_release": True}
+    assert restarted.notification_events == {"drop_claimed": False, "new_release": True, "campaign_ending": False}
     assert restarted.notification_events_revision == 2
     assert restarted.last_notified_releases == {"telegram": "8.0.0", "discord": "8.0.0"}
 

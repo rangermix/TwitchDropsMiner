@@ -229,6 +229,7 @@
                 "help": "Discordra és Telegramra vonatkozik, ha valamelyik be van állítva lent.",
                 "drop_claimed": "Begyűjtött dropok",
                 "new_release": "Új TwitchDropsMiner verziók (6 óránként ellenőrizve)",
+                "campaign_ending": "24 órán belül véget érő kívánt kampányok be nem váltott dropokkal",
                 "save_error": "Az értesítési beállítások mentése sikertelen. Próbáld újra."
             },
             "discord": {

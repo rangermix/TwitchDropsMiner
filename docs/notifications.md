@@ -18,6 +18,12 @@ Event choices are available in v2.6.0 and later.
   check can retry it without repeating the alert on the other provider. TDM
   remembers successful deliveries across restarts. Follow the
   [installation guide](installation.md) to install updates.
+- **Wanted campaigns ending within 24 hours with unclaimed drops** is off by default
+  and is not yet in a released version. When on, TDM checks after every campaign reload
+  (every 30 minutes by default) and sends one alert per campaign of a game in your
+  mining queue that ends within 24 hours and still has drops TDM would mine. Alerted
+  campaigns are remembered in `data/campaign_alerts.json` so a restart does not repeat
+  them; a failed delivery is retried at the next reload.
 
 Each checkbox saves immediately. A failed save restores the previous choice.
 

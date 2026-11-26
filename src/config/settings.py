@@ -66,6 +66,7 @@ default_settings = {
     "notification_events": {
         "drop_claimed": True,
         "new_release": False,
+        "campaign_ending": False,
     },
     "notification_events_revision": 0,
     "proxy": "",

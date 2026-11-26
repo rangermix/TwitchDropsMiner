@@ -273,6 +273,7 @@
                 "help": "Geldt voor Discord en Telegram, zodra een van beide hieronder is ingesteld.",
                 "drop_claimed": "Geclaimde drops",
                 "new_release": "Nieuwe TwitchDropsMiner-versies (elke 6 uur gecontroleerd)",
+                "campaign_ending": "Gewenste campagnes met niet-geclaimde drops die binnen 24 uur eindigen",
                 "save_error": "Meldingskeuzes konden niet worden opgeslagen. Probeer het opnieuw."
             },
             "discord": {

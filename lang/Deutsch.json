@@ -273,6 +273,7 @@
                 "help": "Gilt für Discord und Telegram, sobald eines davon unten eingerichtet ist.",
                 "drop_claimed": "Eingelöste Drops",
                 "new_release": "Neue TwitchDropsMiner-Versionen (alle 6 Stunden geprüft)",
+                "campaign_ending": "Gewünschte Kampagnen mit nicht eingelösten Drops, die innerhalb von 24 Stunden enden",
                 "save_error": "Benachrichtigungsauswahl konnte nicht gespeichert werden. Bitte erneut versuchen."
             },
             "discord": {

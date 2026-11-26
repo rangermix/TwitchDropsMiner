@@ -273,6 +273,7 @@
                 "help": "Aşağıda biri ayarlandığında Discord ve Telegram için geçerlidir.",
                 "drop_claimed": "Alınan droplar",
                 "new_release": "Yeni TwitchDropsMiner sürümleri (6 saatte bir kontrol edilir)",
+                "campaign_ending": "24 saat içinde sona eren, alınmamış drop'ları olan istenen kampanyalar",
                 "save_error": "Bildirim seçimleri kaydedilemedi. Lütfen tekrar deneyin."
             },
             "discord": {

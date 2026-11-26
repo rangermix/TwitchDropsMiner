@@ -273,6 +273,7 @@
                 "help": "在下方設定 Discord 或 Telegram 後生效。",
                 "drop_claimed": "已領取的掉寶",
                 "new_release": "TwitchDropsMiner 新版本(每 6 小時檢查一次)",
+                "campaign_ending": "24 小時內結束且仍有未領取掉寶的目標活動",
                 "save_error": "無法儲存通知選項,請再試一次。"
             },
             "discord": {

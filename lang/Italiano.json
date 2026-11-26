@@ -273,6 +273,7 @@
                 "help": "Vale per Discord e Telegram, una volta configurato uno dei due qui sotto.",
                 "drop_claimed": "Drop riscattati",
                 "new_release": "Nuove versioni di TwitchDropsMiner (controllate ogni 6 ore)",
+                "campaign_ending": "Campagne desiderate con drop non riscattati che terminano entro 24 ore",
                 "save_error": "Impossibile salvare le scelte di notifica. Riprova."
             },
             "discord": {

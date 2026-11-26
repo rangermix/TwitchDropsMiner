@@ -37,6 +37,7 @@ from src.i18n import _
 from src.models.campaign import DropsCampaign
 from src.models.channel import Channel
 from src.models.reward_campaign import RewardCampaign
+from src.services.campaign_alert_service import CampaignEndingAlerts
 from src.services.channel_service import ChannelService
 from src.services.game_order import TemporaryGameOrder
 from src.services.inventory_service import REWARD_ERRORS, InventoryService
@@ -136,6 +137,7 @@ class Twitch:
         self._stream_selector: StreamSelector = StreamSelector()
         # Drop history
         self.drop_history: DropHistory = DropHistory(DATA_DIR)
+        self._campaign_alerts = CampaignEndingAlerts(self, DATA_DIR)
         self._run_task: asyncio.Task | None = None
         self._resume_mining = asyncio.Event()
         self._resume_mining.set()
@@ -668,6 +670,11 @@ class Twitch:
                     self.settings, self.inventory, self.game_order
                 )
                 logger.info("Wanted games list built")
+                try:
+                    await self._campaign_alerts.check()
+                except Exception as error:
+                    # An optional alert must never interrupt mining.
+                    logger.warning("Campaign ending alert failed: %s", type(error).__name__)
 
                 if self.wanted_games:
                     logger.info(
