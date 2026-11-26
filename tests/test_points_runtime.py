@@ -318,16 +318,21 @@ async def test_gains_of_listed_channels_reach_the_tab_and_the_log():
     tw.channels[999] = SimpleNamespace(id=999, name="Z", login="z")
     await svc.process_points(1, earned("WATCH", channel_id="7", gain=10))
     tw.gui.points.gain.assert_called_once_with("b", 10, "WATCH")
-    tw.gui.points.log.assert_called_once_with("gain", channel="B", points=10, reason="WATCH")
+    # the log names the reason like the tab does
+    tw.gui.points.log.assert_called_once_with("gain", channel="B", points=10, reason="Watching")
     await svc.process_points(1, earned("CLAIM", gain=50))  # claim() logs the bonus line itself
     tw.gui.points.gain.assert_called_with("a", 50, "CLAIM")
     assert tw.gui.points.log.call_count == 1
     await svc.process_points(1, earned("WATCH", channel_id="999"))  # unlisted
     await svc.process_points(1, earned("WATCH", channel_id="7", gain="10"))  # unusable amount
     assert tw.gui.points.gain.call_count == 2
+    # a reason code the tab has no name for is logged as Twitch sent it
+    await svc.process_points(1, earned("NEW_CODE", channel_id="7", gain=5))
+    tw.gui.points.log.assert_called_with("gain", channel="B", points=5, reason="NEW_CODE")
+    assert tw.gui.points.gain.call_count == 3
     svc._task = MagicMock(done=lambda: True)
     await svc.process_points(1, earned("WATCH", channel_id="7"))
-    assert tw.gui.points.gain.call_count == 2
+    assert tw.gui.points.gain.call_count == 3
 
 
 # --- watch priority ---

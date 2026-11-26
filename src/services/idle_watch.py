@@ -786,7 +786,9 @@ class IdleWatchService:
             self._twitch.gui.points.gain(listed.login, total, reason)
             if reason != CLAIM_REASON:
                 # claim() already logged the bonus line
-                self._twitch.gui.points.log("gain", channel=listed.name, points=total, reason=reason)
+                # the tab's reason names; an unknown Twitch code stays as sent
+                label = _.t["gui"]["points"]["reasons"].get(reason.lower(), reason)  # type: ignore[attr-defined]
+                self._twitch.gui.points.log("gain", channel=listed.name, points=total, reason=label)
         else:
             self._twitch.gui.points.refresh()
         wake = False
