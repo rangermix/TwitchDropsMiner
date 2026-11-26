@@ -266,8 +266,13 @@ A listed channel that a drop can use goes to drop mining instead.
 **Channels watched at a time** (`watch_slots`, 1 or 2, on the **Points** tab): with 2,
 idle watching also runs while a drop is mined. TDM then watches one listed channel next
 to the drop channel, on a second watch of its own. It uses only listed channels that
-drops cannot use and that have drops off, so drop mining keeps its channel and the
-second watch cannot take drop progress. The **Points** tab marks that channel
+drops cannot use and whose current stream lists no drops campaign at all, earnable or
+not (TDM asks Twitch once per stream; while that check has no answer, or failed, the
+channel is not used). Drop mining keeps its channel, and the second watch is designed
+not to take drop progress (the drops checks above); this has not run live. While drop
+mining reloads its channel list (hourly), the second watch pauses and continues after
+it; with 2 slots TDM tracks fewer drop channels, so the listed channels and their
+events still fit. The **Points** tab marks that channel
 **Watching (second slot)**; the channel list and the status line keep showing drop
 mining. Visits, priority, claims, shares, raids, moments, predictions and chat work on
 it as below. When nothing can be mined, idle watching runs as with one slot. Two watches
@@ -312,7 +317,8 @@ Twitch credits points and drops for two watches at a time is unknown.
   the label), On or Off: the points bonus claim (`claim_channel_points`), raids
   (`follow_raids`), moments (`claim_moments`), predictions (`predictions_enabled`),
   watch streak visits (`idle_streak_first`) and chat (`join_chat`). With visits off for a
-  channel, it gets no first or recovery visits and no watch streak share; a recovery
+  channel, it gets no first or recovery visits and no watch streak share (the global
+  visits setting does not stop shares, which have their own setting); a recovery
   visit also needs `streak_recovery`. Three more options order and limit the pick after
   the visits: Favorite puts the channel first in the priority order (inside the favorites
   and inside the rest, `idle_priority` still decides), a points limit (1 to 100000000)
@@ -358,13 +364,18 @@ Twitch credits points and drops for two watches at a time is unknown.
 - The **History** section of the **Points** tab shows, for one listed channel at a time
   (pick it in the select), a line chart of its balance over time, a table of the points
   gained by source (watching, bonus claim, watch streak, raid, prediction win, other) and
-  the bets TDM placed there: won, lost, refunded and the points won. It fills as TDM
+  the bets TDM placed there: won, lost, refunded and the points won (Twitch's payout,
+  the stake included). The prediction row of the gains table is the net of those bets:
+  a win adds its payout less the stake, a loss subtracts the stake, so it can be
+  negative. Balance changes are kept as one sample per 5 minutes. It fills as TDM
   sees balance changes, so a new install starts empty. The data is kept in
   `data/points_history.json`, for one account (logging in as another account starts it
   empty) and bounded: at most 288 balance samples per channel and 20 channels, and a
   channel removed from the list is dropped at the next save. If that file cannot be read
   or has an unexpected shape, TDM logs one warning, keeps recording in memory for the
-  current run and does not overwrite it: fix the file or delete it, then restart.
+  current run and does not overwrite it: fix the file or delete it, then restart. TDM
+  saves the history at most once a minute, and also when idle watching stops and when
+  it closes.
 - **Share watch streaks while idle watching** (off by default) shares a watch streak
   once Twitch marks it shareable, once per milestone, for live listed channels. The
   check runs about every 5 minutes and right after a watch streak message. Twitch posts
