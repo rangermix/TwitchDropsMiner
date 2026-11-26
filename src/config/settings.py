@@ -170,14 +170,14 @@ class PointsSettings:
         "prediction_fixed_option": (1, 10),
         "watch_slots": (1, 2),
     }
-    # inclusive bounds of the options that take an int or a float
+    # inclusive bounds of the options that take an int or a float, kept to two decimals like the dashboard
     NUMBERS: ClassVar[dict[str, tuple[float, float]]] = {"prediction_min_odds": (1.0, 100.0)}
     FLAGS = ("idle_streak_first", "streak_recovery", "follow_raids", "predictions_enabled", "claim_moments", "join_chat")
     KEYS = (*CHOICES, *RANGES, *NUMBERS, *FLAGS)
 
     @classmethod
     def normalize(cls, key: str, value: Any) -> Any:
-        """Return value when it is valid for key; a bool is never an int here."""
+        """Return value when it is valid for key (a NUMBERS value rounded to 2 decimals); a bool is never an int here."""
         if key in cls.CHOICES:
             valid = type(value) is str and value in cls.CHOICES[key]
         elif key in cls.RANGES:
@@ -191,7 +191,8 @@ class PointsSettings:
             valid = key in cls.FLAGS and type(value) is bool
         if not valid:
             raise ValueError(f"invalid_{key}")
-        return value
+        # a float: merge_json would replace a saved int with the float default
+        return round(float(value), 2) if key in cls.NUMBERS else value
 
     @classmethod
     def salvage(cls, settings: dict[str, Any]) -> None:
@@ -200,7 +201,7 @@ class PointsSettings:
             if key not in settings:
                 continue
             try:
-                cls.normalize(key, settings[key])
+                settings[key] = cls.normalize(key, settings[key])
             except ValueError:
                 default = default_settings[key]
                 settings[key] = default
@@ -428,7 +429,7 @@ class Settings:
             ChannelOptionSettings.normalize(self.idle_channel_options), self.idle_channels,
         )
         for key in PointsSettings.KEYS:
-            PointsSettings.normalize(key, getattr(self, key))
+            setattr(self, key, PointsSettings.normalize(key, getattr(self, key)))
         self.drop_name_blacklist = DropIgnorePolicy.normalize_keywords(
             self.drop_name_blacklist
         )

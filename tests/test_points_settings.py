@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.config.settings import PointsSettings, Settings, default_settings
+from src.web.app import SettingsUpdate
 from src.web.managers.settings import SettingsManager
 from tests.test_wanted_queue_order import client  # noqa: F401 (pytest fixture)
 
@@ -245,3 +246,23 @@ class TestAPI:
         reply = browser.post("/api/settings", json=body)
         assert reply.status_code == 422
         assert reply.json() == {"detail": "invalid_request"}
+
+
+# --- min odds keep two decimals, as the dashboard shows them ---
+
+
+@pytest.mark.parametrize("value, stored", [(1.234, 1.23), (1.235 + 1e-9, 1.24), (2.5, 2.5), (2, 2.0), (99.999, 100.0),
+                                           (1.004, 1.0)])
+def test_min_odds_are_rounded_to_two_decimals_in_load_api_manager_and_save(tmp_path, monkeypatch, caplog, value, stored):
+    assert PointsSettings.normalize("prediction_min_odds", value) == stored
+    assert type(PointsSettings.normalize("prediction_min_odds", value)) is float  # an int would reload as 1.0
+    assert SettingsUpdate(prediction_min_odds=value).prediction_min_odds == stored
+    manager, settings = _manager()
+    _update(manager, {"prediction_min_odds": value})
+    assert settings.prediction_min_odds == stored
+    loaded = _load(tmp_path, monkeypatch, caplog, {"prediction_min_odds": value})
+    assert loaded.prediction_min_odds == stored and not caplog.records
+    loaded.prediction_min_odds = value  # set in code: save() stores it rounded too
+    loaded.save()
+    saved = json.loads((tmp_path / "settings.json").read_text(encoding="utf-8"))
+    assert saved["prediction_min_odds"] == stored
