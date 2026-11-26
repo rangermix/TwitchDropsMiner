@@ -106,6 +106,39 @@ GQL_OPERATIONS: dict[str, GQLOperation] = {
             },
         },
     ),
+    # idle watching: join a raid that starts on the idle-watched channel; sent once (single_attempt)
+    "JoinRaid": GQLOperation(
+        "JoinRaid",
+        "c6a332a86d1087fbbb1a8623aa01bd1313d2386e7c63be60fdb2d1901f01a4ae",
+        variables={
+            "input": {
+                "raidID": ...,  # raid id from the raid topic
+            },
+        },
+    ),
+    # idle watching: bet channel points on a prediction outcome; sent once (single_attempt)
+    "MakePrediction": GQLOperation(
+        "MakePrediction",
+        "b44682ecc88358817009f20e69d75081b1e58825bb40aa53d5dbadcc17c881d8",
+        variables={
+            "input": {
+                "eventID": ...,  # prediction event id
+                "outcomeID": ...,  # outcome id
+                "points": ...,  # int, Twitch takes 10..250000
+                "transactionID": ...,  # random hex, one per bet
+            },
+        },
+    ),
+    # idle watching: claim a community moment; the reply field is claimCommunityMoment
+    "CommunityMomentCallout_Claim": GQLOperation(
+        "CommunityMomentCallout_Claim",
+        "e2d67415aead910f7f9ceb45a77b750a1e1d9622c936d832328a0689e054db62",
+        variables={
+            "input": {
+                "momentID": ...,  # moment id from the community moments topic
+            },
+        },
+    ),
     # can be used to claim a drop
     "ClaimDrop": GQLOperation(
         "DropsPage_ClaimDropRewards",

@@ -179,11 +179,16 @@ WEBSOCKET_TOPICS: dict[str, dict[str, str]] = {
         "Drops": "user-drop-events",
         "Notifications": "onsite-notifications",
         "CommunityPoints": "community-points-user-v1",
+        "Predictions": "predictions-user-v1",  # idle watching, while predictions are on
     },
     "Channel": {  # Using channel_id
         "Drops": "channel-drop-events",  # unused
         "StreamState": "video-playback-by-id",
         "StreamUpdate": "broadcast-settings-update",
         "CommunityPoints": "community-points-channel-v1",  # unused
+        # idle watching only, for live listed channels while the loop runs (src/services/points_events.py)
+        "Predictions": "predictions-channel-v1",
+        "Raid": "raid",
+        "CommunityMoments": "community-moments-channel-v1",
     },
 }
