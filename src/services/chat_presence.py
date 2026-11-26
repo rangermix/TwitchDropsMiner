@@ -99,16 +99,19 @@ class ChatPresence:
         while self._wanted(channel):
             started = time.monotonic()
             try:
-                if not await self._session(channel):
-                    # a refused login: no reconnect with the same account and token
-                    return
+                again = await self._session(channel)
             except RuntimeError:
                 # the HTTP session closed (shutdown)
-                return
+                again = False
             except (MinerException, aiohttp.ClientError, OSError, TimeoutError) as exc:
                 # a failed auth check (MinerException) is retried like a lost connection
                 logger.warning("Chat of %s disconnected (%s), reconnecting", channel.name, type(exc).__name__)
+                again = True
+            # every end of a session leaves the chat; a cancel is logged by leave()
             self._left(channel)
+            if not again:
+                # a refused login (no reconnect with the same account and token) or a shutdown
+                return
             # a connection that drops right after it opened keeps the wait growing
             if time.monotonic() - started >= CHAT_STABLE_SECONDS:
                 backoff.reset()

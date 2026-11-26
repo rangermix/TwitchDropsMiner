@@ -998,6 +998,33 @@ async def test_saving_join_chat_off_and_on_clears_a_refused_login_without_a_tick
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("end", ["notice", "shutdown", "closed", "lost"])
+async def test_every_end_of_a_joined_session_leaves_the_chat(monkeypatch, end):
+    async def fast_sleep(delay):
+        if end in ("closed", "lost"):
+            chat._service.watched = None  # no longer wanted: _run ends after the wait
+
+    monkeypatch.setattr(chat_mod.asyncio, "sleep", fast_sleep)
+
+    class Ending(FakeChat):
+        async def receive(self, timeout=None):
+            if self.messages:
+                return self.messages.pop(0)
+            if end == "notice":
+                return text(":tmi.twitch.tv NOTICE * :Login unsuccessful")
+            if end == "shutdown":
+                raise RuntimeError("Session is closed")
+            if end == "lost":
+                raise aiohttp.ClientConnectionError()
+            return CLOSED
+
+    svc, tw, a, _, session, chat = chat_setup([Ending([text(WELCOME)])])
+    await chat._run(a)
+    assert logged(tw) == ["chat_joined", "chat_left"] and chat._joined is False
+    tw.gui.points.log.assert_called_with("chat_left", channel="A")
+
+
+@pytest.mark.asyncio
 async def test_chat_backoff_is_bounded(monkeypatch):
     sleeps = []
 
