@@ -899,8 +899,10 @@ class Twitch:
                 # ensure that we won't end up with more channels than we can handle
                 # NOTE: we trim from the end because that's where the non-priority,
                 # offline (or online but low viewers) channels end up
-                to_remove_channels = ordered_channels[MAX_CHANNELS:]
-                ordered_channels = ordered_channels[:MAX_CHANNELS]
+                # with two watch slots, room stays for the listed channels and their event topics
+                room = min(MAX_CHANNELS, self.idle_watch.drop_channel_room())
+                to_remove_channels = ordered_channels[room:]
+                ordered_channels = ordered_channels[:room]
                 if to_remove_channels:
                     # tracked channels and gui were cleared earlier, so no need to do it here
                     # just make sure to unsubscribe from their topics

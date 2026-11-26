@@ -21,7 +21,14 @@ from typing import TYPE_CHECKING
 import aiohttp
 
 from src.api.gql_client import private_gql_discovery
-from src.config import GQL_OPERATIONS, MAX_CHANNELS, GQLRawQuery, State
+from src.config import (
+    GQL_OPERATIONS,
+    MAX_CHANNELS,
+    MAX_TOPICS,
+    TOPICS_PER_CHANNEL,
+    GQLRawQuery,
+    State,
+)
 from src.config.settings import ChannelOptionSettings
 from src.exceptions import ExitRequest, GQLException, MinerException
 from src.i18n import _
@@ -57,6 +64,8 @@ IDLE_TICK_SECONDS = 30
 SIDE_WATCH_SECONDS = 10
 # broadcasts whose AvailableDrops answer side mode keeps (20 listed channels, each with a restart)
 SIDE_DROPS_KEPT = 40
+# drop mining rebuilds its channel list here: side mode pauses, so no track() adds channels meanwhile
+SIDE_PAUSE_STATES = frozenset({State.GAMES_UPDATE, State.CHANNELS_CLEANUP, State.CHANNELS_FETCH})
 STREAK_REASON = "WATCH_STREAK"
 CLAIM_REASON = "CLAIM"
 # tick retries of a failed bonus claim per watched channel; after them claim-available retries it
@@ -185,9 +194,22 @@ class IdleWatchService:
         )
 
     def side_allowed(self) -> bool:
-        """Whether side mode may run: allowed(), two watch slots and no authentication change."""
+        """Whether side mode may run: allowed(), two watch slots, no authentication change and no channel reload."""
         tw = self._twitch
-        return self.allowed() and tw.settings.watch_slots == 2 and not tw._changing_auth
+        return (
+            self.allowed() and tw.settings.watch_slots == 2 and not tw._changing_auth
+            and tw._state not in SIDE_PAUSE_STATES
+        )
+
+    def drop_channel_room(self) -> int:
+        """How many drop channels CHANNELS_FETCH may track: MAX_CHANNELS, and with two watch slots fewer, so
+        every listed channel, its stream topics and the most event topics still fit next to them."""
+        tw = self._twitch
+        if tw.settings.watch_slots != 2:
+            return MAX_CHANNELS
+        # a listed channel that is also a drop channel is counted twice: it only leaves a spare slot
+        listed = len(tw.settings.idle_channels)
+        return max((MAX_TOPICS - PointsEvents.most_topics(listed)) // TOPICS_PER_CHANNEL - listed, 0)
 
     def _side_basic(self, channel: Channel) -> bool:
         tw = self._twitch

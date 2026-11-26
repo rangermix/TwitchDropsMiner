@@ -8,14 +8,25 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 import src.services.idle_watch as idle_mod
-from src.config import State
+from src.config import (
+    BASE_TOPICS,
+    MAX_CHANNELS,
+    MAX_WEBSOCKETS,
+    TOPICS_PER_CHANNEL,
+    WS_TOPICS_LIMIT,
+    State,
+)
 from src.core.client import Twitch
 from src.exceptions import MinerException
 from src.models.channel import Channel
 from src.services.message_handlers import MessageHandlerService
+from src.services.points_events import PointsEvents
 from src.utils.async_helpers import AwaitableValue
+from src.websocket.pool import WebsocketPool
+from tests.test_idle_points import POINTS_OPTIONS
 from tests.test_idle_watch import client_stub, fake, loop_service, run_service
 from tests.test_playlist_watch import _make_channel, _playlist, _Transport
+from tests.test_watched_channel_recovery import OFFLINE, _channel, _reloading_miner
 
 
 def chan(cid, login, *, drops=False):
@@ -35,6 +46,7 @@ def side_service(live, *, drop=None, mining=True):
     svc, tw = loop_service(live, mining=mining, idle=tuple(c.login for c in live))
     tw.settings.watch_slots = 2
     tw._changing_auth = False
+    tw._state = State.CHANNEL_SWITCH
     tw._watching = drop
     return svc, tw
 
@@ -315,7 +327,7 @@ def side_client(*, mode="side", active=True, allowed=True):
     return client
 
 
-@pytest.mark.parametrize("state", [State.INVENTORY_FETCH, State.GAMES_UPDATE, State.CHANNELS_FETCH, State.CHANNEL_SWITCH])
+@pytest.mark.parametrize("state", [State.INVENTORY_FETCH, State.CHANNEL_SWITCH])
 def test_side_mode_keeps_running_across_drop_states(state):
     client = side_client()
     client.change_state(state)
@@ -486,7 +498,7 @@ def drops_answers(table):
 def real_side_service(table, monkeypatch):
     monkeypatch.setattr(Channel, "send_watch", AsyncMock(return_value=True))
     svc, tw = run_service(idle=[f"c{cid}" for cid in table], gql=AsyncMock(side_effect=drops_answers(table)))
-    tw.settings.watch_slots, tw._changing_auth = 2, False
+    tw.settings.watch_slots, tw._changing_auth, tw._state = 2, False, State.CHANNEL_SWITCH
     tw._campaigns = {}
     tw._watching = fake(9, 90, login="drop")
     return svc, tw
@@ -544,3 +556,130 @@ def test_side_drops_answers_are_bounded():
     a = chan(1, "a")
     asyncio.run(svc._read_side_drops([a]))
     assert len(svc._side_drops) == idle_mod.SIDE_DROPS_KEPT and a.broadcast_id in svc._side_drops
+
+
+# --- a channel reload with two slots: side mode pauses, and drop channels leave room for the listed ones ---
+
+
+@pytest.mark.parametrize("state", sorted(idle_mod.SIDE_PAUSE_STATES, key=str))
+def test_side_mode_may_not_run_while_drop_mining_reloads_its_channels(state):
+    svc, tw = side_service([chan(1, "a")])
+    assert svc.side_allowed()
+    tw._state = state
+    assert not svc.side_allowed()
+
+
+@pytest.mark.parametrize("slots, listed, room", [(1, 20, MAX_CHANNELS), (2, 0, MAX_CHANNELS - 1), (2, 20, 157)])
+def test_drop_channel_room_leaves_the_listed_channels_and_event_topics_room(slots, listed, room):
+    svc, tw = side_service([])
+    tw.settings.watch_slots, tw.settings.idle_channels = slots, [f"l{i}" for i in range(listed)]
+    assert svc.drop_channel_room() == room
+    if slots == 2:
+        # stream topics of drop and listed channels plus every event topic fit the pool
+        used = BASE_TOPICS + TOPICS_PER_CHANNEL * (room + listed) + PointsEvents.most_topics(listed)
+        assert used <= MAX_WEBSOCKETS * WS_TOPICS_LIMIT
+
+
+LISTED = 20
+
+
+def listed_user(login):
+    cid = 500 + int(login[1:])
+    return {"data": {"user": {
+        "id": str(cid), "login": login, "displayName": login.upper(),
+        "stream": {"id": str(cid * 10), "viewersCount": 5},
+        "broadcastSettings": {"game": {"id": "509658", "name": "Just Chatting"}, "title": "t"},
+    }}}
+
+
+@pytest.mark.asyncio
+async def test_a_channel_reload_with_two_slots_keeps_the_topic_limit_and_the_side_watch(tmp_path, monkeypatch, caplog):
+    """198 directory channels, 20 listed channels with every event topic, the real WebsocketPool."""
+    monkeypatch.setattr(Channel, "send_watch", AsyncMock(return_value=True))
+    client, _watched = _reloading_miner(tmp_path, monkeypatch, discovered=[], stream_status=[])
+    logins = [f"l{i}" for i in range(LISTED)]
+    for key, value in {**POINTS_OPTIONS, "predictions_enabled": True, "claim_moments": True,
+                       "follow_raids": True, "idle_channels": logins, "share_watch_streaks": False,
+                       "watch_slots": 2}.items():
+        setattr(client.settings, key, value)
+    client.logged_in_user_id = lambda: 42
+    client.websocket = WebsocketPool(client)
+    client.websocket.start = AsyncMock()  # no connections; the pool still counts every topic
+    client._channel_service.filter_banned_channels = AsyncMock(
+        side_effect=lambda channels, retained_channels=(): list(channels),
+    )
+    client.get_live_streams = AsyncMock(side_effect=lambda game, **kw: [
+        _channel(client, 1000 + i) for i in range(MAX_CHANNELS)
+    ])
+    sides_during_reload = []
+    fetch = client.get_live_streams.side_effect
+
+    def directory(game, **kw):
+        sides_during_reload.append(client.idle_watch.active)
+        return fetch(game, **kw)
+
+    client.get_live_streams.side_effect = directory
+
+    async def gql(ops):
+        if isinstance(ops, list):
+            # GetStreamInfo lookups of listed logins; batched points reads get an empty reply
+            return [listed_user(op["variables"]["channel"]) if "channel" in op["variables"] else {"data": {}}
+                    for op in ops]
+        variables = ops.get("variables") or {}
+        if "channelID" in variables and "query" not in ops:
+            return {"data": {"channel": {"viewerDropCampaigns": []}}}
+        if variables.get("channel") == "channel1":
+            return OFFLINE
+        return {"data": {}}
+
+    client.gql_request = AsyncMock(side_effect=gql)
+    selected = asyncio.Event()
+
+    def watch(channel, *, update_status=True):
+        client._watch_service.watch(channel, update_status=update_status)
+        selected.set()
+
+    client.watch = watch
+
+    def topics():
+        return sum(len(ws.topics) for ws in client.websocket.websockets)
+
+    def event_topics():
+        return [t for ws in client.websocket.websockets for t in ws.topics if "predictions" in t or "moments" in t]
+
+    # side mode next to drop mining, before the hourly reload
+    client._state = State.CHANNEL_SWITCH
+    client.idle_watch.enter(side=True)
+    for _ in range(100):
+        await asyncio.sleep(0.01)
+        if client.idle_watch.side_channel is not None and event_topics():
+            break
+    assert client.idle_watch.side_channel is not None
+    assert len(event_topics()) == 1 + 2 * LISTED
+    # the reload: side mode pauses with its event topics gone
+    client.change_state(State.GAMES_UPDATE)
+    assert not client.idle_watch.active and client.idle_watch.side_channel is None and not event_topics()
+    client.change_state(State.CHANNELS_CLEANUP)
+    run = asyncio.create_task(client._run())
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        await asyncio.wait_for(selected.wait(), 2)
+        for _ in range(100):
+            await asyncio.sleep(0.01)
+            if client.idle_watch.side_channel is not None and len(event_topics()) == 1 + 2 * LISTED:
+                break
+    try:
+        assert sides_during_reload == [False]
+        assert not run.done()  # no MinerException ended the client
+        drops = [c for c in client.channels.values() if c.login not in logins]
+        assert len(drops) == client.idle_watch.drop_channel_room() == 157
+        assert {c.login for c in client.channels.values()} >= set(logins)
+        side = client.idle_watch.side_channel
+        assert side is not None and side.login in logins
+        assert topics() <= MAX_WEBSOCKETS * WS_TOPICS_LIMIT
+        assert "topic" not in caplog.text.lower() and "skipped" not in caplog.text
+    finally:
+        client.close()
+        await asyncio.gather(run, return_exceptions=True)
+        client.idle_watch.stop()  # close() ended side mode already
+        if client._watching_task is not None:
+            client._watching_task.cancel()

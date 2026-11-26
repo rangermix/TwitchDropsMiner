@@ -70,6 +70,12 @@ class PointsEvents:
                 topics.append(WebsocketTopic("Channel", "Raid", channel.id, self.process_raid))
         return topics
 
+    @staticmethod
+    def most_topics(listed: int) -> int:
+        """The most topics _wanted() asks for with this many listed channels: every option on, all live."""
+        # predictions-user, per channel predictions-channel and moments, one raid
+        return 1 + 2 * listed + 1
+
     def _room(self) -> int:
         """Free topic slots, less the stream topics of listed logins not tracked yet."""
         tw = self._twitch
