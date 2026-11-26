@@ -150,6 +150,10 @@
             "skipped_drops": "已跳过 {count} 个",
             "ignored_keyword_reason": "因关键词而忽略：{keyword}",
             "ignored_precondition_reason": "因依赖 {drop} 而忽略",
+            "ignored_campaign_reason": "已忽略，因为你忽略了此活动",
+            "ignore_campaign": "忽略活动",
+            "unignore_campaign": "挖掘此活动",
+            "ignore_campaign_error": "无法更新已忽略的活动。请重试。",
             "skipped_branch_reason": "已跳过，因为没有可挖取的奖励依赖此掉落。",
             "reward_grants": "已获得次数: {count}",
             "filters": {

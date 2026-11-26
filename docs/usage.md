@@ -202,6 +202,16 @@ ignored and skipped rewards from claimed rewards.
 These rules control what TDM intentionally targets. Twitch may still award simultaneous
 progress to an ignored reward while another reward advances.
 
+## Ignore a single campaign
+
+Each active or upcoming campaign in **Inventory** has an **Ignore campaign** button
+(not yet in a released version). TDM then stops mining that campaign's unclaimed
+drops, even if its game is in your **Mining list**; other campaigns of the same game
+are still mined. Rewards you already earned are still claimed. Its drops show as
+ignored, and **Mine this campaign** on the same card undoes it. The choice is saved
+in `settings.json`; the 500 most recent choices are kept. While mining is paused or
+outside mining hours, the drops' ignored status updates when mining resumes.
+
 ## Drop history
 
 The **History** tab records successful claims made by the miner in

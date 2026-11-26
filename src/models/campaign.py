@@ -55,7 +55,7 @@ class DropsCampaign:
             for drop_data in data["timeBasedDrops"]
         }
         self._drop_ignore_cache_key: (
-            tuple[tuple[str, ...], tuple[tuple[str, bool], ...]] | None
+            tuple[tuple[str, ...], tuple[tuple[str, bool], ...], bool] | None
         ) = None
         self._drop_ignore_cache: DropIgnoreEvaluation | None = None
 
@@ -80,6 +80,12 @@ class DropsCampaign:
         """Return drops that can be earned by watching a stream."""
         return tuple(drop for drop in self.drops if drop.is_watch_drop)
 
+    @property
+    def ignored(self) -> bool:
+        """Whether the user chose not to mine this campaign (Inventory "Ignore campaign")."""
+        ignored_ids = getattr(self._twitch.settings, "ignored_campaigns", None)
+        return isinstance(ignored_ids, list) and self.id in ignored_ids
+
     def _drop_ignore_evaluation(self) -> DropIgnoreEvaluation:
         """Return a policy result cached against keywords and claim state."""
         keywords = tuple(
@@ -88,10 +94,11 @@ class DropsCampaign:
             )
         )
         claimed_state = tuple((drop.id, drop.is_claimed) for drop in self.drops)
-        cache_key = (keywords, claimed_state)
+        ignored = self.ignored
+        cache_key = (keywords, claimed_state, ignored)
         if cache_key != self._drop_ignore_cache_key or self._drop_ignore_cache is None:
             policy = DropIgnorePolicy(keywords)
-            self._drop_ignore_cache = policy.evaluate(tuple(self.drops))
+            self._drop_ignore_cache = policy.evaluate(tuple(self.drops), campaign_ignored=ignored)
             self._drop_ignore_cache_key = cache_key
         return self._drop_ignore_cache
 

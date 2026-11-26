@@ -545,6 +545,16 @@ lang/                # Translation JSON files (20 languages)
   failed saves, disabling, all shared claim paths, and transport failures without sending
   real Telegram messages. Keep Telegram UI result strings in every locale.
 
+`ignored_campaigns` (default `[]`, `IgnoredCampaigns` validates at most 500 IDs matching
+`[A-Za-z0-9_-]{1,100}`) holds campaigns chosen with Inventory's **Ignore campaign**.
+`POST /api/campaigns/ignore` (`{campaign_id, ignored}`, strict types, fixed error codes)
+adds/removes one ID through `SettingsManager.set_campaign_ignored()`, so concurrent
+toggles cannot overwrite each other; generic settings saves do not carry the list. A
+full list drops its oldest IDs to make room (expired campaigns are never pruned).
+`DropIgnorePolicy.evaluate(campaign_ignored=True)` gives every unclaimed drop the
+`campaign` reason, so all mining guards apply while earned rewards still claim.
+Coverage: `tests/test_ignore_campaign.py`.
+
 Drop-name ignore policy is dependency-aware: a matching unclaimed drop and its dependent
 branches are ignored dynamically. Prerequisite-only branches with no mineable reward are
 skipped, while shared prerequisites required by an allowed reward remain mineable. Ignored

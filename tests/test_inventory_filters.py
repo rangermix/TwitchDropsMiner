@@ -60,6 +60,7 @@ class TestInventoryDropUpdates(unittest.IsolatedAsyncioTestCase):
             starts_at=starts_at,
             ends_at=ends_at,
             linked=True,
+            ignored=False,
             active=True,
             upcoming=False,
             expired=False,

@@ -150,6 +150,10 @@
             "skipped_drops": "{count} overgeslagen",
             "ignored_keyword_reason": "Genegeerd vanwege trefwoord: {keyword}",
             "ignored_precondition_reason": "Genegeerd omdat deze drop afhankelijk is van {drop}",
+            "ignored_campaign_reason": "Genegeerd omdat je deze campagne negeert",
+            "ignore_campaign": "Campagne negeren",
+            "unignore_campaign": "Deze campagne minen",
+            "ignore_campaign_error": "De genegeerde campagne kon niet worden bijgewerkt. Probeer het opnieuw.",
             "skipped_branch_reason": "Overgeslagen omdat geen enkele te verdienen beloning van deze drop afhankelijk is.",
             "reward_grants": "Aantal keer verdiend: {count}",
             "filters": {

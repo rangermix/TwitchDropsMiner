@@ -241,6 +241,10 @@ class GUIInventory(TypedDict):
     skipped_drops: str
     ignored_keyword_reason: str
     ignored_precondition_reason: str
+    ignored_campaign_reason: str
+    ignore_campaign: str
+    unignore_campaign: str
+    ignore_campaign_error: str
     skipped_branch_reason: str
     reward_grants: str
     filters: GUIInvFilters

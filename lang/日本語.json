@@ -150,6 +150,10 @@
             "skipped_drops": "{count}件をスキップ",
             "ignored_keyword_reason": "キーワードにより無視: {keyword}",
             "ignored_precondition_reason": "{drop} に依存するため無視",
+            "ignored_campaign_reason": "このキャンペーンを無視しているため無視されます",
+            "ignore_campaign": "キャンペーンを無視",
+            "unignore_campaign": "このキャンペーンをマイニング",
+            "ignore_campaign_error": "無視するキャンペーンを更新できませんでした。もう一度お試しください。",
             "skipped_branch_reason": "マイニング可能な報酬がこのドロップに依存していないためスキップ。",
             "reward_grants": "獲得回数: {count}",
             "filters": {

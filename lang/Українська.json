@@ -150,6 +150,10 @@
             "skipped_drops": "{count} пропущено",
             "ignored_keyword_reason": "Ігнорується через ключове слово: {keyword}",
             "ignored_precondition_reason": "Ігнорується, оскільки залежить від {drop}",
+            "ignored_campaign_reason": "Пропущено, бо ви ігноруєте цю кампанію",
+            "ignore_campaign": "Ігнорувати кампанію",
+            "unignore_campaign": "Майнити цю кампанію",
+            "ignore_campaign_error": "Не вдалося оновити ігноровану кампанію. Спробуйте ще раз.",
             "skipped_branch_reason": "Пропущено, оскільки від цього дропу не залежить жодна доступна для майнінгу нагорода.",
             "reward_grants": "Отримано разів: {count}",
             "filters": {

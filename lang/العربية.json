@@ -150,6 +150,10 @@
             "skipped_drops": "تم تخطي {count}",
             "ignored_keyword_reason": "تم التجاهل بسبب الكلمة المفتاحية: {keyword}",
             "ignored_precondition_reason": "تم التجاهل لأنه يعتمد على {drop}",
+            "ignored_campaign_reason": "تم التجاهل لأنك تجاهلت هذه الحملة",
+            "ignore_campaign": "تجاهل الحملة",
+            "unignore_campaign": "تعدين هذه الحملة",
+            "ignore_campaign_error": "تعذّر تحديث الحملة المتجاهلة. حاول مرة أخرى.",
             "skipped_branch_reason": "تم التخطي لأنه لا تعتمد أي مكافأة قابلة للتعدين على هذا الدروب.",
             "reward_grants": "عدد مرات الحصول: {count}",
             "filters": {

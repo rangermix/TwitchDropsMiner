@@ -150,6 +150,10 @@
             "skipped_drops": "{count} ignorados na mineração",
             "ignored_keyword_reason": "Ignorado pela palavra-chave: {keyword}",
             "ignored_precondition_reason": "Ignorado porque depende de {drop}",
+            "ignored_campaign_reason": "Ignorado porque você ignorou esta campanha",
+            "ignore_campaign": "Ignorar campanha",
+            "unignore_campaign": "Minerar esta campanha",
+            "ignore_campaign_error": "Não foi possível atualizar a campanha ignorada. Tente novamente.",
             "skipped_branch_reason": "Ignorado na mineração porque nenhuma recompensa minerável depende deste drop.",
             "reward_grants": "Vezes obtido: {count}",
             "filters": {

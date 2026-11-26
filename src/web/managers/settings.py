@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from src.config.reward_priority import RewardPriority
 from src.config.settings import (
+    IgnoredCampaigns,
     InventoryFilterSettings,
     MiningHoursSettings,
     NotificationEventSettings,
@@ -182,6 +183,9 @@ class SettingsManager:
         prefer_followed = settings_data.get("prefer_followed_channels")
         if prefer_followed is not None and not isinstance(prefer_followed, bool):
             raise ValueError("invalid_prefer_followed_channels")
+        ignored_campaigns = settings_data.get("ignored_campaigns")
+        if ignored_campaigns is not None:
+            ignored_campaigns = IgnoredCampaigns.normalize(ignored_campaigns)
         language = settings_data.get("language")
         if language is not None and language not in _.get_languages():
             raise ValueError("invalid_language")
@@ -210,6 +214,9 @@ class SettingsManager:
         )
         should_trigger_update |= self.check_and_update_setting(
             "drop_name_blacklist", drop_name_blacklist, True
+        )
+        should_trigger_update |= self.check_and_update_setting(
+            "ignored_campaigns", ignored_campaigns, True
         )
         should_trigger_update |= self.check_and_update_setting(
             "dark_mode", settings_data.get("dark_mode")
@@ -306,6 +313,16 @@ class SettingsManager:
             self._on_change()
 
         return response_settings
+
+    def set_campaign_ignored(self, campaign_id: str, ignored: bool) -> dict[str, Any]:
+        """Add or remove one campaign ID atomically on the server; raise ValueError if invalid."""
+        if not IgnoredCampaigns.valid_id(campaign_id):
+            raise ValueError("invalid_campaign_id")
+        current = [entry for entry in self._settings.ignored_campaigns if entry != campaign_id]
+        if ignored:
+            # Campaigns are never removed when they expire; make room by dropping the oldest.
+            current = [*current[len(current) - IgnoredCampaigns.MAX_ENTRIES + 1:], campaign_id]
+        return self.update_settings({"ignored_campaigns": current})
 
     def _normalize_inventory_filters(self, updates: dict[str, Any]) -> dict[str, Any]:
         """Merge partial filter updates and discard legacy or unknown keys."""

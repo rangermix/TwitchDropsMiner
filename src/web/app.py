@@ -14,7 +14,7 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, StrictBool, field_validator
+from pydantic import BaseModel, StrictBool, StrictStr, field_validator
 
 from src.config.paths import DATA_DIR
 from src.config.reward_priority import RewardPriority
@@ -116,6 +116,11 @@ class SettingsUpdate(BaseModel):
     @classmethod
     def validate_link_status(cls, value: dict | None) -> dict | None:
         return InventoryFilterSettings.validate_update(value) if value is not None else None
+
+
+class IgnoreCampaignRequest(BaseModel):
+    campaign_id: StrictStr
+    ignored: StrictBool
 
 
 class WantedOrderRequest(BaseModel):
@@ -521,6 +526,22 @@ async def update_paused(request: PauseRequest):
 
     twitch_client.set_paused(request.paused, request.duration)
     return {"success": True, **twitch_client.pause_info()}
+
+
+@app.post("/api/campaigns/ignore")
+async def ignore_campaign(request: IgnoreCampaignRequest):
+    """Stop or resume mining one campaign; other campaigns of its game are unaffected."""
+    if not gui_manager:
+        raise HTTPException(status_code=503, detail="GUI manager not initialized")
+    try:
+        updated_settings = gui_manager.settings.set_campaign_ignored(
+            request.campaign_id, request.ignored
+        )
+    except ValueError:
+        raise HTTPException(status_code=422, detail="invalid_campaign") from None
+    except Exception:
+        raise HTTPException(status_code=500, detail="settings_save_failed") from None
+    return {"success": True, "ignored_campaigns": updated_settings["ignored_campaigns"]}
 
 
 @app.post("/api/wanted-order")

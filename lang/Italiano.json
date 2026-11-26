@@ -150,6 +150,10 @@
             "skipped_drops": "{count} saltati",
             "ignored_keyword_reason": "Ignorato per la parola chiave: {keyword}",
             "ignored_precondition_reason": "Ignorato perché dipende da {drop}",
+            "ignored_campaign_reason": "Ignorato perché hai ignorato questa campagna",
+            "ignore_campaign": "Ignora campagna",
+            "unignore_campaign": "Mina questa campagna",
+            "ignore_campaign_error": "Impossibile aggiornare la campagna ignorata. Riprova.",
             "skipped_branch_reason": "Saltato perché nessuna ricompensa ottenibile dipende da questo drop.",
             "reward_grants": "Volte ottenuto: {count}",
             "filters": {
