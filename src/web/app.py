@@ -133,7 +133,8 @@ class SettingsUpdate(BaseModel):
     @field_validator(*PointsSettings.KEYS)
     @classmethod
     def validate_points_option(cls, value: object, info: ValidationInfo) -> object:
-        return PointsSettings.normalize(info.field_name, value) if value is not None else None
+        # field validators always run with a field name
+        return PointsSettings.normalize(str(info.field_name), value) if value is not None else None
 
     @field_validator("mining_hours")
     @classmethod
