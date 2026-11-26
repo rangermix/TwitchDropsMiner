@@ -1238,3 +1238,13 @@ async def test_a_placed_bets_result_is_recorded_and_a_foreign_one_is_not():
     entry = svc.history.channels[1]
     assert entry["bets"] == {"won": 1, "lost": 0, "refunded": 0, "points_won": 120}
     assert entry["gains"]["bet"] == 120
+
+
+@pytest.mark.asyncio
+async def test_a_balance_read_of_an_unlisted_channel_records_no_sample():
+    svc, tw, a, b = setup()
+    z = tw.channels[9]
+    reply = {"data": {"community": {"channel": {"id": "9", "self": {"communityPoints": {"balance": 77, "availableClaim": None}}}}}}
+    await svc.apply_points(z, reply)
+    await svc.apply_points(b, {"data": {"community": {"channel": {"id": "2", "self": {"communityPoints": {"balance": 55, "availableClaim": None}}}}}})
+    assert list(svc.history.channels) == [2] and svc.history.channels[2]["samples"][-1][1] == 55

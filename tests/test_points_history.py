@@ -22,7 +22,10 @@ def test_samples_append_skip_unchanged_and_replace_within_five_minutes():
     h, clock = make()
     h.sample(1, "a", 100)
     h.sample(1, "a", 100)  # unchanged
+    clock["wall"] += 1000
+    h.sample(1, "a", 100)  # unchanged, long after: still no new sample
     assert h.channels[1]["samples"] == [[1000, 100]]
+    clock["wall"] -= 1000
     clock["wall"] += 299
     h.sample(1, "a", 150)  # replaces
     assert h.channels[1]["samples"] == [[1299, 150]]
