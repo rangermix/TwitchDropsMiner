@@ -1537,8 +1537,10 @@ live in `gui.points`, translated in every locale.
   and appended up to `MAX_CHANNELS`; the list is saved through
   `SettingsManager.update_settings()`, so validation, the broadcast and
   `on_idle_channels_change` run. The reply is `{"success": true, "added", "already_listed",
-  "over_limit"}`. Never log a follow login, not even at DEBUG; log the three counts only.
-  Tests: `tests/test_follow_import.py`.
+  "over_limit"}`; past 20 pages `over_limit` counts only the pages read. Never log a follow
+  login, not even at DEBUG; log the three counts only. The hash and variables have only run
+  against mocks (an anonymous probe returns `user` null, so the hash is known). Tests:
+  `tests/test_follow_import.py`.
 - Streak share: `shareViewerMilestone` posts a visible notice in the streamer's chat
   under the user's name, so it is sent with `single_attempt`, and its key (milestone
   id, count as one int) is used up and saved before sending; when that save fails the

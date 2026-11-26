@@ -267,8 +267,10 @@ A listed channel that a drop can use goes to drop mining instead.
 idle watching also runs while a drop is mined. TDM then watches one listed channel next
 to the drop channel, on a second watch of its own. It uses only listed channels that
 drops cannot use and whose current stream lists no drops campaign at all, earnable or
-not (TDM asks Twitch once per stream; while that check has no answer, or failed, the
-channel is not used). Drop mining keeps its channel, and the second watch is designed
+not (TDM asks Twitch when the stream starts and again every 15 minutes, so a campaign
+that starts mid-stream can go unnoticed for up to 15 minutes; while the first check has
+no answer, or failed, the channel is not used, and a failed check is retried after 2
+minutes). Drop mining keeps its channel, and the second watch is designed
 not to take drop progress (the drops checks above); this has not run live. While drop
 mining reloads its channel list (hourly), the second watch pauses and continues after
 it; with 2 slots TDM tracks fewer drop channels, so the listed channels and their
@@ -332,7 +334,10 @@ Twitch credits points and drops for two watches at a time is unknown.
   at most 20 pages of 100 follows and needs a logged-in account. The line next to the
   button says how many were added, how many were already listed and how many did not fit
   the limit of 20. If Twitch cannot be read, nothing changes. TDM does not log the follow
-  list, only these three counts. The request is `POST /api/points/import-follows`.
+  list, only these three counts. The request is `POST /api/points/import-follows`. The
+  import has not run against live Twitch yet. With 2 channels watched at a time, listed
+  channels added while the tracked channel list is full get room at the next channel
+  reload (at most an hour).
 - A listed channel may stream a game with drops that is not in your Mining list. Twitch
   can then credit progress on those drops while TDM idle watches the channel, and TDM
   claims a finished drop as it does every claimable drop in the inventory.
@@ -372,8 +377,9 @@ Twitch credits points and drops for two watches at a time is unknown.
   `data/points_history.json`, for one account (logging in as another account starts it
   empty) and bounded: at most 288 balance samples per channel and 20 channels, and a
   channel removed from the list is dropped at the next save. If that file cannot be read
-  or has an unexpected shape, TDM logs one warning, keeps recording in memory for the
-  current run and does not overwrite it: fix the file or delete it, then restart. TDM
+  or its overall shape is unexpected, TDM logs one warning, keeps recording in memory for
+  the current run and does not overwrite it: fix the file or delete it, then restart. A
+  single damaged channel entry is skipped with a warning and left out at the next save. TDM
   saves the history at most once a minute, and also when idle watching stops and when
   it closes.
 - **Share watch streaks while idle watching** (off by default) shares a watch streak
