@@ -273,6 +273,7 @@
                 "help": "S’applique à Discord et Telegram, dès que l’un d’eux est configuré ci-dessous.",
                 "drop_claimed": "Drops récupérés",
                 "new_release": "Nouvelles versions de TwitchDropsMiner (vérifié toutes les 6 heures)",
+                "mining_problems": "Problèmes : connexion Twitch requise depuis 30 minutes ou aucun visionnage réussi depuis 15 minutes (et lorsqu'ils sont résolus)",
                 "campaign_ending": "Campagnes souhaitées avec des drops non réclamés se terminant dans les 24 heures",
                 "save_error": "Impossible d’enregistrer les choix de notification. Veuillez réessayer."
             },

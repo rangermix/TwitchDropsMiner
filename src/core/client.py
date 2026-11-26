@@ -40,6 +40,7 @@ from src.models.reward_campaign import RewardCampaign
 from src.services.campaign_alert_service import CampaignEndingAlerts
 from src.services.channel_service import ChannelService
 from src.services.game_order import TemporaryGameOrder
+from src.services.health_monitor import HealthMonitor
 from src.services.inventory_service import REWARD_ERRORS, InventoryService
 from src.services.maintenance import MaintenanceService
 from src.services.message_handlers import MessageHandlerService
@@ -539,6 +540,7 @@ class Twitch:
         self.session_controller.start()
         # Account-independent, so authentication changes leave it running.
         release_task = asyncio.create_task(ReleaseService(self).run())
+        health_task = asyncio.create_task(HealthMonitor(self).run())
         try:
             while self._state is not State.EXIT:
                 await self._resume_mining.wait()
@@ -559,7 +561,8 @@ class Twitch:
                     raise RequestException(_.t["login"]["unexpected_content"]) from exc
         finally:
             release_task.cancel()
-            await asyncio.gather(release_task, return_exceptions=True)
+            health_task.cancel()
+            await asyncio.gather(release_task, health_task, return_exceptions=True)
             await self._stop_mining_schedule()
             self._channel_service.clear_bans()
             self.diagnostics.stop_logs()

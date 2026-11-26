@@ -45,6 +45,11 @@ class _AuthState:
         self.client_version: str
         self.browser_active = False
 
+    @property
+    def logged_in(self) -> bool:
+        """Whether a validated Twitch identity is active (False while waiting for login)."""
+        return self._logged_in.is_set()
+
     def _hasattrs(self, *attrs: str) -> bool:
         """Check if all specified attributes exist."""
         return all(hasattr(self, attr) for attr in attrs)

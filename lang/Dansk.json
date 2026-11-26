@@ -273,6 +273,7 @@
                 "help": "Gælder for Discord og Telegram, når en af dem er sat op nedenfor.",
                 "drop_claimed": "Indløste drops",
                 "new_release": "Nye TwitchDropsMiner-versioner (tjekkes hver 6. time)",
+                "mining_problems": "Problemer: Twitch-login krævet i 30 minutter eller ingen vellykket visning i 15 minutter (og når de er løst)",
                 "campaign_ending": "Ønskede kampagner med uindløste drops, der slutter inden for 24 timer",
                 "save_error": "Kunne ikke gemme notifikationsvalg. Prøv igen."
             },

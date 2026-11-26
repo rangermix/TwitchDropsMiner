@@ -116,6 +116,13 @@ class TelegramNotifier:
         )
         return await self._send_message(message)
 
+    async def notify_health(self, message: str, *, resolved: bool) -> bool:
+        """Send a fixed miner health message (a problem, or its recovery)."""
+        if not self.enabled:
+            return False
+        icon = "✅" if resolved else "⚠️"
+        return await self._send_message(f"{icon} {html.escape(message)}")
+
     async def notify_new_release(self, version: str, url: str) -> bool:
         """Send notification when a newer application version is published."""
         if not self.enabled:

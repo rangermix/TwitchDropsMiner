@@ -1440,6 +1440,8 @@ function renderNotificationEvents() {
     if (release && !release.disabled) release.checked = events?.new_release === true;
     const ending = document.getElementById('notify-campaign_ending');
     if (ending && !ending.disabled) ending.checked = events?.campaign_ending === true;
+    const problems = document.getElementById('notify-mining_problems');
+    if (problems && !problems.disabled) problems.checked = events?.mining_problems === true;
 }
 
 function reconcileMiningOptIns(settings, authoritative, changedFields) {
@@ -3035,7 +3037,8 @@ function applyTranslations(t) {
             const labels = {
                 'settings-notification-events-header': 'header', 'settings-notification-events-help': 'help',
                 'settings-notify-drop-claimed-label': 'drop_claimed', 'settings-notify-new-release-label': 'new_release',
-                'settings-notify-campaign-ending-label': 'campaign_ending'
+                'settings-notify-campaign-ending-label': 'campaign_ending',
+                'settings-notify-mining-problems-label': 'mining_problems'
             };
             for (const [id, key] of Object.entries(labels)) {
                 const element = document.getElementById(id);

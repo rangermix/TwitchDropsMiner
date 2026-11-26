@@ -273,6 +273,7 @@
                 "help": "在下方设置 Discord 或 Telegram 后生效。",
                 "drop_claimed": "已领取的掉宝",
                 "new_release": "TwitchDropsMiner 新版本(每 6 小时检查一次)",
+                "mining_problems": "问题：需要登录 Twitch 已达 30 分钟，或 15 分钟内没有成功观看（以及问题解决时）",
                 "campaign_ending": "24 小时内结束且仍有未领取掉宝的目标活动",
                 "save_error": "无法保存通知选项,请重试。"
             },

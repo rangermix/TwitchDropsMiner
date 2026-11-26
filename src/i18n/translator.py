@@ -275,6 +275,7 @@ class GUINotificationEventSettings(TypedDict):
     drop_claimed: str
     new_release: str
     campaign_ending: str
+    mining_problems: str
     save_error: str
 
 

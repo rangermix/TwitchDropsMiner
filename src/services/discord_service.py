@@ -157,6 +157,18 @@ class DiscordNotifier:
         }
         return await self._send_embed(embed)
 
+    async def notify_health(self, message: str, *, resolved: bool) -> bool:
+        """Send a fixed miner health message (a problem, or its recovery)."""
+        if not self.enabled:
+            return False
+        embed = {
+            "title": "✅ TwitchDropsMiner recovered" if resolved else "⚠️ TwitchDropsMiner problem",
+            "description": message,  # _send_embed escapes it
+            "color": 0x2ECC71 if resolved else 0xE67E22,
+            "footer": {"text": "TwitchDropsMiner Bot"},
+        }
+        return await self._send_embed(embed)
+
     async def notify_new_release(self, version: str, url: str) -> bool:
         """Send an embed notification when a newer application version is published."""
         if not self.enabled:

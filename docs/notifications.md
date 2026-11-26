@@ -25,6 +25,11 @@ Event choices are available in v2.6.0 and later.
   campaigns are remembered in `data/campaign_alerts.json` so a restart does not repeat
   them. A campaign counts as alerted once any configured provider accepts the alert; if
   every provider fails, TDM retries at the next reload.
+- **Problems** is off by default and is not yet in a released version. During mining
+  hours (and outside a dashboard pause), TDM sends one alert when it has needed a new
+  Twitch login for 30 minutes, or when a channel is selected but no watch request has
+  succeeded for 15 minutes, and one more message when the problem clears. A failed
+  alert is retried every minute while the problem lasts.
 
 Each checkbox saves immediately. A failed save restores the previous choice.
 

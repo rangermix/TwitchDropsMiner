@@ -67,6 +67,7 @@ default_settings = {
         "drop_claimed": True,
         "new_release": False,
         "campaign_ending": False,
+        "mining_problems": False,
     },
     "notification_events_revision": 0,
     "proxy": "",
