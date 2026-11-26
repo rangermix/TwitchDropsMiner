@@ -253,7 +253,7 @@ class MessageHandlerService:
 
         if drop is not None and drop.can_earn(self._twitch.watching_channel.get_with_default(None)):
             # the received payload is for the drop we expected
-            drop.update_minutes(message["data"]["current_progress_min"])
+            drop.report_twitch_minutes(message["data"]["current_progress_min"])
 
     @task_wrapper
     async def process_notifications(self, user_id: int, message: JsonType) -> None:

@@ -101,12 +101,14 @@ async def test_replacement_drains_old_authenticated_work_before_resuming(tmp_pat
     old_run, old_watch, old_maintenance = client._run_task, client._watching_task, client._mnt_task
     client._auth_state.user_id = 17
     client._auth_state.access_token = "old-token"
+    client.claimed_drop_ids.add("old-account-drop")
     async with client.authentication_change():
         assert old_run.done() and old_watch.done() and old_maintenance.done()
         assert calls == 1
         assert not client._resume_mining.is_set()
     await asyncio.wait_for(resumed.wait(), 1)
     assert not hasattr(client._auth_state, "user_id")
+    assert client.claimed_drop_ids == set()
     client.websocket.stop.assert_awaited_with(clear_topics=True)
     client._inventory_service.clear_cached_state.assert_called_once()
     client._state = State.EXIT

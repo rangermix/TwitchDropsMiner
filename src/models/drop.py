@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
+from contextlib import suppress
 from datetime import datetime, timedelta, timezone
+from time import monotonic
 from typing import TYPE_CHECKING
 
 from dateutil.parser import isoparse
@@ -25,6 +28,8 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("TwitchDrops")
+# Seconds to wait for Twitch's own claim event before building a claim ID ourselves.
+CLAIM_EVENT_GRACE = 60
 DIMS_PATTERN = re.compile(r"-\d+x\d+(?=\.(?:jpg|png|gif)$)", re.I)
 
 
@@ -70,6 +75,14 @@ class BaseDrop:
         ):
             self.is_claimed = True
         self.precondition_drops: list[str] = [d["id"] for d in (data["preconditionDrops"] or [])]
+        if not self.quiet_claim and self.id in (getattr(self._twitch, "claimed_drop_ids", None) or ()):
+            # Claimed earlier this run; a reload right after the claim can still list it unclaimed.
+            self.is_claimed = True
+        # Subscription-gated drops cannot be earned by watching alone.
+        required_subs = data.get("requiredSubs")
+        self.required_subs: int = (
+            required_subs if isinstance(required_subs, int) and not isinstance(required_subs, bool) else 0
+        )
 
     def __repr__(self) -> str:
         if self.is_claimed:
@@ -190,8 +203,34 @@ class BaseDrop:
     quiet_claim: bool = False
     single_attempt_claim: bool = False
 
+    @property
+    def completion_reported(self) -> bool:
+        """Whether Twitch reported, during this run, that this unclaimed drop is complete."""
+        return False
+
+    @property
+    def claim_id_overdue(self) -> bool:
+        """Whether to build the claim ID because the websocket claim event never came."""
+        return False
+
+    def _claimed_this_run(self) -> set[str] | None:
+        # A daily reward repeats under one drop ID, so only one-time drops are tracked.
+        return None if self.quiet_claim else getattr(self._twitch, "claimed_drop_ids", None)
+
+    @property
+    def claimed_this_run(self) -> bool:
+        """Whether this account already claimed (and announced) this drop during this run."""
+        claimed_ids = self._claimed_this_run()
+        return claimed_ids is not None and self.id in claimed_ids
+
     async def claim(self) -> bool:
+        if self.claimed_this_run:
+            # A reload right after a claim can still list it as unclaimed.
+            self.is_claimed = True
+            return True
         result = await self._claim()
+        if result and (claimed_ids := self._claimed_this_run()) is not None:
+            claimed_ids.add(self.id)
         if result and not self.is_claimed:
             self.is_claimed = True
             self.campaign.progress_revision += 1
@@ -295,6 +334,8 @@ class TimedDrop(BaseDrop):
         self.required_minutes: int = data["requiredMinutesWatched"]
         self.extra_current_minutes: int = 0
         self._claim_completion_observed = self.real_current_minutes >= self.required_minutes
+        # Monotonic time Twitch reported full watch time live (report_twitch_minutes).
+        self._completion_reported_at: float | None = None
         if self.is_claimed:
             # claimed drops may report inconsistent current minutes, so we need to overwrite them
             self.real_current_minutes = self.required_minutes
@@ -319,7 +360,49 @@ class TimedDrop(BaseDrop):
     @property
     def is_watch_drop(self) -> bool:
         """Return whether this drop can be earned by watching a stream."""
-        return self.required_minutes > 0
+        return self.required_minutes > 0 and self.required_subs <= 0
+
+    @property
+    def completion_reported(self) -> bool:
+        # Sitewide reward drops follow their own claim and progress flow (RewardCampaign).
+        return (
+            not self.is_claimed and not self.quiet_claim
+            and self.is_watch_drop and self._completion_reported_at is not None
+        )
+
+    @property
+    def claim_id_overdue(self) -> bool:
+        return (
+            self.completion_reported
+            and self.claim_id is None
+            and self.preconditions_met
+            and self._completion_reported_at is not None
+            and monotonic() - self._completion_reported_at >= CLAIM_EVENT_GRACE
+        )
+
+    def report_twitch_minutes(self, minutes: int) -> None:
+        """Record a Twitch-reported reading for this specific drop.
+
+        Full watch time stops further earning and queues a claim, even if the
+        websocket claim event never arrives. Campaign-wide minute updates are
+        estimates for sibling drops and must not call this.
+        """
+        self.update_minutes(minutes)
+        if (
+            minutes < self.required_minutes or self.is_claimed or self.quiet_claim
+            or not self.is_watch_drop or self.completion_reported
+        ):
+            return
+        self._claim_completion_observed = True
+        self._completion_reported_at = monotonic()
+        self.campaign.progress_revision += 1
+        # The claim event normally follows within seconds. Re-check after a grace period,
+        # when GAMES_UPDATE builds the claim ID only if that event never arrived.
+        with suppress(RuntimeError):  # no running loop (synchronous callers)
+            asyncio.get_running_loop().call_later(
+                CLAIM_EVENT_GRACE, self._twitch.request_games_update
+            )
+        self._on_state_changed()
 
     @property
     def awaiting_account_link(self) -> bool:
@@ -384,6 +467,8 @@ class TimedDrop(BaseDrop):
             super()._base_earn_conditions()
             and self.is_watch_drop
             and not self.awaiting_account_link
+            # Twitch reported full watch time: more watching cannot progress it.
+            and not self.completion_reported
             # NOTE: This may be a bad idea, as it invalidates the can_earn status
             # and provides no way to recover from this state until the next reload.
             and self.extra_current_minutes < MAX_EXTRA_MINUTES
@@ -424,7 +509,7 @@ class TimedDrop(BaseDrop):
         return False
 
     async def claim(self) -> bool:
-        was_claimed = self.is_claimed
+        was_claimed = self.is_claimed or self.claimed_this_run
         result = await super().claim()
         if result:
             self.real_current_minutes = self.required_minutes

@@ -270,7 +270,7 @@ class WatchService:
                         # Do not turn the discarded response into an estimated minute.
                         continue
                     if gql_drop is not None and gql_drop.can_earn(channel):
-                        gql_drop.update_minutes(drop_data["currentMinutesWatched"])
+                        gql_drop.report_twitch_minutes(drop_data["currentMinutesWatched"])
                         drop_text: str = (
                             f"{gql_drop.name} ({gql_drop.campaign.game}, "
                             f"{gql_drop.current_minutes}/{gql_drop.required_minutes})"

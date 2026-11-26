@@ -78,15 +78,15 @@ async def test_playlist_polling_preserves_minute_progress_cadence(
     if not watch_succeeded or not current_stream:
         assert not progress_checks
         assert not bumps
-        drop.update_minutes.assert_not_called()
+        drop.report_twitch_minutes.assert_not_called()
         return
     assert progress_checks == [20, 80]
     assert all(b - a >= 59 for a, b in zip(progress_checks, progress_checks[1:], strict=False))
     assert len(progress_checks) <= 3
     if current_session:
         assert not bumps
-        assert drop.update_minutes.call_count == 2
-        drop.update_minutes.assert_called_with(1)
+        assert drop.report_twitch_minutes.call_count == 2
+        drop.report_twitch_minutes.assert_called_with(1)
     else:
         assert bumps == progress_checks
 

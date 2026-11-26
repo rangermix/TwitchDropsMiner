@@ -454,7 +454,8 @@ lang/                # Translation JSON files (20 languages)
   claim. A claim-ready websocket event preserves the claim ID and updates completion
   without triggering post-claim polling, history or notifications. A later linked
   inventory can claim the reward within the existing automatic-claim window.
-- Zero-minute subscription rewards are omitted from Inventory and Wanted Drops Queue;
+- Subscription rewards (zero minutes, or Twitch `requiredSubs > 0`) are not watch drops:
+  they are never mined, counted or shown in Inventory and Wanted Drops Queue;
   individually expired and non-mineable rewards are omitted from the queue without hiding
   upcoming or sequential rewards; successful claims refresh the queue immediately; the
   actively watched channel remains visible while game settings are changing
@@ -938,6 +939,18 @@ progress to an ignored drop while the miner intentionally targets another reward
   Inventory shows Twitch's `grantCount` as "Times earned" (`reward_grants`; no total is available).
   Regression coverage: `tests/test_reward_campaigns.py`, `tests/test_reward_channel_choice.py`
   and `tests/test_reward_grants_frontend.py`.
+
+- `TimedDrop.report_twitch_minutes()` takes per-drop Twitch readings (CurrentDrop for
+  that drop ID, User.Drops progress). Full watch time marks `completion_reported` (the
+  drop stops being earnable) and schedules a games update after `CLAIM_EVENT_GRACE`.
+  `Twitch._claim_ready_drops()` (GAMES_UPDATE) builds the claim ID with
+  `generate_claim()` only when that live completion is older than the grace period, the
+  claim ID is still missing and prerequisites are met. Inventory readings at full time,
+  sibling deltas and estimated minutes never build claim IDs; reward drops are excluded.
+  `Twitch.claimed_drop_ids` remembers one-time drops claimed this run: a reload that
+  still lists one builds it as claimed, so it is neither mined, shown as wanted, claimed,
+  recorded nor announced again. It is cleared on account replacement. Coverage:
+  `tests/test_drop_claim_correctness.py`.
 
 ### GraphQL Operations
 

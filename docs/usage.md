@@ -142,8 +142,9 @@ Not Linked select their respective states. This display filter does not change m
 eligibility or the account-link override. Fully claimed campaigns stay hidden until **Finished** is selected.
 Use the benefit filters and game search to narrow the display further.
 
-Zero-minute subscription rewards are omitted from Inventory and the Wanted Drops
-Queue because they cannot be earned by watching. The queue also omits individually
+Subscription rewards (zero-minute ones, and those that need a subscription as well as
+watch time) are omitted from Inventory and the Wanted Drops Queue because they cannot be
+earned by watching. The queue also omits individually
 expired rewards and rewards the miner cannot target. Upcoming and sequential rewards
 can remain visible, so a queued reward is not necessarily earnable immediately.
 Successful claims refresh the queue. In v2.5.0, each queued reward shows available artwork

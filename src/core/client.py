@@ -94,6 +94,9 @@ class Twitch:
         self.game_order = TemporaryGameOrder()
         self.inventory: list[DropsCampaign] = []
         self._drops: dict[str, TimedDrop] = {}
+        # Drop IDs claimed by this account during this run; an inventory reload can still
+        # list them unclaimed, and they must not be claimed or announced again.
+        self.claimed_drop_ids: set[str] = set()
         self._campaigns: dict[str, DropsCampaign] = {}
         self._mnt_triggers: deque[datetime] = deque()
         # Client type and auth
@@ -235,6 +238,7 @@ class Twitch:
         finally:
             self._auth_state.clear()
             self._channel_service.clear_bans()
+            self.claimed_drop_ids.clear()
             self.diagnostics.clear()
             self._inventory_service.clear_cached_state()
             self._inventory_loaded = False
@@ -640,11 +644,7 @@ class Twitch:
                 # claim drops from expired and active campaigns
                 logger.info("Checking for claimable drops")
                 logger.debug("Campaigns in inventory: %s", self.inventory)
-                for campaign in self.inventory:
-                    if not campaign.upcoming:
-                        for drop in campaign.drops:
-                            if drop.can_claim:
-                                await drop.claim()
+                await self._claim_ready_drops()
                 # figure out which games we want based on selected priorities
                 self.wanted_games.clear()
                 games_to_watch: list[str] = self.settings.games_to_watch
@@ -977,6 +977,18 @@ class Twitch:
             self._activate_pending_inventory_refresh()
             self._activate_pending_games_update()
             await self._state_change.wait()
+
+    async def _claim_ready_drops(self) -> None:
+        """Claim every claimable drop of started campaigns (GAMES_UPDATE)."""
+        for campaign in self.inventory:
+            if not campaign.upcoming:
+                for drop in campaign.drops:
+                    if drop.claim_id_overdue:
+                        # Twitch reported full watch time live, but its claim event
+                        # never arrived: build the claim ID it would have carried.
+                        await drop.generate_claim()
+                    if drop.can_claim:
+                        await drop.claim()
 
     def can_watch(self, channel: Channel) -> bool:
         """Delegate to WatchService."""
