@@ -26,6 +26,7 @@ from src.websocket.pool import WebsocketPool
 from tests.test_idle_points import POINTS_OPTIONS
 from tests.test_idle_watch import client_stub, fake, loop_service, run_service
 from tests.test_playlist_watch import _make_channel, _playlist, _Transport
+from tests.test_session_lifecycle import miner
 from tests.test_watched_channel_recovery import OFFLINE, _channel, _reloading_miner
 
 
@@ -773,3 +774,36 @@ def test_side_watch_checks_compare_the_drop_and_side_channels_by_id():
     tw.idle_watch = SimpleNamespace(side_channel=other)
     tw.watching_channel = SimpleNamespace(get_with_default=lambda d: None)
     assert not channel._watch_current(stream, side=True)
+
+
+# --- an auth change drains the side watcher too ---
+
+
+@pytest.mark.asyncio
+async def test_an_auth_change_drains_the_side_watcher_before_it_completes(tmp_path, monkeypatch):
+    client = miner(tmp_path, monkeypatch)
+    client.websocket.stop = AsyncMock()
+    svc = client.idle_watch
+    a = chan(1, "a")
+    watching, cleaned = asyncio.Event(), asyncio.Event()
+
+    async def send_watch(*, side=False):
+        watching.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            await asyncio.sleep(0)
+            cleaned.set()
+
+    a.send_watch = AsyncMock(side_effect=send_watch)
+    client.is_mining_time = lambda: True
+    svc.side_candidate = lambda channel: True
+    svc._side_start(a)
+    await watching.wait()
+    side = svc._side_task
+    async with client.authentication_change():
+        assert side.done() and cleaned.is_set()
+        calls = a.send_watch.await_count
+        await asyncio.sleep(0.02)
+        assert a.send_watch.await_count == calls
+    assert svc._side_task is None and svc.side_channel is None

@@ -225,11 +225,11 @@ class Twitch:
         self._changing_auth = True
         self._resume_mining.clear()
         try:
-            # The idle loop is its own task, not a child of _run: drain it with the others.
+            # The idle loop and its side watcher are their own tasks, not children of _run: drain them too.
             self._idle_watch_allowed = False
-            idle_task = self.idle_watch.stop()
+            idle_tasks = self.idle_watch.stop_all()
             tasks = [task for task in (self._run_task, self._schedule_task, self._watching_task, self._mnt_task,
-                                       idle_task)
+                                       *idle_tasks)
                      if task is not None and task is not asyncio.current_task()]
             for task in tasks:
                 task.cancel()

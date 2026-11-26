@@ -294,6 +294,11 @@ class IdleWatchService:
         self._end_events()
         return task
 
+    def stop_all(self) -> list[asyncio.Task[None]]:
+        """stop(), returning the loop task and the side watcher task, so a caller can await both."""
+        side = self._side_task
+        return [task for task in (self.stop(), side) if task is not None]
+
     def _side_start(self, channel: Channel, *, quiet: bool = False) -> None:
         """Watch channel in the second slot; the previous side watch ends first."""
         self._side_stop()
