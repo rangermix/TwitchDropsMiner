@@ -466,8 +466,9 @@ Twitch credits points and drops for two watches at a time is unknown.
   channel gets a ban status check and, when live, a drops check (repeated on each later
   stream check of that channel). A listed channel counts as a drop channel only when that
   check shows a campaign your account can earn; a failed check counts as no drops. The
-  hourly channel reload usually drops the idle channels (an idle channel streaming a wanted game stays tracked), so the stream lookup
-  and the channel points read run again after it.
+  hourly channel reload usually drops the idle channels (an idle channel streaming a
+  wanted game stays tracked), so the stream lookup and the channel points read run
+  again after it.
 - TDM tracks at most 198 channels, drop and idle channels together, because the channel
   points topic takes one websocket slot, also with an empty idle list. Idle channels
   over that limit are skipped with a warning and retried the next time idle watching
