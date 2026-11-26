@@ -1372,8 +1372,8 @@ function renderInventory() {
         if (campaign.active || campaign.upcoming || campaign.ignored === true) {
             const ignored = campaign.ignored === true;
             const ignore = makeElement('button', {
-                type: 'button', class: 'inventory-ignore-campaign',
-                id: `inventory-ignore-${encodeURIComponent(campaign.id)}`, 'aria-pressed': String(ignored),
+                type: 'button', class: `inventory-ignore-campaign${ignored ? ' ignored' : ''}`,
+                id: `inventory-ignore-${encodeURIComponent(campaign.id)}`,
             }, ignored ? (t.gui?.inventory?.unignore_campaign || 'Mine this campaign')
                 : (t.gui?.inventory?.ignore_campaign || 'Ignore campaign'));
             ignore.disabled = state.ignoringCampaigns?.has(campaign.id) === true;

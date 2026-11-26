@@ -858,7 +858,7 @@ header h1 {
     cursor: pointer; line-height: 1.4;
 }
 .inventory-ignore-campaign:hover { background: var(--bg-secondary); }
-.inventory-ignore-campaign[aria-pressed="true"] { border-color: var(--accent-color); color: var(--accent-color); }
+.inventory-ignore-campaign.ignored { border-color: var(--accent-color); color: var(--accent-color); }
 .inventory-ignore-campaign:disabled { opacity: .6; cursor: wait; }
 .campaign-content { border-top: 1px solid var(--border-color); }
 .campaign-content .campaign-info { padding: 12px 16px 0; background: transparent; }

@@ -319,9 +319,10 @@ class SettingsManager:
         if not IgnoredCampaigns.valid_id(campaign_id):
             raise ValueError("invalid_campaign_id")
         current = [entry for entry in self._settings.ignored_campaigns if entry != campaign_id]
-        return self.update_settings(
-            {"ignored_campaigns": [*current, campaign_id] if ignored else current}
-        )
+        if ignored:
+            # Campaigns are never removed when they expire; make room by dropping the oldest.
+            current = [*current[len(current) - IgnoredCampaigns.MAX_ENTRIES + 1:], campaign_id]
+        return self.update_settings({"ignored_campaigns": current})
 
     def _normalize_inventory_filters(self, updates: dict[str, Any]) -> dict[str, Any]:
         """Merge partial filter updates and discard legacy or unknown keys."""

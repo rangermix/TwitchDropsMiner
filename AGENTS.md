@@ -549,7 +549,8 @@ lang/                # Translation JSON files (20 languages)
 `[A-Za-z0-9_-]{1,100}`) holds campaigns chosen with Inventory's **Ignore campaign**.
 `POST /api/campaigns/ignore` (`{campaign_id, ignored}`, strict types, fixed error codes)
 adds/removes one ID through `SettingsManager.set_campaign_ignored()`, so concurrent
-toggles cannot overwrite each other; generic settings saves do not carry the list.
+toggles cannot overwrite each other; generic settings saves do not carry the list. A
+full list drops its oldest IDs to make room (expired campaigns are never pruned).
 `DropIgnorePolicy.evaluate(campaign_ignored=True)` gives every unclaimed drop the
 `campaign` reason, so all mining guards apply while earned rewards still claim.
 Coverage: `tests/test_ignore_campaign.py`.

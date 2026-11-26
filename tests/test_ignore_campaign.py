@@ -100,6 +100,15 @@ async def test_set_campaign_ignored_adds_and_removes_one_id():
     assert changed.call_count == 2, "each real change refreshes mining selection"
 
 
+@pytest.mark.asyncio
+async def test_a_full_list_drops_the_oldest_ids():
+    full = [f"old{i}" for i in range(IgnoredCampaigns.MAX_ENTRIES)]
+    manager, stored, _ = _manager(*full)
+    result = manager.set_campaign_ignored("new", True)["ignored_campaigns"]
+    assert len(result) == IgnoredCampaigns.MAX_ENTRIES
+    assert result[0] == "old1" and result[-1] == "new"
+
+
 def test_set_campaign_ignored_rejects_an_invalid_id_before_saving():
     manager, stored, _ = _manager()
     with pytest.raises(ValueError):
