@@ -56,7 +56,8 @@ socket_app = AuthMiddleware(socketio.ASGIApp(sio, app), web_auth)
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(request, exc):
-    if request.url.path.startswith(("/api/auth/", "/api/diagnostics", "/api/settings", "/api/wanted-order")):
+    if request.url.path.startswith(("/api/auth/", "/api/diagnostics", "/api/settings", "/api/wanted-order",
+                                     "/api/points/")):
         return JSONResponse({"detail": "invalid_request"}, status_code=422)
     return await request_validation_exception_handler(request, exc)
 
@@ -159,6 +160,10 @@ class WantedOrderRequest(BaseModel):
 class PauseRequest(BaseModel):
     paused: StrictBool
     duration: Literal["10m", "1h", "tomorrow"] | None = None
+
+
+class PointsPauseRequest(BaseModel):
+    paused: StrictBool
 
 
 class ProxyVerifyRequest(BaseModel):
@@ -552,6 +557,16 @@ async def update_paused(request: PauseRequest):
     return {"success": True, **twitch_client.pause_info()}
 
 
+@app.post("/api/points/pause")
+async def update_points_paused(request: PointsPauseRequest):
+    """Pause or resume idle watching and its channel points actions until resumed or restarted."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    twitch_client.idle_watch.set_points_paused(request.paused)
+    return {"success": True, "paused": twitch_client.idle_watch.points_paused}
+
+
 @app.post("/api/wanted-order")
 async def update_wanted_order(request: WantedOrderRequest):
     """Temporarily reorder queued games until restart; an empty list restores the default."""
@@ -601,6 +616,7 @@ async def connect(sid, environ):
                 "current_drop": gui_manager.progress.get_current_drop(),
                 "wanted_items": gui_manager.get_wanted_game_tree(),
                 "game_order": twitch_client.game_order.info(),
+                "points": gui_manager.points.get_initial(),
             },
             room=sid,
         )

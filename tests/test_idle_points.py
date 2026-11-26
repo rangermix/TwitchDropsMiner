@@ -10,6 +10,9 @@ from src.config import State
 from src.services.idle_watch import CLAIM_RETRIES, IdleWatchService, Visit
 
 
+POINTS_OPTIONS = {"idle_priority": "list", "idle_streak_first": True, "streak_recovery": True}
+
+
 def chan(cid=123, name="A"):
     return SimpleNamespace(id=cid, name=name, login=name.lower())
 
@@ -21,9 +24,9 @@ def setup(*, active=True, claim=True, watched=None, gql=None):
     watched = watched or chan()
     tw = SimpleNamespace(
         channels={watched.id: watched, 7: chan(7, "B")},
-        settings=SimpleNamespace(idle_channels=["a", "b"], claim_channel_points=claim),
+        settings=SimpleNamespace(**POINTS_OPTIONS, idle_channels=["a", "b"], claim_channel_points=claim),
         gql_request=gql or AsyncMock(return_value=CLAIM_OK),
-        gui=SimpleNamespace(status=MagicMock()),
+        gui=SimpleNamespace(points=MagicMock(), status=MagicMock()),
         watching_channel=SimpleNamespace(get_with_default=lambda d: watched),
         can_watch=MagicMock(return_value=False),
         is_mining_time=MagicMock(return_value=True),
@@ -55,14 +58,15 @@ def sent(tw):
 
 
 @pytest.mark.asyncio
-async def test_claim_only_for_idle_watched_channel():
+async def test_claim_on_the_watched_and_on_another_listed_channel():
     svc, tw, _ = setup()
     await svc.process_points(1, claim_msg(channel_id="7"))
-    assert sent(tw) == []
-    await svc.process_points(1, claim_msg())
-    [op] = sent(tw)
-    assert op["operationName"] == "ClaimCommunityPoints"
-    assert op["variables"] == {"input": {"claimID": "abc", "channelID": "123"}}
+    await svc.process_points(1, claim_msg(claim_id="def"))
+    assert [op["variables"] for op in sent(tw)] == [
+        {"input": {"claimID": "abc", "channelID": "7"}},
+        {"input": {"claimID": "def", "channelID": "123"}},
+    ]
+    assert all(op["operationName"] == "ClaimCommunityPoints" for op in sent(tw))
 
 
 @pytest.mark.asyncio
@@ -337,10 +341,10 @@ def tick_setup(gql, *live):
     current = {"live": list(live), "watching": None}
     tw = SimpleNamespace(
         channels={c.id: c for c in live},
-        settings=SimpleNamespace(idle_channels=[c.login for c in live], claim_channel_points=True,
+        settings=SimpleNamespace(**POINTS_OPTIONS, idle_channels=[c.login for c in live], claim_channel_points=True,
                                  share_watch_streaks=False),
         gql_request=gql,
-        gui=SimpleNamespace(status=MagicMock()),
+        gui=SimpleNamespace(points=MagicMock(), status=MagicMock()),
         watching_channel=SimpleNamespace(get_with_default=lambda d: current["watching"] or d),
         can_watch=MagicMock(return_value=False),
         is_mining_time=MagicMock(return_value=True),
@@ -352,6 +356,8 @@ def tick_setup(gql, *live):
     svc._task = MagicMock(done=lambda: False)
     svc.track = AsyncMock()
     svc.live_channels = lambda: current["live"]
+    # these tests cover the watched channel's reads; the batched read of all channels has its own tests
+    svc._reader = SimpleNamespace(read_due=AsyncMock())
     return svc, tw, current
 
 
@@ -502,7 +508,11 @@ async def test_a_leftover_channel_the_loop_did_not_pick_gets_no_claim_or_points(
     assert sent(tw) == []
     assert svc.balances == {}
     tw.gui.status.update.assert_not_called()
-    svc.watched = leftover  # once the loop picked it, it is idle watched
+    svc.watched = leftover  # even as the loop's pick, an unlisted channel gets no claim
+    await svc.process_points(1, claim_msg(channel_id="555"))
+    await svc.claim(leftover, "direct")
+    assert sent(tw) == []
+    tw.settings.idle_channels.append("x")  # once listed, it is idle watched
     await svc.process_points(1, claim_msg(channel_id="555"))
     assert [op["operationName"] for op in sent(tw)] == ["ClaimCommunityPoints"]
 

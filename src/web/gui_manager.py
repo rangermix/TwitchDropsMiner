@@ -15,6 +15,7 @@ from src.web.managers.channels import ChannelListManager
 from src.web.managers.console import ConsoleOutputManager
 from src.web.managers.inventory import InventoryManager
 from src.web.managers.login import LoginFormManager
+from src.web.managers.points import PointsManager
 from src.web.managers.settings import SettingsManager
 from src.web.managers.status import StatusManager, WebsocketStatusManager
 
@@ -49,6 +50,9 @@ class WebGUIManager:
         self.status = StatusManager(self._broadcaster)
         self.websockets = WebsocketStatusManager(self._broadcaster)
         self.output = ConsoleOutputManager(self._broadcaster)
+        # the service keeps its English INFO line for each points event, so this log does not echo it
+        self.points_log = ConsoleOutputManager(self._broadcaster, event="points_output", echo=False)
+        self.points = PointsManager(self._broadcaster, twitch, self.points_log)
         self.progress = CampaignProgressManager(self._broadcaster)
         self.channels = ChannelListManager(self._broadcaster, self)
         self.inv = InventoryManager(self._broadcaster, ImageCache(self))

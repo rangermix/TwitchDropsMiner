@@ -353,7 +353,9 @@ class Twitch:
         self._state_change.set()
 
     def idle_channels_changed(self) -> None:
-        """Re-run the IDLE step for an edited idle list; drop mining needs no games update."""
+        """Re-run the IDLE step for an edited idle option or the points pause; drop mining needs no games update."""
+        # the points tab lists the idle channels, also while drops are mined
+        self.gui.points.refresh()
         if self._state is State.IDLE:
             self._state_change.set()
             if self.idle_watch.active:
