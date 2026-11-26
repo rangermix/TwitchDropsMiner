@@ -20,7 +20,7 @@ from tests.test_imported_session import transport
 
 def miner(tmp_path, monkeypatch):
     monkeypatch.setattr("src.core.client.DATA_DIR", tmp_path)
-    client = Twitch(SimpleNamespace(proxy=""))
+    client = Twitch(SimpleNamespace(proxy="", watch_slots=1, idle_channels=[]))
     client.gui = MagicMock()
     client.gui.login.import_pending = AsyncMock()
     client.gui.login.stop_avatar = AsyncMock()

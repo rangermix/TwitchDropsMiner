@@ -106,6 +106,39 @@ GQL_OPERATIONS: dict[str, GQLOperation] = {
             },
         },
     ),
+    # idle watching: join a raid that starts on the idle-watched channel; sent once (single_attempt)
+    "JoinRaid": GQLOperation(
+        "JoinRaid",
+        "c6a332a86d1087fbbb1a8623aa01bd1313d2386e7c63be60fdb2d1901f01a4ae",
+        variables={
+            "input": {
+                "raidID": ...,  # raid id from the raid topic
+            },
+        },
+    ),
+    # idle watching: bet channel points on a prediction outcome; sent once (single_attempt)
+    "MakePrediction": GQLOperation(
+        "MakePrediction",
+        "b44682ecc88358817009f20e69d75081b1e58825bb40aa53d5dbadcc17c881d8",
+        variables={
+            "input": {
+                "eventID": ...,  # prediction event id
+                "outcomeID": ...,  # outcome id
+                "points": ...,  # int, Twitch takes 10..250000
+                "transactionID": ...,  # random hex, one per bet
+            },
+        },
+    ),
+    # idle watching: claim a community moment; the reply field is claimCommunityMoment; sent once (single_attempt)
+    "CommunityMomentCallout_Claim": GQLOperation(
+        "CommunityMomentCallout_Claim",
+        "e2d67415aead910f7f9ceb45a77b750a1e1d9622c936d832328a0689e054db62",
+        variables={
+            "input": {
+                "momentID": ...,  # moment id from the community moments topic
+            },
+        },
+    ),
     # can be used to claim a drop
     "ClaimDrop": GQLOperation(
         "DropsPage_ClaimDropRewards",
@@ -122,6 +155,17 @@ GQL_OPERATIONS: dict[str, GQLOperation] = {
         "374314de591e69925fce3ddc2bcf085796f56ebb8cad67a0daa3165c03adc345",
         variables={
             "channelLogin": ...,  # channel login
+        },
+    ),
+    # read only: the logins the account follows, oldest follow first, 100 per page; the answer is
+    # data.user.follows.{edges[].node.login, edges[].cursor, pageInfo.hasNextPage}
+    "ChannelFollows": GQLOperation(
+        "ChannelFollows",
+        "eecf815273d3d949e5cf0085cc5084cd8a1b5b7b6f7990cf43cb0beadf546907",
+        variables={
+            "limit": 100,
+            "order": "ASC",
+            "cursor": "",  # the last edge's cursor of the previous page
         },
     ),
     # returns all in-progress campaigns

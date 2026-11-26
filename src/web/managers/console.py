@@ -25,8 +25,14 @@ class ConsoleOutputManager:
     maintaining a rolling history of recent messages.
     """
 
-    def __init__(self, broadcaster: WebSocketBroadcaster, max_lines: int = 1000):
+    def __init__(
+        self, broadcaster: WebSocketBroadcaster, max_lines: int = 1000, *,
+        event: str = "console_output", echo: bool = True,
+    ):
+        """event names the socket event of each line; echo also writes each line to the logger."""
         self._broadcaster = broadcaster
+        self._event = event
+        self._echo = echo
         self._buffer: deque[str] = deque(maxlen=max_lines)
         self._last_collapsible_message: tuple[str, str] | None = None
 
@@ -52,8 +58,9 @@ class ConsoleOutputManager:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         line = f"[{timestamp}] | {message}"
         self._buffer.append(line)
-        asyncio.create_task(self._broadcaster.emit("console_output", {"message": line}))
-        logger.info(message)
+        asyncio.create_task(self._broadcaster.emit(self._event, {"message": line}))
+        if self._echo:
+            logger.info(message)
 
     def get_history(self) -> list[str]:
         """Get the current console history buffer.

@@ -10,9 +10,12 @@ from typing import TYPE_CHECKING, Any
 
 from src.config.reward_priority import RewardPriority
 from src.config.settings import (
+    ChannelOptionSettings,
+    IdleChannelSettings,
     InventoryFilterSettings,
     MiningHoursSettings,
     NotificationEventSettings,
+    PointsSettings,
     default_settings,
 )
 from src.i18n.translator import _
@@ -56,12 +59,14 @@ class SettingsManager:
         console: ConsoleOutputManager,
         on_change: Callable[[], None] | None = None,
         on_games_change: Callable[[], None] | None = None,
+        on_idle_channels_change: Callable[[], None] | None = None,
     ):
         self._broadcaster = broadcaster
         self._settings = settings
         self._console = console
         self._on_change = on_change
         self._on_games_change = on_games_change
+        self._on_idle_channels_change = on_idle_channels_change
         self._available_games: list[str] = []
         # Console lines and side effects of applied fields, run only after a successful save.
         self._pending_effects: list[Callable[[], None]] = []
@@ -182,6 +187,23 @@ class SettingsManager:
         prefer_followed = settings_data.get("prefer_followed_channels")
         if prefer_followed is not None and not isinstance(prefer_followed, bool):
             raise ValueError("invalid_prefer_followed_channels")
+        claim_points = settings_data.get("claim_channel_points")
+        if claim_points is not None and not isinstance(claim_points, bool):
+            raise ValueError("invalid_claim_channel_points")
+        share_streaks = settings_data.get("share_watch_streaks")
+        if share_streaks is not None and not isinstance(share_streaks, bool):
+            raise ValueError("invalid_share_watch_streaks")
+        idle_channels = settings_data.get("idle_channels")
+        if idle_channels is not None:
+            idle_channels = IdleChannelSettings.normalize(idle_channels)
+        idle_options = settings_data.get("idle_channel_options")
+        if idle_options is not None:
+            idle_options = ChannelOptionSettings.normalize(idle_options)
+        points_options = {
+            key: PointsSettings.normalize(key, settings_data[key])
+            for key in PointsSettings.KEYS
+            if settings_data.get(key) is not None
+        }
         language = settings_data.get("language")
         if language is not None and language not in _.get_languages():
             raise ValueError("invalid_language")
@@ -211,6 +233,36 @@ class SettingsManager:
         should_trigger_update |= self.check_and_update_setting(
             "drop_name_blacklist", drop_name_blacklist, True
         )
+        # Log the count only: the channel names stay out of the console. Drop mining does
+        # not use this list, so it re-runs the idle step instead of a games update.
+        self.check_and_update_setting(
+            "idle_channels", idle_channels, False,
+            lambda _names: self._on_idle_channels_change() if self._on_idle_channels_change else None,
+            log_formatter=lambda names: f"{len(names)} channels",
+        )
+        if idle_options is not None or idle_channels is not None:
+            # removing a channel from the list removes its options
+            self.check_and_update_setting(
+                "idle_channel_options",
+                ChannelOptionSettings.prune(
+                    self._settings.idle_channel_options if idle_options is None else idle_options,
+                    self._settings.idle_channels if idle_channels is None else idle_channels,
+                ),
+                False,
+                lambda _options: self._on_idle_channels_change() if self._on_idle_channels_change else None,
+                log_formatter=lambda options: f"{len(options)} channels",
+            )
+        slots_before = getattr(self._settings, "watch_slots", 1)
+        self.check_and_update_setting("claim_channel_points", claim_points)
+        self.check_and_update_setting("share_watch_streaks", share_streaks)
+        for key, value in points_options.items():
+            # idle watching reads them on its next step; drop mining does not use them
+            self.check_and_update_setting(
+                key, value, False,
+                lambda _value: self._on_idle_channels_change() if self._on_idle_channels_change else None,
+            )
+        # a full tracked channel list has no room for the second slot until CHANNELS_FETCH reserves it
+        should_trigger_update |= slots_before == 1 and getattr(self._settings, "watch_slots", 1) == 2
         should_trigger_update |= self.check_and_update_setting(
             "dark_mode", settings_data.get("dark_mode")
         )

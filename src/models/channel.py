@@ -38,6 +38,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("TwitchDrops")
 STREAM_CHECK_TIMEOUT = 10  # seconds
+# a failed GQL read or an unexpected reply shape; anything else is a bug and propagates
+READ_ERRORS = (MinerException, aiohttp.ClientError, TimeoutError, KeyError, TypeError, IndexError, ValueError)
+# the drops read of a verify_drops stream check leaves part of STREAM_CHECK_TIMEOUT to GetStreamInfo
+DROPS_READ_TIMEOUT = STREAM_CHECK_TIMEOUT / 2
 
 
 class Stream:
@@ -187,6 +191,7 @@ class Channel:
         "_spade_url",
         "_stream",
         "_verify_drops",
+        "drops_unverified",
         "_stream_revision",
         "_stream_check_id",
         "_applied_stream_check_id",
@@ -218,6 +223,8 @@ class Channel:
         self._spade_url: URLType | None = None
         self._stream: Stream | None = None
         self._verify_drops = verify_drops
+        # the last drops read of a verify_drops stream failed: viewcount events check again
+        self.drops_unverified = False
         self._stream_revision = 0
         self._stream_check_id = 0
         self._applied_stream_check_id = 0
@@ -378,6 +385,12 @@ class Channel:
         return None
 
     @property
+    def broadcast_id(self) -> int | None:
+        if self._stream is not None:
+            return self._stream.broadcast_id
+        return None
+
+    @property
     def viewers(self) -> int | None:
         if self._stream is not None:
             return self._stream.viewers
@@ -488,12 +501,32 @@ class Channel:
         if channel_data["stream"] is None:
             return None
         stream = Stream.from_get_stream(self, channel_data)
-        if self._verify_drops or not stream.drops_enabled:
+        if self._verify_drops:
+            try:
+                stream.drops_enabled = await asyncio.wait_for(
+                    self.fetch_drops_enabled(stream.game), timeout=DROPS_READ_TIMEOUT,
+                )
+                self.drops_unverified = False
+            except ExitRequest:
+                raise
+            except READ_ERRORS as exc:
+                # liveness and game still apply; the same broadcast keeps its last checked flag,
+                # a new one is without drops until a read succeeds (never the default True)
+                if not self.drops_unverified:  # once per failing streak, retried on viewcount events
+                    logger.warning(f"Drops check failed for channel {self.id}: {type(exc).__name__}")
+                self.drops_unverified = True
+                old = self._stream
+                stream.drops_enabled = old.drops_enabled if old is not None and old == stream else False
+        elif not stream.drops_enabled:
             stream.drops_enabled = await self.fetch_drops_enabled(stream.game)
         return stream
 
     async def fetch_drops_enabled(self, game: Game | None) -> bool:
         """Ask Twitch whether this channel offers a campaign the account can earn."""
+        return self._check_drops_enabled(await self.fetch_drop_campaigns(), game=game)
+
+    async def fetch_drop_campaigns(self) -> list[JsonType]:
+        """The drops campaigns Twitch lists on this channel now, earnable or not ([] for none)."""
         response = await self._twitch.gql_request(
             GQL_OPERATIONS["AvailableDrops"].with_variables({"channelID": str(self.id)})
         )
@@ -501,10 +534,10 @@ class Channel:
             raise MinerException("No reliable AvailableDrops response")
         campaigns = response["data"]["channel"]["viewerDropCampaigns"]
         if campaigns is None:
-            return False
+            return []
         if not isinstance(campaigns, list):
             raise MinerException("Invalid AvailableDrops campaign list")
-        return self._check_drops_enabled(campaigns, game=game)
+        return campaigns
 
     async def update_stream(self) -> bool:
         """
@@ -547,8 +580,7 @@ class Channel:
             stream = await asyncio.wait_for(self.get_stream(), timeout=STREAM_CHECK_TIMEOUT)
         except ExitRequest:
             raise
-        except (MinerException, aiohttp.ClientError, TimeoutError,
-                KeyError, TypeError, IndexError, ValueError) as exc:
+        except READ_ERRORS as exc:
             logger.warning(f"Stream check failed for channel {self.id}: {type(exc).__name__}")
             return (
                 self._stream_revision != check[0]
@@ -604,42 +636,50 @@ class Channel:
         """
         needs_display = self.cancel_online_check()
         old_stream = self._stream
+        self.drops_unverified = False  # a new stream starts a new failing streak
         self._set_stream(None)
         if old_stream is not None:
             self._twitch.on_channel_update(self, old_stream, None)
         elif needs_display:
             self.display()
 
-    def _watch_current(self, stream: Stream) -> bool:
+    def _watch_current(self, stream: Stream, *, side: bool = False) -> bool:
+        watching = self._twitch.watching_channel.get_with_default(None)
         return (
             not self.banned
             and self._twitch.is_mining_time()
             and self._stream is not None
             and self._stream.broadcast_id == stream.broadcast_id
-            and self._twitch.watching_channel.get_with_default(None) is self
+            # side: the second slot's watch (idle side mode), never on the drop channel
+            and (self._side_watched(watching) if side else watching is self)
         )
 
-    async def _send_watch_playlist(self) -> bool:
+    def _side_watched(self, watching: Channel | None) -> bool:
+        # by id: a reload re-creates channel objects, and side mode adopts the new one
+        side = self._twitch.idle_watch.side_channel
+        return (watching is None or watching.id != self.id) and side is not None and side.id == self.id
+
+    async def _send_watch_playlist(self, *, side: bool = False) -> bool:
         """HEAD every new media segment, without fetching audio or video bodies."""
         try:
             # HTTPClient retries network/5xx failures. Bound the entire poll as well
             # as individual requests so one missing segment cannot stall watching.
-            return await asyncio.wait_for(self._watch_playlist(), timeout=10)
+            return await asyncio.wait_for(self._watch_playlist(side=side), timeout=10)
         except ExitRequest:
             raise
         except (MinerException, aiohttp.ClientError, TimeoutError, ValueError):
             return False
 
-    async def _watch_playlist(self) -> bool:
+    async def _watch_playlist(self, *, side: bool = False) -> bool:
         stream = self._stream
-        if stream is None or not self._watch_current(stream):
+        if stream is None or not self._watch_current(stream, side=side):
             return False
         if self._watch_broadcast_id != stream.broadcast_id:
             self._watch_broadcast_id = stream.broadcast_id
             self._watched_segments.clear()
             self._last_spade_sent = None
         stream_url = await stream.get_stream_url()
-        if stream_url is None or not self._watch_current(stream):
+        if stream_url is None or not self._watch_current(stream, side=side):
             return False
         status, playlist = await asyncio.wait_for(
             self._watch_response("GET", stream_url), timeout=5
@@ -650,14 +690,14 @@ class Channel:
                 if self._stream is not None and self._stream == stream:
                     self._stream._stream_url = None
             return False
-        if not self._watch_current(stream):
+        if not self._watch_current(stream, side=side):
             return False
         segments = Stream.playlist_urls(playlist, URL(stream_url))
         if not segments:
             return False
         succeeded = True
         for url in segments:
-            if not self._watch_current(stream):
+            if not self._watch_current(stream, side=side):
                 return False
             key = str(url)
             if key in self._watched_segments:
@@ -666,7 +706,7 @@ class Channel:
                 status, _ = await asyncio.wait_for(
                     self._watch_response("HEAD", url), timeout=3
                 )
-                if not self._watch_current(stream):
+                if not self._watch_current(stream, side=side):
                     return False
                 if status == 200:
                     self._watched_segments[key] = None
@@ -689,12 +729,13 @@ class Channel:
         async with self._twitch.request(method, url, headers=headers) as response:
             return response.status, await response.text() if method == "GET" else ""
 
-    async def send_watch(self) -> bool:
+    async def send_watch(self, *, side: bool = False) -> bool:
+        """One watch poll; side is the second slot's watch of idle side mode, not the drop watch."""
         stream = self._stream
         if stream is None:
             return False
-        succeeded = await self._send_watch_playlist()
-        if not succeeded or not self._watch_current(stream):
+        succeeded = await self._send_watch_playlist(side=side)
+        if not succeeded or not self._watch_current(stream, side=side):
             return False
         now = monotonic()
         # Telemetry is auxiliary; its response does not establish Drop credit.
@@ -703,24 +744,24 @@ class Channel:
             or now - self._last_spade_sent >= WATCH_INTERVAL.total_seconds()
         ):
             self._last_spade_sent = now
-            await self._send_watch_spade()
-        return self._watch_current(stream)
+            await self._send_watch_spade(side=side)
+        return self._watch_current(stream, side=side)
 
-    async def _send_watch_spade(self) -> bool:
+    async def _send_watch_spade(self, *, side: bool = False) -> bool:
         try:
-            return await asyncio.wait_for(self._post_spade(), timeout=5)
+            return await asyncio.wait_for(self._post_spade(side=side), timeout=5)
         except ExitRequest:
             raise
         except (MinerException, aiohttp.ClientError, TimeoutError):
             return False
 
-    async def _post_spade(self) -> bool:
+    async def _post_spade(self, *, side: bool = False) -> bool:
         stream = self._stream
         if stream is None:
             return False
         if self._spade_url is None:
             self._spade_url = await self.get_spade_url()
-        if not self._watch_current(stream):
+        if not self._watch_current(stream, side=side):
             return False
         async with self._twitch.request(
             "POST", self._spade_url, data=stream._spade_payload
