@@ -62,7 +62,7 @@ async def test_login_alert_after_30_minutes_then_one_recovery(sent):
 async def test_stall_counts_from_selection_or_last_success(sent):
     twitch = _twitch()
     monitor = HealthMonitor(twitch)
-    channel = object()
+    channel = SimpleNamespace(id=1)
     twitch.watching_channel.set(channel)
     await monitor.check(100)  # selection time
     twitch._watch_service.last_watch_success = 100 + STALL - 60
@@ -79,9 +79,9 @@ async def test_stall_counts_from_selection_or_last_success(sent):
 async def test_switching_channels_restarts_the_stall_timer(sent):
     twitch = _twitch()
     monitor = HealthMonitor(twitch)
-    twitch.watching_channel.set(object())
+    twitch.watching_channel.set(SimpleNamespace(id=1))
     await monitor.check(0)
-    twitch.watching_channel.set(object())
+    twitch.watching_channel.set(SimpleNamespace(id=2))
     await monitor.check(STALL - 1)
     await monitor.check(2 * STALL - 2)
     assert sent.await_count == 0
@@ -91,7 +91,7 @@ async def test_switching_channels_restarts_the_stall_timer(sent):
 @pytest.mark.parametrize("kwargs", [{"mining": False}, {"enabled": False}])
 async def test_closed_hours_or_disabled_event_send_nothing(sent, kwargs):
     twitch = _twitch(logged_in=False, **kwargs)
-    twitch.watching_channel.set(object())
+    twitch.watching_channel.set(SimpleNamespace(id=1))
     monitor = HealthMonitor(twitch)
     await monitor.check(0)
     await monitor.check(10 * LOGIN)
@@ -119,6 +119,36 @@ async def test_closing_hours_neither_recovers_nor_counts_toward_an_alert(sent):
     twitch.is_mining_time = lambda: True
     await monitor.check(11 * LOGIN + 60)
     assert sent.await_count == 2
+
+
+def _stalled():
+    twitch = _twitch()
+    monitor = HealthMonitor(twitch)
+    twitch.watching_channel.set(SimpleNamespace(id=1))
+    return twitch, monitor
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("change", ["reloaded", "offline", "logged_out", "closed"])
+async def test_a_stall_never_reports_a_false_recovery(sent, change):
+    twitch, monitor = _stalled()
+    await monitor.check(0)
+    await monitor.check(STALL)
+    assert _calls(sent) == [(HealthMonitor.MESSAGES["stalled"][0], False)]
+    if change == "reloaded":  # CHANNELS_FETCH re-links a new object for the same channel
+        twitch.watching_channel.set(SimpleNamespace(id=1))
+    elif change == "offline":
+        twitch.watching_channel.clear()
+    elif change == "logged_out":
+        twitch._auth_state.logged_in = False
+    else:
+        twitch.is_mining_time = lambda: False
+        await monitor.check(STALL + 30)
+        twitch.is_mining_time = lambda: True
+    await monitor.check(STALL + 60)
+    assert all(not resolved for _, resolved in _calls(sent)), _calls(sent)
+    if change == "reloaded":
+        assert sent.await_count == 1, "still the same stall: no repeated alert"
 
 
 @pytest.mark.asyncio

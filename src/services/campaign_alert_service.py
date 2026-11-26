@@ -11,14 +11,15 @@ from typing import TYPE_CHECKING
 
 from dateutil.parser import isoparse
 
-from src.services.discord_service import DiscordNotifier
-from src.services.telegram_service import TelegramNotifier
+from src.services.notification_targets import NotificationTargets
 from src.utils import json_save
 
 
 if TYPE_CHECKING:
     from src.core.client import Twitch
     from src.models.campaign import DropsCampaign
+    from src.services.discord_service import DiscordNotifier
+    from src.services.telegram_service import TelegramNotifier
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -62,17 +63,7 @@ class CampaignEndingAlerts:
             logger.warning("Failed to save campaign alert history: %s", type(error).__name__)
 
     def _notifiers(self) -> list[TelegramNotifier | DiscordNotifier]:
-        settings = self._twitch.settings
-        if settings.notification_events.get("campaign_ending") is not True:
-            return []
-        diagnostics = getattr(self._twitch, "diagnostics", None)
-        notifiers: list[TelegramNotifier | DiscordNotifier] = [
-            TelegramNotifier(
-                settings.telegram_bot_token, settings.telegram_chat_id, diagnostics=diagnostics
-            ),
-            DiscordNotifier(settings.discord_webhook_url, diagnostics=diagnostics),
-        ]
-        return [notifier for notifier in notifiers if notifier.enabled]
+        return NotificationTargets.enabled(self._twitch, "campaign_ending")
 
     def due(self, now: datetime | None = None) -> list[DropsCampaign]:
         """Return wanted, still-mineable campaigns ending within the window and not yet alerted."""

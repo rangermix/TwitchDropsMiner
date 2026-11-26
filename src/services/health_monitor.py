@@ -8,12 +8,13 @@ from dataclasses import dataclass
 from time import monotonic
 from typing import TYPE_CHECKING
 
-from src.services.discord_service import DiscordNotifier
-from src.services.telegram_service import TelegramNotifier
+from src.services.notification_targets import NotificationTargets
 
 
 if TYPE_CHECKING:
     from src.core.client import Twitch
+    from src.services.discord_service import DiscordNotifier
+    from src.services.telegram_service import TelegramNotifier
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -40,8 +41,8 @@ class HealthMonitor:
     STALL_DELAY = 15 * 60
     MESSAGES = {
         "login": (
-            "TwitchDropsMiner needs a new Twitch login. Mining is stopped until you sign in "
-            "on the dashboard.",
+            "TwitchDropsMiner is not logged in to Twitch. Mining is stopped; check the "
+            "dashboard, you may need to sign in again.",
             "Twitch login restored. Mining continues.",
         ),
         "stalled": (
@@ -53,34 +54,36 @@ class HealthMonitor:
     def __init__(self, twitch: Twitch) -> None:
         self._twitch = twitch
         self._problems = {name: _Problem() for name in self.MESSAGES}
-        self._watched: object | None = None
+        # Tracked by ID: a channel reload replaces the object for the same channel.
+        self._watched_id: int | None = None
         self._watched_since = 0.0
 
     def _notifiers(self) -> list[TelegramNotifier | DiscordNotifier]:
-        settings = self._twitch.settings
-        if settings.notification_events.get("mining_problems") is not True:
-            return []
-        diagnostics = getattr(self._twitch, "diagnostics", None)
-        notifiers: list[TelegramNotifier | DiscordNotifier] = [
-            TelegramNotifier(
-                settings.telegram_bot_token, settings.telegram_chat_id, diagnostics=diagnostics
-            ),
-            DiscordNotifier(settings.discord_webhook_url, diagnostics=diagnostics),
-        ]
-        return [notifier for notifier in notifiers if notifier.enabled]
+        return NotificationTargets.enabled(self._twitch, "mining_problems")
 
     def _active(self, now: float) -> dict[str, bool]:
         """Return which problems are currently present."""
         twitch = self._twitch
         logged_in = twitch._auth_state.logged_in
         watched = twitch.watching_channel.get_with_default(None)
-        if watched is not self._watched:
-            self._watched, self._watched_since = watched, now
+        watched_id = watched.id if watched is not None else None
+        if watched_id != self._watched_id:
+            self._watched_id, self._watched_since = watched_id, now
         last_success = max(self._watched_since, twitch._watch_service.last_watch_success or 0.0)
         return {
             "login": not logged_in,
             "stalled": logged_in and watched is not None and now - last_success >= self.STALL_DELAY,
         }
+
+    def _recovered(self, name: str, problem: _Problem) -> bool:
+        """Whether a cleared problem really recovered (and was not just replaced)."""
+        if name == "login":
+            return True  # Only clears when logged in again.
+        last_success = self._twitch._watch_service.last_watch_success
+        return (
+            last_success is not None and problem.started is not None
+            and last_success > problem.started
+        )
 
     async def _send(self, name: str, resolved: bool) -> bool:
         notifiers = self._notifiers()
@@ -98,7 +101,7 @@ class HealthMonitor:
         now = monotonic() if now is None else now
         if not self._twitch.is_mining_time():
             # Closed hours or a pause: not a problem, and not a recovery either.
-            self._watched = None
+            self._watched_id = None
             for problem in self._problems.values():
                 if not problem.alerted:
                     problem.started = None
@@ -112,9 +115,10 @@ class HealthMonitor:
                 if not problem.alerted and now - problem.started >= delays[name]:
                     problem.alerted = await self._send(name, resolved=False)
             else:
-                if problem.alerted:
+                if problem.alerted and self._recovered(name, problem):
                     # A failed recovery message is not retried; the problem is gone.
                     await self._send(name, resolved=True)
+                # Other clears (channel gone, logged out, hours reopened) reset silently.
                 self._problems[name] = _Problem()
 
     async def run(self) -> None:
