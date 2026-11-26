@@ -150,8 +150,8 @@ class PointsHistory:
         return entry
 
     def sample(self, channel_id: int, login: str, balance: int) -> None:
-        """Record a balance; unchanged is skipped, one within 5 minutes of the last bucket's start updates its
-        balance and keeps its time (a steady stream of changes still gives one sample per bucket)."""
+        """Record a balance; unchanged is skipped, one in the same 5-minute slot as the last sample updates its
+        balance and keeps its time (a steady stream of changes still gives one sample per slot)."""
         samples = self.channels.get(channel_id, {}).get("samples", [])
         if samples and samples[-1][1] == balance:
             return
@@ -159,7 +159,7 @@ class PointsHistory:
         if entry is None:
             return
         samples, now = entry["samples"], int(self._now())
-        if samples and now - samples[-1][0] < SAMPLE_MERGE_SECONDS:
+        if samples and now // SAMPLE_MERGE_SECONDS == samples[-1][0] // SAMPLE_MERGE_SECONDS:
             samples[-1][1] = balance
         else:
             samples.append([now, balance])

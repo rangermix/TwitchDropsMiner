@@ -1483,9 +1483,9 @@ live in `gui.points`, translated in every locale.
   bad channel entries are skipped with a count). Bounds: 288 samples per channel, 20
   channels, channels not in `idle_channels` dropped at `save()`. A sample is added by
   `IdleWatchService.record_balance()` when a listed channel's balance changes (the
-  `points-earned` message and `apply_points()`): unchanged is skipped, one less than
-  5 minutes after the start of the last sample's bucket updates its balance and keeps its
-  time. Gains: each `points-earned` of a listed channel adds `total_points` to `watch`
+  `points-earned` message and `apply_points()`): unchanged is skipped, one in the
+  same 5-minute slot (`time // 300`) as the last sample updates its balance and keeps
+  its time, so there is one sample per slot. Gains: each `points-earned` of a listed channel adds `total_points` to `watch`
   (any reason containing WATCH), `bonus` (CLAIM), `raid`, `streak` (WATCH_STREAK) or
   `other`; a reason containing PREDICTION adds nothing (the result message counts it).
   `bet` and the bet counts come from `Predictions.process_result()` for bets TDM placed

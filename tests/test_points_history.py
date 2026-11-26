@@ -26,16 +26,16 @@ def test_samples_append_skip_unchanged_and_replace_within_five_minutes():
     h.sample(1, "a", 100)  # unchanged, long after: still no new sample
     assert h.channels[1]["samples"] == [[1000, 100]]
     clock["wall"] -= 1000
-    clock["wall"] += 299
-    h.sample(1, "a", 150)  # updates the bucket, keeps its time
+    clock["wall"] += 199  # 1199 is the last second of the slot 900..1199
+    h.sample(1, "a", 150)  # updates the sample, keeps its time
     assert h.channels[1]["samples"] == [[1000, 150]]
     clock["wall"] += 1
-    h.sample(1, "a", 160)  # 300 s after the bucket start: appends
-    assert h.channels[1]["samples"] == [[1000, 150], [1300, 160]]
+    h.sample(1, "a", 160)  # next slot: appends
+    assert h.channels[1]["samples"] == [[1000, 150], [1200, 160]]
 
 
-@pytest.mark.parametrize("gap", [60, 240, 299])
-def test_a_steady_stream_of_changes_gives_one_sample_per_bucket(gap):
+@pytest.mark.parametrize("gap", [60, 240, 299, 301])
+def test_a_steady_stream_of_changes_gives_one_sample_per_slot(gap):
     h, clock = make()
     start, balance = clock["wall"], 0
     while clock["wall"] - start < 4 * 3600:
@@ -43,20 +43,24 @@ def test_a_steady_stream_of_changes_gives_one_sample_per_bucket(gap):
         h.sample(1, "a", balance)
         clock["wall"] += gap
     samples = h.channels[1]["samples"]
-    times = [t for t, _ in samples]
-    per_bucket = -(-mod.SAMPLE_MERGE_SECONDS // gap) * gap  # the first change at least 300 s after the start
-    assert all(b - a == per_bucket for a, b in zip(times, times[1:]))
-    assert len(samples) == -(-4 * 3600 // per_bucket) and samples[-1][1] == balance
+    slots = [t // mod.SAMPLE_MERGE_SECONDS for t, _ in samples]
+    assert len(set(slots)) == len(slots) and slots == sorted(slots)
+    if gap < mod.SAMPLE_MERGE_SECONDS:  # no slot with changes is skipped
+        assert all(b - a == 1 for a, b in zip(slots, slots[1:]))
     assert len(samples) > 20
 
 
-def test_bucketed_samples_are_capped_at_288():
+@pytest.mark.parametrize("gap", [60, 240, 299])
+def test_bucketed_samples_are_capped_at_288(gap):
     h, clock = make()
-    for i in range(SAMPLES_KEPT * 5 + 7):
-        clock["wall"] += 60
+    n = SAMPLES_KEPT * 5 + 7
+    for i in range(n):
+        clock["wall"] += gap
         h.sample(1, "a", i + 1)
     samples = h.channels[1]["samples"]
-    assert len(samples) == SAMPLES_KEPT and samples[-1][1] == SAMPLES_KEPT * 5 + 7
+    slots = [t // mod.SAMPLE_MERGE_SECONDS for t, _ in samples]
+    assert len(samples) == SAMPLES_KEPT and len(set(slots)) == SAMPLES_KEPT
+    assert all(b - a == 1 for a, b in zip(slots, slots[1:]))
 
 
 def test_samples_are_capped_and_the_oldest_dropped():
