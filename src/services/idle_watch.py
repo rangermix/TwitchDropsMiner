@@ -32,7 +32,7 @@ from src.config import (
 from src.config.settings import ChannelOptionSettings
 from src.exceptions import ExitRequest, GQLException, MinerException
 from src.i18n import _
-from src.models.channel import Channel
+from src.models.channel import READ_ERRORS, STREAM_CHECK_TIMEOUT, Channel
 from src.services.chat_presence import ChatPresence
 from src.services.idle_points import PointsReader, WatchPriority
 from src.services.points_common import error_code
@@ -50,10 +50,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("TwitchDrops")
-# a failed AvailableDrops read of a new idle channel; anything else is a bug and propagates
-DROPS_READ_ERRORS = (
-    MinerException, aiohttp.ClientError, TimeoutError, KeyError, TypeError, IndexError, ValueError,
-)
 
 IDLE_VISIT_SECONDS = 420
 # Twitch counts a stream for the watch streak only when it starts at least 30 minutes after the
@@ -248,11 +244,14 @@ class IdleWatchService:
         if not todo:
             return
         with private_gql_discovery():
-            results = await asyncio.gather(*(c.fetch_drop_campaigns() for c, _b in todo), return_exceptions=True)
+            results = await asyncio.gather(
+                *(asyncio.wait_for(c.fetch_drop_campaigns(), timeout=STREAM_CHECK_TIMEOUT) for c, _b in todo),
+                return_exceptions=True,
+            )
         failed: str | None = None
         for (_c, broadcast), result in zip(todo, results, strict=True):
             if isinstance(result, BaseException):
-                if not isinstance(result, DROPS_READ_ERRORS) or isinstance(result, ExitRequest):
+                if not isinstance(result, READ_ERRORS) or isinstance(result, ExitRequest):
                     raise result
                 failed = failed or type(result).__name__
                 self._side_failed_at[broadcast] = now
@@ -1172,13 +1171,16 @@ class IdleWatchService:
         give side mode the same answer, so a new channel is not read a second time."""
         live = [c for c in channels if c._stream is not None]
         with private_gql_discovery():
-            results = await asyncio.gather(*(c.fetch_drop_campaigns() for c in live), return_exceptions=True)
+            results = await asyncio.gather(
+                *(asyncio.wait_for(c.fetch_drop_campaigns(), timeout=STREAM_CHECK_TIMEOUT) for c in live),
+                return_exceptions=True,
+            )
         failed: list[str] = []
         now = time.monotonic()
         for channel, result in zip(live, results, strict=True):
             enabled = False
             if isinstance(result, BaseException):
-                if not isinstance(result, DROPS_READ_ERRORS) or isinstance(result, ExitRequest):
+                if not isinstance(result, READ_ERRORS) or isinstance(result, ExitRequest):
                     raise result
                 failed.append(type(result).__name__)
             else:

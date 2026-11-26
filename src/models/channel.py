@@ -38,6 +38,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("TwitchDrops")
 STREAM_CHECK_TIMEOUT = 10  # seconds
+# a failed GQL read or an unexpected reply shape; anything else is a bug and propagates
+READ_ERRORS = (MinerException, aiohttp.ClientError, TimeoutError, KeyError, TypeError, IndexError, ValueError)
+# the drops read of a verify_drops stream check leaves the rest of the check time to GetStreamInfo
+DROPS_READ_TIMEOUT = STREAM_CHECK_TIMEOUT / 2
 
 
 class Stream:
@@ -494,7 +498,20 @@ class Channel:
         if channel_data["stream"] is None:
             return None
         stream = Stream.from_get_stream(self, channel_data)
-        if self._verify_drops or not stream.drops_enabled:
+        if self._verify_drops:
+            try:
+                stream.drops_enabled = await asyncio.wait_for(
+                    self.fetch_drops_enabled(stream.game), timeout=DROPS_READ_TIMEOUT,
+                )
+            except ExitRequest:
+                raise
+            except READ_ERRORS as exc:
+                # liveness and game still apply; the same broadcast keeps its last checked flag,
+                # a new one is without drops until a read succeeds (never the default True)
+                logger.warning(f"Drops check failed for channel {self.id}: {type(exc).__name__}")
+                old = self._stream
+                stream.drops_enabled = old.drops_enabled if old is not None and old == stream else False
+        elif not stream.drops_enabled:
             stream.drops_enabled = await self.fetch_drops_enabled(stream.game)
         return stream
 
@@ -557,8 +574,7 @@ class Channel:
             stream = await asyncio.wait_for(self.get_stream(), timeout=STREAM_CHECK_TIMEOUT)
         except ExitRequest:
             raise
-        except (MinerException, aiohttp.ClientError, TimeoutError,
-                KeyError, TypeError, IndexError, ValueError) as exc:
+        except READ_ERRORS as exc:
             logger.warning(f"Stream check failed for channel {self.id}: {type(exc).__name__}")
             return (
                 self._stream_revision != check[0]
