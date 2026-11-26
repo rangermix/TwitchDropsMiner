@@ -3231,6 +3231,18 @@ header h1 {
 .points-table .points-gain-time { display: block; color: var(--text-secondary); font-size: 12px; }
 .points-table .points-live { color: var(--success-color); }
 .points-table .points-offline { color: var(--text-secondary); }
+.points-history-select { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.points-history-select[hidden] { display: none; }
+.points-history-select select { max-width: 100%; box-sizing: border-box; }
+.points-history-chart { margin: 8px 0 12px; }
+.points-history-chart svg { display: block; width: 100%; height: auto; max-width: 640px; }
+.points-history-chart .history-axis { stroke: var(--border-color); stroke-width: 1; }
+.points-history-chart .history-line { fill: none; stroke: var(--accent-color); stroke-width: 2; stroke-linejoin: round; }
+.points-history-chart .history-dot { fill: var(--accent-color); }
+.points-history-chart text { fill: var(--text-secondary); font-size: 11px; }
+.points-history-table { max-width: 640px; }
+.points-history-table th:nth-child(n+2), .points-history-table td:nth-child(n+2) { text-align: right; }
+.points-history-table caption { text-align: left; color: var(--text-secondary); font-size: 12px; font-weight: 600; padding: 8px 10px 0; }
 .points-container .points-log { height: 240px; flex: none; contain: none; margin: 0; }
 .points-container .settings-section select,
 .points-container .settings-section input[type="number"] { max-width: 100%; box-sizing: border-box; }

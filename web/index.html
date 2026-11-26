@@ -303,6 +303,42 @@
                     </div>
                     <p id="points-empty" class="help-text" data-points-text="no_channels">No channels are listed. Add channels under Idle watching channels below.</p>
                 </section>
+                <section class="settings-section" id="points-history-section">
+                    <h2 data-points-text="history_header">History</h2>
+                    <label id="points-history-select" class="points-history-select">
+                        <span data-points-text="history_channel">Channel</span>
+                        <select id="points-history-channel"></select>
+                    </label>
+                    <p id="points-history-empty" class="help-text" data-points-text="history_empty">No balance history yet for the listed channels.</p>
+                    <div id="points-history-body" hidden>
+                        <div id="points-history-chart" class="points-history-chart"></div>
+                        <div class="points-table-wrap">
+                            <table class="points-table points-history-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" data-points-text="history_col_source">Source</th>
+                                        <th scope="col" data-points-text="history_col_points">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="points-history-gains"></tbody>
+                            </table>
+                        </div>
+                        <div class="points-table-wrap">
+                            <table class="points-table points-history-table">
+                                <caption data-points-text="history_bets">Bets</caption>
+                                <thead>
+                                    <tr>
+                                        <th scope="col" data-points-text="history_bet_won">Won</th>
+                                        <th scope="col" data-points-text="history_bet_lost">Lost</th>
+                                        <th scope="col" data-points-text="history_bet_refunded">Refunded</th>
+                                        <th scope="col" data-points-text="history_bet_points_won">Points won</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="points-history-bets"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
                 <section class="settings-section">
                     <h2 data-points-text="log_header">Channel points log</h2>
                     <div id="points-log" class="console-output points-log"></div>

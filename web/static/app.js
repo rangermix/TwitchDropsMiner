@@ -272,6 +272,10 @@ socket.on('points_update', (data) => {
     updatePointsState(data);
 });
 
+socket.on('points_history', (data) => {
+    updatePointsHistory(data);
+});
+
 socket.on('points_paused_update', (data) => {
     if (typeof data?.paused !== 'boolean') return;
     state.points = {...state.points, paused: data.paused};
@@ -2830,6 +2834,7 @@ function updatePointsState(data, withLog = false) {
         if (log) log.replaceChildren();
         data.log.forEach(line => appendLogLine('points-log', line));
     }
+    if (data.history) updatePointsHistory(data.history);
     renderPoints();
 }
 
@@ -2875,6 +2880,96 @@ function renderPoints() {
     }));
 }
 
+// Balance history of the listed channels: pointsHistory is {channel id: {login, samples, gains, bets}}.
+const HISTORY_CATEGORY_LABELS = {watch: 'watch', bonus: 'claim', raid: 'raid', streak: 'watch_streak', bet: 'prediction', other: 'other'};
+const HISTORY_BET_KEYS = ['won', 'lost', 'refunded', 'points_won'];
+const HISTORY_CHART = {width: 320, height: 150, left: 58, right: 10, top: 10, bottom: 28};
+let pointsHistory = {};
+let pointsHistoryChannel = '';
+
+function updatePointsHistory(data) {
+    if (!data || typeof data.channels !== 'object' || data.channels === null || Array.isArray(data.channels)) return;
+    pointsHistory = data.channels;
+    renderPointsHistory();
+}
+
+function formatHistoryTime(seconds) {
+    return new Date(seconds * 1000).toLocaleString(undefined,
+        {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+}
+
+function buildHistoryChart(samples, label) {
+    const c = HISTORY_CHART;
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const make = (tag, attrs, text = null) => {
+        const el = document.createElementNS(svgNS, tag);
+        Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, String(value)));
+        if (text !== null) el.textContent = String(text);
+        return el;
+    };
+    const times = samples.map(s => s[0]);
+    const values = samples.map(s => s[1]);
+    const [t0, t1] = [Math.min(...times), Math.max(...times)];
+    const [lo, hi] = [Math.min(...values), Math.max(...values)];
+    const plotW = c.width - c.left - c.right;
+    const plotH = c.height - c.top - c.bottom;
+    const x = t => c.left + (t1 === t0 ? plotW / 2 : (t - t0) / (t1 - t0) * plotW);
+    const y = v => c.top + (hi === lo ? plotH / 2 : (1 - (v - lo) / (hi - lo)) * plotH);
+    const svg = make('svg', {viewBox: `0 0 ${c.width} ${c.height}`, role: 'img', 'aria-label': label});
+    svg.appendChild(make('title', {}, label));
+    svg.appendChild(make('line', {class: 'history-axis', x1: c.left, y1: c.top, x2: c.left, y2: c.top + plotH}));
+    svg.appendChild(make('line', {class: 'history-axis', x1: c.left, y1: c.top + plotH, x2: c.width - c.right, y2: c.top + plotH}));
+    svg.appendChild(make('text', {x: c.left - 4, y: c.top + 8, 'text-anchor': 'end'}, hi.toLocaleString()));
+    svg.appendChild(make('text', {x: c.left - 4, y: c.top + plotH, 'text-anchor': 'end'}, lo.toLocaleString()));
+    svg.appendChild(make('text', {x: c.left, y: c.height - 8, 'text-anchor': 'start'}, formatHistoryTime(t0)));
+    if (t1 !== t0) svg.appendChild(make('text', {x: c.width - c.right, y: c.height - 8, 'text-anchor': 'end'}, formatHistoryTime(t1)));
+    svg.appendChild(make('polyline', {class: 'history-line',
+        points: samples.map(s => `${x(s[0]).toFixed(1)},${y(s[1]).toFixed(1)}`).join(' ')}));
+    if (samples.length === 1) svg.appendChild(make('circle', {class: 'history-dot', cx: x(t0), cy: y(values[0]), r: 3}));
+    return svg;
+}
+
+function renderPointsHistory() {
+    const select = document.getElementById('points-history-channel');
+    if (!select) return;
+    const t = state.translations.gui?.points || {};
+    const valid = s => Array.isArray(s) && Number.isFinite(s[0]) && Number.isFinite(s[1]);
+    const withData = Object.entries(pointsHistory).filter(([, entry]) => Array.isArray(entry?.samples) && entry.samples.some(valid));
+    if (!withData.some(([id]) => id === pointsHistoryChannel)) pointsHistoryChannel = withData[0]?.[0] ?? '';
+    select.replaceChildren(...withData.map(([id, entry]) => makeElement('option', {value: id}, entry.login)));
+    select.value = pointsHistoryChannel;
+    const none = withData.length === 0;
+    document.getElementById('points-history-empty').hidden = !none;
+    document.getElementById('points-history-body').hidden = none;
+    document.getElementById('points-history-select').hidden = none;
+    if (none) return;
+    const entry = pointsHistory[pointsHistoryChannel];
+    const samples = entry.samples.filter(valid);
+    const times = samples.map(s => s[0]);
+    const values = samples.map(s => s[1]);
+    const label = (t.history_chart || 'Balance of {channel} from {from} to {to}, between {min} and {max} points')
+        .replace('{channel}', entry.login)
+        .replace('{from}', formatHistoryTime(Math.min(...times)))
+        .replace('{to}', formatHistoryTime(Math.max(...times)))
+        .replace('{min}', Math.min(...values).toLocaleString())
+        .replace('{max}', Math.max(...values).toLocaleString());
+    document.getElementById('points-history-chart').replaceChildren(buildHistoryChart(samples, label));
+    const reasons = t.reasons || {};
+    document.getElementById('points-history-gains').replaceChildren(...Object.entries(HISTORY_CATEGORY_LABELS).map(
+        ([category, key]) => makeElement('tr', {'data-category': category}, null, row => {
+            row.appendChild(makeElement('td', {}, reasons[key] || category));
+            row.appendChild(makeElement('td', {}, Number(entry.gains?.[category] ?? 0).toLocaleString()));
+        })));
+    document.getElementById('points-history-bets').replaceChildren(makeElement('tr', {}, null, row => {
+        HISTORY_BET_KEYS.forEach(key => row.appendChild(makeElement('td', {}, Number(entry.bets?.[key] ?? 0).toLocaleString())));
+    }));
+}
+
+function onPointsHistoryChannelChange(event) {
+    pointsHistoryChannel = event.target.value;
+    renderPointsHistory();
+}
+
 // Static text of the tab comes from data-points-text="<gui.points key>"; the dynamic parts re-render.
 function translatePoints(t) {
     document.querySelectorAll('[data-points-text]').forEach(element => {
@@ -2882,6 +2977,7 @@ function translatePoints(t) {
         if (typeof text === 'string') element.textContent = text;
     });
     renderPoints();
+    if (typeof renderPointsHistory === 'function') renderPointsHistory();
     if (typeof renderIdleChannels === 'function') renderIdleChannels();
 }
 
@@ -4001,6 +4097,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('claim-channel-points').addEventListener('change', onClaimChannelPointsChange);
     document.getElementById('share-watch-streaks').addEventListener('change', onShareWatchStreaksChange);
     document.getElementById('points-pause-btn').addEventListener('click', togglePointsPause);
+    document.getElementById('points-history-channel').addEventListener('change', onPointsHistoryChannelChange);
     document.querySelectorAll('[data-points-setting]').forEach(input =>
         input.addEventListener('change', () => savePointsSetting(input.dataset.pointsSetting)));
     renderPoints();
