@@ -94,6 +94,9 @@ class Twitch:
         self.game_order = TemporaryGameOrder()
         self.inventory: list[DropsCampaign] = []
         self._drops: dict[str, TimedDrop] = {}
+        # Drop IDs claimed by this account during this run; an inventory reload can still
+        # list them unclaimed, and they must not be claimed or announced again.
+        self.claimed_drop_ids: set[str] = set()
         self._campaigns: dict[str, DropsCampaign] = {}
         self._mnt_triggers: deque[datetime] = deque()
         # Client type and auth
@@ -235,6 +238,7 @@ class Twitch:
         finally:
             self._auth_state.clear()
             self._channel_service.clear_bans()
+            self.claimed_drop_ids.clear()
             self.diagnostics.clear()
             self._inventory_service.clear_cached_state()
             self._inventory_loaded = False
@@ -643,6 +647,10 @@ class Twitch:
                 for campaign in self.inventory:
                     if not campaign.upcoming:
                         for drop in campaign.drops:
+                            if drop.claim_id is None and drop.completion_reported:
+                                # The websocket claim event was missed; Twitch has
+                                # reported full watch time, so build the claim ID.
+                                await drop.generate_claim()
                             if drop.can_claim:
                                 await drop.claim()
                 # figure out which games we want based on selected priorities

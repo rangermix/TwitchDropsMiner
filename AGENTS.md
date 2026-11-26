@@ -454,7 +454,8 @@ lang/                # Translation JSON files (20 languages)
   claim. A claim-ready websocket event preserves the claim ID and updates completion
   without triggering post-claim polling, history or notifications. A later linked
   inventory can claim the reward within the existing automatic-claim window.
-- Zero-minute subscription rewards are omitted from Inventory and Wanted Drops Queue;
+- Subscription rewards (zero minutes, or Twitch `requiredSubs > 0`) are not watch drops:
+  they are never mined, counted or shown in Inventory and Wanted Drops Queue;
   individually expired and non-mineable rewards are omitted from the queue without hiding
   upcoming or sequential rewards; successful claims refresh the queue immediately; the
   actively watched channel remains visible while game settings are changing
@@ -938,6 +939,15 @@ progress to an ignored drop while the miner intentionally targets another reward
   Inventory shows Twitch's `grantCount` as "Times earned" (`reward_grants`; no total is available).
   Regression coverage: `tests/test_reward_campaigns.py`, `tests/test_reward_channel_choice.py`
   and `tests/test_reward_grants_frontend.py`.
+
+- `TimedDrop.report_twitch_minutes()` takes per-drop Twitch readings (CurrentDrop for
+  that drop ID, User.Drops progress). Full watch time marks `completion_reported`: the drop
+  stops being earnable and requests a games update, where GAMES_UPDATE builds the missing
+  claim ID with `generate_claim()` if the websocket claim event was missed. Campaign-wide
+  sibling deltas and estimated minutes never report completion; reward drops are excluded.
+  `Twitch.claimed_drop_ids` remembers one-time drops claimed this run, so a reload that
+  still lists one unclaimed neither claims, records nor announces it again; it is cleared
+  on account replacement. Coverage: `tests/test_drop_claim_correctness.py`.
 
 ### GraphQL Operations
 
