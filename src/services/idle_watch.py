@@ -884,7 +884,7 @@ class IdleWatchService:
                         self._recovery[ids[channel.id]] = (channel.id, entry[1] + 1, entry[2])
                         self.visit = Visit(channel.id, ids[channel.id], now, recovery=True)
                         return channel
-        return order[0] if order else None
+        return WatchPriority.first(order, self.watched, settings.idle_priority, self.balances)
 
     def _note_recovery(self, visit: Visit, full: bool, now: float) -> None:
         """Book an ended visit for streak recovery: a full first visit without the bonus earns recovery visits."""

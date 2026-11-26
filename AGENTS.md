@@ -1363,7 +1363,10 @@ live in `gui.points` (English text in every locale until translated).
   broadcast, then the first live channel in priority order is watched.
   `WatchPriority` (`src/services/idle_points.py`) orders live channels by
   `idle_priority` for the visits and that pick (stable sort: ties keep list order,
-  unknown balances last, `subscribed` by multiplier sum). With `idle_streak_first` off
+  unknown balances last, `subscribed` by multiplier sum). For that pick,
+  `WatchPriority.first()` keeps `watched` with `points_low`/`points_high` while it is
+  live and the first channel's balance beats its own by at most `SWITCH_MARGIN` (1000),
+  both balances known, so crossing balances do not switch the watch every tick. With `idle_streak_first` off
   no visit is made and a visit in progress is dropped unrecorded. A visit is
   recorded only when it is done, ran its time or the broadcast changed; one cut short
   because its channel left the live list starts again. Banned channels are skipped; a

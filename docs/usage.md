@@ -282,7 +282,9 @@ use goes to drop mining instead.
   (lowest or highest balance first; a channel whose balance TDM has not read yet comes
   last), or `subscribed` (channels with an active points multiplier, such as a
   subscription, first, largest multiplier first). Ties keep the list order. With the
-  balance orders the watched channel can change when balances pass each other.
+  balance orders TDM keeps watching its channel while it stays live, until another
+  live listed channel's balance is more than 1000 points lower (`points_low`) or higher
+  (`points_high`); a visit to a new stream still goes first.
 - `idle_streak_first` (on by default) makes the watch streak visits. Turned off, TDM
   makes no visits and watches the first channel in priority order.
 - `streak_recovery` (on by default): a visit that ran its full 7 minutes without a watch

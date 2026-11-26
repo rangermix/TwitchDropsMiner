@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger("TwitchDrops")
 
 POINTS_READ_SECONDS = 300
+# points_low / points_high: the watched channel stays until another live channel's balance beats it by more
+SWITCH_MARGIN = 1000
 # a batch that hits a GQL error is split and resent per channel, so it gets more time than one read
 POINTS_READ_TIMEOUT = 30
 
@@ -44,6 +46,24 @@ class WatchPriority:
         if mode == "subscribed":
             return sorted(live, key=lambda c: -sum(multipliers.get(c.id, ())))
         return list(live)
+
+    @staticmethod
+    def first(order: list[Channel], current: Channel | None, mode: str, balances: Mapping[int, int]) -> Channel | None:
+        """The channel to watch after the visits: order[0], or current while it stays in order.
+
+        current stays only with points_low / points_high, while both balances are known and order[0]'s
+        beats current's by at most SWITCH_MARGIN, so balances that pass each other do not switch the
+        watch back and forth on every tick.
+        """
+        if not order:
+            return None
+        best = order[0]
+        kept = next((c for c in order if c == current), None)
+        if mode in ("points_low", "points_high") and kept is not None and kept.id in balances and best.id in balances:
+            lead = balances[kept.id] - balances[best.id]
+            if (lead if mode == "points_low" else -lead) <= SWITCH_MARGIN:
+                return kept
+        return best
 
 
 class PointsReader:

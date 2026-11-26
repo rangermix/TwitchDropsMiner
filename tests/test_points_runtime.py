@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock
 import aiohttp
 import pytest
 
+import src.services.idle_points as idle_points
 import src.services.idle_watch as idle_mod
 from src.config import State
 from src.core.client import Twitch
@@ -396,6 +397,54 @@ def test_streak_first_off_makes_no_visits_and_picks_by_priority():
     svc.visit = Visit(1, 10, 0)
     assert svc.pick(live, 1).id == 2
     assert svc.visit is None and 10 not in svc.visited
+
+
+@pytest.mark.parametrize("mode", ["points_low", "points_high"])
+def test_crossing_balances_do_not_switch_the_watch_every_tick(mode):
+    svc, live = priority_service(idle_priority=mode, idle_streak_first=False)
+    live = live[:2]
+    low = mode == "points_low"
+    picks = []
+    for tick in range(10):
+        # the two balances pass each other on every tick
+        svc.balances = {1: 5000, 2: 5100} if tick % 2 == 0 else {1: 5100, 2: 5000}
+        svc.watched = svc.pick(live, tick)
+        picks.append(svc.watched.id)
+    assert picks == [1 if low else 2] * 10
+    first = picks[0]
+    other = 3 - first
+    # a lead of exactly the margin keeps the watch; one point more switches it
+    svc.balances = {first: 5000, other: 5000 - idle_points.SWITCH_MARGIN if low else 5000 + idle_points.SWITCH_MARGIN}
+    assert svc.pick(live, 20).id == first
+    svc.balances[other] += -1 if low else 1
+    svc.watched = svc.pick(live, 21)
+    assert svc.watched.id == other
+    # an unknown balance of the watched channel, or a watched channel that went offline, gives order[0]
+    svc.balances = {1: 5000, 2: 5100} if low else {1: 5100, 2: 5000}
+    svc.watched = live[1]
+    del svc.balances[2]
+    assert svc.pick(live, 22).id == 1
+    svc.balances[2] = 4900 if low else 5200
+    svc.watched = svc.pick(live, 23)
+    assert svc.watched.id == 2
+    svc.balances = {1: 5000, 2: 5100} if low else {1: 5100, 2: 5000}
+    assert svc.pick(live, 24).id == 2
+    assert svc.pick([live[0]], 25).id == 1
+
+
+def test_the_margin_applies_only_to_the_balance_orders_and_a_visit_still_takes_over():
+    svc, live = priority_service(idle_priority="list", idle_streak_first=False)
+    svc.balances = {1: 5000, 2: 5100}
+    svc.watched = live[1]
+    assert svc.pick(live, 0).id == 1  # list order: the first live channel, as before
+    svc, live = priority_service(idle_priority="points_low")
+    svc.balances = {1: 5000, 2: 5100, 3: 5050}
+    svc.visited = {10: 1, 20: 2}
+    svc.watched = live[0]
+    assert svc.pick(live, 0).id == 3 and svc.visit is not None  # the new stream's visit wins
+    svc.watched = live[2]
+    svc.visit = Visit(3, 30, 0, done=True)
+    assert svc.pick(live, 1).id == 3  # after the visit: 3 is watched and within the margin of 1
 
 
 # --- watch streak recovery ---
