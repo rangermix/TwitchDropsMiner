@@ -1594,6 +1594,14 @@ header h1 {
 .idle-channel-row .small-btn { padding: 4px 8px; min-width: 32px; }
 .idle-channel-row .small-btn:disabled { opacity: 0.4; cursor: default; }
 .idle-channel-row .small-btn:disabled:hover { background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-color); }
+.idle-channel-row { flex-wrap: wrap; }
+.idle-option-marker { color: var(--accent-color); font-size: 12px; }
+.idle-options-panel { flex: 1 0 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 16px; padding: 8px 4px 4px; cursor: default; user-select: text; }
+.idle-options-panel .idle-option { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 0; font-size: 14px; }
+.idle-options-panel .idle-option.checkbox-label { flex-direction: row; align-items: center; gap: 8px; }
+.idle-options-panel select, .idle-options-panel input[type="number"] { max-width: 100%; box-sizing: border-box; margin: 0; }
+.idle-import-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+.idle-import-row .help-text { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .idle-channel-add-row { display: flex; align-items: center; gap: 8px; max-width: 480px; margin-top: 12px; }
 .settings-section .idle-channel-add-row input[type="text"] { flex: 1; min-width: 0; margin-left: 0; }
 

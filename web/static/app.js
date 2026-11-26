@@ -1495,7 +1495,7 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
         settings = {...settings, mining_benefits: state.settings.mining_benefits};
     }
     // Same for the idle watching list and the claim toggle: a partial reply must not undo a confirmed write.
-    for (const key of ['idle_channels', 'claim_channel_points', 'share_watch_streaks',
+    for (const key of ['idle_channels', 'idle_channel_options', 'claim_channel_points', 'share_watch_streaks',
         ...(typeof POINTS_SETTINGS === 'undefined' ? [] : Object.keys(POINTS_SETTINGS))]) {
         if (!authoritative && !changedFields.includes(key) && state.settings[key] !== undefined) {
             settings = {...settings, [key]: state.settings[key]};
@@ -2882,6 +2882,7 @@ function translatePoints(t) {
         if (typeof text === 'string') element.textContent = text;
     });
     renderPoints();
+    if (typeof renderIdleChannels === 'function') renderIdleChannels();
 }
 
 async function togglePointsPause() {
@@ -2965,6 +2966,92 @@ async function savePointsSetting(key) {
 const idleChannelPattern = /^[a-z0-9_]{1,25}$/;
 const idleChannelLimit = 20;
 let idleChannelsSaving = false;
+// Per-channel options mirror ChannelOptionSettings; each feature option overrides the named global setting.
+const CHANNEL_OPTION_FEATURES = {bonus: 'claim_channel_points', raids: 'follow_raids', moments: 'claim_moments',
+    predictions: 'predictions_enabled', streaks: 'idle_streak_first', chat: 'join_chat'};
+const CHANNEL_OPTION_FLAGS = ['favorite', 'streak_only'];
+const CHANNEL_POINTS_LIMIT = {min: 1, max: 100000000};
+// Logins whose options panel is open; the panel state survives re-renders.
+const idleOptionsOpen = new Set();
+let idleOptionsSaving = false;
+let followImportBusy = false;
+
+function globalChannelOption(name) {
+    const value = state.settings[name];
+    return typeof value === 'boolean' ? value : (POINTS_SETTINGS[name]?.default ?? true);
+}
+
+function findOption(node, key) {
+    if (node.dataset?.option === key) return node;
+    for (const child of node.children) {
+        const found = findOption(child, key);
+        if (found) return found;
+    }
+    return null;
+}
+
+// The options object of one login as the panel shows it; empty entries are left out like on the server.
+function readChannelOptions(panel) {
+    const options = {};
+    for (const key of Object.keys(CHANNEL_OPTION_FEATURES)) {
+        const value = findOption(panel, key).value;
+        if (value !== 'default') options[key] = value === 'on';
+    }
+    for (const key of CHANNEL_OPTION_FLAGS) if (findOption(panel, key).checked) options[key] = true;
+    const typed = findOption(panel, 'points_limit').value.trim();
+    const limit = typed === '' ? NaN : Math.trunc(Number(typed));
+    if (Number.isFinite(limit)) options.points_limit = Math.min(CHANNEL_POINTS_LIMIT.max, Math.max(CHANNEL_POINTS_LIMIT.min, limit));
+    return options;
+}
+
+function sortedJson(value) {
+    return JSON.stringify(value, (_key, item) => item && typeof item === 'object' && !Array.isArray(item)
+        ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => (a < b ? -1 : 1))) : item);
+}
+
+function labelled(cls, ...children) {
+    const label = makeElement('label', {class: cls});
+    children.forEach(child => label.appendChild(child));
+    return label;
+}
+
+function buildChannelOptionsPanel(login, options, onChange) {
+    const t = state.translations.gui?.points || {};
+    const panel = makeElement('div', {class: 'idle-options-panel', role: 'group',
+        'aria-label': (t.channel_options || 'Options of {channel}').replace('{channel}', login)});
+    const labels = {bonus: ['opt_bonus', 'Claim the points bonus'], raids: ['opt_raids', 'Follow raids'],
+        moments: ['opt_moments', 'Claim moments'], predictions: ['opt_predictions', 'Place predictions'],
+        streaks: ['opt_streaks', 'Watch streak visits'], chat: ['opt_chat', 'Join the chat']};
+    for (const [key, name] of Object.entries(CHANNEL_OPTION_FEATURES)) {
+        const select = makeElement('select');
+        select.dataset.option = key;
+        const global = globalChannelOption(name);
+        for (const [value, text] of [
+            ['default', global ? (t.option_default_on || 'Default (on)') : (t.option_default_off || 'Default (off)')],
+            ['on', t.option_on || 'On'], ['off', t.option_off || 'Off']]) {
+            select.appendChild(makeElement('option', {value}, text));
+        }
+        select.value = typeof options[key] === 'boolean' ? (options[key] ? 'on' : 'off') : 'default';
+        select.addEventListener('change', onChange);
+        panel.appendChild(labelled('idle-option', makeElement('span', {}, t[labels[key][0]] || labels[key][1]), select));
+    }
+    for (const [key, fallback] of [['favorite', 'Watch this channel first'],
+        ['streak_only', 'Only for the watch streak: never stay on this channel']]) {
+        const box = makeElement('input', {type: 'checkbox'});
+        box.dataset.option = key;
+        box.checked = options[key] === true;
+        box.addEventListener('change', onChange);
+        panel.appendChild(labelled('idle-option checkbox-label', box, makeElement('span', {}, t[`opt_${key}`] || fallback)));
+    }
+    const limit = makeElement('input', {type: 'number', min: CHANNEL_POINTS_LIMIT.min, max: CHANNEL_POINTS_LIMIT.max,
+        step: 1, inputmode: 'numeric'});
+    limit.dataset.option = 'points_limit';
+    limit.value = Number.isInteger(options.points_limit) ? String(options.points_limit) : '';
+    limit.addEventListener('change', onChange);
+    panel.appendChild(labelled('idle-option',
+        makeElement('span', {}, t.opt_points_limit || 'Stop staying at this balance (empty: no limit)'), limit));
+    return panel;
+}
 
 function renderIdleChannels(list = state.settings.idle_channels || []) {
     const container = document.getElementById('idle-channels-list');
@@ -2978,14 +3065,21 @@ function renderIdleChannels(list = state.settings.idle_channels || []) {
         }
     const label = (key, fallback, channel) => (t[key] || fallback).replace('{channel}', channel);
     // Rebuilding the rows drops keyboard focus; remember the control and restore it afterwards.
-    const active = document.activeElement?.closest?.('.idle-channel-row');
+    const focusedElement = document.activeElement;
+    const active = focusedElement?.closest?.('.idle-channel-row');
     const focused = active && active.parentNode === container
-        ? { channel: active.dataset.channel, action: document.activeElement.dataset.action } : null;
+        ? { channel: active.dataset.channel, action: focusedElement.dataset.action, option: focusedElement.dataset.option } : null;
+    const points = state.translations.gui?.points || {};
+    const allOptions = state.settings.idle_channel_options || {};
+    for (const login of [...idleOptionsOpen]) if (!list.includes(login)) idleOptionsOpen.delete(login);
     container.replaceChildren();
     list.forEach((channel, index) => {
         const row = makeElement('div', { class: 'sortable-item idle-channel-row' });
         row.dataset.channel = channel;
-        row.draggable = !idleChannelsSaving;
+        const options = allOptions[channel] || {};
+        const open = idleOptionsOpen.has(channel);
+        // a panel with inputs inside a draggable row would start drags from its fields
+        row.draggable = !idleChannelsSaving && !open;
         // Not disabled while a save is in flight: that would drop focus; saveIdleChannels ignores the click.
         const button = (text, name, disabled, kind, action) => {
             const el = makeElement('button', { type: 'button', 'aria-label': name,
@@ -3000,15 +3094,36 @@ function renderIdleChannels(list = state.settings.idle_channels || []) {
             next.splice(index + delta, 0, next.splice(index, 1)[0]);
             return saveIdleChannels(next);
         };
+        const optionsLabel = (points.channel_options || 'Options of {channel}').replace('{channel}', channel);
+        const toggle = button('⚙', optionsLabel, false, 'options', () => {
+            if (open) idleOptionsOpen.delete(channel);
+            else idleOptionsOpen.add(channel);
+            renderIdleChannels(list);
+        });
+        toggle.setAttribute('aria-expanded', String(open));
+        toggle.setAttribute('aria-controls', `idle-options-${channel}`);
+        const panel = open ? buildChannelOptionsPanel(channel, options, () => {
+            const next = {...allOptions};
+            const chosen = readChannelOptions(panel);
+            if (Object.keys(chosen).length) next[channel] = chosen;
+            else delete next[channel];
+            saveChannelOptions(next);
+        }) : null;
+        if (panel) panel.setAttribute('id', `idle-options-${channel}`);
+        const markerText = points.channel_options_marker || 'This channel has its own options';
         row.replaceChildren(
             makeElement('span', { class: 'drag-handle', 'aria-hidden': 'true' }, '☰'),
             makeElement('span', { class: 'priority-number', 'aria-hidden': 'true' }, String(index + 1)),
             makeElement('span', { class: 'game-name idle-channel-name' }, channel),
+            ...(Object.keys(options).length ? [makeElement('span', { class: 'idle-option-marker', role: 'img',
+                'aria-label': markerText, title: markerText }, '●')] : []),
+            toggle,
             button('▲', label('idle_channels_up', 'Move {channel} up', channel), index === 0, 'up', moved(-1)),
             button('▼', label('idle_channels_down', 'Move {channel} down', channel),
                 index === list.length - 1, 'down', moved(1)),
             button('✕', label('idle_channels_remove', 'Remove {channel}', channel), false, 'remove',
-                () => saveIdleChannels(list.filter(item => item !== channel))));
+                () => saveIdleChannels(list.filter(item => item !== channel))),
+            ...(panel ? [panel] : []));
         row.addEventListener('dragstart', handleDragStart);
         row.addEventListener('dragover', handleDragOver);
         row.addEventListener('drop', handleDrop);
@@ -3023,6 +3138,11 @@ function renderIdleChannels(list = state.settings.idle_channels || []) {
     if (!focused) return;
     // The moved row's control may now be disabled (top or bottom): fall back to its opposite arrow.
     const row = [...container.children].find(item => item.dataset.channel === focused.channel);
+    const inner = row && focused.option ? findOption(row, focused.option) : null;
+    if (inner) {
+        inner.focus();
+        return;
+    }
     const buttons = row ? [...row.children].filter(item => item.dataset.action) : [];
     const order = [focused.action, focused.action === 'up' ? 'down' : 'up'];
     const target = order.map(kind => buttons.find(item => item.dataset.action === kind && !item.disabled))
@@ -3046,7 +3166,7 @@ async function saveIdleChannels(next) {
         const data = await response.json();
         if (data.success !== true || JSON.stringify(data.settings?.idle_channels) !== JSON.stringify(next))
             throw new Error(message);
-        updateSettingsUI(data.settings, false, ['idle_channels']);
+        updateSettingsUI(data.settings, false, ['idle_channels', 'idle_channel_options']);
         saved = true;
     } catch (_) {
         reportSettingsError(error, message);
@@ -3073,6 +3193,67 @@ async function addIdleChannel() {
         return;
     }
     if (await saveIdleChannels([...current, login])) input.value = '';
+}
+
+// Save the whole options object; a failure shows the error and the confirmed options again.
+async function saveChannelOptions(next) {
+    if (idleOptionsSaving) {
+        renderIdleChannels();
+        return false;
+    }
+    const error = document.getElementById('idle-channels-error');
+    const message = state.translations.gui?.points?.channel_options_save_error ||
+        'Could not save the channel options. Please try again.';
+    error.hidden = true;
+    idleOptionsSaving = true;
+    let saved = false;
+    try {
+        const response = await fetch('/api/settings', {method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({idle_channel_options: next})});
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || sortedJson(data.settings?.idle_channel_options) !== sortedJson(next))
+            throw new Error(message);
+        updateSettingsUI(data.settings, false, ['idle_channel_options']);
+        saved = true;
+    } catch (_) {
+        reportSettingsError(error, message);
+        error.hidden = false;
+    } finally {
+        idleOptionsSaving = false;
+        renderIdleChannels();
+    }
+    return saved;
+}
+
+async function importFollows() {
+    if (followImportBusy) return;
+    const button = document.getElementById('idle-import-btn');
+    const status = document.getElementById('idle-import-status');
+    const error = document.getElementById('idle-channels-error');
+    const t = state.translations.gui?.points || {};
+    let message = t.import_follows_error || 'Could not import the followed channels. Please try again.';
+    followImportBusy = true;
+    button.disabled = true;
+    error.hidden = true;
+    status.textContent = '';
+    try {
+        const response = await fetch('/api/points/import-follows', {method: 'POST'});
+        if (response.status === 409) message = t.import_follows_login || 'Log in to Twitch first.';
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || ![data.added, data.already_listed, data.over_limit].every(Number.isInteger))
+            throw new Error(message);
+        status.textContent = (t.import_follows_result ||
+            '{added} added, {listed} already listed, {over} did not fit the limit of 20.')
+            .replace('{added}', data.added).replace('{listed}', data.already_listed).replace('{over}', data.over_limit);
+    } catch (_) {
+        reportSettingsError(error, message);
+        error.hidden = false;
+    } finally {
+        followImportBusy = false;
+        button.disabled = false;
+    }
 }
 
 async function onNotificationEventChange(event) {
@@ -3825,6 +4006,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPoints();
     renderPointsSettings();
     document.getElementById('idle-channel-add').addEventListener('click', addIdleChannel);
+    document.getElementById('idle-import-btn').addEventListener('click', importFollows);
     document.getElementById('idle-channel-input').addEventListener('keydown', event => {
         if (event.key === 'Enter') addIdleChannel();
     });
