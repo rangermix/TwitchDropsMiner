@@ -5,7 +5,7 @@ import logging
 import re
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Literal, TypedDict, cast
+from typing import Any, ClassVar, Literal, TypedDict, cast
 
 from yarl import URL
 
@@ -41,6 +41,18 @@ default_settings = {
     "share_watch_streaks": False,
     "games_to_watch": [],
     "idle_channels": [],
+    # channel points options of idle watching (PointsSettings); actions that spend points or are
+    # visible to others are off by default
+    "idle_priority": "list",
+    "idle_streak_first": True,
+    "streak_recovery": True,
+    "follow_raids": False,
+    "predictions_enabled": False,
+    "prediction_strategy": "smart",
+    "prediction_percent": 5,
+    "prediction_max_points": 1000,
+    "claim_moments": True,
+    "join_chat": False,
     "language": DEFAULT_LANG,
     "last_notified_releases": {"telegram": "", "discord": ""},
     "prefer_followed_channels": False,
@@ -128,6 +140,50 @@ class IdleChannelSettings:
         return list(dict.fromkeys(logins))[: cls.MAX_CHANNELS]
 
 
+class PointsSettings:
+    """Validate the channel points options of idle watching."""
+
+    CHOICES: ClassVar[dict[str, tuple[str, ...]]] = {
+        "idle_priority": ("list", "points_low", "points_high", "subscribed"),
+        "prediction_strategy": ("smart", "most_voted", "high_odds", "favourite"),
+    }
+    # inclusive bounds; Twitch takes 10..250000 points per prediction
+    RANGES: ClassVar[dict[str, tuple[int, int]]] = {
+        "prediction_percent": (1, 100),
+        "prediction_max_points": (10, 250000),
+    }
+    FLAGS = ("idle_streak_first", "streak_recovery", "follow_raids", "predictions_enabled", "claim_moments", "join_chat")
+    KEYS = (*CHOICES, *RANGES, *FLAGS)
+
+    @classmethod
+    def normalize(cls, key: str, value: Any) -> Any:
+        """Return value when it is valid for key; a bool is never an int here."""
+        if key in cls.CHOICES:
+            valid = type(value) is str and value in cls.CHOICES[key]
+        elif key in cls.RANGES:
+            low, high = cls.RANGES[key]
+            valid = type(value) is int and low <= value <= high
+        else:
+            valid = key in cls.FLAGS and type(value) is bool
+        if not valid:
+            raise ValueError(f"invalid_{key}")
+        return value
+
+    @classmethod
+    def salvage(cls, settings: dict[str, Any]) -> None:
+        """Replace invalid hand-edited values with their defaults, one warning per key."""
+        for key in cls.KEYS:
+            if key not in settings:
+                continue
+            try:
+                cls.normalize(key, settings[key])
+            except ValueError:
+                default = default_settings[key]
+                settings[key] = default
+                shown = ("on" if default else "off") if isinstance(default, bool) else default
+                logger.warning("Ignoring invalid %s in settings; using the default (%s)", key, shown)
+
+
 class NotificationEventSettings:
     """Validate which events send Discord and Telegram notifications."""
 
@@ -186,6 +242,16 @@ class Settings:
     share_watch_streaks: bool
     games_to_watch: list[str]
     idle_channels: list[str]
+    idle_priority: str
+    idle_streak_first: bool
+    streak_recovery: bool
+    follow_raids: bool
+    predictions_enabled: bool
+    prediction_strategy: str
+    prediction_percent: int
+    prediction_max_points: int
+    claim_moments: bool
+    join_chat: bool
     language: str
     last_notified_releases: dict[str, str]
     reward_priority: list[str]
@@ -231,6 +297,7 @@ class Settings:
             logger.warning("Ignoring invalid claim_channel_points in settings; using the default (on)")
         if not isinstance(settings.get("share_watch_streaks", False), bool):
             logger.warning("Ignoring invalid share_watch_streaks in settings; using the default (off)")
+        PointsSettings.salvage(settings)
         # Early builds stored a single release version. Preserve their announce-once behavior.
         last_notified = settings.pop("last_notified_release", None)
         if isinstance(last_notified, str) and "last_notified_releases" not in settings:
@@ -250,6 +317,8 @@ class Settings:
         self.reward_priority = RewardPriority.normalize(self.reward_priority)
         self.mining_hours = MiningHoursSettings.normalize(self.mining_hours)
         self.idle_channels = IdleChannelSettings.normalize(self.idle_channels)
+        for key in PointsSettings.KEYS:
+            PointsSettings.normalize(key, getattr(self, key))
         self.drop_name_blacklist = DropIgnorePolicy.normalize_keywords(
             self.drop_name_blacklist
         )

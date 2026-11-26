@@ -14,6 +14,7 @@ from src.config.settings import (
     InventoryFilterSettings,
     MiningHoursSettings,
     NotificationEventSettings,
+    PointsSettings,
     default_settings,
 )
 from src.i18n.translator import _
@@ -194,6 +195,11 @@ class SettingsManager:
         idle_channels = settings_data.get("idle_channels")
         if idle_channels is not None:
             idle_channels = IdleChannelSettings.normalize(idle_channels)
+        points_options = {
+            key: PointsSettings.normalize(key, settings_data[key])
+            for key in PointsSettings.KEYS
+            if settings_data.get(key) is not None
+        }
         language = settings_data.get("language")
         if language is not None and language not in _.get_languages():
             raise ValueError("invalid_language")
@@ -232,6 +238,12 @@ class SettingsManager:
         )
         self.check_and_update_setting("claim_channel_points", claim_points)
         self.check_and_update_setting("share_watch_streaks", share_streaks)
+        for key, value in points_options.items():
+            # idle watching reads them on its next step; drop mining does not use them
+            self.check_and_update_setting(
+                key, value, False,
+                lambda _value: self._on_idle_channels_change() if self._on_idle_channels_change else None,
+            )
         should_trigger_update |= self.check_and_update_setting(
             "dark_mode", settings_data.get("dark_mode")
         )

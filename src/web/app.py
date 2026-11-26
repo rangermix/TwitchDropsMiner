@@ -14,11 +14,16 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, StrictBool, field_validator
+from pydantic import BaseModel, StrictBool, StrictInt, ValidationInfo, field_validator
 
 from src.config.paths import DATA_DIR
 from src.config.reward_priority import RewardPriority
-from src.config.settings import IdleChannelSettings, InventoryFilterSettings, MiningHoursSettings
+from src.config.settings import (
+    IdleChannelSettings,
+    InventoryFilterSettings,
+    MiningHoursSettings,
+    PointsSettings,
+)
 from src.services.game_order import TemporaryGameOrder
 from src.version import __version__
 from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
@@ -92,6 +97,16 @@ class SettingsUpdate(BaseModel):
     idle_channels: list[str] | None = None
     claim_channel_points: StrictBool | None = None
     share_watch_streaks: StrictBool | None = None
+    idle_priority: str | None = None
+    idle_streak_first: StrictBool | None = None
+    streak_recovery: StrictBool | None = None
+    follow_raids: StrictBool | None = None
+    predictions_enabled: StrictBool | None = None
+    prediction_strategy: str | None = None
+    prediction_percent: StrictInt | None = None
+    prediction_max_points: StrictInt | None = None
+    claim_moments: StrictBool | None = None
+    join_chat: StrictBool | None = None
     proxy: str | None = None
     connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
@@ -114,6 +129,11 @@ class SettingsUpdate(BaseModel):
     @classmethod
     def validate_idle_channels(cls, value: list[str] | None) -> list[str] | None:
         return IdleChannelSettings.normalize(value) if value is not None else None
+
+    @field_validator(*PointsSettings.KEYS)
+    @classmethod
+    def validate_points_option(cls, value: object, info: ValidationInfo) -> object:
+        return PointsSettings.normalize(info.field_name, value) if value is not None else None
 
     @field_validator("mining_hours")
     @classmethod
