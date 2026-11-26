@@ -259,9 +259,20 @@ versioned frontend controls.
 ## Idle watching
 
 **Points -> Idle watching channels** lists Twitch channels (lowercase
-logins, at most 20) that TDM watches when nothing can be mined. Idle watching runs only
-when no drop can be mined and only inside mining hours. A listed channel that a drop can
-use goes to drop mining instead.
+logins, at most 20) that TDM watches when nothing can be mined. With one slot (the
+default), idle watching runs only when no drop can be mined and only inside mining hours.
+A listed channel that a drop can use goes to drop mining instead.
+
+**Channels watched at a time** (`watch_slots`, 1 or 2, on the **Points** tab): with 2,
+idle watching also runs while a drop is mined. TDM then watches one listed channel next
+to the drop channel, on a second watch of its own. It uses only listed channels that
+drops cannot use and that have drops off, so drop mining keeps its channel and the
+second watch cannot take drop progress. The **Points** tab marks that channel
+**Watching (second slot)**; the channel list and the status line keep showing drop
+mining. Visits, priority, claims, shares, raids, moments, predictions and chat work on
+it as below. When nothing can be mined, idle watching runs as with one slot. Two watches
+double the video traffic. This mode has not been tested against Twitch yet: whether
+Twitch credits points and drops for two watches at a time is unknown.
 
 - Each live listed channel gets one visit of up to 7 minutes per stream, to count toward
   its watch streak. Finished visits are kept in `data/idle_visits.json` together with
@@ -324,7 +335,7 @@ use goes to drop mining instead.
   watched, so on the other live listed channels TDM only claims a bonus that was left
   open, for example while you watched that channel in a browser. TDM never claims on a
   channel that is not listed, is offline, has banned the account or that a drop can
-  use, and never while mining drops, while paused or outside mining hours. A claim
+  use, and never while mining drops with one slot, while paused or outside mining hours. A claim
   counts only when Twitch returns it. After a failed claim on the
   watched channel, TDM reads its points again on the next idle steps (about every 30
   seconds) and retries at most twice per watched channel; after that it waits for
@@ -359,7 +370,7 @@ use goes to drop mining instead.
   check runs about every 5 minutes and right after a watch streak message. Twitch posts
   a visible watch streak notice in the streamer's chat under your name, and a share may
   give bonus channel points. Sharing happens only while idle watching, never while
-  mining drops, while paused or outside mining hours.
+  mining drops with one slot, while paused or outside mining hours.
   - TDM records each share in `data/idle_visits.json` before it sends it (the newest 100
     are kept), so a restart or a new login with the same account does not send it again.
     A share that cannot be recorded is not sent; a later check tries again once the file
