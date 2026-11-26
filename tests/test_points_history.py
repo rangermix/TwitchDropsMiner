@@ -1,5 +1,6 @@
 """PointsHistory: recording rules, bounds, account change, saving and damaged files."""
 
+import itertools
 import json
 import logging
 
@@ -46,7 +47,7 @@ def test_a_steady_stream_of_changes_gives_one_sample_per_slot(gap):
     slots = [t // mod.SAMPLE_MERGE_SECONDS for t, _ in samples]
     assert len(set(slots)) == len(slots) and slots == sorted(slots)
     if gap < mod.SAMPLE_MERGE_SECONDS:  # no slot with changes is skipped
-        assert all(b - a == 1 for a, b in zip(slots, slots[1:]))
+        assert all(b - a == 1 for a, b in itertools.pairwise(slots))
     assert len(samples) > 20
 
 
@@ -60,7 +61,7 @@ def test_bucketed_samples_are_capped_at_288(gap):
     samples = h.channels[1]["samples"]
     slots = [t // mod.SAMPLE_MERGE_SECONDS for t, _ in samples]
     assert len(samples) == SAMPLES_KEPT and len(set(slots)) == SAMPLES_KEPT
-    assert all(b - a == 1 for a, b in zip(slots, slots[1:]))
+    assert all(b - a == 1 for a, b in itertools.pairwise(slots))
 
 
 def test_samples_are_capped_and_the_oldest_dropped():
