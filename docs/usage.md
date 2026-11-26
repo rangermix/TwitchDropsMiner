@@ -17,6 +17,7 @@ simultaneous viewing can disrupt progress.
 | Main | Login status, the current campaign and drop, wanted rewards, console output, and channels |
 | Inventory | Campaigns and rewards, with status, benefit, and game filters |
 | History | Locally recorded claims, statistics, and CSV export |
+| Points | Channel points of idle watching: pause button, listed channels with balance and last gain, the channel points log, and the idle watching settings |
 | Settings | Grouped into sub-tabs: **General** (theme, connection, proxy), **Mining** (reward types, mining hours, account-link override, ignored names), **Games** (priorities and reload), **Notifications** (Discord, Telegram), and **Account & Maintenance** (dashboard password, cache, diagnostics, Twitch logout) |
 | Help | A quick explanation of mining and Telegram setup |
 
@@ -257,7 +258,7 @@ versioned frontend controls.
 
 ## Idle watching
 
-**Settings -> Mining -> Idle watching channels** lists Twitch channels (lowercase
+**Points -> Idle watching channels** lists Twitch channels (lowercase
 logins, at most 20) that TDM watches when nothing can be mined. Idle watching runs only
 when no drop can be mined and only inside mining hours. A listed channel that a drop can
 use goes to drop mining instead.
@@ -291,8 +292,6 @@ use goes to drop mining instead.
   confirms. Twitch's own recovery (5 minutes of a new live stream within 24 hours of the
   missed one) is covered by the visit every new stream gets. TDM remembers recovery
   visits only while it runs.
-- These options have no dashboard controls yet; set them in `settings.json` or through
-  the settings API.
 - A listed channel may stream a game with drops that is not in your Mining list. Twitch
   can then credit progress on those drops while TDM idle watches the channel, and TDM
   claims a finished drop as it does every claimable drop in the inventory.
@@ -307,10 +306,17 @@ use goes to drop mining instead.
 - About every 5 minutes while idle watching, TDM reads the channel points of the other
   live listed channels in one request: balance, active multipliers and an open bonus,
   which it claims. A failed or partial read waits for the next one.
-- **Pause channel points** (`POST /api/points/pause` with `{"paused": true}` or
-  `false`) stops idle watching and its watch until resumed or until TDM restarts. Drop
-  mining is not affected. The channel points log keeps its own lines (gains, claims,
-  visits, shares, pause); the dashboard tab that shows it is not built yet.
+- **Pause channel points** (the button on the **Points** tab, or `POST /api/points/pause`
+  with `{"paused": true}` or `false`) stops idle watching and its watch until resumed or
+  until TDM restarts. Drop mining is not affected. The status line of the tab shows
+  **Active**, **Paused** or **Inactive** (idle watching is not running). If the request
+  fails, the button keeps its state and the tab shows an error.
+- The **Points** tab lists the listed channels with their live state, the last known
+  balance and the last gain (amount, reason and time); a dash means TDM has not seen a
+  balance or a gain yet. Below it, the channel points log keeps its own lines (gains,
+  claims, visits, shares, pause), separate from the main console and kept for the
+  current run. The settings of this section sit under the log and save when changed; a
+  failed save shows an error and restores the previous value.
 - **Share watch streaks while idle watching** (off by default) shares a watch streak
   once Twitch marks it shareable, once per milestone, for live listed channels. The
   check runs about every 5 minutes and right after a watch streak message. Twitch posts

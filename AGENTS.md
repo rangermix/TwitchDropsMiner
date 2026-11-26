@@ -1236,7 +1236,7 @@ The application uses a web-based interface accessible via browser:
 
 **web/** - Frontend assets:
 
-- `index.html` - Single-page application layout with tabs (Main, Inventory, History, Settings, Help)
+- `index.html` - Single-page application layout with tabs (Main, Inventory, History, Points, Settings, Help)
   - Settings is split into sub-tabs (General, Mining, Games, Notifications, Account &
     Maintenance): each `.settings-section` lives in exactly one `#settings-panel-*` with a
     matching `[data-settings-tab]` button; `switchSettingsTab()` toggles `hidden`.
@@ -1256,6 +1256,7 @@ The application uses a web-based interface accessible via browser:
 - `status_update` - Status bar changes
 - `console_output` - New log lines
 - `channel_add/update/remove` - Channel list changes
+- `points_update`, `points_paused_update`, `points_output` - Points tab state, the channel points pause and its log lines
 - `drop_progress` - Drop mining progress
 - `campaign_add` - New campaign added
 - `login_required` - Prompt for credentials
@@ -1343,6 +1344,14 @@ points while a drop can be mined: a pick that `can_watch()` accepts goes to
 CHANNEL_SWITCH before it is watched. Claims and shares also need `is_mining_time()`.
 Other code reaches the service through the public `Twitch.idle_watch`. The channel
 points options (`PointsSettings` in `src/config/settings.py`) are read on each step.
+The dashboard side is the `points` tab (between History and Settings): `#points-tab`
+holds the pause button, the listed channels table, the points log (`#points-log`, fed
+by `points_output` and `initial_state.points.log`), the moved idle channel list, claim
+and share checkboxes (same element ids as before), and the `PointsSettings` controls
+(`#points-setting-<key>`, table `POINTS_SETTINGS` in `app.js`; each saves alone
+through `savePointsSetting()`, number inputs clamp before saving). Static text carries
+`data-points-text="<gui.points key>"` and is set by `translatePoints()`; the strings
+live in `gui.points` (English text in every locale until translated).
 
 - Points pause: `points_paused` is runtime only, like the drop pause. `allowed()`
   needs it off, and `claim()`, `_may_share()` and the points read check it again.
