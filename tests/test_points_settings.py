@@ -230,7 +230,7 @@ class TestAPI:
         {"prediction_min_balance": -1}, {"prediction_min_balance": True}, {"prediction_min_balance": 5.5},
         {"prediction_min_voters": 1_000_001}, {"prediction_min_voters": "1"}, {"prediction_min_voters": False},
         {"prediction_min_odds": 0.5}, {"prediction_min_odds": 101}, {"prediction_min_odds": True},
-        {"prediction_min_odds": "2"}, 
+        {"prediction_min_odds": "2"},
         {"prediction_timing": "soon"}, {"prediction_delay_seconds": 3601}, {"prediction_delay_seconds": 1.5},
         {"prediction_timer_percent": 0}, {"prediction_timer_percent": 100}, {"prediction_timer_percent": True},
         {"prediction_fixed_option": 0}, {"prediction_fixed_option": 11}, {"prediction_fixed_option": "2"},
