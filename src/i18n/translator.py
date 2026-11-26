@@ -539,6 +539,26 @@ class GUIPoints(TypedDict):
     prediction_delay_seconds_help: str
     prediction_timer_percent: str
     prediction_timer_percent_help: str
+    channel_options: str
+    channel_options_marker: str
+    channel_options_save_error: str
+    option_default_on: str
+    option_default_off: str
+    option_on: str
+    option_off: str
+    opt_bonus: str
+    opt_raids: str
+    opt_moments: str
+    opt_predictions: str
+    opt_streaks: str
+    opt_chat: str
+    opt_favorite: str
+    opt_streak_only: str
+    opt_points_limit: str
+    import_follows: str
+    import_follows_result: str
+    import_follows_error: str
+    import_follows_login: str
     reasons: GUIPointsReasons
 
 
