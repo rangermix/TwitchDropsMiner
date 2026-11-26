@@ -483,12 +483,14 @@ def test_idle_list_change_reruns_idle_step_without_games_update():
     client.idle_channels_changed()
     client._state_change.set.assert_called_once()
     client.idle_watch.poke.assert_called_once()
+    client.idle_watch.settings_changed.assert_called_once()
     assert client._games_update_pending is False
     client = client_stub(flag=False)
     client._state = State.CHANNEL_SWITCH
     client.idle_channels_changed()
     client._state_change.set.assert_not_called()
     client.idle_watch.poke.assert_not_called()
+    client.idle_watch.settings_changed.assert_called_once()  # the chat refusal, also while drops are mined
 
 
 @pytest.mark.asyncio

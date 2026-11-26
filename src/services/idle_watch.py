@@ -229,6 +229,10 @@ class IdleWatchService:
     def poke(self) -> None:
         self._wake.set()
 
+    def settings_changed(self) -> None:
+        """An idle option was saved; also while drops are mined and the loop does not run."""
+        self._chat.settings_changed()
+
     def _load(self) -> None:
         """Read the saved account, visits and share keys; a missing file is empty, bad visit entries are skipped.
 

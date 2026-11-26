@@ -56,11 +56,13 @@ class ChatPresence:
         # (login, token) of a login Twitch refused: no connect with them again
         self._refused: tuple[str, str] | None = None
 
+    def settings_changed(self) -> None:
+        """An idle option was saved: turning `join_chat` off (and on again) allows a new try after a refused login."""
+        if not self._twitch.settings.join_chat:
+            self._refused = None
+
     def follow(self, channel: Channel | None) -> None:
         """Sit in channel's chat (None: leave the current one)."""
-        if not self._twitch.settings.join_chat:
-            # turning the option off and on again allows a new try after a refused login
-            self._refused = None
         if channel is not None and channel is self._channel and self._task is not None and not self._task.done():
             return
         self.leave()

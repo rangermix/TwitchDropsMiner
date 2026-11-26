@@ -1494,8 +1494,9 @@ live in `gui.points` (English text in every locale until translated).
   resets the backoff only after a connection stayed up `CHAT_STABLE_SECONDS` (60). 600 s
   of silence is a lost connection. A `NOTICE *` (refused login) stores `(login, token)`
   in `_refused`: no connect with that pair again, so only a new token, `reset()` (auth
-  change) or a `follow()` while `join_chat` is off (the settings change pokes a tick)
-  allows the next try. It logs only exception types, never the token or IRC lines.
+  change) or saving `join_chat` off allows the next try (`Twitch.idle_channels_changed()`
+  calls `IdleWatchService.settings_changed()` on every idle option save, also while drops
+  are mined; it clears the refusal while `join_chat` is off). It logs only exception types, never the token or IRC lines.
 - The `CommunityPoints` user topic is subscribed at login (`BASE_TOPICS = 3`), so at
   most 198 channels are tracked, drop and idle channels together. Idle channels over
   the limit are skipped with a warning. The event topics above are extra and live only

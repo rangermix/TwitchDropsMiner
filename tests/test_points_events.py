@@ -14,11 +14,13 @@ import src.services.chat_presence as chat_mod
 import src.services.points_common as points_common
 import src.services.predictions as pred_mod
 from src.api.gql_client import GQLClient
-from src.config import MAX_WEBSOCKETS, WS_TOPICS_LIMIT, ClientType, WebsocketTopic
+from src.config import MAX_WEBSOCKETS, WS_TOPICS_LIMIT, ClientType, State, WebsocketTopic
+from src.core.client import Twitch
 from src.exceptions import GQLException, GQLServerError, MinerException, RequestException
 from src.services.chat_presence import ChatPresence
 from src.services.idle_watch import IdleWatchService
 from src.services.predictions import PredictionStrategy
+from src.web.managers.settings import SettingsManager
 from src.websocket.pool import WebsocketPool
 from tests.test_idle_points import POINTS_OPTIONS
 from tests.test_idle_watch import fake, loop_service
@@ -917,14 +919,45 @@ async def test_chat_refused_login_is_not_retried_until_the_account_token_or_sett
         assert session.ws_connect.call_count == 2
         await chat._run(a)  # refused again: blocked with the new token too
         assert session.ws_connect.call_count == 2
+        chat.settings_changed()  # another option saved, join_chat still on: still blocked
         tw.settings.join_chat = False
-        chat.follow(None)  # the tick with the option off
+        chat.follow(None)  # a tick with the option off does not clear it; the save does
+        tw.settings.join_chat = True
+        await chat._run(a)
+        assert session.ws_connect.call_count == 2
+        tw.settings.join_chat = False
+        chat.settings_changed()  # the save that turned it off
         tw.settings.join_chat = True
         await chat._run(a)
         assert session.ws_connect.call_count == 3
         chat.reset()  # an account change
         await chat._run(a)
         assert session.ws_connect.call_count == 4 and sleeps == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("loop", ["stopped", "running"])
+async def test_saving_join_chat_off_and_on_clears_a_refused_login_without_a_tick(loop):
+    # the settings save path itself, while drops are mined (no loop) or within one tick of a running loop
+    notice = ":tmi.twitch.tv NOTICE * :Login authentication failed"
+    svc, tw, a, _, session, chat = chat_setup([FakeChat([text(notice)]), FakeChat([])])
+    svc._chat = chat
+    assert await chat._session(a) is False
+    svc._task = None if loop == "stopped" else svc._task
+    client = SimpleNamespace(
+        idle_watch=svc, gui=tw.gui, _state_change=MagicMock(),
+        _state=State.CHANNEL_SWITCH if loop == "stopped" else State.IDLE,
+    )
+    tw.settings.save = MagicMock()
+    manager = SettingsManager(
+        SimpleNamespace(emit=AsyncMock()), tw.settings, MagicMock(),
+        on_idle_channels_change=lambda: Twitch.idle_channels_changed(client),
+    )
+    manager.update_settings({"prediction_percent": 7})  # another option: the refusal stays
+    assert await chat._session(a) is False and session.ws_connect.call_count == 1
+    manager.update_settings({"join_chat": False})
+    manager.update_settings({"join_chat": True})
+    assert await chat._session(a) is True and session.ws_connect.call_count == 2
 
 
 @pytest.mark.asyncio

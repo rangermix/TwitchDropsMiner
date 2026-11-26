@@ -66,7 +66,7 @@ def pause_client(state):
     client._state = state
     client._state_change = MagicMock()
     client._idle_watch_allowed = state is State.IDLE
-    client.settings = SimpleNamespace(idle_channels=["c1"], mining_hours={"mode": "always"})
+    client.settings = SimpleNamespace(idle_channels=["c1"], mining_hours={"mode": "always"}, join_chat=False)
     client.gui = MagicMock()
     client._paused = False
     client.logged_in_user_id = lambda: 1
