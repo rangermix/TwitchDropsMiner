@@ -962,7 +962,10 @@ GQL failures stay local: one game's failed directory lookup skips that game, a f
 CampaignDetails batch skips only that batch, and null `currentUser`/`dropCampaign`/`game`
 data never raises `TypeError`. A failed Inventory/Campaigns fetch keeps the miner running
 (previous inventory, or IDLE before the first load) and retries through the maintenance
-task after `INVENTORY_RETRY_DELAY`. Retryable GQL errors share a three-retry budget.
+task after `INVENTORY_RETRY_DELAY`, doubling per consecutive failure up to the refresh
+interval. An available campaign without details is skipped rather than built from
+Inventory data alone. "service error"/"PersistedQueryNotFound" share a three-retry
+budget per request; timeout-type errors keep their existing unbounded backoff.
 Regression coverage: `tests/test_gql_resilience.py`.
 
 ### Channel Selection Priority

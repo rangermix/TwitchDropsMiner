@@ -65,7 +65,8 @@ async def test_one_failing_game_directory_does_not_stop_discovery(tmp_path, monk
 
     async def live_streams(game, *, drops_enabled):
         if game is broken:
-            raise MinerException("PersistedQueryNotFound")
+            # As ChannelService.get_live_streams wraps a GQL failure.
+            raise MinerException("Game: broken") from GQLException("PersistedQueryNotFound")
         return [found]
 
     client.get_live_streams = AsyncMock(side_effect=live_streams)
@@ -78,7 +79,8 @@ def _inventory_twitch(responses):
         gui=MagicMock(), get_auth=AsyncMock(return_value=SimpleNamespace(user_id="uid")),
         _drops={}, inventory=[], _campaigns={}, _mnt_triggers=deque(), _mnt_task=None,
         _maintenance_service=SimpleNamespace(run_maintenance_task=AsyncMock()),
-        gql_request=AsyncMock(side_effect=responses), settings=SimpleNamespace(),
+        gql_request=AsyncMock(side_effect=responses),
+        settings=SimpleNamespace(minimum_refresh_interval_minutes=30),
     )
     return twitch
 
@@ -147,3 +149,88 @@ async def test_failed_inventory_fetch_keeps_the_miner_running(tmp_path, monkeypa
     client.fetch_inventory = AsyncMock(side_effect=GQLException("Inventory returned no currentUser"))
     await _run(client)
     assert states[0] is (State.GAMES_UPDATE if loaded else State.IDLE)
+
+
+INVENTORY_OK = {"data": {"currentUser": {
+    "inventory": {"dropCampaignsInProgress": [], "gameEventDrops": []},
+}}}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("inventory", [None, {"dropCampaignsInProgress": [], "gameEventDrops": None}])
+async def test_null_inventory_fields_fail_the_fetch_without_a_type_error(inventory):
+    twitch = _inventory_twitch([{"data": {"currentUser": {"inventory": inventory}}}])
+    with pytest.raises(GQLException):
+        await InventoryService(twitch).fetch_inventory()
+    await twitch._mnt_task
+
+
+@pytest.mark.asyncio
+async def test_retry_delay_backs_off_up_to_the_refresh_interval_and_resets():
+    from datetime import timedelta
+
+    failure = {"data": {"currentUser": None}}
+    twitch = _inventory_twitch([failure] * 6 + [INVENTORY_OK, {"data": {"currentUser": {"dropCampaigns": []}}},
+                                                failure])
+    service = InventoryService(twitch)
+    service.fetch_reward_campaigns = AsyncMock(return_value=[])
+    for _ in range(6):
+        with pytest.raises(GQLException):
+            await service.fetch_inventory()
+    await service.fetch_inventory()
+    with pytest.raises(GQLException):
+        await service.fetch_inventory()
+    delays = [call.args[0] for call in twitch._maintenance_service.run_maintenance_task.call_args_list]
+    assert delays == [timedelta(minutes=m) for m in (2, 4, 8, 16, 30, 30)] + [None, timedelta(minutes=2)]
+    await twitch._mnt_task
+
+
+@pytest.mark.asyncio
+async def test_in_progress_campaign_without_details_is_skipped():
+    in_progress = {"id": "c1", "name": "Partial", "game": {"id": "1", "name": "G"}}
+    responses = [
+        {"data": {"currentUser": {"inventory": {
+            "dropCampaignsInProgress": [in_progress], "gameEventDrops": [],
+        }}}},
+        {"data": {"currentUser": {"dropCampaigns": [{"id": "c1", "status": "ACTIVE"}]}}},
+        GQLException("service error"),
+    ]
+    twitch = _inventory_twitch(responses)
+    service = InventoryService(twitch)
+    service.fetch_reward_campaigns = AsyncMock(return_value=[])
+    await service.fetch_inventory()  # would raise KeyError building from Inventory data alone
+    assert twitch.inventory == []
+    await twitch._mnt_task
+
+
+@pytest.mark.asyncio
+async def test_login_errors_from_a_directory_lookup_still_propagate(tmp_path, monkeypatch):
+    from src.exceptions import LoginException
+
+    client, _ = _reloading_miner(tmp_path, monkeypatch, discovered=[], stream_status=[OFFLINE])
+    client.get_live_streams = AsyncMock(side_effect=LoginException("login"))
+    with pytest.raises(LoginException):
+        await _run(client)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("reply", [{"data": {"currentUser": None}}, GQLException("down")])
+async def test_claim_follow_up_survives_a_null_or_failed_current_drop(reply):
+    from src.services.message_handlers import MessageHandlerService
+    from src.utils.async_helpers import AwaitableValue
+
+    channel = SimpleNamespace(id=7)
+    watching = AwaitableValue()
+    watching.set(channel)
+    campaign = MagicMock()
+    campaign.can_earn.return_value = True
+    drop = MagicMock(is_claimed=False, claim_requires_account_link=False, campaign=campaign)
+    drop.claim = AsyncMock(return_value=True)
+    twitch = SimpleNamespace(
+        _drops={"d1": drop}, watching_channel=watching, restart_watching=MagicMock(),
+        request_inventory_refresh=MagicMock(), gql_request=AsyncMock(side_effect=[reply]),
+    )
+    message = {"type": "drop-claim", "data": {"drop_id": "d1", "drop_instance_id": "i1"}}
+    with patch("src.services.message_handlers.asyncio.sleep", AsyncMock()):
+        await MessageHandlerService(twitch).process_drops(1, message)
+    twitch.restart_watching.assert_called_once()

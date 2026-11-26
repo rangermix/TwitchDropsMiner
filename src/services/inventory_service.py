@@ -84,6 +84,8 @@ class InventoryService:
             twitch: The Twitch client instance
         """
         self._twitch = twitch
+        # Consecutive failed inventory fetches; sets the retry backoff.
+        self._failed_fetches = 0
         # Reward grants, claims and stale readings per group; outlives reloads and failed ones.
         self._reward_ledger = RewardLedger()
 
@@ -394,9 +396,13 @@ class InventoryService:
         try:
             await self._fetch_inventory()
         except GQLException:
-            # Retry soon through the maintenance task instead of waiting a full period.
-            self._restart_maintenance(retry_after=INVENTORY_RETRY_DELAY)
+            # Retry soon through the maintenance task, backing off while failures continue.
+            self._failed_fetches += 1
+            interval = timedelta(minutes=self._twitch.settings.minimum_refresh_interval_minutes)
+            delay = INVENTORY_RETRY_DELAY * 2 ** min(self._failed_fetches - 1, 10)
+            self._restart_maintenance(retry_after=min(delay, interval))
             raise
+        self._failed_fetches = 0
 
     def _restart_maintenance(self, *, retry_after: timedelta | None = None) -> None:
         """(Re)start the maintenance task, which requests the next inventory reload."""
@@ -420,8 +426,11 @@ class InventoryService:
 
         # fetch in-progress campaigns (inventory)
         response = await self._twitch.gql_request(GQL_OPERATIONS["Inventory"])
-        inventory: JsonType = self._current_user(response, "Inventory")["inventory"]
-        ongoing_campaigns: list[JsonType] = inventory["dropCampaignsInProgress"] or []
+        inventory = self._current_user(response, "Inventory").get("inventory")
+        # A "server error" can also null just the inventory or its claimed benefits.
+        if not isinstance(inventory, dict) or not isinstance(inventory.get("gameEventDrops"), list):
+            raise GQLException("Inventory returned no inventory data")
+        ongoing_campaigns: list[JsonType] = inventory.get("dropCampaignsInProgress") or []
 
         # this contains claimed benefit edge IDs, not drop IDs
         claimed_benefits: dict[str, datetime] = {
@@ -449,6 +458,7 @@ class InventoryService:
             for campaigns_chunk in chunk(available_campaigns.items(), 20)
         ]
 
+        detailed: set[str] = set()
         try:
             for coro in asyncio.as_completed(fetch_campaigns_tasks):
                 try:
@@ -458,6 +468,7 @@ class InventoryService:
                     logger.warning("Campaign details are unavailable for one batch; skipping it")
                     continue
                 # merge the inventory and campaigns datas together
+                detailed.update(chunk_campaigns_data)
                 inventory_data = GQLClient.merge_data(inventory_data, chunk_campaigns_data)
         finally:
             # as_completed does not own children, including on parent cancellation.
@@ -465,6 +476,10 @@ class InventoryService:
                 task.cancel()
             await asyncio.gather(*fetch_campaigns_tasks, return_exceptions=True)
 
+        # An available campaign without details (failed batch or null reply) cannot be
+        # built safely from Inventory data alone (it may lack its channel allowlist).
+        for campaign_id in available_campaigns.keys() - detailed:
+            inventory_data.pop(campaign_id, None)
         # filter out invalid campaigns
         for campaign_id in list(inventory_data.keys()):
             if inventory_data[campaign_id]["game"] is None:

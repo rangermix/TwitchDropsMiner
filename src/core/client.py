@@ -783,10 +783,11 @@ class Twitch:
                     # add a list of live channels with drops enabled
                     try:
                         found = await self.get_live_streams(game, drops_enabled=True)
-                    except ExitRequest:
-                        raise
-                    except MinerException:
-                        # One game's failed directory lookup must not stop mining the others.
+                    except MinerException as error:
+                        # One game's failed directory lookup must not stop mining the others;
+                        # anything else (exit, login problems) still propagates.
+                        if not isinstance(error.__cause__, GQLException):
+                            raise
                         logger.warning(f"Channel directory for {game.name} is unavailable")
                         continue
                     # A channel kept from a fetch without the drops filter has the same
