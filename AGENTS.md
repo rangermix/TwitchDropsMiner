@@ -1466,10 +1466,12 @@ live in `gui.points` (English text in every locale until translated).
   `PREDICTION_DELAY_SECONDS` (6) before `created_at + prediction_window_seconds` (at once
   when less is left); later updates replace the stored event, so the bet uses the last
   outcomes. An event is handled once (`_handled`, newest `EVENTS_KEPT`, kept across loop
-  stops and cleared only on an auth change): when its timer fires, when it has no usable
-  window (`bet_skipped`), when a LOCKED, RESOLVED or CANCELED status arrives (a later
-  ACTIVE gets no bet) and when `predictions-user-v1` sends `prediction-made` for it (the
-  account bet, also from a browser). Twitch sends `prediction-made` only when the bet is
+  stops and cleared only on an auth change): when its timer fires, when a LOCKED, RESOLVED
+  or CANCELED status arrives (a later ACTIVE gets no bet) and when `predictions-user-v1`
+  sends `prediction-made` for it (the account bet, also from a browser). An update with no
+  usable window starts no timer and does not handle the event, so a later update with a
+  window still does; it logs `bet_skipped` once per event (`_no_window`, cleared with the
+  open events) and only when `may_act(channel, "predictions_enabled")` allows it. Twitch sends `prediction-made` only when the bet is
   placed, so after a restart or an auth change an open event can get a second bet. When
   the timer fires it bets only if `may_act`, the stored status is ACTIVE, the balance is
   known and `PredictionStrategy.amount()` =

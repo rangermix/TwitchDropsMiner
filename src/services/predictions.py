@@ -78,8 +78,9 @@ class Predictions:
 
     Events come from the `predictions-channel-v1` topic; `predictions-user-v1` reports bets the account
     made (`prediction-made`, also from a browser: no bet from TDM then) and the results of TDM's bets.
-    An event is handled once: when its timer fires, when it ends (not ACTIVE), when it has no usable
-    window, or when the account bet on it. Every check runs again when the timer fires: the loop runs, points are not
+    An event is handled once: when its timer fires, when it ends (not ACTIVE), or when the account bet on
+    it. An update without a usable window is skipped, not handled (logged once, and only while
+    predictions may act). Every check runs again when the timer fires: the loop runs, points are not
     paused, mining time, the channel is listed, live and not one drops can use, predictions are on,
     the event is still ACTIVE and not bet on, and 10 <= amount <= min(prediction_max_points, balance).
     """
@@ -98,6 +99,8 @@ class Predictions:
         self._timers: dict[str, asyncio.Task[None]] = {}
         # events that are handled (bet, skipped, ended, or bet on by the account): never bet on again
         self._handled: dict[str, None] = {}
+        # open events logged once as having no usable window; a later update with one still gets its timer
+        self._no_window: dict[str, None] = {}
         # event id -> (channel name, title) of every sent bet, for the result lines
         self._placed: dict[str, tuple[str, str]] = {}
 
@@ -107,6 +110,7 @@ class Predictions:
             task.cancel()
         self._timers.clear()
         self._latest.clear()
+        self._no_window.clear()
 
     def reset(self) -> None:
         """Forget everything on an account change."""
@@ -142,8 +146,10 @@ class Predictions:
             return
         delay = self._delay(event)
         if delay is None:
-            self._handle(event_id)
-            self._skip(channel, event, "no usable window")
+            # not handled: a later update can still bring a usable window
+            if event_id not in self._no_window and self._service.may_act(channel, "predictions_enabled"):
+                remember(self._no_window, event_id)
+                self._skip(channel, event, "no usable window")
             return
         self._timers[event_id] = asyncio.create_task(self._fire(event_id, delay))
 
@@ -153,6 +159,7 @@ class Predictions:
         if (task := self._timers.pop(event_id, None)) is not None:
             task.cancel()
         self._latest.pop(event_id, None)
+        self._no_window.pop(event_id, None)
 
     def _skip(self, channel: Channel, event: JsonType, why: str) -> None:
         logger.info("No bet on %s (%s)", channel.name, why)

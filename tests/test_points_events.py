@@ -701,6 +701,37 @@ async def test_an_event_without_a_usable_window_is_logged_as_skipped_once(change
     await settle()
     assert sent(tw) == []
     tw.gui.points.log.assert_called_once_with("bet_skipped", channel="A", title="Who wins?")
+    assert "e1" not in svc.events.predictions._handled
+
+
+@pytest.mark.asyncio
+async def test_a_later_update_with_a_usable_window_still_gets_the_bet(monkeypatch):
+    monkeypatch.setattr(pred_mod, "PREDICTION_DELAY_SECONDS", 0.95)
+    svc, tw, *_ = setup(reply=BET_OK)
+    bad = event(window=1, ago=0)
+    bad["data"]["event"]["created_at"] = None
+    await svc.events.predictions.process_event(1, bad)
+    await svc.events.predictions.process_event(1, event(window=1, ago=0))
+    await asyncio.sleep(0.2)
+    assert len(sent(tw)) == 1
+    assert logged(tw) == ["bet_skipped", "bet_placed"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("case", ["points paused", "can_watch", "offline", "predictions off", "outside mining hours"])
+async def test_an_unusable_window_is_not_logged_when_predictions_may_not_act(case):
+    svc, tw, a, _ = setup(reply=BET_OK)
+    svc.points_paused = case == "points paused"
+    tw.can_watch.return_value = case == "can_watch"
+    a.online = case != "offline"
+    tw.settings.predictions_enabled = case != "predictions off"
+    tw.is_mining_time.return_value = case != "outside mining hours"
+    message = event()
+    message["data"]["event"]["prediction_window_seconds"] = 0
+    preds = svc.events.predictions
+    await preds.process_event(1, message)
+    await settle()
+    assert sent(tw) == [] and logged(tw) == [] and "e1" not in preds._handled
 
 
 def result(kind, event_id="e1", won=None):
