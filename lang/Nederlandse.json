@@ -498,7 +498,7 @@
             "join_chat_help": "Maakt verbinding met de chat zonder berichten te sturen. Je verschijnt dan in de kijkerslijst van het kanaal, zodat de streamer en andere kijkers kunnen zien dat je er bent.",
             "predictions_header": "Voorspellingen",
             "predictions_enabled": "Voorspellingen plaatsen op live kanalen in de lijst",
-            "predictions_enabled_help": "Waarschuwing: voorspellingen besteden je kanaalpunten en kunnen ze kwijtraken. Een verloren voorspelling wordt niet terugbetaald.",
+            "predictions_enabled_help": "Waarschuwing: voorspellingen kosten kanaalpunten en je kunt die verliezen. Een verloren voorspelling wordt niet terugbetaald.",
             "prediction_strategy": "Strategie",
             "prediction_strategy_help": "Hoe de uitkomst wordt gekozen. Van geen enkele strategie is bekend dat die gemiddeld beter is dan de andere kijkers.",
             "strategy_smart": "Slim: hoge odds als de stemmen dicht bij elkaar liggen, anders de meeste stemmen",
