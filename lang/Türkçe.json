@@ -499,7 +499,7 @@
             "watch_slots": "Aynı anda izlenen kanallar",
             "watch_slots_one": "Bir: drop veya pasif izleme",
             "watch_slots_two": "İki: drop yanında pasif izleme",
-            "watch_slots_help": "İki seçildiğinde pasif izleme bir drop kazılırken de çalışır: drop kanalının yanında listedeki bir kanalı izler. İkinci yuva yalnızca drop'ların kullanamadığı ve drop'ları kapalı olan listedeki kanalları kullanır, böylece drop kazımı kendi kanalını korur. Bu, video trafiğini iki katına çıkarır. Henüz canlı test edilmedi.",
+            "watch_slots_help": "İki seçildiğinde pasif izleme bir drop kazılırken de çalışır: drop kanalının yanında listedeki bir kanalı izler. İkinci yuva yalnızca drop'ların kullanamadığı ve yayınında hiçbir drop kampanyası listelenmeyen listedeki kanalları kullanır, böylece drop kazımı kendi kanalını korur. Bu, video trafiğini iki katına çıkarır. Henüz canlı test edilmedi.",
             "side_watching": "İzleniyor (ikinci yuva)",
             "predictions_header": "Tahminler",
             "predictions_enabled": "Listedeki canlı kanallarda tahmin yap",

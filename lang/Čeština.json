@@ -499,7 +499,7 @@
             "watch_slots": "Kanály sledované najednou",
             "watch_slots_one": "Jeden: dropy nebo pasivní sledování",
             "watch_slots_two": "Dva: pasivní sledování vedle dropů",
-            "watch_slots_help": "Se dvěma běží pasivní sledování i během těžby dropu: sleduje jeden kanál ze seznamu vedle kanálu dropu. Druhé místo používá jen kanály ze seznamu, které dropy nemohou použít a které mají dropy vypnuté, takže těžba dropů si ponechá svůj kanál. Tím se zdvojnásobí přenos videa. Zatím nevyzkoušeno naživo.",
+            "watch_slots_help": "Se dvěma běží pasivní sledování i během těžby dropu: sleduje jeden kanál ze seznamu vedle kanálu dropu. Druhé místo používá jen kanály ze seznamu, které dropy nemohou použít a jejichž stream nezobrazuje žádnou kampaň dropů, takže těžba dropů si ponechá svůj kanál. Tím se zdvojnásobí přenos videa. Zatím nevyzkoušeno naživo.",
             "side_watching": "Sledováno (druhé místo)",
             "predictions_header": "Předpovědi",
             "predictions_enabled": "Zadávat předpovědi na živých kanálech ze seznamu",

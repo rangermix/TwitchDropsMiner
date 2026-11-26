@@ -499,7 +499,7 @@
             "watch_slots": "Kanały oglądane jednocześnie",
             "watch_slots_one": "Jeden: dropy albo pasywne oglądanie",
             "watch_slots_two": "Dwa: pasywne oglądanie obok dropów",
-            "watch_slots_help": "Przy dwóch pasywne oglądanie działa też podczas kopania dropa: ogląda jeden kanał z listy obok kanału dropa. Drugie miejsce używa tylko kanałów z listy, których dropy nie mogą użyć i które mają wyłączone dropy, więc kopanie dropów zachowuje swój kanał. To podwaja ruch wideo. Jeszcze nie testowane na żywo.",
+            "watch_slots_help": "Przy dwóch pasywne oglądanie działa też podczas kopania dropa: ogląda jeden kanał z listy obok kanału dropa. Drugie miejsce używa tylko kanałów z listy, których dropy nie mogą użyć i których stream nie wyświetla żadnej kampanii dropów, więc kopanie dropów zachowuje swój kanał. To podwaja ruch wideo. Jeszcze nie testowane na żywo.",
             "side_watching": "Oglądany (drugie miejsce)",
             "predictions_header": "Przewidywania",
             "predictions_enabled": "Stawiaj przewidywania na kanałach z listy nadających na żywo",

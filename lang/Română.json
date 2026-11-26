@@ -499,7 +499,7 @@
             "watch_slots": "Canale urmărite simultan",
             "watch_slots_one": "Unul: drops sau vizionare pasivă",
             "watch_slots_two": "Două: vizionare pasivă lângă drops",
-            "watch_slots_help": "Cu două, vizionarea pasivă rulează și cât timp se minează un drop: urmărește un canal din listă lângă canalul dropului. Al doilea loc folosește doar canale din listă pe care drops nu le pot folosi și care au drops dezactivate, astfel încât minarea drops își păstrează canalul. Asta dublează traficul video. Încă netestat live.",
+            "watch_slots_help": "Cu două, vizionarea pasivă rulează și cât timp se minează un drop: urmărește un canal din listă lângă canalul dropului. Al doilea loc folosește doar canale din listă pe care drops nu le pot folosi și a căror transmisiune nu listează nicio campanie de drops, astfel încât minarea drops își păstrează canalul. Asta dublează traficul video. Încă netestat live.",
             "side_watching": "Urmărit (al doilea loc)",
             "predictions_header": "Predicții",
             "predictions_enabled": "Plasează predicții pe canalele live din listă",

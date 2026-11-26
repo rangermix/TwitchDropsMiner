@@ -499,7 +499,7 @@
             "watch_slots": "Kanaler, der ses ad gangen",
             "watch_slots_one": "Én: drops eller passiv visning",
             "watch_slots_two": "To: passiv visning ved siden af drops",
-            "watch_slots_help": "Med to kører passiv visning også, mens et drop mines: den ser én kanal fra listen ved siden af drop-kanalen. Den anden plads bruger kun kanaler fra listen, som drops ikke kan bruge, og som har drops slået fra, så drop-mining beholder sin kanal. Det fordobler videotrafikken. Endnu ikke testet live.",
+            "watch_slots_help": "Med to kører passiv visning også, mens et drop mines: den ser én kanal fra listen ved siden af drop-kanalen. Den anden plads bruger kun kanaler fra listen, som drops ikke kan bruge, og hvis stream ikke viser nogen drops-kampagne, så drop-mining beholder sin kanal. Det fordobler videotrafikken. Endnu ikke testet live.",
             "side_watching": "Ser (anden plads)",
             "predictions_header": "Forudsigelser",
             "predictions_enabled": "Afgiv forudsigelser på live listede kanaler",

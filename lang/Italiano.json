@@ -499,7 +499,7 @@
             "watch_slots": "Canali guardati alla volta",
             "watch_slots_one": "Uno: drop o visione passiva",
             "watch_slots_two": "Due: visione passiva accanto ai drop",
-            "watch_slots_help": "Con due, la visione passiva funziona anche mentre si mina un drop: guarda un canale della lista accanto al canale del drop. Il secondo posto usa solo canali della lista che i drop non possono usare e con i drop disattivati, così il mining dei drop mantiene il suo canale. Questo raddoppia il traffico video. Non ancora testato dal vivo.",
+            "watch_slots_help": "Con due, la visione passiva funziona anche mentre si mina un drop: guarda un canale della lista accanto al canale del drop. Il secondo posto usa solo canali della lista che i drop non possono usare e il cui stream non elenca alcuna campagna di drop, così il mining dei drop mantiene il suo canale. Questo raddoppia il traffico video. Non ancora testato dal vivo.",
             "side_watching": "Guardato (secondo posto)",
             "predictions_header": "Previsioni",
             "predictions_enabled": "Fai previsioni sui canali in elenco in diretta",

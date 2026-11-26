@@ -499,7 +499,7 @@
             "watch_slots": "Egyszerre nézett csatornák",
             "watch_slots_one": "Egy: dropok vagy passzív nézés",
             "watch_slots_two": "Kettő: passzív nézés a dropok mellett",
-            "watch_slots_help": "Kettővel a passzív nézés drop bányászása közben is fut: egy listás csatornát néz a drop csatornája mellett. A második hely csak olyan listás csatornákat használ, amelyeket a dropok nem tudnak használni, és amelyeken a dropok ki vannak kapcsolva, így a drop bányászása megtartja a csatornáját. Ez megduplázza a videóforgalmat. Élőben még nincs kipróbálva.",
+            "watch_slots_help": "Kettővel a passzív nézés drop bányászása közben is fut: egy listás csatornát néz a drop csatornája mellett. A második hely csak olyan listás csatornákat használ, amelyeket a dropok nem tudnak használni, és amelyek streamje nem listáz egyetlen drop kampányt sem, így a drop bányászása megtartja a csatornáját. Ez megduplázza a videóforgalmat. Élőben még nincs kipróbálva.",
             "side_watching": "Nézve (második hely)",
             "predictions_header": "Előrejelzések",
             "predictions_enabled": "Előrejelzések leadása a listán szereplő élő csatornákon",

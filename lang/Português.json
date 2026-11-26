@@ -499,7 +499,7 @@
             "watch_slots": "Canais assistidos ao mesmo tempo",
             "watch_slots_one": "Um: drops ou exibição passiva",
             "watch_slots_two": "Dois: exibição passiva ao lado dos drops",
-            "watch_slots_help": "Com dois, a exibição passiva também funciona enquanto um drop é minerado: ela assiste a um canal da lista ao lado do canal do drop. A segunda vaga usa apenas canais da lista que os drops não podem usar e que estão com os drops desativados, assim a mineração de drops mantém o seu canal. Isso dobra o tráfego de vídeo. Ainda não testado ao vivo.",
+            "watch_slots_help": "Com dois, a exibição passiva também funciona enquanto um drop é minerado: ela assiste a um canal da lista ao lado do canal do drop. A segunda vaga usa apenas canais da lista que os drops não podem usar e cuja transmissão não lista nenhuma campanha de drops, assim a mineração de drops mantém o seu canal. Isso dobra o tráfego de vídeo. Ainda não testado ao vivo.",
             "side_watching": "Assistindo (segunda vaga)",
             "predictions_header": "Previsões",
             "predictions_enabled": "Fazer previsões nos canais da lista ao vivo",

@@ -499,7 +499,7 @@
             "watch_slots": "Channels watched at a time",
             "watch_slots_one": "One: drops or idle watching",
             "watch_slots_two": "Two: idle watching next to drops",
-            "watch_slots_help": "With two, idle watching also runs while a drop is mined: it watches one listed channel next to the drop channel. The second slot only uses listed channels that drops cannot use and that have drops off, so drop mining keeps its channel. This doubles the video traffic. Not tested live yet.",
+            "watch_slots_help": "With two, idle watching also runs while a drop is mined: it watches one listed channel next to the drop channel. The second slot only uses listed channels that drops cannot use and whose stream lists no drops campaign, so drop mining keeps its channel. This doubles the video traffic. Not tested live yet.",
             "side_watching": "Watching (second slot)",
             "predictions_header": "Predictions",
             "predictions_enabled": "Place predictions on live listed channels",

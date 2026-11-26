@@ -499,7 +499,7 @@
             "watch_slots": "Saluran yang ditonton sekaligus",
             "watch_slots_one": "Satu: drop atau tontonan pasif",
             "watch_slots_two": "Dua: tontonan pasif di samping drop",
-            "watch_slots_help": "Dengan dua, tontonan pasif juga berjalan saat drop sedang ditambang: satu saluran dari daftar ditonton di samping saluran drop. Slot kedua hanya memakai saluran dari daftar yang tidak bisa dipakai drop dan yang drop-nya nonaktif, sehingga penambangan drop tetap memakai salurannya. Ini menggandakan lalu lintas video. Belum diuji secara langsung.",
+            "watch_slots_help": "Dengan dua, tontonan pasif juga berjalan saat drop sedang ditambang: satu saluran dari daftar ditonton di samping saluran drop. Slot kedua hanya memakai saluran dari daftar yang tidak bisa dipakai drop dan yang streamnya tidak mencantumkan kampanye drop apa pun, sehingga penambangan drop tetap memakai salurannya. Ini menggandakan lalu lintas video. Belum diuji secara langsung.",
             "side_watching": "Ditonton (slot kedua)",
             "predictions_header": "Prediksi",
             "predictions_enabled": "Pasang prediksi di saluran live dalam daftar",

@@ -499,7 +499,7 @@
             "watch_slots": "Kanalen tegelijk bekeken",
             "watch_slots_one": "Eén: drops of passief kijken",
             "watch_slots_two": "Twee: passief kijken naast drops",
-            "watch_slots_help": "Met twee loopt passief kijken ook terwijl een drop wordt gemined: het kijkt één kanaal uit de lijst naast het dropkanaal. De tweede plek gebruikt alleen kanalen uit de lijst die drops niet kunnen gebruiken en waarop drops uit staan, zodat drop-mining zijn kanaal houdt. Dit verdubbelt het videoverkeer. Nog niet live getest.",
+            "watch_slots_help": "Met twee loopt passief kijken ook terwijl een drop wordt gemined: het kijkt één kanaal uit de lijst naast het dropkanaal. De tweede plek gebruikt alleen kanalen uit de lijst die drops niet kunnen gebruiken en waarvan de stream geen dropcampagne vermeldt, zodat drop-mining zijn kanaal houdt. Dit verdubbelt het videoverkeer. Nog niet live getest.",
             "side_watching": "Bekeken (tweede plek)",
             "predictions_header": "Voorspellingen",
             "predictions_enabled": "Voorspellingen plaatsen op live kanalen in de lijst",

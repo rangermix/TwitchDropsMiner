@@ -499,7 +499,7 @@
             "watch_slots": "Canales vistos a la vez",
             "watch_slots_one": "Uno: drops o visualización pasiva",
             "watch_slots_two": "Dos: visualización pasiva junto a los drops",
-            "watch_slots_help": "Con dos, la visualización pasiva también funciona mientras se mina un drop: ve un canal de la lista junto al canal del drop. La segunda plaza solo usa canales de la lista que los drops no pueden usar y que tienen los drops desactivados, así la minería de drops conserva su canal. Esto duplica el tráfico de vídeo. Aún no probado en directo.",
+            "watch_slots_help": "Con dos, la visualización pasiva también funciona mientras se mina un drop: ve un canal de la lista junto al canal del drop. La segunda plaza solo usa canales de la lista que los drops no pueden usar y cuyo stream no lista ninguna campaña de drops, así la minería de drops conserva su canal. Esto duplica el tráfico de vídeo. Aún no probado en directo.",
             "side_watching": "Viendo (segunda plaza)",
             "predictions_header": "Predicciones",
             "predictions_enabled": "Hacer predicciones en los canales de la lista en directo",
