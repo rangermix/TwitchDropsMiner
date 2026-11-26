@@ -25,6 +25,7 @@ from src.config.settings import (
     MiningHoursSettings,
     PointsSettings,
 )
+from src.services.follow_import import FollowImporter, FollowImportError
 from src.services.game_order import TemporaryGameOrder
 from src.version import __version__
 from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
@@ -579,6 +580,34 @@ async def update_points_paused(request: PointsPauseRequest):
 
     twitch_client.idle_watch.set_points_paused(request.paused)
     return {"success": True, "paused": twitch_client.idle_watch.points_paused}
+
+
+@app.post("/api/points/import-follows")
+async def import_follows():
+    """Append the channels the account follows to the idle list, up to the cap of 20."""
+    if not twitch_client or not gui_manager:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+    if twitch_client.logged_in_user_id() is None:
+        raise HTTPException(status_code=409, detail="not_logged_in")
+
+    importer = FollowImporter(twitch_client)
+    try:
+        followed = await importer.fetch()
+    except FollowImportError:
+        raise HTTPException(status_code=502, detail="follows_unavailable") from None
+    # merged after the reads: the list may have changed while they ran
+    current = list(twitch_client.settings.idle_channels)
+    merged, counts = importer.merge(current, followed)
+    if merged != current:
+        try:
+            gui_manager.settings.update_settings({"idle_channels": merged})
+        except Exception:
+            raise HTTPException(status_code=500, detail="settings_save_failed") from None
+    logger.info(
+        "Followed channels import: %d added, %d already listed, %d over the limit",
+        counts["added"], counts["already_listed"], counts["over_limit"],
+    )
+    return {"success": True, **counts}
 
 
 @app.post("/api/wanted-order")

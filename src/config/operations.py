@@ -157,6 +157,17 @@ GQL_OPERATIONS: dict[str, GQLOperation] = {
             "channelLogin": ...,  # channel login
         },
     ),
+    # read only: the logins the account follows, oldest follow first, 100 per page; the answer is
+    # data.user.follows.{edges[].node.login, edges[].cursor, pageInfo.hasNextPage}
+    "ChannelFollows": GQLOperation(
+        "ChannelFollows",
+        "eecf815273d3d949e5cf0085cc5084cd8a1b5b7b6f7990cf43cb0beadf546907",
+        variables={
+            "limit": 100,
+            "order": "ASC",
+            "cursor": "",  # the last edge's cursor of the previous page
+        },
+    ),
     # returns all in-progress campaigns
     "Inventory": GQLOperation(
         "Inventory",
