@@ -176,6 +176,7 @@ class PointsEvents:
         remember(self._moments, moment_id)
         response, code = await self.send(
             GQL_OPERATIONS["CommunityMomentCallout_Claim"].with_variables({"input": {"momentID": moment_id}}),
+            single_attempt=True,
         )
         if response is not None:
             code = error_code(response, "claimCommunityMoment")

@@ -129,7 +129,7 @@ GQL_OPERATIONS: dict[str, GQLOperation] = {
             },
         },
     ),
-    # idle watching: claim a community moment; the reply field is claimCommunityMoment
+    # idle watching: claim a community moment; the reply field is claimCommunityMoment; sent once (single_attempt)
     "CommunityMomentCallout_Claim": GQLOperation(
         "CommunityMomentCallout_Claim",
         "e2d67415aead910f7f9ceb45a77b750a1e1d9622c936d832328a0689e054db62",

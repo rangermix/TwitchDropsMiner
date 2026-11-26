@@ -328,6 +328,7 @@ async def test_a_moment_on_any_live_listed_channel_is_claimed_once():
     [op] = sent(tw)
     assert op["operationName"] == "CommunityMomentCallout_Claim"
     assert op["variables"] == {"input": {"momentID": "m1"}}
+    assert op.single_attempt is True  # a claim that may have run is not resent
     tw.gui.points.log.assert_called_once_with("moment_claimed", channel="B")
 
 
