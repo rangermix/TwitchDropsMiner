@@ -1536,3 +1536,14 @@ async def test_a_failed_drops_read_is_retried_on_the_next_viewcount(caplog, monk
     assert channel.drops_enabled and not channel.drops_unverified and tw.can_watch(channel)
     await handler.process_stream_state(1, {"type": "viewcount", "viewers": 9})
     assert check_online.call_count == 3  # no more retries once verified
+
+
+@pytest.mark.asyncio
+async def test_stream_down_ends_the_failing_drops_streak():
+    svc, tw = drops_service(WANTED_GAME, "error")
+    await idle_entry(svc)
+    channel = tw.channels[1]
+    assert channel.drops_unverified
+    tw.on_channel_update = MagicMock()
+    channel.set_offline()
+    assert not channel.online and not channel.drops_unverified

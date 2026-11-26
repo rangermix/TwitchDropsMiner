@@ -395,7 +395,7 @@ use goes to drop mining instead.
   stream check of that channel). A listed channel counts as a drop channel only when that
   check shows a campaign your account can earn. A failed check counts as no drops for a
   new stream and keeps the last result for a running one; TDM checks again on the next
-  viewer count update from Twitch. The
+  viewer count update from Twitch, about two minutes later. The
   hourly channel reload usually drops the idle channels (an idle channel streaming a
   wanted game stays tracked), so the stream lookup and the channel points read run
   again after it.

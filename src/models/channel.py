@@ -632,6 +632,7 @@ class Channel:
         """
         needs_display = self.cancel_online_check()
         old_stream = self._stream
+        self.drops_unverified = False  # a new stream starts a new failing streak
         self._set_stream(None)
         if old_stream is not None:
             self._twitch.on_channel_update(self, old_stream, None)
