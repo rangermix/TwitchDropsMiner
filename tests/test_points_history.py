@@ -89,14 +89,40 @@ def test_gain_categories(reason, expected):
     assert sum(h.channels[1]["gains"].values()) == 7
 
 
-def test_bets_count_results_and_a_win_adds_to_the_bet_gains():
+def test_bets_count_results_and_the_bet_gains_hold_the_net():
     h, _ = make()
-    h.bet(1, "a", "WIN", 120)
-    h.bet(1, "a", "LOSE")
-    h.bet(1, "a", "REFUND")
-    h.bet(1, "a", "DRAW")
+    h.bet(1, "a", "WIN", 120, 50)  # +70
+    h.bet(1, "a", "LOSE", 0, 30)  # -30
+    h.bet(1, "a", "REFUND", 0, 40)  # 0
+    h.bet(1, "a", "DRAW", 0, 99)
     assert h.channels[1]["bets"] == {"won": 1, "lost": 1, "refunded": 1, "points_won": 120}
-    assert h.channels[1]["gains"]["bet"] == 120
+    assert h.channels[1]["gains"]["bet"] == 40
+
+
+@pytest.mark.parametrize(("result", "won", "stake", "net"), [
+    ("WIN", 300, 100, 200), ("WIN", 100, 100, 0), ("LOSE", 0, 100, -100), ("REFUND", 0, 100, 0),
+])
+def test_one_bet_result_and_its_net(result, won, stake, net):
+    h, _ = make()
+    h.bet(1, "a", result, won, stake)
+    assert h.channels[1]["gains"]["bet"] == net
+
+
+@pytest.mark.parametrize("reason", ["PREDICTION", "PREDICTION_WIN", "PREDICTION_REFUND", "XPREDICTIONX"])
+def test_a_prediction_payout_in_points_earned_is_not_a_gain(reason):
+    h, _ = make()
+    h.sample(1, "a", 5)
+    h.gain(1, "a", reason, 500)
+    assert all(v == 0 for v in h.channels[1]["gains"].values())
+
+
+def test_a_negative_bet_net_is_saved_and_loads_back(tmp_path):
+    path = tmp_path / "h.json"
+    h, _ = make(path)
+    h.bet(1, "a", "LOSE", 0, 250)
+    assert h.save({"a"})
+    loaded = PointsHistory(path)
+    assert loaded.channels[1]["gains"]["bet"] == -250 and loaded.channels[1]["bets"]["lost"] == 1
 
 
 def test_another_account_starts_empty_and_replaces_the_file(tmp_path):
@@ -188,6 +214,7 @@ def test_bad_channel_entries_are_skipped_with_a_count_and_the_rest_kept(tmp_path
         "2": "nope",
         "3": {**GOOD, "samples": [[1, "2"]]},
         "4": {**GOOD, "gains": {"mystery": 1}},
+        "7": {**GOOD, "gains": {"watch": -1}},  # only the bet net may be negative
         "5": {**GOOD, "bets": {"won": -1}},
         "6": {**GOOD, "login": 5},
     }
@@ -196,7 +223,7 @@ def test_bad_channel_entries_are_skipped_with_a_count_and_the_rest_kept(tmp_path
         h = PointsHistory(path)
     assert list(h.channels) == [1] and h.account == 7
     assert h.channels[1]["gains"]["watch"] == 3 and h.channels[1]["bets"]["won"] == 1
-    assert [r.getMessage() for r in caplog.records] == ["Points history file: 6 invalid entries skipped"]
+    assert [r.getMessage() for r in caplog.records] == ["Points history file: 7 invalid entries skipped"]
 
 
 def test_a_missing_file_is_empty_and_a_saved_file_loads_back(tmp_path):

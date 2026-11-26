@@ -129,3 +129,14 @@ assert.equal(el('points-history-body').hidden, false);
 updatePointsHistory({channels: {'1': {login: 'a', samples: [[1, 2], 'x', [3, null]], gains: {}, bets: {}}}});
 assert.equal(el('points-history-chart').children[0].children.find(c => c.tag === 'polyline').attrs.points.split(' ').length, 1);
 """)
+
+
+def test_a_negative_bet_net_is_shown_with_its_sign():
+    run(r"""
+const channels = sample();
+channels['1'].gains.bet = -250;
+updatePointsHistory({channels});
+const rows = el('points-history-gains').children.map(r => r.children.map(c => c.textContent));
+assert.deepEqual(rows.find(r => r[0] === 'Prediction'), ['Prediction', (-250).toLocaleString()]);
+assert.ok(rows.find(r => r[0] === 'Prediction')[1].includes('250') && /^[-−]/.test((-250).toLocaleString()));
+""")

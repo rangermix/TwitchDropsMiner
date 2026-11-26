@@ -1233,11 +1233,27 @@ async def test_a_placed_bets_result_is_recorded_and_a_foreign_one_is_not():
     svc, tw, *_ = setup(reply=BET_OK)
     await svc.events.predictions.process_event(1, event())
     await settle()
+    stake = next(c.kwargs["points"] for c in tw.gui.points.log.call_args_list if c.args == ("bet_placed",))
     await svc.events.predictions.process_result(42, result("WIN", won=120))
     await svc.events.predictions.process_result(42, result("WIN", event_id="other", won=5))
     entry = svc.history.channels[1]
     assert entry["bets"] == {"won": 1, "lost": 0, "refunded": 0, "points_won": 120}
-    assert entry["gains"]["bet"] == 120
+    assert stake > 0 and entry["gains"]["bet"] == 120 - stake
+
+
+@pytest.mark.asyncio
+async def test_a_lost_bet_records_minus_the_stake_and_its_payout_message_is_not_counted_twice():
+    svc, tw, *_ = setup(reply=BET_OK)
+    await svc.events.predictions.process_event(1, event())
+    await settle()
+    stake = next(c.kwargs["points"] for c in tw.gui.points.log.call_args_list if c.args == ("bet_placed",))
+    await svc.events.predictions.process_result(42, result("LOSE"))
+    assert svc.history.channels[1]["gains"]["bet"] == -stake
+    # a points-earned message for a prediction payout adds to no category, only its balance sample
+    tw.gui.status = MagicMock()  # a is watched: its balance reaches the status line
+    await svc.process_points(42, earned(1, "PREDICTION", 300, 9999))
+    entry = svc.history.channels[1]
+    assert entry["gains"]["bet"] == -stake and entry["gains"]["other"] == 0 and entry["samples"][-1][1] == 9999
 
 
 @pytest.mark.asyncio

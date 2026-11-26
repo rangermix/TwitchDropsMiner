@@ -25,6 +25,7 @@ CHANNELS_KEPT = 20
 SAMPLE_MERGE_SECONDS = 300
 SAVE_INTERVAL_SECONDS = 60
 CATEGORIES = ("watch", "bonus", "raid", "streak", "bet", "other")
+# points_won is gross, as Twitch sends it (the stake included); gains["bet"] holds the net
 BET_KEYS = ("won", "lost", "refunded", "points_won")
 # the reason codes are the ones of IdleWatchService (STREAK_REASON, CLAIM_REASON) and the tab's reasons table
 REASON_CATEGORIES = {"CLAIM": "bonus", "RAID": "raid", "WATCH_STREAK": "streak"}
@@ -104,7 +105,8 @@ class PointsHistory:
             return None
         if not all(type(s) is list and len(s) == 2 and _count(s[0]) and _count(s[1]) for s in samples):
             return None
-        if not all(k in CATEGORIES and _count(v) for k, v in gains.items()) or not all(k in BET_KEYS and _count(v) for k, v in bets.items()):
+        # the net of the bets can be negative
+        if not all(k in CATEGORIES and (_count(v) or (k == "bet" and type(v) is int)) for k, v in gains.items()) or not all(k in BET_KEYS and _count(v) for k, v in bets.items()):
             return None
         return int(key), {
             "login": login,
@@ -164,19 +166,24 @@ class PointsHistory:
             del samples[:-SAMPLES_KEPT]
 
     def gain(self, channel_id: int, login: str, reason: str, points: int) -> None:
-        if points < 0 or (entry := self._entry(channel_id, login)) is None:
+        """Add a points-earned gain; a prediction payout is counted by bet() from the result message."""
+        if points < 0 or "PREDICTION" in reason or (entry := self._entry(channel_id, login)) is None:
             return
         entry["gains"][category(reason)] += points
 
-    def bet(self, channel_id: int, login: str, result: str, points_won: int = 0) -> None:
-        """Count a bet TDM placed: result is WIN, LOSE or REFUND."""
+    def bet(self, channel_id: int, login: str, result: str, points_won: int = 0, stake: int = 0) -> None:
+        """Count a bet TDM placed: result is WIN, LOSE or REFUND; points_won (gross) is Twitch's payout.
+
+        gains["bet"] gets the net: a win its payout less the stake, a loss minus the stake, a refund 0."""
         key = {"WIN": "won", "LOSE": "lost", "REFUND": "refunded"}.get(result)
         if key is None or (entry := self._entry(channel_id, login)) is None:
             return
         entry["bets"][key] += 1
         if key == "won":
-            entry["gains"]["bet"] += points_won
+            entry["gains"]["bet"] += points_won - stake
             entry["bets"]["points_won"] += points_won
+        elif key == "lost":
+            entry["gains"]["bet"] -= stake
 
     def save(self, logins: Collection[str]) -> bool:
         """Drop unlisted channels, then write when changed and the last attempt is a minute old.
