@@ -23,6 +23,7 @@ from src.config import GQL_OPERATIONS, MAX_CHANNELS, GQLRawQuery, State
 from src.exceptions import ExitRequest, GQLException, MinerException
 from src.i18n import _
 from src.models.channel import Channel
+from src.services.chat_presence import ChatPresence
 from src.services.idle_points import PointsReader, WatchPriority
 from src.services.points_events import PointsEvents
 from src.utils import chunk, json_save, task_wrapper
@@ -121,8 +122,9 @@ class IdleWatchService:
         # runtime only, like the drop pause: idle watching and its points actions stop until resumed
         self.points_paused = False
         self._reader = PointsReader(twitch, self)
-        # event topics with raids, moments and predictions
+        # event topics with raids, moments and predictions, and the chat of the watched channel
         self.events = PointsEvents(twitch, self)
+        self._chat = ChatPresence(twitch, self)
         # broadcast id -> (channel id, recovery visits started, when the last visit ended) for broadcasts
         # whose full visit got no streak bonus; in memory only
         self._recovery: dict[int, tuple[int, int, float]] = {}
@@ -190,8 +192,9 @@ class IdleWatchService:
         return task
 
     def _end_events(self) -> None:
-        """Unsubscribe the event topics and drop open predictions."""
+        """Unsubscribe the event topics, drop open predictions and leave the chat."""
         self.events.clear()
+        self._chat.leave()
 
     def _pause(self) -> None:
         # the first stop wins: later stop() calls while already down must not shrink the gap
@@ -211,6 +214,7 @@ class IdleWatchService:
         self.multipliers.clear()
         self._reader.reset()
         self.events.reset()
+        self._chat.reset()
         self._twitch.gui.points.clear()
         self._claimed.clear()
         self._claim_failed = False
@@ -432,6 +436,8 @@ class IdleWatchService:
             self._claim_retries += 1
             await self.refresh_points(channel)
         self.events.sync()
+        watched = self.watched
+        self._chat.follow(watched if watched is not None and self.may_act(watched, "join_chat") else None)
         await self._reader.read_due(live, now)
         await self.share_streaks()
         self._twitch.gui.points.refresh()

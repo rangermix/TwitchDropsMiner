@@ -7,12 +7,15 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
+import aiohttp
 import pytest
 
+import src.services.chat_presence as chat_mod
 import src.services.predictions as pred_mod
 from src.api.gql_client import GQLClient
 from src.config import MAX_WEBSOCKETS, WS_TOPICS_LIMIT, ClientType, WebsocketTopic
 from src.exceptions import GQLException, MinerException
+from src.services.chat_presence import ChatPresence
 from src.services.idle_watch import IdleWatchService
 from src.services.predictions import PredictionStrategy
 from src.websocket.pool import WebsocketPool
@@ -166,11 +169,13 @@ def test_a_pool_limit_error_is_caught_and_logged_once():
 async def test_the_loop_drops_its_topics_when_it_ends_by_itself_but_not_a_newer_runs(monkeypatch):
     svc, tw = loop_service([fake(1, 10)])
     svc.events = MagicMock()
+    svc._chat = MagicMock()
     tw.is_mining_time.side_effect = None
     tw.is_mining_time.return_value = False  # not allowed: the loop ends by itself
     svc.enter()
     await asyncio.wait_for(svc._task, 1)
     svc.events.clear.assert_called_once()
+    svc._chat.leave.assert_called_once()
     # a stopped run that finishes after a new run started leaves the new run's events alone
     tw.is_mining_time.return_value = True
     svc.enter()
@@ -185,13 +190,24 @@ async def test_the_loop_drops_its_topics_when_it_ends_by_itself_but_not_a_newer_
 
 
 @pytest.mark.asyncio
-async def test_tick_syncs_the_topics():
+async def test_tick_syncs_topics_and_follows_the_chat_of_the_watched_channel():
     svc, tw = loop_service([fake(1, 10)])
     svc._task = MagicMock(done=lambda: False)
     svc._reader = SimpleNamespace(read_due=AsyncMock())
     svc.events = MagicMock()
+    svc._chat = MagicMock()
+    tw.settings.join_chat = True
     await svc._tick()
     svc.events.sync.assert_called_once()
+    svc._chat.follow.assert_called_with(svc.watched)
+    tw.settings.join_chat = False
+    await svc._tick()
+    svc._chat.follow.assert_called_with(None)
+    tw.settings.join_chat = True
+    tw.can_watch.return_value = True  # drops can use it: handed over, no chat
+    svc._chat.follow.reset_mock()
+    await svc._tick()
+    svc._chat.follow.assert_not_called()
 
 
 # --- raids ---
@@ -661,3 +677,162 @@ def test_handled_ids_are_bounded():
     for i in range(pred_mod.EVENTS_KEPT + 5):
         pred_mod.remember(store, str(i))
     assert len(store) == pred_mod.EVENTS_KEPT and "0" not in store and str(pred_mod.EVENTS_KEPT + 4) in store
+
+
+# --- chat presence ---
+
+
+TOKEN = "s3cr3t-token-value"
+
+
+def text(data):
+    return aiohttp.WSMessage(aiohttp.WSMsgType.TEXT, data, None)
+
+
+CLOSED = aiohttp.WSMessage(aiohttp.WSMsgType.CLOSED, None, None)
+
+
+class FakeChat:
+    """An IRC websocket that answers with the given messages, then closes."""
+
+    def __init__(self, messages):
+        self.messages = list(messages)
+        self.sent = []
+
+    async def send_str(self, data):
+        self.sent.append(data)
+
+    async def receive(self, timeout=None):
+        return self.messages.pop(0) if self.messages else CLOSED
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        return False
+
+
+def chat_setup(connections, *, login="me"):
+    svc, tw, a, b = setup()
+    svc.gql = AsyncMock(return_value={"data": {"currentUser": {"login": login}}})
+    tw.get_auth = AsyncMock(return_value=SimpleNamespace(access_token=TOKEN))
+    session = SimpleNamespace(ws_connect=MagicMock(side_effect=connections))
+    tw.get_session = AsyncMock(return_value=session)
+    return svc, tw, a, b, session, ChatPresence(tw, svc)
+
+
+WELCOME = ":tmi.twitch.tv 001 me :Welcome\r\n:me!me.tmi.twitch.tv JOIN #a\r\nPING :tmi.twitch.tv"
+
+
+@pytest.mark.asyncio
+async def test_chat_joins_answers_ping_and_never_sends_a_message(caplog):
+    ws = FakeChat([text(WELCOME), text("PING :tmi.twitch.tv\r\n")])
+    svc, tw, a, _, session, chat = chat_setup([ws])
+    with caplog.at_level(logging.DEBUG):
+        assert await chat._session(a) is True
+    assert ws.sent == [f"PASS oauth:{TOKEN}", "NICK me", "JOIN #a", "PONG :tmi.twitch.tv", "PONG :tmi.twitch.tv"]
+    assert not any(line.startswith(("PRIVMSG", "PART")) for line in ws.sent)
+    assert session.ws_connect.call_args.args == ("wss://irc-ws.chat.twitch.tv:443",)
+    tw.gui.points.log.assert_called_once_with("chat_joined", channel="A")
+    assert TOKEN not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_chat_reconnects_with_backoff_and_never_logs_the_token(monkeypatch, caplog):
+    sleeps = []
+
+    async def fast_sleep(delay):
+        sleeps.append(delay)
+
+    monkeypatch.setattr(chat_mod.asyncio, "sleep", fast_sleep)
+    error = aiohttp.ClientConnectionError(f"refused for oauth:{TOKEN}")
+    login_error = MinerException(f"auth failed {TOKEN}")
+    refused = FakeChat([text(":tmi.twitch.tv NOTICE * :Login authentication failed")])
+    svc, tw, a, _, session, chat = chat_setup([error, refused, login_error, FakeChat([text(WELCOME)]), RuntimeError("closed")])
+    with caplog.at_level(logging.DEBUG):
+        await chat._run(a)
+    assert session.ws_connect.call_count == 5
+    assert all(0 < s <= chat_mod.CHAT_BACKOFF_MAX for s in sleeps) and len(sleeps) == 4
+    assert "ClientConnectionError" in caplog.text and "refused the login" in caplog.text and "MinerException" in caplog.text
+    assert TOKEN not in caplog.text
+    assert logged(tw) == ["chat_joined", "chat_left"]
+
+
+@pytest.mark.asyncio
+async def test_chat_backoff_is_bounded(monkeypatch):
+    sleeps = []
+
+    async def fast_sleep(delay):
+        sleeps.append(delay)
+
+    monkeypatch.setattr(chat_mod.asyncio, "sleep", fast_sleep)
+    svc, tw, a, _, session, chat = chat_setup([aiohttp.ClientConnectionError()] * 15 + [RuntimeError()])
+    await chat._run(a)
+    assert max(sleeps) == chat_mod.CHAT_BACKOFF_MAX
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("case", ["off", "not watched", "paused", "can_watch"])
+async def test_chat_does_not_connect_when_not_wanted(case):
+    svc, tw, a, b, session, chat = chat_setup([FakeChat([])])
+    tw.settings.join_chat = case != "off"
+    svc.watched = b if case == "not watched" else a
+    svc.points_paused = case == "paused"
+    tw.can_watch.return_value = case == "can_watch"
+    await chat._run(a)
+    session.ws_connect.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("login", [None, "", "Me", "me\r\nPRIVMSG #a :hi", "x" * 26])
+async def test_chat_needs_a_valid_account_login(login):
+    svc, tw, a, _, session, chat = chat_setup([FakeChat([])], login=login)
+    assert await chat._session(a) is False
+    session.ws_connect.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_chat_reads_the_login_once_per_account():
+    svc, tw, a, _, session, chat = chat_setup([FakeChat([]), FakeChat([])])
+    await chat._session(a)
+    await chat._session(a)
+    svc.gql.assert_awaited_once()
+    chat.reset()
+    await chat._account_login()
+    assert svc.gql.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_chat_follow_leaves_on_switch_and_stop():
+    hold = asyncio.Event()
+
+    class HeldChat(FakeChat):
+        async def receive(self, timeout=None):
+            if self.messages:
+                return self.messages.pop(0)
+            await hold.wait()
+            return CLOSED
+
+    svc, tw, a, b, session, chat = chat_setup([HeldChat([text(WELCOME)]), HeldChat([])])
+    chat.follow(a)
+    await settle()
+    first = chat._task
+    chat.follow(a)  # same channel: kept
+    assert chat._task is first
+    svc.watched = b
+    chat.follow(b)
+    await settle()
+    assert first.cancelled()
+    assert logged(tw) == ["chat_joined", "chat_left"]
+    tw.gui.points.log.assert_called_with("chat_left", channel="A")
+    chat.follow(None)
+    await settle()
+    assert chat._task is None and session.ws_connect.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_stop_leaves_the_chat():
+    svc, *_ = setup()
+    svc._chat = MagicMock()
+    svc.stop()
+    svc._chat.leave.assert_called_once()
