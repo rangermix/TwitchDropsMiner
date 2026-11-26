@@ -15,10 +15,13 @@ import pytest
 
 from src.config import MAX_CHANNELS, State, WebsocketTopic
 from src.core.client import Twitch
+from src.models.campaign import DropsCampaign
+from src.models.game import Game
 from src.services import idle_watch as idle_mod
 from src.services.channel_service import ChannelService
 from src.services.idle_watch import IDLE_VISIT_SECONDS, RESTART_SECONDS, IdleWatchService
 from src.services.message_handlers import MessageHandlerService
+from src.services.watch_service import WatchService
 from tests.test_idle_points import POINTS_OPTIONS
 
 
@@ -1369,3 +1372,62 @@ async def test_a_hand_over_to_drops_pauses_the_visit_clock(monkeypatch):
     assert 10 not in svc.visited
     assert svc.visit is not None and svc.visit.channel_id == 1
     assert now[0] - svc.visit.started == 60.0
+
+
+WANTED_GAME = {"id": "7", "name": "Wanted"}
+CHATTING = {"id": "509658", "name": "Just Chatting"}
+
+
+def drops_service(game, drops):
+    """run_service with a real WatchService.can_watch, one wanted campaign and AvailableDrops answers."""
+    async def gql(ops):
+        if isinstance(ops, list):  # GetStreamInfo lookup
+            return [{"data": {"user": {
+                "id": "1", "login": "c1", "displayName": "C1",
+                "stream": {"id": "100", "viewersCount": 5},
+                "broadcastSettings": {"game": game, "title": "t"},
+            }}}]
+        if drops == "error":
+            raise idle_mod.MinerException("secret body")
+        return {"data": {"channel": {"viewerDropCampaigns": drops}}}
+
+    svc, tw = run_service(idle=["c1"], gql=AsyncMock(side_effect=gql))
+    campaign = SimpleNamespace(game=Game(WANTED_GAME), skips_drops_flag=False,
+                               can_earn=lambda channel=None, ignore_channel_status=False: True)
+    campaign.can_progress_on = lambda channel: DropsCampaign.can_progress_on(campaign, channel)
+    tw._campaigns, tw.inventory, tw.wanted_games = {"camp": campaign}, [campaign], [campaign.game]
+    tw.can_watch = lambda channel: WatchService(tw).can_watch(channel)
+    return svc, tw
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("game, drops, enabled", [
+    (CHATTING, [], False),  # Just Chatting without campaigns
+    (CHATTING, None, False),
+    (WANTED_GAME, [{"id": "other"}], False),  # a campaign this account cannot earn
+    (WANTED_GAME, [{"id": "camp"}], True),
+    (WANTED_GAME, "error", False),
+])
+async def test_a_new_idle_channel_gets_its_drops_flag_from_available_drops(game, drops, enabled, caplog):
+    svc, tw = drops_service(game, drops)
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        await idle_entry(svc)
+    channel = tw.channels[1]
+    assert channel._verify_drops and channel.drops_enabled is enabled
+    handed = [c for c in tw.change_state.call_args_list if c.args == (State.CHANNEL_SWITCH,)]
+    assert bool(handed) is (enabled and game is WANTED_GAME)
+    failed = [r.getMessage() for r in caplog.records if "Drops check failed" in r.getMessage()]
+    assert failed == (["Drops check failed for 1 idle channels (MinerException), treated as without drops"]
+                      if drops == "error" else [])
+    assert "secret body" not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_a_tracked_drop_channel_keeps_its_drops_flag():
+    svc, tw = drops_service(WANTED_GAME, [])
+    existing = fake(1, 100, login="c1")
+    existing.drops_enabled = True
+    tw.channels[1] = existing
+    await svc.track()
+    assert tw.channels[1] is existing and existing.drops_enabled
+    assert all(isinstance(c.args[0], list) for c in tw.gql_request.call_args_list)  # no AvailableDrops

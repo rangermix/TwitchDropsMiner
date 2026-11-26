@@ -1612,9 +1612,16 @@ live in `gui.points`, translated in every locale.
 - Extra requests while idle watching: the event mutations above, one `ChatPresenceLogin`
   read per account when `join_chat` is on, the batched `ChannelPointsContext` read every
   `POINTS_READ_SECONDS`, the watch loop's per-minute `CurrentDrop` for
-  the watched channel, `ChannelBanStatus` for newly tracked idle channels, and
+  the watched channel, `ChannelBanStatus` and (when live) `AvailableDrops` for newly
+  tracked idle channels, `AvailableDrops` on each later stream check of those, and
   `GetStreamInfo` plus `ChannelPointsContext` again after each hourly reload drops
   the idle channels (CHANNELS_CLEANUP keeps an online one that streams a wanted game).
+- Drops flag: `track()` creates new listed channels with `verify_drops=True` and sets the
+  flag of a live one from `fetch_drops_enabled()` (inside `private_gql_discovery`), so
+  `can_watch()` and the hand-over to drops see only a campaign this account can earn. A
+  failed read sets False (one WARNING per `track()` with the exception type): a real
+  drop channel is still found by CHANNELS_FETCH. Channels already tracked are reused
+  unchanged.
 - A listed channel can stream a drops game outside the Mining list: `can_watch()` is
   False, so it is idle watched, Twitch can credit that game's drops, and the
   GAMES_UPDATE claim loop and `process_drops` claim them like any claimable drop.
