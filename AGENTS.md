@@ -1428,6 +1428,26 @@ live in `gui.points`, translated in every locale.
   `initial_state.points` adds `log`. The service calls `gui.points.log(key, **values)`
   with a `points.log.*` key (translated in every locale) and
   keeps its English INFO line.
+- Points history (`PointsHistory`, `src/services/points_history.py`, owned by the service
+  as `history`): `data/points_history.json`, `{"version": 1, "user_id", "channels":
+  {"<channel id>": {"login", "samples": [[unix seconds, balance]], "gains": {category:
+  points}, "bets": {"won", "lost", "refunded", "points_won"}}}}`, written like
+  `idle_visits.json` (one account: `use_account()` clears it for another one; a file that
+  cannot be read, parsed or has a wrong top level, version or `user_id` is never
+  overwritten, one warning with the exception type only, recording continues in memory;
+  bad channel entries are skipped with a count). Bounds: 288 samples per channel, 20
+  channels, channels not in `idle_channels` dropped at `save()`. A sample is added by
+  `IdleWatchService.record_balance()` when a listed channel's balance changes (the
+  `points-earned` message and `apply_points()`): unchanged is skipped, one less than
+  5 minutes after the last replaces it. Gains: each `points-earned` of a listed channel
+  adds `total_points` to `watch` (any reason containing WATCH), `bonus` (CLAIM), `raid`,
+  `streak` (WATCH_STREAK) or `other`; `bet` and the bet counts come from
+  `Predictions.process_result()` for bets TDM placed. `save()` runs from the idle
+  tick, only when changed and at most once a minute, and retries after a failed write
+  with one warning per failing streak. The dashboard gets `initial_state.points.history`
+  and a `points_history` message (`{"channels": {id: entry}}`) from
+  `PointsManager.refresh_history()`, at most once a minute and on an account change; the
+  History section of the Points tab (`renderPointsHistory()`) draws an inline SVG chart.
 - Per-channel options (`idle_channel_options`, `ChannelOptionSettings` in
   `src/config/settings.py`): `{login: {option: value}}`, only for logins in
   `idle_channels`. Feature options `bonus`, `raids`, `moments`, `predictions`, `streaks`

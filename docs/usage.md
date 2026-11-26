@@ -17,7 +17,7 @@ simultaneous viewing can disrupt progress.
 | Main | Login status, the current campaign and drop, wanted rewards, console output, and channels |
 | Inventory | Campaigns and rewards, with status, benefit, and game filters |
 | History | Locally recorded claims, statistics, and CSV export |
-| Points | Channel points of idle watching: pause button, listed channels with balance and last gain, the channel points log, and the idle watching settings |
+| Points | Channel points of idle watching: pause button, listed channels with balance and last gain, the balance history and bets per channel, the channel points log, and the idle watching settings |
 | Settings | Grouped into sub-tabs: **General** (theme, connection, proxy), **Mining** (reward types, mining hours, account-link override, ignored names), **Games** (priorities and reload), **Notifications** (Discord, Telegram), and **Account & Maintenance** (dashboard password, cache, diagnostics, Twitch logout) |
 | Help | A quick explanation of mining and Telegram setup |
 
@@ -344,6 +344,16 @@ use goes to drop mining instead.
   claims, visits, shares, pause), separate from the main console and kept for the
   current run. The settings of this section sit under the log and save when changed; a
   failed save shows an error and restores the previous value.
+- The **History** section of the **Points** tab shows, for one listed channel at a time
+  (pick it in the select), a line chart of its balance over time, a table of the points
+  gained by source (watching, bonus claim, watch streak, raid, prediction win, other) and
+  the bets TDM placed there: won, lost, refunded and the points won. It fills as TDM
+  sees balance changes, so a new install starts empty. The data is kept in
+  `data/points_history.json`, for one account (logging in as another account starts it
+  empty) and bounded: at most 288 balance samples per channel and 20 channels, and a
+  channel removed from the list is dropped at the next save. If that file cannot be read
+  or has an unexpected shape, TDM logs one warning, keeps recording in memory for the
+  current run and does not overwrite it: fix the file or delete it, then restart.
 - **Share watch streaks while idle watching** (off by default) shares a watch streak
   once Twitch marks it shareable, once per milestone, for live listed channels. The
   check runs about every 5 minutes and right after a watch streak message. Twitch posts
