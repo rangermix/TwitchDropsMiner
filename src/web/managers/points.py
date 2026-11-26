@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, cast
 
@@ -13,6 +14,9 @@ if TYPE_CHECKING:
     from src.core.client import Twitch
     from src.web.managers.broadcaster import WebSocketBroadcaster
     from src.web.managers.console import ConsoleOutputManager
+
+
+HISTORY_EMIT_SECONDS = 60
 
 
 class PointsManager:
@@ -31,6 +35,8 @@ class PointsManager:
         # login -> channel id, so a known balance stays shown after a cleanup untracks the channel
         self._ids: dict[str, int] = {}
         self._sent: dict[str, Any] | None = None
+        # revision and time of the last points_history message: at most one a minute
+        self._history_sent: tuple[int, float] | None = None
 
     def log(self, key: str, **values: object) -> None:
         """Add a translated `points.log.<key>` line to the points log."""
@@ -67,7 +73,9 @@ class PointsManager:
         return {"paused": idle.points_paused, "active": idle.active, "channels": channels}
 
     def get_initial(self) -> dict[str, Any]:
-        return {**self.get_state(), "log": self._log.get_history()}
+        history = self._twitch.idle_watch.history
+        self._history_sent = (history.revision, time.monotonic())
+        return {**self.get_state(), "log": self._log.get_history(), "history": history.state()}
 
     def refresh(self) -> None:
         """Broadcast `points_update` when the state differs from the last one sent."""
@@ -75,6 +83,16 @@ class PointsManager:
         if state != self._sent:
             self._sent = state
             asyncio.create_task(self._broadcaster.emit("points_update", state))
+
+    def refresh_history(self, *, force: bool = False) -> None:
+        """Broadcast `points_history` when it changed and the last one is a minute old (or force)."""
+        history = self._twitch.idle_watch.history
+        now = time.monotonic()
+        sent = self._history_sent
+        if sent is not None and (sent[0] == history.revision or (not force and now - sent[1] < HISTORY_EMIT_SECONDS)):
+            return
+        self._history_sent = (history.revision, now)
+        asyncio.create_task(self._broadcaster.emit("points_history", history.state()))
 
     def paused_changed(self, paused: bool) -> None:
         self.log("paused" if paused else "resumed")

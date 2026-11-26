@@ -28,6 +28,7 @@ from src.services.chat_presence import ChatPresence
 from src.services.idle_points import PointsReader, WatchPriority
 from src.services.points_common import error_code
 from src.services.points_events import PointsEvents
+from src.services.points_history import PointsHistory
 from src.utils import chunk, json_save, task_wrapper
 
 
@@ -82,13 +83,15 @@ class Visit:
 
 
 class IdleWatchService:
-    def __init__(self, twitch: Twitch, visits_path: Path | None = None) -> None:
+    def __init__(self, twitch: Twitch, visits_path: Path | None = None, history_path: Path | None = None) -> None:
         self._twitch = twitch
         # visits_path keeps the finished visits and the share keys (used up, or refused with their try
         # count) across restarts, with the account they belong to (None: not known yet, taken by the
         # first account that idle watches)
         self._visits_path = visits_path
         self._account: int | None = None
+        # balance samples, gains and bet results of the listed channels, saved separately
+        self.history = PointsHistory(history_path)
         # broadcast id -> channel id of finished visits
         self.visited: dict[int, int] = {}
         # in memory only, for restarts: channel id -> (broadcast id, time, Channel) when pick() last saw it
@@ -345,6 +348,8 @@ class IdleWatchService:
         tw.gui.clear_drop()
         self.watched = None
         self._use_account(tw.logged_in_user_id())
+        if self.history.use_account(tw.logged_in_user_id()):
+            tw.gui.points.refresh_history(force=True)
         # each idle entry retries the logins the previous run gave up on
         self._skipped.clear()
         self._ban_ends.clear()
@@ -407,6 +412,8 @@ class IdleWatchService:
         live, now = self.live_channels(), time.monotonic()
         channel = self.pick(live, now)
         self._save()
+        self.history.save(tw.settings.idle_channels)
+        tw.gui.points.refresh_history()
         if self._hand_to_drops(channel):
             # no watch, balance read or claim on a channel drops can use
             return True
@@ -567,6 +574,7 @@ class IdleWatchService:
             )
         if isinstance(balance, int) and not isinstance(balance, bool):
             self.balances[channel.id] = balance
+            self.record_balance(channel, balance)
             if watched:
                 self._show_status(channel)
         self._twitch.gui.points.refresh()
@@ -756,6 +764,11 @@ class IdleWatchService:
             if channel_id is not None and (channel := self.listed(channel_id)) is not None:
                 await self.claim(channel, claim["id"])
 
+    def record_balance(self, channel: Channel, balance: int) -> None:
+        """Add a balance sample for a listed channel."""
+        if channel.login in self._twitch.settings.idle_channels:
+            self.history.sample(channel.id, channel.login, balance)
+
     def listed(self, channel_id: str) -> Channel | None:
         """The tracked channel with this id, if its login is in the idle list."""
         listed = set(self._twitch.settings.idle_channels)
@@ -781,11 +794,14 @@ class IdleWatchService:
         points = balance.get("balance") if isinstance(balance, dict) else None
         if isinstance(points, int) and not isinstance(points, bool) and (watched is not None or listed is not None):
             self.balances[int(channel_id)] = points
+            if listed is not None:
+                self.record_balance(listed, points)
             if watched is not None:
                 self._show_status(watched)
         total = gain.get("total_points") if isinstance(gain, dict) else None
         if listed is not None and isinstance(reason, str) and type(total) is int:
             self._twitch.gui.points.gain(listed.login, total, reason)
+            self.history.gain(listed.id, listed.login, reason, total)
             if reason != CLAIM_REASON:
                 # claim() already logged the bonus line
                 # the tab's reason names; an unknown Twitch code stays as sent

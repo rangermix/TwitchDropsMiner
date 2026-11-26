@@ -124,8 +124,8 @@ class Predictions:
         self._handled: dict[str, None] = {}
         # open events logged once as having no usable window; a later update with one still gets its timer
         self._no_window: dict[str, None] = {}
-        # event id -> (channel name, title) of every sent bet, for the result lines
-        self._placed: dict[str, tuple[str, str]] = {}
+        # event id -> (channel name, title, channel id, login) of every sent bet, for the result lines
+        self._placed: dict[str, tuple[str, str, int, str]] = {}
 
     def clear(self) -> None:
         """Drop the open events and their timers when the loop stops; handled ids stay."""
@@ -286,7 +286,7 @@ class Predictions:
             "transactionID": secrets.token_hex(16),
         }})
         # kept before sending: whatever the reply says, a prediction-result that comes is logged
-        remember(self._placed, event_id, (channel.name, title))
+        remember(self._placed, event_id, (channel.name, title, channel.id, channel.login))
         # sent once: it spends points
         response, code = await self._send(op, single_attempt=True)
         if response is not None:
@@ -332,7 +332,7 @@ class Predictions:
         if not isinstance(result, dict) or event_id not in self._placed:
             return
         kind, won = result.get("type"), result.get("points_won")
-        name, title = self._placed[event_id]
+        name, title, channel_id, login = self._placed[event_id]
         if kind == "WIN" and type(won) is int:
             self._twitch.gui.points.log("bet_won", points=won, channel=name, title=title)
         elif kind == "LOSE":
@@ -341,5 +341,6 @@ class Predictions:
             self._twitch.gui.points.log("bet_refunded", channel=name, title=title)
         else:
             return
+        self._service.history.bet(channel_id, login, kind, won if type(won) is int else 0)
         logger.info("Prediction on %s ended: %s", name, kind)
         del self._placed[event_id]

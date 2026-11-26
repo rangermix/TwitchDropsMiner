@@ -1200,3 +1200,41 @@ async def test_a_settings_change_does_not_move_an_armed_timer():
     await asyncio.sleep(0.2)
     assert sent(tw) == [] and "e1" in preds._timers
     preds.clear()
+
+
+# --- points history ---
+
+
+def earned(channel_id, reason, total, balance):
+    return {"type": "points-earned", "data": {
+        "channel_id": str(channel_id), "point_gain": {"reason_code": reason, "total_points": total},
+        "balance": {"balance": balance},
+    }}
+
+
+@pytest.mark.asyncio
+async def test_points_earned_on_a_listed_channel_records_a_sample_and_a_gain():
+    svc, tw, a, b = setup()
+    await svc.process_points(42, earned(2, "RAID", 250, 1250))
+    entry = svc.history.channels[2]
+    assert entry["login"] == "b" and entry["samples"][-1][1] == 1250
+    assert entry["gains"]["raid"] == 250
+
+
+@pytest.mark.asyncio
+async def test_points_earned_on_an_unlisted_channel_records_nothing():
+    svc, tw, a, b = setup()
+    await svc.process_points(42, earned(9, "WATCH", 10, 500))
+    assert svc.history.channels == {}
+
+
+@pytest.mark.asyncio
+async def test_a_placed_bets_result_is_recorded_and_a_foreign_one_is_not():
+    svc, tw, *_ = setup(reply=BET_OK)
+    await svc.events.predictions.process_event(1, event())
+    await settle()
+    await svc.events.predictions.process_result(42, result("WIN", won=120))
+    await svc.events.predictions.process_result(42, result("WIN", event_id="other", won=5))
+    entry = svc.history.channels[1]
+    assert entry["bets"] == {"won": 1, "lost": 0, "refunded": 0, "points_won": 120}
+    assert entry["gains"]["bet"] == 120

@@ -134,7 +134,7 @@ class Twitch:
         self._message_handler_service: MessageHandlerService = MessageHandlerService(self)
         self._inventory_service: InventoryService = InventoryService(self)
         self._watch_service: WatchService = WatchService(self)
-        self.idle_watch: IdleWatchService = IdleWatchService(self, DATA_DIR / "idle_visits.json")
+        self.idle_watch: IdleWatchService = IdleWatchService(self, DATA_DIR / "idle_visits.json", DATA_DIR / "points_history.json")
         self._idle_watch_allowed: bool = False
         self._stream_selector: StreamSelector = StreamSelector()
         # Drop history

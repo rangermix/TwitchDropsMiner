@@ -10,6 +10,7 @@ import pytest
 
 import src.web.app as web
 from src.i18n.translator import LANG_PATH
+from src.services.points_history import PointsHistory
 from src.web.managers.console import ConsoleOutputManager
 from src.web.managers.points import PointsManager
 from tests.test_wanted_queue_order import client  # noqa: F401 (pytest fixture)
@@ -24,7 +25,7 @@ def manager(idle=("a", "b", "c")):
     twitch = SimpleNamespace(
         channels={1: chan(1, "a"), 2: chan(2, "b", online=False)},
         settings=SimpleNamespace(idle_channels=list(idle)),
-        idle_watch=SimpleNamespace(balances={1: 900}, points_paused=False, active=True),
+        idle_watch=SimpleNamespace(balances={1: 900}, points_paused=False, active=True, history=PointsHistory()),
     )
     log = ConsoleOutputManager(broadcaster, event="points_output", echo=False)
     return PointsManager(broadcaster, twitch, log), broadcaster, twitch
@@ -95,11 +96,39 @@ async def test_initial_state_is_the_state_plus_the_log_history():
         await asyncio.sleep(0)
     logger.info.assert_not_called()  # the service logs its own English line
     initial = points.get_initial()
-    assert initial == {**points.get_state(), "log": initial["log"]}
+    assert initial == {**points.get_state(), "log": initial["log"], "history": {"channels": {}}}
     [line] = initial["log"]
     assert line.endswith("| +10 on A (WATCH)")
     # the points log is its own event, not the main console
     assert [c.args[0] for c in broadcaster.emit.await_args_list] == ["points_output"]
+
+
+@pytest.mark.asyncio
+async def test_history_is_sent_when_changed_at_most_once_a_minute_and_forced_on_demand():
+    points, broadcaster, twitch = manager()
+    history = twitch.idle_watch.history
+    points.get_initial()  # the connect snapshot counts as sent
+    points.refresh_history()
+    history.sample(1, "a", 10)
+    with patch("src.web.managers.points.time.monotonic", return_value=1e9):
+        points.refresh_history()  # a minute has passed since the snapshot? monotonic jumped: sent
+    await asyncio.sleep(0)
+    [sent] = emitted(broadcaster, "points_history")
+    assert sent["channels"]["1"]["samples"][0][1] == 10
+    history.sample(1, "a", 20)
+    with patch("src.web.managers.points.time.monotonic", return_value=1e9 + 59):
+        points.refresh_history()  # too soon
+    await asyncio.sleep(0)
+    assert len(emitted(broadcaster, "points_history")) == 1
+    with patch("src.web.managers.points.time.monotonic", return_value=1e9 + 60):
+        points.refresh_history()
+        points.refresh_history()  # unchanged: nothing more
+    await asyncio.sleep(0)
+    assert len(emitted(broadcaster, "points_history")) == 2
+    history.sample(1, "a", 30)
+    points.refresh_history(force=True)
+    await asyncio.sleep(0)
+    assert len(emitted(broadcaster, "points_history")) == 3
 
 
 # every points log line part 2 relies on, with its placeholders
