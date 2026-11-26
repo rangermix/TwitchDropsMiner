@@ -628,8 +628,13 @@ class Channel:
             and self._stream is not None
             and self._stream.broadcast_id == stream.broadcast_id
             # side: the second slot's watch (idle side mode), never on the drop channel
-            and ((watching is not self and self._twitch.idle_watch.side_channel is self) if side else watching is self)
+            and (self._side_watched(watching) if side else watching is self)
         )
+
+    def _side_watched(self, watching: Channel | None) -> bool:
+        # by id: a reload re-creates channel objects, and side mode adopts the new one
+        side = self._twitch.idle_watch.side_channel
+        return (watching is None or watching.id != self.id) and side is not None and side.id == self.id
 
     async def _send_watch_playlist(self, *, side: bool = False) -> bool:
         """HEAD every new media segment, without fetching audio or video bodies."""

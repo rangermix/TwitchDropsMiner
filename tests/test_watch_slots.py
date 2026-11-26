@@ -683,3 +683,93 @@ async def test_a_channel_reload_with_two_slots_keeps_the_topic_limit_and_the_sid
         client.idle_watch.stop()  # close() ended side mode already
         if client._watching_task is not None:
             client._watching_task.cancel()
+
+
+# --- side watch identity: by channel id, a re-tracked object continues the same side watch ---
+
+
+@pytest.mark.asyncio
+async def test_a_re_tracked_object_of_the_side_channel_continues_the_same_side_watch(caplog):
+    a, drop = chan(1, "a"), chan(9, "d", drops=True)
+    svc, tw = side_service([a], drop=drop)
+    svc.refresh_points = AsyncMock()
+    with caplog.at_level(logging.INFO, logger="TwitchDrops"):
+        svc.enter(side=True)
+        await settle()
+        task = svc._side_task
+        assert svc.side_channel is a and svc.refresh_points.await_count == 1
+        svc._claimed.add("c1")
+        svc._claim_failed, svc._claim_retries = True, idle_mod.CLAIM_RETRIES
+        # a cleanup dropped the object and track() made a new one for the same login and broadcast
+        a2 = chan(1, "a")
+        svc.live_channels = lambda: [a2]
+        svc.poke()
+        await settle()
+    assert svc.side_channel is a2 and svc.watched is a2
+    assert svc._side_task is task and not task.done()
+    assert a2.send_watch.await_count >= 1
+    assert svc.refresh_points.await_count == 1
+    assert svc._claimed == {"c1"} and svc._claim_failed and svc._claim_retries == idle_mod.CLAIM_RETRIES
+    assert caplog.text.count("in the second slot") == 2  # the loop start and one side start
+    assert "switched to" not in caplog.text
+    await stopped(svc)
+
+
+@pytest.mark.asyncio
+async def test_a_reload_pause_resumes_the_same_side_watch_on_the_re_tracked_object(caplog):
+    a, drop = chan(1, "a"), chan(9, "d", drops=True)
+    svc, tw = side_service([a], drop=drop)
+    svc.refresh_points = AsyncMock()
+    with caplog.at_level(logging.INFO, logger="TwitchDrops"):
+        svc.enter(side=True)
+        await settle()
+        svc._claimed.add("c1")
+        tw._state = State.CHANNELS_CLEANUP
+        svc.stop()
+        await settle()
+        assert svc.side_channel is None
+        a2 = chan(1, "a")
+        svc.live_channels = lambda: [a2]
+        svc.track = AsyncMock(return_value=[a2])
+        tw._state = State.CHANNEL_SWITCH
+        svc.enter(side=True)
+        await settle()
+    assert svc.side_channel is a2 and svc.watched is a2 and svc._claimed == {"c1"}
+    assert svc.refresh_points.await_count == 1
+    assert caplog.text.count("Idle watching A in the second slot") == 1
+    assert "switched to" not in caplog.text
+    await stopped(svc)
+
+
+@pytest.mark.asyncio
+async def test_a_stop_outside_a_reload_starts_the_side_watch_afresh(caplog):
+    a = chan(1, "a")
+    svc, tw = side_service([a], drop=chan(9, "d", drops=True))
+    svc.refresh_points = AsyncMock()
+    with caplog.at_level(logging.INFO, logger="TwitchDrops"):
+        svc.enter(side=True)
+        await settle()
+        svc._claimed.add("c1")
+        svc.stop()  # state CHANNEL_SWITCH: not a reload pause
+        svc.enter(side=True)
+        await settle()
+    assert svc.side_channel is a and svc._claimed == set()
+    assert svc.refresh_points.await_count == 2
+    assert caplog.text.count("Idle watching A in the second slot") == 2
+    await stopped(svc)
+
+
+def test_side_watch_checks_compare_the_drop_and_side_channels_by_id():
+    channel = _make_channel(_Transport())
+    twin = SimpleNamespace(id=channel.id)
+    other = SimpleNamespace(id=channel.id + 1)
+    stream = channel._stream
+    tw = channel._twitch
+    tw.idle_watch = SimpleNamespace(side_channel=twin)
+    tw.watching_channel = SimpleNamespace(get_with_default=lambda d: other)
+    assert channel._watch_current(stream, side=True)  # the side channel is a twin object of this one
+    tw.watching_channel = SimpleNamespace(get_with_default=lambda d: SimpleNamespace(id=channel.id))
+    assert not channel._watch_current(stream, side=True)  # a twin of this channel is the drop channel
+    tw.idle_watch = SimpleNamespace(side_channel=other)
+    tw.watching_channel = SimpleNamespace(get_with_default=lambda d: None)
+    assert not channel._watch_current(stream, side=True)
