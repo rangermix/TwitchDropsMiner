@@ -298,9 +298,12 @@ use goes to drop mining instead.
   can then credit progress on those drops while TDM idle watches the channel, and TDM
   claims a finished drop as it does every claimable drop in the inventory.
 - **Claim channel points bonus while idle watching** (on by default) claims the channel
-  points bonus on any listed channel while idle watching, never on a channel that is not
-  listed or that a drop can use, never while mining drops, while paused or outside
-  mining hours. A claim counts only when Twitch returns it. After a failed claim on the
+  points bonus while idle watching. Twitch creates a bonus only on the channel being
+  watched, so on the other live listed channels TDM only claims a bonus that was left
+  open, for example while you watched that channel in a browser. TDM never claims on a
+  channel that is not listed, is offline, has banned the account or that a drop can
+  use, and never while mining drops, while paused or outside mining hours. A claim
+  counts only when Twitch returns it. After a failed claim on the
   watched channel, TDM reads its points again on the next idle steps (about every 30
   seconds) and retries at most twice per watched channel; after that it waits for
   Twitch's next bonus message or another channel. A successful claim allows two retries
@@ -369,10 +372,13 @@ use goes to drop mining instead.
   only after a connection stayed up for a minute. When Twitch refuses the chat login,
   TDM does not try again until the account or its session token changes, or until
   `join_chat` is turned off and on again.
-- Raids, moments, predictions and chat follow the same rules as the bonus claim: only
-  while idle watching, only on listed live channels, and never on a channel that drops
-  can use, while channel points are paused or outside mining hours. TDM follows their
-  Twitch events only while idle watching and only for the options that are on.
+- The bonus claim, raids, moments, predictions and chat run the same checks again right
+  before each request: only while idle watching, only on live listed channels where the
+  account is not banned, and never on a channel that drops can use, while channel points
+  are paused or outside mining hours. Raids and chat use only the watched channel;
+  claims, moments and predictions use every live listed channel. TDM follows the raid,
+  moment and prediction events only while idle watching and only for the options that
+  are on.
 - While idle watching, TDM sends a stream lookup for listed channels it does not track
   yet, a channel points read when it starts watching a channel, one batched channel
   points read of the other live listed channels about every 5 minutes, and a watch

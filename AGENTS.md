@@ -1407,7 +1407,9 @@ live in `gui.points` (English text in every locale until translated).
   `can_watch()`); `claim-available` is honoured for any such channel. A claim counts
   only when the reply has a `claim` object with a non-empty id and a null or missing
   `error` (`error_code()` in `src/services/points_common.py`, shared with the event
-  actions). Only a failure on the loop's own pick (`watched`) sets `_claim_failed`: the
+  actions). Twitch creates a bonus chest only on the channel being watched (by TDM, or
+  by the user in a browser), so on the other listed channels TDM only claims a chest
+  that was left open. Only a failure on the loop's own pick (`watched`) sets `_claim_failed`: the
   tick then runs `refresh_points()` again, at most `CLAIM_RETRIES` (2) times per
   watched channel, until the claim succeeds, the read shows no open bonus or the
   channel changes. A success or a channel change resets the count; after the last

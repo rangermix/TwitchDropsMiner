@@ -740,7 +740,7 @@ class IdleWatchService:
             if not isinstance(claim, dict) or not isinstance(claim.get("id"), str) or not claim["id"]:
                 return
             channel_id = self._channel_id(claim.get("channel_id"))
-            # any listed channel; claim() refuses it unless the loop runs and drops cannot use it
+            # any listed channel; claim() refuses it unless may_act() allows the claim there
             if channel_id is not None and (channel := self.listed(channel_id)) is not None:
                 await self.claim(channel, claim["id"])
 
