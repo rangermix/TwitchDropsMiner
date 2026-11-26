@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
+from contextlib import suppress
 from datetime import datetime, timedelta, timezone
+from time import monotonic
 from typing import TYPE_CHECKING
 
 from dateutil.parser import isoparse
@@ -25,6 +28,8 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("TwitchDrops")
+# Seconds to wait for Twitch's own claim event before building a claim ID ourselves.
+CLAIM_EVENT_GRACE = 60
 DIMS_PATTERN = re.compile(r"-\d+x\d+(?=\.(?:jpg|png|gif)$)", re.I)
 
 
@@ -70,6 +75,9 @@ class BaseDrop:
         ):
             self.is_claimed = True
         self.precondition_drops: list[str] = [d["id"] for d in (data["preconditionDrops"] or [])]
+        if not self.quiet_claim and self.id in (getattr(self._twitch, "claimed_drop_ids", None) or ()):
+            # Claimed earlier this run; a reload right after the claim can still list it unclaimed.
+            self.is_claimed = True
         # Subscription-gated drops cannot be earned by watching alone.
         required_subs = data.get("requiredSubs")
         self.required_subs: int = (
@@ -197,7 +205,12 @@ class BaseDrop:
 
     @property
     def completion_reported(self) -> bool:
-        """Whether Twitch reported this unclaimed drop's requirement as complete."""
+        """Whether Twitch reported, during this run, that this unclaimed drop is complete."""
+        return False
+
+    @property
+    def claim_id_overdue(self) -> bool:
+        """Whether to build the claim ID because the websocket claim event never came."""
         return False
 
     def _claimed_this_run(self) -> set[str] | None:
@@ -321,6 +334,8 @@ class TimedDrop(BaseDrop):
         self.required_minutes: int = data["requiredMinutesWatched"]
         self.extra_current_minutes: int = 0
         self._claim_completion_observed = self.real_current_minutes >= self.required_minutes
+        # Monotonic time Twitch reported full watch time live (report_twitch_minutes).
+        self._completion_reported_at: float | None = None
         if self.is_claimed:
             # claimed drops may report inconsistent current minutes, so we need to overwrite them
             self.real_current_minutes = self.required_minutes
@@ -352,7 +367,17 @@ class TimedDrop(BaseDrop):
         # Sitewide reward drops follow their own claim and progress flow (RewardCampaign).
         return (
             not self.is_claimed and not self.quiet_claim
-            and self.is_watch_drop and self._claim_completion_observed
+            and self.is_watch_drop and self._completion_reported_at is not None
+        )
+
+    @property
+    def claim_id_overdue(self) -> bool:
+        return (
+            self.completion_reported
+            and self.claim_id is None
+            and self.preconditions_met
+            and self._completion_reported_at is not None
+            and monotonic() - self._completion_reported_at >= CLAIM_EVENT_GRACE
         )
 
     def report_twitch_minutes(self, minutes: int) -> None:
@@ -369,8 +394,14 @@ class TimedDrop(BaseDrop):
         ):
             return
         self._claim_completion_observed = True
+        self._completion_reported_at = monotonic()
         self.campaign.progress_revision += 1
-        self._twitch.request_games_update()
+        # The claim event normally follows within seconds. Re-check after a grace period,
+        # when GAMES_UPDATE builds the claim ID only if that event never arrived.
+        with suppress(RuntimeError):  # no running loop (synchronous callers)
+            asyncio.get_running_loop().call_later(
+                CLAIM_EVENT_GRACE, self._twitch.request_games_update
+            )
         self._on_state_changed()
 
     @property

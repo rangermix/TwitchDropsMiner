@@ -1,11 +1,16 @@
 """Subscription-gated drops, claims missed by the websocket, and duplicate claim announcements."""
 
+import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from src.core.client import Twitch
 from src.models.campaign import DropsCampaign
+from src.models.drop import CLAIM_EVENT_GRACE
+from src.services.message_handlers import MessageHandlerService
+from src.utils.async_helpers import AwaitableValue
 from src.web.managers.inventory import InventoryManager
 
 
@@ -77,18 +82,54 @@ def test_subscription_gated_campaign_is_hidden_from_inventory():
 
 
 @pytest.mark.asyncio
-async def test_twitch_reported_completion_is_claimed_without_the_claim_event():
+async def test_twitch_reported_completion_is_claimed_after_the_grace_period():
     twitch = _twitch()
     campaign = _campaign(twitch, _drop("drop", minutes=50))
     drop = campaign.timed_drops["drop"]
-    drop.report_twitch_minutes(60)
+    with patch("src.models.drop.monotonic", return_value=1000.0):
+        drop.report_twitch_minutes(60)
     assert drop.completion_reported and not drop.can_earn()
+    with patch("src.models.drop.monotonic", return_value=1000.0 + CLAIM_EVENT_GRACE - 1):
+        assert not drop.claim_id_overdue  # Twitch's own claim event may still arrive
+        await Twitch._claim_ready_drops(SimpleNamespace(inventory=[campaign]))
+    assert drop.claim_id is None
+    with patch("src.models.drop.monotonic", return_value=1000.0 + CLAIM_EVENT_GRACE):
+        await Twitch._claim_ready_drops(SimpleNamespace(inventory=[campaign]))
+    assert drop.claim_id == "42#camp#drop" and drop.is_claimed and not drop.completion_reported
+    twitch.gql_request.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_grace_period_schedules_a_games_update():
+    twitch = _twitch()
+    drop = _campaign(twitch, _drop("drop", minutes=50)).timed_drops["drop"]
+    with patch("src.models.drop.CLAIM_EVENT_GRACE", 0):
+        drop.report_twitch_minutes(60)
+        await asyncio.sleep(0.01)
     twitch.request_games_update.assert_called_once()
-    # GAMES_UPDATE: build the claim ID the missed websocket event would have carried.
-    assert drop.claim_id is None and not drop.can_claim
-    await drop.generate_claim()
-    assert drop.claim_id == "42#camp#drop" and drop.can_claim
-    assert await drop.claim() and drop.is_claimed and not drop.completion_reported
+
+
+@pytest.mark.asyncio
+async def test_websocket_progress_reports_completion():
+    twitch = _twitch()
+    drop = _campaign(twitch, _drop("drop", minutes=50)).timed_drops["drop"]
+    watching = AwaitableValue()
+    twitch._drops, twitch.watching_channel = {"drop": drop}, watching
+    message = {"type": "drop-progress", "data": {
+        "drop_id": "drop", "current_progress_min": 60, "required_progress_min": 60,
+    }}
+    await MessageHandlerService(twitch).process_drops(1, message)
+    assert drop.real_current_minutes == 60 and drop.completion_reported
+
+
+def test_unmet_prerequisite_is_never_claimed_with_a_built_id():
+    twitch = _twitch()
+    first = _drop("first")
+    second = {**_drop("second", minutes=50), "preconditionDrops": [{"id": "first"}]}
+    campaign = _campaign(twitch, first, second)
+    drop = campaign.timed_drops["second"]
+    drop._completion_reported_at = 0.0  # as if reported long ago
+    assert drop.completion_reported and not drop.claim_id_overdue
 
 
 def test_sibling_minutes_and_partial_readings_do_not_report_completion():
@@ -111,9 +152,10 @@ def test_completion_on_an_unlinked_campaign_still_waits_for_linking():
     assert drop.awaiting_account_link and not drop.can_claim
 
 
-def test_inventory_reading_at_full_time_reports_completion():
-    campaign = _campaign(_twitch(), _drop("drop", minutes=60))
-    assert campaign.timed_drops["drop"].completion_reported
+def test_inventory_reading_at_full_time_does_not_build_a_claim_id():
+    # Twitch's own reading lists no claim ID, so it is not claimable yet (or ever).
+    drop = _campaign(_twitch(), _drop("drop", minutes=60)).timed_drops["drop"]
+    assert not drop.completion_reported and not drop.claim_id_overdue and drop.can_earn()
 
 
 @pytest.mark.asyncio
@@ -121,9 +163,10 @@ async def test_a_reloaded_claimed_drop_is_not_claimed_or_announced_again():
     twitch = _twitch()
     first = _campaign(twitch, _drop("drop", minutes=60, instance="claim-1")).timed_drops["drop"]
     assert await first.claim()
-    # The reload right after the claim still lists it as unclaimed.
-    reloaded = _campaign(twitch, _drop("drop", minutes=60, instance="claim-1")).timed_drops["drop"]
-    assert await reloaded.claim() and reloaded.is_claimed
+    # The reload right after the claim still lists it as unclaimed (here with old minutes).
+    reloaded = _campaign(twitch, _drop("drop", minutes=20, instance="claim-1")).timed_drops["drop"]
+    assert reloaded.is_claimed and not reloaded.can_earn()
+    assert await reloaded.claim()
     assert twitch.gql_request.await_count == 1
     assert twitch.print.call_count == 1
     twitch.drop_history.record.assert_called_once()

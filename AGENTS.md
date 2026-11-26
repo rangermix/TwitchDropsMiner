@@ -941,13 +941,16 @@ progress to an ignored drop while the miner intentionally targets another reward
   and `tests/test_reward_grants_frontend.py`.
 
 - `TimedDrop.report_twitch_minutes()` takes per-drop Twitch readings (CurrentDrop for
-  that drop ID, User.Drops progress). Full watch time marks `completion_reported`: the drop
-  stops being earnable and requests a games update, where GAMES_UPDATE builds the missing
-  claim ID with `generate_claim()` if the websocket claim event was missed. Campaign-wide
-  sibling deltas and estimated minutes never report completion; reward drops are excluded.
-  `Twitch.claimed_drop_ids` remembers one-time drops claimed this run, so a reload that
-  still lists one unclaimed neither claims, records nor announces it again; it is cleared
-  on account replacement. Coverage: `tests/test_drop_claim_correctness.py`.
+  that drop ID, User.Drops progress). Full watch time marks `completion_reported` (the
+  drop stops being earnable) and schedules a games update after `CLAIM_EVENT_GRACE`.
+  `Twitch._claim_ready_drops()` (GAMES_UPDATE) builds the claim ID with
+  `generate_claim()` only when that live completion is older than the grace period, the
+  claim ID is still missing and prerequisites are met. Inventory readings at full time,
+  sibling deltas and estimated minutes never build claim IDs; reward drops are excluded.
+  `Twitch.claimed_drop_ids` remembers one-time drops claimed this run: a reload that
+  still lists one builds it as claimed, so it is neither mined, shown as wanted, claimed,
+  recorded nor announced again. It is cleared on account replacement. Coverage:
+  `tests/test_drop_claim_correctness.py`.
 
 ### GraphQL Operations
 
