@@ -135,6 +135,11 @@ class Predictions:
         self._latest.clear()
         self._no_window.clear()
 
+    @property
+    def open_bets(self) -> bool:
+        """A placed bet waits for its result on `predictions-user-v1`."""
+        return bool(self._placed)
+
     def reset(self) -> None:
         """Forget everything on an account change."""
         self.clear()

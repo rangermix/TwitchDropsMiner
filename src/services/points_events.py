@@ -37,7 +37,7 @@ class PointsEvents:
 
     Topics, from each channel's effective option (its override, else the global one):
     `predictions-channel-v1` of every live listed channel with predictions on (plus
-    `predictions-user-v1` while any has), `community-moments-channel-v1` of every live listed channel
+    `predictions-user-v1` while any has or a placed bet waits for its result), `community-moments-channel-v1` of every live listed channel
     with moments on, and `raid` of the idle-watched channel while raids are on for it. `sync()` on every tick adds and
     removes them; `clear()` removes them all when the loop stops. Topics never take the room the pool
     keeps for the stream topics of listed channels that are not tracked yet.
@@ -70,7 +70,8 @@ class PointsEvents:
                 topics.append(WebsocketTopic("Channel", "CommunityMoments", channel.id, self.process_moment))
             if channel is svc.watched and svc.option(channel, "follow_raids"):
                 topics.append(WebsocketTopic("Channel", "Raid", channel.id, self.process_raid))
-        if betting and (user_id := self._twitch.logged_in_user_id()) is not None:
+        # the result of a placed bet may come after its channel went offline or turned predictions off
+        if (betting or self.predictions.open_bets) and (user_id := self._twitch.logged_in_user_id()) is not None:
             topics.insert(0, WebsocketTopic("User", "Predictions", user_id, self.predictions.process_result))
         return topics
 

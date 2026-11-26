@@ -129,6 +129,35 @@ async def test_topics_follow_the_channel_override(key, option, on_a, every):
     assert subscribed(tw) == every
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("change", ["offline", "override off"])
+async def test_the_user_topic_stays_while_a_bet_waits_for_its_result(change):
+    svc, tw, a, b = setup()
+    svc.events.sync()
+    svc.events.predictions._placed["e1"] = ("A", "title", 1, "a", 100)
+    if change == "offline":
+        a.online = b.online = False
+    else:
+        tw.settings.idle_channel_options = {"a": {"predictions": False}, "b": {"predictions": False}}
+    svc.events.sync()
+    assert "predictions-user-v1.42" in subscribed(tw)
+    assert not {"predictions-channel-v1.1", "predictions-channel-v1.2"} & subscribed(tw)
+    svc.events.predictions._placed.clear()
+    svc.events.sync()
+    assert "predictions-user-v1.42" not in subscribed(tw)
+
+
+@pytest.mark.asyncio
+async def test_the_raid_override_follows_the_side_channel():
+    svc, tw, a, b = setup(follow_raids=False)
+    tw.settings.idle_channel_options = {"b": {"raids": True}}
+    svc.events.sync()
+    assert "raid.1" not in subscribed(tw) and "raid.2" not in subscribed(tw)  # b is not watched
+    svc.watched = b  # the side channel in side mode
+    svc.events.sync()
+    assert "raid.2" in subscribed(tw) and "raid.1" not in subscribed(tw)
+
+
 def test_raid_topic_follows_the_watched_channel_and_offline_channels_lose_theirs():
     svc, tw, a, b = setup()
     svc.events.sync()
