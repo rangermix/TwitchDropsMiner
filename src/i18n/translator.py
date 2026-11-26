@@ -509,6 +509,11 @@ class GUIPoints(TypedDict):
     claim_moments_help: str
     join_chat: str
     join_chat_help: str
+    watch_slots: str
+    watch_slots_one: str
+    watch_slots_two: str
+    watch_slots_help: str
+    side_watching: str
     predictions_header: str
     predictions_enabled: str
     predictions_enabled_help: str
