@@ -15,7 +15,7 @@ import src.services.points_common as points_common
 import src.services.predictions as pred_mod
 from src.api.gql_client import GQLClient
 from src.config import MAX_WEBSOCKETS, WS_TOPICS_LIMIT, ClientType, WebsocketTopic
-from src.exceptions import GQLException, MinerException, RequestException
+from src.exceptions import GQLException, GQLServerError, MinerException, RequestException
 from src.services.chat_presence import ChatPresence
 from src.services.idle_watch import IdleWatchService
 from src.services.predictions import PredictionStrategy
@@ -606,6 +606,7 @@ async def test_bet_error_replies_are_logged_and_never_resent(reply, code):
     await settle()
     assert len(sent(tw)) == 1
     tw.gui.points.log.assert_called_once_with("bet_failed", channel="A", code=code)
+    assert "e1" in svc.events.predictions._placed
 
 
 @pytest.mark.asyncio
@@ -618,12 +619,17 @@ async def test_a_failed_bet_request_is_not_resent():
     await settle()
     assert tw.gql_request.await_count == 1
     tw.gui.points.log.assert_called_once_with("bet_failed", channel="A", code="GQLException")
+    tw.gui.points.log.reset_mock()
+    # kept like a sent bet: a result that comes anyway is logged
+    await svc.events.predictions.process_result(42, result("WIN", won=120))
+    tw.gui.points.log.assert_called_once_with("bet_won", points=120, channel="A", title="Who wins?")
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("error", [
     TimeoutError(), aiohttp.ClientConnectionError(), aiohttp.ServerDisconnectedError(),
     RequestException("Unconfirmed HTTP response"),
+    GQLServerError("Mutation response was not confirmed"),  # "service timeout" and the like
 ])
 async def test_a_bet_without_an_answer_may_be_placed_and_its_result_is_logged(error):
     svc, tw, *_ = setup()

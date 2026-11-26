@@ -98,7 +98,7 @@ class Predictions:
         self._timers: dict[str, asyncio.Task[None]] = {}
         # events that are handled (bet, skipped, ended, or bet on by the account): never bet on again
         self._handled: dict[str, None] = {}
-        # event id -> (channel name, title) of placed bets and bets with an unknown outcome, for the result lines
+        # event id -> (channel name, title) of every sent bet, for the result lines
         self._placed: dict[str, tuple[str, str]] = {}
 
     def clear(self) -> None:
@@ -226,21 +226,23 @@ class Predictions:
             "eventID": event_id, "outcomeID": outcome_id, "points": amount,
             "transactionID": secrets.token_hex(16),
         }})
+        # kept before sending: whatever the reply says, a prediction-result that comes is logged
+        remember(self._placed, event_id, (channel.name, title))
         # sent once: it spends points
         response, code = await self._send(op, single_attempt=True)
         if response is not None:
             code = error_code(response, "makePrediction")
         elif code != GQLException.__name__:
-            # no answer from Twitch (a timeout, a lost connection, an unconfirmed HTTP reply): the bet may
-            # have been placed, so its result is still logged; a GQLException is Twitch's own refusal
-            remember(self._placed, event_id, (channel.name, title))
+            # The bet may have been placed: no answer (a timeout, a lost connection, an unconfirmed HTTP
+            # reply) or GQLServerError (a top-level server-side error such as "service timeout", or one
+            # without a readable message). Only a plain GQLException names Twitch's refusal (see
+            # GQLClient._refusal).
             logger.warning("Bet of %d points on %s may have been placed (%s)", amount, channel.name, code)
             self._twitch.gui.points.log("bet_unknown", points=amount, channel=channel.name, title=title)
             return
         if code is None:
             outcome = event["outcomes"][index].get("title")
             outcome = outcome if isinstance(outcome, str) else outcome_id
-            remember(self._placed, event_id, (channel.name, title))
             logger.info("Bet %d points on %s", amount, channel.name)
             self._twitch.gui.points.log("bet_placed", points=amount, outcome=outcome, channel=channel.name, title=title)
             return

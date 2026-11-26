@@ -261,7 +261,7 @@ async def test_one_share_attempt_sends_the_mutation_once(monkeypatch, caplog, me
     with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
         await svc.share_streaks()
     assert len(sent_shares(browser)) == 1
-    assert caplog.messages == ["Twitch request ShareViewerMilestone failed (GQLException)"]
+    assert caplog.messages == ["Twitch request ShareViewerMilestone failed (GQLServerError)"]
     # the outcome is unknown, so later checks do not send it again
     for _ in range(2):
         svc._share_checked -= STREAK_SHARE_CHECK_SECONDS

@@ -1033,7 +1033,7 @@ login_text = _.t["login"]["status"]["logged_in"]  # Returns "Logged in"
 - **src/config/paths.py** - Path management and Docker environment detection
 - **src/config/client_info.py** - Twitch client info (Client-Id, User-Agent)
 - **src/config/settings.py** - Application settings with JSON persistence
-- **src/exceptions.py** - Custom exceptions (MinerException, ExitRequest, RequestException, RequestInvalid, WebsocketClosed, LoginException, CaptchaRequired, GQLException)
+- **src/exceptions.py** - Custom exceptions (MinerException, ExitRequest, RequestException, RequestInvalid, WebsocketClosed, LoginException, CaptchaRequired, GQLException, GQLServerError)
 - **src/drop_history.py** - Claimed-drop history store (`DropHistory`) with atomic JSON
   persistence, filtering, stats, and CSV export; recorded on every successful drop claim
 - **src/utils/** - Helper utilities (string_utils, json_utils, async_helpers, rate_limiter, backoff)
@@ -1454,8 +1454,10 @@ live in `gui.points` (English text in every locale until translated).
   `idle_watched()` (the loop's pick, still watched). Raid, moment and prediction ids are
   used up before sending (newest `EVENTS_KEPT` kept, cleared on an auth change), so a
   repeated message, failure or unknown outcome is never resent. `JoinRaid` and
-  `MakePrediction` are `single_attempt`: a top-level GQL error (Twitch's
-  `IntegrityCheckFailed` on JoinRaid) raises `GQLException`, so the log code is the
+  `MakePrediction` are `single_attempt`: a top-level GQL error raises `GQLException`
+  when every error names a refusal (Twitch's `IntegrityCheckFailed` on JoinRaid), else
+  `GQLServerError` (a message in `SERVER_ERRORS` of `src/api/gql_client.py`, such as
+  `service timeout`, or none readable: the mutation may have run), so the log code is the
   exception type; a nested `data.<field>.error.code` is logged as is. Mutations time out
   after `MUTATION_TIMEOUT` (30 s). `CommunityMomentCallout_Claim` answers in
   `claimCommunityMoment`. A raid target is never watched.
@@ -1472,14 +1474,14 @@ live in `gui.points` (English text in every locale until translated).
   the timer fires it bets only if `may_act`, the stored status is ACTIVE, the balance is
   known and `PredictionStrategy.amount()` =
   `min(balance * prediction_percent // 100, prediction_max_points, balance)` is at least
-  `MIN_BET` (10); otherwise `bet_skipped`. A reply whose `makePrediction.error` is not
-  null is `bet_failed`, as is a `GQLException`; any other send failure (timeout,
-  connection, unconfirmed HTTP reply) is `bet_unknown` and is kept in `_placed` like a
-  placed bet. `PredictionStrategy.choose()` needs two outcomes; counts that are not
+  `MIN_BET` (10); otherwise `bet_skipped`. Every sent bet is kept in `_placed` before
+  sending. A reply whose `makePrediction.error` is not null is `bet_failed`, as is a
+  plain `GQLException`; any other send failure (`GQLServerError`, timeout, connection,
+  unconfirmed HTTP reply) is `bet_unknown`. `PredictionStrategy.choose()` needs two outcomes; counts that are not
   positive ints count as 0; ties keep the first; `smart` = `high_odds` when the two
   outcomes with the most users (a tie keeps the earlier) have
   `abs(u1 - u2) * 100 / (u1 + u2) <= 20` (no users counts as even), else `most_voted`,
-  over all outcomes. Results of placed and unknown bets (`prediction-result`
+  over all outcomes. Results of sent bets (`prediction-result`
   WIN/LOSE/REFUND, kept until an auth change) go to the points log while the user topic
   is subscribed.
 - Chat presence (`ChatPresence`, `src/services/chat_presence.py`, `join_chat`): the tick

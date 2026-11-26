@@ -361,9 +361,10 @@ use goes to drop mining instead.
     No bet is placed below 10 points, with an unknown balance, or when the prediction is
     no longer open, or when Twitch sent a prediction without a usable start time or
     length. Each skip and each result (won, lost, refunded) goes to the channel points
-    log. A bet without an answer from Twitch (a timeout or a lost connection) is logged as
-    possibly placed, and its result is still logged when Twitch sends one. No strategy is
-    known to beat the other viewers.
+    log. A bet without an answer from Twitch (a timeout, a lost connection, or a server
+    error such as "service timeout") is logged as possibly placed. The result of every
+    bet TDM sent is logged when Twitch sends one. No strategy is known to beat the other
+    viewers.
 - `join_chat` (off by default) joins the chat of the idle-watched channel over Twitch's
   chat websocket with your session, and leaves it when TDM switches channels, stops idle
   watching or pauses channel points. TDM never sends chat messages. Twitch lists no

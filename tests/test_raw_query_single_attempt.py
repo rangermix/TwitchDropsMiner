@@ -10,7 +10,7 @@ import pytest
 from src.api.gql_client import GQLClient
 from src.api.http_client import HTTPClient
 from src.config import ClientType, GQLRawQuery, State
-from src.exceptions import GQLException, RequestException
+from src.exceptions import GQLException, GQLServerError, RequestException
 
 
 OK = {"data": {"x": 1}}
@@ -81,6 +81,51 @@ async def test_raw_query_with_single_attempt_does_not_retry_an_error_reply(monke
         await GQLClient(MagicMock(), auth, ClientType.WEB).request(op())
     browser.gql.assert_awaited_once()
     assert browser.gql.call_args.kwargs == {"single_attempt": True}
+
+
+def browser_client(reply):
+    browser = SimpleNamespace(gql=AsyncMock(return_value=reply))
+    auth = SimpleNamespace(validate=AsyncMock(return_value=SimpleNamespace(
+        browser_active=True, _twitch=SimpleNamespace(_browser=browser),
+    )))
+    return GQLClient(MagicMock(), auth, ClientType.WEB)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("reply", "server_side"), [
+    # a server-side error: the mutation may have run
+    ({"errors": [{"message": "service timeout"}]}, True),
+    ({"errors": [{"message": "context deadline exceeded", "path": ["makePrediction"]}], "data": None}, True),
+    ({"errors": [{"message": "service unavailable"}]}, True),
+    ({"errors": [{"message": "service error"}]}, True),
+    ({"errors": [{"message": "server error", "path": ["makePrediction"]}]}, True),
+    ({"errors": [{"message": "failed integrity check"}, {"message": "service timeout"}]}, True),  # mixed
+    # no readable error message
+    ({"errors": [{"path": ["x"]}]}, True),
+    ({"errors": [{"message": ""}]}, True),
+    ({"errors": [{"message": None}]}, True),
+    ({"errors": ["service timeout"]}, True),
+    ({"errors": "service timeout"}, True),
+    ({"error": True}, True),
+    ([OK, "not a row"], True),
+    # a named refusal
+    ({"errors": [{"message": "failed integrity check"}]}, False),
+    ({"errors": [{"message": "PersistedQueryNotFound"}]}, False),
+    ({"errors": [{"message": "service timeout!"}]}, False),  # near-miss of a server-side message
+    ({"errors": [{"message": "Service Timeout"}]}, False),
+    ({"error": "Unauthorized", "status": 401, "message": "invalid oauth token"}, False),
+    ([OK, {"errors": [{"message": "failed integrity check"}]}], False),
+])
+async def test_single_attempt_error_reply_splits_server_side_errors_from_refusals(reply, server_side):
+    with pytest.raises(GQLException, match="not confirmed") as raised:
+        await browser_client(reply).request(op())
+    assert isinstance(raised.value, GQLServerError) is server_side
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("reply", [OK, {"data": {"x": None}, "errors": []}, {"data": {"x": 1}, "error": None}])
+async def test_single_attempt_reply_without_errors_is_returned(reply):
+    assert await browser_client(reply).request(op()) == reply
 
 
 @pytest.mark.asyncio

@@ -14,7 +14,7 @@ from itertools import chain
 from typing import TYPE_CHECKING, overload
 
 from src.config.constants import GQLOperation, GQLRawQuery
-from src.exceptions import GQLException, MinerException
+from src.exceptions import GQLException, GQLServerError, MinerException
 from src.utils import ExponentialBackoff, RateLimiter
 
 
@@ -28,6 +28,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("TwitchDrops")
 gql_logger = logging.getLogger("TwitchDrops.gql")
+
+# top-level GQL error messages of a request that timed out or failed inside Twitch; retried for reads
+TIMEOUT_ERRORS = ("service timeout", "service unavailable", "context deadline exceeded")
+# the server-side errors after which a mutation may have run
+SERVER_ERRORS = ("service error", "server error", *TIMEOUT_ERRORS)
 _private_discovery = ContextVar("private_gql_discovery", default=False)
 
 
@@ -145,10 +150,15 @@ class GQLClient:
             response_list = response_json if isinstance(response_json, list) else [response_json]
 
             if single_attempt:
-                if any(not isinstance(row, dict) or row.get("errors") or row.get("error")
-                       for row in response_list):
+                unconfirmed = [row for row in response_list
+                               if not isinstance(row, dict) or row.get("errors") or row.get("error")]
+                if not unconfirmed:
+                    return orig_response
+                # GQLException only when every error is a named refusal; a server-side error or
+                # one without a readable message may come after the mutation ran
+                if all(self._refusal(row) for row in unconfirmed):
                     raise GQLException("Mutation response was not confirmed")
-                return orig_response
+                raise GQLServerError("Mutation response was not confirmed")
 
             force_retry: bool = False
             for response_json in response_list:
@@ -181,11 +191,7 @@ class GQLClient:
                                     data_dict = data_dict[key]
                                 data_dict[path[-1]] = None
                                 break
-                            elif error_dict["message"] in (
-                                "service timeout",
-                                "service unavailable",
-                                "context deadline exceeded",
-                            ):
+                            elif error_dict["message"] in TIMEOUT_ERRORS:
                                 force_retry = True
                                 break
                     else:
@@ -202,6 +208,20 @@ class GQLClient:
             await asyncio.sleep(delay)
 
         raise RuntimeError("Retry loop was broken")
+
+    @staticmethod
+    def _refusal(row: object) -> bool:
+        """True for an error row in which Twitch named its refusal: an `error` string (an HTTP-style
+        status such as Unauthorized), or `errors` whose messages are all non-empty and none of SERVER_ERRORS."""
+        if not isinstance(row, dict):
+            return False
+        errors = row.get("errors")
+        if not errors:
+            return isinstance(row.get("error"), str) and bool(row["error"])
+        if not isinstance(errors, list):
+            return False
+        messages = [error.get("message") if isinstance(error, dict) else None for error in errors]
+        return all(isinstance(m, str) and m and m not in SERVER_ERRORS for m in messages)
 
     @staticmethod
     def merge_data(primary_data: JsonType, secondary_data: JsonType) -> JsonType:
