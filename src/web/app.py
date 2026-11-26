@@ -118,6 +118,7 @@ class SettingsUpdate(BaseModel):
     prediction_fixed_option: StrictInt | None = None
     claim_moments: StrictBool | None = None
     join_chat: StrictBool | None = None
+    watch_slots: StrictInt | None = None
     proxy: str | None = None
     connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None

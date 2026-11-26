@@ -3231,6 +3231,7 @@ header h1 {
 .points-table .points-gain-time { display: block; color: var(--text-secondary); font-size: 12px; }
 .points-table .points-live { color: var(--success-color); }
 .points-table .points-offline { color: var(--text-secondary); }
+.points-table .points-side { display: block; color: var(--text-secondary); font-size: 12px; }
 .points-history-select { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .points-history-select[hidden] { display: none; }
 .points-history-select select { max-width: 100%; box-sizing: border-box; }

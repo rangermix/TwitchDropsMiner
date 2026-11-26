@@ -98,7 +98,13 @@ def test_every_points_option_has_a_control_matching_the_server_keys():
         assert f'data-points-setting="{key}"' in HTML, key
     # bounds in the markup, the script and the server agree
     for key, (low, high) in PointsSettings.RANGES.items():
-        assert f'data-points-setting="{key}" min="{low}" max="{high}"' in HTML, key
+        if key == "watch_slots":
+            # a select: one option per allowed count
+            start = HTML.index('id="points-setting-watch_slots"')
+            select = HTML[start:HTML.index('</select>', start)]
+            assert re.findall(r'<option value="(\d+)"', select) == [str(n) for n in range(low, high + 1)]
+        else:
+            assert f'data-points-setting="{key}" min="{low}" max="{high}"' in HTML, key
         assert re.search(rf"{key}: \{{default: \d+, min: {low}, max: {high}\}}", POINTS_SETTINGS_JS), key
     for key, (low, high) in PointsSettings.NUMBERS.items():
         assert f'data-points-setting="{key}" min="{low:g}" max="{high:g}" step="0.01"' in HTML, key
@@ -415,4 +421,43 @@ updateSettingsUI({prediction_percent: 7}, false, ['prediction_percent']);
 assert.equal(state.settings.prediction_percent, 7);
 updateSettingsUI({prediction_percent: 9}, true);
 assert.equal(state.settings.prediction_percent, 9);
+""")
+
+
+@needs_node
+def test_watch_slots_select_saves_an_int_and_rolls_back_on_failure():
+    run_points(r"""
+const calls = [];
+let reply = body => ({ok: true, json: async () => ({success: true, settings: body})});
+global.fetch = async (url, options) => { const body = JSON.parse(options.body); calls.push(body); return reply(body); };
+renderPointsSettings();
+assert.equal(control('watch_slots').value, '1');
+control('watch_slots').value = '2';
+await savePointsSetting('watch_slots');
+assert.deepEqual(calls, [{watch_slots: 2}], 'the select value is sent as a number');
+assert.equal(state.settings.watch_slots, 2);
+reply = () => ({ok: false});
+control('watch_slots').value = '1';
+await savePointsSetting('watch_slots');
+assert.equal(control('watch_slots').value, '2', 'back to the confirmed value');
+assert.equal(failure('watch_slots').hidden, false);
+""")
+
+
+@needs_node
+def test_second_slot_label_marks_only_the_side_watched_row():
+    run_points(r"""
+updatePointsState({paused: false, active: true, channels: [
+    {login: 'one', name: 'One', live: true, balance: 1, last_gain: null, side: true},
+    {login: 'two', name: 'Two', live: true, balance: 2, last_gain: null, side: false},
+    {login: 'three', name: 'Three', live: true, balance: 3, last_gain: null}]});
+const [first, second, third] = tableRows();
+const label = first.children[0].children[0];
+assert.ok(label.classes.has('points-side'));
+assert.equal(label.textContent, 'Watching (second slot)');
+assert.equal(second.children[0].children.length, 0);
+assert.equal(third.children[0].children.length, 0);
+state.translations.gui.points = {side_watching: 'Second slot'};
+renderPoints();
+assert.equal(tableRows()[0].children[0].children[0].textContent, 'Second slot');
 """)

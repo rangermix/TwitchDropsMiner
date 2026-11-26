@@ -31,6 +31,7 @@ DEFAULTS = {
     "prediction_fixed_option": 1,
     "claim_moments": True,
     "join_chat": False,
+    "watch_slots": 1,
 }
 
 VALID = [
@@ -46,6 +47,7 @@ VALID = [
     ("prediction_delay_seconds", 0), ("prediction_delay_seconds", 3600),
     ("prediction_timer_percent", 1), ("prediction_timer_percent", 99),
     ("prediction_fixed_option", 1), ("prediction_fixed_option", 10),
+    ("watch_slots", 1), ("watch_slots", 2),
 ] + [("prediction_timing", v) for v in ("before_close", "after_open", "percent")] + [(key, value) for key in PointsSettings.FLAGS for value in (True, False)]
 
 INVALID = [
@@ -70,6 +72,8 @@ INVALID = [
     ("prediction_fixed_option", 0), ("prediction_fixed_option", 11), ("prediction_fixed_option", True),
     ("prediction_fixed_option", 1.0), ("prediction_fixed_option", "1"),
     ("prediction_timing", "Percent"), ("prediction_timing", "after"), ("prediction_timing", 1),
+    ("watch_slots", 0), ("watch_slots", 3), ("watch_slots", True), ("watch_slots", 2.0), ("watch_slots", "2"),
+    ("watch_slots", None),
 ] + [(key, value) for key in PointsSettings.FLAGS for value in (1, 0, "true", None)]
 
 
@@ -234,6 +238,7 @@ class TestAPI:
         {"prediction_timing": "soon"}, {"prediction_delay_seconds": 3601}, {"prediction_delay_seconds": 1.5},
         {"prediction_timer_percent": 0}, {"prediction_timer_percent": 100}, {"prediction_timer_percent": True},
         {"prediction_fixed_option": 0}, {"prediction_fixed_option": 11}, {"prediction_fixed_option": "2"},
+        {"watch_slots": 0}, {"watch_slots": 3}, {"watch_slots": True}, {"watch_slots": "2"}, {"watch_slots": 2.0},
     ])
     def test_rejects_invalid_options(self, client, body):  # noqa: F811
         browser, _twitch = client

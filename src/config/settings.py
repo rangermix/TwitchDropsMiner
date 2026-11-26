@@ -62,6 +62,8 @@ default_settings = {
     "prediction_fixed_option": 1,
     "claim_moments": True,
     "join_chat": False,
+    # 2: idle watching also runs next to drop mining, on a second watch (IdleWatchService side mode)
+    "watch_slots": 1,
     "language": DEFAULT_LANG,
     "last_notified_releases": {"telegram": "", "discord": ""},
     "prefer_followed_channels": False,
@@ -124,7 +126,7 @@ class MiningHoursSettings:
 
 
 class IdleChannelSettings:
-    """Validate the channels watched when nothing can be mined."""
+    """Validate the channels watched when nothing can be mined (with watch_slots 2 also next to drops)."""
 
     LOGIN = re.compile(r"[a-z0-9_]{1,25}")
     MAX_CHANNELS = 20
@@ -166,6 +168,7 @@ class PointsSettings:
         "prediction_delay_seconds": (0, 3600),
         "prediction_timer_percent": (1, 99),
         "prediction_fixed_option": (1, 10),
+        "watch_slots": (1, 2),
     }
     # inclusive bounds of the options that take an int or a float
     NUMBERS: ClassVar[dict[str, tuple[float, float]]] = {"prediction_min_odds": (1.0, 100.0)}
@@ -345,6 +348,7 @@ class Settings:
     prediction_fixed_option: int
     claim_moments: bool
     join_chat: bool
+    watch_slots: int
     language: str
     last_notified_releases: dict[str, str]
     reward_priority: list[str]

@@ -2822,6 +2822,8 @@ const POINTS_SETTINGS = {
     prediction_delay_seconds: {default: 6, min: 0, max: 3600},
     prediction_timer_percent: {default: 50, min: 1, max: 99},
     prediction_fixed_option: {default: 1, min: 1, max: 10},
+    // a select; the number path sends the chosen value as an int
+    watch_slots: {default: 1, min: 1, max: 2},
 };
 let pointsPauseBusy = false;
 
@@ -2870,8 +2872,13 @@ function renderPoints() {
         const gain = formatPointsGain(channel.last_gain, t.reasons || {});
         const gainCell = makeElement('td', {}, gain ? gain.text : '-');
         if (gain?.time) gainCell.appendChild(makeElement('span', {class: 'points-gain-time'}, gain.time));
+        const name = makeElement('td', {}, channel.name || channel.login);
+        // the channel the second watch slot watches next to drop mining
+        if (channel.side === true) {
+            name.appendChild(makeElement('span', {class: 'points-side'}, t.side_watching || 'Watching (second slot)'));
+        }
         row.replaceChildren(
-            makeElement('td', {}, channel.name || channel.login),
+            name,
             makeElement('td', {class: live ? 'points-live' : 'points-offline'},
                 live ? (t.live || 'Live') : (t.offline || 'Offline')),
             makeElement('td', {}, Number.isInteger(channel.balance) ? channel.balance.toLocaleString() : '-'),
