@@ -147,10 +147,11 @@ class DiscordNotifier:
             "title": "⏰ Campaign ending soon!",
             "color": EMBED_COLOR,
             "fields": [
-                {"name": "Campaign", "value": _truncate(_escape_markdown(campaign.name)), "inline": True},
-                {"name": "Game", "value": _truncate(_escape_markdown(campaign.game.name)), "inline": True},
+                # _send_embed escapes and truncates every field.
+                {"name": "Campaign", "value": campaign.name, "inline": True},
+                {"name": "Game", "value": campaign.game.name, "inline": True},
                 {"name": "Ends", "value": f"{ends_at:%Y-%m-%d %H:%M} UTC", "inline": True},
-                {"name": "Unclaimed drops", "value": str(campaign.remaining_drops), "inline": True},
+                {"name": "Drops left", "value": str(len(campaign.mineable_watch_drops)), "inline": True},
             ],
             "footer": {"text": "TwitchDropsMiner Bot"},
         }

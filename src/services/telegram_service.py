@@ -112,7 +112,7 @@ class TelegramNotifier:
             f"<b>Campaign:</b> {html.escape(campaign.name)}\n"
             f"<b>Game:</b> {html.escape(campaign.game.name)}\n"
             f"<b>Ends:</b> {campaign.ends_at.astimezone(timezone.utc):%Y-%m-%d %H:%M} UTC\n"
-            f"<b>Unclaimed drops:</b> {campaign.remaining_drops}"
+            f"<b>Drops left:</b> {len(campaign.mineable_watch_drops)}"
         )
         return await self._send_message(message)
 

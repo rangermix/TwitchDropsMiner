@@ -11,7 +11,7 @@ import pytest
 
 from src.models.game import Game
 from src.services.campaign_alert_service import CampaignEndingAlerts
-from src.services.discord_service import DiscordNotifier
+from src.services.discord_service import DiscordNotifier, _escape_embed
 from src.services.telegram_service import TelegramNotifier
 from tests.javascript_helpers import NODE
 from tests.test_release_notifications import notification_javascript
@@ -22,11 +22,13 @@ WEBHOOK = "https://discord.com/api/webhooks/123/token"
 GAME = Game({"id": "1", "name": "Game <b>"})
 
 
-def _campaign(cid="c1", *, ends_in=timedelta(hours=5), game=GAME, finished=False, eligible=True,
+def _campaign(cid="c1", *, ends_in=timedelta(hours=5), game=GAME, earnable=True, wanted=True,
               active=True):
     return SimpleNamespace(
-        id=cid, name="Camp *one*", game=game, ends_at=NOW + ends_in, eligible=eligible,
-        active=active, mining_finished=finished, remaining_drops=2,
+        id=cid, name="Camp *one*", game=game, ends_at=NOW + ends_in, active=active,
+        can_earn_within=lambda stamp: earnable,
+        has_wanted_unclaimed_benefits=lambda benefits: wanted and benefits == {"BADGE": True},
+        mineable_watch_drops=(object(), object()),
     )
 
 
@@ -35,6 +37,7 @@ def _twitch(*campaigns, enabled=True, wanted=(GAME,)):
         settings=SimpleNamespace(
             notification_events={"campaign_ending": enabled},
             telegram_bot_token="", telegram_chat_id="", discord_webhook_url=WEBHOOK,
+            mining_benefits={"BADGE": True},
         ),
         inventory=list(campaigns), wanted_games=list(wanted), diagnostics=None,
     )
@@ -43,8 +46,8 @@ def _twitch(*campaigns, enabled=True, wanted=(GAME,)):
 @pytest.mark.parametrize("campaign", [
     _campaign(ends_in=timedelta(hours=25)),
     _campaign(game=Game({"id": "2", "name": "Other"})),
-    _campaign(finished=True),
-    _campaign(eligible=False),
+    _campaign(earnable=False),
+    _campaign(wanted=False),
     _campaign(active=False),
 ])
 def test_only_wanted_mineable_campaigns_ending_soon_are_due(tmp_path, campaign):
@@ -79,6 +82,23 @@ async def test_failed_delivery_is_retried_and_disabled_events_send_nothing(tmp_p
 
 
 @pytest.mark.asyncio
+async def test_alerts_for_several_campaigns_are_sent_together(tmp_path):
+    import asyncio
+
+    started = []
+
+    async def slow(_notifier, campaign):
+        started.append(campaign.id)
+        await asyncio.sleep(0.05)
+        return True
+
+    alerts = CampaignEndingAlerts(_twitch(_campaign("a"), _campaign("b"), _campaign("c")), tmp_path)
+    with patch.object(DiscordNotifier, "notify_campaign_ending", slow):
+        await asyncio.wait_for(alerts.check(), 0.12)
+    assert sorted(started) == ["a", "b", "c"]
+
+
+@pytest.mark.asyncio
 async def test_expired_entries_are_pruned_and_a_damaged_file_is_ignored(tmp_path):
     path = tmp_path / CampaignEndingAlerts.FILENAME
     path.write_text("{broken", encoding="utf-8")
@@ -96,12 +116,13 @@ async def test_messages_escape_twitch_text():
     telegram._send_message = AsyncMock(return_value=True)
     assert await telegram.notify_campaign_ending(campaign)
     text = telegram._send_message.await_args.args[0]
-    assert "Game &lt;b&gt;" in text and "Unclaimed drops:</b> 2" in text
+    assert "Game &lt;b&gt;" in text and "Drops left:</b> 2" in text
     discord = DiscordNotifier(WEBHOOK)
     discord._send_embed = AsyncMock(return_value=True)
     assert await discord.notify_campaign_ending(campaign)
-    fields = {f["name"]: f["value"] for f in discord._send_embed.await_args.args[0]["fields"]}
-    assert fields["Campaign"] == "Camp \\*one\\*"
+    sent = _escape_embed(discord._send_embed.await_args.args[0])  # as _send_embed posts it
+    fields = {f["name"]: f["value"] for f in sent["fields"]}
+    assert fields["Campaign"] == "Camp \\*one\\*", "escaped exactly once"
     assert fields["Ends"].endswith(" UTC")
 
 

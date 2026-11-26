@@ -23,7 +23,8 @@ Event choices are available in v2.6.0 and later.
   (every 30 minutes by default) and sends one alert per campaign of a game in your
   mining queue that ends within 24 hours and still has drops TDM would mine. Alerted
   campaigns are remembered in `data/campaign_alerts.json` so a restart does not repeat
-  them; a failed delivery is retried at the next reload.
+  them. A campaign counts as alerted once any configured provider accepts the alert; if
+  every provider fails, TDM retries at the next reload.
 
 Each checkbox saves immediately. A failed save restores the previous choice.
 

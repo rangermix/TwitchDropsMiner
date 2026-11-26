@@ -27,7 +27,8 @@ logger = logging.getLogger("TwitchDrops")
 class CampaignEndingAlerts:
     """Send one Discord/Telegram alert per campaign that ends within ``WINDOW``.
 
-    Only campaigns of wanted games that still have drops TDM would mine are reported.
+    Only campaigns of wanted games that still have drops TDM would mine are reported. A
+    campaign counts as alerted once any provider accepts the alert.
     Alerted campaign IDs are kept in ``campaign_alerts.json`` (with their end time, so
     entries expire) so a restart does not repeat an alert.
     """
@@ -77,15 +78,17 @@ class CampaignEndingAlerts:
         """Return wanted, still-mineable campaigns ending within the window and not yet alerted."""
         now = now or datetime.now(timezone.utc)
         wanted = set(self._twitch.wanted_games)
+        benefits = self._twitch.settings.mining_benefits
         return [
             campaign
             for campaign in self._twitch.inventory
             if campaign.game in wanted
-            and campaign.eligible
             and campaign.active
-            and not campaign.mining_finished
             and campaign.ends_at <= now + self.WINDOW
             and campaign.id not in self._alerted
+            # The same guards the miner uses: eligible, earnable and with wanted rewards left.
+            and campaign.can_earn_within(now)
+            and campaign.has_wanted_unclaimed_benefits(benefits)
         ]
 
     async def check(self) -> None:
@@ -98,12 +101,17 @@ class CampaignEndingAlerts:
         for campaign_id in expired:
             del self._alerted[campaign_id]
         changed = bool(expired)
-        for campaign in self.due(now):
-            results = await asyncio.gather(
+        due = self.due(now)
+        # All sends run together, so a slow provider delays mining by one timeout at most.
+        results = await asyncio.gather(*(
+            asyncio.gather(
                 *(notifier.notify_campaign_ending(campaign) for notifier in notifiers),
                 return_exceptions=True,
             )
-            if any(result is True for result in results):
+            for campaign in due
+        ))
+        for campaign, sent in zip(due, results, strict=True):
+            if any(result is True for result in sent):
                 self._alerted[campaign.id] = campaign.ends_at
                 changed = True
         if changed:
