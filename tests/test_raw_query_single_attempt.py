@@ -111,8 +111,17 @@ def browser_client(reply):
     # a named refusal
     ({"errors": [{"message": "failed integrity check"}]}, False),
     ({"errors": [{"message": "PersistedQueryNotFound"}]}, False),
+    # case and outer spaces do not hide a server-side message; an HTTP-style 5xx is server-side too
+    ({"errors": [{"message": "Service Timeout"}]}, True),
+    ({"errors": [{"message": " service timeout "}]}, True),
+    ({"errors": [{"message": "internal server error"}]}, True),
+    ({"error": "Internal Server Error", "status": 500, "message": "x"}, True),
+    ({"error": "Service Unavailable", "status": 503, "message": "x"}, True),
+    ({"error": "   ", "status": 400, "message": "x"}, True),
     ({"errors": [{"message": "service timeout!"}]}, False),  # near-miss of a server-side message
-    ({"errors": [{"message": "Service Timeout"}]}, False),
+    ({"errors": [{"message": "service timeouts"}]}, False),
+    ({"error": "Bad Request", "status": 400, "message": "x"}, False),
+    ({"error": "Internal Server Error", "status": "500", "message": "x"}, False),  # status not a number
     ({"error": "Unauthorized", "status": 401, "message": "invalid oauth token"}, False),
     ([OK, {"errors": [{"message": "failed integrity check"}]}], False),
 ])

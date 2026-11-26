@@ -32,7 +32,7 @@ gql_logger = logging.getLogger("TwitchDrops.gql")
 # top-level GQL error messages of a request that timed out or failed inside Twitch; retried for reads
 TIMEOUT_ERRORS = ("service timeout", "service unavailable", "context deadline exceeded")
 # the server-side errors after which a mutation may have run
-SERVER_ERRORS = ("service error", "server error", *TIMEOUT_ERRORS)
+SERVER_ERRORS = ("service error", "server error", "internal server error", *TIMEOUT_ERRORS)
 _private_discovery = ContextVar("private_gql_discovery", default=False)
 
 
@@ -212,16 +212,19 @@ class GQLClient:
     @staticmethod
     def _refusal(row: object) -> bool:
         """True for an error row in which Twitch named its refusal: an `error` string (an HTTP-style
-        status such as Unauthorized), or `errors` whose messages are all non-empty and none of SERVER_ERRORS."""
+        status such as Unauthorized, below 500), or `errors` whose messages are all non-empty and none of
+        SERVER_ERRORS (compared without case and outer spaces)."""
         if not isinstance(row, dict):
             return False
         errors = row.get("errors")
         if not errors:
-            return isinstance(row.get("error"), str) and bool(row["error"])
+            status = row.get("status")
+            server = type(status) is int and status >= 500
+            return isinstance(row.get("error"), str) and bool(row["error"].strip()) and not server
         if not isinstance(errors, list):
             return False
         messages = [error.get("message") if isinstance(error, dict) else None for error in errors]
-        return all(isinstance(m, str) and m and m not in SERVER_ERRORS for m in messages)
+        return all(isinstance(m, str) and m.strip() and m.strip().lower() not in SERVER_ERRORS for m in messages)
 
     @staticmethod
     def merge_data(primary_data: JsonType, secondary_data: JsonType) -> JsonType:
