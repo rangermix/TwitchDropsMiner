@@ -1,4 +1,4 @@
-"""Settings > Mining: idle watching channel list and channel points claim toggle."""
+"""Idle watching channel list and the channel points claim and share toggles (now on the Points tab)."""
 
 import json
 import re
