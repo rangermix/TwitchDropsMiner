@@ -266,3 +266,11 @@ def test_min_odds_are_rounded_to_two_decimals_in_load_api_manager_and_save(tmp_p
     loaded.save()
     saved = json.loads((tmp_path / "settings.json").read_text(encoding="utf-8"))
     assert saved["prediction_min_odds"] == stored
+
+
+@pytest.mark.parametrize(("before", "sent", "games_update"), [(1, 2, True), (2, 2, False), (2, 1, False), (1, 1, False)])
+def test_manager_requests_a_games_update_only_when_watch_slots_goes_from_1_to_2(before, sent, games_update):
+    manager, stored = _manager()
+    stored.watch_slots = before
+    _update(manager, {"watch_slots": sent})
+    assert manager._on_change.called is games_update

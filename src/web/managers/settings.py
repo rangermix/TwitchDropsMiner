@@ -252,6 +252,7 @@ class SettingsManager:
                 lambda _options: self._on_idle_channels_change() if self._on_idle_channels_change else None,
                 log_formatter=lambda options: f"{len(options)} channels",
             )
+        slots_before = getattr(self._settings, "watch_slots", 1)
         self.check_and_update_setting("claim_channel_points", claim_points)
         self.check_and_update_setting("share_watch_streaks", share_streaks)
         for key, value in points_options.items():
@@ -260,6 +261,8 @@ class SettingsManager:
                 key, value, False,
                 lambda _value: self._on_idle_channels_change() if self._on_idle_channels_change else None,
             )
+        # a full tracked channel list has no room for the second slot until CHANNELS_FETCH reserves it
+        should_trigger_update |= slots_before == 1 and getattr(self._settings, "watch_slots", 1) == 2
         should_trigger_update |= self.check_and_update_setting(
             "dark_mode", settings_data.get("dark_mode")
         )
