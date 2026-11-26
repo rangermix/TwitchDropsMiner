@@ -10,6 +10,8 @@ from src.config import DEFAULT_LANG, LANG_PATH
 class StatusMessages(TypedDict):
     terminated: str
     watching: str
+    idle_watching: str
+    idle_watching_points: str
     mining_resumed: str
     goes_online: str
     goes_offline: str
@@ -74,6 +76,7 @@ class GUITabs(TypedDict):
     inventory: str
     settings: str
     help: str
+    points: str
 
 
 class GUIBrowserLogin(TypedDict):
@@ -309,6 +312,19 @@ class GUISettings(TypedDict):
     prefer_followed_channels: str
     prefer_followed_channels_help: str
     prefer_followed_channels_save_error: str
+    idle_channels: str
+    idle_channels_help: str
+    idle_channels_add: str
+    idle_channels_remove: str
+    idle_channels_up: str
+    idle_channels_down: str
+    idle_channels_save_error: str
+    claim_channel_points: str
+    claim_channel_points_help: str
+    claim_channel_points_save_error: str
+    share_watch_streaks: str
+    share_watch_streaks_help: str
+    share_watch_streaks_save_error: str
     general: GUISettingsGeneral
     tab_mining: str
     tab_games: str
@@ -448,6 +464,66 @@ class GUIHistory(TypedDict):
     stats_error: str
 
 
+class GUIPointsReasons(TypedDict):
+    watch: str
+    claim: str
+    watch_streak: str
+    raid: str
+    prediction: str
+
+
+class GUIPoints(TypedDict):
+    title: str
+    status_active: str
+    status_paused: str
+    status_inactive: str
+    pause: str
+    resume: str
+    pause_error: str
+    channels_header: str
+    col_channel: str
+    col_live: str
+    col_balance: str
+    col_last_gain: str
+    live: str
+    offline: str
+    no_channels: str
+    log_header: str
+    save_error: str
+    order_header: str
+    idle_priority: str
+    idle_priority_help: str
+    priority_list: str
+    priority_points_low: str
+    priority_points_high: str
+    priority_subscribed: str
+    idle_streak_first: str
+    idle_streak_first_help: str
+    streak_recovery: str
+    streak_recovery_help: str
+    actions_header: str
+    follow_raids: str
+    follow_raids_help: str
+    claim_moments: str
+    claim_moments_help: str
+    join_chat: str
+    join_chat_help: str
+    predictions_header: str
+    predictions_enabled: str
+    predictions_enabled_help: str
+    prediction_strategy: str
+    prediction_strategy_help: str
+    strategy_smart: str
+    strategy_most_voted: str
+    strategy_high_odds: str
+    strategy_favourite: str
+    prediction_percent: str
+    prediction_percent_help: str
+    prediction_max_points: str
+    prediction_max_points_help: str
+    reasons: GUIPointsReasons
+
+
 class GUIMessages(TypedDict):
     auth: GUIAuth
     history: GUIHistory
@@ -461,6 +537,7 @@ class GUIMessages(TypedDict):
     channels: GUIChannels
     inventory: GUIInventory
     settings: GUISettings
+    points: GUIPoints
     help: GUIHelp
     header: GUIHeader
     footer: GUIFooter
@@ -532,6 +609,34 @@ class HelperMessages(TypedDict):
     insecure_warning: str
 
 
+class PointsLog(TypedDict):
+    paused: str
+    resumed: str
+    gain: str
+    bonus_claimed: str
+    visit_started: str
+    recovery_visit_started: str
+    visit_skipped: str
+    streak_shared: str
+    bet_placed: str
+    bet_won: str
+    bet_lost: str
+    bet_refunded: str
+    bet_skipped: str
+    bet_failed: str
+    bet_unknown: str
+    raid_joined: str
+    raid_failed: str
+    moment_claimed: str
+    chat_joined: str
+    chat_left: str
+    topic_limit: str
+
+
+class PointsMessages(TypedDict):
+    log: PointsLog
+
+
 class Translation(TypedDict):
     helper: HelperMessages
     language_name: str
@@ -540,6 +645,7 @@ class Translation(TypedDict):
     login: LoginMessages
     error: ErrorMessages
     gui: GUIMessages
+    points: PointsMessages
 
 
 class Translator:

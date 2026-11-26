@@ -96,3 +96,10 @@ class GQLException(RequestException):
 
     def __init__(self, message: str):
         super().__init__(message)
+
+
+class GQLServerError(GQLException):
+    """
+    A single-attempt mutation answered with a server-side error (a timeout, an unavailable
+    service) or without a readable error: Twitch may have run it.
+    """

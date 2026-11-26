@@ -15,7 +15,8 @@ const state = {
     pauseRevision: 0,
     pauseServerRevision: null,
     pauseInstance: null,
-    pauseEpoch: 0
+    pauseEpoch: 0,
+    points: {paused: false, active: false, channels: []}
 };
 
 // ==================== UI Utilities ====================
@@ -239,6 +240,7 @@ socket.on('initial_state', (data) => {
         }
     }
 
+    if (data.points) updatePointsState(data.points, true);
     if (data.settings) updateSettingsUI(data.settings, true);
     if (data.login) updateLoginStatus(data.login);
     if (data.manual_mode) updateManualModeUI(data.manual_mode);
@@ -264,6 +266,20 @@ socket.on('status_update', (data) => {
 
 socket.on('console_output', (data) => {
     addConsoleLine(data.message);
+});
+
+socket.on('points_update', (data) => {
+    updatePointsState(data);
+});
+
+socket.on('points_paused_update', (data) => {
+    if (typeof data?.paused !== 'boolean') return;
+    state.points = {...state.points, paused: data.paused};
+    renderPoints();
+});
+
+socket.on('points_output', (data) => {
+    appendLogLine('points-log', data.message);
 });
 
 socket.on('channel_add', (data) => {
@@ -403,7 +419,11 @@ function addConsoleLine(message) {
 }
 
 function addConsoleLineRaw(line) {
-    const console = document.getElementById('console-output');
+    appendLogLine('console-output', line);
+}
+
+function appendLogLine(id, line) {
+    const console = document.getElementById(id);
     const div = document.createElement('div');
     div.textContent = line;
     console.appendChild(div);
@@ -1474,12 +1494,25 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     if (!authoritative && !changedFields.includes('mining_benefits') && state.settings.mining_benefits) {
         settings = {...settings, mining_benefits: state.settings.mining_benefits};
     }
+    // Same for the idle watching list and the claim toggle: a partial reply must not undo a confirmed write.
+    for (const key of ['idle_channels', 'claim_channel_points', 'share_watch_streaks',
+        ...(typeof POINTS_SETTINGS === 'undefined' ? [] : Object.keys(POINTS_SETTINGS))]) {
+        if (!authoritative && !changedFields.includes(key) && state.settings[key] !== undefined) {
+            settings = {...settings, [key]: state.settings[key]};
+        }
+    }
     settings = reconcileMiningOptIns(settings, authoritative, changedFields);
     state.settings = reconcileNotificationEvents(settings);
     const allowUnlinked = document.getElementById('allow-unlinked-campaigns');
     if (allowUnlinked && !allowUnlinked.disabled) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
     const preferFollowed = document.getElementById('prefer-followed-channels');
     if (preferFollowed && !preferFollowed.disabled) preferFollowed.checked = settings.prefer_followed_channels === true;
+    const claimPoints = document.getElementById('claim-channel-points');
+    if (claimPoints && !claimPoints.disabled) claimPoints.checked = settings.claim_channel_points !== false;
+    const shareStreaks = document.getElementById('share-watch-streaks');
+    if (shareStreaks && !shareStreaks.disabled) shareStreaks.checked = settings.share_watch_streaks === true;
+    if (typeof renderIdleChannels === 'function') renderIdleChannels(settings.idle_channels || []);
+    if (typeof renderPointsSettings === 'function') renderPointsSettings(settings);
     renderNotificationEvents();
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('priority-list-only').checked = settings.priority_list_only !== false;
@@ -2727,6 +2760,7 @@ async function saveBooleanSetting(key, inputId, errorId, message) {
             ...state.settings,
             allow_unlinked_campaigns: data.settings.allow_unlinked_campaigns,
             prefer_followed_channels: data.settings.prefer_followed_channels,
+            [key]: data.settings[key],
             mining_opt_ins_revision: data.settings.mining_opt_ins_revision,
         }, false, [key]);
     } catch (failure) {
@@ -2734,7 +2768,8 @@ async function saveBooleanSetting(key, inputId, errorId, message) {
         error.hidden = false;
     } finally {
         input.disabled = false;
-        input.checked = state.settings[key] === true;
+        // the claim toggle defaults to on, so a rollback before the server value is known keeps it on.
+        input.checked = key === 'claim_channel_points' ? state.settings[key] !== false : state.settings[key] === true;
     }
 }
 
@@ -2748,6 +2783,287 @@ function onPreferFollowedChange() {
     return saveBooleanSetting('prefer_followed_channels', 'prefer-followed-channels', 'prefer-followed-error',
         state.translations.gui?.settings?.prefer_followed_channels_save_error ||
         'Could not save the followed channels option. Please try again.');
+}
+
+function onClaimChannelPointsChange() {
+    return saveBooleanSetting('claim_channel_points', 'claim-channel-points', 'claim-channel-points-error',
+        state.translations.gui?.settings?.claim_channel_points_save_error ||
+        'Could not save the channel points option. Please try again.');
+}
+
+function onShareWatchStreaksChange() {
+    return saveBooleanSetting('share_watch_streaks', 'share-watch-streaks', 'share-watch-streaks-error',
+        state.translations.gui?.settings?.share_watch_streaks_save_error ||
+        'Could not save the watch streak option. Please try again.');
+}
+
+// ==================== Points Tab ====================
+
+// Defaults and bounds mirror PointsSettings in src/config/settings.py; the server validates again.
+const POINTS_SETTINGS = {
+    idle_priority: {default: 'list'},
+    idle_streak_first: {default: true},
+    streak_recovery: {default: true},
+    follow_raids: {default: false},
+    claim_moments: {default: true},
+    join_chat: {default: false},
+    predictions_enabled: {default: false},
+    prediction_strategy: {default: 'smart'},
+    prediction_percent: {default: 5, min: 1, max: 100},
+    prediction_max_points: {default: 1000, min: 10, max: 250000},
+};
+let pointsPauseBusy = false;
+
+function updatePointsState(data, withLog = false) {
+    if (!data || typeof data !== 'object' || !Array.isArray(data.channels)) return;
+    state.points = {paused: data.paused === true, active: data.active === true, channels: data.channels};
+    if (withLog && Array.isArray(data.log)) {
+        const log = document.getElementById('points-log');
+        // initial_state is a full snapshot: replace the lines instead of appending to old ones
+        if (log) log.replaceChildren();
+        data.log.forEach(line => appendLogLine('points-log', line));
+    }
+    renderPoints();
+}
+
+function formatPointsGain(gain, labels) {
+    if (!gain || !Number.isInteger(gain.points)) return null;
+    const reason = String(gain.reason ?? '');
+    const key = reason.toLowerCase();
+    const label = Object.hasOwn(labels, key) ? labels[key] : reason;
+    const amount = (gain.points > 0 ? '+' : '') + gain.points.toLocaleString();
+    const at = new Date(gain.at);
+    return {text: `${amount} ${label}`.trim(), time: Number.isNaN(at.getTime()) ? '' : at.toLocaleString()};
+}
+
+function renderPoints() {
+    const tbody = document.getElementById('points-tbody');
+    if (!tbody) return;
+    const t = state.translations.gui?.points || {};
+    const {paused, active, channels} = state.points;
+    document.getElementById('points-status').textContent = paused
+        ? (t.status_paused || 'Paused: no channel points actions until resumed')
+        : active ? (t.status_active || 'Active: watching your listed channels')
+        : (t.status_inactive || 'Inactive: idle watching is not running');
+    const button = document.getElementById('points-pause-btn');
+    button.textContent = paused ? (t.resume || 'Resume channel points') : (t.pause || 'Pause channel points');
+    button.setAttribute('aria-pressed', String(paused));
+    const empty = channels.length === 0;
+    document.getElementById('points-empty').hidden = !empty;
+    document.getElementById('points-table').hidden = empty;
+    tbody.replaceChildren(...channels.map(channel => {
+        const row = makeElement('tr');
+        row.dataset.login = String(channel.login);
+        const live = channel.live === true;
+        const gain = formatPointsGain(channel.last_gain, t.reasons || {});
+        const gainCell = makeElement('td', {}, gain ? gain.text : '-');
+        if (gain?.time) gainCell.appendChild(makeElement('span', {class: 'points-gain-time'}, gain.time));
+        row.replaceChildren(
+            makeElement('td', {}, channel.name || channel.login),
+            makeElement('td', {class: live ? 'points-live' : 'points-offline'},
+                live ? (t.live || 'Live') : (t.offline || 'Offline')),
+            makeElement('td', {}, Number.isInteger(channel.balance) ? channel.balance.toLocaleString() : '-'),
+            gainCell);
+        return row;
+    }));
+}
+
+// Static text of the tab comes from data-points-text="<gui.points key>"; the dynamic parts re-render.
+function translatePoints(t) {
+    document.querySelectorAll('[data-points-text]').forEach(element => {
+        const text = t[element.dataset.pointsText];
+        if (typeof text === 'string') element.textContent = text;
+    });
+    renderPoints();
+}
+
+async function togglePointsPause() {
+    if (pointsPauseBusy) return;
+    const button = document.getElementById('points-pause-btn');
+    const error = document.getElementById('points-pause-error');
+    const message = state.translations.gui?.points?.pause_error ||
+        'Could not change the channel points pause. Please try again.';
+    pointsPauseBusy = true;
+    button.disabled = true;
+    error.hidden = true;
+    try {
+        const response = await fetch('/api/points/pause', {method: 'POST',
+            headers: {'Content-Type': 'application/json'}, body: JSON.stringify({paused: !state.points.paused})});
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || typeof data.paused !== 'boolean') throw new Error(message);
+        state.points = {...state.points, paused: data.paused};
+    } catch (_) {
+        // nothing was changed optimistically: the shown state stays the confirmed one
+        reportSettingsError(error, message);
+        error.hidden = false;
+    } finally {
+        pointsPauseBusy = false;
+        button.disabled = false;
+        renderPoints();
+    }
+}
+
+function renderPointsSettings(settings = state.settings) {
+    for (const [key, spec] of Object.entries(POINTS_SETTINGS)) {
+        const input = document.getElementById(`points-setting-${key}`);
+        if (!input || input.disabled) continue;
+        const value = typeof settings[key] === typeof spec.default ? settings[key] : spec.default;
+        if (typeof value === 'boolean') input.checked = value;
+        else input.value = String(value);
+    }
+}
+
+// Save one channel points option alone; a failure shows the error and restores the confirmed value.
+async function savePointsSetting(key) {
+    const spec = POINTS_SETTINGS[key];
+    const input = document.getElementById(`points-setting-${key}`);
+    const error = document.getElementById(`points-setting-${key}-error`);
+    const confirmed = typeof state.settings[key] === typeof spec.default ? state.settings[key] : spec.default;
+    let requested;
+    if (typeof spec.default === 'boolean') requested = input.checked;
+    else if (spec.min === undefined) requested = input.value;
+    else {
+        const number = input.value.trim() === '' ? NaN : Math.trunc(Number(input.value));
+        // clamp before saving, so the shown value is the saved one
+        requested = Number.isFinite(number) ? Math.min(spec.max, Math.max(spec.min, number)) : confirmed;
+    }
+    if (requested === confirmed) {
+        renderPointsSettings();
+        return;
+    }
+    const message = state.translations.gui?.points?.save_error ||
+        'Could not save this channel points option. Please try again.';
+    input.disabled = true;
+    error.hidden = true;
+    error.textContent = '';
+    try {
+        const response = await fetch('/api/settings', {method: 'POST',
+            headers: {'Content-Type': 'application/json'}, body: JSON.stringify({[key]: requested})});
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || data.settings?.[key] !== requested) throw new Error(message);
+        updateSettingsUI({...state.settings, [key]: data.settings[key]}, false, [key]);
+    } catch (_) {
+        reportSettingsError(error, message);
+        error.hidden = false;
+    } finally {
+        input.disabled = false;
+        renderPointsSettings();
+    }
+}
+
+const idleChannelPattern = /^[a-z0-9_]{1,25}$/;
+const idleChannelLimit = 20;
+let idleChannelsSaving = false;
+
+function renderIdleChannels(list = state.settings.idle_channels || []) {
+    const container = document.getElementById('idle-channels-list');
+    if (!container) return;
+    const t = state.translations.gui?.settings || {};
+    for (const [id, key] of Object.entries({'idle-channels-title': 'idle_channels',
+        'idle-channels-help': 'idle_channels_help', 'idle-channel-add': 'idle_channels_add'}))
+        if (t[key]) {
+            const element = document.getElementById(id);
+            if (element) element.textContent = t[key];
+        }
+    const label = (key, fallback, channel) => (t[key] || fallback).replace('{channel}', channel);
+    // Rebuilding the rows drops keyboard focus; remember the control and restore it afterwards.
+    const active = document.activeElement?.closest?.('.idle-channel-row');
+    const focused = active && active.parentNode === container
+        ? { channel: active.dataset.channel, action: document.activeElement.dataset.action } : null;
+    container.replaceChildren();
+    list.forEach((channel, index) => {
+        const row = makeElement('div', { class: 'sortable-item idle-channel-row' });
+        row.dataset.channel = channel;
+        row.draggable = !idleChannelsSaving;
+        // Not disabled while a save is in flight: that would drop focus; saveIdleChannels ignores the click.
+        const button = (text, name, disabled, kind, action) => {
+            const el = makeElement('button', { type: 'button', 'aria-label': name,
+                class: kind === 'remove' ? 'remove-btn' : 'small-btn' }, text);
+            el.dataset.action = kind;
+            el.disabled = disabled;
+            el.addEventListener('click', action);
+            return el;
+        };
+        const moved = delta => () => {
+            const next = [...list];
+            next.splice(index + delta, 0, next.splice(index, 1)[0]);
+            return saveIdleChannels(next);
+        };
+        row.replaceChildren(
+            makeElement('span', { class: 'drag-handle', 'aria-hidden': 'true' }, '☰'),
+            makeElement('span', { class: 'priority-number', 'aria-hidden': 'true' }, String(index + 1)),
+            makeElement('span', { class: 'game-name idle-channel-name' }, channel),
+            button('▲', label('idle_channels_up', 'Move {channel} up', channel), index === 0, 'up', moved(-1)),
+            button('▼', label('idle_channels_down', 'Move {channel} down', channel),
+                index === list.length - 1, 'down', moved(1)),
+            button('✕', label('idle_channels_remove', 'Remove {channel}', channel), false, 'remove',
+                () => saveIdleChannels(list.filter(item => item !== channel))));
+        row.addEventListener('dragstart', handleDragStart);
+        row.addEventListener('dragover', handleDragOver);
+        row.addEventListener('drop', handleDrop);
+        row.addEventListener('dragend', event => {
+            event.target.classList.remove('dragging');
+            draggedElement = null;
+            const order = [...container.children].map(item => item.dataset.channel);
+            if (JSON.stringify(order) !== JSON.stringify(list)) saveIdleChannels(order);
+        });
+        container.appendChild(row);
+    });
+    if (!focused) return;
+    // The moved row's control may now be disabled (top or bottom): fall back to its opposite arrow.
+    const row = [...container.children].find(item => item.dataset.channel === focused.channel);
+    const buttons = row ? [...row.children].filter(item => item.dataset.action) : [];
+    const order = [focused.action, focused.action === 'up' ? 'down' : 'up'];
+    const target = order.map(kind => buttons.find(item => item.dataset.action === kind && !item.disabled))
+        .find(Boolean) ?? document.getElementById('idle-channel-input');
+    target?.focus();
+}
+
+async function saveIdleChannels(next) {
+    if (idleChannelsSaving) return false;
+    const error = document.getElementById('idle-channels-error');
+    const message = state.translations.gui?.settings?.idle_channels_save_error ||
+        'Could not save the idle watching channels. Please try again.';
+    error.hidden = true;
+    idleChannelsSaving = true;
+    renderIdleChannels(next); // the pending order, so a moved row does not jump back while saving
+    let saved = false;
+    try {
+        const response = await fetch('/api/settings', {method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({idle_channels: next})});
+        if (!response.ok) throw new Error(message);
+        const data = await response.json();
+        if (data.success !== true || JSON.stringify(data.settings?.idle_channels) !== JSON.stringify(next))
+            throw new Error(message);
+        updateSettingsUI(data.settings, false, ['idle_channels']);
+        saved = true;
+    } catch (_) {
+        reportSettingsError(error, message);
+        error.hidden = false;
+    } finally {
+        idleChannelsSaving = false;
+        renderIdleChannels(); // shows the confirmed list: a failed save rolls back
+    }
+    return saved;
+}
+
+async function addIdleChannel() {
+    const input = document.getElementById('idle-channel-input');
+    const current = state.settings.idle_channels || [];
+    // ASCII before toLowerCase, like the server: the Kelvin sign would lowercase to an ASCII "k".
+    const login = /^[\x00-\x7f]*$/.test(input.value)
+        ? input.value.trim().toLowerCase() // the server stores logins stripped and lowercase
+        : '';
+    if (!idleChannelPattern.test(login) || current.includes(login) || current.length >= idleChannelLimit) {
+        const error = document.getElementById('idle-channels-error');
+        reportSettingsError(error, state.translations.gui?.settings?.idle_channels_save_error ||
+            'Could not save the idle watching channels. Please try again.');
+        error.hidden = false;
+        return;
+    }
+    if (await saveIdleChannels([...current, login])) input.value = '';
 }
 
 async function onNotificationEventChange(event) {
@@ -2841,6 +3157,7 @@ function applyTranslations(t) {
         'main': document.querySelector('[data-tab="main"]'),
         'inventory': document.querySelector('[data-tab="inventory"]'),
         'history': document.querySelector('[data-tab="history"]'),
+        'points': document.querySelector('[data-tab="points"]'),
         'settings': document.querySelector('[data-tab="settings"]'),
         'help': document.querySelector('[data-tab="help"]')
     };
@@ -2848,7 +3165,9 @@ function applyTranslations(t) {
     if (tabButtons.main && t.gui?.tabs) tabButtons.main.textContent = t.gui.tabs.main;
     if (tabButtons.inventory && t.gui?.tabs) tabButtons.inventory.textContent = t.gui.tabs.inventory;
     if (tabButtons.history && t.gui?.tabs) tabButtons.history.textContent = t.gui.tabs.history;
+    if (tabButtons.points && t.gui?.tabs) tabButtons.points.textContent = t.gui.tabs.points;
     if (tabButtons.settings && t.gui?.tabs) tabButtons.settings.textContent = t.gui.tabs.settings;
+    if (t.gui?.points && typeof translatePoints === 'function') translatePoints(t.gui.points);
     if (tabButtons.help && t.gui?.tabs) tabButtons.help.textContent = t.gui.tabs.help;
 
     // Update Main tab - Login section
@@ -2924,6 +3243,23 @@ function applyTranslations(t) {
         if (preferFollowedHelp) preferFollowedHelp.textContent = t.gui.settings.prefer_followed_channels_help;
         const preferFollowedError = document.getElementById('prefer-followed-error');
         if (preferFollowedError && !preferFollowedError.hidden) preferFollowedError.textContent = t.gui.settings.prefer_followed_channels_save_error;
+        const claimLabel = document.getElementById('claim-channel-points-label');
+        if (claimLabel) claimLabel.textContent = t.gui.settings.claim_channel_points;
+        const claimHelp = document.getElementById('claim-channel-points-help');
+        if (claimHelp) claimHelp.textContent = t.gui.settings.claim_channel_points_help;
+        const claimError = document.getElementById('claim-channel-points-error');
+        if (claimError && !claimError.hidden) claimError.textContent = t.gui.settings.claim_channel_points_save_error;
+        const shareLabel = document.getElementById('share-watch-streaks-label');
+        if (shareLabel) shareLabel.textContent = t.gui.settings.share_watch_streaks;
+        const shareHelp = document.getElementById('share-watch-streaks-help');
+        if (shareHelp) shareHelp.textContent = t.gui.settings.share_watch_streaks_help;
+        const shareError = document.getElementById('share-watch-streaks-error');
+        if (shareError && !shareError.hidden) shareError.textContent = t.gui.settings.share_watch_streaks_save_error;
+        const idleError = document.getElementById('idle-channels-error');
+        if (idleError && !idleError.hidden) idleError.textContent = t.gui.settings.idle_channels_save_error;
+        const idleInput = document.getElementById('idle-channel-input');
+        if (idleInput) idleInput.setAttribute('aria-label', t.gui.settings.idle_channels);
+        if (typeof renderIdleChannels === 'function') renderIdleChannels();
         if (typeof renderRewardPriority === 'function') renderRewardPriority();
 
         const dropBlacklistHeader = document.getElementById('settings-drop-blacklist-header');
@@ -3133,7 +3469,7 @@ function applyTranslations(t) {
             const featuresItems = t.gui.help.features_items || [
                 'Stream-less drop mining - saves bandwidth',
                 'Game priority and exclusion lists',
-                'Tracks up to 199 channels simultaneously',
+                'Tracks up to 198 channels simultaneously',
                 'Automatic channel switching',
                 'Real-time progress tracking'
             ];
@@ -3472,6 +3808,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('drop-name-blacklist').addEventListener('change', saveSettings);
     document.getElementById('allow-unlinked-campaigns').addEventListener('change', onUnlinkedMiningChange);
     document.getElementById('prefer-followed-channels').addEventListener('change', onPreferFollowedChange);
+    document.getElementById('claim-channel-points').addEventListener('change', onClaimChannelPointsChange);
+    document.getElementById('share-watch-streaks').addEventListener('change', onShareWatchStreaksChange);
+    document.getElementById('points-pause-btn').addEventListener('click', togglePointsPause);
+    document.querySelectorAll('[data-points-setting]').forEach(input =>
+        input.addEventListener('change', () => savePointsSetting(input.dataset.pointsSetting)));
+    renderPoints();
+    renderPointsSettings();
+    document.getElementById('idle-channel-add').addEventListener('click', addIdleChannel);
+    document.getElementById('idle-channel-input').addEventListener('keydown', event => {
+        if (event.key === 'Enter') addIdleChannel();
+    });
     document.querySelectorAll('.notification-event')
         .forEach(input => input.addEventListener('change', onNotificationEventChange));
     // Proxy uses a manual "Set Proxy" button instead of auto-save

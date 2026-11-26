@@ -38,6 +38,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("TwitchDrops")
 STREAM_CHECK_TIMEOUT = 10  # seconds
+# a failed GQL read or an unexpected reply shape; anything else is a bug and propagates
+READ_ERRORS = (MinerException, aiohttp.ClientError, TimeoutError, KeyError, TypeError, IndexError, ValueError)
+# the drops read of a verify_drops stream check leaves part of STREAM_CHECK_TIMEOUT to GetStreamInfo
+DROPS_READ_TIMEOUT = STREAM_CHECK_TIMEOUT / 2
 
 
 class Stream:
@@ -187,6 +191,7 @@ class Channel:
         "_spade_url",
         "_stream",
         "_verify_drops",
+        "drops_unverified",
         "_stream_revision",
         "_stream_check_id",
         "_applied_stream_check_id",
@@ -218,6 +223,8 @@ class Channel:
         self._spade_url: URLType | None = None
         self._stream: Stream | None = None
         self._verify_drops = verify_drops
+        # the last drops read of a verify_drops stream failed: viewcount events check again
+        self.drops_unverified = False
         self._stream_revision = 0
         self._stream_check_id = 0
         self._applied_stream_check_id = 0
@@ -378,6 +385,12 @@ class Channel:
         return None
 
     @property
+    def broadcast_id(self) -> int | None:
+        if self._stream is not None:
+            return self._stream.broadcast_id
+        return None
+
+    @property
     def viewers(self) -> int | None:
         if self._stream is not None:
             return self._stream.viewers
@@ -488,7 +501,23 @@ class Channel:
         if channel_data["stream"] is None:
             return None
         stream = Stream.from_get_stream(self, channel_data)
-        if self._verify_drops or not stream.drops_enabled:
+        if self._verify_drops:
+            try:
+                stream.drops_enabled = await asyncio.wait_for(
+                    self.fetch_drops_enabled(stream.game), timeout=DROPS_READ_TIMEOUT,
+                )
+                self.drops_unverified = False
+            except ExitRequest:
+                raise
+            except READ_ERRORS as exc:
+                # liveness and game still apply; the same broadcast keeps its last checked flag,
+                # a new one is without drops until a read succeeds (never the default True)
+                if not self.drops_unverified:  # once per failing streak, retried on viewcount events
+                    logger.warning(f"Drops check failed for channel {self.id}: {type(exc).__name__}")
+                self.drops_unverified = True
+                old = self._stream
+                stream.drops_enabled = old.drops_enabled if old is not None and old == stream else False
+        elif not stream.drops_enabled:
             stream.drops_enabled = await self.fetch_drops_enabled(stream.game)
         return stream
 
@@ -547,8 +576,7 @@ class Channel:
             stream = await asyncio.wait_for(self.get_stream(), timeout=STREAM_CHECK_TIMEOUT)
         except ExitRequest:
             raise
-        except (MinerException, aiohttp.ClientError, TimeoutError,
-                KeyError, TypeError, IndexError, ValueError) as exc:
+        except READ_ERRORS as exc:
             logger.warning(f"Stream check failed for channel {self.id}: {type(exc).__name__}")
             return (
                 self._stream_revision != check[0]
@@ -604,6 +632,7 @@ class Channel:
         """
         needs_display = self.cancel_online_check()
         old_stream = self._stream
+        self.drops_unverified = False  # a new stream starts a new failing streak
         self._set_stream(None)
         if old_stream is not None:
             self._twitch.on_channel_update(self, old_stream, None)

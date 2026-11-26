@@ -14,11 +14,16 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, StrictBool, field_validator
+from pydantic import BaseModel, StrictBool, StrictInt, ValidationInfo, field_validator
 
 from src.config.paths import DATA_DIR
 from src.config.reward_priority import RewardPriority
-from src.config.settings import InventoryFilterSettings, MiningHoursSettings
+from src.config.settings import (
+    IdleChannelSettings,
+    InventoryFilterSettings,
+    MiningHoursSettings,
+    PointsSettings,
+)
 from src.services.game_order import TemporaryGameOrder
 from src.version import __version__
 from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
@@ -51,7 +56,8 @@ socket_app = AuthMiddleware(socketio.ASGIApp(sio, app), web_auth)
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(request, exc):
-    if request.url.path.startswith(("/api/auth/", "/api/diagnostics", "/api/settings", "/api/wanted-order")):
+    if request.url.path.startswith(("/api/auth/", "/api/diagnostics", "/api/settings", "/api/wanted-order",
+                                     "/api/points/")):
         return JSONResponse({"detail": "invalid_request"}, status_code=422)
     return await request_validation_exception_handler(request, exc)
 
@@ -89,6 +95,19 @@ class SettingsUpdate(BaseModel):
     priority_list_only: bool | None = None
     prefer_followed_channels: StrictBool | None = None
     reward_priority: list[str] | None = None
+    idle_channels: list[str] | None = None
+    claim_channel_points: StrictBool | None = None
+    share_watch_streaks: StrictBool | None = None
+    idle_priority: str | None = None
+    idle_streak_first: StrictBool | None = None
+    streak_recovery: StrictBool | None = None
+    follow_raids: StrictBool | None = None
+    predictions_enabled: StrictBool | None = None
+    prediction_strategy: str | None = None
+    prediction_percent: StrictInt | None = None
+    prediction_max_points: StrictInt | None = None
+    claim_moments: StrictBool | None = None
+    join_chat: StrictBool | None = None
     proxy: str | None = None
     connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
@@ -106,6 +125,17 @@ class SettingsUpdate(BaseModel):
     @classmethod
     def validate_reward_priority(cls, value: list[str] | None) -> list[str] | None:
         return RewardPriority.normalize(value) if value is not None else None
+
+    @field_validator("idle_channels")
+    @classmethod
+    def validate_idle_channels(cls, value: list[str] | None) -> list[str] | None:
+        return IdleChannelSettings.normalize(value) if value is not None else None
+
+    @field_validator(*PointsSettings.KEYS)
+    @classmethod
+    def validate_points_option(cls, value: object, info: ValidationInfo) -> object:
+        # field validators always run with a field name
+        return PointsSettings.normalize(str(info.field_name), value) if value is not None else None
 
     @field_validator("mining_hours")
     @classmethod
@@ -130,6 +160,10 @@ class WantedOrderRequest(BaseModel):
 class PauseRequest(BaseModel):
     paused: StrictBool
     duration: Literal["10m", "1h", "tomorrow"] | None = None
+
+
+class PointsPauseRequest(BaseModel):
+    paused: StrictBool
 
 
 class ProxyVerifyRequest(BaseModel):
@@ -523,6 +557,16 @@ async def update_paused(request: PauseRequest):
     return {"success": True, **twitch_client.pause_info()}
 
 
+@app.post("/api/points/pause")
+async def update_points_paused(request: PointsPauseRequest):
+    """Pause or resume idle watching and its channel points actions until resumed or restarted."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    twitch_client.idle_watch.set_points_paused(request.paused)
+    return {"success": True, "paused": twitch_client.idle_watch.points_paused}
+
+
 @app.post("/api/wanted-order")
 async def update_wanted_order(request: WantedOrderRequest):
     """Temporarily reorder queued games until restart; an empty list restores the default."""
@@ -572,6 +616,7 @@ async def connect(sid, environ):
                 "current_drop": gui_manager.progress.get_current_drop(),
                 "wanted_items": gui_manager.get_wanted_game_tree(),
                 "game_order": twitch_client.game_order.info(),
+                "points": gui_manager.points.get_initial(),
             },
             room=sid,
         )

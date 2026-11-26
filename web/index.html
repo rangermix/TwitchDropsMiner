@@ -70,6 +70,7 @@
                     <button class="tab-button active" data-tab="main">Main</button>
                     <button class="tab-button" data-tab="inventory">Inventory</button>
                     <button class="tab-button" data-tab="history">History</button>
+                    <button class="tab-button" data-tab="points">Points</button>
                     <button class="tab-button" data-tab="settings">Settings</button>
                     <button class="tab-button" data-tab="help">Help</button>
                 </nav>
@@ -271,6 +272,146 @@
             </div>
             <div class="inventory-grid" id="inventory-grid">
                 <p class="empty-message">No campaigns loaded yet...</p>
+            </div>
+        </div>
+
+        <!-- Points Tab -->
+        <div id="points-tab" class="tab-content">
+            <div class="settings-container points-container">
+                <section class="settings-section">
+                    <h2 data-points-text="title">Channel points</h2>
+                    <div class="points-status-row">
+                        <p id="points-status" class="points-status" role="status"></p>
+                        <button type="button" id="points-pause-btn" class="secondary-btn">Pause channel points</button>
+                    </div>
+                    <p id="points-pause-error" class="help-text" role="alert" hidden></p>
+                </section>
+                <section class="settings-section">
+                    <h2 data-points-text="channels_header">Listed channels</h2>
+                    <div class="points-table-wrap">
+                        <table id="points-table" class="points-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col" data-points-text="col_channel">Channel</th>
+                                    <th scope="col" data-points-text="col_live">Status</th>
+                                    <th scope="col" data-points-text="col_balance">Balance</th>
+                                    <th scope="col" data-points-text="col_last_gain">Last gain</th>
+                                </tr>
+                            </thead>
+                            <tbody id="points-tbody"></tbody>
+                        </table>
+                    </div>
+                    <p id="points-empty" class="help-text" data-points-text="no_channels">No channels are listed. Add channels under Idle watching channels below.</p>
+                </section>
+                <section class="settings-section">
+                    <h2 data-points-text="log_header">Channel points log</h2>
+                    <div id="points-log" class="console-output points-log"></div>
+                </section>
+                <section class="settings-section" id="idle-channels-section">
+                    <h2 id="idle-channels-title">Idle watching channels</h2>
+                    <p id="idle-channels-help" class="help-text">When nothing can be mined, watch these channels for their watch streak and channel points. Use lowercase Twitch logins, at most 20. With the watch priority List order, this order decides which live channel is watched first.</p>
+                    <div id="idle-channels-list" class="reward-type-list ordered"></div>
+                    <div class="idle-channel-add-row">
+                        <input type="text" id="idle-channel-input" maxlength="25" autocomplete="off" aria-label="Idle watching channels" />
+                        <button type="button" id="idle-channel-add" class="small-btn">Add</button>
+                    </div>
+                    <p id="idle-channels-error" class="help-text" role="alert" hidden></p>
+                </section>
+                <section class="settings-section">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="claim-channel-points" aria-describedby="claim-channel-points-help" />
+                        <span id="claim-channel-points-label">Claim channel points bonus while idle watching</span>
+                    </label>
+                    <p id="claim-channel-points-help" class="help-text">Claims the channel points bonus, only while the miner is idle watching. Twitch offers a bonus only on the channel being watched; on your other listed channels only a bonus left open, for example by watching in a browser, is claimed.</p>
+                    <p id="claim-channel-points-error" class="help-text" role="alert" hidden></p>
+                </section>
+                <section class="settings-section">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="share-watch-streaks" aria-describedby="share-watch-streaks-help" />
+                        <span id="share-watch-streaks-label">Share watch streaks while idle watching</span>
+                    </label>
+                    <p id="share-watch-streaks-help" class="help-text">Shares a watch streak once Twitch allows it, only while the miner is idle watching your listed channels. Twitch posts a visible watch streak notice in that streamer's chat under your name.</p>
+                    <p id="share-watch-streaks-error" class="help-text" role="alert" hidden></p>
+                </section>
+                <section class="settings-section">
+                    <h2 data-points-text="order_header">Watch order</h2>
+                    <label>
+                        <span data-points-text="idle_priority">Priority for watching</span>
+                        <select id="points-setting-idle_priority" data-points-setting="idle_priority" aria-describedby="points-setting-idle_priority-help">
+                            <option value="list" data-points-text="priority_list">List order</option>
+                            <option value="points_low" data-points-text="priority_points_low">Lowest balance first</option>
+                            <option value="points_high" data-points-text="priority_points_high">Highest balance first</option>
+                            <option value="subscribed" data-points-text="priority_subscribed">Channels with a points multiplier first</option>
+                        </select>
+                    </label>
+                    <p id="points-setting-idle_priority-help" class="help-text" data-points-text="idle_priority_help">Which live listed channel is watched first. List order follows the list above. The other choices use the last known channel points balance, or put channels with an active points multiplier first.</p>
+                    <p id="points-setting-idle_priority-error" class="help-text" role="alert" hidden></p>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="points-setting-idle_streak_first" data-points-setting="idle_streak_first" aria-describedby="points-setting-idle_streak_first-help" />
+                        <span data-points-text="idle_streak_first">Visit new streams for the watch streak first</span>
+                    </label>
+                    <p id="points-setting-idle_streak_first-help" class="help-text" data-points-text="idle_streak_first_help">Each live listed channel gets one short visit per stream before the first channel in priority order is watched. Off: no visits are made.</p>
+                    <p id="points-setting-idle_streak_first-error" class="help-text" role="alert" hidden></p>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="points-setting-streak_recovery" data-points-setting="streak_recovery" aria-describedby="points-setting-streak_recovery-help" />
+                        <span data-points-text="streak_recovery">Retry watch streak visits</span>
+                    </label>
+                    <p id="points-setting-streak_recovery-help" class="help-text" data-points-text="streak_recovery_help">When a full visit did not earn the watch streak bonus, visit that channel up to two more times during the same stream.</p>
+                    <p id="points-setting-streak_recovery-error" class="help-text" role="alert" hidden></p>
+                </section>
+                <section class="settings-section">
+                    <h2 data-points-text="actions_header">Raids, moments and chat</h2>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="points-setting-follow_raids" data-points-setting="follow_raids" aria-describedby="points-setting-follow_raids-help" />
+                        <span data-points-text="follow_raids">Follow raids of the watched channel</span>
+                    </label>
+                    <p id="points-setting-follow_raids-help" class="help-text" data-points-text="follow_raids_help">Joins a raid that starts on the channel being watched, which earns channel points. You follow the raid to its target channel, but the target channel is not watched.</p>
+                    <p id="points-setting-follow_raids-error" class="help-text" role="alert" hidden></p>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="points-setting-claim_moments" data-points-setting="claim_moments" aria-describedby="points-setting-claim_moments-help" />
+                        <span data-points-text="claim_moments">Claim moments</span>
+                    </label>
+                    <p id="points-setting-claim_moments-help" class="help-text" data-points-text="claim_moments_help">Claims a community moment on live listed channels while idle watching. This costs no points.</p>
+                    <p id="points-setting-claim_moments-error" class="help-text" role="alert" hidden></p>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="points-setting-join_chat" data-points-setting="join_chat" aria-describedby="points-setting-join_chat-help" />
+                        <span data-points-text="join_chat">Join the chat of the watched channel</span>
+                    </label>
+                    <p id="points-setting-join_chat-help" class="help-text" data-points-text="join_chat_help">Connects to the chat without sending messages. You then appear in the channel's viewer list, so the streamer and other viewers can see that you are there.</p>
+                    <p id="points-setting-join_chat-error" class="help-text" role="alert" hidden></p>
+                </section>
+                <section class="settings-section">
+                    <h2 data-points-text="predictions_header">Predictions</h2>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="points-setting-predictions_enabled" data-points-setting="predictions_enabled" aria-describedby="points-setting-predictions_enabled-help" />
+                        <span data-points-text="predictions_enabled">Place predictions on live listed channels</span>
+                    </label>
+                    <p id="points-setting-predictions_enabled-help" class="help-text" data-points-text="predictions_enabled_help">Warning: predictions spend your channel points and can lose them. A lost prediction is not refunded.</p>
+                    <p id="points-setting-predictions_enabled-error" class="help-text" role="alert" hidden></p>
+                    <label>
+                        <span data-points-text="prediction_strategy">Strategy</span>
+                        <select id="points-setting-prediction_strategy" data-points-setting="prediction_strategy" aria-describedby="points-setting-prediction_strategy-help">
+                            <option value="smart" data-points-text="strategy_smart">Smart: of the two most voted outcomes, the one with fewer points when their votes are close, otherwise most voted</option>
+                            <option value="most_voted" data-points-text="strategy_most_voted">Most voted: the outcome with the most users</option>
+                            <option value="high_odds" data-points-text="strategy_high_odds">High odds: the outcome with the fewest points</option>
+                            <option value="favourite" data-points-text="strategy_favourite">Favourite: the outcome with the most points</option>
+                        </select>
+                    </label>
+                    <p id="points-setting-prediction_strategy-help" class="help-text" data-points-text="prediction_strategy_help">How the outcome is chosen. No strategy is known to beat the other viewers on average.</p>
+                    <p id="points-setting-prediction_strategy-error" class="help-text" role="alert" hidden></p>
+                    <label>
+                        <span data-points-text="prediction_percent">Stake in percent of the balance</span>
+                        <input type="number" id="points-setting-prediction_percent" data-points-setting="prediction_percent" min="1" max="100" step="1" inputmode="numeric" aria-describedby="points-setting-prediction_percent-help" />
+                    </label>
+                    <p id="points-setting-prediction_percent-help" class="help-text" data-points-text="prediction_percent_help">Share of the channel's points balance to bet, from 1 to 100.</p>
+                    <p id="points-setting-prediction_percent-error" class="help-text" role="alert" hidden></p>
+                    <label>
+                        <span data-points-text="prediction_max_points">Highest stake in points</span>
+                        <input type="number" id="points-setting-prediction_max_points" data-points-setting="prediction_max_points" min="10" max="250000" step="1" inputmode="numeric" aria-describedby="points-setting-prediction_max_points-help" />
+                    </label>
+                    <p id="points-setting-prediction_max_points-help" class="help-text" data-points-text="prediction_max_points_help">The stake never exceeds this, from 10 to 250000. A stake below 10 points is skipped.</p>
+                    <p id="points-setting-prediction_max_points-error" class="help-text" role="alert" hidden></p>
+                </section>
             </div>
         </div>
 
@@ -522,7 +663,7 @@
                 <ul>
                     <li>Stream-less drop mining - saves bandwidth</li>
                     <li>Game priority and exclusion lists</li>
-                    <li>Tracks up to 199 channels simultaneously</li>
+                    <li>Tracks up to 198 channels simultaneously</li>
                     <li>Automatic channel switching</li>
                     <li>Real-time progress tracking</li>
                 </ul>
