@@ -288,6 +288,8 @@ class Twitch:
 
     async def shutdown(self) -> None:
         start_time = time()
+        # the idle loop saves its points history at most once a minute and may not get to its own stop
+        self.idle_watch.save_history()
         self._channel_service.clear_bans()
         self.diagnostics.stop_logs()
         await self.helper.stop()

@@ -1,6 +1,7 @@
 """Two channels at a time (watch_slots 2): idle watching in side mode next to drop mining."""
 
 import asyncio
+import json
 import logging
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
@@ -807,3 +808,34 @@ async def test_an_auth_change_drains_the_side_watcher_before_it_completes(tmp_pa
         await asyncio.sleep(0.02)
         assert a.send_watch.await_count == calls
     assert svc._side_task is None and svc.side_channel is None
+
+
+# --- the points history is saved when idle watching stops and at shutdown ---
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("side", [False, True])
+async def test_stopping_idle_watching_saves_the_points_history(tmp_path, side):
+    a = chan(1, "a")
+    svc, tw = side_service([a], drop=chan(9, "d", drops=True) if side else None)
+    svc.history = idle_mod.PointsHistory(tmp_path / "points_history.json")
+    svc.enter(side=side)
+    await settle()
+    assert svc.history.account == 1
+    svc.record_balance(a, 500)  # within the minute after the tick's save
+    await stopped(svc)
+    saved = json.loads((tmp_path / "points_history.json").read_text(encoding="utf-8"))
+    assert saved["channels"]["1"]["samples"][-1][1] == 500
+
+
+@pytest.mark.asyncio
+async def test_shutdown_saves_the_points_history(tmp_path, monkeypatch):
+    client = miner(tmp_path, monkeypatch)
+    client.settings.idle_channels = ["a"]
+    history = client.idle_watch.history
+    history.use_account(7)
+    history.sample(1, "a", 42)
+    history._tried_at = history._monotonic()  # a tick just tried: the minute has not passed
+    await client.shutdown()
+    saved = json.loads((tmp_path / "points_history.json").read_text(encoding="utf-8"))
+    assert saved["user_id"] == 7 and saved["channels"]["1"]["samples"][-1][1] == 42

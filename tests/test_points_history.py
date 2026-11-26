@@ -201,6 +201,7 @@ def test_a_damaged_file_is_kept_unchanged_and_never_logged(tmp_path, caplog, con
     assert h.channels[1]["samples"]  # recorded in memory
     h._monotonic = lambda: 10_000.0
     assert h.save({"a"}) is False
+    assert h.save({"a"}, force=True) is False  # also not at a stop or at shutdown
     assert path.read_bytes() == before
     assert len([r for r in caplog.records if r.levelno == logging.WARNING]) == 1
     assert SECRET not in caplog.text
@@ -235,3 +236,16 @@ def test_a_missing_file_is_empty_and_a_saved_file_loads_back(tmp_path):
     h.save({"a"})
     again = PointsHistory(path)
     assert again.account == 7 and again.channels == h.channels
+
+
+def test_a_forced_save_writes_within_the_minute(tmp_path):
+    path = tmp_path / "h.json"
+    h, clock = make(path)
+    h.sample(1, "a", 5)
+    assert h.save({"a"})
+    clock["wall"] += 400
+    clock["mono"] += 10
+    h.sample(1, "a", 6)
+    assert h.save({"a"}) is False  # a minute has not passed
+    assert h.save({"a"}, force=True)
+    assert json.loads(path.read_text())["channels"]["1"]["samples"][-1][1] == 6

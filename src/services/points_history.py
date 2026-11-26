@@ -185,8 +185,9 @@ class PointsHistory:
         elif key == "lost":
             entry["gains"]["bet"] -= stake
 
-    def save(self, logins: Collection[str]) -> bool:
-        """Drop unlisted channels, then write when changed and the last attempt is a minute old.
+    def save(self, logins: Collection[str], *, force: bool = False) -> bool:
+        """Drop unlisted channels, then write when changed and the last attempt is a minute old (force: now,
+        when idle watching stops or at shutdown). A damaged file is never written.
 
         True when the file holds the history (or there is nothing to write).
         """
@@ -201,7 +202,7 @@ class PointsHistory:
         if payload == self._saved:
             return True
         now = self._monotonic()
-        if self._tried_at is not None and now - self._tried_at < SAVE_INTERVAL_SECONDS:
+        if not force and self._tried_at is not None and now - self._tried_at < SAVE_INTERVAL_SECONDS:
             return False
         self._tried_at = now
         try:

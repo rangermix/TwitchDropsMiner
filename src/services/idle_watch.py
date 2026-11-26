@@ -513,6 +513,11 @@ class IdleWatchService:
             if self._task is None or self._task is asyncio.current_task():
                 self._end_events()
                 self._side_stop()
+                self.save_history()
+
+    def save_history(self) -> None:
+        """Write the points history now: idle watching stopped, or shutdown (the tick saves at most once a minute)."""
+        self.history.save(self._twitch.settings.idle_channels, force=True)
 
     async def _loop(self) -> None:
         tw = self._twitch
