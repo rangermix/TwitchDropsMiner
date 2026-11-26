@@ -1453,12 +1453,13 @@ live in `gui.points`, translated in every locale.
   (listed, not banned), `is_mining_time()` and not `can_watch()`. Raids also need
   `idle_watched()` (the loop's pick, still watched). Raid, moment and prediction ids are
   used up before sending (newest `EVENTS_KEPT` kept, cleared on an auth change), so a
-  repeated message, failure or unknown outcome is never resent. `JoinRaid` and
-  `MakePrediction` are `single_attempt`: a top-level GQL error raises `GQLException`
+  repeated message, failure or unknown outcome is never resent. `JoinRaid`,
+  `CommunityMomentCallout_Claim` and `MakePrediction` are `single_attempt`: a top-level GQL error raises `GQLException`
   when every error names a refusal (Twitch's `IntegrityCheckFailed` on JoinRaid), else
   `GQLServerError` (a message in `SERVER_ERRORS` of `src/api/gql_client.py`, such as
-  `service timeout`, compared without case and outer spaces; an `error` reply with an int
-  `status` of 500 or more; or no readable message: the mutation may have run), so the log code is the
+  `service timeout`, compared without case and outer spaces, in `errors` or as the `error`
+  string; an `error` reply with an int `status` of 500 or more; or no readable message: the
+  mutation may have run), so the log code is the
   exception type; a nested `data.<field>.error.code` is logged as is. Mutations time out
   after `MUTATION_TIMEOUT` (30 s). `CommunityMomentCallout_Claim` answers in
   `claimCommunityMoment`. A raid target is never watched.

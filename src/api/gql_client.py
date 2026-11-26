@@ -212,15 +212,16 @@ class GQLClient:
     @staticmethod
     def _refusal(row: object) -> bool:
         """True for an error row in which Twitch named its refusal: an `error` string (an HTTP-style
-        status such as Unauthorized, below 500), or `errors` whose messages are all non-empty and none of
-        SERVER_ERRORS (compared without case and outer spaces)."""
+        status such as Unauthorized, below 500), or `errors` whose messages are all non-empty; none of
+        them in SERVER_ERRORS (compared without case and outer spaces)."""
         if not isinstance(row, dict):
             return False
         errors = row.get("errors")
         if not errors:
-            status = row.get("status")
-            server = type(status) is int and status >= 500
-            return isinstance(row.get("error"), str) and bool(row["error"].strip()) and not server
+            error, status = row.get("error"), row.get("status")
+            if not isinstance(error, str) or not error.strip():
+                return False
+            return not (type(status) is int and status >= 500) and error.strip().lower() not in SERVER_ERRORS
         if not isinstance(errors, list):
             return False
         messages = [error.get("message") if isinstance(error, dict) else None for error in errors]

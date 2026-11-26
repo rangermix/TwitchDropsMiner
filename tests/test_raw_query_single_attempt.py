@@ -118,10 +118,14 @@ def browser_client(reply):
     ({"error": "Internal Server Error", "status": 500, "message": "x"}, True),
     ({"error": "Service Unavailable", "status": 503, "message": "x"}, True),
     ({"error": "   ", "status": 400, "message": "x"}, True),
+    # an `error` string that is a server-side message, with no int status
+    ({"error": "Service Unavailable", "message": "x"}, True),
+    ({"error": " Internal Server Error ", "status": "500", "message": "x"}, True),
+    ({"error": "service timeout", "status": 200, "message": "x"}, True),
     ({"errors": [{"message": "service timeout!"}]}, False),  # near-miss of a server-side message
     ({"errors": [{"message": "service timeouts"}]}, False),
     ({"error": "Bad Request", "status": 400, "message": "x"}, False),
-    ({"error": "Internal Server Error", "status": "500", "message": "x"}, False),  # status not a number
+    ({"error": "Gateway Timeout", "status": "504", "message": "x"}, False),  # status not a number
     ({"error": "Unauthorized", "status": 401, "message": "invalid oauth token"}, False),
     ([OK, {"errors": [{"message": "failed integrity check"}]}], False),
 ])
