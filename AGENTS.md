@@ -1428,6 +1428,43 @@ live in `gui.points`, translated in every locale.
   `initial_state.points` adds `log`. The service calls `gui.points.log(key, **values)`
   with a `points.log.*` key (translated in every locale) and
   keeps its English INFO line.
+- Per-channel options (`idle_channel_options`, `ChannelOptionSettings` in
+  `src/config/settings.py`): `{login: {option: value}}`, only for logins in
+  `idle_channels`. Feature options `bonus`, `raids`, `moments`, `predictions`, `streaks`
+  and `chat` are bools that replace `claim_channel_points`, `follow_raids`,
+  `claim_moments`, `predictions_enabled`, `idle_streak_first` and `join_chat` for that
+  channel (`ChannelOptionSettings.OVERRIDES`); `favorite` and `streak_only` are bools and
+  `points_limit` is an int of 1 to 100000000. Types are strict (a bool is no int), unknown
+  keys are rejected by the API and dropped with a count-only warning on load, and an
+  empty per-channel object is never stored. Options of a login not in `idle_channels` are
+  dropped on load, in `Settings.save()` and in `SettingsManager.update_settings()`, so
+  removing a channel removes its options. `merge_json` strips unknown keys, so `load()`
+  sets the options aside and puts them back after the merge. One gate:
+  `IdleWatchService.option(channel, setting)` gives the effective value and `may_act()`
+  and `pick()` use it; `_may_share()` and the share check also need the effective
+  `streaks`. `pick()` runs visits and recovery only on channels whose effective `streaks`
+  is on (a per-channel on beats a global off) and drops a visit in progress when its
+  channel turns visits off. `WatchPriority.order()` puts `favorite` logins first and keeps
+  the mode's order inside both groups; `WatchPriority.stayable()` removes `streak_only`
+  channels and channels whose known balance is at or above `points_limit` (unknown counts
+  as below) before `first()`, so with none left idle watching watches nothing. The Points
+  tab row has an options button (`aria-expanded`, `renderIdleChannels()` builds the panel
+  with `buildChannelOptionsPanel()`), saves the whole object through
+  `saveChannelOptions()` and rolls back on failure. Strings are in `gui.points`.
+  Tests: `tests/test_channel_options.py`, `tests/test_channel_options_frontend.py`.
+- Import of followed channels: `POST /api/points/import-follows` (dashboard auth and
+  origin checks like the other points routes) needs a logged-in account (409
+  `not_logged_in`). `FollowImporter` (`src/services/follow_import.py`) reads the
+  `ChannelFollows` persisted query (variables `limit` 100, `order` ASC, `cursor`) inside
+  `private_gql_discovery()`, at most 20 pages, ending on `hasNextPage` false, an empty page
+  or a last edge without a cursor, each page bounded to 30 seconds. A failed or malformed
+  page is 502 `follows_unavailable` and changes nothing. Logins are checked as ASCII before
+  `lower()`, matched with `IdleChannelSettings.LOGIN`, deduplicated, skipped when listed,
+  and appended up to `MAX_CHANNELS`; the list is saved through
+  `SettingsManager.update_settings()`, so validation, the broadcast and
+  `on_idle_channels_change` run. The reply is `{"success": true, "added", "already_listed",
+  "over_limit"}`. Never log a follow login, not even at DEBUG; log the three counts only.
+  Tests: `tests/test_follow_import.py`.
 - Streak share: `shareViewerMilestone` posts a visible notice in the streamer's chat
   under the user's name, so it is sent with `single_attempt`, and its key (milestone
   id, count as one int) is used up and saved before sending; when that save fails the

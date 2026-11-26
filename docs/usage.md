@@ -294,6 +294,28 @@ use goes to drop mining instead.
   confirms. Twitch's own recovery (5 minutes of a new live stream within 24 hours of the
   missed one) is covered by the visit every new stream gets. TDM remembers recovery
   visits only while it runs.
+- Options per channel: the gear button of a row in the idle list opens that channel's own
+  options (the `idle_channel_options` setting, keyed by login). A row with any option set
+  shows a dot. Removing a channel from the list removes its options. Six options replace a
+  global setting for that channel only, each set to Default (the global value, shown in
+  the label), On or Off: the points bonus claim (`claim_channel_points`), raids
+  (`follow_raids`), moments (`claim_moments`), predictions (`predictions_enabled`),
+  watch streak visits (`idle_streak_first`) and chat (`join_chat`). With visits off for a
+  channel, it gets no first or recovery visits and no watch streak share; a recovery
+  visit also needs `streak_recovery`. Three more options order and limit the pick after
+  the visits: Favorite puts the channel first in the priority order (inside the favorites
+  and inside the rest, `idle_priority` still decides), a points limit (1 to 100000000)
+  stops TDM from staying on the channel once its last known balance is at or above the
+  limit (an unknown balance counts as below), and Streak only gives the channel its visits
+  but never stays on it. The visits of such a channel still run. When every live listed
+  channel is excluded this way, TDM watches nothing after the visits.
+- **Import followed channels** (next to the idle list) appends the channels your account
+  follows, oldest follow first, to the end of the list until it holds 20. Channels already
+  listed and invalid logins are skipped, the existing list and its order stay. It reads
+  at most 20 pages of 100 follows and needs a logged-in account. The line next to the
+  button says how many were added, how many were already listed and how many did not fit
+  the limit of 20. If Twitch cannot be read, nothing changes. TDM does not log the follow
+  list, only these three counts. The request is `POST /api/points/import-follows`.
 - A listed channel may stream a game with drops that is not in your Mining list. Twitch
   can then credit progress on those drops while TDM idle watches the channel, and TDM
   claims a finished drop as it does every claimable drop in the inventory.
