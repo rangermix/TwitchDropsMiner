@@ -344,6 +344,10 @@
             "skipped_drops": "{count} kihagyva",
             "ignored_keyword_reason": "Figyelmen kívül hagyva e kulcsszó miatt: {keyword}",
             "ignored_precondition_reason": "Figyelmen kívül hagyva, mert ettől függ: {drop}",
+            "ignored_campaign_reason": "Kihagyva, mert ezt a kampányt figyelmen kívül hagytad",
+            "ignore_campaign": "Kampány kihagyása",
+            "unignore_campaign": "Kampány bányászása",
+            "ignore_campaign_error": "Nem sikerült frissíteni a kihagyott kampányt. Próbáld újra.",
             "skipped_branch_reason": "Kihagyva, mert egyetlen megszerezhető jutalom sem függ ettől a droptól.",
             "reward_grants": "Megszerzések száma: {count}",
             "filters": {

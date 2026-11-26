@@ -344,6 +344,10 @@
             "skipped_drops": "{count} skipped",
             "ignored_keyword_reason": "Ignored by keyword: {keyword}",
             "ignored_precondition_reason": "Ignored because it depends on {drop}",
+            "ignored_campaign_reason": "Ignored because you ignored this campaign",
+            "ignore_campaign": "Ignore campaign",
+            "unignore_campaign": "Mine this campaign",
+            "ignore_campaign_error": "Could not update the ignored campaign. Try again.",
             "skipped_branch_reason": "Skipped because no mineable reward depends on this drop.",
             "reward_grants": "Times earned: {count}",
             "filters": {

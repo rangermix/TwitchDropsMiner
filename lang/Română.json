@@ -150,6 +150,10 @@
             "skipped_drops": "{count} omise",
             "ignored_keyword_reason": "Ignorat din cauza cuvântului-cheie: {keyword}",
             "ignored_precondition_reason": "Ignorat deoarece depinde de {drop}",
+            "ignored_campaign_reason": "Ignorat deoarece ai ignorat această campanie",
+            "ignore_campaign": "Ignoră campania",
+            "unignore_campaign": "Minează această campanie",
+            "ignore_campaign_error": "Campania ignorată nu a putut fi actualizată. Încearcă din nou.",
             "skipped_branch_reason": "Omis deoarece nicio recompensă ce poate fi minată nu depinde de acest drop.",
             "reward_grants": "Număr de obțineri: {count}",
             "filters": {

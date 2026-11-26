@@ -36,7 +36,7 @@ class DropPolicyItem(Protocol):
 class DropIgnoreReason:
     """Why a drop is ignored by the configured policy."""
 
-    kind: Literal["keyword", "precondition"]
+    kind: Literal["keyword", "precondition", "campaign"]
     detail: str
 
 
@@ -88,15 +88,22 @@ class DropIgnorePolicy:
                 return keyword
         return None
 
-    def evaluate(self, drops: Sequence[DropPolicyItem]) -> DropIgnoreEvaluation:
-        """Evaluate direct ignores, blocked descendants, and useful prerequisites."""
+    def evaluate(
+        self, drops: Sequence[DropPolicyItem], *, campaign_ignored: bool = False
+    ) -> DropIgnoreEvaluation:
+        """Evaluate direct ignores, blocked descendants, and useful prerequisites.
+
+        ``campaign_ignored`` ignores every unclaimed drop of the campaign.
+        """
         drops_by_id = {drop.id: drop for drop in drops}
         reasons: dict[str, DropIgnoreReason] = {}
 
         for drop in drops:
             if drop.is_claimed:
                 continue
-            if (keyword := self.matching_keyword(drop.name, *drop.ignore_name_aliases)) is not None:
+            if campaign_ignored:
+                reasons[drop.id] = DropIgnoreReason("campaign", "")
+            elif (keyword := self.matching_keyword(drop.name, *drop.ignore_name_aliases)) is not None:
                 reasons[drop.id] = DropIgnoreReason("keyword", keyword)
 
         # Preconditions are AND-based. One ignored unclaimed prerequisite makes

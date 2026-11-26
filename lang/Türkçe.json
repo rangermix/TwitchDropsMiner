@@ -150,6 +150,10 @@
             "skipped_drops": "{count} atlandı",
             "ignored_keyword_reason": "Anahtar kelime nedeniyle yoksayıldı: {keyword}",
             "ignored_precondition_reason": "{drop} drop'una bağlı olduğu için yoksayıldı",
+            "ignored_campaign_reason": "Bu kampanyayı yok saydığınız için yok sayıldı",
+            "ignore_campaign": "Kampanyayı yok say",
+            "unignore_campaign": "Bu kampanyayı topla",
+            "ignore_campaign_error": "Yok sayılan kampanya güncellenemedi. Tekrar deneyin.",
             "skipped_branch_reason": "Madenciliği yapılabilir hiçbir ödül bu drop'a bağlı olmadığı için atlandı.",
             "reward_grants": "Kazanılma sayısı: {count}",
             "filters": {

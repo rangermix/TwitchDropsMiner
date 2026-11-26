@@ -105,6 +105,7 @@ class InventoryManager:
             "starts_at": campaign.starts_at.isoformat(),
             "ends_at": campaign.ends_at.isoformat(),
             "linked": campaign.linked,
+            "ignored": campaign.ignored,
             "active": campaign.active,
             "upcoming": campaign.upcoming,
             "expired": campaign.expired,

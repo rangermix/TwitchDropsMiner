@@ -1167,6 +1167,37 @@ async function addInventoryGame(campaignId, button) {
     }
 }
 
+// Stop or resume mining one campaign; the server adds/removes its ID atomically.
+async function toggleCampaignIgnored(campaignId, button) {
+    const campaign = state.campaigns[campaignId];
+    const pending = state.ignoringCampaigns ??= new Set();
+    if (!campaign || pending.has(campaignId)) return;
+    const hadFocus = document.activeElement === button;
+    const requested = campaign.ignored !== true;
+    const t = state.translations.gui?.inventory || {};
+    pending.add(campaignId);
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    try {
+        const response = await fetch('/api/campaigns/ignore', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ campaign_id: campaignId, ignored: requested })
+        });
+        if (!response.ok) throw new Error('ignore_failed');
+        const data = await response.json();
+        if (data.success !== true || !Array.isArray(data.ignored_campaigns)
+            || data.ignored_campaigns.includes(campaignId) !== requested) throw new Error('ignore_failed');
+        // The drops' ignore state follows with the next inventory update from the server.
+        campaign.ignored = requested;
+    } catch (_) {
+        showToast(t.ignore_campaign_error || 'Could not update the ignored campaign. Try again.', 'error');
+    } finally {
+        pending.delete(campaignId);
+        renderInventory();
+        if (hadFocus) document.getElementById(`inventory-ignore-${encodeURIComponent(campaignId)}`)?.focus();
+    }
+}
+
 function renderInventory() {
     updateDropArt();
     const container = document.getElementById('inventory-grid');
@@ -1234,6 +1265,8 @@ function renderInventory() {
                 } else if (drop.ignored_reason === 'precondition') {
                     const template = t.gui?.inventory?.ignored_precondition_reason || 'Ignored because it depends on {drop}';
                     policyReason = template.replace('{drop}', drop.ignored_precondition || '');
+                } else if (drop.ignored_reason === 'campaign') {
+                    policyReason = t.gui?.inventory?.ignored_campaign_reason || 'Ignored because you ignored this campaign';
                 }
             } else if (drop.is_skipped) {
                 policyStatus = `⊘ ${skippedText}`;
@@ -1335,6 +1368,17 @@ function renderInventory() {
             add.id = `inventory-add-${encodeURIComponent(campaign.id)}`;
             add.addEventListener('click', () => addInventoryGame(campaign.id, add));
             actions.appendChild(add);
+        }
+        if (campaign.active || campaign.upcoming || campaign.ignored === true) {
+            const ignored = campaign.ignored === true;
+            const ignore = makeElement('button', {
+                type: 'button', class: 'inventory-ignore-campaign',
+                id: `inventory-ignore-${encodeURIComponent(campaign.id)}`, 'aria-pressed': String(ignored),
+            }, ignored ? (t.gui?.inventory?.unignore_campaign || 'Mine this campaign')
+                : (t.gui?.inventory?.ignore_campaign || 'Ignore campaign'));
+            ignore.disabled = state.ignoringCampaigns?.has(campaign.id) === true;
+            ignore.addEventListener('click', () => toggleCampaignIgnored(campaign.id, ignore));
+            actions.appendChild(ignore);
         }
         if (!campaign.linked && campaign.link_url) {
             const link = makeElement('a', { id: `inventory-link-${encodeURIComponent(campaign.id)}`, href: campaign.link_url, target: '_blank', rel: 'noopener noreferrer', class: 'link-account-btn' },

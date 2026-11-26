@@ -815,7 +815,7 @@ header h1 {
     cursor: pointer;
 }
 .campaign-toggle:hover { background: var(--bg-secondary); }
-.campaign-toggle:focus-visible, .inventory-add-game:focus-visible, .campaign-actions a:focus-visible {
+.campaign-toggle:focus-visible, .inventory-add-game:focus-visible, .inventory-ignore-campaign:focus-visible, .campaign-actions a:focus-visible {
     outline: 2px solid var(--accent-color); outline-offset: -3px;
 }
 .campaign-titles { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
@@ -842,7 +842,7 @@ header h1 {
     transform: rotate(45deg); transition: transform .15s;
 }
 .campaign-toggle[aria-expanded="true"] .campaign-chevron { transform: rotate(225deg); }
-.campaign-actions { grid-column: 2; grid-row: 2; display: flex; align-items: center; justify-content: flex-end; min-width: 0; }
+.campaign-actions { grid-column: 2; grid-row: 2; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; min-width: 0; }
 .campaign-actions > button, .campaign-actions > a { max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: center; }
 .campaign-actions .link-account-btn { width: auto; margin: 0; text-decoration: none; }
 .inventory-add-game {
@@ -852,6 +852,14 @@ header h1 {
 }
 .inventory-add-game:hover { background: var(--bg-secondary); }
 .inventory-add-game:disabled { opacity: .6; cursor: wait; }
+.inventory-ignore-campaign {
+    padding: 9px 12px; border: 1px solid var(--border-color); border-radius: 5px;
+    background: transparent; color: var(--text-secondary); font: inherit; font-size: 13px;
+    cursor: pointer; line-height: 1.4;
+}
+.inventory-ignore-campaign:hover { background: var(--bg-secondary); }
+.inventory-ignore-campaign[aria-pressed="true"] { border-color: var(--accent-color); color: var(--accent-color); }
+.inventory-ignore-campaign:disabled { opacity: .6; cursor: wait; }
 .campaign-content { border-top: 1px solid var(--border-color); }
 .campaign-content .campaign-info { padding: 12px 16px 0; background: transparent; }
 .campaign-content .campaign-status { padding: 0; gap: 12px; flex-wrap: wrap; }

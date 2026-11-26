@@ -150,6 +150,10 @@
             "skipped_drops": "{count} přeskočeno",
             "ignored_keyword_reason": "Ignorováno kvůli klíčovému slovu: {keyword}",
             "ignored_precondition_reason": "Ignorováno, protože závisí na odměně {drop}",
+            "ignored_campaign_reason": "Ignorováno, protože tuto kampaň ignorujete",
+            "ignore_campaign": "Ignorovat kampaň",
+            "unignore_campaign": "Těžit tuto kampaň",
+            "ignore_campaign_error": "Ignorovanou kampaň se nepodařilo aktualizovat. Zkuste to znovu.",
             "skipped_branch_reason": "Přeskočeno, protože na této odměně nezávisí žádná získatelná odměna.",
             "reward_grants": "Počet získání: {count}",
             "filters": {

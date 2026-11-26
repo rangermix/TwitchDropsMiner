@@ -150,6 +150,10 @@
             "skipped_drops": "{count} übersprungen",
             "ignored_keyword_reason": "Wegen Schlüsselwort ignoriert: {keyword}",
             "ignored_precondition_reason": "Ignoriert, weil dieser Drop von {drop} abhängt",
+            "ignored_campaign_reason": "Ignoriert, weil du diese Kampagne ignorierst",
+            "ignore_campaign": "Kampagne ignorieren",
+            "unignore_campaign": "Diese Kampagne minen",
+            "ignore_campaign_error": "Die ignorierte Kampagne konnte nicht aktualisiert werden. Versuche es erneut.",
             "skipped_branch_reason": "Übersprungen, weil keine erspielbare Belohnung von diesem Drop abhängt.",
             "reward_grants": "Anzahl erhalten: {count}",
             "filters": {

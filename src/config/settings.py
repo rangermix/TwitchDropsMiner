@@ -35,6 +35,7 @@ default_settings = {
     "language": DEFAULT_LANG,
     "last_notified_releases": {"telegram": "", "discord": ""},
     "prefer_followed_channels": False,
+    "ignored_campaigns": [],
     "priority_list_only": True,
     "reward_priority": [],
     "inventory_filters": {
@@ -108,6 +109,26 @@ class NotificationEventSettings:
         return {**template, **(current or {}), **value}
 
 
+class IgnoredCampaigns:
+    """Validate the IDs of campaigns the user chose not to mine."""
+
+    MAX_ENTRIES = 500
+    ID_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,100}")
+
+    @classmethod
+    def valid_id(cls, value: Any) -> bool:
+        return isinstance(value, str) and cls.ID_PATTERN.fullmatch(value) is not None
+
+    @classmethod
+    def normalize(cls, value: Any) -> list[str]:
+        """Return deduplicated IDs in order; raise ValueError for any invalid entry."""
+        if not isinstance(value, list) or len(value) > cls.MAX_ENTRIES or not all(
+            cls.valid_id(entry) for entry in value
+        ):
+            raise ValueError("Invalid ignored campaigns")
+        return list(dict.fromkeys(value))
+
+
 class InventoryFilterSettings:
     """Normalize display filters and migrate the previous restrictive checkbox."""
 
@@ -152,6 +173,7 @@ class Settings:
     last_notified_releases: dict[str, str]
     reward_priority: list[str]
     prefer_followed_channels: bool
+    ignored_campaigns: list[str]
     priority_list_only: bool
     inventory_filters: InventoryFilters
     inventory_list_view: bool
@@ -184,6 +206,14 @@ class Settings:
         if isinstance(last_notified, str) and "last_notified_releases" not in settings:
             settings["last_notified_releases"] = {"telegram": last_notified, "discord": last_notified}
         merge_json(settings, default_settings)
+        try:
+            settings["ignored_campaigns"] = IgnoredCampaigns.normalize(settings["ignored_campaigns"])
+        except ValueError:
+            # merge_json guarantees a list here; keep its valid entries.
+            saved = cast(list[Any], settings["ignored_campaigns"])
+            settings["ignored_campaigns"] = list(dict.fromkeys(
+                entry for entry in saved if IgnoredCampaigns.valid_id(entry)
+            ))[: IgnoredCampaigns.MAX_ENTRIES]
         settings.pop("allow_helper_connection", None)
         for key, value in settings.items():
             if value is URL:

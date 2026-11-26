@@ -150,6 +150,10 @@
             "skipped_drops": "{count} dilewati",
             "ignored_keyword_reason": "Diabaikan karena kata kunci: {keyword}",
             "ignored_precondition_reason": "Diabaikan karena bergantung pada {drop}",
+            "ignored_campaign_reason": "Diabaikan karena Anda mengabaikan kampanye ini",
+            "ignore_campaign": "Abaikan kampanye",
+            "unignore_campaign": "Tambang kampanye ini",
+            "ignore_campaign_error": "Tidak dapat memperbarui kampanye yang diabaikan. Coba lagi.",
             "skipped_branch_reason": "Dilewati karena tidak ada hadiah yang dapat ditambang yang bergantung pada drop ini.",
             "reward_grants": "Jumlah diperoleh: {count}",
             "filters": {

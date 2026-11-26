@@ -150,6 +150,10 @@
             "skipped_drops": "{count} sprunget over",
             "ignored_keyword_reason": "Ignoreret på grund af nøgleordet: {keyword}",
             "ignored_precondition_reason": "Ignoreret, fordi dette drop afhænger af {drop}",
+            "ignored_campaign_reason": "Ignoreret, fordi du ignorerer denne kampagne",
+            "ignore_campaign": "Ignorer kampagne",
+            "unignore_campaign": "Udvind denne kampagne",
+            "ignore_campaign_error": "Kunne ikke opdatere den ignorerede kampagne. Prøv igen.",
             "skipped_branch_reason": "Sprunget over, fordi ingen drop, der kan optjenes, afhænger af dette drop.",
             "reward_grants": "Antal gange optjent: {count}",
             "filters": {
