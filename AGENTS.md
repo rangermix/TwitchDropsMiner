@@ -1383,10 +1383,13 @@ live in `gui.points`, translated in every locale.
   `track()`), not `can_watch()`, not `watching_channel` (by id), and whose broadcast has
   an AvailableDrops answer with an empty or null `viewerDropCampaigns`: any campaign,
   earnable or not, may be credited drop progress that the drop code does not track.
-  `_read_side_drops()` reads it once per broadcast in the side tick (inside
-  `private_gql_discovery`, `Channel.fetch_drop_campaigns()`), keeps the newest
-  `SIDE_DROPS_KEPT` (40) answers (cleared by `reset()`), and leaves a failed read
-  unknown: no candidate, retried next tick, one WARNING per failing streak. `pick()` runs over the candidates only and `may_act` also needs
+  `track()` reads it for a new live channel (`_check_drops()`, one `fetch_drop_campaigns()`
+  that sets the drops flag and seeds the answer); `_read_side_drops()` reads it per
+  broadcast in the side tick (inside `private_gql_discovery`), again after
+  `SIDE_DROPS_REFRESH_SECONDS` (15 minutes), keeps the newest `SIDE_DROPS_KEPT` (40)
+  answers with their read time (cleared by `reset()`), and leaves a failed read
+  unknown: no candidate, retried after `SIDE_DROPS_RETRY_SECONDS` (2 minutes), one
+  WARNING per failing streak. `pick()` runs over the candidates only and `may_act` also needs
   one, so visits, recovery, priority, per-channel options, claims, shares, raids,
   moments, predictions and chat work unchanged on them. The pick goes to the side
   watcher (`_side_watch`, one task, `side_channel`), never to `Twitch.watch`: it calls

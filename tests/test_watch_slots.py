@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import time
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -523,38 +524,86 @@ async def test_a_side_candidate_needs_a_broadcast_without_any_drops_campaign(cam
     await stopped(svc)
 
 
+def drops_reads(tw):
+    return [c for c in tw.gql_request.await_args_list
+            if isinstance(c.args[0], dict) and "channelID" in c.args[0]["variables"]]
+
+
+def shifted_clock(monkeypatch):
+    """idle_watch's clock, moved on by clock[0] seconds (the event loop keeps the real one)."""
+    clock = [0.0]
+    monkeypatch.setattr(idle_mod, "time", SimpleNamespace(
+        time=time.time, monotonic=lambda: time.monotonic() + clock[0]))
+    return clock
+
+
 @pytest.mark.asyncio
-async def test_a_failed_side_drops_read_is_retried_with_one_warning_per_streak(monkeypatch, caplog):
-    # track()'s own read succeeds; the side reads fail twice, then answer; one tick per poke
+async def test_a_failed_side_drops_read_waits_before_a_retry_and_warns_once_per_streak(monkeypatch, caplog):
+    # track()'s own read fails, then the side reads fail twice, then answer; one tick per poke
     monkeypatch.setattr(idle_mod, "IDLE_TICK_SECONDS", 10)
-    svc, tw = real_side_service({1: ["empty", "error", "error", "empty"]}, monkeypatch)
+    clock = shifted_clock(monkeypatch)
+    svc, tw = real_side_service({1: ["error", "error", "error", "empty"]}, monkeypatch)
     with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
         svc.enter(side=True)
         await settle()
-        assert svc.side_channel is None
+        assert svc.side_channel is None and len(drops_reads(tw)) == 2
+        for _ in range(3):  # inside the wait: no read
+            svc.poke()
+            await settle()
+        assert len(drops_reads(tw)) == 2
+        clock[0] += idle_mod.SIDE_DROPS_RETRY_SECONDS
         svc.poke()
         await settle()
-        assert svc.side_channel is None
+        assert svc.side_channel is None and len(drops_reads(tw)) == 3
+        clock[0] += idle_mod.SIDE_DROPS_RETRY_SECONDS
         svc.poke()
         await settle()
     assert svc.side_channel is tw.channels[1]
     warnings = [r.getMessage() for r in caplog.records if "second slot channels" in r.getMessage()]
     assert warnings == ["Drops check of second slot channels failed (MinerException), retrying"]
     assert "secret body" not in caplog.text
-    reads = [c for c in tw.gql_request.await_args_list
-             if isinstance(c.args[0], dict) and "channelID" in c.args[0]["variables"]]
-    assert len(reads) == 4  # once per broadcast after the answer: no read on later ticks
+    assert len(drops_reads(tw)) == 4
     svc.poke()
     await settle()
-    assert len([c for c in tw.gql_request.await_args_list
-                if isinstance(c.args[0], dict) and "channelID" in c.args[0]["variables"]]) == 4
+    assert len(drops_reads(tw)) == 4  # answered: no read on later ticks
     await stopped(svc)
+
+
+@pytest.mark.asyncio
+async def test_a_side_drops_answer_is_read_again_after_the_refresh_time(monkeypatch):
+    monkeypatch.setattr(idle_mod, "IDLE_TICK_SECONDS", 10)
+    clock = shifted_clock(monkeypatch)
+    table = {1: []}
+    svc, tw = real_side_service(table, monkeypatch)
+    svc.enter(side=True)
+    await settle()
+    assert svc.side_channel is tw.channels[1] and len(drops_reads(tw)) == 1  # track()'s read serves side mode
+    clock[0] += idle_mod.SIDE_DROPS_REFRESH_SECONDS - 1
+    svc.poke()
+    await settle()
+    assert len(drops_reads(tw)) == 1
+    table[1] = [{"id": "new-campaign"}]  # a campaign appears mid-broadcast
+    clock[0] += 1
+    svc.poke()
+    await settle()
+    assert len(drops_reads(tw)) == 2
+    assert not svc.side_candidate(tw.channels[1]) and svc.side_channel is None
+    await stopped(svc)
+
+
+@pytest.mark.asyncio
+async def test_a_new_listed_channel_is_read_once_before_it_can_be_a_side_pick(monkeypatch):
+    svc, tw = real_side_service({1: [], 2: []}, monkeypatch)
+    svc.enter(side=True)
+    await settle()
+    assert sorted(int(c.args[0]["variables"]["channelID"]) for c in drops_reads(tw)) == [1, 2]
+    assert svc.side_channel is not None
 
 
 def test_side_drops_answers_are_bounded():
     svc, _ = side_service([])
     for broadcast in range(1000, 1000 + idle_mod.SIDE_DROPS_KEPT + 5):
-        svc._side_drops[broadcast] = True
+        svc._side_drops[broadcast] = (True, 0.0)
     a = chan(1, "a")
     asyncio.run(svc._read_side_drops([a]))
     assert len(svc._side_drops) == idle_mod.SIDE_DROPS_KEPT and a.broadcast_id in svc._side_drops

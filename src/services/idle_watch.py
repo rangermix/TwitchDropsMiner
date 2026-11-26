@@ -64,6 +64,9 @@ IDLE_TICK_SECONDS = 30
 SIDE_WATCH_SECONDS = 10
 # broadcasts whose AvailableDrops answer side mode keeps (20 listed channels, each with a restart)
 SIDE_DROPS_KEPT = 40
+# an answer is read again after this long (a campaign may start mid-broadcast); a failed read waits
+SIDE_DROPS_REFRESH_SECONDS = 900
+SIDE_DROPS_RETRY_SECONDS = 120
 # drop mining rebuilds its channel list here: side mode pauses, so no track() adds channels meanwhile
 SIDE_PAUSE_STATES = frozenset({State.GAMES_UPDATE, State.CHANNELS_CLEANUP, State.CHANNELS_FETCH})
 STREAK_REASON = "WATCH_STREAK"
@@ -172,8 +175,10 @@ class IdleWatchService:
         # the side watcher: the channel it watches and its task
         self.side_channel: Channel | None = None
         self._side_task: asyncio.Task[None] | None = None
-        # broadcast id -> True when AvailableDrops listed no campaign at all on it (newest SIDE_DROPS_KEPT)
-        self._side_drops: dict[int, bool] = {}
+        # broadcast id -> (True when AvailableDrops listed no campaign at all on it, read time), newest
+        # SIDE_DROPS_KEPT; and broadcast id -> time of its last failed read
+        self._side_drops: dict[int, tuple[bool, float]] = {}
+        self._side_failed_at: dict[int, float] = {}
         self._side_drops_failed = False
         # the side pick when side mode paused for a channel reload: the resumed loop continues its watch
         self._side_pick: Channel | None = None
@@ -223,12 +228,23 @@ class IdleWatchService:
         AvailableDrops listed no campaign at all on its broadcast (any campaign may take drop progress).
 
         An unread or failed broadcast is no candidate; _read_side_drops() fills the answers."""
-        return self._side_basic(channel) and self._side_drops.get(channel.broadcast_id or 0) is True
+        answer = self._side_drops.get(channel.broadcast_id or 0)
+        return self._side_basic(channel) and answer is not None and answer[0]
+
+    def _store_side_drops(self, broadcast: int, no_campaign: bool, now: float) -> None:
+        self._side_drops.pop(broadcast, None)  # newest last, so the oldest answer is dropped first
+        self._side_drops[broadcast] = (no_campaign, now)
+        while len(self._side_drops) > SIDE_DROPS_KEPT:
+            del self._side_drops[next(iter(self._side_drops))]
 
     async def _read_side_drops(self, live: list[Channel]) -> None:
-        """Read AvailableDrops once per broadcast of the live channels side mode could pick."""
+        """Read AvailableDrops per broadcast of the live channels side mode could pick: again after
+        SIDE_DROPS_REFRESH_SECONDS, and not before SIDE_DROPS_RETRY_SECONDS after a failed read."""
+        now = time.monotonic()
+        self._side_failed_at = {b: t for b, t in self._side_failed_at.items() if now - t < SIDE_DROPS_RETRY_SECONDS}
         todo = [(c, self._broadcast_id(c)) for c in live if self._side_basic(c)]
-        todo = [(c, b) for c, b in todo if b not in self._side_drops]
+        todo = [(c, b) for c, b in todo if b not in self._side_failed_at
+                and (b not in self._side_drops or now - self._side_drops[b][1] >= SIDE_DROPS_REFRESH_SECONDS)]
         if not todo:
             return
         with private_gql_discovery():
@@ -239,12 +255,11 @@ class IdleWatchService:
                 if not isinstance(result, DROPS_READ_ERRORS) or isinstance(result, ExitRequest):
                     raise result
                 failed = failed or type(result).__name__
+                self._side_failed_at[broadcast] = now
                 continue
-            self._side_drops[broadcast] = not result
-            while len(self._side_drops) > SIDE_DROPS_KEPT:
-                del self._side_drops[next(iter(self._side_drops))]
+            self._store_side_drops(broadcast, not result, now)
         if failed is not None and not self._side_drops_failed:
-            # once per failing streak; the unread broadcasts are retried on the next tick
+            # once per failing streak; the unread broadcasts are retried after SIDE_DROPS_RETRY_SECONDS
             logger.warning("Drops check of second slot channels failed (%s), retrying", failed)
         self._side_drops_failed = failed is not None
 
@@ -367,6 +382,7 @@ class IdleWatchService:
         self.multipliers.clear()
         self._reader.reset()
         self._side_drops.clear()
+        self._side_failed_at.clear()
         self.events.reset()
         self._chat.reset()
         self._twitch.gui.points.clear()
@@ -1152,21 +1168,26 @@ class IdleWatchService:
         return await self._send_split(ops)
 
     async def _check_drops(self, channels: list[Channel]) -> None:
-        """Set the drops flag of new live channels from AvailableDrops; False when the read fails."""
+        """Set the drops flag of new live channels from AvailableDrops (False when the read fails) and
+        give side mode the same answer, so a new channel is not read a second time."""
         live = [c for c in channels if c._stream is not None]
         with private_gql_discovery():
-            results = await asyncio.gather(
-                *(c.fetch_drops_enabled(c.game) for c in live), return_exceptions=True,
-            )
+            results = await asyncio.gather(*(c.fetch_drop_campaigns() for c in live), return_exceptions=True)
         failed: list[str] = []
+        now = time.monotonic()
         for channel, result in zip(live, results, strict=True):
+            enabled = False
             if isinstance(result, BaseException):
                 if not isinstance(result, DROPS_READ_ERRORS) or isinstance(result, ExitRequest):
                     raise result
                 failed.append(type(result).__name__)
-            if channel._stream is not None:
+            else:
                 # a false True would hand the channel to drop mining; CHANNELS_FETCH still finds a real one
-                channel._stream.drops_enabled = result is True
+                enabled = channel._check_drops_enabled(result, game=channel.game)
+                if channel.broadcast_id is not None:
+                    self._store_side_drops(channel.broadcast_id, not result, now)
+            if channel._stream is not None:
+                channel._stream.drops_enabled = enabled
         if failed:
             logger.warning("Drops check failed for %d idle channels (%s), treated as without drops",
                            len(failed), failed[0])
