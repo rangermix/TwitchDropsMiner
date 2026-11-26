@@ -120,11 +120,34 @@ PLACEHOLDERS = {
 }
 
 
-def test_every_points_log_line_has_its_placeholders():
-    lines = json.loads((LANG_PATH / "English.json").read_text(encoding="utf-8"))["points"]["log"]
+def placeholders(text):
+    return {name for _, name, _, _ in string.Formatter().parse(text) if name is not None}
+
+
+def flat(tree, prefix=""):
+    for key, value in tree.items():
+        if isinstance(value, dict):
+            yield from flat(value, f"{prefix}{key}.")
+        else:
+            yield f"{prefix}{key}", value
+
+
+LOCALES = sorted(LANG_PATH.glob("*.json"))
+
+
+@pytest.mark.parametrize("path", LOCALES, ids=[p.stem for p in LOCALES])
+def test_every_points_line_has_its_placeholders_in_every_locale(path):
+    lang = json.loads(path.read_text(encoding="utf-8"))
+    lines = lang["points"]["log"]
     assert set(lines) == set(PLACEHOLDERS)
     for key, text in lines.items():
-        assert {name for _, name, _, _ in string.Formatter().parse(text) if name} == PLACEHOLDERS[key], key
+        assert placeholders(text) == PLACEHOLDERS[key], key
+    # the Points tab strings keep the English placeholders (none today: a stray brace would break format())
+    english = dict(flat(json.loads((LANG_PATH / "English.json").read_text(encoding="utf-8"))["gui"]["points"]))
+    tab = dict(flat(lang["gui"]["points"]))
+    assert set(tab) == set(english)
+    for key, text in tab.items():
+        assert isinstance(text, str) and placeholders(text) == placeholders(english[key]), key
 
 
 @pytest.mark.asyncio
