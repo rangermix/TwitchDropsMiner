@@ -69,6 +69,8 @@ class MessageHandlerService:
                 # if it's not online for some reason, set it so
                 channel.check_online()
             else:
+                if channel.drops_unverified:
+                    channel.check_online()  # retry a failed drops read of this stream
                 viewers = message["viewers"]
                 channel.viewers = viewers
                 channel.display()

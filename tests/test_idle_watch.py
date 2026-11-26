@@ -1495,3 +1495,44 @@ async def test_a_later_stream_check_with_a_failing_drops_read_keeps_liveness(
     assert tw.can_watch(channel) is enabled
     assert "Drops check failed for channel 1: MinerException" in caplog.text
     assert "Stream check failed" not in caplog.text and "secret body" not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_a_failed_drops_read_is_retried_on_the_next_viewcount(caplog, monkeypatch):
+    svc, tw = drops_service(WANTED_GAME, "error")
+    caplog.set_level(logging.WARNING, logger="TwitchDrops")
+    await idle_entry(svc)
+    channel = tw.channels[1]
+    assert channel.online and not channel.drops_enabled and channel.drops_unverified
+    handler = MessageHandlerService(tw)
+    check_online = MagicMock()
+    monkeypatch.setattr(Channel, "check_online", check_online)
+    monkeypatch.setattr(Channel, "display", MagicMock())
+    # the read keeps failing: retried on every viewcount, logged once per streak
+    tw.on_channel_update = MagicMock()
+
+    async def failing(ops):
+        if isinstance(ops, dict) and ops["operationName"] == GQL_OPERATIONS["GetStreamInfo"]["operationName"]:
+            return stream_reply(WANTED_GAME, broadcast="100")
+        raise idle_mod.MinerException("secret body")
+
+    tw.gql_request.side_effect = failing
+    for _ in range(2):
+        await handler.process_stream_state(1, {"type": "viewcount", "viewers": 7})
+        assert channel.viewers == 7  # the viewer count still updates
+        await channel.refresh_stream()
+    assert check_online.call_count == 2
+    assert channel.online and channel.drops_unverified and "Stream check failed" not in caplog.text
+    assert caplog.text.count("Drops check failed for channel 1") == 0  # track() logged this streak
+
+    async def healthy(ops):
+        if isinstance(ops, dict) and ops["operationName"] == GQL_OPERATIONS["GetStreamInfo"]["operationName"]:
+            return stream_reply(WANTED_GAME, broadcast="100")
+        return {"data": {"channel": {"viewerDropCampaigns": [{"id": "camp"}]}}}
+
+    tw.gql_request.side_effect = healthy
+    await handler.process_stream_state(1, {"type": "viewcount", "viewers": 8})
+    await channel.refresh_stream()
+    assert channel.drops_enabled and not channel.drops_unverified and tw.can_watch(channel)
+    await handler.process_stream_state(1, {"type": "viewcount", "viewers": 9})
+    assert check_online.call_count == 3  # no more retries once verified

@@ -1179,6 +1179,7 @@ class IdleWatchService:
         now = time.monotonic()
         for channel, result in zip(live, results, strict=True):
             enabled = False
+            channel.drops_unverified = isinstance(result, BaseException)
             if isinstance(result, BaseException):
                 if not isinstance(result, READ_ERRORS) or isinstance(result, ExitRequest):
                     raise result
