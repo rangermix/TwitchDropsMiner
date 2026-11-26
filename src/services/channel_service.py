@@ -356,16 +356,15 @@ class ChannelService:
         except GQLException as exc:
             raise MinerException(f"Game: {game.slug}") from exc
 
-        # Twitch returns a null game (or null streams) for unknown or delisted slugs.
-        game_data = (response.get("data") or {}).get("game") or {}
-        edges = (game_data.get("streams") or {}).get("edges") or []
-        return [
-            Channel.from_directory(
-                self._twitch, stream_channel_data["node"], drops_enabled=drops_enabled
-            )
-            for stream_channel_data in edges
-            if stream_channel_data["node"]["broadcaster"] is not None
-        ]
+        if "game" in response["data"]:
+            return [
+                Channel.from_directory(
+                    self._twitch, stream_channel_data["node"], drops_enabled=drops_enabled
+                )
+                for stream_channel_data in response["data"]["game"]["streams"]["edges"]
+                if stream_channel_data["node"]["broadcaster"] is not None
+            ]
+        return []
 
     async def filter_banned_channels(
         self, channels: abc.Iterable[Channel], *, retained_channels: abc.Iterable[Channel] = (),

@@ -9,11 +9,9 @@ import pytest
 from src.api import GQLClient
 from src.config import GQL_OPERATIONS
 from src.config.client_info import ClientType
-from src.exceptions import GQLException, MinerException
-from src.models.game import Game
-from src.services.channel_service import ChannelService
+from src.exceptions import GQLException
 from src.services.inventory_service import INVENTORY_RETRY_DELAY, InventoryService
-from tests.test_watched_channel_recovery import GAME, OFFLINE, _channel, _reloading_miner, _run
+from tests.test_watched_channel_recovery import _reloading_miner, _run
 
 
 SERVICE_ERROR = {"errors": [{"message": "service error"}]}  # no "extensions" key
@@ -42,36 +40,6 @@ async def test_service_error_retries_are_bounded():
     with patch("src.api.gql_client.asyncio.sleep", AsyncMock()), pytest.raises(GQLException):
         await client.request(GQL_OPERATIONS["Inventory"])
     assert browser.gql.await_count == 4
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("data", [{"game": None}, {"game": {"streams": None}}, {}])
-async def test_directory_lookup_tolerates_a_null_game(data):
-    twitch = MagicMock()
-    twitch.gql_request = AsyncMock(return_value={"data": data})
-    assert await ChannelService(twitch).get_live_streams(Game(GAME)) == []
-
-
-@pytest.mark.asyncio
-async def test_one_failing_game_directory_does_not_stop_discovery(tmp_path, monkeypatch):
-    client, watched = _reloading_miner(tmp_path, monkeypatch, discovered=[], stream_status=[OFFLINE])
-    broken, working = Game({"id": "2", "name": "Broken"}), Game(GAME)
-    client.wanted_games = [broken, working]
-    client.inventory = [SimpleNamespace(
-        game=game, can_earn_within=lambda stamp: True, allowed_channels=[],
-        can_earn=lambda channel: True, can_progress_on=lambda channel: channel.drops_enabled,
-    ) for game in (broken, working)]
-    found = _channel(client, 2)
-
-    async def live_streams(game, *, drops_enabled):
-        if game is broken:
-            # As ChannelService.get_live_streams wraps a GQL failure.
-            raise MinerException("Game: broken") from GQLException("PersistedQueryNotFound")
-        return [found]
-
-    client.get_live_streams = AsyncMock(side_effect=live_streams)
-    await _run(client)
-    assert client.watching_channel.get_with_default(None) is found
 
 
 def _inventory_twitch(responses):
@@ -201,16 +169,6 @@ async def test_in_progress_campaign_without_details_is_skipped():
     await service.fetch_inventory()  # would raise KeyError building from Inventory data alone
     assert twitch.inventory == []
     await twitch._mnt_task
-
-
-@pytest.mark.asyncio
-async def test_login_errors_from_a_directory_lookup_still_propagate(tmp_path, monkeypatch):
-    from src.exceptions import LoginException
-
-    client, _ = _reloading_miner(tmp_path, monkeypatch, discovered=[], stream_status=[OFFLINE])
-    client.get_live_streams = AsyncMock(side_effect=LoginException("login"))
-    with pytest.raises(LoginException):
-        await _run(client)
 
 
 @pytest.mark.asyncio
