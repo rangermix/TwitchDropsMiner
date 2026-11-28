@@ -29,11 +29,12 @@ REWARD_CAMPAIGNS_QUERY = """
 query RewardCampaigns {
     rewardCampaignsAvailableToUser {
         id name status startsAt endsAt isSitewide
+        image { image1xURL }
         rewardGroups {
             id
             unlockRequirements { minuteWatchedGoal subsGoal }
             categories { id displayName slug boxArtURL }
-            rewards { id name thumbnailImage { image1xURL } }
+            rewards { id name thumbnailImage { image1xURL } bannerImage { image1xURL } }
         }
     }
 }
