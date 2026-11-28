@@ -25,7 +25,8 @@ const element = (extra = {}) => ({ value: '', checked: false, disabled: false, s
 const elements = {
     'set-proxy-btn': element(), 'proxy-url': element(), 'proxy-verify-result': element(),
     'dark-mode': element(), 'inventory-list-view': element(), 'language': element({value: 'English'}),
-    'connection-quality': element({value: '1'}), 'minimum-refresh-interval': element({value: '30'}),
+    'connection-quality': element({value: '1', min: '1', max: '6'}),
+    'minimum-refresh-interval': element({value: '30', min: '1', max: '1440'}),
 };
 const document = { getElementById: id => elements[id] || element() };
 const state = {

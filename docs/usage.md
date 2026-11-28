@@ -21,6 +21,18 @@ simultaneous viewing can disrupt progress.
 | Help | A quick explanation of mining and Telegram setup |
 
 Use Left/Right arrows, Home or End to switch Settings sub-tabs from the tab bar.
+If your saved language is unavailable after an update, TDM starts in English.
+
+## Connection and refresh settings
+
+In **Settings → General**, **Connection Quality** accepts whole numbers from 1 to 6
+and **Minimum Refresh Interval** accepts 1 to 1440 minutes. The dashboard adjusts
+numeric entries to whole numbers within those limits before saving. The API rejects
+invalid values. On startup, TDM clamps out-of-range integers in `settings.json` and
+uses the defaults of 1 and 30 minutes for values of the wrong type.
+
+The new refresh interval applies when the next inventory refresh starts its timer.
+Use **Reload Campaigns** to start a new refresh cycle.
 
 ## Choose games and priorities
 
@@ -213,8 +225,15 @@ selected day; displayed claim times use your browser's local timezone.
 
 **Export CSV** downloads the current filtered view. The file supports Unicode game
 names and includes a UTF-8 byte-order mark for spreadsheet compatibility.
-**Clear** deletes all local history, including records hidden by a filter. It does
-not change your Twitch account or take away rewards.
+**Clear** deletes all entries in the current history, including records hidden by a
+filter. Twitch rewards and local recovery backups remain available.
+
+On startup, TDM moves an invalid or unsupported history file to
+`data/drop_history.json.bad` or the next numbered backup and starts an empty history.
+Keep the backup for recovery. If TDM cannot read or move the file, it leaves the
+original in place and disables history writes until restart. Alerts for sitewide
+rewards earned during that period can be skipped. A failed **Clear** keeps the
+current history available.
 
 ## Refreshing and clearing cache
 

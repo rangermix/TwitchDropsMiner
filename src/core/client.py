@@ -773,7 +773,7 @@ class Twitch:
                 for game in no_acl:
                     # for every campaign without an ACL, for it's game,
                     # add a list of live channels with drops enabled
-                    found = await self.get_live_streams(game, drops_enabled=True)
+                    found = await self._discover_game_channels(game, drops_enabled=True)
                     # A channel kept from a fetch without the drops filter has the same
                     # broadcast: record that drops are enabled, keeping the old object.
                     kept = {channel: channel for channel in new_channels}
@@ -789,16 +789,7 @@ class Twitch:
                     # Reward campaigns progress on any live channel in the category. Added
                     # after the lookup above, so a drops-enabled Channel is kept (set.update
                     # leaves an equal existing element in place).
-                    try:
-                        found = await asyncio.wait_for(
-                            self.get_live_streams(game, drops_enabled=False), timeout=REWARD_DIRECTORY_TIMEOUT
-                        )
-                    except ExitRequest:
-                        raise
-                    except REWARD_ERRORS:
-                        logger.warning("Open Reward Campaign channel directory is unavailable")
-                        continue
-                    new_channels.update(found)
+                    new_channels.update(await self._discover_game_channels(game, drops_enabled=False))
                 # Optional: followed channels outside each game's top directory results.
                 known_ids = {channel.id for channel in new_channels}
                 if (watched := self.watching_channel.get_with_default(None)) is not None:
@@ -1119,6 +1110,19 @@ class Twitch:
         return await self._channel_service.get_live_streams(
             game, limit=limit, drops_enabled=drops_enabled
         )
+
+    async def _discover_game_channels(self, game: Game, *, drops_enabled: bool) -> list[Channel]:
+        """Isolate one failed game directory lookup from the rest of discovery."""
+        try:
+            lookup = self.get_live_streams(game, drops_enabled=drops_enabled)
+            if drops_enabled:
+                return await lookup
+            return await asyncio.wait_for(lookup, timeout=REWARD_DIRECTORY_TIMEOUT)
+        except ExitRequest:
+            raise
+        except REWARD_ERRORS as exc:
+            logger.warning("Channel directory for %r is unavailable (%s)", game.name, type(exc).__name__)
+            return []
 
     async def bulk_check_online(self, channels: abc.Iterable[Channel]):
         """Delegate to ChannelService."""

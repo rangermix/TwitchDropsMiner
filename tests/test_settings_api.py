@@ -4,13 +4,18 @@ import importlib
 import json
 import tempfile
 import unittest
+from collections import deque
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 
 from src.config.settings import Settings, default_settings
+from src.services.maintenance import MaintenanceService
 from src.web.app import SettingsUpdate
 from src.web.managers.settings import SettingsManager
 
@@ -404,6 +409,103 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         set_language.assert_called_once_with(other_language)
         broadcaster.emit.assert_any_call("language_changed", {"language": other_language})
         console.print.assert_called_once_with(f"Setting changed: language = {other_language}")
+
+
+@pytest.mark.parametrize(("key", "invalid"), [
+    ("connection_quality", (0, 7, True, "3", 2.0)),
+    ("minimum_refresh_interval_minutes", (0, -5, 1441, False, "30", 30.5)),
+])
+def test_bounded_settings_reject_invalid_requests_without_saving(key, invalid, monkeypatch):
+    manager = MagicMock(spec=SettingsManager)
+    manager.update_settings.return_value = {}
+    monkeypatch.setattr(web_app, "gui_manager", SimpleNamespace(settings=manager))
+    with TestClient(web_app.app, headers={"X-TDM-Request": "1"}) as client:
+        for value in invalid:
+            response = client.post("/api/settings", json={key: value, "dark_mode": True})
+            assert response.status_code == 422, value
+            assert response.json() == {"detail": "invalid_request"}
+
+    manager.update_settings.assert_not_called()
+
+
+def test_bounded_settings_api_accepts_limits_and_ignores_null(tmp_path, monkeypatch):
+    path = tmp_path / "settings.json"
+    monkeypatch.setattr("src.config.settings.SETTINGS_PATH", path)
+    manager = SettingsManager(AsyncMock(), Settings(), MagicMock())
+    monkeypatch.setattr(web_app, "gui_manager", SimpleNamespace(settings=manager))
+    with TestClient(web_app.app, headers={"X-TDM-Request": "1"}) as client:
+        for quality, refresh in ((1, 1440), (6, 1)):
+            response = client.post("/api/settings", json={
+                "connection_quality": quality, "minimum_refresh_interval_minutes": refresh,
+            })
+            assert response.status_code == 200
+            assert response.json()["settings"]["connection_quality"] == quality
+            assert response.json()["settings"]["minimum_refresh_interval_minutes"] == refresh
+            saved = Settings()
+            assert saved.connection_quality == quality
+            assert saved.minimum_refresh_interval_minutes == refresh
+
+        response = client.post("/api/settings", json={"connection_quality": None, "dark_mode": True})
+        assert response.status_code == 200
+        saved = Settings()
+        assert (saved.connection_quality, saved.minimum_refresh_interval_minutes) == (6, 1)
+        assert saved.dark_mode is True
+
+
+@pytest.mark.parametrize(("quality", "refresh", "expected"), [
+    (0, -5, (1, 1)),
+    (7, 1441, (6, 1440)),
+    (True, {"accidental_value": "private-settings-canary"}, (1, 30)),
+    (2.0, "40", (1, 30)),
+    (None, None, (1, 30)),
+])
+def test_bounded_settings_repair_stored_values(quality, refresh, expected, tmp_path, monkeypatch, caplog):
+    path = tmp_path / "settings.json"
+    monkeypatch.setattr("src.config.settings.SETTINGS_PATH", path)
+    data = {
+        "connection_quality": quality,
+        "minimum_refresh_interval_minutes": refresh,
+        "games_to_watch": ["Keep selected game"],
+    }
+    path.write_text(json.dumps(data), encoding="utf-8")
+
+    settings = Settings()
+    assert (settings.connection_quality, settings.minimum_refresh_interval_minutes) == expected
+    assert settings.games_to_watch == ["Keep selected game"]
+    assert "connection_quality" in caplog.text and "minimum_refresh_interval_minutes" in caplog.text
+    assert "private-settings-canary" not in caplog.text
+    assert json.loads(path.read_text(encoding="utf-8")) == data
+
+    caplog.clear()
+    settings.save()
+    saved = Settings()
+    assert (saved.connection_quality, saved.minimum_refresh_interval_minutes) == expected
+    assert not caplog.records
+
+
+@pytest.mark.asyncio
+async def test_maintenance_waits_after_loading_zero_refresh_interval(tmp_path, monkeypatch):
+    path = tmp_path / "settings.json"
+    path.write_text('{"minimum_refresh_interval_minutes": 0}', encoding="utf-8")
+    monkeypatch.setattr("src.config.settings.SETTINGS_PATH", path)
+    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    twitch = SimpleNamespace(
+        settings=Settings(), _mnt_triggers=deque(), request_inventory_refresh=MagicMock(),
+    )
+
+    async def advance_clock(seconds):
+        nonlocal now
+        twitch.request_inventory_refresh.assert_not_called()
+        now += timedelta(seconds=seconds)
+
+    sleep = AsyncMock(side_effect=advance_clock)
+    monkeypatch.setattr("src.services.maintenance.datetime", SimpleNamespace(now=lambda tz: now))
+    monkeypatch.setattr("src.services.maintenance.asyncio", SimpleNamespace(sleep=sleep))
+
+    await MaintenanceService(twitch).run_maintenance_task()
+
+    sleep.assert_awaited_once_with(60)
+    twitch.request_inventory_refresh.assert_called_once_with()
 
 
 if __name__ == "__main__":
