@@ -35,6 +35,8 @@ function getComputedStyle(){return {getPropertyValue:name=>name==='--inventory-c
 for(const id of ['inventory-view-cards','inventory-view-list'])body.appendChild(Object.assign(new Element('button'),{id}));
 for(const id of ['dark-mode','language','connection-quality','minimum-refresh-interval','drop-name-blacklist']) {
  const control=new Element('input');control.id=id;control.value=id==='connection-quality'?'1':id==='minimum-refresh-interval'?'30':'';
+ if(id==='connection-quality')Object.assign(control,{min:'1',max:'6'});
+ if(id==='minimum-refresh-interval')Object.assign(control,{min:'1',max:'1440'});
  body.appendChild(control);
 }
 function walk(root){return [root,...root.children.flatMap(walk)];}

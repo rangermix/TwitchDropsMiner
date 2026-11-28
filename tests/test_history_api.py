@@ -30,6 +30,7 @@ class _FakeHistory:
 
     def clear(self):
         self.total_count = 0
+        return True
 
 
 def _fake_client() -> SimpleNamespace:
@@ -94,6 +95,18 @@ async def test_delete_history_endpoint_clears():
 
     assert response == {"success": True}
     assert client.drop_history.total_count == 0
+
+
+@pytest.mark.asyncio
+async def test_delete_history_endpoint_returns_500_when_clear_cannot_be_saved():
+    client = _fake_client()
+    client.drop_history.clear = lambda: False
+    with patch.object(web_app, "twitch_client", client):
+        with pytest.raises(web_app.HTTPException) as failure:
+            await web_app.clear_history()
+
+    assert failure.value.status_code == 500
+    assert failure.value.detail == "history_not_saved"
 
 
 def test_parse_history_since_accepts_date_and_datetime():

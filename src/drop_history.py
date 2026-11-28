@@ -16,7 +16,10 @@ import csv
 import io
 import json
 import logging
+import os
+from contextlib import suppress
 from datetime import datetime, timezone
+from itertools import chain, count
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict
 
@@ -64,6 +67,7 @@ class DropHistory:
         self._path = data_dir / HISTORY_FILENAME
         self._entries: list[HistoryEntry] = []
         self._dirty = False
+        self._save_disabled = False
         self._load()
 
     # ------------------------------------------------------------------
@@ -83,7 +87,9 @@ class DropHistory:
         # Skip if this drop was already recorded (e.g. restart replaying events)
         if any(e["id"] == drop_id for e in self._entries):
             logger.debug(f"Drop {drop_id} already in history, skipping.")
-            return self._save() if self._dirty else True
+            if self._dirty:
+                self._dirty = not self._save(self._entries)
+            return not self._dirty
 
         # Collect reward names; fall back gracefully if the API shape differs
         benefits: list[str] = []
@@ -109,10 +115,10 @@ class DropHistory:
         }
 
         self._entries.append(entry)
-        saved = self._save()
-        if saved:
+        self._dirty = not self._save(self._entries)
+        if not self._dirty:
             logger.info(f"Recorded drop: {entry['game']} — {entry['drop_name']}")
-        return saved
+        return not self._dirty
 
     def get_entries(
         self,
@@ -210,57 +216,111 @@ class DropHistory:
             counts[month] = counts.get(month, 0) + 1
         return dict(sorted(counts.items()))
 
-    def clear(self) -> None:
-        """Delete all history entries from memory and disk."""
-        self._entries = []
-        self._save()
+    def clear(self) -> bool:
+        """Clear history after committing the empty list to disk."""
+        if not self._save([]):
+            return False
+        self._entries.clear()
+        self._dirty = False
         logger.warning("Drop history cleared.")
+        return True
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
     def _load(self) -> None:
-        """Read history from disk. Silently starts fresh if the file is absent."""
-        if not self._path.exists():
-            logger.debug(f"No history file at {self._path}, starting fresh.")
-            return
+        """Read history from disk, retaining any file that cannot be loaded."""
         try:
-            with self._path.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-            if data.get("version") == HISTORY_VERSION:
-                self._entries = data.get("entries", [])
-                logger.debug(f"Loaded {len(self._entries)} history entries.")
-            else:
-                # Future versions may add a migration path here
-                logger.warning(
-                    f"Unknown history version {data.get('version')}, ignoring file."
-                )
-        except (json.JSONDecodeError, OSError) as exc:
-            logger.error(f"Failed to load drop history: {exc}")
+            try:
+                self._path.lstat()
+            except FileNotFoundError:
+                logger.debug("No drop history file, starting fresh.")
+                return
 
-    def _save(self) -> bool:
+            with self._path.open("r", encoding="utf-8-sig") as f:
+                data = json.load(f)
+            if (not isinstance(data, dict) or type(data.get("version")) is not int
+                    or data["version"] != HISTORY_VERSION):
+                raise ValueError("Unknown drop history format")
+            entries = data.get("entries")
+            if not isinstance(entries, list) or not all(self._valid_entry(e) for e in entries):
+                raise ValueError("Invalid drop history entries")
+        except (ValueError, RecursionError):
+            self._quarantine()
+        except OSError as exc:
+            self._disable_saving(exc)
+        else:
+            self._entries = entries
+            logger.debug("Loaded %d history entries.", len(entries))
+
+    @staticmethod
+    def _valid_entry(entry: object) -> bool:
+        if not isinstance(entry, dict) or entry.keys() != HistoryEntry.__required_keys__:
+            return False
+        benefits = entry["benefits"]
+        if type(entry["required_minutes"]) is not int or not isinstance(benefits, list):
+            return False
+        text_fields = ("id", "claimed_at", "game", "campaign", "drop_name", "campaign_id")
+        fields = (entry[field] for field in text_fields)
+        for value in chain(fields, benefits):
+            if not isinstance(value, str):
+                return False
+            value.encode("utf-8")
+        return datetime.fromisoformat(entry["claimed_at"]).tzinfo is not None
+
+    def _quarantine(self) -> None:
+        """Move the unusable file to a new backup path in the same directory."""
+        try:
+            for index in count():
+                suffix = f".bad.{index}" if index else ".bad"
+                backup = self._path.with_name(self._path.name + suffix)
+                try:
+                    # Reserve the name without replacing an existing backup.
+                    with backup.open("xb"):
+                        pass
+                except FileExistsError:
+                    continue
+                break
+            try:
+                self._path.replace(backup)
+            except OSError:
+                with suppress(OSError):
+                    backup.unlink()
+                raise
+        except OSError as exc:
+            self._disable_saving(exc)
+        else:
+            logger.warning("Moved unusable drop history to %s.", backup.name)
+
+    def _disable_saving(self, error: OSError) -> None:
+        self._save_disabled = True
+        logger.warning("Drop history left untouched (%s). Saving is disabled until restart.", error)
+
+    def _save(self, entries: list[HistoryEntry]) -> bool:
         """
         Write the current state to disk atomically.
         Writes to a .tmp file first, then renames it over the real file.
         This ensures the history file is never left in a half-written state
         even if the process is killed during the write.
         """
+        if self._save_disabled:
+            return False
         try:
             self._path.parent.mkdir(parents=True, exist_ok=True)
             tmp = self._path.with_suffix(".json.tmp")
             with tmp.open("w", encoding="utf-8") as f:
                 json.dump(
-                    {"version": HISTORY_VERSION, "entries": self._entries},
+                    {"version": HISTORY_VERSION, "entries": entries},
                     f,
                     ensure_ascii=False,
                     indent=2,
                 )
+                f.flush()
+                os.fsync(f.fileno())
             # Atomic rename — on POSIX this is guaranteed by the OS
             tmp.replace(self._path)
-            self._dirty = False
             return True
         except OSError as exc:
-            self._dirty = True
             logger.error(f"Failed to save drop history: {exc}")
             return False
