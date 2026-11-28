@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import timezone
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
@@ -14,6 +15,7 @@ from src.version import __version__
 
 if TYPE_CHECKING:
     from src.diagnostics import Diagnostics
+    from src.models.campaign import DropsCampaign
     from src.models.drop import BaseDrop
 
 
@@ -134,6 +136,37 @@ class DiscordNotifier:
         except Exception:
             logger.warning("Failed to send Discord notification")
             return False
+
+    async def notify_campaign_ending(self, campaign: DropsCampaign) -> bool:
+        """Send an embed notification that a wanted campaign with unclaimed drops ends soon."""
+        if not self.enabled:
+            return False
+        ends_at = campaign.ends_at.astimezone(timezone.utc)
+        embed = {
+            "title": "⏰ Campaign ending soon!",
+            "color": EMBED_COLOR,
+            "fields": [
+                # _send_embed escapes and truncates every field.
+                {"name": "Campaign", "value": campaign.name, "inline": True},
+                {"name": "Game", "value": campaign.game.name, "inline": True},
+                {"name": "Ends", "value": f"{ends_at:%Y-%m-%d %H:%M} UTC", "inline": True},
+                {"name": "Drops left", "value": str(len(campaign.mineable_watch_drops)), "inline": True},
+            ],
+            "footer": {"text": "TwitchDropsMiner Bot"},
+        }
+        return await self._send_embed(embed)
+
+    async def notify_health(self, message: str, *, resolved: bool) -> bool:
+        """Send a fixed miner health message (a problem, or its recovery)."""
+        if not self.enabled:
+            return False
+        embed = {
+            "title": "✅ TwitchDropsMiner recovered" if resolved else "⚠️ TwitchDropsMiner problem",
+            "description": message,  # _send_embed escapes it
+            "color": 0x2ECC71 if resolved else 0xE67E22,
+            "footer": {"text": "TwitchDropsMiner Bot"},
+        }
+        return await self._send_embed(embed)
 
     async def notify_new_release(self, version: str, url: str) -> bool:
         """Send an embed notification when a newer application version is published."""

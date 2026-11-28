@@ -229,6 +229,8 @@
                 "help": "Applies to Discord and Telegram, once either is set up below.",
                 "drop_claimed": "Claimed drops",
                 "new_release": "New TwitchDropsMiner versions (checked every 6 hours)",
+                "mining_problems": "Problems: Twitch login needed for 30 minutes, or no successful watch for 15 minutes (and when they clear)",
+                "campaign_ending": "Wanted campaigns ending within 24 hours with unclaimed drops",
                 "save_error": "Could not save notification choices. Please try again."
             },
             "discord": {

@@ -18,6 +18,20 @@ Event choices are available in v2.6.0 and later.
   check can retry it without repeating the alert on the other provider. TDM
   remembers successful deliveries across restarts. Follow the
   [installation guide](installation.md) to install updates.
+- **Wanted campaigns ending within 24 hours with unclaimed drops** is off by default
+  and is not yet in a released version. When on, TDM checks after every campaign reload
+  (every 30 minutes by default) and sends one alert per campaign of a game in your
+  mining queue that ends within 24 hours and still has drops TDM would mine. Alerted
+  campaigns are remembered in `data/campaign_alerts.json` so a restart does not repeat
+  them. A campaign counts as alerted once any configured provider accepts the alert; if
+  every provider fails, TDM retries at the next reload.
+- **Problems** is off by default and is not yet in a released version. During mining
+  hours (and outside a dashboard pause), TDM sends one alert when it has not been
+  logged in to Twitch for 30 minutes, or when a channel is selected but no watch request
+  has succeeded on it for 15 minutes. It sends one more message when you are logged in
+  again or a watch succeeds again; a stall that ends because the channel went offline
+  or you were logged out ends quietly. A failed alert is retried every minute while the
+  problem lasts.
 
 Each checkbox saves immediately. A failed save restores the previous choice.
 

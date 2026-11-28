@@ -532,7 +532,25 @@ lang/                # Translation JSON files (20 languages)
   not echo submitted settings. Test Connection reports success only after saving.
   Preserve localized safe Help rendering and `tests/test_discord_*` coverage.
 - `notification_events` (`NotificationEventSettings`) selects alert events for both
-  providers: `drop_claimed` (default true) and `new_release` (default false). Only an
+  providers: `drop_claimed` (default true), `new_release`, `campaign_ending` and
+  `mining_problems` (default false). `NotificationTargets.enabled()`
+  (`src/services/notification_targets.py`) returns the enabled Telegram/Discord notifiers
+  for an event. `CampaignEndingAlerts` (`src/services/campaign_alert_service.py`) runs at
+  the end of building wanted games in GAMES_UPDATE; failures are logged by class name and
+  never interrupt mining. It alerts once per wanted, active campaign ending within 24
+  hours that the miner can still earn with wanted rewards (`can_earn_within`,
+  `has_wanted_unclaimed_benefits`), sending all due alerts concurrently and persisting
+  alerted IDs with their end time in `campaign_alerts.json` (expired entries pruned;
+  unreadable files ignored). Coverage: `tests/test_campaign_ending_alerts.py`.
+  `HealthMonitor` (`src/services/health_monitor.py`) is an account-independent task
+  started beside `ReleaseService` in `Twitch.run()`. Once a minute, inside mining hours
+  only, it alerts once when `_AuthState.logged_in` has been false for 30 minutes or the
+  selected channel (tracked by ID) has had no successful watch
+  (`WatchService.last_watch_success`, or selection time) for 15 minutes. A stall sends a
+  recovery only after a newer successful watch; a login problem only once logged in.
+  Other clears (channel gone, logout, closed hours/pause) reset silently. Messages are
+  fixed English text; failures are logged by class name. Coverage:
+  `tests/test_health_monitor.py`. Only an
   explicit `drop_claimed: false` suppresses claim alerts; settings problems never block a
   claim. Partial updates merge; unknown keys or non-booleans fail before any write.
   Persist the event revision with the choices so late settings responses or broadcasts

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import logging
+from datetime import timezone
 from typing import TYPE_CHECKING
 
 import aiohttp
@@ -13,6 +14,7 @@ from src.version import __version__
 
 if TYPE_CHECKING:
     from src.diagnostics import Diagnostics
+    from src.models.campaign import DropsCampaign
     from src.models.drop import BaseDrop, TimedDrop
 
 
@@ -99,6 +101,26 @@ class TelegramNotifier:
         except Exception as e:
             logger.warning(f"Failed to send Telegram progress notification: {type(e).__name__}")
             return False
+
+    async def notify_campaign_ending(self, campaign: DropsCampaign) -> bool:
+        """Send a notification that a wanted campaign with unclaimed drops ends soon."""
+        if not self.enabled:
+            return False
+        message = (
+            f"⏰ <b>Campaign ending soon!</b>\n"
+            f"<b>Campaign:</b> {html.escape(campaign.name)}\n"
+            f"<b>Game:</b> {html.escape(campaign.game.name)}\n"
+            f"<b>Ends:</b> {campaign.ends_at.astimezone(timezone.utc):%Y-%m-%d %H:%M} UTC\n"
+            f"<b>Drops left:</b> {len(campaign.mineable_watch_drops)}"
+        )
+        return await self._send_message(message)
+
+    async def notify_health(self, message: str, *, resolved: bool) -> bool:
+        """Send a fixed miner health message (a problem, or its recovery)."""
+        if not self.enabled:
+            return False
+        icon = "✅" if resolved else "⚠️"
+        return await self._send_message(f"{icon} {html.escape(message)}")
 
     async def notify_new_release(self, version: str, url: str) -> bool:
         """Send notification when a newer application version is published."""

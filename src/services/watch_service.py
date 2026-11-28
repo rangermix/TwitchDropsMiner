@@ -51,6 +51,8 @@ class WatchService:
             twitch: The Twitch client instance
         """
         self._twitch = twitch
+        # Monotonic time of the last successful watch request (read by HealthMonitor).
+        self.last_watch_success: float | None = None
 
     def can_watch(self, channel: Channel) -> bool:
         """
@@ -193,7 +195,9 @@ class WatchService:
             started = monotonic()
             succeeded: bool = await channel.send_watch()
 
-            if not succeeded:
+            if succeeded:
+                self.last_watch_success = monotonic()
+            else:
                 logger.log(CALL, f"Watch requested failed for channel: {channel.name}")
 
             # A ten-second poll fits inside Twitch's rolling segment window.

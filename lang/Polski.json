@@ -273,6 +273,8 @@
                 "help": "Dotyczy Discorda i Telegrama, gdy jeden z nich jest skonfigurowany poniżej.",
                 "drop_claimed": "Odebrane dropy",
                 "new_release": "Nowe wersje TwitchDropsMiner (sprawdzane co 6 godzin)",
+                "mining_problems": "Problemy: logowanie do Twitch wymagane od 30 minut lub brak udanego oglądania od 15 minut (oraz gdy zostaną rozwiązane)",
+                "campaign_ending": "Wybrane kampanie z nieodebranymi dropami kończące się w ciągu 24 godzin",
                 "save_error": "Nie udało się zapisać wyboru powiadomień. Spróbuj ponownie."
             },
             "discord": {

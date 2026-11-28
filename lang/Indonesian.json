@@ -273,6 +273,8 @@
                 "help": "Berlaku untuk Discord dan Telegram, setelah salah satunya diatur di bawah.",
                 "drop_claimed": "Drop yang diklaim",
                 "new_release": "Versi baru TwitchDropsMiner (diperiksa setiap 6 jam)",
+                "mining_problems": "Masalah: perlu login Twitch selama 30 menit, atau tidak ada tontonan yang berhasil selama 15 menit (dan saat masalah teratasi)",
+                "campaign_ending": "Kampanye yang diinginkan dengan drop belum diklaim yang berakhir dalam 24 jam",
                 "save_error": "Tidak dapat menyimpan pilihan notifikasi. Silakan coba lagi."
             },
             "discord": {

@@ -273,6 +273,8 @@
                 "help": "Se aplică pentru Discord și Telegram, după ce unul dintre ele este configurat mai jos.",
                 "drop_claimed": "Drop-uri revendicate",
                 "new_release": "Versiuni noi TwitchDropsMiner (verificate la fiecare 6 ore)",
+                "mining_problems": "Probleme: autentificare Twitch necesară de 30 de minute sau nicio vizionare reușită de 15 minute (și când se rezolvă)",
+                "campaign_ending": "Campanii dorite cu drop-uri nerevendicate care se încheie în 24 de ore",
                 "save_error": "Nu s-au putut salva opțiunile de notificare. Încearcă din nou."
             },
             "discord": {
