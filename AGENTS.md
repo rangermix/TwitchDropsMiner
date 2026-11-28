@@ -1150,6 +1150,7 @@ protocol rejection; preserve rejection and target-cleanup assertions.
 
 ### Continuous Integration
 
+- Ruff and Mypy target Python 3.12, matching the minimum supported Python version.
 - The validation workflow runs `ruff check src/` without automatic fixes. CI must
   verify the submitted source rather than repair one job's checkout while other
   jobs build unchanged files. Preserve fail-fast behavior and do not make Ruff

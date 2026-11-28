@@ -2,6 +2,8 @@ import asyncio
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from aiohttp import ClientTimeout
+
 from src.web.app import ProxyVerifyRequest, verify_proxy
 
 
@@ -47,6 +49,11 @@ class TestVerifyProxy(unittest.TestCase):
         # Run async function
         result = asyncio.run(verify_proxy(request))
 
+        self.mock_session.get.assert_called_once_with(
+            "https://www.twitch.tv",
+            proxy="http://valid-proxy:8080",
+            timeout=ClientTimeout(total=10),
+        )
         self.assertTrue(result["success"])
         self.assertIn("Connected!", result["message"])
         self.assertIn("latency", result)
