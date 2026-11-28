@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import codecs
 import json
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from src.drop_history import HISTORY_VERSION, DropHistory
+import pytest
+
+from src.drop_history import HISTORY_FILENAME, HISTORY_VERSION, DropHistory
 
 
 class _MockBenefit:
@@ -144,114 +147,142 @@ def test_clear_deletes_entries_from_disk(tmp_path):
     assert reloaded.total_count == 0
 
 
-def test_unknown_version_file_is_ignored(tmp_path):
-    payload = {"version": HISTORY_VERSION + 1, "entries": [{"id": "stale"}]}
-    target = tmp_path / "drop_history.json"
-    target.write_text(json.dumps(payload), encoding="utf-8")
+@pytest.mark.parametrize(
+    "contents",
+    [
+        b'{"version": 1, "entries": [',
+        b"[]",
+        b'{"version": 2, "entries": []}',
+        b'{"version": true, "entries": []}',
+        b'{"version": 1, "entries": {}}',
+        b'{"version": 1, "entries": [42]}',
+        b'{"version": 1, "entries": [{"id": "stale"}]}',
+        b"\xff",
+    ],
+)
+def test_unusable_file_is_preserved_before_next_claim(tmp_path, contents):
+    target = tmp_path / HISTORY_FILENAME
+    target.write_bytes(contents)
 
     history = _fresh_history(tmp_path)
     assert history.total_count == 0
+    assert history.record(_MockDrop(), _MockCampaign())
+    assert target.with_name(f"{target.name}.bad").read_bytes() == contents
+    assert DropHistory(tmp_path).get_entries()[0]["id"] == _MockDrop.id
 
 
-def test_corrupt_history_file_does_not_crash(tmp_path):
-    (tmp_path / "drop_history.json").write_text("{not json", encoding="utf-8")
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"game": []},
+        {"benefits": [1]},
+        {"required_minutes": True},
+        {"claimed_at": "invalid"},
+        {"claimed_at": "2026-01-01T00:00:00"},
+        {"drop_name": "\ud800"},
+    ],
+)
+def test_invalid_entry_fields_are_preserved_as_unusable(tmp_path, overrides):
+    history = _fresh_history(tmp_path)
+    assert history.record(_MockDrop(), _MockCampaign())
+    target = tmp_path / HISTORY_FILENAME
+    payload = json.loads(target.read_bytes())
+    payload["entries"][0].update(overrides)
+    contents = json.dumps(payload).encode()
+    target.write_bytes(contents)
 
     history = _fresh_history(tmp_path)
     assert history.total_count == 0
+    assert target.with_name(f"{target.name}.bad").read_bytes() == contents
 
 
-def _record_after_bad_file(tmp_path, content):
-    target = tmp_path / "drop_history.json"
-    target.write_text(content, encoding="utf-8")
-    history = _fresh_history(tmp_path)
-    assert history.total_count == 0
-    history.record(_MockDrop(), _MockCampaign())
-    return target, tmp_path / "drop_history.json.bad"
+def test_quarantine_preserves_existing_backups(tmp_path):
+    target = tmp_path / HISTORY_FILENAME
+    first = target.with_name(f"{target.name}.bad")
+    second = target.with_name(f"{target.name}.bad.1")
+    first.write_bytes(b"first")
+    second.write_bytes(b"second")
+    target.write_bytes(b"third")
+
+    assert _fresh_history(tmp_path).total_count == 0
+    assert first.read_bytes() == b"first"
+    assert second.read_bytes() == b"second"
+    assert target.with_name(f"{target.name}.bad.2").read_bytes() == b"third"
 
 
-def test_truncated_file_is_kept_aside_not_overwritten(tmp_path):
-    content = '{"version": 1, "entries": [{"id": "old"'
-    target, bad = _record_after_bad_file(tmp_path, content)
-    assert bad.read_text(encoding="utf-8") == content
-    assert len(json.loads(target.read_text(encoding="utf-8"))["entries"]) == 1
+def test_unreadable_file_is_left_untouched_and_saving_disabled(tmp_path, monkeypatch):
+    target = tmp_path / HISTORY_FILENAME
+    assert _fresh_history(tmp_path).record(_MockDrop(), _MockCampaign())
+    contents = target.read_bytes()
+    open_path = Path.open
 
-
-def test_unusable_file_shapes_are_moved_aside(tmp_path):
-    for content in ("[]", json.dumps({"version": HISTORY_VERSION + 1, "entries": []}),
-                    json.dumps({"version": HISTORY_VERSION, "entries": {}})):
-        folder = tmp_path / str(abs(hash(content)))
-        folder.mkdir()
-        _, bad = _record_after_bad_file(folder, content)
-        assert bad.read_text(encoding="utf-8") == content
-
-
-def test_valid_file_is_loaded_without_bad_copy(tmp_path):
-    (tmp_path / "drop_history.json").write_text(
-        json.dumps({"version": HISTORY_VERSION, "entries": [{"id": "x"}]}), encoding="utf-8")
-    assert _fresh_history(tmp_path).total_count == 1
-    assert not (tmp_path / "drop_history.json.bad").exists()
-
-
-def test_save_is_disabled_when_bad_file_cannot_be_moved(tmp_path, monkeypatch):
-    target = tmp_path / "drop_history.json"
-    target.write_text("{broken", encoding="utf-8")
-    real_replace = Path.replace
-
-    def replace(self, dest):
-        if self == target:
+    def refuse_read(path, *args, **kwargs):
+        if path == target:
             raise PermissionError("held open")
-        return real_replace(self, dest)
+        return open_path(path, *args, **kwargs)
 
-    monkeypatch.setattr(Path, "replace", replace)
-    history = _fresh_history(tmp_path)
-    assert history.record(_MockDrop(), _MockCampaign()) is False
-    assert target.read_text(encoding="utf-8") == "{broken"
+    with monkeypatch.context() as context:
+        context.setattr(Path, "open", refuse_read)
+        history = _fresh_history(tmp_path)
 
-
-def test_existing_bad_file_is_not_overwritten(tmp_path):
-    (tmp_path / "drop_history.json.bad").write_text("first", encoding="utf-8")
-    (tmp_path / "drop_history.json").write_text("{second", encoding="utf-8")
-    _fresh_history(tmp_path)
-    assert (tmp_path / "drop_history.json.bad").read_text(encoding="utf-8") == "first"
-    assert (tmp_path / "drop_history.json.bad.1").read_text(encoding="utf-8") == "{second"
+    assert not history.record(_MockDrop(), _MockCampaign(), "new-drop")
+    assert not history.record(_MockDrop(), _MockCampaign(), "new-drop")
+    assert not history.clear()
+    assert target.read_bytes() == contents
+    assert list(tmp_path.iterdir()) == [target]
 
 
-def test_unreadable_file_is_left_untouched_and_saving_stays_disabled(tmp_path, monkeypatch, caplog):
-    target = tmp_path / "drop_history.json"
-    content = json.dumps({"version": HISTORY_VERSION, "entries": [{"id": "x"}]})
-    target.write_text(content, encoding="utf-8")
-    real_open = Path.open
+def test_failed_quarantine_leaves_original_file_untouched(tmp_path, monkeypatch):
+    target = tmp_path / HISTORY_FILENAME
+    target.write_bytes(b"{broken")
+    replace_path = Path.replace
 
-    def deny(self, *args, **kwargs):
-        if self == target:
+    def refuse_move(path, destination):
+        if path == target:
             raise PermissionError("held open")
-        return real_open(self, *args, **kwargs)
+        return replace_path(path, destination)
 
-    monkeypatch.setattr(Path, "open", deny)
+    with monkeypatch.context() as context:
+        context.setattr(Path, "replace", refuse_move)
+        history = _fresh_history(tmp_path)
+
+    assert not history.record(_MockDrop(), _MockCampaign())
+    assert target.read_bytes() == b"{broken"
+    assert list(tmp_path.iterdir()) == [target]
+
+
+def test_valid_bom_history_preserves_entries_and_remains_writable(tmp_path):
     history = _fresh_history(tmp_path)
-    monkeypatch.undo()
-    assert not (tmp_path / "drop_history.json.bad").exists()
-    # A duplicate id keeps reporting the failed write instead of claiming success.
-    assert history.record(_MockDrop(), _MockCampaign()) is False
-    assert history.record(_MockDrop(), _MockCampaign()) is False
-    history.clear()
-    assert "cleared" not in caplog.text
-    assert target.read_text(encoding="utf-8") == content
+    assert history.record(_MockDrop(), _MockCampaign())
+    target = tmp_path / HISTORY_FILENAME
+    contents = codecs.BOM_UTF8 + target.read_bytes()
+    target.write_bytes(contents)
+
+    loaded = _fresh_history(tmp_path)
+    assert loaded.get_entries() == history.get_entries()
+    assert target.read_bytes() == contents
+    assert loaded.record(_MockBroadcasterDrop(), _MockBroadcasterCampaign())
+    assert DropHistory(tmp_path).total_count == 2
+    assert list(tmp_path.iterdir()) == [target]
 
 
-def test_non_dict_entries_are_moved_aside(tmp_path):
-    target = tmp_path / "drop_history.json"
-    target.write_text(json.dumps({"version": HISTORY_VERSION, "entries": [1, "x"]}), encoding="utf-8")
+def test_failed_clear_preserves_saved_entries_and_pending_claim(tmp_path, monkeypatch):
     history = _fresh_history(tmp_path)
-    assert history.total_count == 0
-    assert (tmp_path / "drop_history.json.bad").exists()
-    assert history.record(_MockDrop(), _MockCampaign()) is True
+    assert history.record(_MockDrop(), _MockCampaign())
+    target = tmp_path / HISTORY_FILENAME
+    contents = target.read_bytes()
 
+    def refuse_sync(_descriptor):
+        raise OSError("disk full")
 
-def test_valid_file_with_utf8_bom_is_loaded(tmp_path):
-    target = tmp_path / "drop_history.json"
-    data = {"version": HISTORY_VERSION, "entries": [{"id": "old", "claimed_at": "2026-01-01T00:00:00+00:00"}]}
-    target.write_bytes(codecs.BOM_UTF8 + json.dumps(data).encode("utf-8"))
-    history = _fresh_history(tmp_path)
-    assert history.total_count == 1
-    assert not (tmp_path / "drop_history.json.bad").exists()
+    with monkeypatch.context() as context:
+        context.setattr(os, "fsync", refuse_sync)
+        assert not history.record(_MockBroadcasterDrop(), _MockBroadcasterCampaign())
+        assert not history.clear()
+
+    assert history.total_count == 2
+    assert target.read_bytes() == contents
+    assert history.record(_MockBroadcasterDrop(), _MockBroadcasterCampaign())
+    assert DropHistory(tmp_path).total_count == 2
+    assert history.clear()
+    assert DropHistory(tmp_path).total_count == 0

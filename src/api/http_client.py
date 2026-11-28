@@ -17,6 +17,7 @@ import aiohttp
 from yarl import URL
 
 from src.config import COOKIES_PATH
+from src.config.settings import CONNECTION_QUALITY_RANGE
 from src.exceptions import ExitRequest, RequestException, RequestInvalid
 from src.i18n import _
 from src.utils import ExponentialBackoff
@@ -115,11 +116,12 @@ class HTTPClient:
             cookie_jar.clear()
 
         # Create timeouts based on connection quality
+        minimum, maximum = CONNECTION_QUALITY_RANGE
         connection_quality = self.settings.connection_quality
-        if connection_quality < 1:
-            connection_quality = self.settings.connection_quality = 1
-        elif connection_quality > 6:
-            connection_quality = self.settings.connection_quality = 6
+        if connection_quality < minimum:
+            connection_quality = self.settings.connection_quality = minimum
+        elif connection_quality > maximum:
+            connection_quality = self.settings.connection_quality = maximum
 
         timeout = aiohttp.ClientTimeout(
             sock_connect=5 * connection_quality,

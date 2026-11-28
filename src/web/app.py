@@ -18,7 +18,12 @@ from pydantic import BaseModel, Field, StrictBool, StrictInt, field_validator
 
 from src.config.paths import DATA_DIR
 from src.config.reward_priority import RewardPriority
-from src.config.settings import InventoryFilterSettings, MiningHoursSettings
+from src.config.settings import (
+    CONNECTION_QUALITY_RANGE,
+    REFRESH_INTERVAL_MINUTES_RANGE,
+    InventoryFilterSettings,
+    MiningHoursSettings,
+)
 from src.services.game_order import TemporaryGameOrder
 from src.version import __version__
 from src.web.auth import AuthAPI, AuthMiddleware, AuthSocketServer, WebAuth
@@ -90,8 +95,12 @@ class SettingsUpdate(BaseModel):
     prefer_followed_channels: StrictBool | None = None
     reward_priority: list[str] | None = None
     proxy: str | None = None
-    connection_quality: StrictInt | None = Field(default=None, ge=1, le=6)
-    minimum_refresh_interval_minutes: StrictInt | None = Field(default=None, ge=1, le=1440)
+    connection_quality: StrictInt | None = Field(
+        default=None, ge=CONNECTION_QUALITY_RANGE[0], le=CONNECTION_QUALITY_RANGE[1]
+    )
+    minimum_refresh_interval_minutes: StrictInt | None = Field(
+        default=None, ge=REFRESH_INTERVAL_MINUTES_RANGE[0], le=REFRESH_INTERVAL_MINUTES_RANGE[1]
+    )
     discord_webhook_url: str | None = None
     discord_remove_webhook: StrictBool | None = None
     telegram_bot_token: str | None = None

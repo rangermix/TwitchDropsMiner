@@ -98,13 +98,15 @@ async def test_delete_history_endpoint_clears():
 
 
 @pytest.mark.asyncio
-async def test_delete_history_endpoint_reports_unsaved_clear():
+async def test_delete_history_endpoint_returns_500_when_clear_cannot_be_saved():
     client = _fake_client()
     client.drop_history.clear = lambda: False
-    with patch.object(web_app, "twitch_client", client), pytest.raises(web_app.HTTPException) as exc:
-        await web_app.clear_history()
+    with patch.object(web_app, "twitch_client", client):
+        with pytest.raises(web_app.HTTPException) as failure:
+            await web_app.clear_history()
 
-    assert exc.value.status_code == 500
+    assert failure.value.status_code == 500
+    assert failure.value.detail == "history_not_saved"
 
 
 def test_parse_history_since_accepts_date_and_datetime():

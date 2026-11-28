@@ -36,6 +36,7 @@ services operated for other users are outside its support scope.
 - Review claimed-drop history, export it to CSV, and set up
   [Telegram or Discord alerts](docs/notifications.md) for claims and new versions.
   Discord claim alerts include reward artwork when available.
+  See [drop history recovery](docs/usage.md#drop-history) if the local file is damaged.
 - Manage everything from a web dashboard with optional password protection.
 - Set daily [mining hours](docs/usage.md#mining-hours) in the miner’s local timezone.
 - [Pause mining](docs/usage.md#pause-mining) for 10 minutes, an hour, until tomorrow,
@@ -44,7 +45,8 @@ services operated for other users are outside its support scope.
   clears the pause, and already-earned rewards can still be claimed while paused.
   Reconnecting to the same running miner keeps its latest pause state.
 
-Invalid settings or a failed save keep your previous settings unchanged.
+Rejected settings requests and failed saves keep your previous settings.
+See [connection and refresh limits](docs/usage.md#connection-and-refresh-settings).
 
 In v2.4.0, Settings groups controls into **General**, **Mining**, **Games**,
 **Notifications**, and **Account & Maintenance**. The **Pause** menu stops watching

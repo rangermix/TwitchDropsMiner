@@ -1,14 +1,15 @@
-"""Failures and cancellation in optional reward queries stay isolated."""
+"""Failures and cancellation in directory and optional reward queries stay isolated."""
 
 import asyncio
 from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import aiohttp
 import pytest
 
-from src.exceptions import ExitRequest, MinerException
-from src.models import DropsCampaign, Game, RewardCampaign
+from src.exceptions import ExitRequest, GQLException, MinerException
+from src.models import RewardCampaign
+from src.models.game import Game
 from src.services.channel_service import ChannelService
 from src.services.inventory_service import InventoryService
 from src.services.watch_service import WatchService
@@ -31,6 +32,68 @@ from tests.test_reward_campaigns import (
     _twitch,
 )
 from tests.test_special_game_watch import CHANNEL_ID, SPECIAL_EVENTS, _campaign
+from tests.test_watched_channel_recovery import _reloading_miner
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure", [GQLException("PersistedQueryNotFound"), aiohttp.ClientError(), KeyError("streams")])
+async def test_regular_directory_failure_keeps_channel_from_next_game(tmp_path, monkeypatch, caplog, failure):
+    client, _ = _reloading_miner(tmp_path, monkeypatch, discovered=[], stream_status=[])
+    client.watching_channel.clear()
+    del client.get_live_streams
+    client.inventory = [_regular(client, data) for data in (GTA, OTHER)]
+    client.wanted_games = [campaign.game for campaign in client.inventory]
+    games = {Game(data).slug: data for data in (GTA, OTHER)}
+    lookups = []
+
+    async def directory(operation):
+        slug = operation["variables"]["slug"]
+        lookups.append(slug)
+        if len(lookups) == 1:
+            raise failure
+        return {"data": {"game": {"streams": {"edges": [{"node": {
+            "id": "20",
+            "broadcaster": {"id": "2", "login": "channel2", "displayName": "Channel 2"},
+            "game": games[slug], "viewersCount": 3, "title": "Live",
+        }}]}}}}
+
+    client.gql_request = directory
+    await _run_client(client)
+
+    assert len(lookups) == 2 and set(lookups) == games.keys()
+    assert client.watching_channel.get_with_default(None) is client.channels[2]
+    assert client.channels[2].game.slug == lookups[1]
+    assert client.channels[2].drops_enabled
+    failed_game = Game(games[lookups[0]])
+    assert any(failed_game.name in message for message in caplog.messages)
+
+
+@pytest.mark.asyncio
+async def test_regular_directory_failure_preserves_flagless_lookup(tmp_path, monkeypatch):
+    client, _ = _channels_fetch_client(tmp_path, monkeypatch, [False, True])
+    live_streams = client.get_live_streams
+    lookups = []
+
+    async def directory(game, *, drops_enabled):
+        lookups.append(drops_enabled)
+        if drops_enabled:
+            raise GQLException("PersistedQueryNotFound")
+        return await live_streams(game, drops_enabled=False)
+
+    client.get_live_streams = directory
+    await _run_client(client)
+
+    assert lookups == [True, False]
+    assert client.watching_channel.get_with_default(None) is client.channels[2]
+    assert not client.channels[2].drops_enabled
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("data", [{"game": None}, {}])
+async def test_game_directory_with_no_game_returns_no_streams(data):
+    twitch = _twitch()
+    twitch.gql_request = AsyncMock(return_value={"data": data})
+    assert await ChannelService(twitch).get_live_streams(Game(OTHER)) == []
 
 
 @pytest.mark.asyncio
@@ -58,8 +121,9 @@ async def test_optional_directory_failure_keeps_regular_channel(tmp_path, monkey
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("stop", [ExitRequest, asyncio.CancelledError])
-async def test_optional_directory_preserves_shutdown(tmp_path, monkeypatch, stop):
-    client, _ = _channels_fetch_client(tmp_path, monkeypatch, [True])
+@pytest.mark.parametrize("reward", [False, True])
+async def test_directory_preserves_shutdown(tmp_path, monkeypatch, stop, reward):
+    client, _ = _channels_fetch_client(tmp_path, monkeypatch, [reward])
     client.get_live_streams = AsyncMock(side_effect=stop())
     with pytest.raises(stop):
         await _run_client(client)
@@ -191,45 +255,3 @@ def test_one_enabled_benefit_keeps_mixed_reward_watchable():
     assert campaign.can_earn(_channel(twitch))
     twitch.settings.mining_benefits["BADGE"] = False
     assert not campaign.can_earn(_channel(twitch))
-
-
-@pytest.mark.asyncio
-async def test_failed_regular_game_lookup_does_not_stop_other_games(tmp_path, monkeypatch, caplog):
-    client, _ = _channels_fetch_client(tmp_path, monkeypatch, [False])
-    gta_lookup = client.get_live_streams
-    broken = Game(OTHER)
-    broken_campaign = MagicMock(spec=DropsCampaign)
-    broken_campaign.configure_mock(
-        game=broken, can_earn_within=lambda stamp: True, allowed_channels=[],
-        can_earn=lambda channel: True, can_progress_on=lambda channel: channel.drops_enabled,
-    )
-    client.inventory.append(broken_campaign)
-    client.wanted_games.append(broken)
-    lookups = []
-
-    async def directory(game, *, drops_enabled):
-        lookups.append(game)
-        if game == broken:
-            raise MinerException(f"Game: {game.slug}")
-        return await gta_lookup(game, drops_enabled=drops_enabled)
-
-    client.get_live_streams = directory
-    await _run_client(client)
-    assert any("Game: other-game" in message for message in caplog.messages)
-    assert len(lookups) == 2
-    assert client.watching_channel.get_with_default(None) is client.channels[2]
-
-
-@pytest.mark.asyncio
-async def test_game_directory_without_game_returns_empty_list():
-    twitch = _twitch()
-    twitch.gql_request = AsyncMock(return_value={"data": {"game": None}})
-    assert await ChannelService(twitch).get_live_streams(Game(OTHER)) == []
-
-
-@pytest.mark.asyncio
-async def test_exit_request_in_regular_game_lookup_propagates(tmp_path, monkeypatch):
-    client, _ = _channels_fetch_client(tmp_path, monkeypatch, [False])
-    client.get_live_streams = AsyncMock(side_effect=ExitRequest())
-    with pytest.raises(ExitRequest):
-        await _run_client(client)

@@ -15,7 +15,6 @@ def test_proxy_save_is_separate_and_restores_on_rejection():
     source = APP_JS.read_text(encoding="utf-8")
     script = "\n".join([
         extract_javascript_function(source, "reportSettingsError"),
-        extract_javascript_function(source, "readBoundedInt"),
         "async " + extract_javascript_function(source, "saveProxy"),
         "async " + extract_javascript_function(source, "saveSettings"),
     ]) + r"""
@@ -26,7 +25,8 @@ const element = (extra = {}) => ({ value: '', checked: false, disabled: false, s
 const elements = {
     'set-proxy-btn': element(), 'proxy-url': element(), 'proxy-verify-result': element(),
     'dark-mode': element(), 'inventory-list-view': element(), 'language': element({value: 'English'}),
-    'connection-quality': element({value: '1'}), 'minimum-refresh-interval': element({value: '30'}),
+    'connection-quality': element({value: '1', min: '1', max: '6'}),
+    'minimum-refresh-interval': element({value: '30', min: '1', max: '1440'}),
 };
 const document = { getElementById: id => elements[id] || element() };
 const state = {

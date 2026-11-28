@@ -395,9 +395,12 @@ lang/                # Translation JSON files (20 languages)
   strings (`select_linked`, `game_linked`, `game_not_linked`, `game_linked_title`,
   `game_not_linked_title`) in every locale and in `GUISettings`. Coverage lives in
   `tests/test_account_link_frontend.py` and `tests/test_game_priority.py`.
-- Connection quality multiplier (1-6) and `minimum_refresh_interval_minutes` (1-1440): the
-  API takes strict integers in range, `Settings.load` clamps ints and defaults other types,
-  and `saveSettings` clamps the inputs before sending
+- Connection quality multiplier (1–6) and minimum inventory refresh interval (1–1440
+  minutes) share backend bounds between the settings API and startup normalization.
+  The API rejects invalid non-null values. Load clamps saved out-of-range integers
+  and uses defaults for wrong types. Warnings omit raw stored values. The dashboard
+  normalizes numeric entries before autosaving. See `tests/test_settings_api.py` for
+  the persistence and maintenance-timer regressions.
 - Language selection
 - Proxy support (including verification)
 - Logging and dump flags from command-line arguments
@@ -934,9 +937,11 @@ progress to an ignored drop while the miner intentionally targets another reward
   run saw 0 -> 1 at 60/60).
   A reading without
   a minute increase bumps the estimate until the extra-minute cutoff switches channels. Reward
-  categories also add live channels without the drops flag in CHANNELS_FETCH. A failed
-  optional directory lookup preserves regular channels already found. Recheck the watched
-  broadcast before applying each reward reading after an awaited notification.
+  categories also add live channels without the drops flag in CHANNELS_FETCH. Both
+  directory lookups isolate a recoverable error to the affected game and propagate
+  shutdown and cancellation. A null game result counts as an empty directory.
+  Recheck the watched broadcast before applying each reward reading after an awaited
+  notification.
   Inventory shows Twitch's `grantCount` as "Times earned" (`reward_grants`; no total is available).
   Regression coverage: `tests/test_reward_campaigns.py`, `tests/test_reward_channel_choice.py`
   and `tests/test_reward_grants_frontend.py`.
@@ -1020,8 +1025,8 @@ login_text = _.t["login"]["status"]["logged_in"]  # Returns "Logged in"
 
 **Language Persistence:**
 
-- Language selection persisted in `settings.json` (DATA_DIR); `main()` resets an unknown saved
-  language to `DEFAULT_LANG` instead of raising
+- Language selection is persisted in `settings.json` (DATA_DIR). Startup resets an
+  unavailable saved language to `DEFAULT_LANG` and applies it to the translator.
 - Dynamic language switching supported in web GUI
 - Changes take effect immediately without restart
 
@@ -1338,10 +1343,12 @@ by drop ID. The History tab provides game/date filters, pagination, statistics, 
 and confirmed local deletion. Date-only filters mean midnight UTC; aware timestamps
 preserve their instant. CSV attachment names use UTF-8 percent encoding with an ASCII
 fallback. History text is defined in `gui.history` for every locale and rendered as text.
-Tests cover persistence, filtering, Unicode exports, offsets, and translated UI behavior.
-An unusable file (bad JSON, non-object, unknown version, non-list entries) is moved to
-`drop_history.json.bad[.N]` before the next save; an `OSError` on read or move disables
-saving for the run so the file is never overwritten. The temp file is fsynced before rename.
+The loader accepts UTF-8 with a BOM and preserves invalid or unsupported files as
+`.bad` backups with unique names. A failed read or backup disables writes for that
+run and leaves the original in place. Writes flush and sync a temporary snapshot
+before replacement. A failed clear returns HTTP 500 and preserves in-memory claims
+and pending writes. Tests cover recovery, persistence, filtering, Unicode exports,
+offsets, and translated UI behavior.
 
 - Existing-session admission accepts only a bounded sole `token` field through
   dashboard-authenticated, same-origin `POST /api/session/token`. Never echo inputs.

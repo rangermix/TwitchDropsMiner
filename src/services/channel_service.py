@@ -356,15 +356,16 @@ class ChannelService:
         except GQLException as exc:
             raise MinerException(f"Game: {game.slug}") from exc
 
-        if response["data"].get("game"):
-            return [
-                Channel.from_directory(
-                    self._twitch, stream_channel_data["node"], drops_enabled=drops_enabled
-                )
-                for stream_channel_data in response["data"]["game"]["streams"]["edges"]
-                if stream_channel_data["node"]["broadcaster"] is not None
-            ]
-        return []
+        game_data = response["data"].get("game")
+        if game_data is None:
+            return []
+        return [
+            Channel.from_directory(
+                self._twitch, stream_channel_data["node"], drops_enabled=drops_enabled
+            )
+            for stream_channel_data in game_data["streams"]["edges"]
+            if stream_channel_data["node"]["broadcaster"] is not None
+        ]
 
     async def filter_banned_channels(
         self, channels: abc.Iterable[Channel], *, retained_channels: abc.Iterable[Channel] = (),

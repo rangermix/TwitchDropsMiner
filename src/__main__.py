@@ -55,12 +55,10 @@ if __name__ == "__main__":
 
     # client run
     async def main():
-        # set language
-        if settings.language in _.get_languages():
-            _.set_language(settings.language)
-        else:
-            logger.warning(f"Language {settings.language!r} is not available, using the default")
+        if settings.language not in _.get_languages():
+            logger.warning("Saved language is unavailable. Using the default language.")
             settings.language = DEFAULT_LANG
+        _.set_language(settings.language)
 
         logger.info("=== TwitchDropsMiner Starting ===")
         logger.info(f"Version: {__version__}")

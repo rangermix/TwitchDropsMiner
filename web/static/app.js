@@ -2624,23 +2624,24 @@ async function onMiningHoursChange() {
     }
 }
 
-// The server rejects values outside the input's min/max, which would fail every autosave.
-function readBoundedInt(id) {
-    const input = document.getElementById(id);
-    const value = parseInt(input.value);
-    if (Number.isNaN(value)) return value;
-    const clamped = Math.min(Math.max(value, parseInt(input.min) || value), parseInt(input.max) || value);
-    input.value = clamped;
-    return clamped;
-}
-
 async function saveSettings() {
+    function readBoundedInteger(id) {
+        const input = document.getElementById(id);
+        const value = Number(input.value);
+        if (input.value === '' || !Number.isFinite(value)) return null;
+
+        const bounded = Math.min(Math.max(Math.trunc(value), Number(input.min)), Number(input.max));
+        const normalized = String(bounded);
+        if (input.value !== normalized) input.value = normalized;
+        return bounded;
+    }
+
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
         inventory_list_view: state.settings.inventory_list_view === true,
         language: document.getElementById('language').value,
-        connection_quality: readBoundedInt('connection-quality'),
-        minimum_refresh_interval_minutes: readBoundedInt('minimum-refresh-interval'),
+        connection_quality: readBoundedInteger('connection-quality'),
+        minimum_refresh_interval_minutes: readBoundedInteger('minimum-refresh-interval'),
         games_to_watch: state.settings.games_to_watch || [],
         drop_name_blacklist: parseDropNameBlacklist(
             document.getElementById('drop-name-blacklist')?.value

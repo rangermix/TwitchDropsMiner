@@ -76,6 +76,49 @@ assert.equal(container.children.length, 4, 'an empty selected list keeps the exi
     )
 
 
+def test_autosave_sends_bounded_numbers_and_leaves_empty_fields_alone():
+    run_javascript(
+        ["saveSettings"],
+        r"""
+const assert = require('node:assert/strict');
+const elements = {
+    'dark-mode': {checked: true},
+    'language': {value: 'English'},
+    'connection-quality': {min: '1', max: '6'},
+    'minimum-refresh-interval': {min: '1', max: '1440'},
+};
+const document = {getElementById: id => elements[id]};
+const state = {settings: {}};
+const writes = [];
+function getInventoryFilters() { return {}; }
+function parseDropNameBlacklist() { return []; }
+async function queueSettingsWrite(settings) { writes.push(JSON.parse(JSON.stringify(settings))); }
+
+(async () => {
+    const quality = elements['connection-quality'];
+    const refresh = elements['minimum-refresh-interval'];
+    for (const [rawQuality, rawRefresh, savedQuality, savedRefresh] of [
+        ['0', '2000', 1, 1440],
+        ['7', '-5', 6, 1],
+        ['3', '1e3', 3, 1000],
+        ['2.9', '1e4', 2, 1440],
+        ['', '', null, null],
+    ]) {
+        quality.value = rawQuality;
+        refresh.value = rawRefresh;
+        await saveSettings();
+        const saved = writes.at(-1);
+        assert.deepEqual([saved.connection_quality, saved.minimum_refresh_interval_minutes],
+            [savedQuality, savedRefresh]);
+        assert.deepEqual([String(quality.value), String(refresh.value)],
+            [String(savedQuality ?? ''), String(savedRefresh ?? '')]);
+        assert.equal(saved.dark_mode, true);
+    }
+})().catch(error => { console.error(error); process.exitCode = 1; });
+""",
+    )
+
+
 def test_settings_restore_strict_default_and_both_explicit_modes_without_changing_games():
     run_javascript(
         ["updateSettingsUI", "toggleMiningHoursRange"],
@@ -308,24 +351,5 @@ def test_late_partial_save_reply_preserves_newer_watch_list():
  await pending;assert.deepEqual(state.settings.games_to_watch,['A','B','C']);
  await saveSettings();assert.deepEqual(saved,['A','B','C']);
 })().catch(error=>{console.error(error);process.exitCode=1;});
-""",
-    )
-
-
-def test_bounded_number_inputs_are_clamped_before_saving():
-    run_javascript(
-        ["readBoundedInt"],
-        r"""
-const assert = require('node:assert/strict');
-const inputs = {q: {value: '', min: '1', max: '6'}, m: {value: '', min: '1', max: '1440'}};
-const document = {getElementById: id => inputs[id]};
-for (const [id, raw, expected] of [['q', '0', 1], ['q', '7', 6], ['q', '3', 3], ['m', '2000', 1440], ['m', '-5', 1]]) {
-    inputs[id].value = raw;
-    assert.equal(readBoundedInt(id), expected);
-    assert.equal(inputs[id].value, expected);
-}
-inputs.q.value = '';
-assert.ok(Number.isNaN(readBoundedInt('q')));
-assert.equal(inputs.q.value, '');
 """,
     )
