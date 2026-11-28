@@ -82,7 +82,8 @@ def test_both_opt_ins_follow_latest_complete_server_revision(socket_first, key):
     const save = current === follow ? onPreferFollowedChange : onUnlinkedMiningChange;
     const sibling = current === follow ? 'allow_unlinked_campaigns' : 'prefer_followed_channels';
     const snapshot = (revision, main, second) => ({{
-        mining_opt_ins_revision: revision, [key]: main, [sibling]: second
+        mining_opt_ins_revision: revision, [key]: main, [sibling]: second,
+        prefer_small_streamers: false
     }});
     updateSettingsUI(snapshot(0, false, false), true);
     let finish;

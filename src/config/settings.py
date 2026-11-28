@@ -42,6 +42,7 @@ default_settings = {
     "language": DEFAULT_LANG,
     "last_notified_releases": {"telegram": "", "discord": ""},
     "prefer_followed_channels": False,
+    "prefer_small_streamers": False,
     "priority_list_only": True,
     "reward_priority": [],
     "inventory_filters": {
@@ -159,6 +160,7 @@ class Settings:
     last_notified_releases: dict[str, str]
     reward_priority: list[str]
     prefer_followed_channels: bool
+    prefer_small_streamers: bool
     priority_list_only: bool
     inventory_filters: InventoryFilters
     inventory_list_view: bool

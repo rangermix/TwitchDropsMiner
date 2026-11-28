@@ -1443,7 +1443,7 @@ function renderNotificationEvents() {
 function reconcileMiningOptIns(settings, authoritative, changedFields) {
     const revision = state.settings.mining_opt_ins_revision ?? -1;
     const incoming = settings.mining_opt_ins_revision;
-    const keys = ['allow_unlinked_campaigns', 'prefer_followed_channels'];
+    const keys = ['allow_unlinked_campaigns', 'prefer_followed_channels', 'prefer_small_streamers'];
     if (Number.isSafeInteger(incoming) && incoming >= 0 && incoming >= revision
         && keys.every(key => typeof settings[key] === 'boolean')) {
         return settings;
@@ -1480,6 +1480,8 @@ function updateSettingsUI(settings, authoritative = false, changedFields = []) {
     if (allowUnlinked && !allowUnlinked.disabled) allowUnlinked.checked = settings.allow_unlinked_campaigns === true;
     const preferFollowed = document.getElementById('prefer-followed-channels');
     if (preferFollowed && !preferFollowed.disabled) preferFollowed.checked = settings.prefer_followed_channels === true;
+    const preferSmall = document.getElementById('prefer-small-streamers');
+    if (preferSmall && !preferSmall.disabled) preferSmall.checked = settings.prefer_small_streamers === true;
     renderNotificationEvents();
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('priority-list-only').checked = settings.priority_list_only !== false;
@@ -2738,6 +2740,7 @@ async function saveBooleanSetting(key, inputId, errorId, message) {
             ...state.settings,
             allow_unlinked_campaigns: data.settings.allow_unlinked_campaigns,
             prefer_followed_channels: data.settings.prefer_followed_channels,
+            prefer_small_streamers: data.settings.prefer_small_streamers,
             mining_opt_ins_revision: data.settings.mining_opt_ins_revision,
         }, false, [key]);
     } catch (failure) {
@@ -2759,6 +2762,12 @@ function onPreferFollowedChange() {
     return saveBooleanSetting('prefer_followed_channels', 'prefer-followed-channels', 'prefer-followed-error',
         state.translations.gui?.settings?.prefer_followed_channels_save_error ||
         'Could not save the followed channels option. Please try again.');
+}
+
+function onPreferSmallChange() {
+    return saveBooleanSetting('prefer_small_streamers', 'prefer-small-streamers', 'prefer-small-error',
+        state.translations.gui?.settings?.prefer_small_streamers_save_error ||
+        'Could not save the small streamers option. Please try again.');
 }
 
 async function onNotificationEventChange(event) {
@@ -2935,6 +2944,12 @@ function applyTranslations(t) {
         if (preferFollowedHelp) preferFollowedHelp.textContent = t.gui.settings.prefer_followed_channels_help;
         const preferFollowedError = document.getElementById('prefer-followed-error');
         if (preferFollowedError && !preferFollowedError.hidden) preferFollowedError.textContent = t.gui.settings.prefer_followed_channels_save_error;
+        const preferSmallLabel = document.getElementById('prefer-small-label');
+        if (preferSmallLabel) preferSmallLabel.textContent = t.gui.settings.prefer_small_streamers;
+        const preferSmallHelp = document.getElementById('prefer-small-help');
+        if (preferSmallHelp) preferSmallHelp.textContent = t.gui.settings.prefer_small_streamers_help;
+        const preferSmallError = document.getElementById('prefer-small-error');
+        if (preferSmallError && !preferSmallError.hidden) preferSmallError.textContent = t.gui.settings.prefer_small_streamers_save_error;
         if (typeof renderRewardPriority === 'function') renderRewardPriority();
 
         const dropBlacklistHeader = document.getElementById('settings-drop-blacklist-header');
@@ -3483,6 +3498,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('drop-name-blacklist').addEventListener('change', saveSettings);
     document.getElementById('allow-unlinked-campaigns').addEventListener('change', onUnlinkedMiningChange);
     document.getElementById('prefer-followed-channels').addEventListener('change', onPreferFollowedChange);
+    document.getElementById('prefer-small-streamers').addEventListener('change', onPreferSmallChange);
     document.querySelectorAll('.notification-event')
         .forEach(input => input.addEventListener('change', onNotificationEventChange));
     // Proxy uses a manual "Set Proxy" button instead of auto-save

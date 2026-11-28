@@ -304,6 +304,18 @@ class ChannelService:
                              default=(len(policy.TYPES), float("inf")))
         return (tier, rank, deadline, priority)
 
+    def sort_by_viewers(self, channels: abc.Iterable[Channel]) -> list[Channel]:
+        """Order channels by viewers: most first, or fewest first with prefer_small_streamers.
+
+        Offline channels (no viewer count) stay last either way.
+        """
+        settings = getattr(self._twitch, "settings", None)
+        if getattr(settings, "prefer_small_streamers", False) is not True:
+            return sorted(channels, key=self.get_viewers_key, reverse=True)
+        return sorted(
+            channels, key=lambda channel: (self.get_viewers_key(channel) < 0, self.get_viewers_key(channel))
+        )
+
     @staticmethod
     def get_viewers_key(channel: Channel) -> int:
         """
