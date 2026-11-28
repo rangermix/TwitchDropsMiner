@@ -33,7 +33,7 @@ build-backend = "setuptools.build_meta"
 [tool.ruff]
 # Set the maximum line length to 100 (more reasonable than 88)
 line-length = 100
-target-version = "py310"
+target-version = "py312"
 
 [tool.ruff.lint]
 # Enable specific rule sets
@@ -52,6 +52,7 @@ select = [
 ignore = [
     "E501",  # line too long (handled by formatter)
     "UP036", # outdated version block (we want to keep Python version check)
+    "UP040", "UP046", "UP047", # PEP 695 type syntax: style-only rewrite, left for a separate change
 ]
 
 [tool.ruff.lint.isort]
@@ -59,7 +60,7 @@ force-single-line = false
 lines-after-imports = 2
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.12"
 warn_return_any = false  # Too noisy with JSON responses
 warn_unused_configs = true
 disallow_untyped_defs = false  # Start lenient, can tighten later

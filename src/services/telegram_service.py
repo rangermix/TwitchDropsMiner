@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import html
 import logging
 from typing import TYPE_CHECKING
@@ -164,7 +163,7 @@ class TelegramNotifier:
                                                      body=error_text[:self.diagnostics.MAX_BODY_BYTES + 1].encode("utf-8"))
                     logger.warning(f"Telegram API error {response.status}: {error_text}")
                     return False
-        except asyncio.TimeoutError:
+        except TimeoutError:
             if self.diagnostics is not None:
                 self.diagnostics.record("telegram", outcome="timeout")
             logger.warning("Telegram notification timeout")

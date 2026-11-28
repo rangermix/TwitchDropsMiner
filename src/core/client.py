@@ -4,7 +4,7 @@ import asyncio
 import logging
 from collections import OrderedDict, abc, deque
 from contextlib import asynccontextmanager, suppress
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from functools import partial
 from time import monotonic, time
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
@@ -400,13 +400,13 @@ class Twitch:
         if self._pause_deadline is not None:
             return self._pause_deadline - monotonic()
         if self._resume_at is not None:
-            return (self._resume_at - datetime.now(timezone.utc)).total_seconds()
+            return (self._resume_at - datetime.now(UTC)).total_seconds()
         return None
 
     def _pause_resume_time(self) -> datetime | None:
         if self._pause_deadline is not None:
             remaining = self._pause_seconds_remaining()
-            return datetime.now(timezone.utc) + timedelta(seconds=max(0.0, remaining or 0.0))
+            return datetime.now(UTC) + timedelta(seconds=max(0.0, remaining or 0.0))
         return self._resume_at
 
     def set_paused(self, paused: bool, duration: str | None = None) -> None:
@@ -418,10 +418,10 @@ class Twitch:
         deadline: float | None = None
         if paused and duration == "tomorrow":
             midnight = datetime.combine(datetime.now().date() + timedelta(days=1), datetime.min.time())
-            resume_at = midnight.astimezone(timezone.utc)
+            resume_at = midnight.astimezone(UTC)
         elif paused and duration is not None:
             interval = self.PAUSE_DURATIONS[duration]
-            resume_at = datetime.now(timezone.utc) + interval
+            resume_at = datetime.now(UTC) + interval
             deadline = monotonic() + interval.total_seconds()
         if paused == self._paused and resume_at == self._resume_at and deadline == self._pause_deadline:
             return
@@ -648,7 +648,7 @@ class Twitch:
                 # figure out which games we want based on selected priorities
                 self.wanted_games.clear()
                 games_to_watch: list[str] = self.settings.games_to_watch
-                next_hour: datetime = datetime.now(timezone.utc) + timedelta(hours=1)
+                next_hour: datetime = datetime.now(UTC) + timedelta(hours=1)
                 logger.info("games_to_watch: %s", games_to_watch)
                 logger.info("priority_list_only: %s", self.settings.priority_list_only)
                 logger.info(
@@ -754,7 +754,7 @@ class Twitch:
                 no_acl: set[Game] = set()
                 flagless: set[Game] = set()
                 acl_channels: set[Channel] = set()
-                next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
+                next_hour = datetime.now(UTC) + timedelta(hours=1)
                 for campaign in self.inventory:
                     if campaign.game in self.wanted_games and campaign.can_earn_within(next_hour):
                         if campaign.allowed_channels:

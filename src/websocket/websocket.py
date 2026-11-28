@@ -131,7 +131,7 @@ class Websocket:
                 self.set_status(_.t["gui"]["websocket"]["disconnecting"])
                 await ws.close()
             if self._handle_task is not None:
-                with suppress(asyncio.TimeoutError, asyncio.CancelledError):
+                with suppress(TimeoutError, asyncio.CancelledError):
                     await asyncio.wait_for(self._handle_task, timeout=2)
                 self._handle_task = None
             callbacks = tuple(self._callback_tasks)
@@ -176,11 +176,7 @@ class Websocket:
                 async with session.ws_connect(ws_url, proxy=proxy) as websocket:
                     yield websocket
                     backoff.reset()
-            except (
-                asyncio.TimeoutError,
-                aiohttp.ClientResponseError,
-                aiohttp.ClientConnectionError,
-            ):
+            except (TimeoutError, aiohttp.ClientResponseError, aiohttp.ClientConnectionError):
                 ws_logger.info(
                     f"Websocket[{self._idx}] connection problem (sleep: {round(delay)}s)"
                 )
@@ -365,7 +361,7 @@ class Websocket:
         """Handle receiving and processing messages from the websocket."""
         # listen over 0.5s for incoming messages
         messages: list[JsonType] = []
-        with suppress(asyncio.TimeoutError):
+        with suppress(TimeoutError):
             await self._gather_recv(messages, timeout=0.5)
         # process them
         for message in messages:

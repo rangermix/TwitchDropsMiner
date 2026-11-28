@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from functools import cached_property
 from itertools import chain
 from typing import TYPE_CHECKING
@@ -125,15 +125,15 @@ class DropsCampaign:
 
     @property
     def active(self) -> bool:
-        return self._valid and self.starts_at <= datetime.now(timezone.utc) < self.ends_at
+        return self._valid and self.starts_at <= datetime.now(UTC) < self.ends_at
 
     @property
     def upcoming(self) -> bool:
-        return self._valid and datetime.now(timezone.utc) < self.starts_at
+        return self._valid and datetime.now(UTC) < self.starts_at
 
     @property
     def expired(self) -> bool:
-        return not self._valid or self.ends_at <= datetime.now(timezone.utc)
+        return not self._valid or self.ends_at <= datetime.now(UTC)
 
     @property
     def total_drops(self) -> int:
@@ -281,7 +281,7 @@ class DropsCampaign:
         return (
             self.eligible
             and self._valid
-            and self.ends_at > datetime.now(timezone.utc)
+            and self.ends_at > datetime.now(UTC)
             and self.starts_at < stamp
             and any(drop._can_earn_within(stamp) for drop in self.drops)
         )

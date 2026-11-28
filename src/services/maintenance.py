@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from src.config import CALL, State
@@ -56,14 +56,14 @@ class MaintenanceService:
         2. If the trigger is a campaign timing change, request channel cleanup
         3. After reaching the next hour boundary, request inventory reload
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         next_period = now + timedelta(
             minutes=self._twitch.settings.minimum_refresh_interval_minutes
         )
 
         while True:
             # exit if there's no need to repeat the loop
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             if now >= next_period:
                 break
 
@@ -83,7 +83,7 @@ class MaintenanceService:
             await asyncio.sleep((next_trigger - now).total_seconds())
 
             # exit after waiting, before the actions
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             if now >= next_period:
                 break
 

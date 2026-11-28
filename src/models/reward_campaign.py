@@ -4,7 +4,7 @@ import asyncio
 import logging
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from dateutil.parser import isoparse
@@ -39,8 +39,8 @@ def _reward_timestamp(value: object, *, assume_utc: bool = False) -> datetime | 
         if parsed.tzinfo is None:
             if not assume_utc:
                 return None
-            parsed = parsed.replace(tzinfo=timezone.utc)
-        return parsed.astimezone(timezone.utc)
+            parsed = parsed.replace(tzinfo=UTC)
+        return parsed.astimezone(UTC)
     except (ValueError, OverflowError):
         return None
 
@@ -192,7 +192,7 @@ class RewardCampaign(DropsCampaign):
         *, starts_at: datetime | None = None,
     ) -> tuple[int, bool, datetime | None] | None:
         """Map a reward group's progress to (minutes, granted, wait_until); None = do not farm."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         earliest = max(now, starts_at) if starts_at is not None else now
         if progress is None:
             return RewardCampaign._unfinishable(0, goal, ends_at, earliest) or (0, False, None)
@@ -290,7 +290,7 @@ class RewardCampaign(DropsCampaign):
         # BaseDrop.can_claim uses a 24-hour grace period after the campaign ends.
         if (
             starts_at is None or ends_at is None or starts_at >= ends_at
-            or ends_at > datetime.max.replace(tzinfo=timezone.utc) - timedelta(days=1)
+            or ends_at > datetime.max.replace(tzinfo=UTC) - timedelta(days=1)
         ):
             raise ValueError("Invalid reward campaign dates")
         # Subscription goals cannot be earned by watching, so groups that need one are skipped.
@@ -457,7 +457,7 @@ class RewardCampaign(DropsCampaign):
                 reading.get("status") == "IN_PROGRESS" and type(minutes) is int and 0 <= minutes < goal
             ) or (
                 attempt.window_end is not None and window is not None
-                and attempt.window_end <= datetime.now(timezone.utc) and window > attempt.window_end
+                and attempt.window_end <= datetime.now(UTC) and window > attempt.window_end
             )
             if new_cycle and not attempt.in_flight:
                 del ledger.claim_attempts[group["id"]]
@@ -482,7 +482,7 @@ class RewardCampaign(DropsCampaign):
             keeps = (progress is None and signature != NO_READING) or cls._matches_hold(
                 signature, current
             )
-            if until <= datetime.now(timezone.utc) or not keeps:
+            if until <= datetime.now(UTC) or not keeps:
                 del ledger.uncredited[group["id"]]
             elif held and not state[1] and state[2] is None:
                 # Mineable now but not credited: the drop starts when the retry is due.
@@ -515,7 +515,7 @@ class RewardCampaign(DropsCampaign):
         return (
             self.built_with_reading
             and not drop.is_claimed
-            and drop.starts_at <= datetime.now(timezone.utc)
+            and drop.starts_at <= datetime.now(UTC)
         )
 
     @property
@@ -551,7 +551,7 @@ class RewardCampaign(DropsCampaign):
     ) -> None:
         """Forget a hold once the reading changed; hold on a second cutoff with the same reading."""
         ledger = self._ledger.uncredited
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         entry = ledger.get(drop.id)
         if entry is not None and (entry[1] <= now or not self._matches_hold(entry[0], signature)):
             del ledger[drop.id]

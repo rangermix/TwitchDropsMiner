@@ -7,7 +7,7 @@ from base64 import b64encode
 from collections import OrderedDict
 from contextlib import nullcontext
 from copy import copy
-from datetime import timezone
+from datetime import UTC
 from time import monotonic, time
 from typing import TYPE_CHECKING, Any, SupportsInt
 
@@ -321,7 +321,7 @@ class Channel:
                 try:
                     expiry = isoparse(status["expiresAt"])
                     if expiry.tzinfo is not None:
-                        self._ban_expires_at = expiry.astimezone(timezone.utc).timestamp()
+                        self._ban_expires_at = expiry.astimezone(UTC).timestamp()
                 except (ValueError, OverflowError):
                     pass
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from dateutil.parser import isoparse
@@ -127,14 +127,14 @@ class BaseDrop:
         return (
             self._base_earn_conditions()
             # is within the timeframe
-            and self.starts_at <= datetime.now(timezone.utc) < self.ends_at
+            and self.starts_at <= datetime.now(UTC) < self.ends_at
         )
 
     def _can_earn_within(self, stamp: datetime) -> bool:
         # NOTE: This does not check the campaign's eligibility or active status
         return (
             self._base_earn_conditions()
-            and self.ends_at > datetime.now(timezone.utc)
+            and self.ends_at > datetime.now(UTC)
             and self.starts_at < stamp
         )
 
@@ -159,7 +159,7 @@ class BaseDrop:
         return (
             self.claim_id is not None
             and not self.is_claimed
-            and datetime.now(timezone.utc) < self.campaign.ends_at + timedelta(hours=24)
+            and datetime.now(UTC) < self.campaign.ends_at + timedelta(hours=24)
             and not self.claim_requires_account_link
         )
 
@@ -374,7 +374,7 @@ class TimedDrop(BaseDrop):
     def availability(self) -> float:
         import math
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if self.is_watch_drop and self.total_remaining_minutes > 0 and now < self.ends_at:
             return ((self.ends_at - now).total_seconds() / 60) / self.total_remaining_minutes
         return math.inf

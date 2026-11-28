@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from functools import partial
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -441,7 +441,7 @@ class InventoryService:
 
         self._clear_inventory_state()
         switch_triggers: set[datetime] = set()
-        next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
+        next_hour = datetime.now(UTC) + timedelta(hours=1)
 
         # add the campaigns to the internal inventory
         for campaign in campaigns:
@@ -482,7 +482,7 @@ class InventoryService:
         self._twitch._mnt_triggers.extend(sorted(switch_triggers))
 
         # trim out all triggers that we're already past
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         while self._twitch._mnt_triggers and self._twitch._mnt_triggers[0] <= now:
             self._twitch._mnt_triggers.popleft()
 

@@ -18,7 +18,7 @@ import json
 import logging
 import os
 from contextlib import suppress
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from itertools import chain, count
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict
@@ -104,7 +104,7 @@ class DropHistory:
 
         entry: HistoryEntry = {
             "id": drop_id,
-            "claimed_at": datetime.now(timezone.utc).isoformat(),
+            "claimed_at": datetime.now(UTC).isoformat(),
             "game": campaign.game.name,
             "campaign": campaign.name,
             # Prefer the structured .name attribute; fall back to rewards_text()
@@ -146,7 +146,7 @@ class DropHistory:
             result = [e for e in result if e["campaign_id"] == campaign_id]
         if since:
             if since.tzinfo is None:
-                since = since.replace(tzinfo=timezone.utc)
+                since = since.replace(tzinfo=UTC)
             result = [e for e in result if datetime.fromisoformat(e["claimed_at"]) >= since]
         if limit is not None:
             result = result[:limit]

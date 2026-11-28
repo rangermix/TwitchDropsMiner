@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import re
 from typing import TYPE_CHECKING
@@ -203,7 +202,7 @@ class DiscordNotifier:
                     return True
                 logger.warning("Discord notification rejected")
                 return False
-        except asyncio.TimeoutError:
+        except TimeoutError:
             if self.diagnostics is not None:
                 self.diagnostics.record("discord", outcome="timeout")
             logger.warning("Discord notification timeout")
